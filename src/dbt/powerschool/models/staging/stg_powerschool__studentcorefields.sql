@@ -1,15 +1,22 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="studentsdcid.int_value",
-        transform_cols=[{"name": "studentsdcid", "extract": "int_value"}],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
-    )
-}}
+{%- set lep_status_true = ["1", "YES", "Y"] -%}
 
-select *
-from staging
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("powerschool", "src_powerschool__studentcorefields"),
+                partition_by="studentsdcid.int_value",
+                order_by="_file_name desc",
+            )
+        }}
+    )
+
+select
+    * except (studentsdcid, lep_status),
+
+    /* column transformations */
+    studentsdcid.int_value as studentsdcid,
+
+    if(lep_status in unnest({{ lep_status_true }}), true, false) as lep_status,
+    if(homeless_code in ('Y1', 'Y2'), true, false) as is_homeless,
+from deduplicate
