@@ -24,7 +24,6 @@ with
             `4_life_science_performance`,
 
             'PM3' as `admin`,
-            'PM3' as `admin`,
             'Spring' as season,
             'Science' as discipline,
             'Science' as subject,

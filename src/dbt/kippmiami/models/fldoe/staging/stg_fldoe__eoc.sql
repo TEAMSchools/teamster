@@ -64,7 +64,6 @@ with
                 when 'Civics'
                 then 'SOC08'
             end as test_code,
-            
         from {{ source("fldoe", "src_fldoe__eoc") }}
     ),
 
@@ -76,7 +75,7 @@ with
 
             safe_cast(right(achievement_level, 1) as int) as achievement_level_int,
 
-            if(scale_score = "Invalidated", true, false) as is_invalidated,
+            if(scale_score = 'Invalidated', true, false) as is_invalidated,
         from source
     )
 
