@@ -23,6 +23,12 @@ with
             `3_physical_science_performance`,
             `4_life_science_performance`,
 
+            'PM3' as `admin`,
+            'PM3' as `admin`,
+            'Spring' as season,
+            'Science' as discipline,
+            'Science' as subject,
+
             cast(_dagster_partition_grade_level_subject as int) as test_grade_level,
             cast(_dagster_partition_school_year_term as int) as academic_year,
 
@@ -45,5 +51,8 @@ with
         from source
     )
 
-select *, if(achievement_level_int >= 3, true, false) as is_proficient,
+select
+    *,
+    if(achievement_level_int >= 3, true, false) as is_proficient,
+    case test_grade_level when 5 then 'SCI05' when 8 then 'SCI08' end as test_code,
 from with_achievement_level_int
