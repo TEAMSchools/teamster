@@ -284,8 +284,7 @@ with
                 is_enrolled_y1,
                 is_enrolled_oct01,
                 is_enrolled_oct15,
-                is_enrolled_recent,
-                is_retained_year
+                is_enrolled_recent
             ),
 
             max(cohort_graduated) over (partition by studentid) as cohort_graduated,
