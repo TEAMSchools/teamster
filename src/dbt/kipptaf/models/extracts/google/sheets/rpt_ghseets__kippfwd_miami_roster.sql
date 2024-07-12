@@ -16,15 +16,19 @@ with
             pivot (max(fast_score) for subject in ('ELAReading', 'Mathematics'))
     )
 select
+    co.academic_year,
     co.lastfirst,
     co.advisor_lastfirst,
     co.student_number as ps_id,
     co.state_studentnumber as mdcps_id,
     co.gender,
-    gpa.cumulative_y1_gpa_unweighted as gpa,
+    co.spedlep as iep_status,
+
     fp.fast_ela,
     fp.fast_math,
-    co.spedlep as iep_status
+
+    gpa.cumulative_y1_gpa_unweighted as gpa
+
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     fast_pivot as fp on co.academic_year - 1 = fp.academic_year and co.fleid = fp.fleid
@@ -34,7 +38,7 @@ left join
     and co.schoolid = gpa.schoolid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
 where
-    co.academic_year = {{ var("current_academic_year") }}
+    co.academic_year >= {{ var("current_academic_year") }} - 1
     and co.rn_year = 1
     and co.grade_level = 8
     and co.enroll_status = 0
