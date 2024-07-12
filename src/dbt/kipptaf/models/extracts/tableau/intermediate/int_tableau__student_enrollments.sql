@@ -90,11 +90,7 @@ with
             nj_state_assessment_demo as d
             on e.academic_year = d.academic_year
             and e.state_studentnumber = d.state_id
-        where
-            e.academic_year >= {{ var("current_academic_year") - 7 }}
-            and e.rn_year = 1
-            and e.grade_level > 2
-            and e.schoolid != 999999
+        where e.rn_year = 1 and e.schoolid != 999999
     )
 
 select *
