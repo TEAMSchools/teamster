@@ -6,6 +6,9 @@ with
             tgrade as test_grade,
             schoolyear as school_year,
             scoreflag as score_flag,
+            'Spring' as `admin`,
+            'FSA' as assessment_name,
+            'Spring' as season,
             nullif(trim(fleid), '') as fleid,
             nullif(trim(testname), '') as test_name,
             nullif(trim(pass), '') as pass,
@@ -92,5 +95,31 @@ select
         when 5
         then 'Mastery'
     end as achievement_level,
+    case
+        when test_subject = 'ELA'
+        then concat('ELA0', test_grade)
+        when test_subject = 'SCIENCE'
+        then concat('SCI0', test_grade)
+        else concat('MAT0', test_grade)
+    end as test_code,
+    case
+        test_subject
+        when 'ELA'
+        then 'ELA'
+        when 'MATH'
+        then 'Math'
+        when 'SCIENCE'
+        then 'Science'
+    end as discipline,
+
+    case
+        test_subject
+        when 'ELA'
+        then 'English Language Arts'
+        when 'MATH'
+        then 'Mathematics'
+        when 'SCIENCE'
+        then 'Science'
+    end as subject,
     if(performance_level >= 3, true, false) as is_proficient,
 from fsa
