@@ -112,9 +112,6 @@ intacct_extract = build_bigquery_query_sftp_asset(
     file_config={"stem": "adp_payroll_{date}_{group_code}", "suffix": "csv"},
     destination_config={"name": "couchdrop", "path": "/data-team/accounting/intacct"},
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
-    auto_materialize_policy=AutoMaterializePolicy.eager(
-        max_materializations_per_minute=10
-    ),
 )
 
 assets = [

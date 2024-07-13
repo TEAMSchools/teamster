@@ -3,6 +3,7 @@ import re
 import pendulum
 from dagster import (
     AddDynamicPartitionsRequest,
+    AssetKey,
     DynamicPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -83,7 +84,38 @@ def adp_payroll_sftp_sensor(
             run_requests.append(
                 RunRequest(
                     run_key=f"{asset_identifier}__{partition_key}__{now.timestamp()}",
-                    asset_selection=[asset.key],
+                    asset_selection=[
+                        asset.key,
+                        AssetKey(
+                            [
+                                CODE_LOCATION,
+                                "adp_payroll",
+                                "src_adp_payroll__general_ledger_file",
+                            ]
+                        ),
+                        AssetKey(
+                            [
+                                CODE_LOCATION,
+                                "adp_payroll",
+                                "stg_adp_payroll__general_ledger_file",
+                            ]
+                        ),
+                        AssetKey(
+                            [
+                                CODE_LOCATION,
+                                "extracts",
+                                "rpt_gsheets__intacct_integration_file",
+                            ]
+                        ),
+                        AssetKey(
+                            [
+                                CODE_LOCATION,
+                                "extracts",
+                                "couchdrop",
+                                "adp_payroll_date_group_code_csv",
+                            ]
+                        ),
+                    ],
                     partition_key=partition_key,
                     tags={"amp_updated_parent_filter__adp_payroll": ""},
                 )
