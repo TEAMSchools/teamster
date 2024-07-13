@@ -11,6 +11,7 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     _check,
+    define_asset_job,
     sensor,
 )
 
@@ -18,20 +19,33 @@ from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.adp.payroll.assets import general_ledger_file
 from teamster.libraries.ssh.resources import SSHResource
 
-downstream_asset_keys = [
-    AssetKey([CODE_LOCATION, "adp_payroll", "src_adp_payroll__general_ledger_file"]),
-    AssetKey([CODE_LOCATION, "adp_payroll", "stg_adp_payroll__general_ledger_file"]),
-    AssetKey([CODE_LOCATION, "extracts", "rpt_gsheets__intacct_integration_file"]),
-    AssetKey(
-        [CODE_LOCATION, "extracts", "couchdrop", "adp_payroll_date_group_code_csv"]
-    ),
-]
-
 
 @sensor(
     name=f"{CODE_LOCATION}_adp_payroll_sftp_sensor",
     minimum_interval_seconds=(60 * 10),
-    asset_selection=[general_ledger_file.key, *downstream_asset_keys],
+    job=define_asset_job(
+        name=f"{CODE_LOCATION}_adp_payroll_sftp_asset_job",
+        selection=[
+            general_ledger_file.key,
+            AssetKey(
+                [CODE_LOCATION, "adp_payroll", "src_adp_payroll__general_ledger_file"]
+            ),
+            AssetKey(
+                [CODE_LOCATION, "adp_payroll", "stg_adp_payroll__general_ledger_file"]
+            ),
+            AssetKey(
+                [CODE_LOCATION, "extracts", "rpt_gsheets__intacct_integration_file"]
+            ),
+            AssetKey(
+                [
+                    CODE_LOCATION,
+                    "extracts",
+                    "couchdrop",
+                    "adp_payroll_date_group_code_csv",
+                ]
+            ),
+        ],
+    ),
 )
 def adp_payroll_sftp_sensor(
     context: SensorEvaluationContext, ssh_couchdrop: SSHResource
@@ -92,9 +106,7 @@ def adp_payroll_sftp_sensor(
         run_requests.append(
             RunRequest(
                 run_key=f"{asset_identifier}__{partition_key}__{now.timestamp()}",
-                asset_selection=[general_ledger_file.key, *downstream_asset_keys],
                 partition_key=partition_key,
-                tags={"amp_updated_parent_filter__adp_payroll": ""},
             )
         )
 
