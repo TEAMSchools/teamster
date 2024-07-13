@@ -5,5 +5,4 @@ models:
     meta:
       dagster:
         auto_materialize_policy:
-          max_materializations_per_minute: 10
-          # type: adp_payroll
+          type: none
