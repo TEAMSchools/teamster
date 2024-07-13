@@ -1,6 +1,11 @@
 from typing import Any, Mapping, Optional
 
-from dagster import AssetKey, AutoMaterializePolicy
+from dagster import (
+    AssetKey,
+    AutoMaterializeAssetPartitionsFilter,
+    AutoMaterializePolicy,
+    AutoMaterializeRule,
+)
 from dagster_dbt import KeyPrefixDagsterDbtTranslator
 from dagster_dbt.asset_utils import default_group_from_dbt_resource_props
 
@@ -25,7 +30,19 @@ class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
             .get("auto_materialize_policy", {})
         )
 
-        if auto_materialize_policy_config.get("type") == "lazy":
+        amp_type = auto_materialize_policy_config.get("type")
+
+        if amp_type == "adp_payroll":
+            return AutoMaterializePolicy.eager(
+                auto_materialize_policy_config.get("max_materializations_per_minute")
+            ).with_rules(
+                AutoMaterializeRule.materialize_on_parent_updated(
+                    updated_parent_filter=AutoMaterializeAssetPartitionsFilter(
+                        {"amp_updated_parent_filter__adp_payroll": ""}
+                    )
+                )
+            )
+        elif amp_type == "lazy":
             return AutoMaterializePolicy.lazy()
         else:
             return AutoMaterializePolicy.eager(
