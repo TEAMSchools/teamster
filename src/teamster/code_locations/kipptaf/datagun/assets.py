@@ -1,6 +1,6 @@
 import pathlib
 
-from dagster import AutoMaterializePolicy, config_from_files
+from dagster import config_from_files
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.payroll.assets import (
