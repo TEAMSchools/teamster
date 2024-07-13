@@ -85,6 +85,7 @@ def adp_payroll_sftp_sensor(
                     run_key=f"{asset_identifier}__{partition_key}__{now.timestamp()}",
                     asset_selection=[asset.key],
                     partition_key=partition_key,
+                    tags={"amp_updated_parent_filter__adp_payroll": ""},
                 )
             )
 
