@@ -19,7 +19,7 @@ nonpartition_asset_job_schedule = ScheduleDefinition(
     job=powerschool_nonpartition_asset_job,
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
-    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 6)},
+    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 10)},
 )
 
 schedules = [
