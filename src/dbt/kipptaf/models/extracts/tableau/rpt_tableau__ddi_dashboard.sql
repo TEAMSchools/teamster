@@ -174,6 +174,37 @@ with
             co.rn_year = 1
             and co.enroll_status = 0
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
+    ),
+
+    microgoals as (
+        select
+            employee_number,
+            week_start_monday,
+            string_agg(goal_name, ', ') as microgoals,
+        from
+            (
+                select
+                    u.internal_id_int as employee_number,
+
+                    m.goal_name,
+
+                    date_add(
+                        date(timestamp_trunc(timestamp(a.created), week)),
+                        interval 1 day
+                    ) as week_start_monday,
+                from {{ ref("stg_schoolmint_grow__users") }} as u
+                left join
+                    {{ ref("stg_schoolmint_grow__assignments") }} as a
+                    on u.user_id = a.user_id
+                left join
+                    {{ ref("stg_schoolmint_grow__assignments__tags") }} as t
+                    on a.assignment_id = t.assignment_id
+                left join
+                    {{ ref("stg_schoolmint_grow__microgoals") }} as m
+                    on t.tag_id = m.goal_tag_id
+                where m.goal_code is not null
+            )
+        group by employee_number, week_start_monday
     )
 
 /* ES/MS assessments */
@@ -296,7 +327,7 @@ select
 
     o.rubric_name as title,
 
-    null as scope,
+    m.microgoals as scope,
     null as subject_area,
 
     o.observed_at as administered_at,
@@ -377,4 +408,8 @@ left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
     on r.home_work_location_powerschool_school_id
     = lc.home_work_location_powerschool_school_id
+left join
+    microgoals as m
+    on r.employee_number = m.employee_number
+    and w.week_start_monday = m.week_start_monday
 where o.observation_type_abbreviation = 'WT'
