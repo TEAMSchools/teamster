@@ -43,15 +43,16 @@ def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
 
             cursor[asset_identifier] = now_timestamp
 
-    return SensorResult(
-        run_requests=[
-            RunRequest(
-                run_key=f"{CODE_LOCATION}_ldap_sensor_{now_timestamp}",
-                asset_selection=asset_selection,
-            )
-        ],
-        cursor=json.dumps(cursor),
-    )
+    if asset_selection:
+        return SensorResult(
+            run_requests=[
+                RunRequest(
+                    run_key=f"{context.sensor_name}_{now_timestamp}",
+                    asset_selection=asset_selection,
+                )
+            ],
+            cursor=json.dumps(cursor),
+        )
 
 
 sensors = [

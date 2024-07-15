@@ -14,15 +14,13 @@ from dagster import (
 def build_deanslist_job_schedule(
     code_location, partitions_type, selection, cron_schedule, execution_timezone
 ):
-    job_name = f"{code_location}_deanslist_{partitions_type}_assets_job"
-
-    job = define_asset_job(name=job_name, selection=selection)
+    job = define_asset_job(
+        name=f"{code_location}_deanslist_{partitions_type}_assets_job",
+        selection=selection,
+    )
 
     @schedule(
-        name=f"{job_name}_schedule",
-        cron_schedule=cron_schedule,
-        execution_timezone=execution_timezone,
-        job=job,
+        cron_schedule=cron_schedule, execution_timezone=execution_timezone, job=job
     )
     def _schedule(context: ScheduleEvaluationContext) -> Generator:
         if partitions_type == "static":
@@ -53,7 +51,7 @@ def build_deanslist_job_schedule(
                 )
 
             yield RunRequest(
-                run_key=f"{code_location}_{context._schedule_name}_{school_id}",
+                run_key=f"{context._schedule_name}_{school_id}",
                 partition_key=partition_key,
             )
 
