@@ -1,3 +1,6 @@
+import re
+
+
 def test_regex_pattern_replace():
     from teamster.libraries.core.utils.functions import regex_pattern_replace
 
@@ -75,7 +78,6 @@ def test_ghseet_asset_key_rename():
 
 def test_orjson():
     import json
-    import re
     from datetime import date, datetime, timedelta
     from decimal import Decimal
 
@@ -124,3 +126,40 @@ def test_orjson():
 
         assert stdlib_match.group(1) == orjson_match.group(1)
         print(f"{k}: {stdlib_match.group(1)} == {orjson_match.group(1)}")
+
+
+def test_foo():
+    from teamster.libraries.sftp.assets import compose_regex, match_files
+
+    files = [
+        (None, "\\./.DS_Store"),
+        (None, "\\./additional_earnings_report.csv"),
+        (None, "\\./comprehensive_benefits_report.csv"),
+        (None, "\\./employees.csv"),
+        (None, "\\./employees_all.csv"),
+        (None, "\\./employees_future.csv"),
+        (None, "\\./employee_onboarding.csv"),
+        (None, "\\./home_cost_number.csv"),
+        (None, "\\./manager_history.csv"),
+        (None, "\\./pension_and_benefits_enrollments.csv"),
+        (None, "\\./pension_and_benefits_enrollments_history.csv"),
+        (None, "\\./restricted_grant_coding.csv"),
+        (None, "\\./salary_history.csv"),
+        (None, "\\./staff_roster_example.csv"),
+        (None, "\\./status_history.csv"),
+        (None, "\\./vaccine_records.csv"),
+        (None, "\\./work_assignment_history.csv"),
+    ]
+
+    remote_dir_regex_composed = compose_regex(regexp=r"\.")
+    remote_file_regex_composed = compose_regex(
+        regexp=r"additional_earnings_report\.csv"
+    )
+
+    file_matches = match_files(
+        remote_dir=remote_dir_regex_composed,
+        remote_file=remote_file_regex_composed,
+        files=files,
+    )
+
+    assert len(file_matches) > 0

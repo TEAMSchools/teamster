@@ -64,7 +64,7 @@ def test_iready_personalized_instruction_by_lesson_kippnj():
         personalized_instruction_by_lesson,
     )
 
-    _test_asset(asset=personalized_instruction_by_lesson, partition_key="2024|ela")
+    _test_asset(asset=personalized_instruction_by_lesson, partition_key="2023|math")
 
 
 def test_iready_instructional_usage_data_kippmiami():
@@ -94,4 +94,4 @@ def test_iready_diagnostic_and_instruction_kippnj():
         diagnostic_and_instruction,
     )
 
-    _test_asset(asset=diagnostic_and_instruction, partition_key="2024|ela")
+    _test_asset(asset=diagnostic_and_instruction, partition_key="2021|math")

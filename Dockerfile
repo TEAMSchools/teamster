@@ -6,9 +6,9 @@ FROM python:"${PYTHON_VERSION}"-slim
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # set container envs
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV PATH /app/.venv/bin:"${PATH}"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH=/app/.venv/bin:"${PATH}"
 
 # set workdir
 WORKDIR /app

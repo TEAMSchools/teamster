@@ -1,12 +1,9 @@
 import pathlib
 
 import yaml
-from dagster import AssetKey, AssetsDefinition, AssetSpec
+from dagster import AssetKey, AssetsDefinition, AssetSpec, external_assets_from_specs
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
-from teamster.libraries.core.definitions.external_asset import (
-    external_assets_from_specs,
-)
 
 CONNECTORS = {}
 
@@ -40,6 +37,4 @@ for config_file in config_path.glob("*.yaml"):
                 )
             )
 
-assets: list[AssetsDefinition] = external_assets_from_specs(
-    specs=specs, compute_kind="fivetran"
-)
+assets: list[AssetsDefinition] = external_assets_from_specs(specs=specs)
