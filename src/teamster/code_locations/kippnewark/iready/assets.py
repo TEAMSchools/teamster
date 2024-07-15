@@ -13,27 +13,36 @@ key_prefix = [CODE_LOCATION, "iready"]
 diagnostic_results = build_iready_sftp_asset(
     asset_key=[*key_prefix, "diagnostic_results"],
     region_subfolder=region_subfolder,
-    remote_file_regex=r"diagnostic_results_(?P<subject>\w+)\.csv",
+    remote_file_regex=r"diagnostic_results_(?P<subject>\w+)(_CONFIDENTIAL)?\.csv",
     avro_schema=DIAGNOSTIC_RESULTS_SCHEMA,
-    start_fiscal_year=2020,
+    start_fiscal_year=2021,
     current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
 personalized_instruction_by_lesson = build_iready_sftp_asset(
     asset_key=[*key_prefix, "personalized_instruction_by_lesson"],
     region_subfolder=region_subfolder,
-    remote_file_regex=r"personalized_instruction_by_lesson_(?P<subject>\w+)\.csv",
+    remote_file_regex=(
+        r"personalized_instruction_by_lesson_(?P<subject>\w+)(_CONFIDENTIAL)?\.csv"
+    ),
     avro_schema=PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
-    start_fiscal_year=2022,
+    start_fiscal_year=2023,
     current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {"requests": {"cpu": "750m"}, "limits": {"cpu": "750m"}}
+            }
+        }
+    },
 )
 
 instructional_usage_data = build_iready_sftp_asset(
     asset_key=[*key_prefix, "instructional_usage_data"],
     region_subfolder=region_subfolder,
-    remote_file_regex=r"instructional_usage_data_(?P<subject>\w+)\.csv",
+    remote_file_regex=r"instructional_usage_data_(?P<subject>\w+)(_CONFIDENTIAL)?\.csv",
     avro_schema=INSTRUCTIONAL_USAGE_DATA_SCHEMA,
-    start_fiscal_year=2022,
+    start_fiscal_year=2023,
     current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
@@ -42,12 +51,11 @@ diagnostic_and_instruction = build_iready_sftp_asset(
     region_subfolder=region_subfolder,
     remote_file_regex=r"diagnostic_and_instruction_(?P<subject>\w+)_ytd_window\.csv",
     avro_schema=DIAGNOSTIC_AND_INSTRUCTION_SCHEMA,
-    start_fiscal_year=2021,
-    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+    start_fiscal_year=2022,
+    current_fiscal_year=2024,
 )
 
 assets = [
-    diagnostic_and_instruction,
     diagnostic_results,
     instructional_usage_data,
     personalized_instruction_by_lesson,

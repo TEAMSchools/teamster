@@ -15,7 +15,7 @@ from teamster.libraries.deanslist.assets import (
     build_deanslist_static_partition_asset,
 )
 
-static_partitions_def = StaticPartitionsDefinition(["472", "525"])
+deanslist_static_partitions_def = StaticPartitionsDefinition(["472", "525"])
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
@@ -23,7 +23,7 @@ static_partition_assets = [
     build_deanslist_static_partition_asset(
         asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
         schema=ASSET_SCHEMA[e["endpoint"]],
-        partitions_def=static_partitions_def,
+        partitions_def=deanslist_static_partitions_def,
         **e,
     )
     for e in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
@@ -40,7 +40,7 @@ multi_partition_monthly_assets = [
                 "date": MonthlyPartitionsDefinition(
                     start_date="2018-07-01", timezone=LOCAL_TIMEZONE.name, end_offset=1
                 ),
-                "school": static_partitions_def,
+                "school": deanslist_static_partitions_def,
             }
         ),
         **e,
@@ -62,7 +62,7 @@ multi_partition_fiscal_assets = [
                     timezone=LOCAL_TIMEZONE.name,
                     end_offset=1,
                 ),
-                "school": static_partitions_def,
+                "school": deanslist_static_partitions_def,
             }
         ),
         **e,

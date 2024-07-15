@@ -10,6 +10,7 @@ from teamster.libraries.google.bigquery.ops import (
 
 
 @job(
+    name=f"{CODE_LOCATION}_adp_wfn_update_workers_job",
     config=RunConfig(
         ops={
             "bigquery_get_table_op": BigQueryGetTableOpConfig(

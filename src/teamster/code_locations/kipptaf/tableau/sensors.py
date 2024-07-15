@@ -7,6 +7,7 @@ from dagster import (
     _check,
     sensor,
 )
+from tableauserverclient.server.endpoint.exceptions import InternalServerError
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.tableau.assets import external_assets
@@ -32,7 +33,11 @@ def tableau_asset_sensor(
 
         last_updated_timestamp = cursor.get(asset_identifier, 0)
 
-        workbook = tableau._server.workbooks.get_by_id(asset_metadata["id"])
+        try:
+            workbook = tableau._server.workbooks.get_by_id(asset_metadata["id"])
+        except InternalServerError as e:
+            context.log.exception(e)
+            continue
 
         updated_at_timestamp = _check.not_none(value=workbook.updated_at).timestamp()
 

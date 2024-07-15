@@ -15,6 +15,12 @@ class DiagnosticInstruction(BaseModel):
     diagnostic_completion_date_most_recent: str | None = None
     diagnostic_gain_note_negative_gains_zero: str | None = None
     diagnostic_grouping_most_recent: float | None = None
+    diagnostic_language_1: str | None = None
+    diagnostic_language_2: str | None = None
+    diagnostic_language_3: str | None = None
+    diagnostic_language_4: str | None = None
+    diagnostic_language_5: str | None = None
+    diagnostic_language_most_recent: str | None = None
     diagnostic_lexile_measure_most_recent: str | None = None
     diagnostic_lexile_range_most_recent: str | None = None
     diagnostic_overall_placement_1: str | None = None
@@ -340,12 +346,13 @@ class PersonalizedInstruction(BaseModel):
     race: str | None = None
     report_group_s: str | None = None
     school: str | None = None
-    score: int | None = None
     sex: str | None = None
     special_education: str | None = None
     student_grade: str | None = None
     student_id: int | None = None
     subject: str | None = None
     teacher_assigned_lesson: str | None = None
-    total_time_on_lesson_min: int | None = None
     user_name: str | None = None
+
+    score: int | float | None = None
+    total_time_on_lesson_min: int | float | None = None
