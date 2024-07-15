@@ -85,6 +85,9 @@ left join
 
 union all
 
+/* generic roster names used for positions that are open, closed, 
+have hires that are pre-start, or are filled by subs */
+
 select
     999999 as employee_number,
     'Active' as assignment_status,
@@ -107,7 +110,7 @@ select
     null as location_shortname,
     null as campus,
     null as region_state,
-    null as permission_level
+    null as permission_level,
 
 union all
 
@@ -133,7 +136,7 @@ select
     null as location_shortname,
     null as campus,
     null as region_state,
-    null as permission_level
+    null as permission_level,
 
 union all
 
@@ -159,7 +162,7 @@ select
     null as location_shortname,
     null as campus,
     null as region_state,
-    null as permission_level
+    null as permission_level,
 
 union all
 
@@ -185,4 +188,4 @@ select
     null as location_shortname,
     null as campus,
     null as region_state,
-    null as permission_level
+    null as permission_level,
