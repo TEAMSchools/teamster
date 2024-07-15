@@ -1,3 +1,5 @@
+from typing import Generator
+
 from dagster import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -11,18 +13,17 @@ from dagster import (
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.tableau.assets import workbook
 
-job = define_asset_job(
-    name=f"{CODE_LOCATION}_tableau_workbook_asset_job", selection=[workbook]
-)
-
 
 @schedule(
-    name=f"{job.name}_schedule",
-    job=job,
+    job=define_asset_job(
+        name=f"{CODE_LOCATION}_tableau_workbook_asset_job", selection=[workbook]
+    ),
     cron_schedule="0 1 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
-def tableau_workbook_asset_job_schedule(context: ScheduleEvaluationContext):
+def tableau_workbook_asset_job_schedule(
+    context: ScheduleEvaluationContext,
+) -> Generator:
     partitions_def = _check.inst(workbook.partitions_def, MultiPartitionsDefinition)
 
     workbook_id_partition = partitions_def.get_partitions_def_for_dimension(
@@ -41,7 +42,7 @@ def tableau_workbook_asset_job_schedule(context: ScheduleEvaluationContext):
         )
 
         yield RunRequest(
-            run_key=f"{CODE_LOCATION}_{context._schedule_name}_{partition_key}",
+            run_key=f"{context._schedule_name}_{partition_key}",
             asset_selection=[workbook.key],
             partition_key=partition_key,
             tags={"tableau_pat_session_limit": "true"},

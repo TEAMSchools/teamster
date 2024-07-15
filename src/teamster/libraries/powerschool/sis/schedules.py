@@ -24,17 +24,12 @@ def build_powerschool_schedule(
     asset_defs: list[AssetsDefinition],
     max_runtime_seconds,
 ):
-    job_name = f"{code_location}_powerschool_schedule_job"
-
-    job = define_asset_job(name=job_name, selection=asset_defs)
-
-    schedule_name = f"{job_name}_schedule"
-
     @schedule(
         cron_schedule=cron_schedule,
-        name=schedule_name,
         execution_timezone=execution_timezone,
-        job=job,
+        job=define_asset_job(
+            name=f"{code_location}_powerschool_schedule_job", selection=asset_defs
+        ),
     )
     def _schedule(
         context: ScheduleEvaluationContext,
@@ -114,7 +109,7 @@ def build_powerschool_schedule(
 
         if asset_selection:
             return RunRequest(
-                run_key=schedule_name,
+                run_key=context._schedule_name,
                 asset_selection=asset_selection,
                 tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
             )

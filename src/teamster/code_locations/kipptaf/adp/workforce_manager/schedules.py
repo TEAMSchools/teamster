@@ -1,3 +1,5 @@
+from typing import Generator
+
 from dagster import (
     DynamicPartitionsDefinition,
     MultiPartitionKey,
@@ -9,7 +11,7 @@ from dagster import (
     schedule,
 )
 
-from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_manager.assets import (
     adp_wfm_assets_dynamic,
 )
@@ -28,13 +30,13 @@ adp_wfm_daily_partition_asset_job_schedule = build_schedule_from_partitioned_job
 
 @schedule(
     cron_schedule="50 23 * * *",
-    name=f"{CODE_LOCATION}_adp_wfm_dynamic_partition_schedule",
+    name=f"{adp_wfm_dynamic_partition_asset_job.name}_schedule",
     execution_timezone=LOCAL_TIMEZONE.name,
     job=adp_wfm_dynamic_partition_asset_job,
 )
 def adp_wfm_dynamic_partition_schedule(
     context: ScheduleEvaluationContext, adp_wfm: AdpWorkforceManagerResource
-):
+) -> Generator:
     for asset in adp_wfm_assets_dynamic:
         partitions_def = _check.inst(asset.partitions_def, MultiPartitionsDefinition)
 
