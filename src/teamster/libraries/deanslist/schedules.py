@@ -1,83 +1,60 @@
+from typing import Generator
+
 from dagster import (
-    MonthlyPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
+    StaticPartitionsDefinition,
     _check,
+    define_asset_job,
     schedule,
 )
 
-from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
 
-
-def build_deanslist_static_partition_asset_job_schedule(
-    code_location, cron_schedule, execution_timezone, job
-):
-    schedule_name = f"{code_location}_deanslist_static_partition_asset_job_schedule"
-    partition_keys = job.partitions_def.get_partition_keys()
-
-    @schedule(
-        name=schedule_name,
-        cron_schedule=cron_schedule,
-        execution_timezone=execution_timezone,
-        job=job,
-    )
-    def _schedule(context: ScheduleEvaluationContext):
-        for school_id in partition_keys:
-            yield RunRequest(
-                run_key=f"{code_location}_{schedule_name}_{school_id}",
-                partition_key=school_id,
-            )
-
-    return _schedule
-
-
-def build_deanslist_multi_partition_asset_job_schedule(
-    code_location,
-    cron_schedule,
+def build_deanslist_job_schedule(
+    job_name: str,
+    selection,
+    partitions_def: StaticPartitionsDefinition | MultiPartitionsDefinition,
+    cron_schedule: str,
     execution_timezone,
-    job,
-    asset_selection=None,
-    schedule_name=None,
 ):
-    partitions_def: MultiPartitionsDefinition = job.partitions_def
-
-    date_partition = partitions_def.get_partitions_def_for_dimension("date")
-    school_partition = partitions_def.get_partitions_def_for_dimension("school")
-
-    last_date_partition_key = _check.not_none(
-        value=date_partition.get_last_partition_key()
+    job = define_asset_job(
+        name=job_name, selection=selection, partitions_def=partitions_def
     )
 
-    if schedule_name is None:
-        if isinstance(date_partition, MonthlyPartitionsDefinition):
-            date_partition_type = "monthly"
-        elif isinstance(date_partition, FiscalYearPartitionsDefinition):
-            date_partition_type = "fiscal"
-        else:
-            date_partition_type = ""
-
-        schedule_name = (
-            f"{code_location}_deanslist_multi_partition_{date_partition_type}"
-            "_asset_job_schedule"
-        )
-
     @schedule(
-        name=schedule_name,
+        name=f"{job.name}_schedule",
         cron_schedule=cron_schedule,
         execution_timezone=execution_timezone,
         job=job,
     )
-    def _schedule(context: ScheduleEvaluationContext):
-        for school in school_partition.get_partition_keys():
-            partition_key = MultiPartitionKey(
-                {"school": school, "date": last_date_partition_key}
+    def _schedule(context: ScheduleEvaluationContext) -> Generator:
+        partition_keys = []
+
+        if isinstance(partitions_def, StaticPartitionsDefinition):
+            partition_keys = partitions_def.get_partition_keys()
+        elif isinstance(partitions_def, MultiPartitionsDefinition):
+            school_partitions_def = partitions_def.get_partitions_def_for_dimension(
+                "school"
+            )
+            date_partitions_def = partitions_def.get_partitions_def_for_dimension(
+                "date"
             )
 
+            school_partition_keys = school_partitions_def.get_partition_keys()
+            date_partition_key = _check.not_none(
+                value=date_partitions_def.get_last_partition_key()
+            )
+
+            partition_keys = [
+                MultiPartitionKey({"school": school_id, "date": date_partition_key})
+                for school_id in school_partition_keys
+            ]
+
+        for partition_key in partition_keys:
             yield RunRequest(
-                run_key=f"{code_location}_{schedule_name}_{partition_key}",
-                asset_selection=asset_selection,
+                run_key=f"{context._schedule_name}_{partition_key}",
                 partition_key=partition_key,
             )
 
