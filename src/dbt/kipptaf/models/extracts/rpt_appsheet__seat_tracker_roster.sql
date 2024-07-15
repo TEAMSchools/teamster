@@ -83,10 +83,9 @@ left join
     {{ ref("stg_people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.location_name
 
-union all
-
 /* generic roster names used for positions that are open, closed, 
 have hires that are pre-start, or are filled by subs */
+union all
 
 select
     999999 as employee_number,
