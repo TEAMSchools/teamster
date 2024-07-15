@@ -9,7 +9,6 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     _check,
-    define_asset_job,
     sensor,
 )
 
@@ -24,12 +23,10 @@ def build_iready_sftp_sensor(
     current_fiscal_year: int,
     minimum_interval_seconds=None,
 ):
-    base_name = f"{code_location}_iready_sftp_assets"
-
     @sensor(
-        name=f"{base_name}_sensor",
+        name=f"{code_location}_iready_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
-        job=define_asset_job(name=f"{base_name}_job", selection=asset_defs),
+        asset_selection=asset_defs,
     )
     def _sensor(context: SensorEvaluationContext, ssh_iready: SSHResource):
         now = pendulum.now(tz=timezone)
