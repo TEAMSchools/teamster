@@ -8,7 +8,6 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     _check,
-    define_asset_job,
     sensor,
 )
 from dagster_airbyte import AirbyteCloudResource
@@ -18,10 +17,8 @@ from teamster.code_locations.kipptaf.airbyte import assets
 
 ASSET_KEYS = [key for a in assets for key in a.keys]
 
-job = define_asset_job(name=f"{CODE_LOCATION}_airbyte_asset_job", selection=assets)
 
-
-@sensor(name=f"{job.name}_sensor", minimum_interval_seconds=(60 * 5), job=job)
+@sensor(name=f"{CODE_LOCATION}_airbyte_asset", minimum_interval_seconds=(60 * 5))
 def airbyte_job_status_sensor(
     context: SensorEvaluationContext, airbyte: AirbyteCloudResource
 ):

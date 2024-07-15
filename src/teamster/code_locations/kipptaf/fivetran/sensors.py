@@ -5,7 +5,6 @@ from dagster import (
     AssetMaterialization,
     SensorEvaluationContext,
     SensorResult,
-    define_asset_job,
     sensor,
 )
 from dagster_fivetran import FivetranResource
@@ -25,10 +24,9 @@ def render_fivetran_audit_query(dataset, timestamp):
     """
 
 
-job = define_asset_job(name=f"{CODE_LOCATION}_fivetran_asset_job", selection=assets)
-
-
-@sensor(name=f"{job.name}_sensor", job=job, minimum_interval_seconds=(60 * 5))
+@sensor(
+    name=f"{CODE_LOCATION}_fivetran_asset_sensor", minimum_interval_seconds=(60 * 5)
+)
 def fivetran_sync_status_sensor(
     context: SensorEvaluationContext,
     fivetran: FivetranResource,
