@@ -19,15 +19,18 @@ from teamster.code_locations.kipptaf.schoolmint.grow.jobs import (
     schoolmint_grow_user_update_job,
 )
 
+job = define_asset_job(
+    name=f"{CODE_LOCATION}_schoolmint_grow_static_partitions_assets_job",
+    selection=schoolmint_grow_static_partitions_assets,
+    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
+)
+
 
 @schedule(
+    name=f"{job.name}_schedule",
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
-    job=define_asset_job(
-        name=f"{CODE_LOCATION}_schoolmint_grow_static_partitions_assets_job",
-        selection=schoolmint_grow_static_partitions_assets,
-        tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
-    ),
+    job=job,
 )
 def schoolmint_grow_static_partitions_assets_job_schedule(
     context: ScheduleEvaluationContext,

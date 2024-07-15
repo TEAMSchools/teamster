@@ -35,8 +35,6 @@ def build_dbt_code_version_schedule(
                 asset_selection.append(asset_key)
 
         if asset_selection:
-            return RunRequest(
-                run_key=context._schedule_name, asset_selection=asset_selection
-            )
+            return RunRequest(asset_selection=asset_selection)
 
     return _schedule
