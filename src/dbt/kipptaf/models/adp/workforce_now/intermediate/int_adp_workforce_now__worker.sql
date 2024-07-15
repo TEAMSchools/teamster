@@ -137,6 +137,7 @@ with
         -- trunk-ignore(sqlfluff/AM04)
         select
             *,
+
             lag(work_assignment__as_of_date_timestamp, 1) over (
                 partition by work_assignment_id
                 order by work_assignment__as_of_date_timestamp asc
