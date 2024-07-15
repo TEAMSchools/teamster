@@ -49,7 +49,6 @@ diagnostic_and_instruction = build_iready_sftp_asset(
 )
 
 assets = [
-    diagnostic_and_instruction,
     diagnostic_results,
     instructional_usage_data,
     personalized_instruction_by_lesson,
