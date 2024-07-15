@@ -1,18 +1,22 @@
 import json
 
 import pendulum
-from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
+from dagster import (
+    RunRequest,
+    SensorEvaluationContext,
+    SensorResult,
+    define_asset_job,
+    sensor,
+)
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.ldap.assets import assets
 from teamster.libraries.ldap.resources import LdapResource
 
+job = define_asset_job(name=f"{CODE_LOCATION}_ldap_asset_job", selection=assets)
 
-@sensor(
-    name=f"{CODE_LOCATION}_ldap_asset_sensor",
-    minimum_interval_seconds=(60 * 10),
-    asset_selection=assets,
-)
+
+@sensor(name=f"{job.name}_sensor", minimum_interval_seconds=(60 * 10), job=job)
 def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
     now_timestamp = pendulum.now().timestamp()
 
@@ -43,15 +47,17 @@ def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
 
             cursor[asset_identifier] = now_timestamp
 
-    return SensorResult(
-        run_requests=[
-            RunRequest(
-                run_key=f"{CODE_LOCATION}_ldap_sensor_{now_timestamp}",
-                asset_selection=asset_selection,
-            )
-        ],
-        cursor=json.dumps(cursor),
-    )
+    if asset_selection:
+        return SensorResult(
+            run_requests=[
+                # trunk-ignore(pyright/reportArgumentType)
+                RunRequest(
+                    run_key=f"{context.sensor_name}_{now_timestamp}",
+                    asset_selection=asset_selection,
+                )
+            ],
+            cursor=json.dumps(cursor),
+        )
 
 
 sensors = [

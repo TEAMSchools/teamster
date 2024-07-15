@@ -2,19 +2,18 @@ from dagster import ScheduleEvaluationContext, SkipReason, _check, job, schedule
 from dagster_airbyte import AirbyteCloudResource
 
 
-@job
-def airbyte_job():
-    """Placehoder job"""
-
-
 def build_airbyte_start_sync_schedule(
     code_location, connection_id, connection_name, cron_schedule, execution_timezone
 ):
+    @job(name=f"{code_location}_airbyte_sync_{connection_name}_job")
+    def _job():
+        """Placehoder job"""
+
     @schedule(
-        name=f"{code_location}_airbyte_sync_{connection_name}_schedule",
+        name=f"{_job.name}_schedule",
         cron_schedule=cron_schedule,
         execution_timezone=execution_timezone,
-        job=airbyte_job,
+        job=_job,
     )
     def _schedule(context: ScheduleEvaluationContext, airbyte: AirbyteCloudResource):
         job_sync = _check.not_none(
