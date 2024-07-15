@@ -8,6 +8,7 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     _check,
+    define_asset_job,
     sensor,
 )
 from dagster_airbyte import AirbyteCloudResource
@@ -17,19 +18,16 @@ from teamster.code_locations.kipptaf.airbyte import assets
 
 ASSET_KEYS = [key for a in assets for key in a.keys]
 
+job = define_asset_job(name=f"{CODE_LOCATION}_airbyte_asset_job", selection=assets)
 
-@sensor(
-    name=f"{CODE_LOCATION}_airbyte_job_status_sensor",
-    minimum_interval_seconds=(60 * 5),
-    asset_selection=assets,
-)
+
+@sensor(name=f"{job.name}_sensor", minimum_interval_seconds=(60 * 5), job=job)
 def airbyte_job_status_sensor(
     context: SensorEvaluationContext, airbyte: AirbyteCloudResource
-) -> SensorResult:
+):
     now_timestamp = pendulum.now().timestamp()
 
     asset_events = []
-
     cursor = json.loads(context.cursor or "{}")
 
     connections = _check.not_none(
@@ -71,7 +69,8 @@ def airbyte_job_status_sensor(
                     context.log.info(asset_key)
                     asset_events.append(AssetMaterialization(asset_key=asset_key))
 
-    return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
+    if asset_events:
+        return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
 
 
 sensors = [

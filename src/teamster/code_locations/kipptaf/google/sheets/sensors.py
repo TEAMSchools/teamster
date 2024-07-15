@@ -6,6 +6,7 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     _check,
+    define_asset_job,
     sensor,
 )
 
@@ -24,15 +25,15 @@ ASSET_KEYS_BY_SHEET_ID = {
 
 TIMEOUT = 60 / len(ASSET_KEYS_BY_SHEET_ID)
 
-
-@sensor(
-    name=f"{CODE_LOCATION}_google_sheets_asset_sensor",
-    minimum_interval_seconds=(60 * 10),
-    asset_selection=google_sheets_assets,
+job = define_asset_job(
+    name=f"{CODE_LOCATION}_google_sheets_asset_job", selection=google_sheets_assets
 )
+
+
+@sensor(name=f"{job.name}_sensor", job=job, minimum_interval_seconds=(60 * 10))
 def google_sheets_asset_sensor(
     context: SensorEvaluationContext, gsheets: GoogleSheetsResource
-) -> SensorResult:
+):
     cursor: dict = json.loads(context.cursor or "{}")
     asset_events: list = []
 
@@ -63,7 +64,8 @@ def google_sheets_asset_sensor(
         except Exception as e:
             context.log.error(e)
 
-    return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
+    if asset_events:
+        return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
 
 
 sensors = [
