@@ -25,17 +25,14 @@ def render_fivetran_audit_query(dataset, timestamp):
 
 
 @sensor(
-    name=f"{CODE_LOCATION}_fivetran_sync_status_sensor",
-    minimum_interval_seconds=(60 * 5),
-    asset_selection=assets,
+    name=f"{CODE_LOCATION}_fivetran_asset_sensor", minimum_interval_seconds=(60 * 5)
 )
 def fivetran_sync_status_sensor(
     context: SensorEvaluationContext,
     fivetran: FivetranResource,
     db_bigquery: BigQueryResource,
-) -> SensorResult:
+):
     asset_events = []
-
     cursor: dict = json.loads(s=(context.cursor or "{}"))
 
     with db_bigquery.get_client() as bq:
@@ -84,7 +81,8 @@ def fivetran_sync_status_sensor(
 
             cursor[connector_id] = curr_last_sync_completion_timestamp
 
-    return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
+    if asset_events:
+        return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
 
 
 sensors = [

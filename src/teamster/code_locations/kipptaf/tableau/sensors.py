@@ -15,16 +15,13 @@ from teamster.libraries.tableau.resources import TableauServerResource
 
 
 @sensor(
-    name=f"{CODE_LOCATION}_tableau_asset_sensor",
-    minimum_interval_seconds=(60 * 10),
-    asset_selection=external_assets,
+    name=f"{CODE_LOCATION}_tableau_asset_sensor", minimum_interval_seconds=(60 * 10)
 )
 def tableau_asset_sensor(
     context: SensorEvaluationContext, tableau: TableauServerResource
 ):
-    cursor: dict = json.loads(context.cursor or "{}")
-
     asset_events = []
+    cursor: dict = json.loads(context.cursor or "{}")
 
     for asset in external_assets:
         asset_identifier = asset.key.to_python_identifier()
@@ -48,7 +45,8 @@ def tableau_asset_sensor(
 
             cursor[asset_identifier] = updated_at_timestamp
 
-    return SensorResult(asset_events=asset_events, cursor=json.dumps(cursor))
+    if asset_events:
+        return SensorResult(asset_events=asset_events, cursor=json.dumps(cursor))
 
 
 sensors = [

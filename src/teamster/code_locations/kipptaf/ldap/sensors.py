@@ -20,9 +20,9 @@ job = define_asset_job(name=f"{CODE_LOCATION}_ldap_asset_job", selection=assets)
 def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
     now_timestamp = pendulum.now().timestamp()
 
-    cursor: dict = json.loads(context.cursor or "{}")
-
+    run_requests = []
     asset_selection = []
+    cursor: dict = json.loads(context.cursor or "{}")
 
     for asset in assets:
         asset_identifier = asset.key.to_python_identifier()
@@ -48,16 +48,14 @@ def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
             cursor[asset_identifier] = now_timestamp
 
     if asset_selection:
-        return SensorResult(
-            run_requests=[
-                # trunk-ignore(pyright/reportArgumentType)
-                RunRequest(
-                    run_key=f"{context.sensor_name}_{now_timestamp}",
-                    asset_selection=asset_selection,
-                )
-            ],
-            cursor=json.dumps(cursor),
+        run_requests.append(
+            RunRequest(
+                run_key=f"{context.sensor_name}_{now_timestamp}",
+                asset_selection=asset_selection,
+            )
         )
+
+        return SensorResult(run_requests=run_requests, cursor=json.dumps(cursor))
 
 
 sensors = [
