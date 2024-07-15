@@ -35,7 +35,11 @@ deanslist_multi_partition_fiscal_asset_job_schedule = build_deanslist_job_schedu
 deanslist_comm_log_midday_job_schedule = build_deanslist_job_schedule(
     code_location=CODE_LOCATION,
     partitions_type="comm_log",
-    selection=[AssetKey([CODE_LOCATION, "deanslist", "comm_log"])],
+    selection=[
+        a
+        for a in multi_partition_fiscal_assets
+        if a.key == AssetKey([CODE_LOCATION, "deanslist", "comm_log"])
+    ],
     cron_schedule="0 14 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
