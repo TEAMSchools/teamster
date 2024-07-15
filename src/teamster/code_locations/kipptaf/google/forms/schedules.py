@@ -1,19 +1,24 @@
 from typing import Generator
 
-from dagster import RunRequest, ScheduleEvaluationContext, schedule
+from dagster import RunRequest, ScheduleEvaluationContext, define_asset_job, schedule
 
-from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.google.forms.assets import (
     GOOGLE_FORMS_PARTITIONS_DEF,
+    form,
+    responses,
 )
-from teamster.code_locations.kipptaf.google.forms.jobs import google_forms_asset_job
+
+job = define_asset_job(
+    name=f"{CODE_LOCATION}_google_forms_asset_job", selection=[form, responses]
+)
 
 
 @schedule(
-    name=f"{google_forms_asset_job.name}_schedule",
+    name=f"{job.name}_schedule",
     cron_schedule="0 0 * * *",
-    job=google_forms_asset_job,
     execution_timezone=LOCAL_TIMEZONE.name,
+    job=job,
 )
 def google_forms_asset_job_schedule(context: ScheduleEvaluationContext) -> Generator:
     partition_keys = GOOGLE_FORMS_PARTITIONS_DEF.get_partition_keys(

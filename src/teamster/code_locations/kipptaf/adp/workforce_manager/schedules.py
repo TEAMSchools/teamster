@@ -8,31 +8,42 @@ from dagster import (
     ScheduleEvaluationContext,
     _check,
     build_schedule_from_partitioned_job,
+    define_asset_job,
     schedule,
 )
 
-from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_manager.assets import (
+    adp_wfm_assets_daily,
     adp_wfm_assets_dynamic,
-)
-from teamster.code_locations.kipptaf.adp.workforce_manager.jobs import (
-    adp_wfm_daily_partition_asset_job,
-    adp_wfm_dynamic_partition_asset_job,
 )
 from teamster.libraries.adp.workforce_manager.resources import (
     AdpWorkforceManagerResource,
 )
 
 adp_wfm_daily_partition_asset_job_schedule = build_schedule_from_partitioned_job(
-    job=adp_wfm_daily_partition_asset_job, hour_of_day=23, minute_of_hour=50
+    job=define_asset_job(
+        name=f"{CODE_LOCATION}_adp_wfm_daily_partition_asset_job",
+        selection=adp_wfm_assets_daily,
+    ),
+    hour_of_day=23,
+    minute_of_hour=50,
+)
+
+adp_wfm_dynamic_partition_asset_job = define_asset_job(
+    name=f"{CODE_LOCATION}_adp_wfm_dynamic_partition_asset_job",
+    selection=adp_wfm_assets_dynamic,
 )
 
 
 @schedule(
-    cron_schedule="50 23 * * *",
     name=f"{adp_wfm_dynamic_partition_asset_job.name}_schedule",
+    cron_schedule="50 23 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
-    job=adp_wfm_dynamic_partition_asset_job,
+    job=define_asset_job(
+        name=f"{CODE_LOCATION}_adp_wfm_dynamic_partition_asset_job",
+        selection=adp_wfm_assets_dynamic,
+    ),
 )
 def adp_wfm_dynamic_partition_schedule(
     context: ScheduleEvaluationContext, adp_wfm: AdpWorkforceManagerResource
@@ -70,8 +81,7 @@ def adp_wfm_dynamic_partition_schedule(
             )
 
             yield RunRequest(
-                run_key=f"{asset.key.to_python_identifier()}_{partition_key}",
-                asset_selection=[asset.key],
+                run_key=f"{context._schedule_name}_{partition_key}",
                 partition_key=partition_key,
             )
 

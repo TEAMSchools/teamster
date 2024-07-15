@@ -8,7 +8,6 @@ assets = [
 
 jobs = [
     *directory.jobs,
-    *forms.jobs,
 ]
 
 schedules = [

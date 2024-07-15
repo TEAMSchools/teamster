@@ -10,7 +10,10 @@ def build_fivetran_start_sync_schedule(
         """Placehoder job"""
 
     @schedule(
-        cron_schedule=cron_schedule, execution_timezone=execution_timezone, job=_job
+        name=f"{_job.name}_schedule",
+        cron_schedule=cron_schedule,
+        execution_timezone=execution_timezone,
+        job=_job,
     )
     def _schedule(context: ScheduleEvaluationContext, fivetran: FivetranResource):
         fivetran.start_sync(connector_id=connector_id)
@@ -27,7 +30,10 @@ def build_fivetran_start_resync_schedule(
         """Placehoder job"""
 
     @schedule(
-        cron_schedule=cron_schedule, execution_timezone=execution_timezone, job=_job
+        name=f"{_job.name}_schedule",
+        cron_schedule=cron_schedule,
+        execution_timezone=execution_timezone,
+        job=_job,
     )
     def _schedule(context: ScheduleEvaluationContext, fivetran: FivetranResource):
         fivetran.start_resync(connector_id=connector_id)
