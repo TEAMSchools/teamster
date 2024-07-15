@@ -5,7 +5,6 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     _check,
-    define_asset_job,
     sensor,
 )
 from tableauserverclient.server.endpoint.exceptions import InternalServerError
@@ -14,12 +13,10 @@ from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.tableau.assets import external_assets
 from teamster.libraries.tableau.resources import TableauServerResource
 
-job = define_asset_job(
-    name=f"{CODE_LOCATION}_tableau_asset_job", selection=external_assets
+
+@sensor(
+    name=f"{CODE_LOCATION}_tableau_asset_sensor", minimum_interval_seconds=(60 * 10)
 )
-
-
-@sensor(name=f"{job.name}_sensor", job=job, minimum_interval_seconds=(60 * 10))
 def tableau_asset_sensor(
     context: SensorEvaluationContext, tableau: TableauServerResource
 ):
