@@ -13,6 +13,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
     client_secret: str
     cert_filepath: str
     key_filepath: str
+    masked: bool = True
 
     _service_root: str = PrivateAttr(default="https://api.adp.com")
     _session: OAuth2Session = PrivateAttr()
@@ -37,6 +38,9 @@ class AdpWorkforceNowResource(ConfigurableResource):
         access_token = token_dict.get("access_token")
 
         self._session.headers["Authorization"] = f"Bearer {access_token}"
+
+        if not self.masked:
+            self._session.headers["Accept"] = "application/json;masked=false"
 
     @retry(
         stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
