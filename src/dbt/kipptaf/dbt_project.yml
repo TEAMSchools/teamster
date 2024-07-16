@@ -58,6 +58,9 @@ models:
         +schema: adp_workforce_now
         staging:
           +materialized: table
+        workers:
+          staging:
+            +materialized: table
     alchemer:
       +schema: alchemer
       staging:
