@@ -28,4 +28,3 @@ left join
 /* all staff */
 left join
     {{ ref("base_people__staff_roster") }} as srt on s.teammate = srt.employee_number
-where academic_year is not null
