@@ -26,7 +26,36 @@ asset_key = [CODE_LOCATION, "adp", "workforce_now", "workers"]
 )
 def workers(context: AssetExecutionContext, adp_wfn: AdpWorkforceNowResource):
     records = adp_wfn.get_records(
-        endpoint="hr/v2/workers", params={"asOfDate": context.partition_key}
+        endpoint="hr/v2/workers",
+        params={
+            "asOfDate": context.partition_key,
+            "$select": ",".join(
+                [
+                    "workers/associateOID",
+                    "workers/workerID",
+                    "workers/workerDates",
+                    "workers/workerStatus",
+                    "workers/businessCommunication",
+                    "workers/workAssignments",
+                    "workers/customFieldGroup",
+                    "workers/languageCode",
+                    "workers/person/birthDate",
+                    "workers/person/communication",
+                    "workers/person/customFieldGroup",
+                    "workers/person/disabledIndicator",
+                    "workers/person/ethnicityCode",
+                    "workers/person/genderCode",
+                    "workers/person/genderSelfIdentityCode",
+                    "workers/person/highestEducationLevelCode",
+                    "workers/person/legalAddress",
+                    "workers/person/legalName",
+                    "workers/person/militaryClassificationCodes",
+                    "workers/person/militaryStatusCode",
+                    "workers/person/preferredName",
+                    "workers/person/raceCode",
+                ]
+            ),
+        },
     )
 
     yield Output(
