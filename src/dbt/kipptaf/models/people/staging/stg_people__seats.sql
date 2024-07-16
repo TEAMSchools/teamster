@@ -1,1 +1,1 @@
-select * from {{ source("google_appsheet", "src_seat_tracker__seats") }}
+select *, from {{ source("google_appsheet", "src_seat_tracker__seats") }}
