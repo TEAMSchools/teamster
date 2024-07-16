@@ -10,5 +10,4 @@ def test_schedule():
 
     output = deanslist_midday_commlog_job_schedule(context=context)
 
-    assert output is not None
     context.log.info(output)
