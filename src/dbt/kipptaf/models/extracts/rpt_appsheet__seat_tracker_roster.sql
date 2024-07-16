@@ -82,7 +82,7 @@ inner join
 left join
     {{ ref("stg_people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.location_name
-
+where (sr.worker_termination_date is null or sr.worker_termination_date >= DATE({{ var('current_academic_year') }},7,1))
 /* generic roster names used for positions that are open, closed, pre-start, or subs */
 union all
 
@@ -90,7 +90,7 @@ select
     999999 as employee_number,
     'Active' as assignment_status,
     'Open Seat' as preferred_name_lastfirst,
-    null as home_work_location_name,
+    'X' as home_work_location_name,
     null as home_work_location_grade_band,
     null as job_title,
     null as mail,
@@ -105,7 +105,7 @@ select
     null as smart_recruiter_id,
     null as grade_department,
     null as location_entity,
-    null as location_shortname,
+    'X' as location_shortname,
     null as campus,
     null as region_state,
     null as permission_level,
@@ -116,7 +116,7 @@ select
     999998 as employee_number,
     'Pre-Start' as assignment_status,
     'New Hire' as preferred_name_lastfirst,
-    null as home_work_location_name,
+    'X' as home_work_location_name,
     null as home_work_location_grade_band,
     null as job_title,
     null as mail,
@@ -131,7 +131,7 @@ select
     null as smart_recruiter_id,
     null as grade_department,
     null as location_entity,
-    null as location_shortname,
+    'X' as location_shortname,
     null as campus,
     null as region_state,
     null as permission_level,
@@ -142,7 +142,7 @@ select
     999997 as employee_number,
     'Active' as assignment_status,
     'Position Closed' as preferred_name_lastfirst,
-    null as home_work_location_name,
+    'X' as home_work_location_name,
     null as home_work_location_grade_band,
     null as job_title,
     null as mail,
@@ -157,7 +157,7 @@ select
     null as smart_recruiter_id,
     null as grade_department,
     null as location_entity,
-    null as location_shortname,
+    'X' as location_shortname,
     null as campus,
     null as region_state,
     null as permission_level,
@@ -168,7 +168,7 @@ select
     999996 as employee_number,
     'Active' as assignment_status,
     'Scoot Sub' as preferred_name_lastfirst,
-    null as home_work_location_name,
+    'X' as home_work_location_name,
     null as home_work_location_grade_band,
     null as job_title,
     null as mail,
@@ -183,7 +183,7 @@ select
     null as smart_recruiter_id,
     null as grade_department,
     null as location_entity,
-    null as location_shortname,
+    'X' as location_shortname,
     null as campus,
     null as region_state,
     null as permission_level,
