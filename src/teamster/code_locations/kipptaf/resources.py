@@ -41,6 +41,7 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
     client_secret=EnvVar("ADP_WFN_CLIENT_SECRET"),
     cert_filepath="/etc/secret-volume/adp_wfn_cert",
     key_filepath="/etc/secret-volume/adp_wfn_key",
+    masked=False,
 )
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
