@@ -32,7 +32,6 @@ select
 
 {#
     safe_cast(report_to_employee_number as string) as `Business Unit Code`,
-
     if(is_prestart, 'Active', assignment_status) as `Position Status`,
  #}
 from {{ ref("stg_adp_workforce_now__workers") }} as w
