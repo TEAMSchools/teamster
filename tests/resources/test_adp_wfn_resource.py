@@ -12,6 +12,7 @@ with build_resources(
             client_secret=EnvVar("ADP_WFN_CLIENT_SECRET"),
             cert_filepath="/etc/secret-volume/adp_wfn_cert",
             key_filepath="/etc/secret-volume/adp_wfn_key",
+            masked=False,
         ),
     }
 ) as resources:
@@ -29,7 +30,36 @@ def test_event_notification():
 
 def test_get_worker():
     aoid = "G3ASWDTVJ0WV5S6S"
-    params = {"asOfDate": "06/30/2025"}
+    params = {
+        "asOfDate": "07/01/2024",
+        "$select": ",".join(
+            [
+                "workers/associateOID",
+                "workers/workerID",
+                "workers/workerDates",
+                "workers/workerStatus",
+                "workers/businessCommunication",
+                "workers/workAssignments",
+                "workers/customFieldGroup",
+                "workers/languageCode",
+                "workers/person/birthDate",
+                "workers/person/communication",
+                "workers/person/customFieldGroup",
+                "workers/person/disabledIndicator",
+                "workers/person/ethnicityCode",
+                "workers/person/genderCode",
+                "workers/person/genderSelfIdentityCode",
+                "workers/person/highestEducationLevelCode",
+                "workers/person/legalAddress",
+                "workers/person/legalName",
+                "workers/person/militaryClassificationCodes",
+                "workers/person/militaryStatusCode",
+                "workers/person/preferredName",
+                "workers/person/raceCode",
+                # "workers/person/governmentIDs",
+            ]
+        ),
+    }
 
     record = ADP_WFN.get(endpoint=f"hr/v2/workers/{aoid}", params=params)
 
