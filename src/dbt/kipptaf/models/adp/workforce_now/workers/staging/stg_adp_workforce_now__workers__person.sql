@@ -1,8 +1,10 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
     person as (
         select
             associate_oid,
-            as_of_date_timestamp,
+            effective_date_start,
+            effective_date_timestamp,
 
             person.birthdate as birth_date,
             person.disabledindicator as disabled_indicator,
@@ -12,7 +14,7 @@ with
             person.birthname.formattedname as birth_name__formatted_name,
             person.birthname.givenname as birth_name__given_name,
             person.birthname.middlename as birth_name__middle_name,
-            person.birthname.familyname1 as birth_name__family_name1,
+            person.birthname.familyname1 as birth_name__family_name_1,
             person.birthname.nickname as birth_name__nick_name,
 
             person.birthname.generationaffixcode.effectivedate
@@ -33,7 +35,7 @@ with
             person.birthname.qualificationaffixcode.shortname
             as birth_name__qualification_affix_code__short_name,
 
-            person.legalname.familyname1 as legal_name__family_name1,
+            person.legalname.familyname1 as legal_name__family_name_1,
             person.legalname.formattedname as legal_name__formatted_name,
             person.legalname.givenname as legal_name__given_name,
             person.legalname.middlename as legal_name__middle_name,
@@ -60,7 +62,7 @@ with
             person.preferredname.formattedname as preferred_name__formatted_name,
             person.preferredname.givenname as preferred_name__given_name,
             person.preferredname.middlename as preferred_name__middle_name,
-            person.preferredname.familyname1 as preferred_name__family_name1,
+            person.preferredname.familyname1 as preferred_name__family_name_1,
             person.preferredname.nickname as preferred_name__nick_name,
 
             person.preferredname.generationaffixcode.effectivedate
@@ -118,26 +120,26 @@ with
             person.legaladdress.countrycode as legal_address__country_code,
 
             person.legaladdress.countrysubdivisionlevel1.effectivedate
-            as legal_address__country_subdivision_level1__effective_date,
+            as legal_address__country_subdivision_level_1__effective_date,
             person.legaladdress.countrysubdivisionlevel1.subdivisiontype
-            as legal_address__country_subdivision_level1__subdivision_type,
+            as legal_address__country_subdivision_level_1__subdivision_type,
             person.legaladdress.countrysubdivisionlevel1.codevalue
-            as legal_address__country_subdivision_level1__code_value,
+            as legal_address__country_subdivision_level_1__code_value,
             person.legaladdress.countrysubdivisionlevel1.longname
-            as legal_address__country_subdivision_level1__long_name,
+            as legal_address__country_subdivision_level_1__long_name,
             person.legaladdress.countrysubdivisionlevel1.shortname
-            as legal_address__country_subdivision_level1__short_name,
+            as legal_address__country_subdivision_level_1__short_name,
 
             person.legaladdress.countrysubdivisionlevel2.effectivedate
-            as legal_address__country_subdivision_level2__effective_date,
+            as legal_address__country_subdivision_level_2__effective_date,
             person.legaladdress.countrysubdivisionlevel2.subdivisiontype
-            as legal_address__country_subdivision_level2__subdivision_type,
+            as legal_address__country_subdivision_level_2__subdivision_type,
             person.legaladdress.countrysubdivisionlevel2.codevalue
-            as legal_address__country_subdivision_level2__code_value,
+            as legal_address__country_subdivision_level_2__code_value,
             person.legaladdress.countrysubdivisionlevel2.longname
-            as legal_address__country_subdivision_level2__long_name,
+            as legal_address__country_subdivision_level_2__long_name,
             person.legaladdress.countrysubdivisionlevel2.shortname
-            as legal_address__country_subdivision_level2__short_name,
+            as legal_address__country_subdivision_level_2__short_name,
 
             person.legaladdress.namecode.effectivedate
             as legal_address__name_code__effective_date,
@@ -194,7 +196,7 @@ with
 
             /* repeated records */
             person.disabilitytypecodes as disability_type_codes,
-            person.governmentids as government_i_ds,
+            person.governmentids as government_ids,
             person.militaryclassificationcodes as military_classification_codes,
             person.otherpersonaladdresses as other_personal_addresses,
             person.socialinsuranceprograms as social_insurance_programs,
@@ -217,12 +219,42 @@ with
             {{ dbt_utils.generate_surrogate_key(["to_json_string(person)"]) }}
             as surrogate_key,
         from {{ ref("stg_adp_workforce_now__workers") }}
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="person",
+                partition_by="associate_oid, surrogate_key",
+                order_by="effective_date_timestamp asc",
+            )
+        }}
+    ),
+
+    with_end_date as (
+        -- trunk-ignore(sqlfluff/AM04)
+        select
+            *,
+
+            coalesce(
+                date_sub(
+                    lead(effective_date_start, 1) over (
+                        partition by associate_oid order by effective_date_start asc
+                    ),
+                    interval 1 day
+                ),
+                '9999-12-31'
+            ) as effective_date_end,
+        from deduplicate
     )
 
-    {{
-        dbt_utils.deduplicate(
-            relation="person",
-            partition_by="associate_oid, surrogate_key",
-            order_by="as_of_date_timestamp asc",
-        )
-    }}
+select
+    *,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between effective_date_start and effective_date_end,
+        true,
+        false
+    ) as is_current_record,
+from with_end_date

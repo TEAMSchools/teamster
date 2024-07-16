@@ -1,8 +1,10 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
     work_assignments as (
         select
             w.associate_oid,
-            w.as_of_date_timestamp,
+            w.effective_date_start,
+            w.effective_date_timestamp,
 
             wa.itemid as item_id,
             wa.positionid as position_id,
@@ -121,26 +123,26 @@ with
             as home_work_location__address__country_code,
 
             wa.homeworklocation.address.countrysubdivisionlevel1.effectivedate
-            as home_work_location__address__country_subdivision_level1__effective_date,
-            wa.homeworklocation.address.countrysubdivisionlevel1.subdivisiontype
-            as home_work_location__address__country_subdivision_level1__subdivision_type,
+            as home_work_location__address__country_subdivision_level_1__effective_date,
+            wa.homeworklocation.address.countrysubdivisionlevel1.subdivisiontype as
+            home_work_location__address__country_subdivision_level_1__subdivision_type,
             wa.homeworklocation.address.countrysubdivisionlevel1.codevalue
-            as home_work_location__address__country_subdivision_level1__code_value,
+            as home_work_location__address__country_subdivision_level_1__code_value,
             wa.homeworklocation.address.countrysubdivisionlevel1.longname
-            as home_work_location__address__country_subdivision_level1__long_name,
+            as home_work_location__address__country_subdivision_level_1__long_name,
             wa.homeworklocation.address.countrysubdivisionlevel1.shortname
-            as home_work_location__address__country_subdivision_level1__short_name,
+            as home_work_location__address__country_subdivision_level_1__short_name,
 
             wa.homeworklocation.address.countrysubdivisionlevel2.effectivedate
-            as home_work_location__address__country_subdivision_level2__effective_date,
-            wa.homeworklocation.address.countrysubdivisionlevel2.subdivisiontype
-            as home_work_location__address__country_subdivision_level2__subdivision_type,
+            as home_work_location__address__country_subdivision_level_2__effective_date,
+            wa.homeworklocation.address.countrysubdivisionlevel2.subdivisiontype as
+            home_work_location__address__country_subdivision_level_2__subdivision_type,
             wa.homeworklocation.address.countrysubdivisionlevel2.codevalue
-            as home_work_location__address__country_subdivision_level2__code_value,
+            as home_work_location__address__country_subdivision_level_2__code_value,
             wa.homeworklocation.address.countrysubdivisionlevel2.longname
-            as home_work_location__address__country_subdivision_level2__long_name,
+            as home_work_location__address__country_subdivision_level_2__long_name,
             wa.homeworklocation.address.countrysubdivisionlevel2.shortname
-            as home_work_location__address__country_subdivision_level2__short_name,
+            as home_work_location__address__country_subdivision_level_2__short_name,
 
             wa.homeworklocation.address.namecode.effectivedate
             as home_work_location__address__name_code__effective_date,
@@ -235,12 +237,43 @@ with
             as surrogate_key,
         from {{ ref("stg_adp_workforce_now__workers") }} as w
         cross join unnest(w.work_assignments) as wa
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="work_assignments",
+                partition_by="associate_oid, item_id, surrogate_key",
+                order_by="effective_date_timestamp asc",
+            )
+        }}
+    ),
+
+    with_end_date as (
+        -- trunk-ignore(sqlfluff/AM04)
+        select
+            *,
+
+            coalesce(
+                date_sub(
+                    lead(effective_date_start, 1) over (
+                        partition by associate_oid, item_id
+                        order by effective_date_start asc
+                    ),
+                    interval 1 day
+                ),
+                '9999-12-31'
+            ) as effective_date_end,
+        from deduplicate
     )
 
-    {{
-        dbt_utils.deduplicate(
-            relation="work_assignments",
-            partition_by="associate_oid, surrogate_key",
-            order_by="as_of_date_timestamp asc",
-        )
-    }}
+select
+    *,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between effective_date_start and effective_date_end,
+        true,
+        false
+    ) as is_current_record,
+from with_end_date
