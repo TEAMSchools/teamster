@@ -82,7 +82,7 @@ inner join
 left join
     {{ ref("stg_people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.location_name
-
+where (sr.worker_termination_date is null or sr.worker_termination_date >= DATE({{ var('current_academic_year') }},7,1))
 /* generic roster names used for positions that are open, closed, pre-start, or subs */
 union all
 
