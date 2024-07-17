@@ -46,11 +46,12 @@ select
 
     dli.incident_id,
     dli.create_ts_date,
-    dli.referral_category,
+    dli.category,
     dli.reported_details,
     dli.admin_summary,
 
-    dlp.numdays,
+    dlp.num_days,
+    dlp.is_suspension,
 
     cf.nj_state_reporting,
     cf.restraint_used,
@@ -65,6 +66,11 @@ select
 
     concat(dli.create_last, ', ', dli.create_first) as entry_staff,
     concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
+
+    row_number() over (
+        partition by co.academic_year, co.student_number, dli.incident_id
+        order by dlp.is_suspension desc
+    ) as rn_incident,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as w
