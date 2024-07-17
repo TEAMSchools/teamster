@@ -69,11 +69,13 @@ select
     case
         when left(dli.category, 2) = 'SW'
         then 'Social Work'
-        when left(dli.category, 2) = 'T1'
+        when left(dli.category, 2) = 'TX'
+        then 'Home Instruction Request'
+        when left(dli.category, 2) = 'Low'
         then 'Tier 1'
-        when left(dli.category, 2) = 'T2'
+        when left(dli.category, 2) = 'Middle'
         then 'Tier 2'
-        when left(dli.category, 2) = 'T3'
+        when left(dli.category, 2) = 'High'
         then 'Tier 3'
         when dli.category is null
         then null
