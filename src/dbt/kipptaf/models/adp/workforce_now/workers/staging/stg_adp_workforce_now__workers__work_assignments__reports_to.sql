@@ -11,8 +11,6 @@ select
 
     rt.workerid.idvalue as reports_to_worker_id__id_value,
 
-    rt.workerid.schemecode.effectivedate
-    as reports_to_worker_id__scheme_code__effective_date,
     rt.workerid.schemecode.codevalue as reports_to_worker_id__scheme_code__code_value,
     rt.workerid.schemecode.longname as reports_to_worker_id__scheme_code__long_name,
     rt.workerid.schemecode.shortname as reports_to_worker_id__scheme_code__short_name,
@@ -23,8 +21,6 @@ select
     rt.reportstoworkername.familyname1 as reports_to_worker_name__family_name1,
     rt.reportstoworkername.nickname as reports_to_worker_name__nick_name,
 
-    rt.reportstoworkername.generationaffixcode.effectivedate
-    as reports_to_worker_name__generation_affix_code__effective_date,
     rt.reportstoworkername.generationaffixcode.codevalue
     as reports_to_worker_name__generation_affix_code__code_value,
     rt.reportstoworkername.generationaffixcode.longname
@@ -32,8 +28,6 @@ select
     rt.reportstoworkername.generationaffixcode.shortname
     as reports_to_worker_name__generation_affix_code__short_name,
 
-    rt.reportstoworkername.qualificationaffixcode.effectivedate
-    as reports_to_worker_name__qualification_affix_code__effective_date,
     rt.reportstoworkername.qualificationaffixcode.codevalue
     as reports_to_worker_name__qualification_affix_code__code_value,
     rt.reportstoworkername.qualificationaffixcode.longname
@@ -44,5 +38,16 @@ select
     /* repeated records */
     rt.reportstoworkername.preferredsalutations
     as reports_to_worker_name__preferred_salutations,
+
+    date(
+        rt.workerid.schemecode.effectivedate
+    ) as reports_to_worker_id__scheme_code__effective_date,
+
+    date(
+        rt.reportstoworkername.generationaffixcode.effectivedate
+    ) as reports_to_worker_name__generation_affix_code__effective_date,
+    date(
+        rt.reportstoworkername.qualificationaffixcode.effectivedate
+    ) as reports_to_worker_name__qualification_affix_code__effective_date,
 from {{ ref("stg_adp_workforce_now__workers__work_assignments") }} as wa
 cross join unnest(wa.reports_to) as rt

@@ -20,10 +20,6 @@ select
     wa.voluntaryindicator as voluntary_indicator,
     wa.fulltimeequivalenceratio as full_time_equivalence_ratio,
 
-    wa.assignmentstatus.effectivedate as assignment_status__effective_date,
-
-    wa.assignmentstatus.statuscode.effectivedate
-    as assignment_status__status_code__effective_date,
     wa.assignmentstatus.statuscode.codevalue
     as assignment_status__status_code__code_value,
     wa.assignmentstatus.statuscode.longname
@@ -31,8 +27,6 @@ select
     wa.assignmentstatus.statuscode.shortname
     as assignment_status__status_code__short_name,
 
-    wa.assignmentstatus.reasoncode.effectivedate
-    as assignment_status__reason_code__effective_date,
     wa.assignmentstatus.reasoncode.codevalue
     as assignment_status__reason_code__code_value,
     wa.assignmentstatus.reasoncode.longname
@@ -40,8 +34,6 @@ select
     wa.assignmentstatus.reasoncode.shortname
     as assignment_status__reason_code__short_name,
 
-    wa.payrollprocessingstatuscode.effectivedate
-    as payroll_processing_status_code__effective_date,
     wa.payrollprocessingstatuscode.codevalue
     as payroll_processing_status_code__code_value,
     wa.payrollprocessingstatuscode.longname
@@ -49,15 +41,11 @@ select
     wa.payrollprocessingstatuscode.shortname
     as payroll_processing_status_code__short_name,
 
-    wa.baseremuneration.effectivedate as base_remuneration__effective_date,
-
     wa.baseremuneration.annualrateamount.amountvalue
     as base_remuneration__annual_rate_amount__amount_value,
     wa.baseremuneration.annualrateamount.currencycode
     as base_remuneration__annual_rate_amount__currency_code,
 
-    wa.baseremuneration.annualrateamount.namecode.effectivedate
-    as base_remuneration__annual_rate_amount__name_code__effective_date,
     wa.baseremuneration.annualrateamount.namecode.codevalue
     as base_remuneration__annual_rate_amount__name_code__code_value,
     wa.baseremuneration.annualrateamount.namecode.longname
@@ -70,8 +58,6 @@ select
     wa.baseremuneration.payperiodrateamount.currencycode
     as base_remuneration__pay_period_rate_amount__currency_code,
 
-    wa.baseremuneration.payperiodrateamount.namecode.effectivedate
-    as base_remuneration__pay_period_rate_amount__name_code__effective_date,
     wa.baseremuneration.payperiodrateamount.namecode.codevalue
     as base_remuneration__pay_period_rate_amount__name_code__code_value,
     wa.baseremuneration.payperiodrateamount.namecode.longname
@@ -84,8 +70,6 @@ select
     wa.baseremuneration.hourlyrateamount.currencycode
     as base_remuneration__hourly_rate_amount__currency_code,
 
-    wa.baseremuneration.hourlyrateamount.namecode.effectivedate
-    as base_remuneration__hourly_rate_amount__name_code__effective_date,
     wa.baseremuneration.hourlyrateamount.namecode.codevalue
     as base_remuneration__hourly_rate_amount__name_code__code_value,
     wa.baseremuneration.hourlyrateamount.namecode.longname
@@ -98,8 +82,6 @@ select
     wa.baseremuneration.dailyrateamount.currencycode
     as base_remuneration__daily_rate_amount__currency_code,
 
-    wa.baseremuneration.dailyrateamount.namecode.effectivedate
-    as base_remuneration__daily_rate_amount__name_code__effective_date,
     wa.baseremuneration.dailyrateamount.namecode.codevalue
     as base_remuneration__daily_rate_amount__name_code__code_value,
     wa.baseremuneration.dailyrateamount.namecode.longname
@@ -116,8 +98,6 @@ select
     wa.homeworklocation.address.countrycode
     as home_work_location__address__country_code,
 
-    wa.homeworklocation.address.countrysubdivisionlevel1.effectivedate
-    as home_work_location__address__country_subdivision_level_1__effective_date,
     wa.homeworklocation.address.countrysubdivisionlevel1.subdivisiontype
     as home_work_location__address__country_subdivision_level_1__subdivision_type,
     wa.homeworklocation.address.countrysubdivisionlevel1.codevalue
@@ -127,8 +107,6 @@ select
     wa.homeworklocation.address.countrysubdivisionlevel1.shortname
     as home_work_location__address__country_subdivision_level_1__short_name,
 
-    wa.homeworklocation.address.countrysubdivisionlevel2.effectivedate
-    as home_work_location__address__country_subdivision_level_2__effective_date,
     wa.homeworklocation.address.countrysubdivisionlevel2.subdivisiontype
     as home_work_location__address__country_subdivision_level_2__subdivision_type,
     wa.homeworklocation.address.countrysubdivisionlevel2.codevalue
@@ -138,8 +116,6 @@ select
     wa.homeworklocation.address.countrysubdivisionlevel2.shortname
     as home_work_location__address__country_subdivision_level_2__short_name,
 
-    wa.homeworklocation.address.namecode.effectivedate
-    as home_work_location__address__name_code__effective_date,
     wa.homeworklocation.address.namecode.codevalue
     as home_work_location__address__name_code__code_value,
     wa.homeworklocation.address.namecode.longname
@@ -147,8 +123,6 @@ select
     wa.homeworklocation.address.namecode.shortname
     as home_work_location__address__name_code__short_name,
 
-    wa.homeworklocation.address.typecode.effectivedate
-    as home_work_location__address__type_code__effective_date,
     wa.homeworklocation.address.typecode.codevalue
     as home_work_location__address__type_code__code_value,
     wa.homeworklocation.address.typecode.longname
@@ -156,18 +130,14 @@ select
     wa.homeworklocation.address.typecode.shortname
     as home_work_location__address__type_code__short_name,
 
-    wa.homeworklocation.namecode.effectivedate
-    as home_work_location__name_code__effective_date,
     wa.homeworklocation.namecode.codevalue as home_work_location__name_code__code_value,
     wa.homeworklocation.namecode.longname as home_work_location__name_code__long_name,
     wa.homeworklocation.namecode.shortname as home_work_location__name_code__short_name,
 
-    wa.jobcode.effectivedate as job_code__effective_date,
     wa.jobcode.codevalue as job_code__code_value,
     wa.jobcode.longname as job_code__long_name,
     wa.jobcode.shortname as job_code__short_name,
 
-    wa.paycyclecode.effectivedate as pay_cycle_code__effective_date,
     wa.paycyclecode.codevalue as pay_cycle_code__code_value,
     wa.paycyclecode.longname as pay_cycle_code__long_name,
     wa.paycyclecode.shortname as pay_cycle_code__short_name,
@@ -177,14 +147,10 @@ select
     wa.standardpayperiodhours.hoursquantity
     as standard_pay_period_hours__hours_quantity,
 
-    wa.standardhours.unitcode.effectivedate
-    as standard_hours__unit_code__effective_date,
     wa.standardhours.unitcode.codevalue as standard_hours__unit_code__code_value,
     wa.standardhours.unitcode.longname as standard_hours__unit_code__long_name,
     wa.standardhours.unitcode.shortname as standard_hours__unit_code__short_name,
 
-    wa.wagelawcoverage.coveragecode.effectivedate
-    as wage_law_coverage__coverage_code__effective_date,
     wa.wagelawcoverage.coveragecode.codevalue
     as wage_law_coverage__coverage_code__code_value,
     wa.wagelawcoverage.coveragecode.longname
@@ -192,8 +158,6 @@ select
     wa.wagelawcoverage.coveragecode.shortname
     as wage_law_coverage__coverage_code__short_name,
 
-    wa.wagelawcoverage.wagelawnamecode.effectivedate
-    as wage_law_coverage__wage_law_name_code__effective_date,
     wa.wagelawcoverage.wagelawnamecode.codevalue
     as wage_law_coverage__wage_law_name_code__code_value,
     wa.wagelawcoverage.wagelawnamecode.longname
@@ -201,7 +165,6 @@ select
     wa.wagelawcoverage.wagelawnamecode.shortname
     as wage_law_coverage__wage_law_name_code__short_name,
 
-    wa.workertypecode.effectivedate as worker_type_code__effective_date,
     wa.workertypecode.codevalue as worker_type_code__code_value,
     wa.workertypecode.longname as worker_type_code__long_name,
     wa.workertypecode.shortname as worker_type_code__short_name,
@@ -220,6 +183,65 @@ select
     wa.customfieldgroup.multicodefields as custom_field_group__multi_code_fields,
     wa.customfieldgroup.numberfields as custom_field_group__number_fields,
     wa.customfieldgroup.stringfields as custom_field_group__string_fields,
+
+    date(wa.assignmentstatus.effectivedate) as assignment_status__effective_date,
+    date(
+        wa.assignmentstatus.statuscode.effectivedate
+    ) as assignment_status__status_code__effective_date,
+    date(
+        wa.assignmentstatus.reasoncode.effectivedate
+    ) as assignment_status__reason_code__effective_date,
+
+    date(
+        wa.payrollprocessingstatuscode.effectivedate
+    ) as payroll_processing_status_code__effective_date,
+
+    date(wa.baseremuneration.effectivedate) as base_remuneration__effective_date,
+    date(
+        wa.baseremuneration.annualrateamount.namecode.effectivedate
+    ) as base_remuneration__annual_rate_amount__name_code__effective_date,
+    date(
+        wa.baseremuneration.payperiodrateamount.namecode.effectivedate
+    ) as base_remuneration__pay_period_rate_amount__name_code__effective_date,
+    date(
+        wa.baseremuneration.hourlyrateamount.namecode.effectivedate
+    ) as base_remuneration__hourly_rate_amount__name_code__effective_date,
+    date(
+        wa.baseremuneration.dailyrateamount.namecode.effectivedate
+    ) as base_remuneration__daily_rate_amount__name_code__effective_date,
+
+    date(
+        wa.homeworklocation.address.countrysubdivisionlevel1.effectivedate
+    ) as home_work_location__address__country_subdivision_level_1__effective_date,
+    date(
+        wa.homeworklocation.address.countrysubdivisionlevel2.effectivedate
+    ) as home_work_location__address__country_subdivision_level_2__effective_date,
+    date(
+        wa.homeworklocation.address.namecode.effectivedate
+    ) as home_work_location__address__name_code__effective_date,
+    date(
+        wa.homeworklocation.address.typecode.effectivedate
+    ) as home_work_location__address__type_code__effective_date,
+    date(
+        wa.homeworklocation.namecode.effectivedate
+    ) as home_work_location__name_code__effective_date,
+
+    date(wa.jobcode.effectivedate) as job_code__effective_date,
+
+    date(wa.paycyclecode.effectivedate) as pay_cycle_code__effective_date,
+
+    date(
+        wa.standardhours.unitcode.effectivedate
+    ) as standard_hours__unit_code__effective_date,
+
+    date(
+        wa.wagelawcoverage.coveragecode.effectivedate
+    ) as wage_law_coverage__coverage_code__effective_date,
+    date(
+        wa.wagelawcoverage.wagelawnamecode.effectivedate
+    ) as wage_law_coverage__wage_law_name_code__effective_date,
+
+    date(wa.workertypecode.effectivedate) as worker_type_code__effective_date,
 
     {{ dbt_utils.generate_surrogate_key(["to_json_string(wa)"]) }} as surrogate_key,
 from {{ ref("stg_adp_workforce_now__workers") }} as w
