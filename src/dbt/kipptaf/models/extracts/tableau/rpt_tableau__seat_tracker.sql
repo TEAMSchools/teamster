@@ -6,7 +6,7 @@ select
     s.entity,
     s.grade_band,
     s.short_name as location,
-    s.mid_year_hire as is_mid_year_hire,
+    s.mid_year_hire,
     s.plan_status,
     s.staffing_status,
     s.status_detail,
