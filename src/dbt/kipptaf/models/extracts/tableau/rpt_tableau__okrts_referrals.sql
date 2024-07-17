@@ -66,6 +66,19 @@ select
 
     concat(dli.create_last, ', ', dli.create_first) as entry_staff,
     concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
+    case
+        when left(dli.category, 2) = 'SW'
+        then 'Social Work'
+        when left(dli.category, 2) = 'T1'
+        then 'Tier 1'
+        when left(dli.category, 2) = 'T2'
+        then 'Tier 2'
+        when left(dli.category, 2) = 'T3'
+        then 'Tier 3'
+        when dli.category is null
+        then null
+        else 'Other'
+    end as referral_tier,
 
     row_number() over (
         partition by co.academic_year, co.student_number, dli.incident_id
