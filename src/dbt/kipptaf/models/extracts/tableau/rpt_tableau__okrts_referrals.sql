@@ -57,6 +57,8 @@ select
     cf.restraint_used,
     cf.ssds_incident_id,
 
+    st.suspension_type,
+
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
     if(co.is_504, 'Has 504', 'No 504') as status_504,
     if(
