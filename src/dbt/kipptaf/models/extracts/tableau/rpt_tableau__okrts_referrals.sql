@@ -57,10 +57,11 @@ select
     cf.restraint_used,
     cf.ssds_incident_id,
 
-    round(ada.ada, 2) as ada,
     ada.days_absent_unexcused,
 
     st.suspension_type,
+
+    round(ada.ada, 2) as ada,
 
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
     if(co.is_504, 'Has 504', 'No 504') as status_504,
