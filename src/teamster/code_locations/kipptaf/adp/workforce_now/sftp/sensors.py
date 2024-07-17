@@ -27,11 +27,7 @@ def adp_wfn_sftp_sensor(
     run_requests = []
     cursor: dict = json.loads(context.cursor or "{}")
 
-    try:
-        files = ssh_adp_workforce_now.listdir_attr_r()
-    except Exception as e:
-        context.log.exception(e)
-        return SensorResult(skip_reason=str(e))
+    files = ssh_adp_workforce_now.listdir_attr_r()
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]

@@ -35,11 +35,7 @@ def build_renlearn_sftp_sensor(
         now = pendulum.now(tz=timezone)
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            files = ssh_renlearn.listdir_attr_r()
-        except Exception as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=str(e))
+        files = ssh_renlearn.listdir_attr_r()
 
         run_requests = []
         for asset in asset_defs:
