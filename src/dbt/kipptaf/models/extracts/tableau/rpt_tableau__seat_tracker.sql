@@ -24,7 +24,7 @@ select
 from {{ ref("stg_people__seats") }} as s
 /* recruiters */
 left join
-    {{ ref("base_people__staff_roster") }} as srr on s.teammate = srr.employee_number
+    {{ ref("base_people__staff_roster") }} as srr on s.recruiter = srr.employee_number
 /* all staff */
 left join
     {{ ref("base_people__staff_roster") }} as srt on s.teammate = srt.employee_number
