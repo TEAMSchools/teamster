@@ -1,7 +1,6 @@
+from dagster import external_assets_from_specs
+
 from teamster.code_locations.kipptaf.dbt.assets import manifest
-from teamster.libraries.core.definitions.external_asset import (
-    external_assets_from_specs,
-)
 from teamster.libraries.google.sheets.assets import build_google_sheets_asset_spec
 
 specs = [
@@ -13,11 +12,10 @@ specs = [
     for source in manifest["sources"].values()
     if source.get("external")
     and source["external"]["options"]["format"] == "GOOGLE_SHEETS"
+    and "retired" not in source["tags"]
 ]
 
-google_sheets_assets = external_assets_from_specs(
-    specs=specs, compute_kind="googlesheets"
-)
+google_sheets_assets = external_assets_from_specs(specs=specs)
 
 assets = [
     *google_sheets_assets,

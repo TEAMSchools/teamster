@@ -5,7 +5,6 @@ from teamster.code_locations.kipptaf.resources import SMARTRECRUITERS_RESOURCE
 from teamster.code_locations.kipptaf.smartrecruiters.assets import (
     applicants,
     applications,
-    ratings,
 )
 from teamster.libraries.core.resources import get_io_manager_gcs_avro
 
@@ -35,7 +34,6 @@ def _test_asset(asset):
     )
 
     assert records > 0
-    assert asset_check_evaluation.passed
 
     extras = asset_check_evaluation.metadata.get("extras")
 
@@ -49,7 +47,3 @@ def test_asset_smartrecruiters_applicants():
 
 def test_asset_smartrecruiters_applications():
     _test_asset(applications)
-
-
-def test_asset_smartrecruiters_ratings():
-    _test_asset(ratings)

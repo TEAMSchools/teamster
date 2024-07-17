@@ -43,8 +43,6 @@ vars:
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
-  +post-hook:
-    - "{{ dagster.log_column_level_metadata() }}"
   kipptaf:
     act:
       +schema: act
@@ -137,6 +135,10 @@ models:
       +schema: njdoe
       staging:
         +materialized: table
+    overgrad:
+      +schema: overgrad
+      staging:
+        +materialized: table
     pearson:
       +schema: pearson
     people:
@@ -179,7 +181,3 @@ models:
       +schema: zendesk
       staging:
         +materialized: table
-
-snapshots:
-  +post-hook:
-    - "{{ dagster.log_column_level_metadata() }}"

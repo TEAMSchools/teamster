@@ -6,12 +6,12 @@ from teamster.code_locations.kippnewark.renlearn.schema import (
     STAR_SCHEMA,
 )
 from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.libraries.sftp.assets import build_sftp_asset
+from teamster.libraries.sftp.assets import build_sftp_archive_asset
 
 asset_key_prefix = [CODE_LOCATION, "renlearn"]
-remote_dir = "."
+remote_dir_regex = r"\."
 remote_file_regex = r"KIPP TEAM & Family\.zip"
-archive_filepath = "(?P<subject>).csv"
+archive_file_regex = r"(?P<subject>)\.csv"
 ssh_resource_key = "ssh_renlearn"
 slugify_cols = False
 
@@ -19,11 +19,11 @@ start_date_partition = FiscalYearPartitionsDefinition(
     start_date="2023-07-01", timezone=LOCAL_TIMEZONE.name, start_month=7
 )
 
-accelerated_reader = build_sftp_asset(
+accelerated_reader = build_sftp_archive_asset(
     asset_key=[*asset_key_prefix, "accelerated_reader"],
-    remote_dir=remote_dir,
+    remote_dir_regex=remote_dir_regex,
     remote_file_regex=remote_file_regex,
-    archive_filepath=archive_filepath,
+    archive_file_regex=archive_file_regex,
     ssh_resource_key=ssh_resource_key,
     avro_schema=ACCELERATED_READER_SCHEMA,
     slugify_cols=slugify_cols,
@@ -35,11 +35,11 @@ accelerated_reader = build_sftp_asset(
     ),
 )
 
-star = build_sftp_asset(
+star = build_sftp_archive_asset(
     asset_key=[*asset_key_prefix, "star"],
-    remote_dir=remote_dir,
+    remote_dir_regex=remote_dir_regex,
     remote_file_regex=remote_file_regex,
-    archive_filepath=archive_filepath,
+    archive_file_regex=archive_file_regex,
     ssh_resource_key=ssh_resource_key,
     avro_schema=STAR_SCHEMA,
     slugify_cols=slugify_cols,

@@ -41,6 +41,7 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
     client_secret=EnvVar("ADP_WFN_CLIENT_SECRET"),
     cert_filepath="/etc/secret-volume/adp_wfn_cert",
     key_filepath="/etc/secret-volume/adp_wfn_key",
+    masked=False,
 )
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
@@ -158,13 +159,6 @@ SSH_RESOURCE_IDAUTO = SSHResource(
     remote_host=EnvVar("KTAF_SFTP_HOST_IP"),
     username=EnvVar("KTAF_SFTP_USERNAME"),
     password=EnvVar("KTAF_SFTP_PASSWORD"),
-)
-
-SSH_RESOURCE_BLISSBOOK = SSHResource(
-    remote_host=EnvVar("BLISSBOOK_SFTP_HOST"),
-    remote_port=EnvVar("BLISSBOOK_SFTP_PORT"),
-    username=EnvVar("BLISSBOOK_SFTP_USERNAME"),
-    password=EnvVar("BLISSBOOK_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_LITTLESIS = SSHResource(

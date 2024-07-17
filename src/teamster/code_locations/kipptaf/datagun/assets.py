@@ -1,6 +1,6 @@
 import pathlib
 
-from dagster import AutoMaterializePolicy, config_from_files
+from dagster import config_from_files
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.payroll.assets import (
@@ -13,18 +13,7 @@ from teamster.libraries.datagun.assets import (
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
-# BQ extract job
-blissbook_extract = build_bigquery_extract_sftp_asset(
-    code_location=CODE_LOCATION,
-    timezone=LOCAL_TIMEZONE,
-    dataset_config={
-        "dataset_id": "kipptaf_extracts",
-        "table_id": "rpt_blissbook__employee_list",
-    },
-    file_config={"stem": "members", "suffix": "csv"},
-    destination_config={"name": "blissbook"},
-)
-
+# BQ extract jobs
 clever_extract_assets = [
     build_bigquery_extract_sftp_asset(
         code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
@@ -67,12 +56,28 @@ littlesis_extract = build_bigquery_extract_sftp_asset(
 )
 
 # BQ query
-deanslist_extract_assets = [
+deanslist_annual_extract_assets = [
     build_bigquery_query_sftp_asset(
         code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
     )
-    for a in config_from_files([f"{config_dir}/deanslist.yaml"])["assets"]
+    for a in config_from_files([f"{config_dir}/deanslist-annual.yaml"])["assets"]
 ]
+
+deanslist_continuous_extract = build_bigquery_query_sftp_asset(
+    code_location=CODE_LOCATION,
+    timezone=LOCAL_TIMEZONE,
+    query_config={
+        "type": "schema",
+        "value": {
+            "table": {
+                "name": "rpt_deanslist__student_misc",
+                "schema": "kipptaf_extracts",
+            }
+        },
+    },
+    file_config={"stem": "deanslist_student_misc", "suffix": "json.gz"},
+    destination_config={"name": "deanslist"},
+)
 
 idauto_extract = build_bigquery_query_sftp_asset(
     code_location=CODE_LOCATION,
@@ -107,18 +112,16 @@ intacct_extract = build_bigquery_query_sftp_asset(
     file_config={"stem": "adp_payroll_{date}_{group_code}", "suffix": "csv"},
     destination_config={"name": "couchdrop", "path": "/data-team/accounting/intacct"},
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
-    auto_materialize_policy=AutoMaterializePolicy.eager(
-        max_materializations_per_minute=4
-    ),
 )
 
 assets = [
     coupa_extract,
+    deanslist_continuous_extract,
     egencia_extract,
     idauto_extract,
-    littlesis_extract,
     intacct_extract,
+    littlesis_extract,
     *clever_extract_assets,
-    *deanslist_extract_assets,
+    *deanslist_annual_extract_assets,
     *illuminate_extract_assets,
 ]

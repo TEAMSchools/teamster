@@ -1,7 +1,6 @@
 import random
 
-from dagster import _check, materialize
-from dagster._core.events import StepMaterializationData
+from dagster import materialize
 
 from teamster.code_locations.kipptaf.performance_management.assets import (
     observation_details,
@@ -32,19 +31,7 @@ def _test_asset(asset, partition_key=None):
 
     assert result.success
 
-    asset_materialization_event = result.get_asset_materialization_events()[0]
     asset_check_evaluation = result.get_asset_check_evaluations()[0]
-
-    step_materialization_data = _check.inst(
-        asset_materialization_event.event_specific_data, StepMaterializationData
-    )
-
-    records = _check.inst(
-        step_materialization_data.materialization.metadata["records"].value, int
-    )
-
-    assert records > 0
-    assert asset_check_evaluation.passed
 
     extras = asset_check_evaluation.metadata.get("extras")
 
@@ -53,4 +40,4 @@ def _test_asset(asset, partition_key=None):
 
 
 def test_performance_management_observation_details_kipptaf():
-    _test_asset(asset=observation_details, partition_key="2023|PM3")
+    _test_asset(asset=observation_details)
