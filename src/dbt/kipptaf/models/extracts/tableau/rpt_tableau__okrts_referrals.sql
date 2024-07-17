@@ -52,12 +52,19 @@ select
 
     dlp.numdays,
 
+    cf.nj_state_reporting,
+    cf.restraint_used,
+    cf.ssds_incident_id,
+
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
     if(co.is_504, 'Has 504', 'No 504') as status_504,
     if(
         co.is_self_contained, 'Self-contained', 'Not self-contained'
     ) as self_contained_status,
     if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
+    concat(dli.create_last, ', ', dli.create_first) as entry_staff,
+    concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as w
