@@ -57,6 +57,9 @@ select
     cf.restraint_used,
     cf.ssds_incident_id,
 
+    round(ada.ada, 2) as ada,
+    ada.days_absent_unexcused,
+
     st.suspension_type,
 
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
@@ -84,9 +87,19 @@ select
         else 'Other'
     end as referral_tier,
 
-    row_number() over (
-        partition by co.academic_year, co.student_number, dli.incident_id
-        order by dlp.is_suspension desc
+    count(distinct co.student_number) over (
+        partition by w.week_start_monday, co.school_abbreviation
+    ) as school_enrollment_by_week,
+
+    if(round(ada.ada, 2) <= .90, true, false) as is_chronically_absent,
+
+    if(
+        dli.incident_id is null,
+        null,
+        row_number() over (
+            partition by co.academic_year, co.student_number, dli.incident_id
+            order by dlp.is_suspension desc
+        )
     ) as rn_incident,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
@@ -110,6 +123,11 @@ left join
     on dli.incident_id = cf.incident_id
     and {{ union_dataset_join_clause(left_alias="dli", right_alias="cf") }}
 left join suspension_type as st on dlp.penalty_name = st.penalty_name
+left join
+    {{ ref("int_powerschool__ada") }} as ada
+    on co.studentid = ada.studentid
+    and co.yearid = ada.yearid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
 where
     co.academic_year >= {{ var("current_academic_year") }} - 1
     and co.rn_year = 1
