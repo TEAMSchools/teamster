@@ -36,13 +36,9 @@ def build_couchdrop_sftp_sensor(
 
         tick_cursor = float(context.cursor or "0.0")
 
-        try:
-            files = ssh_couchdrop.listdir_attr_r(
-                remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
-            )
-        except Exception as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=str(e))
+        files = ssh_couchdrop.listdir_attr_r(
+            remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
+        )
 
         for asset in assets:
             asset_identifier = asset.key.to_python_identifier()
