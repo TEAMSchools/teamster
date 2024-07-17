@@ -52,7 +52,7 @@ with
             case
                 when co.region = 'Miami'
                 then regexp_extract(b.behavior_category, r'^(.*?) \(')
-                else b.behavior
+                else regexp_extract(b.behavior, r'^(.*?) \(')
             end as behavior,
 
             count(distinct co.student_number) over (
