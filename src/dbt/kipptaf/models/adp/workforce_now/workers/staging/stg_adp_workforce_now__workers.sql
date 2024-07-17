@@ -315,12 +315,10 @@ with
                 timestamp_add(timestamp(effective_date_start), interval 1 day),
                 interval 1 millisecond
             ) as effective_date_timestamp,
-        from deduplicate
-    ),
 
-    with_end_date as (
-        select
-            *,
+            lag(effective_date_start, 1) over (
+                partition by associate_oid order by effective_date_start asc
+            ) as effective_date_start_lag,
 
             coalesce(
                 date_sub(
@@ -331,7 +329,7 @@ with
                 ),
                 '9999-12-31'
             ) as effective_date_end,
-        from flattened
+        from deduplicate
     )
 
 select
@@ -343,4 +341,4 @@ select
         true,
         false
     ) as is_current_record,
-from with_end_date
+from flattened

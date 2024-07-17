@@ -118,7 +118,7 @@ with
         left join
             {{ ref_work_assignments }} as wa
             on s.work_assignment_id = wa.item_id
-            and wa.as_of_date_timestamp
+            and wa.effective_date_timestamp
             between s.work_assignment__fivetran_start
             and s.work_assignment__fivetran_end
     ),
@@ -128,20 +128,20 @@ with
             dbt_utils.deduplicate(
                 relation="with_work_assignments",
                 partition_by="work_assignment_id, work_assignment__fivetran_start, work_assignment__fivetran_end, work_assignment__surrogate_key",
-                order_by="work_assignment__as_of_date_timestamp desc",
+                order_by="work_assignment__effective_date_timestamp desc",
             )
         }}
     ),
 
-    with_as_of_date_timestamp_lag as (
+    with_effective_date_timestamp_lag as (
         -- trunk-ignore(sqlfluff/AM04)
         select
             *,
 
-            lag(work_assignment__as_of_date_timestamp, 1) over (
+            lag(work_assignment__effective_date_timestamp, 1) over (
                 partition by work_assignment_id
-                order by work_assignment__as_of_date_timestamp asc
-            ) as work_assignment__as_of_date_timestamp_lag,
+                order by work_assignment__effective_date_timestamp asc
+            ) as work_assignment__effective_date_timestamp_lag,
         from deduplicate_work_assignments
     ),
 
@@ -151,7 +151,8 @@ with
 
             coalesce(
                 timestamp_add(
-                    work_assignment__as_of_date_timestamp_lag, interval 1 millisecond
+                    work_assignment__effective_date_timestamp_lag,
+                    interval 1 millisecond
                 ),
                 work_assignment__fivetran_start
             ) as work_assignment_start_date,
@@ -162,11 +163,11 @@ with
                     unnest(
                         [
                             work_assignment__fivetran_end,
-                            work_assignment__as_of_date_timestamp
+                            work_assignment__effective_date_timestamp
                         ]
                     ) as col
             ) as work_assignment_end_date,
-        from with_as_of_date_timestamp_lag
+        from with_effective_date_timestamp_lag
     ),
 
     with_start_date_lead as (
@@ -175,8 +176,8 @@ with
             lead(work_assignment_start_date, 1) over (
                 partition by work_assignment_id order by work_assignment_start_date asc
             ) as work_assignment_start_date_lead,
-            max(work_assignment__as_of_date_timestamp) over (
-            ) as work_assignment__as_of_date_timestamp_max,
+            max(work_assignment__effective_date_timestamp) over (
+            ) as work_assignment__effective_date_timestamp_max,
         from with_start_end_dates
         where work_assignment_start_date <= work_assignment_end_date
     )
@@ -186,17 +187,19 @@ select
         work_assignment__surrogate_key,
         work_assignment__fivetran_start,
         work_assignment__fivetran_end,
-        work_assignment__as_of_date_timestamp,
-        work_assignment__as_of_date_timestamp_lag,
-        work_assignment__as_of_date_timestamp_max,
+        work_assignment__effective_date_timestamp,
+        work_assignment__effective_date_timestamp_lag,
+        work_assignment__effective_date_timestamp_max,
         work_assignment_start_date_lead,
         work_assignment_end_date
     ),
 
     case
-        when work_assignment_start_date_lead > work_assignment__as_of_date_timestamp_max
+        when
+            work_assignment_start_date_lead
+            > work_assignment__effective_date_timestamp_max
         then timestamp_sub(work_assignment_start_date_lead, interval 1 millisecond)
-        when work_assignment_end_date = work_assignment__as_of_date_timestamp_max
+        when work_assignment_end_date = work_assignment__effective_date_timestamp_max
         then timestamp('9999-12-31 23:59:59.999')
         else work_assignment_end_date
     end as work_assignment_end_date,
