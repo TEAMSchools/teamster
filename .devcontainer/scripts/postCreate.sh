@@ -3,11 +3,14 @@
 # update/install apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install bash-completion &&
+  sudo apt-get -y --no-install-recommends install \
+    bash-completion \
+    google-cloud-cli-gke-gcloud-auth-plugin &&
   rm -rf /var/lib/apt/lists/*
 
 # create env folder
 mkdir -p ./env
+mkdir -p /home/vscode/.dbt
 sudo mkdir -p /etc/secret-volume
 
 # inject 1Password secrets into .env
@@ -44,6 +47,10 @@ op inject -f --in-file=.devcontainer/tpl/op_credentials_json.tpl \
   --out-file=env/op_credentials_json &&
   sudo mv -f env/op_credentials_json /etc/secret-volume/op_credentials_json
 
+op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
+  --out-file=env/dbt_cloud.yml &&
+  sudo mv -f env/dbt_cloud.yml /home/vscode/.dbt/dbt_cloud.yml
+
 # authenticate gcloud
 gcloud auth activate-service-account --key-file=/etc/secret-volume/gcloud_service_account_json
 
@@ -59,10 +66,13 @@ pdm install --frozen-lockfile
 
 # install dbt deps and generate manifests
 # trunk-ignore(shellcheck/SC2312)
-find ./src/dbt -maxdepth 2 -name "dbt_project.yml" -print0 |
+find ./src/dbt/ -maxdepth 2 -name "dbt_project.yml" -print0 |
   while IFS= read -r -d "" file; do
     directory=$(dirname "${file}")
     project_name=$(basename "${directory}")
 
     pdm run dbt "${project_name}" deps && pdm run dbt "${project_name}" parse
   done
+
+# install dbt cloud cli
+sudo pip install dbt

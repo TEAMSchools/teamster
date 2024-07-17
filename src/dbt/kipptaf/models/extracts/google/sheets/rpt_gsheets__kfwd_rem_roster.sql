@@ -4,6 +4,7 @@ with
             student,
             cumulative_credits_earned,
             credits_required_for_graduation,
+            gpa,
             row_number() over (
                 partition by student order by transcript_date desc
             ) as rn_transcript,
@@ -104,6 +105,25 @@ select  -- noqa: ST06
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
+
+    case
+        when ei.ba_status = 'Graduated'
+        then 'BA graduate'
+        when ei.aa_status = 'Graduated'
+        then 'AA graduate'
+        when ei.cte_status = 'Graduated'
+        then 'CTE graduate'
+        when ei.ugrad_enrollment_id is null and ei.cte_enrollment_id is null
+        then 'Never enrolled'
+    end as is_graduated,
+
+    r.first_name,
+    r.last_name,
+    r.contact_home_phone,
+    r.contact_mobile_phone,
+    r.contact_email,
+    r.contact_secondary_email,
+    gpa.gpa,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student

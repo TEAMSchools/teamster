@@ -1,0 +1,20 @@
+endpoints:
+  - endpoint: behavior
+    api_version: v1
+    params:
+      IncludeDeleted: Y
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              memory: 1.5Gi
+  - endpoint: homework
+    api_version: v1
+    params:
+      IncludeDeleted: Y
+  - endpoint: incidents
+    api_version: v1
+    params:
+      IncludeDeleted: Y
+      cf: Y

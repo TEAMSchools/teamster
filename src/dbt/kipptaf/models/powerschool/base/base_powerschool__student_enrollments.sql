@@ -43,6 +43,7 @@ with
             nj.other_related_services_yn,
             nj.lepbegindate,
             nj.lependdate,
+            nj.gifted_and_talented,
 
             sr.mail as advisor_email,
             sr.communication_business_mobile as advisor_phone,
@@ -118,6 +119,9 @@ select
     ar.gender,
     ar.ethnicity,
     ar.fedethnicity,
+    ar.next_school,
+    ar.sched_nextyeargrade,
+    ar.boy_status,
     ar.track,
     ar.fteid,
     ar.is_self_contained,
@@ -240,6 +244,7 @@ select
     ar.other_related_services_yn,
     ar.lepbegindate,
     ar.lependdate,
+    ar.gifted_and_talented,
 
     {# regional differences #}
     case

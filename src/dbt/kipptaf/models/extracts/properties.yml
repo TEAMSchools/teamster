@@ -1,11 +1,8 @@
 version: 2
 
 models:
-  - name: rpt_tableau__assessment_dashboard
-    config:
-      meta:
-        dagster:
-          freshness_policy:
-            maximum_lag_minutes: 1440
-            cron_schedule: 30 4 * * *
-            cron_schedule_timezone: America/New_York
+  - name: rpt_gsheets__intacct_integration_file
+    meta:
+      dagster:
+        auto_materialize_policy:
+          type: none

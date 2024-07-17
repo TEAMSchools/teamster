@@ -1,60 +1,56 @@
 select
-    od.user_id,
-    od.role_name,
-    od.internal_id,
-    od.form_type,
-    od.form_term,
-    od.form_short_name,
-    od.form_long_name,
-    od.score_type,
-    od.score_measurement_type,
-    od.score_measurement_shortname,
-    od.start_date,
-    od.end_date,
-    od.academic_year,
-    od.observation_id,
-    od.teacher_id,
-    od.created,
-    od.observed_at,
-    od.observer_name,
+    od.employee_number,
     od.observer_employee_number,
-    od.etr_score,
-    od.so_score,
-    od.overall_score,
+    od.observation_id,
+    od.rubric_name,
+    od.observation_score,
+    od.strand_score,
     od.glows,
     od.grows,
-    od.score_measurement_id,
-    od.score_percentage,
-    od.row_score_value,
+    od.locked,
+    od.observed_at,
+    od.academic_year,
+    od.observation_type,
+    od.observation_type_abbreviation,
+    od.term_code,
+    od.term_name,
+    od.row_score,
     od.measurement_name,
+    od.strand_name,
     od.text_box,
-    od.rn_submission,
-    od.etr_tier,
-    od.so_tier,
     od.overall_tier,
-    sr.employee_number,
-    sr.preferred_name_lastfirst as teammate,
-    sr.business_unit_home_name as entity,
-    sr.home_work_location_name as location,
-    sr.home_work_location_grade_band as grade_band,
-    sr.home_work_location_powerschool_school_id,
-    sr.department_home_name as department,
-    sr.primary_grade_level_taught as grade_taught,
-    sr.job_title,
-    sr.report_to_preferred_name_lastfirst as manager,
-    sr.worker_original_hire_date,
-    sr.assignment_status,
-    sr.mail,
-    sr.report_to_mail,
+
+    os.final_score,
+    os.final_tier,
+
+    srh.preferred_name_lastfirst as teammate,
+    srh.business_unit_home_name as entity,
+    srh.home_work_location_name as `location`,
+    srh.home_work_location_grade_band as grade_band,
+    srh.department_home_name as department,
+
+    srh.primary_grade_level_taught as grade_taught,
+    srh.job_title,
+    srh.report_to_preferred_name_lastfirst as manager,
+    srh.worker_original_hire_date,
+    srh.assignment_status,
+
     sr.sam_account_name,
     sr.report_to_sam_account_name,
+    sr.preferred_name_lastfirst as observer_name,
 from {{ ref("int_performance_management__observation_details") }} as od
 left join
-    {{ ref("base_people__staff_roster_history") }} as sr
-    on od.internal_id = safe_cast(sr.employee_number as string)
-    and coalesce(
-        od.observed_at,
-        od.start_date
-    ) between safe_cast(sr.work_assignment_start_date as date) and safe_cast(
-        sr.work_assignment_end_date as date
-    )
+    {{ ref("int_performance_management__overall_scores") }} as os
+    on od.employee_number = os.employee_number
+    and od.academic_year = os.academic_year
+inner join
+    {{ ref("base_people__staff_roster_history") }} as srh
+    on od.employee_number = srh.employee_number
+    and od.observed_at
+    between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date)
+left join
+    {{ ref("base_people__staff_roster") }} as sr
+    on od.employee_number = sr.employee_number
+left join
+    {{ ref("base_people__staff_roster") }} as sr2
+    on od.observer_employee_number = sr2.employee_number

@@ -1,9 +1,9 @@
 import random
 
-from dagster import AssetsDefinition, materialize
+from dagster import AssetsDefinition, TextMetadataValue, _check, materialize
+from dagster._core.events import StepMaterializationData
 
-from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.kipptaf.google.directory.assets import (
+from teamster.code_locations.kipptaf.google.directory.assets import (
     groups,
     members,
     orgunits,
@@ -11,7 +11,8 @@ from teamster.kipptaf.google.directory.assets import (
     roles,
     users,
 )
-from teamster.kipptaf.resources import GOOGLE_DIRECTORY_RESOURCE
+from teamster.code_locations.kipptaf.resources import GOOGLE_DIRECTORY_RESOURCE
+from teamster.libraries.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(asset: AssetsDefinition):
@@ -26,18 +27,27 @@ def _test_asset(asset: AssetsDefinition):
         assets=[asset],
         partition_key=partition_key,
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro(
+                code_location="test", test=True
+            ),
             "google_directory": GOOGLE_DIRECTORY_RESOURCE,
         },
     )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["record_count"]
-        .value
-        > 0
+    asset_materialization_event = result.get_asset_materialization_events()[0]
+    event_specific_data = _check.inst(
+        asset_materialization_event.event_specific_data, StepMaterializationData
     )
+    records = _check.inst(
+        event_specific_data.materialization.metadata["record_count"].value, int
+    )
+    assert records > 0
+    extras = _check.inst(
+        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
+        ttype=TextMetadataValue,
+    )
+    assert extras.text == ""
 
 
 def test_asset_google_directory_groups():

@@ -1,10 +1,10 @@
 select
     s.employee_number,
     s.academic_year,
-    s.pm_term,
+    s.term_code as pm_term,
     s.etr_score,
     s.so_score,
-    s.overall_score,
+    s.observation_score as overall_score,
     s.etr_tier,
     s.so_tier,
     s.overall_tier,
@@ -15,7 +15,7 @@ select
 
     sr.preferred_name_lastfirst as teammate,
     sr.business_unit_home_name as entity,
-    sr.home_work_location_name as location,
+    sr.home_work_location_name as `location`,
     sr.home_work_location_grade_band as grade_band,
     sr.home_work_location_powerschool_school_id,
     sr.department_home_name as department,
@@ -29,7 +29,7 @@ select
     sr.base_remuneration_annual_rate_amount_amount_value as annual_salary,
     sr.alumni_status,
     sr.community_professional_exp,
-from {{ ref("int_performance_management__overall_scores") }} as s
+from {{ ref("int_performance_management__observations") }} as s
 left join
     {{ ref("int_people__years_experience") }} as ye
     on s.employee_number = ye.employee_number
@@ -39,5 +39,5 @@ inner join
     on s.employee_number = sr.employee_number
     and s.eval_date
     between date(sr.work_assignment_start_date) and date(sr.work_assignment_end_date)
-    and sr.assignment_status not in ('Terminated', 'Deceased')
     and sr.primary_indicator
+    and sr.assignment_status not in ('Terminated', 'Deceased')

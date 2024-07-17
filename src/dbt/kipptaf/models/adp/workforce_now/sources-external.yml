@@ -13,6 +13,13 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - adp
+              - workforce_now
+              - additional_earnings_report
       - name: src_adp_workforce_now__comprehensive_benefits_report
         external:
           location:
@@ -20,6 +27,13 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - adp
+              - workforce_now
+              - comprehensive_benefits_report
       - name: src_adp_workforce_now__pension_and_benefits_enrollments
         external:
           location:
@@ -28,6 +42,13 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - adp
+              - workforce_now
+              - pension_and_benefits_enrollments
       - name: src_adp_workforce_now__workers
         external:
           location: "{{ var('cloud_storage_uri_base') }}/adp/workforce_now/workers/*"
@@ -36,3 +57,10 @@ sources:
             enable_logical_types: true
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/adp/workforce_now/workers/"
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - adp
+              - workforce_now
+              - workers

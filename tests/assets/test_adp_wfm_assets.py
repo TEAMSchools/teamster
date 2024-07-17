@@ -1,38 +1,41 @@
 import random
 
 from dagster import (
-    DailyPartitionsDefinition,
+    AssetsDefinition,
     DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    _check,
     instance_for_test,
     materialize,
 )
+from dagster._core.events import StepMaterializationData
 
-from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.kipptaf.adp.workforce_manager.assets import build_adp_wfm_asset
-from teamster.kipptaf.resources import ADP_WORKFORCE_MANAGER_RESOURCE
-from teamster.staging import LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.adp.workforce_manager.assets import (
+    accrual_reporting_period_summary,
+    time_details,
+)
+from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_MANAGER_RESOURCE
+from teamster.libraries.core.resources import get_io_manager_gcs_avro
 
 
-def _test_asset(asset_name, report_name, hyperfind, symbolic_ids, date_partitions_def):
-    asset = build_adp_wfm_asset(
-        asset_name=asset_name,
-        report_name=report_name,
-        hyperfind=hyperfind,
-        symbolic_ids=symbolic_ids,
-        date_partitions_def=date_partitions_def,
+def _test_asset(asset: AssetsDefinition):
+    partitions_def = _check.inst(
+        obj=asset.partitions_def, ttype=MultiPartitionsDefinition
     )
+    date_partitions_def = partitions_def.get_partitions_def_for_dimension("date")
 
     with instance_for_test() as instance:
         if isinstance(date_partitions_def, DynamicPartitionsDefinition):
             instance.add_dynamic_partitions(
-                partitions_def_name=date_partitions_def.name, partition_keys=["foo"]
+                partitions_def_name=_check.not_none(value=date_partitions_def.name),
+                partition_keys=["foo"],
             )
 
-            partition_keys = asset.partitions_def.get_partition_keys(
+            partition_keys = partitions_def.get_partition_keys(
                 dynamic_partitions_store=instance
             )
         else:
-            partition_keys = asset.partitions_def.get_partition_keys()
+            partition_keys = partitions_def.get_partition_keys()
 
         result = materialize(
             assets=[asset],
@@ -41,40 +44,38 @@ def _test_asset(asset_name, report_name, hyperfind, symbolic_ids, date_partition
                 random.randint(a=0, b=(len(partition_keys) - 1))
             ],
             resources={
-                "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+                "io_manager_gcs_avro": get_io_manager_gcs_avro(
+                    code_location="test", test=True
+                ),
                 "adp_wfm": ADP_WORKFORCE_MANAGER_RESOURCE,
             },
         )
 
     assert result.success
 
-    event = result.get_asset_materialization_events()[0]
+    asset_materialization_event = result.get_asset_materialization_events()[0]
 
-    assert event.event_specific_data.materialization.metadata["records"].value > 0
+    step_materialization_data = _check.inst(
+        asset_materialization_event.event_specific_data, StepMaterializationData
+    )
+
+    records = _check.inst(
+        step_materialization_data.materialization.metadata["records"].value, int
+    )
+
+    assert records > 0
+
+    asset_check_evaluation = result.get_asset_check_evaluations()[0]
+
+    extras = asset_check_evaluation.metadata.get("extras")
+
+    assert extras is not None
+    assert extras.text == ""
 
 
 def test_asset_adp_workforce_manager_accrual_reporting_period_summary():
-    _test_asset(
-        asset_name="accrual_reporting_period_summary",
-        report_name="AccrualReportingPeriodSummary",
-        hyperfind="All Home",
-        symbolic_ids=["Previous_SchedPeriod", "Current_SchedPeriod"],
-        date_partitions_def=DailyPartitionsDefinition(
-            start_date="2023-05-17",
-            timezone=LOCAL_TIMEZONE.name,
-            fmt="%Y-%m-%d",
-            end_offset=1,
-        ),
-    )
+    _test_asset(accrual_reporting_period_summary)
 
 
 def test_asset_adp_workforce_manager_time_details():
-    _test_asset(
-        asset_name="time_details",
-        report_name="TimeDetails",
-        hyperfind="All Home",
-        symbolic_ids=["Previous_SchedPeriod", "Current_SchedPeriod"],
-        date_partitions_def=DynamicPartitionsDefinition(
-            name="staging__adp_workforce_manager__time_details_date"
-        ),
-    )
+    _test_asset(time_details)

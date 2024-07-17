@@ -7,14 +7,15 @@ from dagster import (
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
+    _check,
     asset,
     materialize,
 )
+from dagster._core.events import HandledOutputData
 from dagster_gcp import GCSResource
 
 from teamster import GCS_PROJECT_NAME
-from teamster.core.google.storage.io_manager import GCSIOManager
-from teamster.core.utils.functions import get_avro_record_schema
+from teamster.libraries.core.io_managers.gcs import GCSIOManager
 
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
@@ -38,12 +39,7 @@ def build_test_asset_avro(
         ),
     )
     def _asset():
-        yield Output(
-            value=(
-                output_data,
-                get_avro_record_schema(name="test", fields=output_schema_fields),
-            )
-        )
+        yield Output(value=(output_data, output_schema_fields))
 
     return _asset
 
@@ -75,9 +71,11 @@ def _test_asset_handle_output_path(
         e for e in result.all_node_events if e.event_type_value == "HANDLED_OUTPUT"
     ][0]
 
-    assert (
-        handled_output_event.event_specific_data.metadata["path"].value == expected_path
+    event_specific_data = _check.inst(
+        handled_output_event.event_specific_data, HandledOutputData
     )
+
+    assert (event_specific_data.metadata["path"].value) == expected_path
 
 
 def test_avro_handle_asset():

@@ -94,7 +94,7 @@ select
     statebenchmarkminscaledscore as `state_benchmark_min_scaled_score`,
     statebenchmarknumberofcategorylevels as `state_benchmark_number_of_category_levels`,
     statebenchmarkproficient as `state_benchmark_proficient`,
-    studentemail as `student_email`,
+    studentemail.string_value as `student_email`,
     studentfirstname as `student_first_name`,
     studentgrowthpercentilefallfall as `student_growth_percentile_fall_fall`,
     studentgrowthpercentilefallspring as `student_growth_percentile_fall_spring`,
@@ -139,7 +139,7 @@ select
     ) as `district_state_id`,
     coalesce(
         renaissancebenchmarkcategorynumberoflevels.long_value,
-        safe_cast(renaissancebenchmarkcategorynumberoflevels.float_value as int)
+        safe_cast(renaissancebenchmarkcategorynumberoflevels.double_value as int)
     ) as `renaissance_benchmark_category_number_of_levels`,
     coalesce(
         schoolstateid.long_value, safe_cast(schoolstateid.double_value as int)
@@ -154,7 +154,7 @@ select
         studentsourcedid.long_value, safe_cast(studentsourcedid.double_value as int)
     ) as `student_sourced_id`,
     coalesce(
-        studentuserid.long_value, safe_cast(studentuserid.float_value as int)
+        studentuserid.long_value, safe_cast(studentuserid.double_value as int)
     ) as `student_user_id`,
     coalesce(
         teacherstateid.long_value, safe_cast(teacherstateid.double_value as int)

@@ -5,6 +5,9 @@ config-version: 2
 # This setting configures which profile dbt uses for this project.
 profile: kipptaf
 
+dbt-cloud:
+  project-id: 211862
+
 # These configurations specify where dbt should look for different types of files.
 # The `source-paths` config, for example, states that models in this project can be
 # found in the models/ directory. You probably won't need to change these!
@@ -23,9 +26,8 @@ clean-targets: # directories to be removed by `dbt clean`
 vars:
   local_timezone: America/New_York
   cloud_storage_uri_base: gs://teamster-kipptaf/dagster/kipptaf
-  couchdrop_cloud_storage_uri_base: gs://teamster-kipptaf/couchdrop
-  current_academic_year: 2023
-  current_fiscal_year: 2024
+  current_academic_year: 2024
+  current_fiscal_year: 2025
   alchemer_survey_identifier_short_names:
     - respondent_employee_number
     - respondent_df_employee_number
@@ -108,6 +110,8 @@ models:
         +schema: google_directory
         staging:
           +materialized: table
+      appsheet:
+        +schema: appsheet
     illuminate:
       +schema: illuminate
       staging:
@@ -131,6 +135,10 @@ models:
       +schema: njdoe
       staging:
         +materialized: table
+    overgrad:
+      +schema: overgrad
+      staging:
+        +materialized: table
     pearson:
       +schema: pearson
     people:
@@ -141,6 +149,8 @@ models:
       +materialized: table
     powerschool:
       +schema: powerschool
+    powerschool_enrollment:
+      +schema: powerschool_enrollment
     renlearn:
       +schema: renlearn
     reporting:
@@ -157,8 +167,7 @@ models:
       +schema: students
     surveys:
       +schema: surveys
-      intermediate:
-        +materialized: table
+      +materialized: table
     tableau:
       +schema: tableau
       staging:

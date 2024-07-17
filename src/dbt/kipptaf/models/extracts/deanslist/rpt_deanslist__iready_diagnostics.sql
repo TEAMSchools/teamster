@@ -54,7 +54,7 @@ with
                 overall_placement
             ) as overall_placement_display,
         from {{ ref("base_iready__diagnostic_results") }}
-        where academic_year_int >= {{ var("current_academic_year") }} - 1
+        where academic_year_int >= {{ var("current_academic_year") - 1 }}
     )
 
 select

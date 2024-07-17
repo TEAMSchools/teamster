@@ -13,3 +13,12 @@ sources:
               - illuminate
               - national_assessments
               - psat_2023
+      - name: psat_2024
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - psat_2024

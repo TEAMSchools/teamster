@@ -24,6 +24,7 @@ with
 
             adb.contact_id,
             adb.ktc_cohort,
+            adb.contact_owner_name,
 
             s.courses_course_name,
             s.teacher_lastfirst,
@@ -92,19 +93,6 @@ with
         where e.rn_year = 1 and e.school_level = 'HS' and e.schoolid != 999999
     ),
 
-    psat10_unpivot as (
-        select local_student_id as contact, test_date, score_type, score,
-        from
-            {{ ref("stg_illuminate__psat") }} unpivot (
-                score for score_type in (
-                    eb_read_write_section_score,
-                    math_test_score,
-                    reading_test_score,
-                    total_score
-                )
-            )
-    ),
-
     college_assessments_official as (
         select
             contact,
@@ -162,16 +150,17 @@ with
                 'sat_math',
                 'sat_ebrw'
             )
+
         union all
+
         select
-            contact,
+            safe_cast(local_student_id as string) as contact,
+
             'PSAT10' as scope,
+
             test_date,
             score as scale_score,
-
-            row_number() over (
-                partition by contact, score_type order by score desc
-            ) as rn_highest,
+            rn_highest,
 
             'Official' as test_type,
 
@@ -181,29 +170,41 @@ with
 
             case
                 score_type
-                when 'total_score'
+                when 'psat10_total_score'
                 then 'Composite'
-                when 'reading_test_score'
+                when 'psat10_reading_test_score'
                 then 'Reading'
-                when 'math_test_score'
+                when 'psat10_math_test_score'
+                then 'Math Test'
+                when 'psat10_math_section_score'
                 then 'Math'
-                when 'eb_read_write_section_score'
+                when 'psat10_eb_read_write_section_score'
                 then 'Writing and Language Test'
             end as subject_area,
             case
-                when score_type in ('eb_read_write_section_score', 'reading_test_score')
+                when
+                    score_type in (
+                        'psat10_eb_read_write_section_score',
+                        'psat10_reading_test_score'
+                    )
                 then 'ENG'
-                when score_type = 'math_test_score'
+                when
+                    score_type
+                    in ('psat10_math_test_score', 'psat10_math_section_score')
                 then 'MATH'
                 else 'NA'
             end as course_discipline,
 
-            {{
-                teamster_utils.date_to_fiscal_year(
-                    date_field="test_date", start_month=7, year_source="start"
-                )
-            }} as test_academic_year,
-        from psat10_unpivot
+            academic_year as test_academic_year,
+        from {{ ref("int_illuminate__psat_unpivot") }}
+        where
+            score_type in (
+                'psat10_eb_read_write_section_score',
+                'psat10_math_section_score',
+                'psat10_math_test_score',
+                'psat10_reading_test_score',
+                'psat10_total_score'
+            )
     )
 
 select
@@ -224,6 +225,7 @@ select
     e.advisor_lastfirst,
     e.contact_id,
     e.ktc_cohort,
+    e.contact_owner_name,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
@@ -264,13 +266,12 @@ left join
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
-    and o.test_type != 'PSAT10'
 left join
     course_subjects_roster as c
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official'
+where e.expected_test_type = 'Official' and e.expected_scope != 'PSAT10'
 
 union all
 
@@ -292,6 +293,7 @@ select
     e.advisor_lastfirst,
     e.contact_id,
     e.ktc_cohort,
+    e.contact_owner_name,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
@@ -328,17 +330,16 @@ select
 from roster as e
 left join
     college_assessments_official as o
-    on cast(e.student_number as string) = o.contact
+    on safe_cast(e.student_number as string) = o.contact
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
-    and o.test_type = 'PSAT10'
 left join
     course_subjects_roster as c
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official'
+where e.expected_test_type = 'Official' and e.expected_scope = 'PSAT10'
 
 union all
 
@@ -360,6 +361,7 @@ select
     e.advisor_lastfirst,
     e.contact_id,
     e.ktc_cohort,
+    e.contact_owner_name,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,

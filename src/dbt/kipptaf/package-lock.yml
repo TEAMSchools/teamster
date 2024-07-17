@@ -1,7 +1,10 @@
 packages:
   - local: ../teamster_utils
   - package: dbt-labs/dbt_external_tables
-    version: 0.8.7
+    version: 0.9.0
+  - git: https://github.com/dagster-io/dagster.git
+    revision: 36968cc4598b7e5a9fedb4f26a93fbde93675cd0
+    subdirectory: python_modules/libraries/dagster-dbt/dbt_packages/dagster
   - package: dbt-labs/dbt_utils
-    version: 1.1.1
-sha1_hash: a536e0843ed924caec1b29b83f741d2915da52fc
+    version: 1.2.0
+sha1_hash: 758510f57239c604f71242be4100654307a49ca1

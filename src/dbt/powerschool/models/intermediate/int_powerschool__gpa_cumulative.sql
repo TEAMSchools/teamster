@@ -136,7 +136,7 @@ with
             and sg.academic_year = {{ var("current_academic_year") }}
             and sg.storecode = 'Y1'
         where
-            fg.yearid = ({{ var("current_academic_year") }} - 1990)
+            fg.yearid = {{ var("current_academic_year") - 1990 }}
             and fg.storecode = 'Q2'
             and fg.exclude_from_gpa = 0
             /* include only unstored current-year grades */
@@ -207,6 +207,7 @@ select
     potential_credits_cum,
     earned_credits_cum_projected,
     earned_credits_cum_projected_s1,
+
     round(safe_divide(weighted_points, potentialcrhrs), 2) as cumulative_y1_gpa,
     round(
         safe_divide(unweighted_points, potentialcrhrs), 2

@@ -115,3 +115,19 @@ sources:
               - kippcamden
               - deanslist
               - int_deanslist__incidents__custom_fields__pivot
+      - name: stg_deanslist__students__custom_fields
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - stg_deanslist__students__custom_fields
+      - name: int_deanslist__students__custom_fields__pivot
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - int_deanslist__students__custom_fields__pivot

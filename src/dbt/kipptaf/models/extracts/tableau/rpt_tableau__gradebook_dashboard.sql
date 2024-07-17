@@ -73,43 +73,6 @@ with
             not enr.is_dropped_course
             and not enr.is_dropped_section
             and enr.rn_course_number_year = 1
-    ),
-
-    final_grades as (
-        select
-            fg.studentid,
-            fg.yearid,
-            fg.course_number,
-            fg.sectionid,
-            fg.storecode,
-            fg.exclude_from_gpa,
-            fg.potential_credit_hours,
-            fg.term_percent_grade_adjusted as term_grade_percent_adjusted,
-            fg.term_letter_grade_adjusted as term_grade_letter_adjusted,
-            fg.term_grade_points,
-            fg.y1_percent_grade_adjusted as y1_grade_percent_adjusted,
-            fg.y1_letter_grade as y1_grade_letter,
-            fg.y1_grade_points,
-            fg.need_60,
-            fg.need_70,
-            fg.need_80,
-            fg.need_90,
-            fg._dbt_source_relation,
-            if(
-                current_date('{{ var("local_timezone") }}')
-                between fg.termbin_start_date and fg.termbin_end_date,
-                1,
-                0
-            ) as is_curterm,
-
-            cou.credittype,
-            cou.course_name,
-        from {{ ref("base_powerschool__final_grades") }} as fg
-        inner join
-            {{ ref("stg_powerschool__courses") }} as cou
-            on fg.course_number = cou.course_number
-            and {{ union_dataset_join_clause(left_alias="fg", right_alias="cou") }}
-        where fg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
     )
 
 /* current year - term grades */
@@ -136,13 +99,13 @@ select
     gr.storecode as finalgradename,
     gr.exclude_from_gpa as excludefromgpa,
     gr.potential_credit_hours as credit_hours,
-    gr.term_grade_percent_adjusted,
-    gr.term_grade_letter_adjusted,
+    gr.term_percent_grade_adjusted as term_grade_percent_adjusted,
+    gr.term_letter_grade_adjusted as term_grade_letter_adjusted,
     gr.term_grade_points as term_gpa_points,
-    gr.y1_grade_percent_adjusted,
-    gr.y1_grade_letter,
+    gr.y1_percent_grade_adjusted as y1_grade_percent_adjusted,
+    gr.y1_letter_grade as y1_grade_letter,
     gr.y1_grade_points as y1_gpa_points,
-    gr.is_curterm,
+    if(gr.termbin_is_current, 1, 0) as is_curterm,
     gr.credittype,
     gr.course_name,
 
@@ -162,26 +125,27 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
-    max(case when gr.is_curterm = 1 then gr.need_60 end) over (
+    max(case when gr.termbin_is_current then gr.need_60 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_65,
-    max(case when gr.is_curterm = 1 then gr.need_70 end) over (
+    max(case when gr.termbin_is_current then gr.need_70 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_70,
-    max(case when gr.is_curterm = 1 then gr.need_80 end) over (
+    max(case when gr.termbin_is_current then gr.need_80 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_80,
-    max(case when gr.is_curterm = 1 then gr.need_90 end) over (
+    max(case when gr.termbin_is_current then gr.need_90 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_90,
 
     round(ada.ada, 3) as ada,
 from student_roster as co
 left join
-    final_grades as gr
+    {{ ref("base_powerschool__final_grades") }} as gr
     on co.studentid = gr.studentid
     and co.yearid = gr.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gr") }}
+    and gr.termbin_start_date <= current_date('{{ var("local_timezone") }}')
 left join
     {{ ref("stg_powerschool__pgfinalgrades") }} as pgf
     on gr.studentid = pgf.studentid
@@ -232,13 +196,13 @@ select
 
     gr.exclude_from_gpa as excludefromgpa,
     gr.potential_credit_hours as credit_hours,
-    gr.y1_grade_percent_adjusted as term_grade_percent_adjusted,
-    gr.y1_grade_letter as term_grade_letter_adjusted,
+    gr.y1_percent_grade_adjusted as term_grade_percent_adjusted,
+    gr.y1_letter_grade as term_grade_letter_adjusted,
     gr.y1_grade_points as term_gpa_points,
-    gr.y1_grade_percent_adjusted as y1_grade_percent_adjusted,
-    gr.y1_grade_letter,
+    gr.y1_percent_grade_adjusted as y1_grade_percent_adjusted,
+    gr.y1_letter_grade as y1_grade_letter,
     gr.y1_grade_points as y1_gpa_points,
-    gr.is_curterm,
+    if(gr.termbin_is_current, 1, 0) as is_curterm,
     gr.credittype,
     gr.course_name,
 
@@ -258,27 +222,28 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
-    max(case when gr.is_curterm = 1 then gr.need_60 end) over (
+    max(case when gr.termbin_is_current then gr.need_60 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_65,
-    max(case when gr.is_curterm = 1 then gr.need_70 end) over (
+    max(case when gr.termbin_is_current then gr.need_70 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_70,
-    max(case when gr.is_curterm = 1 then gr.need_80 end) over (
+    max(case when gr.termbin_is_current then gr.need_80 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_80,
-    max(case when gr.is_curterm = 1 then gr.need_90 end) over (
+    max(case when gr.termbin_is_current then gr.need_90 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_90,
 
     round(ada.ada, 3) as ada,
 from student_roster as co
 left join
-    final_grades as gr
+    {{ ref("base_powerschool__final_grades") }} as gr
     on co.studentid = gr.studentid
     and co.yearid = gr.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gr") }}
-    and gr.is_curterm = 1
+    and gr.termbin_is_current
+    and gr.termbin_start_date <= current_date('{{ var("local_timezone") }}')
 left join
     {{ ref("stg_powerschool__storedgrades") }} as y1
     on co.studentid = y1.studentid
