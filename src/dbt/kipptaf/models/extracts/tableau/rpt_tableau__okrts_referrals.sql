@@ -39,6 +39,9 @@ select
     co.lunch_status,
     co.is_retained_year,
 
+    hr.sections_section_number as homeroom_section,
+    hr.teacher_lastfirst as homeroom_teacher_name,
+
     w.week_start_monday,
     w.week_end_sunday,
     w.date_count as days_in_session,
@@ -103,6 +106,15 @@ select
         )
     ) as rn_incident,
 from {{ ref("base_powerschool__student_enrollments") }} as co
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as hr
+    on co.studentid = hr.cc_studentid
+    and co.yearid = hr.cc_yearid
+    and co.schoolid = hr.cc_schoolid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
+    and hr.cc_course_number = 'HR'
+    and not hr.is_dropped_section
+    and hr.rn_course_number_year = 1
 inner join
     {{ ref("int_powerschool__calendar_week") }} as w
     on co.academic_year = w.academic_year
