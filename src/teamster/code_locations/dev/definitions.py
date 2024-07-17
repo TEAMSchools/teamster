@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore", category=ExperimentalWarning)
 # trunk-ignore-begin(ruff/E402)
 from dagster import Definitions, load_assets_from_modules
 
-from teamster.code_locations.kipptaf import (  # adp,; airbyte,; alchemer,; amplify,; couchdrop,; datagun,; dayforce,; deanslist,; fivetran,; google,; ldap,; performance_management,; powerschool,; schoolmint,; smartrecruiters,; tableau,; zendesk,
+from teamster.code_locations.kipptaf import (  # adp,; airbyte,; amplify,; couchdrop,; datagun,; deanslist,; fivetran,; google,; ldap,; performance_management,; powerschool,; schoolmint,; smartrecruiters,; tableau,; zendesk,
     CODE_LOCATION,
     dbt,
     overgrad,
@@ -28,10 +28,8 @@ defs = Definitions(
         modules=[
             # adp,
             # airbyte,
-            # alchemer,
             # amplify,
             # datagun,
-            # dayforce,
             dbt,
             # deanslist,
             # fivetran,
@@ -62,7 +60,6 @@ defs = Definitions(
     # sensors=[
     #     *adp.sensors,
     #     *airbyte.sensors,
-    #     *alchemer.sensors,
     #     *couchdrop.sensors,
     #     *deanslist.sensors,
     #     *fivetran.sensors,
@@ -82,7 +79,6 @@ defs = Definitions(
         # "adp_wfm": resources.ADP_WORKFORCE_MANAGER_RESOURCE,
         # "adp_wfn": resources.ADP_WORKFORCE_NOW_RESOURCE,
         # "airbyte": resources.AIRBYTE_CLOUD_RESOURCE,
-        # "alchemer": resources.ALCHEMER_RESOURCE,
         # "fivetran": resources.FIVETRAN_RESOURCE,
         # "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,
         # "google_drive": resources.GOOGLE_DRIVE_RESOURCE,
@@ -98,7 +94,6 @@ defs = Definitions(
         # "zendesk": resources.ZENDESK_RESOURCE,
         # # ssh
         # "ssh_adp_workforce_now": resources.SSH_RESOURCE_ADP_WORKFORCE_NOW,
-        # "ssh_blissbook": resources.SSH_RESOURCE_BLISSBOOK,
         # "ssh_clever": resources.SSH_RESOURCE_CLEVER,
         # "ssh_coupa": resources.SSH_RESOURCE_COUPA,
         # "ssh_deanslist": resources.SSH_RESOURCE_DEANSLIST,

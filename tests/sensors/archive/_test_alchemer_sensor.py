@@ -12,6 +12,8 @@ from teamster.code_locations.kipptaf.alchemer.sensors import (
     alchemer_survey_metadata_asset_sensor,
     alchemer_survey_response_asset_sensor,
 )
+
+# trunk-ignore(pyright/reportAttributeAccessIssue)
 from teamster.code_locations.kipptaf.resources import ALCHEMER_RESOURCE
 
 

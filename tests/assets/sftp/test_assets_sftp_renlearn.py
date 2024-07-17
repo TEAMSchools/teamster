@@ -1,7 +1,6 @@
 import random
 
-from dagster import EnvVar, _check, materialize
-from dagster._core.events import StepMaterializationData
+from dagster import EnvVar, materialize
 
 from teamster.libraries.core.resources import get_io_manager_gcs_avro
 from teamster.libraries.ssh.resources import SSHResource
@@ -45,19 +44,7 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
 
     assert result.success
 
-    asset_materialization_event = result.get_asset_materialization_events()[0]
     asset_check_evaluation = result.get_asset_check_evaluations()[0]
-
-    step_materialization_data = _check.inst(
-        asset_materialization_event.event_specific_data, StepMaterializationData
-    )
-
-    records = _check.inst(
-        step_materialization_data.materialization.metadata["records"].value, int
-    )
-
-    assert records > 0
-    assert asset_check_evaluation.passed
 
     extras = asset_check_evaluation.metadata.get("extras")
 

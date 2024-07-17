@@ -4,7 +4,10 @@ import pendulum
 from dagster import AssetsDefinition, DagsterInstance, MultiPartitionKey, materialize
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_LITTLESIS
+from teamster.code_locations.kipptaf.resources import (
+    SSH_RESOURCE_DEANSLIST,
+    SSH_RESOURCE_LITTLESIS,
+)
 from teamster.libraries.core.resources import (
     BIGQUERY_RESOURCE,
     GCS_RESOURCE,
@@ -30,6 +33,7 @@ def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
             "db_bigquery": BIGQUERY_RESOURCE,
             "ssh_couchdrop": SSH_COUCHDROP,
             "ssh_littlesis": SSH_RESOURCE_LITTLESIS,
+            "ssh_deanslist": SSH_RESOURCE_DEANSLIST,
         },
     )
 
@@ -147,3 +151,11 @@ def test_littlesis_extract():
     from teamster.code_locations.kipptaf.datagun.assets import littlesis_extract
 
     _test_asset(asset=littlesis_extract)
+
+
+def test_deanslist_jsongz():
+    from teamster.code_locations.kipptaf.datagun.assets import (
+        deanslist_continuous_extract_gzip,
+    )
+
+    _test_asset(asset=deanslist_continuous_extract_gzip)

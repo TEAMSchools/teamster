@@ -22,6 +22,7 @@ def build_renlearn_sftp_sensor(
     fiscal_year,
     timezone,
     minimum_interval_seconds=None,
+    tags=None,
 ):
     fiscal_year_start_string = fiscal_year.start.to_date_string()
 
@@ -34,11 +35,7 @@ def build_renlearn_sftp_sensor(
         now = pendulum.now(tz=timezone)
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            files = ssh_renlearn.listdir_attr_r()
-        except Exception as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=str(e))
+        files = ssh_renlearn.listdir_attr_r()
 
         run_requests = []
         for asset in asset_defs:
@@ -67,6 +64,7 @@ def build_renlearn_sftp_sensor(
                                 RunRequest(
                                     run_key=f"{asset_identifier}_{f.st_mtime}",
                                     asset_selection=[asset.key],
+                                    tags=tags,
                                     partition_key=MultiPartitionKey(
                                         {
                                             "start_date": fiscal_year_start_string,

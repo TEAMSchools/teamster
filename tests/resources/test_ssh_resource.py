@@ -21,22 +21,7 @@ def test_couchdrop():
             username=EnvVar("COUCHDROP_SFTP_USERNAME").get_value(),
             password=EnvVar("COUCHDROP_SFTP_PASSWORD").get_value(),
         ),
-        remote_dir="data-team",
-    )
-
-
-def test_blissbook():
-    _test_listdir_attr_r(
-        ssh=SSHResource(
-            remote_host=_check.not_none(
-                value=EnvVar("BLISSBOOK_SFTP_HOST").get_value()
-            ),
-            remote_port=_check.not_none(
-                value=EnvVar("BLISSBOOK_SFTP_PORT").get_value()
-            ),
-            username=EnvVar("BLISSBOOK_SFTP_USERNAME").get_value(),
-            password=EnvVar("BLISSBOOK_SFTP_PASSWORD").get_value(),
-        )
+        remote_dir=r"data-team",
     )
 
 
@@ -47,5 +32,5 @@ def test_coupa():
             username=EnvVar("COUPA_SFTP_USERNAME").get_value(),
             password=EnvVar("COUPA_SFTP_PASSWORD").get_value(),
         ),
-        remote_dir="/Incoming/Users",
+        remote_dir=r"/Incoming/Users",
     )

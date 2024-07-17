@@ -10,7 +10,6 @@ from dagster import (
     _check,
     sensor,
 )
-from paramiko.ssh_exception import SSHException
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -20,7 +19,11 @@ def build_titan_sftp_sensor(
     asset_defs: list[AssetsDefinition],
     timezone,
     minimum_interval_seconds=None,
+    exclude_dirs: list | None = None,
 ):
+    if exclude_dirs is None:
+        exclude_dirs = []
+
     @sensor(
         name=f"{code_location}_titan_sftp_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
@@ -31,11 +34,7 @@ def build_titan_sftp_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            files = ssh_titan.listdir_attr_r()
-        except SSHException as e:
-            context.log.error(e)
-            return SensorResult(skip_reason=str(e))
+        files = ssh_titan.listdir_attr_r(exclude_dirs=exclude_dirs)
 
         run_requests = []
         for asset in asset_defs:

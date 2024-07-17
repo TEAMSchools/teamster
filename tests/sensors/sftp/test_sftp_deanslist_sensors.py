@@ -4,10 +4,12 @@ from teamster.code_locations.kipptaf.deanslist.sensors import deanslist_sftp_sen
 from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_DEANSLIST
 
 
-def _test_sensor(sftp_sensor, **kwargs):
+def _test_sensor(sftp_sensor):
     context = build_sensor_context(sensor_name=sftp_sensor.name)
 
-    result: SensorResult = sftp_sensor(context=context, **kwargs)
+    result: SensorResult = sftp_sensor(
+        context=context, ssh_deanslist=SSH_RESOURCE_DEANSLIST
+    )
 
     assert result.run_requests is not None
     assert len(result.run_requests) > 0
@@ -17,6 +19,4 @@ def _test_sensor(sftp_sensor, **kwargs):
 
 
 def test_deanslist_sftp_sensor_kipptaf():
-    _test_sensor(
-        sftp_sensor=deanslist_sftp_sensor, ssh_deanslist=SSH_RESOURCE_DEANSLIST
-    )
+    _test_sensor(sftp_sensor=deanslist_sftp_sensor)

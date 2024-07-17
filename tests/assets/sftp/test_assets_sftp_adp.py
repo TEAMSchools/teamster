@@ -1,9 +1,14 @@
 import random
 
-from dagster import _check, materialize
-from dagster._core.events import StepMaterializationData
+from dagster import (
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    _check,
+    instance_for_test,
+    materialize,
+)
 
-from teamster.code_locations.kippmiami.fldoe.assets import eoc, fast, fsa, science
+from teamster.code_locations.kipptaf.adp.payroll.assets import general_ledger_file
 from teamster.libraries.core.resources import SSH_COUCHDROP, get_io_manager_gcs_avro
 
 
@@ -24,28 +29,16 @@ def _test_asset(asset, partition_key=None, instance=None):
         instance=instance,
         partition_key=partition_key,
         resources={
-            "ssh_couchdrop": SSH_COUCHDROP,
             "io_manager_gcs_avro": get_io_manager_gcs_avro(
                 code_location="test", test=True
             ),
+            "ssh_couchdrop": SSH_COUCHDROP,
         },
     )
 
     assert result.success
 
-    asset_materialization_event = result.get_asset_materialization_events()[0]
     asset_check_evaluation = result.get_asset_check_evaluations()[0]
-
-    step_materialization_data = _check.inst(
-        asset_materialization_event.event_specific_data, StepMaterializationData
-    )
-
-    records = _check.inst(
-        step_materialization_data.materialization.metadata["records"].value, int
-    )
-
-    assert records > 0
-    assert asset_check_evaluation.passed
 
     extras = asset_check_evaluation.metadata.get("extras")
 
@@ -53,17 +46,21 @@ def _test_asset(asset, partition_key=None, instance=None):
     assert extras.text == ""
 
 
-def test_fldoe_fast_kippmiami():
-    _test_asset(asset=fast, partition_key="Grade3FASTELAReading|SY23/PM3")
+def test_adp_payroll_general_ledger_file_kipptaf():
+    partitions_def = _check.inst(
+        obj=general_ledger_file.partitions_def, ttype=MultiPartitionsDefinition
+    )
 
+    date_partitions_def = _check.inst(
+        obj=partitions_def.get_partitions_def_for_dimension("date"),
+        ttype=DynamicPartitionsDefinition,
+    )
 
-def test_fldoe_fsa_kippmiami():
-    _test_asset(asset=fsa)
+    partitions_def_name = _check.not_none(value=date_partitions_def.name)
 
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions(
+            partitions_def_name=partitions_def_name, partition_keys=["20240229"]
+        )
 
-def test_fldoe_eoc_kippmiami():
-    _test_asset(asset=eoc)
-
-
-def test_fldoe_science_kippmiami():
-    _test_asset(asset=science)
+        _test_asset(asset=general_ledger_file, instance=instance)

@@ -25,7 +25,11 @@ class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
             .get("auto_materialize_policy", {})
         )
 
-        if auto_materialize_policy_config.get("type") == "lazy":
+        amp_type = auto_materialize_policy_config.get("type")
+
+        if amp_type == "none":
+            return None
+        elif amp_type == "lazy":
             return AutoMaterializePolicy.lazy()
         else:
             return AutoMaterializePolicy.eager(

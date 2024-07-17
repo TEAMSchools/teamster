@@ -4,7 +4,6 @@ from teamster.code_locations.kipptaf.resources import (
     ADP_WORKFORCE_MANAGER_RESOURCE,
     ADP_WORKFORCE_NOW_RESOURCE,
     AIRBYTE_CLOUD_RESOURCE,
-    ALCHEMER_RESOURCE,
     FIVETRAN_RESOURCE,
     GOOGLE_DIRECTORY_RESOURCE,
     GOOGLE_DRIVE_RESOURCE,
@@ -14,7 +13,6 @@ from teamster.code_locations.kipptaf.resources import (
     SCHOOLMINT_GROW_RESOURCE,
     SMARTRECRUITERS_RESOURCE,
     SSH_RESOURCE_ADP_WORKFORCE_NOW,
-    SSH_RESOURCE_BLISSBOOK,
     SSH_RESOURCE_CLEVER,
     SSH_RESOURCE_COUPA,
     SSH_RESOURCE_DEANSLIST,
@@ -51,10 +49,6 @@ def test_adp_workforce_now_resource():
 
 def test_airbyte_cloud_resource():
     _test_resource_init(AIRBYTE_CLOUD_RESOURCE)
-
-
-def test_alchemer_resource():
-    _test_resource_init(ALCHEMER_RESOURCE)
 
 
 def test_bigquery_resource():
@@ -123,10 +117,6 @@ def test_ssh_renlearn():
 
 def test_ssh_resource_adp_workforce_now():
     _test_resource_init(SSH_RESOURCE_ADP_WORKFORCE_NOW)
-
-
-def test_ssh_resource_blissbook():
-    _test_resource_init(SSH_RESOURCE_BLISSBOOK)
 
 
 def test_ssh_resource_clever():
