@@ -6,7 +6,6 @@ select
     s.entity,
     s.grade_band,
     s.short_name as location,
-    if(s.mid_year_hire=true,1,0) as Mid_Year_Hire,
     s.plan_status,
     s.staffing_status,
     s.status_detail,
@@ -20,6 +19,7 @@ select
     if(s.status_detail in ('New Hire', 'Transfer In'), 1, 0) as New_Hire,
     if(s.staffing_status = 'Staffed', 1, 0) as Staffed,
     if(s.plan_status = 'Active', 1, 0) as Active,
+    if(s.mid_year_hire=true,1,0) as Mid_Year_Hire,
 
 from {{ ref("stg_people__seats") }} as s
 /* recruiters */
