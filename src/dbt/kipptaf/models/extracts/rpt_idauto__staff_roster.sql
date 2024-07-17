@@ -1,3 +1,8 @@
+{# 
+    TODO: 
+        - union is_current_record w/ future effective_date_start
+        - dedupe by assignment_status__status_code__long_name
+#}
 -- trunk-ignore-all(sqlfluff/RF05)
 select
     w.worker_id__id_value as `Associate ID`,
