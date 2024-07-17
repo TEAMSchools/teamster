@@ -57,7 +57,7 @@ def test_regex_pattern_replace():
 
 
 def test_ghseet_asset_key_rename():
-    from teamster.code_locations.kipptaf.dbt.assets import manifest
+    from teamster.code_locations.kipptaf._dbt.assets import manifest
 
     asset_keys_old = set()
     asset_keys_new = set()
@@ -129,7 +129,7 @@ def test_orjson():
 
 
 def test_foo():
-    from teamster.libraries.sftp.assets import compose_regex, match_files
+    from teamster.libraries.sftp.assets import compose_regex
 
     files = [
         (None, "\\./.DS_Store"),
@@ -156,10 +156,14 @@ def test_foo():
         regexp=r"additional_earnings_report\.csv"
     )
 
-    file_matches = match_files(
-        remote_dir=remote_dir_regex_composed,
-        remote_file=remote_file_regex_composed,
-        files=files,
-    )
+    file_matches = [
+        path
+        for _, path in files
+        if re.search(
+            pattern=f"{remote_dir_regex_composed}/{remote_file_regex_composed}",
+            string=path,
+        )
+        is not None
+    ]
 
     assert len(file_matches) > 0

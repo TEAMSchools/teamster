@@ -9,7 +9,7 @@ from dagster import Definitions, load_assets_from_modules
 
 from teamster.code_locations.kipptaf import (  # adp,; airbyte,; amplify,; couchdrop,; datagun,; deanslist,; fivetran,; google,; ldap,; performance_management,; powerschool,; schoolmint,; smartrecruiters,; tableau,; zendesk,
     CODE_LOCATION,
-    dbt,
+    _dbt,
     overgrad,
     resources,
 )
@@ -30,7 +30,7 @@ defs = Definitions(
             # airbyte,
             # amplify,
             # datagun,
-            dbt,
+            _dbt,
             # deanslist,
             # fivetran,
             # google,

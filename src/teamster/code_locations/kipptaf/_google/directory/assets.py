@@ -1,7 +1,7 @@
 from dagster import AssetExecutionContext, Output, StaticPartitionsDefinition, asset
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
-from teamster.code_locations.kipptaf.google.directory.schema import (
+from teamster.code_locations.kipptaf._google.directory.schema import (
     GROUPS_SCHEMA,
     MEMBERS_SCHEMA,
     ORGUNITS_SCHEMA,

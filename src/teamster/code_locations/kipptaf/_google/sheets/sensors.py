@@ -10,7 +10,7 @@ from dagster import (
 )
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
-from teamster.code_locations.kipptaf.google.sheets.assets import google_sheets_assets
+from teamster.code_locations.kipptaf._google.sheets.assets import google_sheets_assets
 from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 
 ASSET_KEYS_BY_SHEET_ID = {
