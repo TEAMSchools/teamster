@@ -3,6 +3,9 @@ with
         select
             associate_oid,
             item_id,
+            effective_date_start,
+            effective_date_end,
+            effective_date_timestamp,
             is_current_record,
             type_code__code_value,
             name_code__code_value,
