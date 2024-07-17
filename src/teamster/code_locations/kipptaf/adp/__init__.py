@@ -11,7 +11,6 @@ assets = [
 ]
 
 jobs = [
-    *workforce_manager.jobs,
     *workforce_now.jobs,
 ]
 
