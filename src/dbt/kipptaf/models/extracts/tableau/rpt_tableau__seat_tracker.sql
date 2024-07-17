@@ -15,11 +15,11 @@ select
     srr.report_to_preferred_name_lastfirst as recruiter_manager,
     srt.preferred_name_lastfirst as teammate,
 
-    if(s.staffing_status = 'Open', 1, 0) as `Open`,
-    if(s.status_detail in ('New Hire', 'Transfer In'), 1, 0) as New_Hire,
-    if(s.staffing_status = 'Staffed', 1, 0) as Staffed,
-    if(s.plan_status = 'Active', 1, 0) as Active,
-    if(s.mid_year_hire=true,1,0) as Mid_Year_Hire,
+    if(s.staffing_status = 'Open', 1, 0) as `open`,
+    if(s.status_detail in ('New Hire', 'Transfer In'), 1, 0) as new_hire,
+    if(s.staffing_status = 'Staffed', 1, 0) as staffed,
+    if(s.plan_status = 'Active', 1, 0) as active,
+    if(s.mid_year_hire=true,1,0) as mid_year_hire,
 
 from {{ ref("stg_people__seats") }} as s
 /* recruiters */
