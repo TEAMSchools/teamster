@@ -14,7 +14,7 @@ def _test_dbt_code_version_schedule(schedule):
 
 
 def test_kipptaf():
-    from teamster.code_locations.kipptaf.dbt.schedules import dbt_code_version_schedule
+    from teamster.code_locations.kipptaf._dbt.schedules import dbt_code_version_schedule
 
     _test_dbt_code_version_schedule(schedule=dbt_code_version_schedule)
 

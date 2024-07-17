@@ -1,4 +1,4 @@
-from teamster.code_locations.kipptaf.google import directory, drive, forms, sheets
+from teamster.code_locations.kipptaf._google import directory, drive, forms, sheets
 
 assets = [
     *directory.assets,
