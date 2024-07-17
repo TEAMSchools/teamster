@@ -1,5 +1,3 @@
-{{ config(tags="dagster") }}
-
 with
     deduplicate as (
         {{
