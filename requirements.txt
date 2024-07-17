@@ -545,9 +545,9 @@ pendulum==3.0.0; python_version >= "3.12" \
     --hash=sha256:fa30af36bd8e50686846bdace37cf6707bdd044e5cb6e1109acbad3277232e04 \
     --hash=sha256:fd69b15374bef7e4b4440612915315cc42e8575fcda2a3d7586a0d88192d0c88 \
     --hash=sha256:fde4d0b2024b9785f66b7f30ed59281bd60d63d9213cda0eb0910ead777f6d37
-pex==2.10.0 \
-    --hash=sha256:26f7ed80f08ab30a8a0b2c2494b4a27c7d4bc022e2c6ed7de02fe4f5384f47ed \
-    --hash=sha256:9ddb6b6a1342475aa568565ee66fe76ddeeae894ca0e9ff00a2e0dbf50bf2cb6
+pex==2.11.0 \
+    --hash=sha256:22285310b06dedb45c5ce19d21fa0a5e102caad0030458e53b0cda4975c9a4ef \
+    --hash=sha256:9f3394da2c651d4d0adebf0a8e419abf1e37b6302fcbf66de54882281538e29c
 prompt-toolkit==3.0.36 \
     --hash=sha256:3e163f254bef5a03b146397d7c1963bd3e2812f0964bb9a24e6ec761fd28db63 \
     --hash=sha256:aa64ad242a462c5ff0363a7b9cfe696c20d55d9fc60c11fd8e632d064804d305
