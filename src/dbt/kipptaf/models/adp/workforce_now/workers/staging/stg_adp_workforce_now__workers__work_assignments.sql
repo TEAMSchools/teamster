@@ -41,8 +41,6 @@ select
     wa.payrollprocessingstatuscode.shortname
     as payroll_processing_status_code__short_name,
 
-    wa.baseremuneration.annualrateamount.amountvalue
-    as base_remuneration__annual_rate_amount__amount_value,
     wa.baseremuneration.annualrateamount.currencycode
     as base_remuneration__annual_rate_amount__currency_code,
 
@@ -53,8 +51,6 @@ select
     wa.baseremuneration.annualrateamount.namecode.shortname
     as base_remuneration__annual_rate_amount__name_code__short_name,
 
-    wa.baseremuneration.payperiodrateamount.amountvalue
-    as base_remuneration__pay_period_rate_amount__amount_value,
     wa.baseremuneration.payperiodrateamount.currencycode
     as base_remuneration__pay_period_rate_amount__currency_code,
 
@@ -65,8 +61,6 @@ select
     wa.baseremuneration.payperiodrateamount.namecode.shortname
     as base_remuneration__pay_period_rate_amount__name_code__short_name,
 
-    wa.baseremuneration.hourlyrateamount.amountvalue
-    as base_remuneration__hourly_rate_amount__amount_value,
     wa.baseremuneration.hourlyrateamount.currencycode
     as base_remuneration__hourly_rate_amount__currency_code,
 
@@ -77,8 +71,6 @@ select
     wa.baseremuneration.hourlyrateamount.namecode.shortname
     as base_remuneration__hourly_rate_amount__name_code__short_name,
 
-    wa.baseremuneration.dailyrateamount.amountvalue
-    as base_remuneration__daily_rate_amount__amount_value,
     wa.baseremuneration.dailyrateamount.currencycode
     as base_remuneration__daily_rate_amount__currency_code,
 
@@ -183,6 +175,22 @@ select
     wa.customfieldgroup.multicodefields as custom_field_group__multi_code_fields,
     wa.customfieldgroup.numberfields as custom_field_group__number_fields,
     wa.customfieldgroup.stringfields as custom_field_group__string_fields,
+
+    cast(
+        wa.baseremuneration.annualrateamount.amountvalue as numeric
+    ) as base_remuneration__annual_rate_amount__amount_value,
+
+    cast(
+        wa.baseremuneration.hourlyrateamount.amountvalue as numeric
+    ) as base_remuneration__hourly_rate_amount__amount_value,
+
+    cast(
+        wa.baseremuneration.dailyrateamount.amountvalue as numeric
+    ) as base_remuneration__daily_rate_amount__amount_value,
+
+    cast(
+        wa.baseremuneration.payperiodrateamount.amountvalue as numeric
+    ) as base_remuneration__pay_period_rate_amount__amount_value,
 
     date(wa.assignmentstatus.effectivedate) as assignment_status__effective_date,
     date(
