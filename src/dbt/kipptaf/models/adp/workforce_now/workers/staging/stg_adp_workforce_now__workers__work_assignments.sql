@@ -220,5 +220,7 @@ select
     wa.customfieldgroup.multicodefields as custom_field_group__multi_code_fields,
     wa.customfieldgroup.numberfields as custom_field_group__number_fields,
     wa.customfieldgroup.stringfields as custom_field_group__string_fields,
+
+    {{ dbt_utils.generate_surrogate_key(["to_json_string(wa)"]) }} as surrogate_key,
 from {{ ref("stg_adp_workforce_now__workers") }} as w
 cross join unnest(w.work_assignments) as wa
