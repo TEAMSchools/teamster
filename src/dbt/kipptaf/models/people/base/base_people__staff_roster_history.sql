@@ -46,9 +46,9 @@ with
             as base_remuneration_effective_date,
             work_assignment__base_remuneration__annual_rate_amount__amount_value
             as base_remuneration_annual_rate_amount_amount_value,
-            work_assignment__reports_to__associate_oid as report_to_associate_oid,
-            work_assignment__reports_to__position_id as report_to_position_id,
-            work_assignment__reports_to__worker_id__id_value as report_to_worker_id,
+            reports_to_associate_oid as report_to_associate_oid,
+            reports_to_position_id as report_to_position_id,
+            reports_to_worker_id__id_value as report_to_worker_id,
 
             worker_associate_oid as associate_oid,
             worker_status_value as status_value,

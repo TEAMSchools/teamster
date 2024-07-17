@@ -19,6 +19,9 @@
 {%- set ref_work_assignments = ref(
     "stg_adp_workforce_now__workers__work_assignments"
 ) -%}
+{%- set ref_reports_to = ref(
+    "stg_adp_workforce_now__workers__work_assignments__reports_to"
+) -%}
 
 with
     source as (
@@ -114,6 +117,13 @@ with
                     prefix="work_assignment__",
                 )
             }},
+
+            rt.reports_to_associate_oid,
+            rt.reports_to_position_id,
+            rt.reports_to_worker_name__formatted_name,
+            rt.reports_to_worker_id__id_value,
+            rt.reports_to_worker_id__scheme_code__code_value,
+            rt.reports_to_worker_id__scheme_code__short_name,
         from source as s
         left join
             {{ ref_work_assignments }} as wa
@@ -121,6 +131,10 @@ with
             and wa.effective_date_timestamp
             between s.work_assignment__fivetran_start
             and s.work_assignment__fivetran_end
+        left join
+            {{ ref_reports_to }} as rt
+            on wa.item_id = rt.item_id
+            and rt.is_current_record
     ),
 
     deduplicate_work_assignments as (
