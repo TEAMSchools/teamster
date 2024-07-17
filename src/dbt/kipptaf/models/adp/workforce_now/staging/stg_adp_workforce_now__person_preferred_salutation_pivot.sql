@@ -1,5 +1,3 @@
-{{ config(tags="dagster") }}
-
 select
     worker_id, legal_name, birth_name, former_name, preferred, alternate_preferred_name,
 from
