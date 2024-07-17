@@ -12,7 +12,7 @@ select
     sr.worker_original_hire_date,
     sr.business_unit_home_name,
     sr.worker_termination_date,
-    sr.sam_account_name as tableau_username, 
+    sr.sam_account_name as tableau_username,
     sr.report_to_sam_account_name as tableau_manager_username,
 
     /* future feeds from other data sources*/
