@@ -113,7 +113,8 @@ select
     null as campus,
     null as region_state,
     null as permission_level,
-
+    null as tableau_username,
+    null as tableau_manager_username,
 union all
 
 select
@@ -140,6 +141,8 @@ select
     null as campus,
     null as region_state,
     null as permission_level,
+    null as tableau_username,
+    null as tableau_manager_username,
 
 union all
 
@@ -167,6 +170,8 @@ select
     null as campus,
     null as region_state,
     null as permission_level,
+    null as tableau_username,
+    null as tableau_manager_username,
 
 union all
 
@@ -194,3 +199,5 @@ select
     null as campus,
     null as region_state,
     null as permission_level,
+    null as tableau_username,
+    null as tableau_manager_username,
