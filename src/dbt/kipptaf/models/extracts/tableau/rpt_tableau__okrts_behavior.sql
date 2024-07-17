@@ -54,7 +54,7 @@ with
                 then regexp_extract(b.behavior_category, r'^(.*?) \(')
                 else b.behavior
             end as behavior,
-            
+
             if(co.lep_status, 'ML', 'Not ML') as ml_status,
             if(co.is_504, 'Has 504', 'No 504') as status_504,
             if(
