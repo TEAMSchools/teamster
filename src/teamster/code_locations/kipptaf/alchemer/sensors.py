@@ -43,10 +43,7 @@ def alchemer_survey_metadata_asset_sensor(
     run_requests = []
     dynamic_partitions_requests = []
 
-    try:
-        survey_list = alchemer._client.survey.list()
-    except Exception as e:
-        return SensorResult(skip_reason=str(e))
+    survey_list = alchemer._client.survey.list()
 
     for survey_obj in survey_list:
         context.log.info(msg=survey_obj["title"])
@@ -126,10 +123,7 @@ def alchemer_survey_response_asset_sensor(
     survey_response_partition_keys = []
     survey_response_dq_partition_keys = []
 
-    try:
-        surveys = alchemer._client.survey.list()
-    except Exception as e:
-        return SensorResult(skip_reason=str(e))
+    surveys = alchemer._client.survey.list()
 
     for survey_metadata in surveys:
         survey_id = survey_metadata["id"]
