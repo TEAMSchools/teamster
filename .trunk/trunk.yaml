@@ -4,11 +4,11 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.6.0
+      ref: v1.6.1
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - pyright@1.1.371
+    - pyright@1.1.372
     - actionlint@1.7.1
     - bandit@1.7.9
     - git-diff-check
