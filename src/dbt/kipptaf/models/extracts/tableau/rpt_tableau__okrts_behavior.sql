@@ -55,6 +55,10 @@ with
                 else b.behavior
             end as behavior,
 
+            count(distinct co.student_number) over (
+                partition by w.week_start_monday, co.school_abbreviation
+            ) as school_enrollment_by_week,
+
             if(co.lep_status, 'ML', 'Not ML') as ml_status,
             if(co.is_504, 'Has 504', 'No 504') as status_504,
             if(
