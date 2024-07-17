@@ -1,0 +1,14 @@
+endpoints:
+  - endpoint: behavior
+    api_version: v1
+    params:
+      IncludeDeleted: Y
+  - endpoint: homework
+    api_version: v1
+    params:
+      IncludeDeleted: Y
+  - endpoint: incidents
+    api_version: v1
+    params:
+      IncludeDeleted: Y
+      cf: Y

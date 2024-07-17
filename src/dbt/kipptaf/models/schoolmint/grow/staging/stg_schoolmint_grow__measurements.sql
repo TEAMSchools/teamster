@@ -12,16 +12,20 @@ with
     )
 
 select
-    _id as `measurement_id`,
-    `name`,
+    _id as measurement_id,
     district,
-    created,
-    lastmodified as `last_modified`,
-    archivedat as `archived_at`,
+    `name`,
     `description`,
-    rowstyle as `row_style`,
-    scalemax as `scale_max`,
-    scalemin as `scale_min`,
-    textboxes as `text_boxes`,
-    measurementoptions as `measurement_options`,
+    rowstyle as row_style,
+    scalemax as scale_max,
+    scalemin as scale_min,
+
+    /* repeated records */
+    textboxes as text_boxes,
+    measurementoptions as measurement_options,
+
+    timestamp(created) as created,
+    timestamp(lastmodified) as last_modified,
+    timestamp(archivedat) as archived_at,
 from deduplicate
+where _dagster_partition_key = 'f'

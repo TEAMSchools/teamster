@@ -1,39 +1,49 @@
-from dagster import materialize
+from dagster import _check, materialize
+from dagster._core.events import StepMaterializationData
 
-from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.kipptaf.resources import SMARTRECRUITERS_RESOURCE
-from teamster.kipptaf.smartrecruiters.assets import build_smartrecruiters_report_asset
+from teamster.code_locations.kipptaf.resources import SMARTRECRUITERS_RESOURCE
+from teamster.code_locations.kipptaf.smartrecruiters.assets import (
+    applicants,
+    applications,
+)
+from teamster.libraries.core.resources import get_io_manager_gcs_avro
 
 
-def _test_asset(asset_name, report_id):
-    asset = build_smartrecruiters_report_asset(
-        asset_name=asset_name, code_location="staging", report_id=report_id
-    )
-
+def _test_asset(asset):
     result = materialize(
         assets=[asset],
         resources={
-            "io_manager_gcs_avro": get_io_manager_gcs_avro("staging"),
+            "io_manager_gcs_avro": get_io_manager_gcs_avro(
+                code_location="test", test=True
+            ),
             "smartrecruiters": SMARTRECRUITERS_RESOURCE,
         },
     )
 
     assert result.success
-    assert (
-        result.get_asset_materialization_events()[0]
-        .event_specific_data.materialization.metadata["records"]
-        .value
-        > 0
+
+    asset_materialization_event = result.get_asset_materialization_events()[0]
+    asset_check_evaluation = result.get_asset_check_evaluations()[0]
+
+    step_materialization_data = _check.inst(
+        asset_materialization_event.event_specific_data, StepMaterializationData
     )
+
+    records = _check.inst(
+        step_materialization_data.materialization.metadata["records"].value, int
+    )
+
+    assert records > 0
+
+    extras = asset_check_evaluation.metadata.get("extras")
+
+    assert extras is not None
+    assert extras.text == ""
 
 
 def test_asset_smartrecruiters_applicants():
-    _test_asset(
-        asset_name="applicants", report_id="e841aa3f-b037-4976-b75f-8ef43e177a45"
-    )
+    _test_asset(applicants)
 
 
 def test_asset_smartrecruiters_applications():
-    _test_asset(
-        asset_name="applications", report_id="878d114e-8e48-4ffe-a81b-cb3c92ee653f"
-    )
+    _test_asset(applications)

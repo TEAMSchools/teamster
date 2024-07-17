@@ -30,7 +30,7 @@ with
                     partition by academic_year, region order by code asc
                 )
                 - 1,
-                date({{ var("current_academic_year") }} + 1, 06, 30)
+                date({{ var("current_academic_year") + 1 }}, 06, 30)
             ) as end_date,
         from {{ ref("stg_reporting__terms") }}
         where type = 'IR'
@@ -92,6 +92,7 @@ select
     f.state_test_proficiency,
     f.nj_student_tier,
     f.is_exempt_iready,
+    f.territory,
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
 

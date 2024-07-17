@@ -105,7 +105,7 @@ with
             mem.attendancevalue is not null
             and mem.membershipvalue > 0
             and mem.calendardate between date(
-                ({{ var("current_academic_year") }} - 1), 7, 1
+                ({{ var("current_academic_year") - 1 }}), 7, 1
             ) and current_date('{{ var("local_timezone") }}')
     )
 

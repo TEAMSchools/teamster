@@ -7,6 +7,12 @@ sources:
       - stage_external_sources
     tables:
       - name: src_fldoe__fast
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kippmiami
+              - fldoe
+              - fast
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/fast/*"
           options:
@@ -14,9 +20,41 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__fsa
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kippmiami
+              - fldoe
+              - fsa
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/fsa/*"
           options:
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/fsa/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_fldoe__science
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kippmiami
+              - fldoe
+              - science
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/fldoe/science/*"
+          options:
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/science/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_fldoe__eoc
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kippmiami
+              - fldoe
+              - eoc
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/fldoe/eoc/*"
+          options:
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/eoc/"
             format: AVRO
             enable_logical_types: true

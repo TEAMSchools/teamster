@@ -82,7 +82,7 @@ with
             {{ ref("int_people__leadership_crosswalk") }} as lc
             on co.schoolid = lc.home_work_location_powerschool_school_id
         where
-            co.academic_year >= {{ var("current_academic_year") }} - 1
+            co.academic_year >= {{ var("current_academic_year") - 1 }}
             and co.rn_year = 1
             and co.grade_level != 99
     )
@@ -136,6 +136,7 @@ select
 
     sf.nj_student_tier,
     sf.tutoring_nj,
+    sf.territory,
 from dashboard as d
 left join
     {{ ref("int_reporting__student_filters") }} as sf

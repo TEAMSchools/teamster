@@ -1,0 +1,32 @@
+version: 2
+
+sources:
+  - name: smartrecruiters
+    schema: kipptaf_smartrecruiters
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_smartrecruiters__applicants
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/smartrecruiters/applicants/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - smartrecruiters
+              - applicants
+      - name: src_smartrecruiters__applications
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/smartrecruiters/applications/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - smartrecruiters
+              - applications

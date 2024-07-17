@@ -2,7 +2,7 @@ with
     year_scaffold as (
         select {{ var("current_academic_year") }} as academic_year
         union distinct
-        select {{ var("current_academic_year") }} - 1 as academic_year
+        select {{ var("current_academic_year") - 1 }} as academic_year
     ),
 
     app_rollup as (
@@ -16,10 +16,51 @@ with
             max(is_accepted_aa) as is_accepted_aa,
             max(is_accepted_ba) as is_accepted_ba,
             max(is_accepted_certificate) as is_accepted_certificate,
+            max(is_early_action_decision) as is_early_action_decision,
 
             sum(if(is_submitted, 1, 0)) as n_submitted,
             sum(if(is_accepted, 1, 0)) as n_accepted,
 
+            max(
+                case
+                    when is_early_action_decision and is_submitted and is_accepted
+                    then true
+                    when is_early_action_decision and is_submitted and not is_accepted
+                    then false
+                end
+            ) as is_accepted_early,
+            max(
+                case
+                    when
+                        is_early_action_decision
+                        and is_submitted
+                        and is_accepted
+                        and adjusted_6_year_minority_graduation_rate >= 60
+                    then true
+                    when
+                        is_early_action_decision
+                        and is_submitted
+                        and not is_accepted
+                        and adjusted_6_year_minority_graduation_rate >= 60
+                    then false
+                end
+            ) as is_accepted_early_ecc_60_plus,
+            max(
+                case
+                    when
+                        is_early_action_decision
+                        and is_submitted
+                        and is_accepted
+                        and adjusted_6_year_minority_graduation_rate >= 90
+                    then true
+                    when
+                        is_early_action_decision
+                        and is_submitted
+                        and not is_accepted
+                        and adjusted_6_year_minority_graduation_rate >= 90
+                    then false
+                end
+            ) as is_accepted_early_ecc_90_plus,
             round(
                 avg(
                     case
@@ -268,6 +309,23 @@ with
         from {{ ref("base_powerschool__student_enrollments") }}
         where rn_year = 1
         group by student_number
+    ),
+
+    bgp as (
+        select
+            contact,
+            subject as bgp,
+            row_number() over (partition by contact order by date desc) as rn_bgp,
+        from {{ ref("stg_kippadb__contact_note") }}
+        where
+            subject in (
+                'BGP: 2-year',
+                'BGP: 4-year',
+                'BGP: CTE',
+                'BGP: Workforce',
+                'BGP: Unknown',
+                'BGP: Military'
+            )
     )
 
 select
@@ -361,6 +419,10 @@ select
     ar.ecc_matriculated_min,
     ar.ecc_accepted_avg,
     ar.ecc_accepted_min,
+    ar.is_early_action_decision,
+    ar.is_accepted_early,
+    ar.is_accepted_early_ecc_60_plus,
+    ar.is_accepted_early_ecc_90_plus,
 
     cnr.as1,
     cnr.as2,
@@ -525,6 +587,30 @@ select
 
     case
         when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
+        then 1
+        else 0
+    end as is_4yr_aa_grad_int,
+
+    case
+        when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 5), 08, 31)
+        then 1
+        else 0
+    end as is_5yr_aa_grad_int,
+
+    case
+        when
+            ei.aa_status = 'Graduated'
+            and ei.aa_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
+        then 1
+        else 0
+    end as is_6yr_aa_grad_int,
+
+    case
+        when
             ei.cte_status = 'Graduated'
             and ei.cte_actual_end_date <= date((c.ktc_cohort + 1), 08, 31)
         then 1
@@ -541,11 +627,69 @@ select
 
     case
         when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 3), 08, 31)
+        then 1
+        else 0
+    end as is_3yr_cte_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
+        then 1
+        else 0
+    end as is_4yr_cte_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 5), 08, 31)
+        then 1
+        else 0
+    end as is_5yr_cte_grad_int,
+
+    case
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
+        then 1
+        else 0
+    end as is_6yr_cte_grad_int,
+
+    case
+        when
             ei.ugrad_status = 'Graduated'
             and ei.ugrad_actual_end_date <= current_date('America/New_York')
         then 1
         else 0
     end as is_grad_ever,
+
+    case
+        when
+            ei.ugrad_status = 'Graduated'
+            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
+        then 1
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
+        then 1
+        else 0
+    end as is_6yr_ugrad_cte_grad_int,
+
+    case
+        when
+            ei.ugrad_status = 'Graduated'
+            and ei.ugrad_actual_end_date
+            <= date_add(c.contact_birthdate, interval 25 year)
+        then 1
+        when
+            ei.cte_status = 'Graduated'
+            and ei.cte_actual_end_date
+            <= date_add(c.contact_birthdate, interval 25 year)
+        then 1
+        else 0
+    end as is_24yo_ugrad_cte_grad_int,
 
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
@@ -589,6 +733,7 @@ select
         true,
         false
     ) as has_ecc_enrollment,
+    coalesce(bg.bgp, 'No BGP') as bgp,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -635,6 +780,7 @@ left join
 left join persist_pivot as p on c.contact_id = p.sf_contact_id
 left join matriculation_type as m on apps.account_type = m.application_account_type
 left join es_grad as e on e.student_number = c.student_number
+left join bgp as bg on c.contact_id = bg.contact and bg.rn_bgp = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null

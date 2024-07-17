@@ -11,25 +11,10 @@ dagsterCloud:
   # organization.
   branchDeployments: true
 
-  # Optionally specify the timeout in seconds to use when making requests to Dagster
-  # Cloud servers.
-  timeout: 4
-
-  # Optionally specify the number of retries to use when an HTTPS request to Dagster Cloud servers
-  # fails with a retryable error.
-  retries: 15
-
 ########################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ########################################################################################
 dagsterCloudAgent:
-  resources:
-    requests:
-      cpu: 250m
-      memory: 1.0Gi
-    limits:
-      cpu: 250m
-      memory: 1.0Gi
   nodeSelector:
     cloud.google.com/gke-placement-group: servers
     cloud.google.com/compute-class: Balanced
@@ -69,6 +54,17 @@ workspace:
   serverTTL:
     branchDeployments:
       ttlSeconds: 300
+
+  # Specifies the timeout in seconds the agent should use when waiting for a code
+  # server to be ready after the Kubernetes deployment is created. If not set, defaults
+  # to 180 seconds.
+  # This timeout should be increased if your code locations can take more than 3
+  # minutes to load your Dagster definitions.
+  serverProcessStartupTimeout: 600
+
+  # Specifies the timeout when creating a new Kubernetes deployment for a code server.
+  # If not set, defaults to 300 seconds.
+  deploymentStartupTimeout: 600
 
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
@@ -112,290 +108,12 @@ extraManifests:
       selector:
         matchLabels:
           location_name: kippnewark
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
     metadata:
-      name: op-achieve3k-sftp
-      namespace: dagster-cloud
+      name: pdb-kipptaf
     spec:
-      itemPath: vaults/Data Team/items/Achieve 3000 SFTP
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-adp-wfn-sftp
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/ADP Workforce Now SFTP
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-adp-wfm-api
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/ADP Workforce Manager API
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-adp-wfn-api
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/ADP Workforce Now API
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-airbyte-api
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Airbyte API
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-alchemer-api
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Alchemer API
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-amplify-service-account
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Amplify Service Account
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-blissbook-sftp
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Blissbook SFTP
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-clever-sftp
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Clever SFTP - Uploads
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-couchdrop-sftp
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Couchdrop SFTP - Data Robot
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-coupa-sftp
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Coupa SFTP
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-deanslist-sftp
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/DeansList SFTP
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-egencia-sftp
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Egencia SFTP
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-fivetran-api
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Fivetran API
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-illuminate-sftp
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Illuminate SFTP
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-iready-sftp
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/iReady SFTP
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-edplan-sftp-kippcamden
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/edplan SFTP - Camden
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-ps-db-kippcamden
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/PowerSchool DB - Camden
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-ps-ssh-kippcamden
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/PowerSchool SSH - Camden
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-titan-sftp-kippcamden
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Titan SFTP - Camden
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-ps-db-kippmiami
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/PowerSchool DB - Miami
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-ps-ssh-kippmiami
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/PowerSchool SSH - Miami
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-renlearn-sftp-kippmiami
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/RenLearning SFTP Exports - Miami
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-edplan-sftp-kippnewark
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/edplan SFTP - Newark
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-ps-db-kippnewark
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/PowerSchool DB - Newark
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-ps-ssh-kippnewark
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/PowerSchool SSH - Newark
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-titan-sftp-kippnewark
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Titan SFTP - Newark
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-renlearn-sftp-kippnj
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/RenLearning SFTP Exports - NJ
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-idauto-sftp
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/ID Auto SFTP
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-ldap-service-account
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Active Directory Service Account
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-littlesis-sftp
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Little SIS SFTP
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-schoolmint-grow-api
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/SchooMint Grow API
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-smartrecruiters-api
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/SmartRecruiters API
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-ps-db-staging
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/PowerSchool DB - Test
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-ps-ssh-staging
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/PowerSchool SSH - Test
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-zendesk-api
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Zendesk API
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-deanslist-api
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/DeansList API
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-gcp-service-account-dbt
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/GCP Service Account - dbt
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-gcp-service-account-teamster
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/GCP Service Account - TEAMster
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-tableau-server-api
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Tableau Server PAT - Dagster
-  - apiVersion: onepassword.com/v1
-    kind: OnePasswordItem
-    metadata:
-      name: op-illuminate-odbc
-      namespace: dagster-cloud
-    spec:
-      itemPath: vaults/Data Team/items/Illuminate ODBC
+      maxUnavailable: 0
+      selector:
+        matchLabels:
+          location_name: kipptaf

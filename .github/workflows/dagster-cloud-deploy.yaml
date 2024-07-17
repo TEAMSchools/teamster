@@ -13,15 +13,15 @@ on:
       python-version:
         type: string
         required: false
-        default: "3.12"
+        default: 3.12.3
       dbt-version:
         type: string
         required: false
-        default: "1.7"
+        default: 1.8
 
 concurrency:
   # Cancel in-progress deploys to the same branch
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -31,7 +31,8 @@ env:
   REGISTRY_IMAGE:
     ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster/${{
     inputs.code-location }}
-  DAGSTER_CLOUD_YAML_PATH: src/teamster/${{ inputs.code-location }}/dagster-cloud.yaml
+  DAGSTER_CLOUD_YAML_PATH:
+    src/teamster/code_locations/${{ inputs.code-location }}/dagster-cloud.yaml
   IMAGE_TAG:
     ${{ inputs.code-location }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
 
@@ -42,7 +43,7 @@ permissions:
 
 jobs:
   prerun:
-    runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
+    runs-on: ubuntu-20.04
     outputs:
       result: ${{ steps.prerun.outputs.result }}
     steps:
@@ -71,7 +72,9 @@ jobs:
           cache: pip
 
       - name: Install dbt
-        run: pip install setuptools "dbt-bigquery>=${{ inputs.dbt-version }}"
+        run:
+          pip install setuptools "dbt-adapters!=1.3.0" "dbt-core>=${{ inputs.dbt-version }}"
+          "dbt-bigquery>=${{ inputs.dbt-version }}"
 
       - name: dbt deps
         run: dbt deps --project-dir=./src/dbt/${{ inputs.code-location }}
@@ -150,7 +153,7 @@ jobs:
       # https://github.com/docker/build-push-action
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           cache-from: type=gha,scope=build-${{ env.PLATFORM_PAIR }}
@@ -184,7 +187,7 @@ jobs:
       - prerun
       - dbt
       - build
-    if: needs.prerun.outputs.result != 'skip'
+    if: needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
     steps:
       # https://github.com/actions/download-artifact
       - name: Download digests
@@ -224,20 +227,21 @@ jobs:
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }}
 
-      # https://github.com/GoogleCloudPlatform/gcr-cleaner
-      - uses: docker://us-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
-        with:
-          args: >-
-            -repo=us-central1-docker.pkg.dev/teamster-332318/teamster/${{ inputs.code-location }}
-            -keep=1 -tag-filter-any=.* -grace=30m
+      # # https://github.com/GoogleCloudPlatform/gcr-cleaner/blob/main/docs/deploy-github-actions.md
+      # - uses: docker://us-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
+      #   with:
+      #     args: >-
+      #       -repo=us-central1-docker.pkg.dev/teamster-332318/teamster/${{ inputs.code-location }}
+      #       -keep=5 -tag-filter-any=.*
 
   deploy:
-    runs-on: ubuntu-20.04 # dagster ci requires python 3.8 default
+    runs-on: ubuntu-20.04
     needs:
       - prerun
       - dbt
       - build
       - merge
+    if: github.actor != 'dependabot[bot]'
     steps:
       # https://github.com/actions/checkout
       - name: Checkout
@@ -304,7 +308,7 @@ jobs:
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Generate a summary
         id: ci-summary
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1.27
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
         if: needs.prerun.outputs.result != 'skip' && always()
         with:
           command: ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY

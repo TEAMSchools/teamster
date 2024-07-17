@@ -1,4 +1,5 @@
 select
+    os.employee_number,
     os.academic_year,
     os.form_term,
     os.etr_score,
@@ -6,6 +7,8 @@ select
     os.overall_score,
     os.form_long_name,
     os.form_short_name,
+    os.observation_id,
+    os.rubric_id,
 
     ds.score_type,
     ds.observer_employee_number,
@@ -13,8 +16,6 @@ select
     ds.observed_at,
     ds.measurement_name,
     ds.row_score_value,
-
-    safe_cast(os.employee_number as string) as employee_number,
 from {{ ref("stg_performance_management__scores_overall_archive") }} as os
 inner join
     {{ ref("stg_performance_management__scores_detail_archive") }} as ds

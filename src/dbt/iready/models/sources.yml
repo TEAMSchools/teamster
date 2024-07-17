@@ -9,6 +9,12 @@ sources:
       - stage_external_sources
     tables:
       - name: src_iready__diagnostic_results
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - iready
+              - diagnostic_results
         external:
           location: "{{ var('cloud_storage_uri_base') }}/iready/diagnostic_results/*"
           options:
@@ -17,6 +23,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_iready__diagnostic_and_instruction
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - iready
+              - diagnostic_and_instruction
         external:
           location: "{{ var('cloud_storage_uri_base') }}/iready/diagnostic_and_instruction/*"
           options:
@@ -25,6 +37,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_iready__instructional_usage_data
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - iready
+              - instructional_usage_data
         external:
           location: "{{ var('cloud_storage_uri_base') }}/iready/instructional_usage_data/*"
           options:
@@ -33,6 +51,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_iready__personalized_instruction_by_lesson
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - iready
+              - personalized_instruction_by_lesson
         external:
           location:
             "{{ var('cloud_storage_uri_base') }}/iready/personalized_instruction_by_lesson/*"

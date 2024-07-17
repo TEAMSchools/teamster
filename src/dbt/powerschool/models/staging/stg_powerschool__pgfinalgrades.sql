@@ -27,8 +27,12 @@
 
 grade_fix as (
     select
-        * except (grade, `percent`),
+        * except (grade, citizenship, comment_value, `percent`),
+
         nullif(grade, '--') as grade,
+        nullif(citizenship, '') as citizenship,
+        nullif(comment_value, '') as comment_value,
+
         if(grade = '--', null, `percent`) as `percent`,
     from staging
 ),

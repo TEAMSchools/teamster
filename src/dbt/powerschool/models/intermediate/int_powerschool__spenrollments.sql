@@ -1,49 +1,29 @@
-with
-    spenrollments_gen as (  -- noqa: ST03
-        select
-            sp.dcid,
-            sp.id,
-            sp.studentid,
-            sp.programid,
-            sp.gradelevel,
-            sp.sp_comment,
-            sp.enter_date,
-            sp.exit_date,
-            sp.exitcode,
-            {{
-                teamster_utils.date_to_fiscal_year(
-                    date_field="sp.enter_date", start_month=7, year_source="start"
-                )
-            }} as academic_year,
-
-            gen.name as specprog_name,
-        from {{ ref("stg_powerschool__spenrollments") }} as sp
-        inner join
-            {{ ref("stg_powerschool__gen") }} as gen
-            on sp.programid = gen.id
-            and gen.cat = 'specprog'
-    ),
-
-    deuplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="spenrollments_gen",
-                partition_by="studentid, programid, academic_year",
-                order_by="enter_date desc",
-            )
-        }}
-    )
+{%- set self_contained_specprog_names = [
+    "Self-Contained Special Education",
+    "Pathways ES",
+    "Pathways MS",
+] -%}
 
 select
-    dcid,
-    id,
-    studentid,
-    programid,
-    gradelevel,
-    sp_comment,
-    enter_date,
-    exit_date,
-    exitcode,
-    academic_year,
-    specprog_name,
-from deuplicate
+    sp.dcid,
+    sp.id,
+    sp.studentid,
+    sp.programid,
+    sp.gradelevel,
+    sp.sp_comment,
+    sp.enter_date,
+    sp.exit_date,
+    sp.exitcode,
+    sp.academic_year,
+
+    gen.name as specprog_name,
+
+    if(gen.name = 'Out of District', true, false) as is_out_of_district,
+    if(
+        gen.name in unnest({{ self_contained_specprog_names }}), true, false
+    ) as is_self_contained,
+from {{ ref("stg_powerschool__spenrollments") }} as sp
+inner join
+    {{ ref("stg_powerschool__gen") }} as gen
+    on sp.programid = gen.id
+    and gen.cat = 'specprog'

@@ -1,9 +1,17 @@
 name: Trunk Check
 
-on: [pull_request]
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
+    paths-ignore:
+      - requirements.txt
 
 concurrency:
-  group: ${{ github.head_ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions: read-all
@@ -18,7 +26,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Trunk Check
         uses: trunk-io/trunk-action@v1
+        with:
+          arguments: --exclude=pyright

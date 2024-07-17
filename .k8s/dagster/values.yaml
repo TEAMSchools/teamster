@@ -66,6 +66,23 @@ dagsterCloud:
   # servers fails with a retryable error.
   # backoffFactor: 0.5
 
+  # Optionally customize the socket_options that are passed in to the underlying HTTP connection
+  # pool used to send HTTP requests to Dagster Cloud.
+  #
+  # See https://urllib3.readthedocs.io/en/stable/reference/urllib3.connection.html for the expected
+  # format. socketOptions should be a list of lists, where each inner list has three elements. The
+  # list values can either be string name of socket attributes (like "IPPROTO_TCP") or the integer
+  # value of that attribute. Omitting the `socketOptions` key will use the default urllib3 socket
+  # options (setting TCP_NODELAY to 1) - be sure to explicitly include
+  # ["IPPROTO_TCP", "TCP_NODELAY", 1] if you are overridding socketOptions and want to include
+  # the default options as well.
+  #
+  # Example:
+  # socketOptions:
+  #   - ["IPPROTO_TCP", "TCP_NODELAY", 1]
+  #   - ["SOL_SOCKET", "SO_KEEPALIVE", 1],
+  #   - [6, 257, 7]
+
   # Optionally configure the agent process requests for code locations annotated with a specific agent queue.
   # Examples:
   #
@@ -92,10 +109,6 @@ dagsterCloudAgent:
     # When a tag field is specified as nil, it will default as the Helm chart version
     tag: ~
     pullPolicy: "Always"
-
-  # heartbeatTolerance is used to set how long the agent will run for without a hearbeat from the
-  # hosted cloud. Set heartbeatTolerance to overwrite the default.
-  # heartbeatTolerance: 300
 
   # initContainers are used for testing, since the host cloud will not be available while it is starting
   initContainers: []
@@ -133,6 +146,13 @@ dagsterCloudAgent:
   #   ENV_TWO: two
   env: {}
 
+  # Additional sources of environment variables on the agent container. Follows the
+  # same format as the `envFrom` dictionary in a Kubernes pod container. Note that this
+  # configuration will not automatically be included in other pods that the agent
+  # creates - see the `workspace` section below to specify environment variables in those
+  # pods.
+  envFrom: []
+
   annotations: {}
   labels: {}
   nodeSelector: {}
@@ -169,6 +189,11 @@ dagsterCloudAgent:
   # Additional volumes for the agent pod and volumeMounts for the container.
   # volumes:
   # volumeMounts:
+
+  # Additional agent pod spec configuration that is not covered by a field above.
+  # Example:
+  # additionalPodSpecConfig:
+  #   priorityClassName: high-priority
 
 ####################################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
@@ -260,7 +285,7 @@ workspace:
 
   # Specifies the timeout when creating a new Kubernetes deployment for a code server.
   #
-  # If not set, defaults to 5 minutes.
+  # If not set, defaults to 300 seconds.
   deploymentStartupTimeout: ~
 
   # Specifies an amount of time that the agent will wait for an image to fail to pull

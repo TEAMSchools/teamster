@@ -1,7 +1,7 @@
 import pendulum
 from dagster import build_resources
 from dagster_gcp import BigQueryResource
-from google.cloud.bigquery import Client
+from google.cloud.bigquery import Client as BigQueryClient
 
 
 def render_fivetran_audit_query(dataset, done):
@@ -18,7 +18,7 @@ def test_resource():
     with build_resources(
         resources={"db_bigquery": BigQueryResource(project="teamster-332318")}
     ) as resources:
-        db_bigquery: Client = next(resources.db_bigquery)
+        db_bigquery: BigQueryClient = next(resources.db_bigquery)
 
     query_job = db_bigquery.query(
         query=render_fivetran_audit_query(

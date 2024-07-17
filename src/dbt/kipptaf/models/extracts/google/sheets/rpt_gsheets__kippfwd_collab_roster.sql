@@ -1,16 +1,39 @@
 with
-    ccdm as (  -- noqa: ST03
-        select contact, `date`,
-        from {{ ref("stg_kippadb__contact_note") }}
-        where `subject` = 'CCDM'
+    matriculated_application as (
+        select
+            applicant,
+            id as application_id,
+            name as application_name,
+            matriculation_decision,
+            type as application_type,
+            intended_degree_type,
+            account_name as application_account_name,
+            adjusted_6_year_minority_graduation_rate,
+
+            row_number() over (partition by applicant order by id asc) as rn_applicant,
+        from {{ ref("base_kippadb__application") }}
+        where matriculation_decision = 'Matriculated (Intent to Enroll)'
     ),
 
-    ccdm_deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="ccdm", partition_by="contact", order_by="date desc"
-            )
-        }}
+    financial_aid_recent as (
+        select
+            enrollment,
+            unmet_need,
+            pell_grant,
+            tap as tag,
+            state_grant,
+            parent_plus_loan,
+            stafford_loan_subsidized,
+            stafford_loan_unsubsidized,
+            other_private_loan,
+
+            coalesce(parent_plus_loan, 0)
+            + coalesce(stafford_loan_subsidized, 0)
+            + coalesce(stafford_loan_unsubsidized, 0)
+            + coalesce(other_private_loan, 0) as total_loan_amount,
+
+            row_number() over (partition by enrollment order by name desc) as rn_award,
+        from {{ ref("stg_kippadb__subsequent_financial_aid_award") }}
     )
 
 select  -- noqa: disable=ST06
@@ -43,7 +66,7 @@ select  -- noqa: disable=ST06
     ) as `Mailing Address`,
     if(ktc.contact_most_recent_iep_date is not null, true, false) as `IEP`,
     ktc.powerschool_is_504 as `504 Plan`,
-    ktc.contact_df_has_fafsa as `FAFSA Complete`,
+    if(ktc.contact_latest_fafsa_date >= '2023-11-01', 'Yes', 'No') as `FAFSA Complete`,
     if(
         ktc.contact_latest_state_financial_aid_app_date is not null, 'Yes', 'No'
     ) as `HESAA Complete`,
@@ -52,40 +75,70 @@ select  -- noqa: disable=ST06
     ktc.contact_college_match_display_gpa as college_match_display_gpa,
     ktc.contact_highest_act_score as highest_act_score,
 
-    app.id as application_id,
-    app.name as application_name,
+    app.application_id,
+    app.application_name,
     app.matriculation_decision,
 
-    if(cn.contact is null, 'No', 'Yes') as `CCDM Complete`,
+    coalesce(cn.ccdm, 0) as `CCDM Complete`,
 
-    if(ktc.contact_college_match_display_gpa >= 3.0, 1, 0) as gpa_higher_than_3,
+    app.application_account_name,
+    app.application_type,
+    app.intended_degree_type,
 
-    if(ac.x6_yr_minority_completion_rate < 50, 1, 0) as minor_grad_rate_under50,
+    fa.unmet_need,
+    fa.pell_grant,
+    fa.tag,
+    fa.parent_plus_loan,
+    fa.stafford_loan_subsidized,
+    fa.stafford_loan_unsubsidized,
+    fa.other_private_loan,
+    fa.total_loan_amount,
 
-    if(
-        ktc.contact_college_match_display_gpa between 2.5 and 2.9, 1, 0
-    ) as gpa_between_25_29,
-
-    if(ac.x6_yr_minority_completion_rate < 40, 1, 0) as minor_grad_rate_under40,
-
-    if(
-        ktc.contact_college_match_display_gpa >= 3.0
-        and ac.x6_yr_minority_completion_rate < 50,
-        1,
-        0
-    ) as undermatch_3gpa,
-    if(
-        ktc.contact_college_match_display_gpa between 2.5 and 2.9
-        and ac.x6_yr_minority_completion_rate < 40,
-        1,
-        0
-    ) as undermatch_25_29gpa,
+    case
+        when ktc.contact_college_match_display_gpa >= 3.50
+        then '3.50+'
+        when ktc.contact_college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when ktc.contact_college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when ktc.contact_college_match_display_gpa >= 2.00
+        then '2.00-2.50'
+        when ktc.contact_college_match_display_gpa < 2.00
+        then '<2.00'
+    end as hs_gpa_bands,
+    case
+        when
+            ktc.contact_college_match_display_gpa >= 3.50
+            and round(app.adjusted_6_year_minority_graduation_rate, 0) < 68
+        then true
+        when
+            ktc.contact_college_match_display_gpa >= 3.00
+            and round(app.adjusted_6_year_minority_graduation_rate, 0) < 60
+        then true
+        when
+            ktc.contact_college_match_display_gpa >= 2.50
+            and round(app.adjusted_6_year_minority_graduation_rate, 0) < 55
+        then true
+        when
+            ktc.contact_college_match_display_gpa < 2.50
+            or ktc.contact_college_match_display_gpa is null
+            or app.adjusted_6_year_minority_graduation_rate is null
+        then null
+        else false
+    end as is_undermatch,
+    fa.state_grant,
 from {{ ref("int_kippadb__roster") }} as ktc
 left join
-    {{ ref("base_kippadb__application") }} as app
+    matriculated_application as app
     on ktc.contact_id = app.applicant
-    and app.matriculation_decision = 'Matriculated (Intent to Enroll)'
+    and app.rn_applicant = 1
 left join
     {{ ref("int_kippadb__enrollment_pivot") }} as ei on ktc.contact_id = ei.student
-left join {{ ref("stg_kippadb__account") }} as ac on ei.ugrad_nces_id = ac.nces_id
-left join ccdm_deduplicate as cn on ktc.contact_id = cn.contact
+left join
+    {{ ref("int_kippadb__contact_note_rollup") }} as cn
+    on ktc.contact_id = cn.contact_id
+    and cn.academic_year = {{ var("current_academic_year") }}
+left join
+    financial_aid_recent as fa
+    on ei.ugrad_enrollment_id = fa.enrollment
+    and fa.rn_award = 1
