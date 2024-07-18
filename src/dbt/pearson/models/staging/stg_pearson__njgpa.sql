@@ -94,6 +94,5 @@ select
         when 1
         then 'Not Yet Graduation Ready'
     end as testperformancelevel_text,
-
 from {{ src_njgpa }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'
