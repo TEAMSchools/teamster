@@ -1,57 +1,75 @@
-select
-    application_id,
-    candidate_id,
-    candidate_first_name,
-    candidate_last_name,
-    candidate_email,
-    candidate_source,
-    candidate_source_type,
-    candidate_source_subtype,
-    department_internal,
-    job_title,
-    job_city,
-    recruiters,
-    source,
-    source_type,
-    source_subtype,
-    application_field_job_title,
-    application_field_application_review_score as application_review_score,
-    application_field_phone_interview_score as phone_interview_score,
-    application_field_resume_score as resume_score,
-    application_reason_for_rejection as reason_for_rejection,
-    application_reason_for_withdrawal as reason_for_withdrawal,
-    application_state,
-    application_state_in_review_date as in_review_date,
-    application_state_interview_date as interview_date,
-    application_state_lead_date,
-    application_state_transferred_date,
-    application_state_withdrawn_date,
-    application_status,
-    application_status_before_rejection as before_rejection,
-    application_status_before_withdrawal as before_withdrawal,
-    application_status_in_review_performance_task_date
-    as in_review_performance_task_date,
-    application_status_in_review_resume_review_date as in_review_resume_review_date,
-    application_status_interview_performance_task_date as performance_task_date,
-    time_in_application_state_in_review,
-    time_in_application_state_interview,
-    time_in_application_state_lead,
-    time_in_application_state_new,
-    time_in_application_state_offered,
-    time_in_application_status_in_review_resume_review,
-    time_in_application_status_interview_demo,
-    time_in_application_status_interview_phone_screen_complete,
-    time_in_application_status_interview_phone_screen_requested,
+with
+    applications as (
+        select
+            application_id,
+            candidate_id,
+            candidate_first_name,
+            candidate_last_name,
+            candidate_email,
+            candidate_source,
+            candidate_source_type,
+            candidate_source_subtype,
+            department_internal,
+            job_title,
+            job_city,
+            recruiters,
+            source,
+            source_type,
+            source_subtype,
+            application_field_job_title,
+            application_field_application_review_score as application_review_score,
+            application_field_phone_interview_score as phone_interview_score,
+            application_field_resume_score as resume_score,
+            application_reason_for_rejection as reason_for_rejection,
+            application_reason_for_withdrawal as reason_for_withdrawal,
+            application_state,
+            application_state_in_review_date as in_review_date,
+            application_state_interview_date as interview_date,
+            application_state_lead_date,
+            application_state_transferred_date,
+            application_state_withdrawn_date,
+            application_status,
+            application_status_before_rejection as before_rejection,
+            application_status_before_withdrawal as before_withdrawal,
+            application_status_in_review_performance_task_date
+            as in_review_performance_task_date,
+            application_status_in_review_resume_review_date
+            as in_review_resume_review_date,
+            application_status_interview_performance_task_date as performance_task_date,
+            time_in_application_state_in_review,
+            time_in_application_state_interview,
+            time_in_application_state_lead,
+            time_in_application_state_new,
+            time_in_application_state_offered,
+            time_in_application_status_in_review_resume_review,
+            time_in_application_status_interview_demo,
+            time_in_application_status_interview_phone_screen_complete,
+            time_in_application_status_interview_phone_screen_requested,
 
-    cast(application_state_hired_date as timestamp) as hired_date_timestamp,
-    cast(application_state_new_date as timestamp) as new_date_timestamp,
-    cast(application_state_offer_date as timestamp) as offer_date_timestamp,
-    cast(application_state_rejected_date as timestamp) as rejected_date_timestamp,
-    cast(application_status_interview_demo_date as timestamp) as demo_date_timestamp,
-    cast(
-        application_status_interview_phone_screen_complete_date as timestamp
-    ) as phone_screen_complete_date_timestamp,
-    cast(
-        application_status_interview_phone_screen_requested_date as timestamp
-    ) as phone_screen_requested_date_timestamp,
-from {{ source("smartrecruiters", "src_smartrecruiters__applications") }}
+            cast(application_state_hired_date as timestamp) as hired_date_timestamp,
+            cast(application_state_new_date as timestamp) as new_date_timestamp,
+            cast(application_state_offer_date as timestamp) as offer_date_timestamp,
+            cast(
+                application_state_rejected_date as timestamp
+            ) as rejected_date_timestamp,
+            cast(
+                application_status_interview_demo_date as timestamp
+            ) as demo_date_timestamp,
+            cast(
+                application_status_interview_phone_screen_complete_date as timestamp
+            ) as phone_screen_complete_date_timestamp,
+            cast(
+                application_status_interview_phone_screen_requested_date as timestamp
+            ) as phone_screen_requested_date_timestamp,
+        from {{ source("smartrecruiters", "src_smartrecruiters__applications") }}
+    )
+
+select
+    a.*,
+
+    cast(new_date_timestamp as date) as new_date,
+    cast(phone_screen_complete_date_timestamp as date) as phone_screen_requested_date,
+    cast(demo_date_timestamp as date) as demo_date,
+    cast(offer_date_timestamp as date) as offer_date,
+    cast(hired_date_timestamp as date) as hired_date,
+from applications as a
