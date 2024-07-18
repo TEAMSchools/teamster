@@ -74,5 +74,9 @@ select
     ) as testadministrator,
 
     safe_cast(left(assessmentyear, 4) as int) as academic_year,
+
+    if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
+
+    if(`period` = 'FallBlock', 'Fall', `period`) as season,
 from {{ src_njgpa }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'
