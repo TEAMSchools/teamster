@@ -80,11 +80,13 @@ select
 
     'NJGPA' as assessment_name,
 
-    if(testperformancelevel = 2, true, false) as is_proficient,
+    if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
 
     if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
 
     if(`period` = 'FallBlock', 'Fall', `period`) as season,
+
+    if(testperformancelevel = 2, true, false) as is_proficient,
 
     case
         testperformancelevel

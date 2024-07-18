@@ -125,5 +125,28 @@ select
     ) as shipreportdistrictcode,
 
     safe_cast(left(assessmentyear, 4) as int) as academic_year,
+
+    safe_cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
+
+    'PARCC' as assessment_name,
+
+    if(`subject` = 'English Language Arts/Literacy', 'ELA', 'Math') as discipline,
+
+    if(testperformancelevel >= 4, true, false) as is_proficient,
+
+    case
+        testperformancelevel
+        when 5
+        then 'Exceeded Expectations'
+        when 4
+        then 'Met Expectations'
+        when 3
+        then 'Approached Expectations'
+        when 2
+        then 'Partially Met Expectations'
+        when 1
+        then 'Did Not Yet Meet Expectations'
+    end as testperformancelevel_text,
+
 from {{ src_parcc }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'

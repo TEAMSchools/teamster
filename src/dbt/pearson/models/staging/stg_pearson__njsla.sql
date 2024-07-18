@@ -102,15 +102,31 @@ select
 
     safe_cast(left(assessmentyear, 4) as int) as academic_year,
 
-                case
-                when
-                    `subject`
-                    in ('English Language Arts', 'English Language Arts/Literacy')
-                then 'ELA'
-                when `subject` in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
-                then 'Math'
-                when `subject` = 'Science'
-                then 'Science'
-            end as subject_area,
+    safe_cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
+
+    'NJSLA' as assessment_name,
+
+    if(
+        `subject` in ('English Language Arts', 'English Language Arts/Literacy'),
+        'ELA',
+        'Math'
+    ) as discipline,
+
+    if(testperformancelevel >= 4, true, false) as is_proficient,
+
+    case
+        testperformancelevel
+        when 5
+        then 'Exceeded Expectations'
+        when 4
+        then 'Met Expectations'
+        when 3
+        then 'Approached Expectations'
+        when 2
+        then 'Partially Met Expectations'
+        when 1
+        then 'Did Not Yet Meet Expectations'
+    end as testperformancelevel_text,
+
 from {{ src_parcc }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'

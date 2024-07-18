@@ -100,6 +100,7 @@ select
     safe_cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
     'NJSLA Science' as assessment_name,
+    'Science' as discipline,
 
     if(testperformancelevel >= 3, true, false) as is_proficient,
 
