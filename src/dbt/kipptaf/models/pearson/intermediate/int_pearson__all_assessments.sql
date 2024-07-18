@@ -71,17 +71,6 @@ with
                 then 'W'
             end as race_ethnicity,
 
-            case
-                when
-                    `subject`
-                    in ('English Language Arts', 'English Language Arts/Literacy')
-                then 'ELA'
-                when `subject` in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
-                then 'Math'
-                when `subject` = 'Science'
-                then 'Science'
-            end as subject_area,
-
         from union_relations
     )
 
@@ -92,9 +81,9 @@ select
     assessmentyear,
     academic_year,
     `period`,
+    discipline,
     testcode,
     `subject`,
-    subject_area,
     assessmentgrade,
     testscalescore,
     testperformancelevel,
