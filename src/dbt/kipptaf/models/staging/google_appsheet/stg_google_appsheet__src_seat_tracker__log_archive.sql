@@ -2,7 +2,7 @@ with
 
     source as (
 
-        select * from {{ source("google_appsheet", "src_seat_tracker__log_archive") }}
+        select *, from {{ source("google_appsheet", "src_seat_tracker__log_archive") }}
 
     ),
 
