@@ -101,5 +101,16 @@ select
     safe_cast(testadministrator as string) as testadministrator,
 
     safe_cast(left(assessmentyear, 4) as int) as academic_year,
+
+                case
+                when
+                    `subject`
+                    in ('English Language Arts', 'English Language Arts/Literacy')
+                then 'ELA'
+                when `subject` in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
+                then 'Math'
+                when `subject` = 'Science'
+                then 'Science'
+            end as subject_area,
 from {{ src_parcc }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'
