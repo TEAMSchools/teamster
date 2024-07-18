@@ -535,6 +535,7 @@ select
     g.organization_goal,
 
     sf.nj_student_tier,
+    sf.tutoring_nj,
 
     m.teacher_name,
     m.course_number,
@@ -608,6 +609,7 @@ select
     g.organization_goal,
 
     sf.nj_student_tier,
+    sf.tutoring_nj,
 
     m.teacher_name,
     m.course_number,
@@ -678,6 +680,7 @@ select
     region_goal,
     organization_goal,
     nj_student_tier,
+    tutoring_nj,
     teacher_name,
     course_number,
     course_name,
