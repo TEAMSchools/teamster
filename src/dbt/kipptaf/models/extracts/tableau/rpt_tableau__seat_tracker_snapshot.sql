@@ -15,6 +15,6 @@ select
     ) as snapshot_new_hire,
     if(snapshot_staffing_status = 'Staffed', 1, 0) as snapshot_staffed,
     if(snapshot_plan_status = 'Active', 1, 0) as snapshot_active,
-    if(snapshot_mid_year_hire = true, 1, 0) as snapshot_mid_year_hire,
+    if(snapshot_mid_year_hire = true, 1, 0) as snapshot_mid_year_hire_int,
 
 from {{ ref("stg_google_appsheet__src_seat_tracker__log_archive") }}
