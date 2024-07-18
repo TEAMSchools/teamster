@@ -13,10 +13,9 @@ def fivetran_external_assets_from_specs(config_file: pathlib.Path, code_location
 
     config = yaml.safe_load(config_file.read_text())
 
-    connector_name = config["connector_name"]
-    connector_id = config["connector_id"]
+    connector_name, connector_id, group_name, schemas = config.values()
 
-    for schema in config["schemas"]:
+    for schema in schemas:
         asset_key_prefix = [code_location, connector_name]
 
         schema_name = schema.get("name")
@@ -28,8 +27,13 @@ def fivetran_external_assets_from_specs(config_file: pathlib.Path, code_location
             specs.append(
                 AssetSpec(
                     key=AssetKey([*asset_key_prefix, table]),
-                    group_name=config.get("group_name", connector_name),
-                    metadata={"connector_id": connector_id},
+                    group_name=group_name,
+                    metadata={
+                        "connector_id": connector_id,
+                        "connector_name": connector_name,
+                        "schema_name": schema_name,
+                        "table_name": table,
+                    },
                 )
             )
 
