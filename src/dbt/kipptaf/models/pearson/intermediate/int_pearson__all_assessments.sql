@@ -78,8 +78,8 @@ with
 
 select
     _dbt_source_relation,
-    assessment_name,
     statestudentidentifier,
+    assessment_name,
     assessmentyear,
     academic_year,
     `period`,
