@@ -20,8 +20,6 @@ select
 
     b.candidate_last_first,
     b.candidate_email,
-    b.certification_in_state,
-    b.certification_out_of_state,
 from {{ ref("stg_smartrecruiters__applications") }} as a
 left join
     {{ ref("stg_smartrecruiters__applicants") }} as b on a.candidate_id = b.candidate_id
