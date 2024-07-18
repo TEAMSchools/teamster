@@ -95,12 +95,12 @@ select
         )
     }},
 
-    safe_cast(left(assessmentyear, 4) as int) as academic_year,
-
-    safe_cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
-
     'NJSLA Science' as assessment_name,
     'Science' as discipline,
+
+    cast(left(assessmentyear, 4) as int) as academic_year,
+
+    cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
     if(testperformancelevel >= 3, true, false) as is_proficient,
 
@@ -114,7 +114,6 @@ select
         then 'SCI11'
         else testcode
     end as test_code,
-
     case
         testperformancelevel
         when 4
@@ -126,6 +125,5 @@ select
         when 1
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
-
 from {{ src_njsla }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'

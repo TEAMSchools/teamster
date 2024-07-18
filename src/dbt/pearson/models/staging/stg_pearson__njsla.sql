@@ -97,21 +97,20 @@ select
         )
     }},
 
-    safe_cast(staffmemberidentifier as string) as staffmemberidentifier,
-    safe_cast(testadministrator as string) as testadministrator,
-
-    safe_cast(left(assessmentyear, 4) as int) as academic_year,
-
-    safe_cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
-
     'NJSLA' as assessment_name,
+
+    cast(staffmemberidentifier as string) as staffmemberidentifier,
+    cast(testadministrator as string) as testadministrator,
+
+    cast(left(assessmentyear, 4) as int) as academic_year,
+
+    cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
     if(
         `subject` in ('English Language Arts', 'English Language Arts/Literacy'),
         'ELA',
         'Math'
     ) as discipline,
-
     if(testperformancelevel >= 4, true, false) as is_proficient,
 
     case
@@ -127,6 +126,5 @@ select
         when 1
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
-
 from {{ src_parcc }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'

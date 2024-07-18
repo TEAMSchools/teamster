@@ -64,19 +64,18 @@ select
         )
     }},
 
-    safe_cast(
+    cast(
         coalesce(
             staffmemberidentifier.long_value, staffmemberidentifier.double_value
         ) as int
     ) as staffmemberidentifier,
-
-    safe_cast(
+    cast(
         coalesce(testadministrator.long_value, testadministrator.double_value) as int
     ) as testadministrator,
 
-    safe_cast(left(assessmentyear, 4) as int) as academic_year,
+    cast(left(assessmentyear, 4) as int) as academic_year,
 
-    safe_cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
+    cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
     'NJGPA' as assessment_name,
 

@@ -108,76 +108,30 @@ with
                 grade_7_fast_mathematics_percentile_rank.string_value,
                 fast_grade_8_mathematics_percentile_rank.string_value,
                 grade_8_fast_mathematics_percentile_rank.string_value,
-                safe_cast(
-                    fast_grade_3_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    fast_grade_3_mathematics_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    fast_grade_4_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    fast_grade_4_mathematics_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    fast_grade_5_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    fast_grade_5_mathematics_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    fast_grade_6_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    fast_grade_6_mathematics_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    fast_grade_7_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    fast_grade_7_mathematics_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    fast_grade_8_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    fast_grade_8_mathematics_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    grade_3_fast_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    grade_3_fast_mathematics_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    grade_4_fast_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    grade_4_fast_mathematics_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    grade_5_fast_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    grade_5_fast_mathematics_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    grade_6_fast_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    grade_6_fast_mathematics_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    grade_7_fast_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    grade_7_fast_mathematics_percentile_rank.long_value as string
-                ),
-                safe_cast(
-                    grade_8_fast_ela_reading_percentile_rank.long_value as string
-                ),
-                safe_cast(grade_8_fast_mathematics_percentile_rank.long_value as string)
+                cast(fast_grade_3_ela_reading_percentile_rank.long_value as string),
+                cast(fast_grade_3_mathematics_percentile_rank.long_value as string),
+                cast(fast_grade_4_ela_reading_percentile_rank.long_value as string),
+                cast(fast_grade_4_mathematics_percentile_rank.long_value as string),
+                cast(fast_grade_5_ela_reading_percentile_rank.long_value as string),
+                cast(fast_grade_5_mathematics_percentile_rank.long_value as string),
+                cast(fast_grade_6_ela_reading_percentile_rank.long_value as string),
+                cast(fast_grade_6_mathematics_percentile_rank.long_value as string),
+                cast(fast_grade_7_ela_reading_percentile_rank.long_value as string),
+                cast(fast_grade_7_mathematics_percentile_rank.long_value as string),
+                cast(fast_grade_8_ela_reading_percentile_rank.long_value as string),
+                cast(fast_grade_8_mathematics_percentile_rank.long_value as string),
+                cast(grade_3_fast_ela_reading_percentile_rank.long_value as string),
+                cast(grade_3_fast_mathematics_percentile_rank.long_value as string),
+                cast(grade_4_fast_ela_reading_percentile_rank.long_value as string),
+                cast(grade_4_fast_mathematics_percentile_rank.long_value as string),
+                cast(grade_5_fast_ela_reading_percentile_rank.long_value as string),
+                cast(grade_5_fast_mathematics_percentile_rank.long_value as string),
+                cast(grade_6_fast_ela_reading_percentile_rank.long_value as string),
+                cast(grade_6_fast_mathematics_percentile_rank.long_value as string),
+                cast(grade_7_fast_ela_reading_percentile_rank.long_value as string),
+                cast(grade_7_fast_mathematics_percentile_rank.long_value as string),
+                cast(grade_8_fast_ela_reading_percentile_rank.long_value as string),
+                cast(grade_8_fast_mathematics_percentile_rank.long_value as string)
             ) as percentile_rank,
 
             coalesce(
@@ -205,34 +159,35 @@ with
                 grade_7_fast_mathematics_scale_score.long_value,
                 grade_8_fast_ela_reading_scale_score.long_value,
                 grade_8_fast_mathematics_scale_score.long_value,
-                safe_cast(fast_grade_3_ela_reading_scale_score.string_value as int),
-                safe_cast(fast_grade_3_mathematics_scale_score.string_value as int),
-                safe_cast(fast_grade_4_ela_reading_scale_score.string_value as int),
-                safe_cast(fast_grade_4_mathematics_scale_score.string_value as int),
-                safe_cast(fast_grade_5_ela_reading_scale_score.string_value as int),
-                safe_cast(fast_grade_5_mathematics_scale_score.string_value as int),
-                safe_cast(fast_grade_6_ela_reading_scale_score.string_value as int),
-                safe_cast(fast_grade_6_mathematics_scale_score.string_value as int),
-                safe_cast(fast_grade_7_ela_reading_scale_score.string_value as int),
-                safe_cast(fast_grade_7_mathematics_scale_score.string_value as int),
-                safe_cast(fast_grade_8_ela_reading_scale_score.string_value as int),
-                safe_cast(fast_grade_8_mathematics_scale_score.string_value as int),
-                safe_cast(grade_3_fast_ela_reading_scale_score.string_value as int),
-                safe_cast(grade_3_fast_mathematics_scale_score.string_value as int),
-                safe_cast(grade_4_fast_ela_reading_scale_score.string_value as int),
-                safe_cast(grade_4_fast_mathematics_scale_score.string_value as int),
-                safe_cast(grade_5_fast_ela_reading_scale_score.string_value as int),
-                safe_cast(grade_5_fast_mathematics_scale_score.string_value as int),
-                safe_cast(grade_6_fast_ela_reading_scale_score.string_value as int),
-                safe_cast(grade_6_fast_mathematics_scale_score.string_value as int),
-                safe_cast(grade_7_fast_ela_reading_scale_score.string_value as int),
-                safe_cast(grade_7_fast_mathematics_scale_score.string_value as int),
-                safe_cast(grade_8_fast_ela_reading_scale_score.string_value as int),
-                safe_cast(grade_8_fast_mathematics_scale_score.string_value as int)
+                cast(fast_grade_3_ela_reading_scale_score.string_value as int),
+                cast(fast_grade_3_mathematics_scale_score.string_value as int),
+                cast(fast_grade_4_ela_reading_scale_score.string_value as int),
+                cast(fast_grade_4_mathematics_scale_score.string_value as int),
+                cast(fast_grade_5_ela_reading_scale_score.string_value as int),
+                cast(fast_grade_5_mathematics_scale_score.string_value as int),
+                cast(fast_grade_6_ela_reading_scale_score.string_value as int),
+                cast(fast_grade_6_mathematics_scale_score.string_value as int),
+                cast(fast_grade_7_ela_reading_scale_score.string_value as int),
+                cast(fast_grade_7_mathematics_scale_score.string_value as int),
+                cast(fast_grade_8_ela_reading_scale_score.string_value as int),
+                cast(fast_grade_8_mathematics_scale_score.string_value as int),
+                cast(grade_3_fast_ela_reading_scale_score.string_value as int),
+                cast(grade_3_fast_mathematics_scale_score.string_value as int),
+                cast(grade_4_fast_ela_reading_scale_score.string_value as int),
+                cast(grade_4_fast_mathematics_scale_score.string_value as int),
+                cast(grade_5_fast_ela_reading_scale_score.string_value as int),
+                cast(grade_5_fast_mathematics_scale_score.string_value as int),
+                cast(grade_6_fast_ela_reading_scale_score.string_value as int),
+                cast(grade_6_fast_mathematics_scale_score.string_value as int),
+                cast(grade_7_fast_ela_reading_scale_score.string_value as int),
+                cast(grade_7_fast_mathematics_scale_score.string_value as int),
+                cast(grade_8_fast_ela_reading_scale_score.string_value as int),
+                cast(grade_8_fast_mathematics_scale_score.string_value as int)
             ) as scale_score,
 
             parse_date('%m/%d/%Y', date_taken) as date_taken,
             parse_date('%m/%d/%Y', test_completion_date) as test_completion_date,
+
             regexp_extract(test_reason, r'\w+\d') as administration_window,
             regexp_extract(
                 _dagster_partition_grade_level_subject, r'^Grade\dFAST(\w+)$'
@@ -243,14 +198,11 @@ with
                     _dagster_partition_grade_level_subject, r'^Grade(\d)FAST\w+$'
                 ) as int
             ) as assessment_grade,
-            (
-                cast(
-                    regexp_extract(
-                        _dagster_partition_school_year_term, r'^SY(\d+)'
-                    ) as int
-                )
-                + 1999
-            ) as academic_year,
+
+            cast(
+                regexp_extract(_dagster_partition_school_year_term, r'^SY(\d+)') as int
+            )
+            + 1999 as academic_year,
         from deduplicate
     ),
 
@@ -258,10 +210,8 @@ with
         select
             * except (percentile_rank),
 
-            safe_cast(
-                regexp_extract(percentile_rank, r'\d+') as numeric
-            ) as percentile_rank,
-            safe_cast(
+            cast(regexp_extract(percentile_rank, r'\d+') as numeric) as percentile_rank,
+            cast(
                 regexp_extract(achievement_level, r'\d+') as int
             ) as achievement_level_int,
 
@@ -270,6 +220,11 @@ with
                 concat('ELA0', assessment_grade),
                 concat('MAT0', assessment_grade)
             ) as test_code,
+            if(
+                assessment_subject = 'ELAReading',
+                'English Language Arts',
+                assessment_subject
+            ) as assessment_subject,
 
             case
                 administration_window
@@ -280,7 +235,6 @@ with
                 when 'PM3'
                 then 'Spring'
             end as season,
-
             case
                 assessment_subject
                 when 'ELAReading'
@@ -288,14 +242,6 @@ with
                 when 'Mathematics'
                 then 'Math'
             end as discipline,
-
-            case
-                assessment_subject
-                when 'ELAReading'
-                then 'English Language Arts'
-                when 'Mathematics'
-                then 'Mathematics'
-            end as `subject`,
 
             lag(scale_score, 1) over (
                 partition by student_id, academic_year, assessment_subject
