@@ -915,7 +915,6 @@ version = "2.6.1"
 requires_python = ">=3.8"
 summary = "DNS toolkit"
 groups = ["dev"]
-marker = "python_version ~= \"3.11\""
 files = [
     {file = "dnspython-2.6.1-py3-none-any.whl", hash = "sha256:5ef3b9680161f6fa89daf8ad451b5f1a33b18ae8a1c6778cdf4b43f08c0a6e50"},
     {file = "dnspython-2.6.1.tar.gz", hash = "sha256:e8f0f9c23a7b7cb99ded64e6c3a6f3e701d78f50c55e002b839dea7225cff7cc"},
@@ -938,7 +937,6 @@ version = "2.2.0"
 requires_python = ">=3.8"
 summary = "A robust email address syntax and deliverability validation library."
 groups = ["dev"]
-marker = "python_version ~= \"3.11\""
 dependencies = [
     "dnspython>=2.0.0",
     "idna>=2.0.0",
