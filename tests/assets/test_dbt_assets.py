@@ -77,7 +77,7 @@ def test_dbt_assets():
 
 
 def test_external_source_dbt_assets():
-    from teamster.code_locations.kipptaf.dbt.assets import external_source_dbt_assets
+    from teamster.code_locations.kipptaf._dbt.assets import external_source_dbt_assets
 
     result = materialize(
         assets=[external_source_dbt_assets],
@@ -89,7 +89,7 @@ def test_external_source_dbt_assets():
 
 
 def test_dbt_assets_kipptaf():
-    from teamster.code_locations.kipptaf.dbt.assets import adp_payroll_dbt_assets
+    from teamster.code_locations.kipptaf._dbt.assets import adp_payroll_dbt_assets
 
     result = materialize(
         assets=[adp_payroll_dbt_assets],

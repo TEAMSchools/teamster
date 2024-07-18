@@ -1,4 +1,5 @@
 import json
+from itertools import groupby
 
 from dagster import (
     AssetKey,
@@ -11,9 +12,25 @@ from dagster_fivetran import FivetranResource
 from dagster_gcp import BigQueryResource
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
-from teamster.code_locations.kipptaf.fivetran.assets import CONNECTORS, assets
+from teamster.code_locations.kipptaf.fivetran.assets import assets
 
+CONNECTORS = {}
 ASSET_KEYS = [asset.key for asset in assets]
+
+asset_metadata = [asset.metadata_by_key[asset.key] for asset in assets]
+
+for key, group in groupby(iterable=asset_metadata, key=lambda x: x["connector_id"]):
+    CONNECTORS[key] = set()
+
+    for g in group:
+        connector_id, connector_name, schema_name, table_name = g.values()
+
+        if schema_name is not None:
+            schema_table = f"{connector_name}.{schema_name}"
+        else:
+            schema_table = connector_name
+
+        CONNECTORS[key].add(schema_table)
 
 
 def render_fivetran_audit_query(dataset, timestamp):

@@ -10,9 +10,9 @@ from dagster import (
 )
 from fastavro import block_reader, parse_schema, writer
 from pendulum.datetime import DateTime
-from zenpy.lib.api_objects import BaseObject
-from zenpy.lib.exception import RecordNotFoundException
-from zenpy.lib.generator import SearchExportResultGenerator
+from zenpy.lib.api_objects import BaseObject  # type: ignore
+from zenpy.lib.exception import RecordNotFoundException  # type: ignore
+from zenpy.lib.generator import SearchExportResultGenerator  # type: ignore
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.zendesk.schema import TICKET_METRIC_SCHEMA

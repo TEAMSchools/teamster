@@ -7,7 +7,7 @@ from dagster import (
 )
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
-from teamster.code_locations.kipptaf.google.forms.assets import (
+from teamster.code_locations.kipptaf._google.forms.assets import (
     GOOGLE_FORMS_PARTITIONS_DEF,
 )
 from teamster.libraries.google.drive.resources import GoogleDriveResource
