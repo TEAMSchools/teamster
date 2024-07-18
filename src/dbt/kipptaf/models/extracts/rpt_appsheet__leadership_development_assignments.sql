@@ -39,28 +39,32 @@ with
         where au.active_title
 
     ),
-query as (
-select
-    ag.employee_number,
-    ldm.academic_year,
-    ldm.metric_id,
-    concat(ag.employee_number, ldm.metric_id) as assignment_id,
-from assignment_group as ag
-inner join
-    leadership_development_metrics as ldm
-    on ag.route = ldm.role
-    and ag.business_unit_home_name = ldm.region
+    query as (
+        select
+            ag.employee_number,
+            ldm.academic_year,
+            ldm.metric_id,
+            concat(ag.employee_number, ldm.metric_id) as assignment_id,
+        from assignment_group as ag
+        inner join
+            leadership_development_metrics as ldm
+            on ag.route = ldm.role
+            and ag.business_unit_home_name = ldm.region
 
-union all
+        union all
 
-select
-    ag.employee_number,
-    ldm.academic_year,
-    ldm.metric_id,
-    concat(ag.employee_number, ldm.metric_id) as assignment_id,
-from assignment_group as ag
-inner join
-    leadership_development_metrics as ldm on ag.route = ldm.role and ldm.region = 'All'
-)
+        select
+            ag.employee_number,
+            ldm.academic_year,
+            ldm.metric_id,
+            concat(ag.employee_number, ldm.metric_id) as assignment_id,
+        from assignment_group as ag
+        inner join
+            leadership_development_metrics as ldm
+            on ag.route = ldm.role
+            and ldm.region = 'All'
+    )
 
-select * from query where employee_number = 400287
+select *
+from query
+where employee_number = 400287
