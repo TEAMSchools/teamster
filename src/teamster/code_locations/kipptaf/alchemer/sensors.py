@@ -11,7 +11,6 @@ from dagster import (
     _check,
     sensor,
 )
-from requests.exceptions import HTTPError
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.alchemer.assets import (
@@ -145,25 +144,18 @@ def alchemer_survey_response_asset_sensor(
         elif survey_metadata["status"] in ["Closed", "Archived"]:
             continue
         else:
-            try:
-                try:
-                    survey_obj = alchemer._client.survey.get(id=survey_id)
-                except Exception as e:
-                    context.log.error(msg=e)
-                    continue
+            survey_obj = alchemer._client.survey.get(id=survey_id)
 
-                date_submitted = pendulum.from_timestamp(
-                    timestamp=survey_cursor_timestamp, tz="America/New_York"
-                )
+            date_submitted = pendulum.from_timestamp(
+                timestamp=survey_cursor_timestamp, tz="America/New_York"
+            )
 
-                survey_response_data = survey_obj.response.filter(
-                    "date_submitted", ">=", date_submitted.to_datetime_string()
-                ).list(params={"resultsperpage": 1, "page": 1})
+            survey_response_data = survey_obj.response.filter(
+                "date_submitted", ">=", date_submitted.to_datetime_string()
+            ).list(params={"resultsperpage": 1, "page": 1})
 
-                if survey_response_data:
-                    is_run_request = True
-            except HTTPError as e:
-                context.log.error(msg=e)
+            if survey_response_data:
+                is_run_request = True
 
         if is_run_request:
             partition_key = f"{survey_id}_{survey_cursor_timestamp}"
