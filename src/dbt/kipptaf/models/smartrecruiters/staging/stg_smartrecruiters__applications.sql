@@ -21,13 +21,9 @@ select
     application_reason_for_rejection as reason_for_rejection,
     application_reason_for_withdrawal as reason_for_withdrawal,
     application_state,
-    application_state_hired_date as hired_date,
     application_state_in_review_date as in_review_date,
     application_state_interview_date as interview_date,
     application_state_lead_date,
-    application_state_new_date as new_date,
-    application_state_offer_date as offer_date,
-    application_state_rejected_date,
     application_state_transferred_date,
     application_state_withdrawn_date,
     application_status,
@@ -36,12 +32,7 @@ select
     application_status_in_review_performance_task_date
     as in_review_performance_task_date,
     application_status_in_review_resume_review_date as in_review_resume_review_date,
-    application_status_interview_demo_date as demo_date,
     application_status_interview_performance_task_date as performance_task_date,
-    application_status_interview_phone_screen_complete_date
-    as phone_screen_complete_date,
-    application_status_interview_phone_screen_requested_date
-    as phone_screen_requested_date,
     time_in_application_state_in_review,
     time_in_application_state_interview,
     time_in_application_state_lead,
@@ -51,4 +42,16 @@ select
     time_in_application_status_interview_demo,
     time_in_application_status_interview_phone_screen_complete,
     time_in_application_status_interview_phone_screen_requested,
+
+    cast(application_state_hired_date as timestamp) as hired_date_timestamp,
+    cast(application_state_new_date as timestamp) as new_date_timestamp,
+    cast(application_state_offer_date as timestamp) as offer_date_timestamp,
+    cast(application_state_rejected_date as timestamp) as rejected_date_timestamp,
+    cast(application_status_interview_demo_date as timestamp) as demo_date_timestamp,
+    cast(
+        application_status_interview_phone_screen_complete_date as timestamp
+    ) as phone_screen_complete_date_timestamp,
+    cast(
+        application_status_interview_phone_screen_requested_date as timestamp
+    ) as phone_screen_requested_date_timestamp,
 from {{ source("smartrecruiters", "src_smartrecruiters__applications") }}
