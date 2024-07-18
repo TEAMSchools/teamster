@@ -1,6 +1,6 @@
 from dagster import SensorResult, _check, build_sensor_context, instance_for_test
 
-from teamster.code_locations.kipptaf.google.drive.sensors import (
+from teamster.code_locations.kipptaf._google.drive.sensors import (
     google_forms_partition_sensor,
 )
 from teamster.code_locations.kipptaf.resources import GOOGLE_DRIVE_RESOURCE
