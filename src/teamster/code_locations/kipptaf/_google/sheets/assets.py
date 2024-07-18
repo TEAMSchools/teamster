@@ -1,6 +1,6 @@
 from dagster import external_assets_from_specs
 
-from teamster.code_locations.kipptaf.dbt.assets import manifest
+from teamster.code_locations.kipptaf._dbt.assets import manifest
 from teamster.libraries.google.sheets.assets import build_google_sheets_asset_spec
 
 specs = [

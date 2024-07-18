@@ -1,7 +1,7 @@
 from dagster import AssetExecutionContext, DynamicPartitionsDefinition, Output, asset
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
-from teamster.code_locations.kipptaf.google.forms.schema import (
+from teamster.code_locations.kipptaf._google.forms.schema import (
     FORM_SCHEMA,
     RESPONSES_SCHEMA,
 )

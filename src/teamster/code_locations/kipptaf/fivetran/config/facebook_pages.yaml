@@ -1,5 +1,6 @@
 connector_name: facebook_pages
 connector_id: regency_carrying
+group_name: facebook_pages
 schemas:
   - destination_tables:
       - daily_page_metrics_total
