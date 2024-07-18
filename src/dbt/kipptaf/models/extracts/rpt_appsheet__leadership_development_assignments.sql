@@ -25,6 +25,7 @@ with
                     'Head of Schools in Residence',
                     'Director School Operations',
                     'Director Campus Operations',
+                    'Fellow School Operations Director',
                     'Managing Director of School Operations',
                     'Associate Director of School Operations'
                 ),
@@ -37,8 +38,8 @@ with
             on sr.employee_number = safe_cast(au.employee_number as int)
         where au.active_title
 
-    )
-
+    ),
+query as (
 select
     ag.employee_number,
     ldm.academic_year,
@@ -60,3 +61,6 @@ select
 from assignment_group as ag
 inner join
     leadership_development_metrics as ldm on ag.route = ldm.role and ldm.region = 'All'
+)
+
+select * from query where employee_number = 400287
