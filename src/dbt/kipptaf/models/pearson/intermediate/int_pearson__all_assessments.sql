@@ -38,72 +38,35 @@ with
                 ],
             )
         }}
-    ),
-
-    with_translations as (
-        select  -- noqa: AM04
-            * except (statestudentidentifier, _dbt_source_relation_2),
-
-            safe_cast(statestudentidentifier as string) as statestudentidentifier,
-
-            coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
-
-            if(englishlearnerel = 'Y', true, false) as lep_status,
-
-            case
-                when studentwithdisabilities in ('IEP', 'B')
-                then 'Has IEP'
-                else 'No IEP'
-            end as iep_status,
-
-            case
-                when twoormoreraces = 'Y'
-                then 'T'
-                when hispanicorlatinoethnicity = 'Y'
-                then 'H'
-                when americanindianoralaskanative = 'Y'
-                then 'I'
-                when asian = 'Y'
-                then 'A'
-                when blackorafricanamerican = 'Y'
-                then 'B'
-                when nativehawaiianorotherpacificislander = 'Y'
-                then 'P'
-                when white = 'Y'
-                then 'W'
-            end as race_ethnicity,
-
-        from union_relations
     )
 
+-- trunk-ignore(sqlfluff/AM04)
 select
-    _dbt_source_relation,
-    statestudentidentifier,
-    assessment_name,
-    assessmentyear,
-    academic_year,
-    `period`,
-    discipline,
-    testcode,
-    `subject`,
-    assessmentgrade,
-    test_grade,
-    testscalescore,
-    testperformancelevel,
-    testperformancelevel_text,
-    is_proficient,
-    studentwithdisabilities,
-    englishlearnerel,
-    is_504,
-    iep_status,
-    lep_status,
-    twoormoreraces,
-    americanindianoralaskanative,
-    asian,
-    blackorafricanamerican,
-    hispanicorlatinoethnicity,
-    nativehawaiianorotherpacificislander,
-    white,
-    race_ethnicity,
+    * except (statestudentidentifier, _dbt_source_relation_2),
 
-from with_translations
+    safe_cast(statestudentidentifier as string) as statestudentidentifier,
+
+    coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
+
+    if(englishlearnerel = 'Y', true, false) as lep_status,
+    if(studentwithdisabilities in ('IEP', 'B'), 'Has IEP', 'No IEP') as iep_status,
+
+    case
+        when twoormoreraces = 'Y'
+        then 'T'
+        when hispanicorlatinoethnicity = 'Y'
+        then 'H'
+        when americanindianoralaskanative = 'Y'
+        then 'I'
+        when asian = 'Y'
+        then 'A'
+        when blackorafricanamerican = 'Y'
+        then 'B'
+        when nativehawaiianorotherpacificislander = 'Y'
+        then 'P'
+        when white = 'Y'
+        then 'W'
+    end as race_ethnicity,
+
+    regexp_extract(_dbt_source_relation, r'__(\w+)`$') as assessment_name,
+from union_relations

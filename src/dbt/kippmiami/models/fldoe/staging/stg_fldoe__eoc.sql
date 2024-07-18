@@ -27,7 +27,7 @@ with
             `2_linear_relationships_performance`,
             `3_non_linear_relationships_performance`,
 
-            'PM3' as `admin`,
+            'PM3' as administration_window,
             'EOC' as assessment_name,
             'Spring' as season,
 
@@ -55,7 +55,7 @@ with
                 _dagster_partition_grade_level_subject = 'B.E.S.T.Algebra1',
                 'Algebra I',
                 'Civics'
-            ) as subject,
+            ) as assessment_subject,
 
             case
                 _dagster_partition_grade_level_subject
@@ -71,9 +71,9 @@ with
         select
             * except (scale_score),
 
-            safe_cast(scale_score as int) as scale_score,
+            cast(scale_score as int) as scale_score,
 
-            safe_cast(right(achievement_level, 1) as int) as achievement_level_int,
+            cast(right(achievement_level, 1) as int) as achievement_level_int,
 
             if(scale_score = 'Invalidated', true, false) as is_invalidated,
         from source
