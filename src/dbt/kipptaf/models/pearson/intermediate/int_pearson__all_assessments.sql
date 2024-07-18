@@ -26,7 +26,6 @@ with
                     "period",
                     "statestudentidentifier",
                     "studentwithdisabilities",
-                    "subject_area",
                     "subject",
                     "testcode",
                     "test_grade",
