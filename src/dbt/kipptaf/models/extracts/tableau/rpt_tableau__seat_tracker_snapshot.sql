@@ -13,12 +13,15 @@ select
         snapshot_status_detail in ('New Hire', 'Transfer In'), 1, 0
     ) as snapshot_new_hire,
     if(snapshot_staffing_status = 'Staffed', 1, 0) as snapshot_staffed,
-    if(snapshot_plan_status IN ('Active','TRUE'), 1, 0) as snapshot_active,
+    if(snapshot_plan_status in ('Active', 'TRUE'), 1, 0) as snapshot_active,
     if(snapshot_mid_year_hire = true, 1, 0) as snapshot_mid_year_hire_int,
 
     case
-    when snapshot_plan_status = 'TRUE' then 'Active'
-    when snapshot_plan_status = 'FALSE' then 'Inactive'
+        when snapshot_plan_status = 'TRUE'
+        then 'Active'
+        when snapshot_plan_status = 'FALSE'
+        then 'Inactive'
+        else snapshot_plan_status
     end as snapshot_plan_status,
 
 from {{ ref("stg_google_appsheet__src_seat_tracker__log_archive") }}
