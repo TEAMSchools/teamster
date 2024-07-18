@@ -1,5 +1,5 @@
 with
-    source as (
+    science as (
         select
             student_id,
             local_id,
@@ -47,7 +47,7 @@ with
 
     with_achievement_level_int as (
         select *, cast(right(achievement_level, 1) as int) as achievement_level_int,
-        from source
+        from science
     )
 
 select

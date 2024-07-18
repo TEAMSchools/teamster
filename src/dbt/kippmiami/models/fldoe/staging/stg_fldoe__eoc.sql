@@ -1,5 +1,5 @@
 with
-    source as (
+    eoc as (
         select
             _dagster_partition_grade_level_subject as test_name,
             student_id,
@@ -71,12 +71,12 @@ with
         select
             * except (scale_score),
 
-            cast(scale_score as int) as scale_score,
+            safe_cast(scale_score as int) as scale_score,
 
-            cast(right(achievement_level, 1) as int) as achievement_level_int,
+            safe_cast(right(achievement_level, 1) as int) as achievement_level_int,
 
             if(scale_score = 'Invalidated', true, false) as is_invalidated,
-        from source
+        from eoc
     )
 
 select *, if(achievement_level_int >= 3, true, false) as is_proficient,
