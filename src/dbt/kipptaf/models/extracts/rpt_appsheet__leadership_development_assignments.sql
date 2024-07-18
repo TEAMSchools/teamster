@@ -2,11 +2,6 @@ with
     leadership_development_metrics as (
         select *,
         from {{ ref("stg_performance_management__leadership_development_metrics") }}
-        /*
-            Need '2024' to make visible before start of next academic year will switch
-            after 7/1/2024
-        */
-        where academic_year = 2024
     ),
 
     assignment_group as (
@@ -38,33 +33,26 @@ with
             on sr.employee_number = safe_cast(au.employee_number as int)
         where au.active_title
 
-    ),
-    query as (
-        select
-            ag.employee_number,
-            ldm.academic_year,
-            ldm.metric_id,
-            concat(ag.employee_number, ldm.metric_id) as assignment_id,
-        from assignment_group as ag
-        inner join
-            leadership_development_metrics as ldm
-            on ag.route = ldm.role
-            and ag.business_unit_home_name = ldm.region
-
-        union all
-
-        select
-            ag.employee_number,
-            ldm.academic_year,
-            ldm.metric_id,
-            concat(ag.employee_number, ldm.metric_id) as assignment_id,
-        from assignment_group as ag
-        inner join
-            leadership_development_metrics as ldm
-            on ag.route = ldm.role
-            and ldm.region = 'All'
     )
 
-select *
-from query
-where employee_number = 400287
+select
+    ag.employee_number,
+    ldm.academic_year,
+    ldm.metric_id,
+    concat(ag.employee_number, ldm.metric_id) as assignment_id,
+from assignment_group as ag
+inner join
+    leadership_development_metrics as ldm
+    on ag.route = ldm.role
+    and ag.business_unit_home_name = ldm.region
+
+union all
+
+select
+    ag.employee_number,
+    ldm.academic_year,
+    ldm.metric_id,
+    concat(ag.employee_number, ldm.metric_id) as assignment_id,
+from assignment_group as ag
+inner join
+    leadership_development_metrics as ldm on ag.route = ldm.role and ldm.region = 'All'
