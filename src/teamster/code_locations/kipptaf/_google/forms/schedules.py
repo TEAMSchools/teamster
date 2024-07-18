@@ -3,7 +3,7 @@ from typing import Generator
 from dagster import RunRequest, ScheduleEvaluationContext, define_asset_job, schedule
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.google.forms.assets import (
+from teamster.code_locations.kipptaf._google.forms.assets import (
     GOOGLE_FORMS_PARTITIONS_DEF,
     form,
     responses,

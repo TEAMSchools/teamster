@@ -21,7 +21,6 @@ from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
-from teamster.libraries.zendesk.resources import ZendeskResource
 
 """
 Dagster resources
@@ -107,12 +106,6 @@ TABLEAU_SERVER_RESOURCE = TableauServerResource(
     site_id=EnvVar("TABLEAU_SITE_ID"),
     token_name=EnvVar("TABLEAU_TOKEN_NAME"),
     personal_access_token=EnvVar("TABLEAU_PERSONAL_ACCESS_TOKEN"),
-)
-
-ZENDESK_RESOURCE = ZendeskResource(
-    subdomain=EnvVar("ZENDESK_SUBDOMAIN"),
-    email=EnvVar("ZENDESK_EMAIL"),
-    token=EnvVar("ZENDESK_TOKEN"),
 )
 
 """
