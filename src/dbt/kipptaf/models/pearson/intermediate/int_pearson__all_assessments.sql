@@ -44,68 +44,9 @@ with
 
             safe_cast(statestudentidentifier as string) as statestudentidentifier,
 
-            safe_cast(
-                regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int
-            ) as test_grade,
-
-            upper(
-                regexp_extract(_dbt_source_relation, r'__(\w+)`$')
-            ) as assessment_name,
-
             coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
 
             if(englishlearnerel = 'Y', true, false) as lep_status,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as season,
-
-            case
-                when
-                    `subject`
-                    in ('English Language Arts', 'English Language Arts/Literacy')
-                then 'ELA'
-                when `subject` in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
-                then 'Math'
-                when `subject` = 'Science'
-                then 'Science'
-            end as subject_area,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as test_code,
-
-            case
-                testperformancelevel
-                when 5
-                then 'Exceeded Expectations'
-                when 4
-                then 'Met Expectations'
-                when 3
-                then 'Approached Expectations'
-                when 2
-                then 'Partially Met Expectations'
-                when 1
-                then 'Did Not Yet Meet Expectations'
-            end as testperformancelevel_text,
-
-            case
-                when `subject` = 'Science' and testperformancelevel >= 3
-                then true
-                when testcode in ('MATGP', 'ELAGP') and testperformancelevel = 2
-                then true
-                when testperformancelevel >= 4
-                then true
-                when testperformancelevel < 4
-                then false
-            end as is_proficient,
 
             case
                 when studentwithdisabilities in ('IEP', 'B')
@@ -129,6 +70,18 @@ with
                 when white = 'Y'
                 then 'W'
             end as race_ethnicity,
+
+            case
+                when
+                    `subject`
+                    in ('English Language Arts', 'English Language Arts/Literacy')
+                then 'ELA'
+                when `subject` in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
+                then 'Math'
+                when `subject` = 'Science'
+                then 'Science'
+            end as subject_area,
+
         from union_relations
     )
 
@@ -149,6 +102,9 @@ select
     is_proficient,
     studentwithdisabilities,
     englishlearnerel,
+    is_504,
+    iep_status,
+    lep_status,
     twoormoreraces,
     americanindianoralaskanative,
     asian,
@@ -156,13 +112,6 @@ select
     hispanicorlatinoethnicity,
     nativehawaiianorotherpacificislander,
     white,
-
-    case
-        when testcode in ('ELAGP', 'MATGP') and testperformancelevel = 2
-        then 'Graduation Ready'
-        when testcode in ('ELAGP', 'MATGP') and testperformancelevel = 1
-        then 'Not Yet Graduation Ready'
-        else testperformancelevel_text
-    end as performance_band,
+    race_ethnicity,
 
 from with_translations
