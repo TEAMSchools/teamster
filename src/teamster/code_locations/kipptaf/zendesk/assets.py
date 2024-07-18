@@ -64,30 +64,23 @@ def ticket_metrics_archive(context: AssetExecutionContext, zendesk: ZendeskResou
 
     fo = data_filepath.open("a+b")
 
-    try:
-        for ticket in archived_tickets:
-            ticket_id = ticket.id
+    for ticket in archived_tickets:
+        ticket_id = ticket.id
 
-            context.log.info(f"Getting metrics for ticket #{ticket_id}")
-            metrics = _check.inst(
-                zendesk._client.tickets.metrics(ticket_id), BaseObject
+        context.log.info(f"Getting metrics for ticket #{ticket_id}")
+        metrics = _check.inst(zendesk._client.tickets.metrics(ticket_id), BaseObject)
+
+        try:
+            writer(
+                fo=fo,
+                schema=schema,
+                records=[metrics.to_dict()],
+                codec="snappy",
+                strict_allow_default=True,
             )
-
-            try:
-                writer(
-                    fo=fo,
-                    schema=schema,
-                    records=[metrics.to_dict()],
-                    codec="snappy",
-                    strict_allow_default=True,
-                )
-            except RecordNotFoundException as e:
-                context.log.exception(e)
-                pass
-
-    except IndexError as e:
-        context.log.exception(e)
-        pass
+        except RecordNotFoundException as e:
+            context.log.exception(e)
+            continue
 
     fo.close()
 
