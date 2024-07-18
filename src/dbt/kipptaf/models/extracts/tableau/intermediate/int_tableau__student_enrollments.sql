@@ -13,7 +13,7 @@ select
     gender,
     lunch_status,
 
-    'KTAF' as organization,
+    'KTAF' as `organization`,
 
     if(region = 'Miami', fleid, state_studentnumber) as state_studentnumber,
 
