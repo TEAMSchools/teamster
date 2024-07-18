@@ -23,5 +23,5 @@ with
 
     )
 
-select *
+select *,
 from renamed
