@@ -56,6 +56,8 @@ select
     dlp.num_days,
     dlp.is_suspension,
     dlp.penalty_name,
+    dlp.start_date,
+    dlp.end_date,
 
     cf.nj_state_reporting,
     cf.restraint_used,
