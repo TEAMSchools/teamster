@@ -50,17 +50,16 @@ from {{ ref("stg_schoolmint_grow__observations") }} as o
 left join
     {{ ref("stg_schoolmint_grow__generic_tags") }} as gt
     on o.observation_type = gt.tag_id
-left join
-    {{ ref("stg_reporting__terms") }} as t
-    on gt.abbreviation = t.type
-    and o.observed_at_date_local between t.start_date and t.end_date
 /* join on google email and date for employee_number*/
 left join
     {{ ref("base_people__staff_roster") }} as sr on o.teacher_email = sr.google_email
-
 /* join on google email and date for observer_employee_number*/
 left join
     {{ ref("base_people__staff_roster") }} as sr2 on o.observer_email = sr2.google_email
+left join
+    {{ ref("stg_reporting__terms") }} as t
+    on gt.abbreviation = t.type
+    and sr.business_unit_home_name = t.region
+    and o.observed_at_date_local between t.start_date and t.end_date
 /* data prior to 2024 in snapshot */
-where
-    o.is_published and o.academic_year >= 2024 and t.region = sr.business_unit_home_name
+where o.is_published and o.academic_year >= 2024

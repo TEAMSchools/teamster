@@ -8,18 +8,12 @@ select
     t.is_current,
     o.observation_id,
     o.observed_at,
-    if(o.observation_id is not null, true, false) as is_observed,
+    if(o.observation_id is not null, 1, 0) as is_observed,
 
 from {{ ref("base_people__staff_roster_history") }} as srh
-cross join {{ ref("stg_reporting__terms") }} as t
-left join
-    {{ ref("int_performance_management__observations") }} as o
-    on t.type = o.observation_type_abbreviation
-    and o.observed_at between t.start_date and t.end_date
-where
-    srh.job_title in ("Teacher", "Teacher in Residence", "Learning Specialist")
-    and srh.assignment_status = "Active"
-    and (
+inner join
+    {{ ref("stg_reporting__terms") }} as t
+    on (
         t.start_date between date(srh.work_assignment_start_date) and date(
             srh.work_assignment_end_date
         )
@@ -30,3 +24,10 @@ where
     and t.type in ("PMS", "PMC", "TR", "O3", "WT")
     and t.academic_year = {{ var("current_academic_year") }}
     and t.region = srh.business_unit_home_name
+left join
+    {{ ref("int_performance_management__observations") }} as o
+    on t.type = o.observation_type_abbreviation
+    and o.observed_at between t.start_date and t.end_date
+where
+    srh.job_title in ("Teacher", "Teacher in Residence", "Learning Specialist")
+    and srh.assignment_status = "Active"
