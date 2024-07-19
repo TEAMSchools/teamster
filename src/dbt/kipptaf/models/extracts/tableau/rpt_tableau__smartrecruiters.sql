@@ -1,4 +1,4 @@
-select
+select distinct
     a.application_id,
     a.candidate_id,
     a.job_title,
@@ -22,3 +22,4 @@ select
 from {{ ref("stg_smartrecruiters__applications") }} as a
 left join
     {{ ref("stg_smartrecruiters__applicants") }} as b on a.candidate_id = b.candidate_id
+where a.new_date is not null
