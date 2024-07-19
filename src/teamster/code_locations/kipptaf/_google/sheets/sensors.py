@@ -8,6 +8,7 @@ from dagster import (
     _check,
     sensor,
 )
+from gspread.exceptions import APIError
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf._google.sheets.assets import google_sheets_assets
@@ -34,7 +35,14 @@ def google_sheets_asset_sensor(
     asset_events: list = []
 
     for sheet_id, asset_keys in ASSET_KEYS_BY_SHEET_ID:
-        spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
+        try:
+            spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
+        except APIError as e:
+            if "APIError: [503]: The service is currently unavailable." in e.args:
+                context.log.error(msg=str(e))
+                continue
+            else:
+                raise e
 
         last_update_time = _check.inst(
             pendulum.parse(text=spreadsheet.get_lastUpdateTime()), pendulum.DateTime
