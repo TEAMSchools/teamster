@@ -332,7 +332,7 @@ with
             'Spring' as season,
 
             case
-                test_subject
+                assessment_subject
                 when 'ELA'
                 then 'ELA'
                 when 'MATH'
@@ -341,7 +341,7 @@ with
                 then 'Science'
             end as discipline,
             case
-                test_subject
+                assessment_subject
                 when 'ELA'
                 then 'English Language Arts'
                 when 'MATH'
@@ -350,9 +350,9 @@ with
                 then 'Science'
             end as `subject`,
             case
-                when test_subject = 'ELA'
+                when assessment_subject = 'ELA'
                 then concat('ELA0', test_grade)
-                when test_subject = 'SCIENCE'
+                when assessment_subject = 'SCIENCE'
                 then concat('SCI0', test_grade)
                 else concat('MAT0', test_grade)
             end as test_code,
