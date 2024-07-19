@@ -11,12 +11,6 @@ with
         where school_level = 'MS'
     ),
 
-    ms_grad as (
-        select _dbt_source_relation, student_number, ms_attended,
-        from ms_grad_sub
-        where rn = 1
-    ),
-
     students_nj as (
         select
             e._dbt_source_relation,
@@ -44,9 +38,10 @@ with
             end as advisory,
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
-            ms_grad as m
+            ms_grad_sub as m
             on e.student_number = m.student_number
             and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
+            and m.rn = 1
         where
             e.academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_year = 1
@@ -102,6 +97,7 @@ with
             teacher_lastfirst as teacher_name,
             courses_course_name as course_name,
             cc_course_number as course_number,
+
             case
                 courses_credittype
                 when 'ENG'
@@ -131,6 +127,7 @@ with
             e.cc_course_number as course_number,
 
             c.teacher_name as teacher_name_current,
+
             case
                 e.courses_credittype
                 when 'ENG'
@@ -159,7 +156,7 @@ with
             academic_year,
             statestudentidentifier as state_id,
             assessment_name,
-            subject_area as discipline,
+            discipline,
             testscalescore as score,
             testperformancelevel as performance_band_level,
             is_proficient,
@@ -223,13 +220,12 @@ with
             if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
             if(`period` = 'FallBlock', 'Fall', `period`) as season,
             if(
-                subject = 'English Language Arts/Literacy',
+                `subject` = 'English Language Arts/Literacy',
                 'English Language Arts',
-                subject
-            ) as subject,
-
+                `subject`
+            ) as `subject`,
         from {{ ref("int_pearson__all_assessments") }}
-        where safe_cast(academic_year as int) >= {{ var("current_academic_year") - 7 }}
+        where academic_year >= {{ var("current_academic_year") - 7 }}
     ),
 
     assessments_fl_eoc as (
@@ -250,7 +246,6 @@ with
             if(test_name = 'B.E.S.T.Algebra1', 'ALG01', 'SOC08') as test_code,
 
             safe_cast(enrolled_grade as string) as test_grade,
-
         from {{ ref("stg_fldoe__eoc") }}
         where not is_invalidated
 
@@ -269,12 +264,11 @@ with
             'PM3' as `admin`,
             'Spring' as season,
             'Science' as discipline,
-            'Science' as subject,
+            'Science' as `subject`,
 
             if(test_grade_level = 5, 'SCI05', 'SCI08') as test_code,
 
             safe_cast(test_grade_level as string) as test_grade,
-
         from {{ ref("stg_fldoe__science") }}
     ),
 
@@ -282,8 +276,11 @@ with
         select
             academic_year,
             student_id as state_id,
+
             'FAST' as assessment_name,
+
             safe_cast(assessment_grade as string) as test_grade,
+
             administration_window as `admin`,
             scale_score as score,
             achievement_level as performance_band,
@@ -312,21 +309,28 @@ with
                 concat('ELA0', assessment_grade),
                 concat('MAT0', assessment_grade)
             ) as test_code,
-
         from {{ ref("stg_fldoe__fast") }}
         where achievement_level not in ('Insufficient to score', 'Invalidated')
+
         union all
+
         select
             academic_year,
             fleid as state_id,
+
             'FSA' as assessment_name,
+
             safe_cast(test_grade as string) as test_grade,
+
             'Spring' as `admin`,
+
             scale_score as score,
             achievement_level as performance_band,
             performance_level as performance_band_level,
             is_proficient,
+
             'Spring' as season,
+
             case
                 test_subject
                 when 'ELA'
@@ -344,7 +348,7 @@ with
                 then 'Mathematics'
                 when 'SCIENCE'
                 then 'Science'
-            end as subject,
+            end as `subject`,
             case
                 when test_subject = 'ELA'
                 then concat('ELA0', test_grade)
@@ -354,7 +358,9 @@ with
             end as test_code,
         from {{ ref("stg_fldoe__fsa") }}
         where performance_level is not null
+
         union all
+
         select
             academic_year,
             state_id,
@@ -367,10 +373,12 @@ with
             is_proficient,
             season,
             discipline,
-            subject,
+            `subject`,
             test_code,
         from assessments_fl_eoc
+
         union all
+
         select
             academic_year,
             state_id,
@@ -383,10 +391,9 @@ with
             is_proficient,
             season,
             discipline,
-            subject,
+            `subject`,
             test_code,
         from assessments_fl_science
-
     ),
 
     nj_final as (
@@ -473,7 +480,7 @@ with
     ),
 
     state_comps as (
-        select academic_year, test_name, test_code, region, city, state,
+        select academic_year, test_name, test_code, region, city, `state`,
         from
             {{ ref("stg_assessments__state_test_comparison") }}
             pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
@@ -566,7 +573,9 @@ left join
     on s.academic_year = sf.academic_year
     and s.discipline = sf.discipline
     and s.student_number = sf.student_number
+
 union all
+
 select
     s.academic_year,
     s.region,
@@ -584,7 +593,9 @@ select
     s.iep_status,
     s.is_504,
     s.lunch_status,
+
     null as ms_attended,
+
     s.lep_status,
     s.advisory,
     s.assessment_name,
@@ -640,7 +651,9 @@ left join
     on s.academic_year = sf.academic_year
     and s.discipline = sf.discipline
     and s.student_number = sf.student_number
+
 union all
+
 select
     academic_year,
     region,
@@ -663,10 +676,12 @@ select
     advisory,
     assessment_name,
     discipline,
-    subject,
+    `subject`,
     test_code,
+
     cast(test_grade as string) as test_grade,
-    admin,
+
+    `admin`,
     season,
     score,
     performance_band,

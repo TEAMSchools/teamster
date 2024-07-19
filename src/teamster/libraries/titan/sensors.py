@@ -44,6 +44,11 @@ def build_titan_sftp_sensor(
                 return SkipReason(str(e))
             else:
                 raise SSHException from e
+        except TimeoutError as e:
+            if "timed out" in e.args:
+                return SkipReason(str(e))
+            else:
+                raise TimeoutError from e
 
         run_requests = []
         for asset in asset_defs:
