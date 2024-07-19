@@ -339,7 +339,6 @@ class FastStar(FastStarCore):
     Quantile: str | None = None
     # Reading
     IRL: str | None = None
-    Lexile: str | None = None
     PassingScore_G3: str | None = None
     PassingStatus_G3: str | None = None
     ZPD_Lexile_Lower: float | None = None
@@ -405,3 +404,4 @@ class FastStar(FastStarCore):
     SubDomain_VS_SkillSet_B: int | None = None
 
     Attempts_G3: str | int | None = None
+    Lexile: str | int | None = None
