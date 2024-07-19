@@ -8,7 +8,7 @@ from teamster.libraries.iready.sensors import build_iready_sftp_sensor
 
 sftp_sensor = build_iready_sftp_sensor(
     code_location=CODE_LOCATION,
-    asset_defs=assets,
+    asset_selection=assets,
     timezone=LOCAL_TIMEZONE,
     remote_dir_regex=r"/exports/fl-kipp_miami",
     current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,

@@ -1,14 +1,20 @@
 import json
 import re
+from collections import defaultdict
+from itertools import groupby
+from operator import itemgetter
 
 import pendulum
 from dagster import (
+    AssetKey,
     AssetsDefinition,
+    PartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
     _check,
+    define_asset_job,
     sensor,
 )
 from paramiko.ssh_exception import SSHException
@@ -16,24 +22,49 @@ from paramiko.ssh_exception import SSHException
 from teamster.libraries.ssh.resources import SSHResource
 
 
+def get_partitioned_asset_job_name(
+    base_job_name: str, partitions_def: PartitionsDefinition
+):
+    return f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
+
+
 def build_titan_sftp_sensor(
-    code_location,
-    asset_defs: list[AssetsDefinition],
+    code_location: str,
+    asset_selection: list[AssetsDefinition],
     timezone,
-    minimum_interval_seconds=None,
+    minimum_interval_seconds: int | None = None,
     exclude_dirs: list | None = None,
 ):
+    base_job_name = f"{code_location}_titan_sftp_asset_job"
+
     if exclude_dirs is None:
         exclude_dirs = []
 
+    keys_by_partitions_def = defaultdict(set[AssetKey])
+
+    for assets_def in asset_selection:
+        keys_by_partitions_def[assets_def.partitions_def].add(assets_def.key)
+
+    jobs = [
+        define_asset_job(
+            name=get_partitioned_asset_job_name(
+                base_job_name=base_job_name, partitions_def=partitions_def
+            ),
+            selection=list(keys),
+        )
+        for partitions_def, keys in keys_by_partitions_def.items()
+    ]
+
     @sensor(
-        name=f"{code_location}_titan_sftp_sensor",
+        name=f"{base_job_name}_sensor",
+        jobs=jobs,
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=asset_defs,
     )
     def _sensor(context: SensorEvaluationContext, ssh_titan: SSHResource):
-        now = pendulum.now(tz=timezone)
+        now_timestamp = pendulum.now(tz=timezone).timestamp()
 
+        run_request_kwargs = []
+        run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
         try:
@@ -50,31 +81,49 @@ def build_titan_sftp_sensor(
             else:
                 raise TimeoutError from e
 
-        run_requests = []
-        for asset in asset_defs:
-            asset_metadata = asset.metadata_by_key[asset.key]
-            asset_identifier = asset.key.to_python_identifier()
+        for a in asset_selection:
+            asset_identifier = a.key.to_python_identifier()
+            partitions_def = _check.not_none(value=a.partitions_def)
             context.log.info(asset_identifier)
 
             last_run = cursor.get(asset_identifier, 0)
 
             for f, _ in files:
                 match = re.match(
-                    pattern=asset_metadata["remote_file_regex"], string=f.filename
+                    pattern=a.metadata_by_key[a.key]["remote_file_regex"],
+                    string=f.filename,
                 )
 
-                if match is not None:
+                if (
+                    match is not None
+                    and f.st_mtime > last_run
+                    and _check.not_none(value=f.st_size) > 0
+                ):
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                    if f.st_mtime > last_run and _check.not_none(value=f.st_size) > 0:
-                        run_requests.append(
-                            RunRequest(
-                                run_key=f"{asset_identifier}_{f.st_mtime}",
-                                asset_selection=[asset.key],
-                                partition_key=match.group(1),
-                            )
-                        )
+                    run_request_kwargs.append(
+                        {
+                            "asset_key": a.key,
+                            "job_name": get_partitioned_asset_job_name(
+                                base_job_name=base_job_name,
+                                partitions_def=partitions_def,
+                            ),
+                            "partition_key": match.group(1),
+                        }
+                    )
 
-                cursor[asset_identifier] = now.timestamp()
+                cursor[asset_identifier] = now_timestamp
+
+        for (job_name, parition_key), group in groupby(
+            iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
+        ):
+            run_requests.append(
+                RunRequest(
+                    run_key=f"{job_name}_{now_timestamp}",
+                    job_name=job_name,
+                    partition_key=parition_key,
+                    asset_selection=[g["asset_key"] for g in group],
+                )
+            )
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

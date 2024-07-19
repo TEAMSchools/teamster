@@ -10,6 +10,7 @@ from dagster import (
     SensorResult,
     StaticPartitionsDefinition,
     _check,
+    define_asset_job,
     sensor,
 )
 
@@ -19,16 +20,21 @@ from teamster.libraries.ssh.resources import SSHResource
 def build_couchdrop_sftp_sensor(
     code_location,
     local_timezone,
-    assets: list[AssetsDefinition],
+    asset_selection: list[AssetsDefinition],
+    minimum_interval_seconds: int,
     exclude_dirs: list | None = None,
 ):
     if exclude_dirs is None:
         exclude_dirs = []
 
+    job = define_asset_job(
+        f"{code_location}_couchdrop_sftp_asset_job", selection=asset_selection
+    )
+
     @sensor(
-        name=f"{code_location}_couchdrop_sftp_sensor",
-        minimum_interval_seconds=(60 * 10),
-        asset_selection=assets,
+        name=f"{job.name}_sensor",
+        job=job,
+        minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_couchdrop: SSHResource):
         now = pendulum.now(tz=local_timezone)
@@ -40,7 +46,7 @@ def build_couchdrop_sftp_sensor(
             remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
         )
 
-        for asset in assets:
+        for asset in asset_selection:
             asset_identifier = asset.key.to_python_identifier()
             metadata_by_key = asset.metadata_by_key[asset.key]
 
