@@ -1,5 +1,3 @@
-{{ config(tags="dagster") }}
-
 with
     union_relations as (
         {{

@@ -215,6 +215,7 @@ select
     g.organization_goal,
 
     sf.nj_student_tier,
+    sf.tutoring_nj,
 
     'Preliminary' as results_type,
     null as test_grade,
