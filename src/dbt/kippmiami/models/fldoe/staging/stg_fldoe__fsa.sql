@@ -8,7 +8,7 @@ with
             scoreflag as score_flag,
 
             'Spring' as administration_window,
-            'FSA' as assessment_name,
+            'FSA' as test_name,
             'Spring' as season,
 
             nullif(trim(fleid), '') as fleid,
