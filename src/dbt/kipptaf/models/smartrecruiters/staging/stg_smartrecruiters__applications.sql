@@ -3,13 +3,6 @@ with
         select
             application_id,
             candidate_id,
-            candidate_first_name,
-            candidate_last_name,
-            --candidate_last_first,
-            candidate_email,
-            candidate_source,
-            candidate_source_type,
-            candidate_source_subtype,
             department_internal,
             job_title,
             job_city,
@@ -19,7 +12,6 @@ with
             application_reason_for_rejection as reason_for_rejection,
             application_reason_for_withdrawal as reason_for_withdrawal,
             application_status,
-
             cast(application_state_hired_date as timestamp) as hired_date_timestamp,
             cast(application_state_new_date as timestamp) as new_date_timestamp,
             cast(application_state_offer_date as timestamp) as offer_date_timestamp,
