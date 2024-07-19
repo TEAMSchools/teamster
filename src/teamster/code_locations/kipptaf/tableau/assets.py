@@ -13,6 +13,7 @@ from dagster import (
     _check,
     asset,
     config_from_files,
+    external_assets_from_specs,
 )
 from slugify import slugify
 
@@ -21,9 +22,6 @@ from teamster.code_locations.kipptaf.tableau.schema import WORKBOOK_SCHEMA
 from teamster.libraries.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
-)
-from teamster.libraries.core.definitions.external_asset import (
-    external_assets_from_specs,
 )
 from teamster.libraries.tableau.resources import TableauServerResource
 
@@ -109,9 +107,7 @@ specs = [
     for a in config["external_assets"]
 ]
 
-external_assets: list[AssetsDefinition] = external_assets_from_specs(
-    specs=specs, compute_kind="tableau"
-)
+external_assets: list[AssetsDefinition] = external_assets_from_specs(specs=specs)
 
 assets = [
     workbook,

@@ -95,6 +95,35 @@ select
         )
     }},
 
-    safe_cast(left(assessmentyear, 4) as int) as academic_year,
+    'NJSLA Science' as assessment_name,
+    'Science' as discipline,
+
+    cast(left(assessmentyear, 4) as int) as academic_year,
+
+    cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
+
+    if(testperformancelevel >= 3, true, false) as is_proficient,
+
+    case
+        testcode
+        when 'SC05'
+        then 'SCI05'
+        when 'SC08'
+        then 'SCI08'
+        when 'SC11'
+        then 'SCI11'
+        else testcode
+    end as test_code,
+    case
+        testperformancelevel
+        when 4
+        then 'Met Expectations'
+        when 3
+        then 'Approached Expectations'
+        when 2
+        then 'Partially Met Expectations'
+        when 1
+        then 'Did Not Yet Meet Expectations'
+    end as testperformancelevel_text,
 from {{ src_njsla }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'

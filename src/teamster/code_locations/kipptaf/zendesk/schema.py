@@ -1,4 +1,3 @@
-# trunk-ignore-all(pyright/reportIncompatibleVariableOverride)
 import json
 
 import py_avro_schema
@@ -33,6 +32,7 @@ class requester_wait_time_in_minutes_record(Minutes):
 class ticket_metrics_record(TicketMetric):
     """helper class for backwards compatibility"""
 
+    # trunk-ignore-begin(pyright/reportIncompatibleVariableOverride)
     agent_wait_time_in_minutes: agent_wait_time_in_minutes_record | None = None
     first_resolution_time_in_minutes: first_resolution_time_in_minutes_record | None = (
         None
@@ -43,6 +43,7 @@ class ticket_metrics_record(TicketMetric):
     on_hold_time_in_minutes: on_hold_time_in_minutes_record | None = None
     reply_time_in_minutes: reply_time_in_minutes_record | None = None
     requester_wait_time_in_minutes: requester_wait_time_in_minutes_record | None = None
+    # trunk-ignore-end(pyright/reportIncompatibleVariableOverride)
 
 
 TICKET_METRIC_SCHEMA = json.loads(

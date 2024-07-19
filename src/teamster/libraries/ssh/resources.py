@@ -1,5 +1,4 @@
 import pathlib
-import re
 from stat import S_ISDIR, S_ISREG
 
 from dagster import _check
@@ -87,7 +86,9 @@ class SSHResource(DagsterSSHResource):
             remote_port=remote_port, remote_host=remote_host, local_port=local_port
         )
 
-    def listdir_attr_r(self, remote_dir: str = ".", exclude_dirs: list | None = None):
+    def listdir_attr_r(
+        self, remote_dir: str = ".", exclude_dirs: list[str] | None = None
+    ):
         if exclude_dirs is None:
             exclude_dirs = []
 
@@ -105,7 +106,7 @@ class SSHResource(DagsterSSHResource):
         self,
         sftp_client: SFTPClient,
         remote_dir: str,
-        exclude_dirs: list,
+        exclude_dirs: list[str],
         files: list | None = None,
     ) -> list[tuple[SFTPAttributes, str]]:
         if files is None:
@@ -129,22 +130,3 @@ class SSHResource(DagsterSSHResource):
                 files.append((file, path))
 
         return files
-
-    def match_sftp_files(
-        self, remote_dir: str, remote_file: str, exclude_dirs: list[str] | None = None
-    ):
-        if exclude_dirs is None:
-            exclude_dirs = []
-
-        files = self.listdir_attr_r(remote_dir=remote_dir, exclude_dirs=exclude_dirs)
-
-        if remote_dir == ".":
-            pattern = remote_file
-        else:
-            pattern = f"{remote_dir}/{remote_file}"
-
-        return [
-            path
-            for _, path in files
-            if re.match(pattern=pattern, string=path) is not None
-        ]
