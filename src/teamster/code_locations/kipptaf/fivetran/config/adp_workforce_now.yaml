@@ -1,5 +1,6 @@
 connector_name: adp_workforce_now
 connector_id: sameness_cunning
+group_name: adp_workforce_now
 schemas:
   - destination_tables:
       - business_communication

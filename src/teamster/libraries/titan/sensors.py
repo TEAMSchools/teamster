@@ -7,9 +7,11 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     _check,
     sensor,
 )
+from paramiko.ssh_exception import SSHException
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -34,7 +36,19 @@ def build_titan_sftp_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
-        files = ssh_titan.listdir_attr_r(exclude_dirs=exclude_dirs)
+        try:
+            files = ssh_titan.listdir_attr_r(exclude_dirs=exclude_dirs)
+        except SSHException as e:
+            context.log.error(msg=e)
+            if "No existing session" in e.args:
+                return SkipReason(str(e))
+            else:
+                raise SSHException from e
+        except TimeoutError as e:
+            if "timed out" in e.args:
+                return SkipReason(str(e))
+            else:
+                raise TimeoutError from e
 
         run_requests = []
         for asset in asset_defs:
