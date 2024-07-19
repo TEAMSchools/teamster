@@ -9,6 +9,7 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     _check,
+    define_asset_job,
     sensor,
 )
 
@@ -17,16 +18,20 @@ from teamster.libraries.ssh.resources import SSHResource
 
 def build_iready_sftp_sensor(
     code_location: str,
-    asset_defs: list[AssetsDefinition],
+    asset_selection: list[AssetsDefinition],
     timezone,
     remote_dir_regex: str,
     current_fiscal_year: int,
     minimum_interval_seconds=None,
 ):
+    job = define_asset_job(
+        name=f"{code_location}_iready_sftp_asset_job", selection=asset_selection
+    )
+
     @sensor(
-        name=f"{code_location}_iready_sftp_sensor",
+        name=f"{job.name}_sensor",
+        job=job,
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=asset_defs,
     )
     def _sensor(context: SensorEvaluationContext, ssh_iready: SSHResource):
         now = pendulum.now(tz=timezone)
@@ -37,7 +42,7 @@ def build_iready_sftp_sensor(
 
         files = ssh_iready.listdir_attr_r(remote_dir=remote_dir_regex)
 
-        for asset in asset_defs:
+        for asset in asset_selection:
             metadata_by_key = asset.metadata_by_key[asset.key]
             asset_identifier = asset.key.to_python_identifier()
 
