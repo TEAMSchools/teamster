@@ -1,15 +1,17 @@
 select
     srh.employee_number,
     srh.preferred_name_lastfirst,
+
     t.type,
     t.code,
     t.name as rubric,
     t.academic_year,
     t.is_current,
+
     o.observation_id,
     o.observed_at,
-    if(o.observation_id is not null, 1, 0) as is_observed,
 
+    if(o.observation_id is not null, 1, 0) as is_observed,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as t
