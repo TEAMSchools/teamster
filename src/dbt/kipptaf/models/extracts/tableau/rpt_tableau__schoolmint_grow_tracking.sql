@@ -11,11 +11,12 @@ select
     o.observation_id,
     o.observed_at,
 
-    if(o.observation_id is not null, 1, 0) as is_observed,
+    if(o.observation_id is not null, true, false) as is_observed,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as t
-    on (
+    on t.region = srh.business_unit_home_name
+    and (
         t.start_date between date(srh.work_assignment_start_date) and date(
             srh.work_assignment_end_date
         )
@@ -25,7 +26,6 @@ inner join
     )
     and t.type in ("PMS", "PMC", "TR", "O3", "WT")
     and t.academic_year = {{ var("current_academic_year") }}
-    and t.region = srh.business_unit_home_name
 left join
     {{ ref("int_performance_management__observations") }} as o
     on t.type = o.observation_type_abbreviation
