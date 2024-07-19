@@ -22,8 +22,6 @@ ASSET_KEYS_BY_SHEET_ID = {
     for a in google_sheets_assets
 }.items()
 
-TIMEOUT = 60 / len(ASSET_KEYS_BY_SHEET_ID)
-
 
 @sensor(
     name=f"{CODE_LOCATION}_google_sheets_asset_sensor",
@@ -34,8 +32,6 @@ def google_sheets_asset_sensor(
 ):
     cursor: dict = json.loads(context.cursor or "{}")
     asset_events: list = []
-
-    gsheets._client.http_client.set_timeout(TIMEOUT)
 
     for sheet_id, asset_keys in ASSET_KEYS_BY_SHEET_ID:
         spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
