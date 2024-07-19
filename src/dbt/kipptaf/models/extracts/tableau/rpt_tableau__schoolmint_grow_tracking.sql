@@ -15,7 +15,7 @@ select
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as t
-    on t.region = srh.business_unit_home_name
+    on srh.business_unit_home_name = t.region
     and (
         t.start_date between date(srh.work_assignment_start_date) and date(
             srh.work_assignment_end_date
