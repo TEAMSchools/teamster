@@ -6,16 +6,16 @@ FROM python:"${PYTHON_VERSION}"-slim
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # set container envs
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV PATH /app/.venv/bin:"${PATH}"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH=/app/.venv/bin:"${PATH}"
 
 # set workdir
 WORKDIR /app
 
 # install uv & create venv
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install "uv==0.2.18" --no-cache-dir \
+    pip install "uv==0.2.26" --no-cache-dir \
     && uv venv
 
 # install dependencies

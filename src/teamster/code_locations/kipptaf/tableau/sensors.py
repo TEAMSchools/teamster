@@ -7,6 +7,7 @@ from dagster import (
     _check,
     sensor,
 )
+from tableauserverclient.server.endpoint.exceptions import InternalServerError
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.tableau.assets import external_assets
@@ -14,16 +15,13 @@ from teamster.libraries.tableau.resources import TableauServerResource
 
 
 @sensor(
-    name=f"{CODE_LOCATION}_tableau_asset_sensor",
-    minimum_interval_seconds=(60 * 10),
-    asset_selection=external_assets,
+    name=f"{CODE_LOCATION}_tableau_asset_sensor", minimum_interval_seconds=(60 * 10)
 )
 def tableau_asset_sensor(
     context: SensorEvaluationContext, tableau: TableauServerResource
 ):
-    cursor: dict = json.loads(context.cursor or "{}")
-
     asset_events = []
+    cursor: dict = json.loads(context.cursor or "{}")
 
     for asset in external_assets:
         asset_identifier = asset.key.to_python_identifier()
@@ -32,7 +30,11 @@ def tableau_asset_sensor(
 
         last_updated_timestamp = cursor.get(asset_identifier, 0)
 
-        workbook = tableau._server.workbooks.get_by_id(asset_metadata["id"])
+        try:
+            workbook = tableau._server.workbooks.get_by_id(asset_metadata["id"])
+        except InternalServerError as e:
+            context.log.exception(e)
+            continue
 
         updated_at_timestamp = _check.not_none(value=workbook.updated_at).timestamp()
 
@@ -43,7 +45,8 @@ def tableau_asset_sensor(
 
             cursor[asset_identifier] = updated_at_timestamp
 
-    return SensorResult(asset_events=asset_events, cursor=json.dumps(cursor))
+    if asset_events:
+        return SensorResult(asset_events=asset_events, cursor=json.dumps(cursor))
 
 
 sensors = [

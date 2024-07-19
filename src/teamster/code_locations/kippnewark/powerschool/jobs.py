@@ -5,7 +5,7 @@ from teamster.code_locations.kippnewark.powerschool.assets import nonpartition_a
 powerschool_nonpartition_asset_job = define_asset_job(
     name="powerschool_nonpartition_asset_job",
     selection=nonpartition_assets,
-    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 7)},
+    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
 )
 
 jobs = [
