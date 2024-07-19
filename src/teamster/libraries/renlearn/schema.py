@@ -149,7 +149,6 @@ class Star(RenLearningCore):
     Quantile: str | None = None
     # Reading
     InstructionalReadingLevel: str | None = None
-    Lexile: str | None = None
     Grade3_AssessmentAttempts: int | None = None
     Grade3_PassingStatus: float | None = None
     Grade3_PassingScore: float | None = None
@@ -162,11 +161,12 @@ class Star(RenLearningCore):
     LiteracyClassification: str | None = None
     LexileRange: str | None = None
 
+    Audio: float | str | None = None
     Grade: int | str | None = None
     GradeEquivalent: float | str | None
-    StudentDisplayID: int | float | None
+    Lexile: str | int | None = None
     RenaissanceBenchmarkCategoryNumberOfLevels: int | float | None = None
-    Audio: float | str | None = None
+    StudentDisplayID: int | float | None = None
 
 
 class StarDashboardStandard(BaseModel):
