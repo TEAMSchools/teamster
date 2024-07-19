@@ -3,7 +3,7 @@ import random
 from dagster import AssetsDefinition, TextMetadataValue, _check, materialize
 from dagster._core.events import StepMaterializationData
 
-from teamster.code_locations.kipptaf.google.directory.assets import (
+from teamster.code_locations.kipptaf._google.directory.assets import (
     groups,
     members,
     orgunits,

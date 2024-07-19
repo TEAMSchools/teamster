@@ -35,11 +35,7 @@ def build_iready_sftp_sensor(
 
         run_requests = []
 
-        try:
-            files = ssh_iready.listdir_attr_r(remote_dir=remote_dir_regex)
-        except Exception as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=str(e))
+        files = ssh_iready.listdir_attr_r(remote_dir=remote_dir_regex)
 
         for asset in asset_defs:
             metadata_by_key = asset.metadata_by_key[asset.key]

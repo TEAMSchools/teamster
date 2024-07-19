@@ -6,6 +6,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     _check,
     define_asset_job,
     sensor,
@@ -29,9 +30,11 @@ def adp_wfn_sftp_sensor(
 
     try:
         files = ssh_adp_workforce_now.listdir_attr_r()
-    except Exception as e:
-        context.log.exception(e)
-        return SensorResult(skip_reason=str(e))
+    except TimeoutError as e:
+        if "timed out" in e.args:
+            return SkipReason(str(e))
+        else:
+            raise TimeoutError from e
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]

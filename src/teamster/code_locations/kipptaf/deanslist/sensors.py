@@ -28,11 +28,7 @@ def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHRe
     asset_selection = []
     cursor: dict = json.loads(context.cursor or "{}")
 
-    try:
-        files = ssh_deanslist.listdir_attr_r("reconcile_report_files")
-    except Exception as e:
-        context.log.exception(e)
-        return SensorResult(skip_reason=str(e))
+    files = ssh_deanslist.listdir_attr_r("reconcile_report_files")
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]

@@ -7,6 +7,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     _check,
     sensor,
 )
@@ -37,9 +38,17 @@ def build_titan_sftp_sensor(
 
         try:
             files = ssh_titan.listdir_attr_r(exclude_dirs=exclude_dirs)
-        except (SSHException, TimeoutError) as e:
-            context.log.error(e)
-            return SensorResult(skip_reason=str(e))
+        except SSHException as e:
+            context.log.error(msg=e)
+            if "No existing session" in e.args:
+                return SkipReason(str(e))
+            else:
+                raise SSHException from e
+        except TimeoutError as e:
+            if "timed out" in e.args:
+                return SkipReason(str(e))
+            else:
+                raise TimeoutError from e
 
         run_requests = []
         for asset in asset_defs:

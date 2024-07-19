@@ -2,6 +2,7 @@ import pathlib
 
 import google.auth
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from google.auth.credentials import Credentials
 from gspread.auth import authorize, service_account
 from gspread.client import Client
 from gspread.exceptions import SpreadsheetNotFound
@@ -30,7 +31,9 @@ class GoogleSheetsResource(ConfigurableResource):
                 ]
             )
 
-            self._client = authorize(credentials=credentials)
+            self._client = authorize(
+                credentials=_check.inst(obj=credentials, ttype=Credentials)
+            )
 
     def open(self, **kwargs):
         kwargs_keys = kwargs.keys()

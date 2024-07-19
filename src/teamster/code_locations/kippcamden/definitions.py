@@ -3,9 +3,9 @@ from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kippcamden import (
     CODE_LOCATION,
+    _dbt,
     couchdrop,
     datagun,
-    dbt,
     deanslist,
     edplan,
     pearson,
@@ -31,8 +31,8 @@ defs = Definitions(
     executor=k8s_job_executor,
     assets=load_assets_from_modules(
         modules=[
+            _dbt,
             datagun,
-            dbt,
             deanslist,
             edplan,
             pearson,
@@ -41,8 +41,8 @@ defs = Definitions(
         ]
     ),
     schedules=[
+        *_dbt.schedules,
         *datagun.schedules,
-        *dbt.schedules,
         *deanslist.schedules,
         *powerschool.schedules,
     ],

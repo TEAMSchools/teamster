@@ -1,5 +1,6 @@
 connector_name: coupa
 connector_id: bellows_curliness
+group_name: coupa
 schemas:
   - destination_tables:
       - address

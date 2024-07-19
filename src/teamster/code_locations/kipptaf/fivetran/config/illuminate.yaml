@@ -1,5 +1,6 @@
 connector_name: illuminate
 connector_id: jinx_credulous
+group_name: illuminate
 schemas:
   - name: codes
     destination_tables:

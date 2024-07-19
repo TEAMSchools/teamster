@@ -101,29 +101,49 @@ select
         )
     }},
 
+    'PARCC' as assessment_name,
+
     coalesce(
         staffmemberidentifier.string_value,
-        safe_cast(staffmemberidentifier.double_value as string)
+        cast(staffmemberidentifier.double_value as string)
     ) as staffmemberidentifier,
     coalesce(
-        testadministrator.string_value,
-        safe_cast(testadministrator.double_value as string)
+        testadministrator.string_value, cast(testadministrator.double_value as string)
     ) as testadministrator,
     coalesce(
-        statefield6.string_value, safe_cast(statefield6.double_value as string)
+        statefield6.string_value, cast(statefield6.double_value as string)
     ) as statefield6,
     coalesce(
-        statefield9.string_value, safe_cast(statefield9.double_value as string)
+        statefield9.string_value, cast(statefield9.double_value as string)
     ) as statefield9,
     coalesce(
-        shipreportschoolcode.long_value,
-        safe_cast(shipreportschoolcode.double_value as int)
+        shipreportschoolcode.long_value, cast(shipreportschoolcode.double_value as int)
     ) as shipreportschoolcode,
     coalesce(
         shipreportdistrictcode.long_value,
-        safe_cast(shipreportdistrictcode.double_value as int)
+        cast(shipreportdistrictcode.double_value as int)
     ) as shipreportdistrictcode,
 
-    safe_cast(left(assessmentyear, 4) as int) as academic_year,
+    cast(left(assessmentyear, 4) as int) as academic_year,
+
+    cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
+
+    if(`subject` = 'English Language Arts/Literacy', 'ELA', 'Math') as discipline,
+
+    if(testperformancelevel >= 4, true, false) as is_proficient,
+
+    case
+        testperformancelevel
+        when 5
+        then 'Exceeded Expectations'
+        when 4
+        then 'Met Expectations'
+        when 3
+        then 'Approached Expectations'
+        when 2
+        then 'Partially Met Expectations'
+        when 1
+        then 'Did Not Yet Meet Expectations'
+    end as testperformancelevel_text,
 from {{ src_parcc }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'

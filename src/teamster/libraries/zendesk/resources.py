@@ -1,6 +1,6 @@
 from dagster import ConfigurableResource, InitResourceContext
 from pydantic import PrivateAttr
-from zenpy import Zenpy
+from zenpy import Zenpy  # type: ignore
 
 
 class ZendeskResource(ConfigurableResource):

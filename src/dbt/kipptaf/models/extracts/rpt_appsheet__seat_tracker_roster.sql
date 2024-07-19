@@ -11,6 +11,9 @@ select
     sr.report_to_google_email,
     sr.worker_original_hire_date,
     sr.business_unit_home_name,
+    sr.worker_termination_date,
+    sr.sam_account_name as tableau_username,
+    sr.report_to_sam_account_name as tableau_manager_username,
 
     /* future feeds from other data sources*/
     null as itr_response,
@@ -99,6 +102,7 @@ select
     null as report_to_google_email,
     null as worker_original_hire_date,
     null as business_unit_home_name,
+    null as worker_termination_date,
     null as itr_response,
     null as certification_renewal_status,
     null as last_performance_management_score,
@@ -109,7 +113,8 @@ select
     null as campus,
     null as region_state,
     null as permission_level,
-
+    null as tableau_username,
+    null as tableau_manager_username,
 union all
 
 select
@@ -125,6 +130,7 @@ select
     null as report_to_google_email,
     null as worker_original_hire_date,
     null as business_unit_home_name,
+    null as worker_termination_date,
     null as itr_response,
     null as certification_renewal_status,
     null as last_performance_management_score,
@@ -135,6 +141,8 @@ select
     null as campus,
     null as region_state,
     null as permission_level,
+    null as tableau_username,
+    null as tableau_manager_username,
 
 union all
 
@@ -151,6 +159,7 @@ select
     null as report_to_google_email,
     null as worker_original_hire_date,
     null as business_unit_home_name,
+    null as worker_termination_date,
     null as itr_response,
     null as certification_renewal_status,
     null as last_performance_management_score,
@@ -161,6 +170,8 @@ select
     null as campus,
     null as region_state,
     null as permission_level,
+    null as tableau_username,
+    null as tableau_manager_username,
 
 union all
 
@@ -177,6 +188,7 @@ select
     null as report_to_google_email,
     null as worker_original_hire_date,
     null as business_unit_home_name,
+    null as worker_termination_date,
     null as itr_response,
     null as certification_renewal_status,
     null as last_performance_management_score,
@@ -187,3 +199,5 @@ select
     null as campus,
     null as region_state,
     null as permission_level,
+    null as tableau_username,
+    null as tableau_manager_username,

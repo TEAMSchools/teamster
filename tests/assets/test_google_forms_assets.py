@@ -10,7 +10,7 @@ from dagster import (
 )
 from dagster._core.events import StepMaterializationData
 
-from teamster.code_locations.kipptaf.google.forms.assets import form, responses
+from teamster.code_locations.kipptaf._google.forms.assets import form, responses
 from teamster.code_locations.kipptaf.resources import GOOGLE_FORMS_RESOURCE
 from teamster.libraries.core.resources import get_io_manager_gcs_avro
 
