@@ -5,10 +5,13 @@ from dagster_gcp import BigQueryResource
 from google.cloud.bigquery import DatasetReference, TableReference
 
 from teamster import GCS_PROJECT_NAME
+from teamster.code_locations.kipptaf._google.appsheet.assets import (
+    assets as google_appsheet_assets,
+)
 from teamster.code_locations.kipptaf.airbyte.assets import assets as airbyte_assets
 from teamster.code_locations.kipptaf.fivetran.assets import assets as fivetran_assets
 
-asset_selection = [*airbyte_assets, *fivetran_assets]
+asset_selection = [*google_appsheet_assets, *airbyte_assets, *fivetran_assets]
 
 
 @sensor()
