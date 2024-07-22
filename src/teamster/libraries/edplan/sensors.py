@@ -31,13 +31,12 @@ def build_edplan_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_edplan: SSHResource):
-        now = pendulum.now(tz=timezone)
+        now_timestamp = pendulum.now(tz=timezone).timestamp()
 
+        run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
         files = ssh_edplan.listdir_attr_r("Reports")
-
-        run_requests = []
 
         asset_identifier = asset.key.to_python_identifier()
         context.log.info(asset_identifier)
@@ -50,19 +49,24 @@ def build_edplan_sftp_sensor(
                 string=f.filename,
             )
 
-            if match is not None:
+            if (
+                match is not None
+                and f.st_mtime > last_run
+                and _check.not_none(value=f.st_size) > 0
+            ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                if f.st_mtime > last_run and _check.not_none(value=f.st_size) > 0:
-                    run_requests.append(
-                        RunRequest(
-                            run_key=f"{asset_identifier}_{f.st_mtime}",
-                            partition_key=pendulum.from_timestamp(
-                                timestamp=_check.not_none(value=f.st_mtime)
-                            ).to_date_string(),
-                        )
-                    )
+                partition_key = pendulum.from_timestamp(
+                    timestamp=_check.not_none(value=f.st_mtime)
+                ).to_date_string()
 
-            cursor[asset_identifier] = now.timestamp()
+                run_requests.append(
+                    RunRequest(
+                        run_key=f"{asset_identifier}_{partition_key}_{now_timestamp}",
+                        partition_key=partition_key,
+                    )
+                )
+
+            cursor[asset_identifier] = now_timestamp
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
