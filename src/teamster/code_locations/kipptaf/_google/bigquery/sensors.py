@@ -5,6 +5,7 @@ from dagster_gcp import BigQueryResource
 from google.cloud.bigquery import DatasetReference, TableReference
 
 from teamster import GCS_PROJECT_NAME
+from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf._google.appsheet.assets import (
     assets as google_appsheet_assets,
 )
@@ -14,7 +15,10 @@ from teamster.code_locations.kipptaf.fivetran.assets import assets as fivetran_a
 asset_selection = [*google_appsheet_assets, *airbyte_assets, *fivetran_assets]
 
 
-@sensor()
+@sensor(
+    name=f"{CODE_LOCATION}_bigquery_table_modified_sensor",
+    minimum_interval_seconds=(60 * 5),
+)
 def bigquery_table_modified_sensor(
     context: SensorEvaluationContext, db_bigquery: BigQueryResource
 ):
@@ -51,3 +55,8 @@ def bigquery_table_modified_sensor(
 
     if asset_events:
         return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
+
+
+sensors = [
+    bigquery_table_modified_sensor,
+]
