@@ -51,10 +51,10 @@ models:
     +schema: titan
     staging:
       stg_titan__income_form_data:
-        +enabled: False
+        +enabled: false
 
 sources:
   titan:
     titan:
       src_titan__income_form_data:
-        +enabled: False
+        +enabled: false
