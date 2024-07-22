@@ -160,51 +160,22 @@ with
             testscalescore as score,
             testperformancelevel as performance_band_level,
             is_proficient,
+            testperformancelevel_text as performance_band,
+            lep_status,
+            iep_status,
+            is_504,
+            race_ethnicity,
 
-            coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
+            safe_cast(test_grade as string) as test_grade,
 
-            case
-                when testcode in ('ELAGP', 'MATGP') and testperformancelevel = 2
-                then 'Graduation Ready'
-                when testcode in ('ELAGP', 'MATGP') and testperformancelevel = 1
-                then 'Not Yet Graduation Ready'
-                else testperformancelevel_text
-            end as performance_band,
+            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
+            if(`period` = 'FallBlock', 'Fall', `period`) as season,
 
-            case
-                when twoormoreraces = 'Y'
-                then 'T'
-                when hispanicorlatinoethnicity = 'Y'
-                then 'H'
-                when americanindianoralaskanative = 'Y'
-                then 'I'
-                when asian = 'Y'
-                then 'A'
-                when blackorafricanamerican = 'Y'
-                then 'B'
-                when nativehawaiianorotherpacificislander = 'Y'
-                then 'P'
-                when white = 'Y'
-                then 'W'
-            end as race_ethnicity,
-
-            case
-                when studentwithdisabilities in ('IEP', 'B')
-                then 'Has IEP'
-                else 'No IEP'
-            end as iep_status,
-
-            case
-                englishlearnerel when 'Y' then true when 'N' then false
-            end as lep_status,
-
-            case
-                when assessmentgrade in ('Grade 10', 'Grade 11')
-                then right(assessmentgrade, 2)
-                when assessmentgrade is null
-                then null
-                else right(assessmentgrade, 1)
-            end as test_grade,
+            if(
+                `subject` = 'English Language Arts/Literacy',
+                'English Language Arts',
+                `subject`
+            ) as `subject`,
 
             case
                 testcode
@@ -216,99 +187,66 @@ with
                 then 'SCI11'
                 else testcode
             end as test_code,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
-            if(`period` = 'FallBlock', 'Fall', `period`) as season,
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as `subject`,
         from {{ ref("int_pearson__all_assessments") }}
         where academic_year >= {{ var("current_academic_year") - 7 }}
-    ),
-
-    assessments_fl_eoc as (
-        select
-            academic_year,
-            is_proficient,
-            student_id as state_id,
-            achievement_level as performance_band,
-            achievement_level_int as performance_band_level,
-            scale_score as score,
-
-            'EOC' as assessment_name,
-            'PM3' as `admin`,
-            'Spring' as season,
-
-            if(test_name = 'B.E.S.T.Algebra1', 'Math', 'Civics') as discipline,
-            if(test_name = 'B.E.S.T.Algebra1', 'Algebra I', 'Civics') as subject,
-            if(test_name = 'B.E.S.T.Algebra1', 'ALG01', 'SOC08') as test_code,
-
-            safe_cast(enrolled_grade as string) as test_grade,
-        from {{ ref("stg_fldoe__eoc") }}
-        where not is_invalidated
-
-    ),
-
-    assessments_fl_science as (
-        select
-            academic_year,
-            is_proficient,
-            student_id as state_id,
-            achievement_level as performance_band,
-            achievement_level_int as performance_band_level,
-            scale_score as score,
-
-            'Science' as assessment_name,
-            'PM3' as `admin`,
-            'Spring' as season,
-            'Science' as discipline,
-            'Science' as `subject`,
-
-            if(test_grade_level = 5, 'SCI05', 'SCI08') as test_code,
-
-            safe_cast(test_grade_level as string) as test_grade,
-        from {{ ref("stg_fldoe__science") }}
     ),
 
     assessments_fl as (
         select
             academic_year,
+            assessment_name,
+            season,
+            discipline,
+            test_code,
+            is_proficient,
+            administration_window as admin,
+            assessment_subject as subject,
             student_id as state_id,
+            achievement_level as performance_band,
+            achievement_level_int as performance_band_level,
+            scale_score as score,
 
-            'FAST' as assessment_name,
+            safe_cast(enrolled_grade as string) as test_grade,
+        from {{ ref("stg_fldoe__eoc") }}
+        where not is_invalidated
+
+        union all
+
+        select
+            academic_year,
+            assessment_name,
+            season,
+            discipline,
+            test_code,
+            is_proficient,
+            administration_window as admin,
+            assessment_subject as subject,
+            student_id as state_id,
+            achievement_level as performance_band,
+            achievement_level_int as performance_band_level,
+            scale_score as score,
+
+            safe_cast(test_grade_level as string) as test_grade,
+        from {{ ref("stg_fldoe__science") }}
+
+        union all
+
+        select
+            academic_year,
+            assessment_name,
+            season,
+            discipline,
+            test_code,
+            is_proficient,
+            administration_window as admin,
+            assessment_subject as subject,
+            student_id as state_id,
+            achievement_level as performance_band,
+            achievement_level_int as performance_band_level,
+            scale_score as score,
 
             safe_cast(assessment_grade as string) as test_grade,
 
-            administration_window as `admin`,
-            scale_score as score,
-            achievement_level as performance_band,
-            achievement_level_int as performance_band_level,
-            is_proficient,
-
-            case
-                administration_window
-                when 'PM1'
-                then 'Fall'
-                when 'PM2'
-                then 'Winter'
-                when 'PM3'
-                then 'Spring'
-            end as season,
-
-            if(assessment_subject = 'ELAReading', 'ELA', 'Math') as discipline,
-            if(
-                assessment_subject = 'ELAReading',
-                'English Language Arts',
-                'Mathematics'
-            ) as subject,
-
-            if(
-                assessment_subject = 'ELAReading',
-                concat('ELA0', assessment_grade),
-                concat('MAT0', assessment_grade)
-            ) as test_code,
         from {{ ref("stg_fldoe__fast") }}
         where achievement_level not in ('Insufficient to score', 'Invalidated')
 
@@ -316,84 +254,23 @@ with
 
         select
             academic_year,
+            test_name as assessment_name,
+            'Spring' as season,
+            discipline,
+            test_code,
+            is_proficient,
+            administration_round as admin,
+            assessment_subject as subject,
             fleid as state_id,
-
-            'FSA' as assessment_name,
+            achievement_level as performance_band,
+            performance_level as performance_band_level,
+            scale_score as score,
 
             safe_cast(test_grade as string) as test_grade,
 
-            'Spring' as `admin`,
-
-            scale_score as score,
-            achievement_level as performance_band,
-            performance_level as performance_band_level,
-            is_proficient,
-
-            'Spring' as season,
-
-            case
-                assessment_subject
-                when 'ELA'
-                then 'ELA'
-                when 'MATH'
-                then 'Math'
-                when 'SCIENCE'
-                then 'Science'
-            end as discipline,
-            case
-                assessment_subject
-                when 'ELA'
-                then 'English Language Arts'
-                when 'MATH'
-                then 'Mathematics'
-                when 'SCIENCE'
-                then 'Science'
-            end as `subject`,
-            case
-                when assessment_subject = 'ELA'
-                then concat('ELA0', test_grade)
-                when assessment_subject = 'SCIENCE'
-                then concat('SCI0', test_grade)
-                else concat('MAT0', test_grade)
-            end as test_code,
         from {{ ref("stg_fldoe__fsa") }}
         where performance_level is not null
 
-        union all
-
-        select
-            academic_year,
-            state_id,
-            assessment_name,
-            test_grade,
-            `admin`,
-            score,
-            performance_band,
-            performance_band_level,
-            is_proficient,
-            season,
-            discipline,
-            `subject`,
-            test_code,
-        from assessments_fl_eoc
-
-        union all
-
-        select
-            academic_year,
-            state_id,
-            assessment_name,
-            test_grade,
-            `admin`,
-            score,
-            performance_band,
-            performance_band_level,
-            is_proficient,
-            season,
-            discipline,
-            `subject`,
-            test_code,
-        from assessments_fl_science
     ),
 
     nj_final as (
