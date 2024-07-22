@@ -7,7 +7,8 @@ from teamster.libraries.couchdrop.sensors import build_couchdrop_sftp_sensor
 couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
     code_location=CODE_LOCATION,
     local_timezone=LOCAL_TIMEZONE,
-    assets=[observation_details],
+    asset_selection=[observation_details],
+    minimum_interval_seconds=(60 * 10),
     exclude_dirs=[
         f"/data-team/{CODE_LOCATION}/surveys",
         f"/data-team/{CODE_LOCATION}/dayforce",
