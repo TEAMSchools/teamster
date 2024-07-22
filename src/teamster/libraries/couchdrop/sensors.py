@@ -31,7 +31,7 @@ def build_couchdrop_sftp_sensor(
     if exclude_dirs is None:
         exclude_dirs = []
 
-    base_job_name = f"{code_location}_iready_sftp_asset_job"
+    base_job_name = f"{code_location}_couchdrop_sftp_asset_job"
 
     keys_by_partitions_def = defaultdict(set[AssetKey])
 
