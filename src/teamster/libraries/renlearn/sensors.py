@@ -1,8 +1,12 @@
 import json
 import re
+from collections import defaultdict
+from itertools import groupby
+from operator import itemgetter
 
 import pendulum
 from dagster import (
+    AssetKey,
     AssetsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -25,22 +29,37 @@ def build_renlearn_sftp_sensor(
     minimum_interval_seconds=None,
     tags=None,
 ):
-    job = define_asset_job(
-        name=f"{code_location}_renlearn_sftp_asset_job", selection=asset_selection
-    )
+    base_job_name = f"{code_location}_renlearn_sftp_asset_job"
+
+    keys_by_partitions_def = defaultdict(set[AssetKey])
+
+    for assets_def in asset_selection:
+        keys_by_partitions_def[assets_def.partitions_def].add(assets_def.key)
+
+    jobs = [
+        define_asset_job(
+            name=(
+                f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
+            ),
+            selection=list(keys),
+        )
+        for partitions_def, keys in keys_by_partitions_def.items()
+    ]
 
     @sensor(
-        name=f"{job.name}_sensor",
-        job=job,
+        name=f"{base_job_name}_sensor",
+        jobs=jobs,
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_renlearn: SSHResource):
         now_timestamp = pendulum.now(tz=timezone).timestamp()
+
+        run_request_kwargs = []
+        run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
         files = ssh_renlearn.listdir_attr_r()
 
-        run_requests = []
         for asset in asset_selection:
             asset_metadata = asset.metadata_by_key[asset.key]
             asset_identifier = asset.key.to_python_identifier()
@@ -53,6 +72,9 @@ def build_renlearn_sftp_sensor(
             )
 
             subjects = partitions_def.get_partitions_def_for_dimension("subject")
+            job_name = (
+                f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
+            )
 
             for f, _ in files:
                 match = re.match(
@@ -66,21 +88,32 @@ def build_renlearn_sftp_sensor(
                 ):
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     for subject in subjects.get_partition_keys():
-                        run_requests.append(
-                            RunRequest(
-                                run_key=f"{asset_identifier}_{now_timestamp}",
-                                asset_selection=[asset.key],
-                                tags=tags,
-                                partition_key=MultiPartitionKey(
+                        run_request_kwargs.append(
+                            {
+                                "asset_key": asset.key,
+                                "job_name": job_name,
+                                "partition_key": MultiPartitionKey(
                                     {
                                         "start_date": partition_key_start_date,
                                         "subject": subject,
                                     }
                                 ),
-                            )
+                            }
                         )
 
                 cursor[asset_identifier] = now_timestamp
+
+        for (job_name, parition_key), group in groupby(
+            iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
+        ):
+            run_requests.append(
+                RunRequest(
+                    run_key=f"{job_name}_{parition_key}_{now_timestamp}",
+                    job_name=job_name,
+                    partition_key=parition_key,
+                    asset_selection=[g["asset_key"] for g in group],
+                )
+            )
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

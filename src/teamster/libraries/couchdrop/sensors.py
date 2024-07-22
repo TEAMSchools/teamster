@@ -1,7 +1,11 @@
 import re
+from collections import defaultdict
+from itertools import groupby
+from operator import itemgetter
 
 import pendulum
 from dagster import (
+    AssetKey,
     AssetsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -27,30 +31,45 @@ def build_couchdrop_sftp_sensor(
     if exclude_dirs is None:
         exclude_dirs = []
 
-    job = define_asset_job(
-        f"{code_location}_couchdrop_sftp_asset_job", selection=asset_selection
-    )
+    base_job_name = f"{code_location}_iready_sftp_asset_job"
+
+    keys_by_partitions_def = defaultdict(set[AssetKey])
+
+    for assets_def in asset_selection:
+        keys_by_partitions_def[assets_def.partitions_def].add(assets_def.key)
+
+    jobs = [
+        define_asset_job(
+            name=(
+                f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
+            ),
+            selection=list(keys),
+        )
+        for partitions_def, keys in keys_by_partitions_def.items()
+    ]
 
     @sensor(
-        name=f"{job.name}_sensor",
-        job=job,
+        name=f"{base_job_name}_sensor",
+        jobs=jobs,
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_couchdrop: SSHResource):
-        now = pendulum.now(tz=local_timezone)
-        run_requests = []
+        now_timestamp = pendulum.now(tz=local_timezone).timestamp()
 
+        run_request_kwargs = []
+        run_requests = []
         tick_cursor = float(context.cursor or "0.0")
 
         files = ssh_couchdrop.listdir_attr_r(
             remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
         )
 
-        for asset in asset_selection:
-            asset_identifier = asset.key.to_python_identifier()
-            metadata_by_key = asset.metadata_by_key[asset.key]
-
+        for a in asset_selection:
+            asset_identifier = a.key.to_python_identifier()
+            metadata_by_key = a.metadata_by_key[a.key]
+            partitions_def = _check.not_none(value=a.partitions_def)
             context.log.info(asset_identifier)
+
             pattern = re.compile(
                 pattern=(
                     f"{metadata_by_key["remote_dir_regex"]}/"
@@ -69,31 +88,39 @@ def build_couchdrop_sftp_sensor(
             for f, path in file_matches:
                 match = _check.not_none(value=pattern.match(string=path))
 
-                if isinstance(asset.partitions_def, MultiPartitionsDefinition):
+                if isinstance(a.partitions_def, MultiPartitionsDefinition):
                     partition_key = MultiPartitionKey(match.groupdict())
-                elif isinstance(asset.partitions_def, StaticPartitionsDefinition):
+                elif isinstance(a.partitions_def, StaticPartitionsDefinition):
                     partition_key = match.group(1)
                 else:
                     partition_key = None
 
                 context.log.info(f"{f.filename}: {partition_key}")
-                run_requests.append(
-                    RunRequest(
-                        run_key="_".join(
-                            [
-                                context.sensor_name,
-                                asset_identifier,
-                                str(partition_key),
-                                str(now.timestamp()),
-                            ]
+                run_request_kwargs.append(
+                    {
+                        "asset_key": a.key,
+                        "job_name": (
+                            f"{base_job_name}_"
+                            f"{partitions_def.get_serializable_unique_identifier()}"
                         ),
-                        asset_selection=[asset.key],
-                        partition_key=partition_key,
-                    )
+                        "partition_key": partition_key,
+                    }
                 )
 
-        if run_requests:
-            tick_cursor = now.timestamp()
+        if run_request_kwargs:
+            tick_cursor = now_timestamp
+
+            for (job_name, parition_key), group in groupby(
+                iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
+            ):
+                run_requests.append(
+                    RunRequest(
+                        run_key=f"{job_name}_{parition_key}_{now_timestamp}",
+                        job_name=job_name,
+                        partition_key=parition_key,
+                        asset_selection=[g["asset_key"] for g in group],
+                    )
+                )
 
         return SensorResult(run_requests=run_requests, cursor=str(tick_cursor))
 

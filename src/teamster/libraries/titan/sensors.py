@@ -8,7 +8,6 @@ import pendulum
 from dagster import (
     AssetKey,
     AssetsDefinition,
-    PartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
@@ -20,12 +19,6 @@ from dagster import (
 from paramiko.ssh_exception import SSHException
 
 from teamster.libraries.ssh.resources import SSHResource
-
-
-def get_partitioned_asset_job_name(
-    base_job_name: str, partitions_def: PartitionsDefinition
-):
-    return f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
 
 
 def build_titan_sftp_sensor(
@@ -47,8 +40,8 @@ def build_titan_sftp_sensor(
 
     jobs = [
         define_asset_job(
-            name=get_partitioned_asset_job_name(
-                base_job_name=base_job_name, partitions_def=partitions_def
+            name=(
+                f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
             ),
             selection=list(keys),
         )
@@ -103,9 +96,9 @@ def build_titan_sftp_sensor(
                     run_request_kwargs.append(
                         {
                             "asset_key": a.key,
-                            "job_name": get_partitioned_asset_job_name(
-                                base_job_name=base_job_name,
-                                partitions_def=partitions_def,
+                            "job_name": (
+                                f"{base_job_name}_"
+                                f"{partitions_def.get_serializable_unique_identifier()}"
                             ),
                             "partition_key": match.group(1),
                         }
@@ -118,7 +111,7 @@ def build_titan_sftp_sensor(
         ):
             run_requests.append(
                 RunRequest(
-                    run_key=f"{job_name}_{now_timestamp}",
+                    run_key=f"{job_name}_{parition_key}_{now_timestamp}",
                     job_name=job_name,
                     partition_key=parition_key,
                     asset_selection=[g["asset_key"] for g in group],
