@@ -9,3 +9,4 @@ sources:
       - name: src_leadership_development_ratings
       - name: src_seat_tracker__seats
       - name: src_seat_tracker__nonrenewals
+      - name: src_seat_tracker__log_archive
