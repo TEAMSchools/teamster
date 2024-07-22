@@ -1,5 +1,6 @@
 import json
 import re
+from socket import gaierror
 
 import pendulum
 from dagster import (
@@ -7,6 +8,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     _check,
     sensor,
 )
@@ -30,7 +32,14 @@ def build_sftp_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
-        files = ssh_edplan.listdir_attr_r("Reports")
+        try:
+            files = ssh_edplan.listdir_attr_r("Reports")
+        except gaierror as e:
+            if "[Errno -3] Temporary failure in name resolution" in e.args:
+                context.log.error(msg=str(e))
+                return SkipReason(str(e))
+            else:
+                raise e
 
         run_requests = []
         for asset in asset_defs:
