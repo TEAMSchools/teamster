@@ -50,6 +50,7 @@ with
         select
             fleid,
             test_name,
+            season,
             test_grade,
             scale_score,
             performance_level,
