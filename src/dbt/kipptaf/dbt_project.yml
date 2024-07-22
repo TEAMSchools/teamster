@@ -116,6 +116,9 @@ models:
       +schema: illuminate
       staging:
         +materialized: table
+        repositories:
+          archive:
+            +enabled: false
       base:
         +materialized: table
     instagram:
