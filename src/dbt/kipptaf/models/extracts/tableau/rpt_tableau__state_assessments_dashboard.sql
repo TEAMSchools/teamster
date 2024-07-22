@@ -544,6 +544,8 @@ select
     sf.nj_student_tier,
     sf.tutoring_nj,
 
+    sf2.iready_proficiency_eoy,
+
     m.teacher_name,
     m.course_number,
     m.course_name,
@@ -573,6 +575,11 @@ left join
     on s.academic_year = sf.academic_year
     and s.discipline = sf.discipline
     and s.student_number = sf.student_number
+left join
+    {{ ref("int_reporting__student_filters") }} as sf2
+    on s.academic_year = sf2.academic_year - 1
+    and s.discipline = sf2.discipline
+    and s.student_number = sf2.student_number
 
 union all
 
@@ -622,6 +629,8 @@ select
     sf.nj_student_tier,
     sf.tutoring_nj,
 
+    sf2.iready_proficiency_eoy,
+
     m.teacher_name,
     m.course_number,
     m.course_name,
@@ -651,6 +660,11 @@ left join
     on s.academic_year = sf.academic_year
     and s.discipline = sf.discipline
     and s.student_number = sf.student_number
+left join
+    {{ ref("int_reporting__student_filters") }} as sf2
+    on s.academic_year = sf2.academic_year - 1
+    and s.discipline = sf2.discipline
+    and s.student_number = sf2.student_number
 
 union all
 
@@ -696,6 +710,7 @@ select
     organization_goal,
     nj_student_tier,
     tutoring_nj,
+    iready_proficiency_eoy,
     teacher_name,
     course_number,
     course_name,
