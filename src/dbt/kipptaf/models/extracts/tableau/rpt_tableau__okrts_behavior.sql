@@ -101,6 +101,26 @@ with
             co.academic_year >= {{ var("current_academic_year") }} - 1
             and co.rn_year = 1
             and co.grade_level != 99
+    ),
+
+    behavior_aggregation as (
+        select
+            student_number,
+            academic_year,
+            week_start_monday,
+            category_type,
+            behavior,
+            entry_staff,
+            count(distinct dl_said) as behavior_count,
+            sum(point_value) as total_points,
+        from roster
+        group by
+            student_number,
+            academic_year,
+            week_start_monday,
+            category_type,
+            behavior,
+            entry_staff
     )
 
 select
@@ -122,41 +142,20 @@ select
     r.week_end_sunday,
     r.days_in_session,
     r.term,
-    r.category_type,
-    r.behavior,
     r.school_enrollment_by_week,
-    r.entry_staff,
     r.ml_status,
     r.status_504,
     r.self_contained_status,
     r.iep_status,
-    count(distinct r.dl_said) as behavior_count,
-    sum(r.point_value) as total_points,
+
+    b.category_type,
+    b.behavior,
+    b.entry_staff,
+    b.behavior_count,
+    b.total_points,
 from roster as r
-group by
-    r.student_number,
-    r.student_name,
-    r.academic_year,
-    r.schoolid,
-    r.school,
-    r.region,
-    r.grade_level,
-    r.enroll_status,
-    r.cohort,
-    r.school_level,
-    r.gender,
-    r.ethnicity,
-    r.homeroom_section,
-    r.homeroom_teacher_name,
-    r.week_start_monday,
-    r.week_end_sunday,
-    r.days_in_session,
-    r.term,
-    r.category_type,
-    r.behavior,
-    r.school_enrollment_by_week,
-    r.entry_staff,
-    r.ml_status,
-    r.status_504,
-    r.self_contained_status,
-    r.iep_status
+left join
+    behavior_aggregation as b
+    on r.student_number = b.student_number
+    and r.academic_year = b.academic_year
+    and r.week_start_monday = b.week_start_monday
