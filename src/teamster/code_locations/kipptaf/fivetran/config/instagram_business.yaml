@@ -1,5 +1,6 @@
 connector_name: instagram_business
 connector_id: muskiness_cumulative
+group_name: instagram_business
 schemas:
   - destination_tables:
       - media_history

@@ -29,6 +29,7 @@ class Application(BaseModel):
     application_status_interview_phone_screen_requested_date: str | None = None
     application_status: str | None = None
     candidate_email: str | None = None
+    candidate_first_and_last_name: str | None = None
     candidate_first_name: str | None = None
     candidate_id: str | None = None
     candidate_last_name: str | None = None
@@ -54,38 +55,34 @@ class Application(BaseModel):
 
 
 class Applicant(BaseModel):
-    candidate_id: str | None = None
-    application_id: str | None = None
-    candidate_first_name: str | None = None
-    candidate_last_name: str | None = None
-    candidate_email: str | None = None
-    current_employer: str | None = None
-    candidate_tags_values: str | None = None
-    application_field_school_shared_with_new_jersey: str | None = None
     application_field_school_shared_with_miami: str | None = None
-    screening_question_answer_new_jersey_undergrad_gpa: str | None = None
-    screening_question_answer_new_jersey_grad_gpa: str | None = None
-    screening_question_answer_new_jersey_teacher_certification_question: str | None = (
-        None
-    )
-    screening_question_answer_new_jersey_out_of_state_teacher_certification_details: (
-        str | None
-    ) = None
-    screening_question_answer_new_jersey_out_of_state_teacher_certification_sped_credits: (
-        str | None
-    ) = None
-    screening_question_answer_new_jersey_out_of_state_sped_credits: str | None = None
-    screening_question_answer_miami_undergrad_gpa: str | None = None
+    application_field_school_shared_with_new_jersey: str | None = None
+    application_id: str | None = None
+    candidate_email: str | None = None
+    candidate_first_and_last_name: str | None = None
+    candidate_first_name: str | None = None
+    candidate_id: str | None = None
+    candidate_last_name: str | None = None
+    candidate_source_subtype: str | None = None
+    candidate_source_type: str | None = None
+    candidate_source: str | None = None
+    candidate_tags_values: str | None = None
+    current_employer: str | None = None
     screening_question_answer_miami_grad_gpa: str | None = None
-    screening_question_answer_miami_teacher_certification_question: str | None = None
-    screening_question_answer_miami_teacher_certification_endorsement_question: (
-        str | None
-    ) = None
     screening_question_answer_miami_out_of_state_teaching_certification_details: (
         str | None
     ) = None
+    screening_question_answer_miami_teacher_certification_endorsement_question: (
+        str | None
+    ) = None
+    screening_question_answer_miami_teacher_certification_question: str | None = None
+    screening_question_answer_miami_undergrad_gpa: str | None = None
+    screening_question_answer_national_are_you_alumnus: str | None = None
+    screening_question_answer_national_gender: str | None = None
+    screening_question_answer_national_in_which_regions_alumnus: str | None = None
+    screening_question_answer_national_race: str | None = None
+    screening_question_answer_new_jersey_grad_gpa: str | None = None
     screening_question_answer_new_jersey_miami_affiliated_orgs: str | None = None
-    screening_question_answer_new_jersey_miami_other_orgs: str | None = None
     screening_question_answer_new_jersey_miami_city_of_interest: str | None = None
     screening_question_answer_new_jersey_miami_current_or_former_kipp_employee: (
         str | None
@@ -97,10 +94,18 @@ class Applicant(BaseModel):
     screening_question_answer_new_jersey_miami_how_did_you_hear_about_kipp_nj_miami: (
         str | None
     ) = None
-    screening_question_answer_national_race: str | None = None
-    screening_question_answer_national_gender: str | None = None
-    screening_question_answer_national_are_you_alumnus: str | None = None
-    screening_question_answer_national_in_which_regions_alumnus: str | None = None
+    screening_question_answer_new_jersey_miami_other_orgs: str | None = None
+    screening_question_answer_new_jersey_out_of_state_sped_credits: str | None = None
+    screening_question_answer_new_jersey_out_of_state_teacher_certification_details: (
+        str | None
+    ) = None
+    screening_question_answer_new_jersey_out_of_state_teacher_certification_sped_credits: (
+        str | None
+    ) = None
+    screening_question_answer_new_jersey_teacher_certification_question: str | None = (
+        None
+    )
+    screening_question_answer_new_jersey_undergrad_gpa: str | None = None
 
 
 class Rating(BaseModel):

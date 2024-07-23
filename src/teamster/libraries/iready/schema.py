@@ -161,6 +161,7 @@ class DiagnosticResults(BaseModel):
     quantile_measure: str | None = None
     quantile_range: str | None = None
     race: str | None = None
+    read_aloud: str | None = None
     reading_comprehension_informational_text_placement: str | None = None
     reading_comprehension_informational_text_relative_placement: str | None = None
     reading_comprehension_informational_text_scale_score: float | None = None

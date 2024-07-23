@@ -56,13 +56,9 @@ def adp_payroll_sftp_sensor(
 
     tick_cursor = float(context.cursor or "0.0")
 
-    try:
-        files = ssh_couchdrop.listdir_attr_r(
-            remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll"
-        )
-    except Exception as e:
-        context.log.exception(e)
-        return SensorResult(skip_reason=str(e))
+    files = ssh_couchdrop.listdir_attr_r(
+        remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll"
+    )
 
     add_dynamic_partition_keys = set()
 

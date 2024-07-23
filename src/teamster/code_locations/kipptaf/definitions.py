@@ -1,17 +1,21 @@
-from dagster import Definitions, load_assets_from_modules
+from dagster import (
+    Definitions,
+    load_asset_checks_from_modules,
+    load_assets_from_modules,
+)
 from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kipptaf import (
     CODE_LOCATION,
+    _dbt,
+    _google,
     adp,
     airbyte,
     amplify,
-    couchdrop,
+    asset_checks,
     datagun,
-    dbt,
     deanslist,
     fivetran,
-    google,
     ldap,
     overgrad,
     performance_management,
@@ -20,7 +24,6 @@ from teamster.code_locations.kipptaf import (
     schoolmint,
     smartrecruiters,
     tableau,
-    zendesk,
 )
 from teamster.libraries.core.resources import (
     BIGQUERY_RESOURCE,
@@ -36,14 +39,14 @@ defs = Definitions(
     executor=k8s_job_executor,
     assets=load_assets_from_modules(
         modules=[
+            _dbt,
+            _google,
             adp,
             airbyte,
             amplify,
             datagun,
-            dbt,
             deanslist,
             fivetran,
-            google,
             ldap,
             overgrad,
             performance_management,
@@ -51,29 +54,26 @@ defs = Definitions(
             schoolmint,
             smartrecruiters,
             tableau,
-            zendesk,
         ]
     ),
+    asset_checks=load_asset_checks_from_modules(modules=[asset_checks]),
     schedules=[
+        *_dbt.schedules,
+        *_google.schedules,
         *adp.schedules,
         *airbyte.schedules,
         *amplify.schedules,
         *datagun.schedules,
-        *dbt.schedules,
         *fivetran.schedules,
-        *google.schedules,
         *ldap.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
         *tableau.schedules,
     ],
     sensors=[
+        *_google.sensors,
         *adp.sensors,
-        *airbyte.sensors,
-        *couchdrop.sensors,
         *deanslist.sensors,
-        *fivetran.sensors,
-        *google.sensors,
         *tableau.sensors,
     ],
     resources={
@@ -101,7 +101,6 @@ defs = Definitions(
         "schoolmint_grow": resources.SCHOOLMINT_GROW_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
         "tableau": resources.TABLEAU_SERVER_RESOURCE,
-        "zendesk": resources.ZENDESK_RESOURCE,
         # ssh
         "ssh_adp_workforce_now": resources.SSH_RESOURCE_ADP_WORKFORCE_NOW,
         "ssh_clever": resources.SSH_RESOURCE_CLEVER,

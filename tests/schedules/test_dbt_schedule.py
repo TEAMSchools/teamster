@@ -14,13 +14,13 @@ def _test_dbt_code_version_schedule(schedule):
 
 
 def test_kipptaf():
-    from teamster.code_locations.kipptaf.dbt.schedules import dbt_code_version_schedule
+    from teamster.code_locations.kipptaf._dbt.schedules import dbt_code_version_schedule
 
     _test_dbt_code_version_schedule(schedule=dbt_code_version_schedule)
 
 
 def test_kippnewark():
-    from teamster.code_locations.kippnewark.dbt.schedules import (
+    from teamster.code_locations.kippnewark._dbt.schedules import (
         dbt_code_version_schedule,
     )
 
@@ -28,7 +28,7 @@ def test_kippnewark():
 
 
 def test_kippcamden():
-    from teamster.code_locations.kippcamden.dbt.schedules import (
+    from teamster.code_locations.kippcamden._dbt.schedules import (
         dbt_code_version_schedule,
     )
 
@@ -36,7 +36,7 @@ def test_kippcamden():
 
 
 def test_kippmiami():
-    from teamster.code_locations.kippmiami.dbt.schedules import (
+    from teamster.code_locations.kippmiami._dbt.schedules import (
         dbt_code_version_schedule,
     )
 
