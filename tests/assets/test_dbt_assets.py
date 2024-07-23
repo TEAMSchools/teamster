@@ -77,7 +77,7 @@ def test_dbt_assets():
 
 
 def test_external_source_dbt_assets():
-    from teamster.code_locations.kipptaf.dbt.assets import external_source_dbt_assets
+    from teamster.code_locations.kipptaf._dbt.assets import external_source_dbt_assets
 
     result = materialize(
         assets=[external_source_dbt_assets],
@@ -89,12 +89,12 @@ def test_external_source_dbt_assets():
 
 
 def test_dbt_assets_kipptaf():
-    from teamster.code_locations.kipptaf.dbt.assets import dbt_assets
+    from teamster.code_locations.kipptaf._dbt.assets import adp_payroll_dbt_assets
 
     result = materialize(
-        assets=[dbt_assets],
+        assets=[adp_payroll_dbt_assets],
         resources={"dbt_cli": get_dbt_cli_resource(code_location="kipptaf", test=True)},
-        selection=["kipptaf/pearson/int_pearson__all_assessments"],
+        selection=["kipptaf/extracts/rpt_gsheets__intacct_integration_file"],
     )
 
     assert result.success
