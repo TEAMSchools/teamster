@@ -5,8 +5,50 @@ sources:
     schema: kipptaf_appsheet
     tables:
       - name: illuminate_assessments_extension
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - illuminate_assessments_extension
       - name: src_leadership_development_active_users
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - src_leadership_development_active_users
       - name: src_leadership_development_output
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - src_leadership_development_output
       - name: src_leadership_development_ratings
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - src_leadership_development_ratings
       - name: src_seat_tracker__log_archive
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - src_seat_tracker__log_archive
       - name: src_seat_tracker__seats
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - src_seat_tracker__seats
