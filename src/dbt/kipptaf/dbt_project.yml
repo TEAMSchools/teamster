@@ -111,7 +111,7 @@ models:
         staging:
           +materialized: table
       appsheet:
-        +schema: appsheet
+        +schema: google_appsheet
     illuminate:
       +schema: illuminate
       staging:

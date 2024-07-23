@@ -4,7 +4,7 @@ from teamster.code_locations.kipptaf._dbt.assets import manifest
 
 specs = [
     AssetSpec(
-        key=source["fqn"],
+        key=source["meta"]["dagster"]["asset_key"],
         metadata={"dataset_id": source["schema"], "table_id": source["name"]},
         group_name="google_appsheet",
     )
