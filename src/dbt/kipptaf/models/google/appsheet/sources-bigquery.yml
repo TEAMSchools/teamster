@@ -4,8 +4,9 @@ sources:
   - name: google_appsheet
     schema: kipptaf_appsheet
     tables:
+      - name: illuminate_assessments_extension
       - name: src_leadership_development_active_users
       - name: src_leadership_development_output
       - name: src_leadership_development_ratings
+      - name: src_seat_tracker__log_archive
       - name: src_seat_tracker__seats
-      - name: src_seat_tracker__nonrenewals
