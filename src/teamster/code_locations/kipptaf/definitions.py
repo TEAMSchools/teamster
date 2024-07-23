@@ -73,9 +73,7 @@ defs = Definitions(
     sensors=[
         *_google.sensors,
         *adp.sensors,
-        *airbyte.sensors,
         *deanslist.sensors,
-        *fivetran.sensors,
         *tableau.sensors,
     ],
     resources={
