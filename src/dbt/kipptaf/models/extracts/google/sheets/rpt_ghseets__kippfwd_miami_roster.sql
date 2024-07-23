@@ -9,6 +9,7 @@ with
         from {{ ref("stg_fldoe__fast") }}
         where administration_window = 'PM3'
     ),
+
     fast_pivot as (
         select fleid, academic_year, elareading as fast_ela, mathematics as fast_math,
         from
