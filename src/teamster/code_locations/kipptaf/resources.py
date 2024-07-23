@@ -52,7 +52,9 @@ DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
 )
 
 FIVETRAN_RESOURCE = FivetranResource(
-    api_key=EnvVar("FIVETRAN_API_KEY"), api_secret=EnvVar("FIVETRAN_API_SECRET")
+    api_key=EnvVar("FIVETRAN_API_KEY"),
+    api_secret=EnvVar("FIVETRAN_API_SECRET"),
+    request_max_retries=5,
 )
 
 GOOGLE_DRIVE_RESOURCE = GoogleDriveResource(
