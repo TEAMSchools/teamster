@@ -15,6 +15,7 @@ with
             (select academic_year, fleid, subject, fast_score, from fast_concat)
             pivot (max(fast_score) for subject in ('ELAReading', 'Mathematics'))
     )
+
 select
     co.academic_year,
     co.lastfirst,
@@ -27,7 +28,7 @@ select
     fp.fast_ela,
     fp.fast_math,
 
-    gpa.cumulative_y1_gpa_unweighted as gpa
+    gpa.cumulative_y1_gpa_unweighted as gpa,
 
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
