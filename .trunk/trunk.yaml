@@ -8,7 +8,6 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - pyright@1.1.372
     - actionlint@1.7.1
     - bandit@1.7.9
     - git-diff-check
@@ -19,6 +18,7 @@ lint:
     - osv-scanner@1.8.2
     - oxipng@9.1.2
     - prettier@3.3.3
+    - pyright@1.1.372
     - ruff@0.5.4
     - shellcheck@0.10.0
     - shfmt@3.6.0
@@ -42,6 +42,12 @@ lint:
         - sqlfluff
         - sqlfmt
     - paths:
+        - src/teamster/libraries/dlt_sources/**
+      linters:
+        - pyright
+        - sqlfluff
+        - sqlfmt
+    - paths:
         - src/dbt/**
       linters:
         - actionlint
@@ -52,6 +58,7 @@ lint:
         - markdownlint
         - osv-scanner
         - oxipng
+        - pyright
         - ruff
         - shellcheck
         - shfmt

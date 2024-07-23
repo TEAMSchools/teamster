@@ -28,6 +28,8 @@ dependencies = [
   "scikit-learn>=1.4.0",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
+  "dagster-embedded-elt>=0.23.14",
+  "psycopg2>=2.9.9",
 ]
 requires-python = ">=3.12,<3.13"
 license = { text = "GPL-3.0-or-later" }

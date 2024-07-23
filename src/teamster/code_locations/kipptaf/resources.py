@@ -1,5 +1,6 @@
 from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudResource
+from dagster_embedded_elt.dlt import DagsterDltResource
 from dagster_fivetran import FivetranResource
 
 from teamster.libraries.adp.workforce_manager.resources import (
@@ -50,6 +51,8 @@ AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
 DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
     username=EnvVar("AMPLIFY_DDS_USERNAME"), password=EnvVar("AMPLIFY_DDS_PASSWORD")
 )
+
+DLT_RESOURCE = DagsterDltResource()
 
 FIVETRAN_RESOURCE = FivetranResource(
     api_key=EnvVar("FIVETRAN_API_KEY"),
