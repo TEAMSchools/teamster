@@ -1,4 +1,4 @@
-select distinct
+select
     employee_number,
     observation_id,
     academic_year,
