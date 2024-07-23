@@ -105,7 +105,7 @@ with
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
         where
-            bss.academic_year = {{ var("current_academic_year") }}
+            bss.academic_year >= {{ var("current_academic_year") - 1 }}
             and u.measure = 'Composite'
     ),
 
@@ -155,6 +155,7 @@ select
     co._dbt_source_relation,
     co.student_number,
     co.studentid,
+    co.gifted_and_talented,
 
     sj.iready_subject,
     sj.illuminate_subject_area,
@@ -169,6 +170,9 @@ select
     coalesce(db.boy, 'No Test') as dibels_boy_composite,
     coalesce(db.moy, 'No Test') as dibels_moy_composite,
     coalesce(db.eoy, 'No Test') as dibels_eoy_composite,
+    coalesce(
+        db.eoy, db.moy, db.boy, 'No Composite Score Available'
+    ) as dibels_most_recent_composite,
 
     if(nj.nj_intervention_subject is not null, true, false) as bucket_two,
 

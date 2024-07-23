@@ -21,7 +21,6 @@ from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
-from teamster.libraries.zendesk.resources import ZendeskResource
 
 """
 Dagster resources
@@ -41,6 +40,7 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
     client_secret=EnvVar("ADP_WFN_CLIENT_SECRET"),
     cert_filepath="/etc/secret-volume/adp_wfn_cert",
     key_filepath="/etc/secret-volume/adp_wfn_key",
+    masked=False,
 )
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
@@ -52,7 +52,9 @@ DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
 )
 
 FIVETRAN_RESOURCE = FivetranResource(
-    api_key=EnvVar("FIVETRAN_API_KEY"), api_secret=EnvVar("FIVETRAN_API_SECRET")
+    api_key=EnvVar("FIVETRAN_API_KEY"),
+    api_secret=EnvVar("FIVETRAN_API_SECRET"),
+    request_max_retries=5,
 )
 
 GOOGLE_DRIVE_RESOURCE = GoogleDriveResource(
@@ -106,12 +108,6 @@ TABLEAU_SERVER_RESOURCE = TableauServerResource(
     site_id=EnvVar("TABLEAU_SITE_ID"),
     token_name=EnvVar("TABLEAU_TOKEN_NAME"),
     personal_access_token=EnvVar("TABLEAU_PERSONAL_ACCESS_TOKEN"),
-)
-
-ZENDESK_RESOURCE = ZendeskResource(
-    subdomain=EnvVar("ZENDESK_SUBDOMAIN"),
-    email=EnvVar("ZENDESK_EMAIL"),
-    token=EnvVar("ZENDESK_TOKEN"),
 )
 
 """

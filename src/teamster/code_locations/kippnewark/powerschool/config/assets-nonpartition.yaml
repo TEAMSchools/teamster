@@ -13,6 +13,14 @@ assets:
   - asset_name: spenrollments
   - asset_name: studenttest
   - asset_name: studenttestscore
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              cpu: 750m
+            limits:
+              cpu: 750m
   - asset_name: test
   - asset_name: testscore
   - asset_name: u_clg_et_stu
@@ -23,6 +31,6 @@ assets:
         container_config:
           resources:
             requests:
-              cpu: 750m
+              cpu: 1000m
             limits:
-              cpu: 750m
+              cpu: 1000m

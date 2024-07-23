@@ -2,11 +2,6 @@ with
     leadership_development_metrics as (
         select *,
         from {{ ref("stg_performance_management__leadership_development_metrics") }}
-        /*
-            Need '2024' to make visible before start of next academic year will switch
-            after 7/1/2024
-        */
-        where academic_year = 2024
     ),
 
     assignment_group as (
@@ -25,6 +20,7 @@ with
                     'Head of Schools in Residence',
                     'Director School Operations',
                     'Director Campus Operations',
+                    'Fellow School Operations Director',
                     'Managing Director of School Operations',
                     'Associate Director of School Operations'
                 ),
