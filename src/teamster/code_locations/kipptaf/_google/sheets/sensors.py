@@ -38,7 +38,7 @@ def google_sheets_asset_sensor(
         try:
             spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
         except APIError as e:
-            if "APIError: [503]: The service is currently unavailable." in e.args:
+            if e.code == 503:
                 context.log.error(msg=str(e))
                 continue
             else:

@@ -77,11 +77,8 @@ where
     sr.associate_oid is not null
     and sr.mail is not null
     and (
-        sr.employee_number != sr.custom_employee_number
-        or sr.employee_number != sr.custom_wfmgr_badge_number
-        or lower(sr.mail) != sr.communication_business_email
-        or sr.custom_employee_number is null
-        or sr.custom_wfmgr_badge_number is null
-        or sr.communication_business_email is null
-        or sr.custom_wfmgr_trigger != wfm.surrogate_key_new
+        sr.employee_number != coalesce(sr.custom_employee_number, -1)
+        or sr.employee_number != coalesce(sr.custom_wfmgr_badge_number, -1)
+        or lower(sr.mail) != coalesce(sr.communication_business_email, '')
+        or coalesce(sr.custom_wfmgr_trigger, '') != coalesce(wfm.surrogate_key_new, '')
     )
