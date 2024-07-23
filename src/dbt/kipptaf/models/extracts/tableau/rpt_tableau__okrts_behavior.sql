@@ -19,6 +19,12 @@ with
         union all
         select 'Miami' as region, 'Corrective' as category_type, behavior_category,
         from unnest(['Written Reminders', 'Big Reminders']) as behavior_category
+        union all
+        select
+            region,
+            'Incentives' as category_type,
+            'Earned Incentives' as behavior_category,
+        from unnest(['Camden', 'Newark', 'Miami']) as region
     ),
 
     roster as (
