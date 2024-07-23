@@ -1,4 +1,5 @@
 import json
+from itertools import groupby
 
 from dagster import (
     AssetKey,
@@ -11,9 +12,25 @@ from dagster_fivetran import FivetranResource
 from dagster_gcp import BigQueryResource
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
-from teamster.code_locations.kipptaf.fivetran.assets import CONNECTORS, assets
+from teamster.code_locations.kipptaf.fivetran.assets import assets
 
+CONNECTORS = {}
 ASSET_KEYS = [asset.key for asset in assets]
+
+asset_metadata = [asset.metadata_by_key[asset.key] for asset in assets]
+
+for key, group in groupby(iterable=asset_metadata, key=lambda x: x["connector_id"]):
+    CONNECTORS[key] = set()
+
+    for g in group:
+        connector_id, connector_name, schema_name, table_name = g.values()
+
+        if schema_name is not None:
+            schema_table = f"{connector_name}.{schema_name}"
+        else:
+            schema_table = connector_name
+
+        CONNECTORS[key].add(schema_table)
 
 
 def render_fivetran_audit_query(dataset, timestamp):
@@ -25,17 +42,14 @@ def render_fivetran_audit_query(dataset, timestamp):
 
 
 @sensor(
-    name=f"{CODE_LOCATION}_fivetran_sync_status_sensor",
-    minimum_interval_seconds=(60 * 5),
-    asset_selection=assets,
+    name=f"{CODE_LOCATION}_fivetran_asset_sensor", minimum_interval_seconds=(60 * 5)
 )
 def fivetran_sync_status_sensor(
     context: SensorEvaluationContext,
     fivetran: FivetranResource,
     db_bigquery: BigQueryResource,
-) -> SensorResult:
+):
     asset_events = []
-
     cursor: dict = json.loads(s=(context.cursor or "{}"))
 
     with db_bigquery.get_client() as bq:
@@ -84,7 +98,8 @@ def fivetran_sync_status_sensor(
 
             cursor[connector_id] = curr_last_sync_completion_timestamp
 
-    return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
+    if asset_events:
+        return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
 
 
 sensors = [

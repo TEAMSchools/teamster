@@ -64,15 +64,35 @@ select
         )
     }},
 
-    safe_cast(
+    cast(
         coalesce(
             staffmemberidentifier.long_value, staffmemberidentifier.double_value
         ) as int
     ) as staffmemberidentifier,
-    safe_cast(
+    cast(
         coalesce(testadministrator.long_value, testadministrator.double_value) as int
     ) as testadministrator,
 
-    safe_cast(left(assessmentyear, 4) as int) as academic_year,
+    cast(left(assessmentyear, 4) as int) as academic_year,
+
+    cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
+
+    'NJGPA' as assessment_name,
+
+    if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
+
+    if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
+
+    if(`period` = 'FallBlock', 'Fall', `period`) as season,
+
+    if(testperformancelevel = 2, true, false) as is_proficient,
+
+    case
+        testperformancelevel
+        when 2
+        then 'Graduation Ready'
+        when 1
+        then 'Not Yet Graduation Ready'
+    end as testperformancelevel_text,
 from {{ src_njgpa }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'

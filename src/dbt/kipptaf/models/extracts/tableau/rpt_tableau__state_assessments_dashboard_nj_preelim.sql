@@ -215,6 +215,9 @@ select
     g.organization_goal,
 
     sf.nj_student_tier,
+    sf.tutoring_nj,
+
+    sf2.iready_proficiency_eoy,
 
     'Preliminary' as results_type,
     null as test_grade,
@@ -252,3 +255,8 @@ left join
     on s.academic_year = sf.academic_year
     and a.discipline = sf.discipline
     and s.student_number = sf.student_number
+left join
+    {{ ref("int_reporting__student_filters") }} as sf2
+    on s.academic_year = sf2.academic_year - 1
+    and a.discipline = sf2.discipline
+    and s.student_number = sf2.student_number
