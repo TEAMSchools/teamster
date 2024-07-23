@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: google_appsheet
     schema: kipptaf_appsheet
+    tags:
+      - stage_external_sources
     tables:
       - name: illuminate_assessments_extension
       - name: src_leadership_development_active_users
