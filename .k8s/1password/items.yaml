@@ -334,3 +334,19 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Overgrad API
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-illuminate-db
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Illuminate ODBC
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-gcp-service-account-dlt
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Teamster Service Account - dlt
