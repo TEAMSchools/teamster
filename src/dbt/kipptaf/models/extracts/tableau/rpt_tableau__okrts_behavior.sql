@@ -111,6 +111,7 @@ with
             category_type,
             behavior,
             entry_staff,
+
             count(distinct dl_said) as behavior_count,
             sum(point_value) as total_points,
         from roster
