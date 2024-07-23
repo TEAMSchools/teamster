@@ -391,21 +391,21 @@ locations:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: username
-              - name: DESTINATION__BIGQUERY__CREDENTIALS__CLIENT_EMAIL
-                valueFrom:
-                  secretKeyRef:
-                    name: op-gcp-service-account-dlt
-                    key: username
-              - name: DESTINATION__BIGQUERY__CREDENTIALS__PRIVATE_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-gcp-service-account-dlt
-                    key: password
-              - name: DESTINATION__BIGQUERY__CREDENTIALS__PROJECT_ID
-                valueFrom:
-                  secretKeyRef:
-                    name: op-gcp-service-account-dlt
-                    key: project-id
+              # - name: DESTINATION__BIGQUERY__CREDENTIALS__CLIENT_EMAIL
+              #   valueFrom:
+              #     secretKeyRef:
+              #       name: op-gcp-service-account-dlt
+              #       key: username
+              # - name: DESTINATION__BIGQUERY__CREDENTIALS__PRIVATE_KEY
+              #   valueFrom:
+              #     secretKeyRef:
+              #       name: op-gcp-service-account-dlt
+              #       key: password
+              # - name: DESTINATION__BIGQUERY__CREDENTIALS__PROJECT_ID
+              #   valueFrom:
+              #     secretKeyRef:
+              #       name: op-gcp-service-account-dlt
+              #       key: project-id
         run_k8s_config:
           container_config:
             resources:
@@ -754,18 +754,18 @@ locations:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: username
-              - name: DESTINATION__BIGQUERY__CREDENTIALS__CLIENT_EMAIL
-                valueFrom:
-                  secretKeyRef:
-                    name: op-gcp-service-account-dlt
-                    key: username
-              - name: DESTINATION__BIGQUERY__CREDENTIALS__PRIVATE_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-gcp-service-account-dlt
-                    key: password
-              - name: DESTINATION__BIGQUERY__CREDENTIALS__PROJECT_ID
-                valueFrom:
-                  secretKeyRef:
-                    name: op-gcp-service-account-dlt
-                    key: project-id
+              # - name: DESTINATION__BIGQUERY__CREDENTIALS__CLIENT_EMAIL
+              #   valueFrom:
+              #     secretKeyRef:
+              #       name: op-gcp-service-account-dlt
+              #       key: username
+              # - name: DESTINATION__BIGQUERY__CREDENTIALS__PRIVATE_KEY
+              #   valueFrom:
+              #     secretKeyRef:
+              #       name: op-gcp-service-account-dlt
+              #       key: password
+              # - name: DESTINATION__BIGQUERY__CREDENTIALS__PROJECT_ID
+              #   valueFrom:
+              #     secretKeyRef:
+              #       name: op-gcp-service-account-dlt
+              #       key: project-id
