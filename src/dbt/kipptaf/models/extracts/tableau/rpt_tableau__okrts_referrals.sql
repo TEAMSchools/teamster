@@ -79,10 +79,12 @@ select
     concat(dli.create_last, ', ', dli.create_first) as entry_staff,
     concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
     case
-        when left(dli.category, 2) = 'SW'
+        when left(dli.category, 2) in ('SW', 'SSC')
         then 'Social Work'
         when left(dli.category, 2) = 'TX'
-        then 'Home Instruction Request'
+        then 'Non-Behavioral'
+        when left(dli.category, 2) = 'TB'
+        then 'Bus Referral (Miami)'
         when left(dli.category, 2) = 'T1'
         then 'Low'
         when left(dli.category, 2) = 'T2'
@@ -100,6 +102,16 @@ select
 
     if(round(ada.ada, 2) <= .90, true, false) as is_chronically_absent,
 
+    max(if(dlp.is_suspension, 1, 0)) over (
+        partition by co.academic_year, co.student_number
+    ) as is_suspended_y1_int,
+    max(if(st.suspension_type = 'OSS', 1, 0)) over (
+        partition by co.academic_year, co.student_number
+    ) as is_suspended_y1_oss_int,
+    max(if(st.suspension_type = 'ISS', 1, 0)) over (
+        partition by co.academic_year, co.student_number
+    ) as is_suspended_y1_iss_int,
+
     if(
         dli.incident_id is null,
         null,
@@ -108,6 +120,11 @@ select
             order by dlp.is_suspension desc
         )
     ) as rn_incident,
+
+    row_number() over (
+        partition by co.academic_year, co.student_number
+        order by w.week_start_monday asc
+    ) as rn_student_year,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("base_powerschool__course_enrollments") }} as hr
