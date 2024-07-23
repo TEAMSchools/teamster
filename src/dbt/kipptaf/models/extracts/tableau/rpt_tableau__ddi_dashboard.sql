@@ -6,8 +6,6 @@ with
             last_week_start_date,
             last_week_end_date,
             last_week_lessons_passed,
-            last_week_percent_lessons_passed,
-            last_week_time_on_task_min,
 
             lower(`subject`) as `subject`,
         from {{ ref("snapshot_iready__instructional_usage_data") }}
@@ -220,14 +218,12 @@ select
 
     iw.n_lessons_passed_reading,
     iw.n_lessons_passed_math,
-    iw.pct_lessons_passed_reading,
-    iw.pct_lessons_passed_math,
-    iw.time_on_task_reading,
-    iw.time_on_task_math,
 
     sf.nj_student_tier,
 
     if(qbl.qbl is not null, true, false) as is_qbl,
+
+    -- if(iw.n_lessons_passed_reading >= 2, 1, 0) as is_passed_iready_2plus_reading,
 from identifiers as co
 left join
     {{ ref("int_reporting__student_filters") }} as sf
@@ -272,10 +268,6 @@ select
 
     null as n_lessons_passed_reading,
     null as n_lessons_passed_math,
-    null as pct_lessons_passed_reading,
-    null as pct_lessons_passed_math,
-    null as time_on_task_reading,
-    null as time_on_task_math,
 
     sf.nj_student_tier,
 
@@ -380,10 +372,6 @@ select
     null as organization_goal,
     null as n_lessons_passed_reading,
     null as n_lessons_passed_math,
-    null as pct_lessons_passed_reading,
-    null as pct_lessons_passed_math,
-    null as time_on_task_reading,
-    null as time_on_task_math,
 
     null as nj_student_tier,
 
