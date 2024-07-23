@@ -11,7 +11,7 @@ select
     o.observation_id,
     o.observed_at,
 
-    if(o.observation_id is not null, true, false) as is_observed,
+    if(o.observation_id is not null, 1, 0) as is_observed,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as t
@@ -29,6 +29,7 @@ inner join
 left join
     {{ ref("int_performance_management__observations") }} as o
     on t.type = o.observation_type_abbreviation
+    and srh.employee_number = o.employee_number
     and o.observed_at between t.start_date and t.end_date
 where
     srh.job_title in ("Teacher", "Teacher in Residence", "Learning Specialist")
