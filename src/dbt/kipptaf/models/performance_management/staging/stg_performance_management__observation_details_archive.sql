@@ -1,7 +1,7 @@
 select
     employee_number,
     academic_year,
-    form_term as term_code,
+    coalesce(pm_term,form_term) as term_code,
     form_type,
     observation_id,
     teacher_id,

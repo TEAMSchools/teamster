@@ -4,8 +4,33 @@ select distinct
     academic_year,
     term_code,
     term_name,
-    observed_at,
-    observed_at_date_local,
+    rubric_name,
+    observation_type,
+    observation_type_abbreviation,
+    eval_date,
+    score,
+    overall_tier,
+    etr_score,
+    etr_tier,
+    so_score,
+    so_tier,
+    final_score,
+    final_tier,
+    glows,
+    grows,
+    locked,
+    max(observed_at) as observed_at,
+    max(observed_at_date_local) as observed_at_date_local,
+    if(
+        academic_year < 2023, 'Multiple', cast(observer_employee_number as string)
+    ) as observer_employee_number,
+from {{ ref("stg_performance_management__observation_details_archive") }}
+group by
+    employee_number,
+    observation_id,
+    academic_year,
+    term_code,
+    term_name,
     rubric_name,
     observation_type,
     observation_type_abbreviation,
@@ -21,5 +46,4 @@ select distinct
     final_tier,
     glows,
     grows,
-    locked,
-from {{ ref("stg_performance_management__observation_details_archive") }}
+    locked
