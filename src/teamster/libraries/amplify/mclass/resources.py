@@ -50,7 +50,7 @@ class MClassResource(ConfigurableResource):
             self._log.exception(e)
             raise exceptions.HTTPError(response.text) from e
         except Exception as e:
-            raise Exception from e
+            raise e
 
     def get(self, path, *args, **kwargs):
         url = self._get_url(*args, path=path)
