@@ -1,8 +1,8 @@
 /* tracking for current year */
 select
-    t.type,
-    t.code,
-    t.name as rubric,
+    t.type as tracking_type,
+    t.code as tracking_code,
+    t.name as tracking_rubric,
     t.academic_year as tracking_academic_year,
     t.is_current,
     od.employee_number,
