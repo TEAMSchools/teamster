@@ -28,11 +28,11 @@ with
     )
 
 select
-    s.type,
-    s.code,
-    s.name as rubric,
-    s.academic_year as tracking_academic_year,
-    s.is_current,
+    t.type,
+    t.code,
+    t.name as rubric,
+    t.academic_year as tracking_academic_year,
+    t.is_current,
     od.employee_number,
     od.observer_employee_number,
     od.observation_id,
@@ -74,25 +74,43 @@ select
     sr.preferred_name_lastfirst as observer_name,
 
     if(od.observation_id is not null, 1, 0) as is_observed,
-from {{ ref("int_performance_management__observation_details") }} as od
-full outer join
-    tracking_scaffold as s
-    on s.employee_number = od.employee_number
-    and s.type = od.observation_type_abbreviation
-    and s.code = od.term_code
-    and s.academic_year = od.academic_year
+from {{ ref("base_people__staff_roster_history") }} as srh
+inner join
+    {{ ref("stg_reporting__terms") }} as t
+    on srh.business_unit_home_name = t.region
+    and (
+        t.start_date between date(srh.work_assignment_start_date) and date(
+            srh.work_assignment_end_date
+        )
+        or t.end_date between date(srh.work_assignment_start_date) and date(
+            srh.work_assignment_end_date
+        )
+    )
+    and t.type in ("PMS", "PMC", "TR", "O3", "WT")
+    and t.academic_year = {{ var("current_academic_year") }}
+left join
+    {{ ref("int_performance_management__observations") }} as o
+    on t.type = o.observation_type_abbreviation
+    and srh.employee_number = o.employee_number
+    and o.observed_at between t.start_date and t.end_date
+left join
+    {{ ref("int_performance_management__observation_details") }} as od
+    on o.observation_id = od.observation_id
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on od.employee_number = os.employee_number
     and od.academic_year = os.academic_year
-inner join
-    {{ ref("base_people__staff_roster_history") }} as srh
-    on od.employee_number = srh.employee_number
-    and od.observed_at
-    between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date)
+-- inner join
+--     {{ ref("base_people__staff_roster_history") }} as srh
+--     on od.employee_number = srh.employee_number
+--     and od.observed_at
+--     between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date)
 left join
     {{ ref("base_people__staff_roster") }} as sr
     on od.employee_number = sr.employee_number
 left join
     {{ ref("base_people__staff_roster") }} as sr2
     on od.observer_employee_number = sr2.employee_number
+where
+    srh.job_title in ("Teacher", "Teacher in Residence", "Learning Specialist")
+    and srh.assignment_status = "Active"
