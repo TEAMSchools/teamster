@@ -22,13 +22,13 @@ class DibelsDataSystemResource(ConfigurableResource):
             data={"name": self.username, "password": self.password, "login": "Login"},
         )
 
-    def _get_url(self, path, *args):
+    def _get_url(self, path: str, *args):
         if args:
             return f"{self._base_url}/{path}/{'/'.join(args)}"
         else:
             return f"{self._base_url}/{path}"
 
-    def _request(self, method, url, **kwargs):
+    def _request(self, method: str, url: str, **kwargs):
         response = Response()
 
         try:
@@ -40,7 +40,7 @@ class DibelsDataSystemResource(ConfigurableResource):
             self._log.exception(e)
             raise exceptions.HTTPError(response.text) from e
 
-    def get(self, path, *args, **kwargs):
+    def get(self, path: str, *args, **kwargs):
         url = self._get_url(*args, path=path)
         self._log.debug(f"GET: {url}")
 
@@ -88,4 +88,6 @@ class DibelsDataSystemResource(ConfigurableResource):
             obj=soup.find(name="a", attrs={"class": "csv-link"}), ttype=Tag
         )
 
-        return self._request(method="GET", url=csv_link.get(key="href"))
+        url = _check.inst(obj=csv_link.get(key="href"), ttype=str)
+
+        return self._request(method="GET", url=url)
