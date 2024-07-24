@@ -52,7 +52,10 @@ def build_powerschool_sensor(
             if "An error occurred while opening tunnels." in e.args:
                 return SkipReason(str(e))
             else:
-                raise HandlerSSHTunnelForwarderError from e
+                raise e
+        except Exception as e:
+            context.log.error(msg=str(e))
+            raise e
 
         for asset in asset_defs:
             context.log.info(asset.key)
