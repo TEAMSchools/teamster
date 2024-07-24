@@ -31,7 +31,7 @@ select
     s.type,
     s.code,
     s.name as rubric,
-    s.academic_year,
+    s.tracking_academic_year,
     s.is_current,
     od.employee_number,
     od.observer_employee_number,
