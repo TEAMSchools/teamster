@@ -82,6 +82,7 @@ where
     srh.job_title in ("Teacher", "Teacher in Residence", "Learning Specialist")
     and srh.assignment_status = "Active"
 
+union all
 /* actual responses from past years*/
 select
     null as tracking_type,
@@ -132,7 +133,6 @@ select
     if(od.observation_id is not null, 1, 0) as is_observed,
 from
     {{ ref("int_performance_management__observation_details") }} as od
-    on o.observation_id = od.observation_id
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on od.employee_number = os.employee_number
