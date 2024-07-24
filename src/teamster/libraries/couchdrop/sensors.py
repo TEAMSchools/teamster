@@ -12,11 +12,13 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     StaticPartitionsDefinition,
     _check,
     define_asset_job,
     sensor,
 )
+from paramiko.ssh_exception import SSHException
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -60,9 +62,19 @@ def build_couchdrop_sftp_sensor(
         run_requests = []
         tick_cursor = float(context.cursor or "0.0")
 
-        files = ssh_couchdrop.listdir_attr_r(
-            remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
-        )
+        try:
+            files = ssh_couchdrop.listdir_attr_r(
+                remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
+            )
+        except SSHException as e:
+            if "Error reading SSH protocol banner" in e.args:
+                context.log.error(msg=str(e))
+                return SkipReason(str(e))
+            else:
+                raise e
+        except Exception as e:
+            context.log.error(msg=str(e))
+            raise e
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()
