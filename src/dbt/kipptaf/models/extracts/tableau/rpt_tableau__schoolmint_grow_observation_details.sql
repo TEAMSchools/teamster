@@ -131,8 +131,7 @@ select
     sr.preferred_name_lastfirst as observer_name,
 
     if(od.observation_id is not null, 1, 0) as is_observed,
-from
-    {{ ref("int_performance_management__observation_details") }} as od
+from {{ ref("int_performance_management__observation_details") }} as od
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on od.employee_number = os.employee_number
