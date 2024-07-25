@@ -21,7 +21,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # install dependencies
 COPY pyproject.toml requirements.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
-    uv pip install -r requirements.txt --no-cache-dir
+    uv pip install \
+    -r requirements.txt \
+    --override overrides.txt \
+    --no-cache-dir
 
 # install python project
 COPY src/teamster/ ./src/teamster/
