@@ -88,17 +88,15 @@ def build_couchdrop_sftp_sensor(
             raise e
 
         for a in asset_selection:
-            max_st_mtime = 0
-
             asset_identifier = a.key.to_python_identifier()
             metadata = a.metadata_by_key[a.key]
             partitions_def = _check.not_none(value=a.partitions_def)
 
-            cursor_st_mtime = cursor.get(asset_identifier, 0)
+            max_st_mtime = cursor_st_mtime = cursor.get(asset_identifier, 0)
 
             pattern = re.compile(
                 pattern=(
-                    f"{metadata["remote_dir_regex"]}/{metadata["remote_file_regex"]}"
+                    rf"{metadata["remote_dir_regex"]}/{metadata["remote_file_regex"]}"
                 )
             )
 
