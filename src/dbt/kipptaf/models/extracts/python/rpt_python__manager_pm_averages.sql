@@ -92,6 +92,7 @@ with
             observer_employee_number,
             academic_year,
             term_code,
+
             avg(observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }}
         where rubric_name = 'Coaching Tool: Coach ETR and Reflection'
