@@ -46,6 +46,7 @@ select
     sr.preferred_name_lastfirst as observer_name,
 
     if(od.observation_id is not null, 1, 0) as is_observed,
+    if(od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0) as met_goal_miami
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as t
@@ -131,6 +132,7 @@ select
     sr.preferred_name_lastfirst as observer_name,
 
     if(od.observation_id is not null, 1, 0) as is_observed,
+    if(od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0) as met_goal_miami
 from {{ ref("int_performance_management__observation_details") }} as od
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
