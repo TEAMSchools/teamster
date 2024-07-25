@@ -18,7 +18,7 @@ from dagster import (
     define_asset_job,
     sensor,
 )
-from paramiko.ssh_exception import SSHException
+from paramiko.ssh_exception import AuthenticationException, SSHException
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -66,8 +66,17 @@ def build_couchdrop_sftp_sensor(
             files = ssh_couchdrop.listdir_attr_r(
                 remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
             )
-        except SSHException as e:
-            if "Error reading SSH protocol banner" in e.args:
+        except (SSHException, AuthenticationException) as e:
+            if (
+                isinstance(e, SSHException)
+                and "Error reading SSH protocol banner" in e.args
+            ):
+                context.log.error(msg=str(e))
+                return SkipReason(str(e))
+            elif (
+                isinstance(e, AuthenticationException)
+                and "Authentication timeout" in e.args
+            ):
                 context.log.error(msg=str(e))
                 return SkipReason(str(e))
             else:
