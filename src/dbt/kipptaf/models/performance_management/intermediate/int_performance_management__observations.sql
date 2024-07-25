@@ -20,8 +20,11 @@ select
     t.name as term_name,
 
     sr.employee_number,
+    sr.sam_account_name,
+    sr.report_to_sam_account_name,
 
     sr2.employee_number as observer_employee_number,
+    sr2.preferred_name_lastfirst as observer_name,
 
     null as etr_score,
     null as etr_tier,
@@ -88,8 +91,11 @@ select
     t.name as term_name,
 
     sr.employee_number,
+    sr.sam_account_name,
+    sr.report_to_sam_account_name,
 
     sr2.employee_number as observer_employee_number,
+    sr2.preferred_name_lastfirst as observer_name,
 
     null as etr_score,
     null as etr_tier,

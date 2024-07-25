@@ -23,6 +23,7 @@ with
             locked,
             observed_at,
             observed_at_date_local,
+
             if(
                 academic_year < 2023,
                 'Multiple',
@@ -52,28 +53,8 @@ select
     glows,
     grows,
     locked,
+
     max(observed_at) as observed_at,
     max(observed_at_date_local) as observed_at_date_local,
 from observer
-group by
-    employee_number,
-    observation_id,
-    academic_year,
-    term_code,
-    term_name,
-    rubric_name,
-    observation_type,
-    observation_type_abbreviation,
-    eval_date,
-    score,
-    overall_tier,
-    etr_score,
-    etr_tier,
-    so_score,
-    so_tier,
-    final_score,
-    final_tier,
-    glows,
-    grows,
-    locked,
-    observer_employee_number
+group by all
