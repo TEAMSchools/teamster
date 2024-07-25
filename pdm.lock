@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:07cc097fd0facd0519ce5a4a40f0aa04eb1608e9b35f268c114a4ef538d5eff3"
+content_hash = "sha256:ee7e2e3b0c8680caf57fef293312d1f99fe07e01cd8bcd6a54543e844558182c"
 
 [[metadata.targets]]
 requires_python = ">=3.12,<3.13"
@@ -2757,29 +2757,29 @@ files = [
 
 [[package]]
 name = "sqlglot"
-version = "25.7.0"
+version = "25.7.1"
 requires_python = ">=3.7"
 summary = "An easily customizable SQL parser and transpiler"
 groups = ["default"]
 files = [
-    {file = "sqlglot-25.7.0-py3-none-any.whl", hash = "sha256:99319bd2094e2311e9cc35aff3506eed75f24514fefe2cc89dc0b466667b3a08"},
-    {file = "sqlglot-25.7.0.tar.gz", hash = "sha256:74671d1bb571d3f74d5ca7df0779af383e597f7bdc2ac778acc31ff9bad88a9c"},
+    {file = "sqlglot-25.7.1-py3-none-any.whl", hash = "sha256:d907e07baaa910b1b1ad1f95bc01aeef95734132efb7372d08da8966e9f5b55c"},
+    {file = "sqlglot-25.7.1.tar.gz", hash = "sha256:bab34b0beea365317fd67e50defbfabc97f14d8e1968ccef509b13030c4af561"},
 ]
 
 [[package]]
 name = "sqlglot"
-version = "25.7.0"
+version = "25.7.1"
 extras = ["rs"]
 requires_python = ">=3.7"
 summary = "An easily customizable SQL parser and transpiler"
 groups = ["default"]
 dependencies = [
-    "sqlglot==25.7.0",
+    "sqlglot==25.7.1",
     "sqlglotrs==0.2.8",
 ]
 files = [
-    {file = "sqlglot-25.7.0-py3-none-any.whl", hash = "sha256:99319bd2094e2311e9cc35aff3506eed75f24514fefe2cc89dc0b466667b3a08"},
-    {file = "sqlglot-25.7.0.tar.gz", hash = "sha256:74671d1bb571d3f74d5ca7df0779af383e597f7bdc2ac778acc31ff9bad88a9c"},
+    {file = "sqlglot-25.7.1-py3-none-any.whl", hash = "sha256:d907e07baaa910b1b1ad1f95bc01aeef95734132efb7372d08da8966e9f5b55c"},
+    {file = "sqlglot-25.7.1.tar.gz", hash = "sha256:bab34b0beea365317fd67e50defbfabc97f14d8e1968ccef509b13030c4af561"},
 ]
 
 [[package]]
@@ -3055,13 +3055,13 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "2.0.7"
-requires_python = ">=3.7"
+version = "2.2.2"
+requires_python = ">=3.8"
 summary = "HTTP library with thread-safe connection pooling, file post, and more."
 groups = ["default", "dev"]
 files = [
-    {file = "urllib3-2.0.7-py3-none-any.whl", hash = "sha256:fdb6d215c776278489906c2f8916e6e7d4f5a9b602ccbcfdf7f016fc8da0596e"},
-    {file = "urllib3-2.0.7.tar.gz", hash = "sha256:c97dfde1f7bd43a71c8d2a58e369e9b2bf692d1334ea9f9cae55add7d0dd0f84"},
+    {file = "urllib3-2.2.2-py3-none-any.whl", hash = "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472"},
+    {file = "urllib3-2.2.2.tar.gz", hash = "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"},
 ]
 
 [[package]]
