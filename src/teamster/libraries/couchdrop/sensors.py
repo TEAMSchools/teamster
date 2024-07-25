@@ -1,3 +1,4 @@
+import json
 import re
 from collections import defaultdict
 from itertools import groupby
@@ -12,11 +13,13 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     StaticPartitionsDefinition,
     _check,
     define_asset_job,
     sensor,
 )
+from paramiko.ssh_exception import AuthenticationException, SSHException
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -58,22 +61,48 @@ def build_couchdrop_sftp_sensor(
 
         run_request_kwargs = []
         run_requests = []
-        tick_cursor = float(context.cursor or "0.0")
 
-        files = ssh_couchdrop.listdir_attr_r(
-            remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
-        )
+        cursor: dict = json.loads(context.cursor or "{}")
+
+        try:
+            files = ssh_couchdrop.listdir_attr_r(
+                remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
+            )
+        except (SSHException, AuthenticationException) as e:
+            if (
+                isinstance(e, SSHException)
+                and "Error reading SSH protocol banner" in e.args
+            ):
+                context.log.error(msg=str(e))
+                return SkipReason(str(e))
+            elif (
+                isinstance(e, AuthenticationException)
+                and "Authentication timeout" in e.args
+            ):
+                context.log.error(msg=str(e))
+                return SkipReason(str(e))
+            else:
+                raise e
+        except FileNotFoundError as e:
+            if "[Errno 2] no such file" in e.args:
+                context.log.error(msg=str(e))
+                return SkipReason(str(e))
+            else:
+                raise e
+        except Exception as e:
+            context.log.error(msg=str(e))
+            raise e
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()
-            metadata_by_key = a.metadata_by_key[a.key]
+            metadata = a.metadata_by_key[a.key]
             partitions_def = _check.not_none(value=a.partitions_def)
-            context.log.info(asset_identifier)
+
+            max_st_mtime = cursor_st_mtime = cursor.get(asset_identifier, 0)
 
             pattern = re.compile(
                 pattern=(
-                    f"{metadata_by_key["remote_dir_regex"]}/"
-                    f"{metadata_by_key["remote_file_regex"]}"
+                    rf"{metadata["remote_dir_regex"]}/{metadata["remote_file_regex"]}"
                 )
             )
 
@@ -81,11 +110,16 @@ def build_couchdrop_sftp_sensor(
                 (f, path)
                 for f, path in files
                 if pattern.match(string=path)
-                and _check.not_none(value=f.st_mtime) > tick_cursor
+                and _check.not_none(value=f.st_mtime) > cursor_st_mtime
                 and _check.not_none(value=f.st_size) > 0
             ]
 
             for f, path in file_matches:
+                f_st_mtime = f.st_mtime or 0
+
+                if f_st_mtime > max_st_mtime:
+                    max_st_mtime = f_st_mtime
+
                 match = _check.not_none(value=pattern.match(string=path))
 
                 if isinstance(a.partitions_def, MultiPartitionsDefinition):
@@ -95,7 +129,7 @@ def build_couchdrop_sftp_sensor(
                 else:
                     partition_key = None
 
-                context.log.info(f"{f.filename}: {partition_key}")
+                context.log.info(f"{asset_identifier}\n{f.filename}: {partition_key}")
                 run_request_kwargs.append(
                     {
                         "asset_key": a.key,
@@ -107,9 +141,9 @@ def build_couchdrop_sftp_sensor(
                     }
                 )
 
-        if run_request_kwargs:
-            tick_cursor = now_timestamp
+            cursor[asset_identifier] = max_st_mtime
 
+        if run_request_kwargs:
             for (job_name, parition_key), group in groupby(
                 iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
             ):
@@ -122,6 +156,6 @@ def build_couchdrop_sftp_sensor(
                     )
                 )
 
-        return SensorResult(run_requests=run_requests, cursor=str(tick_cursor))
+        return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
     return _sensor

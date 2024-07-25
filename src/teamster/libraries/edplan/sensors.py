@@ -46,6 +46,9 @@ def build_edplan_sftp_sensor(
                 return SkipReason(str(e))
             else:
                 raise e
+        except Exception as e:
+            context.log.error(msg=str(e))
+            raise e
 
         asset_identifier = asset.key.to_python_identifier()
         context.log.info(asset_identifier)

@@ -74,10 +74,10 @@ with
         from {{ ref("int_performance_management__observation_details") }} as obs
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            on obs.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
-            and obs.employee_number = srh.employee_number
+            on obs.employee_number = srh.employee_number
             and obs.observed_at_timestamp
             between srh.work_assignment_start_date and srh.work_assignment_end_date
+            and obs.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
         group by
             obs.employee_number,
             obs.observer_employee_number,
