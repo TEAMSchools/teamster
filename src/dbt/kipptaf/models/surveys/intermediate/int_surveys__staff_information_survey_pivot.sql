@@ -51,11 +51,20 @@ with
     ),
 
     pre_pivot as (
-        select employee_number, item_abbreviation, pivot_column_value, from deduplicate
+        select
+            employee_number,
+            item_abbreviation,
+            pivot_column_value,
+
+            max(last_submitted_timestamp) over (
+                partition by employee_number
+            ) as last_submitted_timestamp,
+        from deduplicate
     )
 
 select
     employee_number,
+    last_submitted_timestamp,
 
     /* pivot cols */
     additional_languages,
