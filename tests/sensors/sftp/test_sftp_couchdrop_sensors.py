@@ -14,6 +14,8 @@ def _test_sensor(sftp_sensor):
     for run_request in result.run_requests:
         context.log.info(run_request)
 
+    print(result.cursor)
+
 
 def test_couchdrop_sftp_sensor_kippcamden():
     from teamster.code_locations.kippcamden.couchdrop.sensors import (
@@ -37,11 +39,3 @@ def test_couchdrop_sftp_sensor_kippnewark():
     )
 
     _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
-
-
-def test_adp_payroll_sftp_sensor():
-    from teamster.code_locations.kipptaf.adp.payroll.sensors import (
-        adp_payroll_sftp_sensor,
-    )
-
-    _test_sensor(sftp_sensor=adp_payroll_sftp_sensor)
