@@ -1,3 +1,4 @@
+import json
 import re
 from collections import defaultdict
 from itertools import groupby
@@ -60,7 +61,8 @@ def build_couchdrop_sftp_sensor(
 
         run_request_kwargs = []
         run_requests = []
-        tick_cursor = float(context.cursor or "0.0")
+
+        cursor: dict = json.loads(context.cursor or "{}")
 
         try:
             files = ssh_couchdrop.listdir_attr_r(
@@ -87,14 +89,14 @@ def build_couchdrop_sftp_sensor(
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()
-            metadata_by_key = a.metadata_by_key[a.key]
+            metadata = a.metadata_by_key[a.key]
             partitions_def = _check.not_none(value=a.partitions_def)
-            context.log.info(asset_identifier)
+
+            cursor_st_mtime = cursor.get(asset_identifier, 0)
 
             pattern = re.compile(
                 pattern=(
-                    f"{metadata_by_key["remote_dir_regex"]}/"
-                    f"{metadata_by_key["remote_file_regex"]}"
+                    f"{metadata["remote_dir_regex"]}/{metadata["remote_file_regex"]}"
                 )
             )
 
@@ -102,7 +104,7 @@ def build_couchdrop_sftp_sensor(
                 (f, path)
                 for f, path in files
                 if pattern.match(string=path)
-                and _check.not_none(value=f.st_mtime) > tick_cursor
+                and _check.not_none(value=f.st_mtime) > cursor_st_mtime
                 and _check.not_none(value=f.st_size) > 0
             ]
 
@@ -116,7 +118,7 @@ def build_couchdrop_sftp_sensor(
                 else:
                     partition_key = None
 
-                context.log.info(f"{f.filename}: {partition_key}")
+                context.log.info(f"{asset_identifier}\n{f.filename}: {partition_key}")
                 run_request_kwargs.append(
                     {
                         "asset_key": a.key,
@@ -128,9 +130,9 @@ def build_couchdrop_sftp_sensor(
                     }
                 )
 
-        if run_request_kwargs:
-            tick_cursor = now_timestamp
+                cursor[asset_identifier] = f.st_mtime
 
+        if run_request_kwargs:
             for (job_name, parition_key), group in groupby(
                 iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
             ):
@@ -143,6 +145,6 @@ def build_couchdrop_sftp_sensor(
                     )
                 )
 
-        return SensorResult(run_requests=run_requests, cursor=str(tick_cursor))
+        return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
     return _sensor

@@ -14,7 +14,9 @@ from teamster.libraries.sftp.assets import (
 
 fast = build_sftp_folder_asset(
     asset_key=[CODE_LOCATION, "fldoe", "fast"],
-    remote_dir_regex=r"/data-team/kippmiami/fldoe/fast/(?P<school_year_term>\d+/PM\d)",
+    remote_dir_regex=(
+        r"/data-team/kippmiami/fldoe/fast/(?P<school_year_term>SY\d+/PM\d)"
+    ),
     remote_file_regex=(
         r"\w+-\w+_(?P<grade_level_subject>Grade\dFAST\w+)_StudentData_.+\.csv"
     ),
@@ -101,6 +103,5 @@ fsa = build_sftp_file_asset(
 assets = [
     eoc,
     fast,
-    fsa,
     science,
 ]
