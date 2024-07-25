@@ -40,7 +40,7 @@ coupa_start_sync_schedule = build_fivetran_start_sync_schedule(
     code_location=CODE_LOCATION,
     connector_id="bellows_curliness",
     connector_name="coupa",
-    cron_schedule="0 * * * *",
+    cron_schedule="0 4 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
@@ -48,7 +48,7 @@ facebook_pages_start_sync_schedule = build_fivetran_start_sync_schedule(
     code_location=CODE_LOCATION,
     connector_id="regency_carrying",
     connector_name="facebook_pages",
-    cron_schedule="0 * * * *",
+    cron_schedule="0 6 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
@@ -56,13 +56,12 @@ instagram_business_start_sync_schedule = build_fivetran_start_sync_schedule(
     code_location=CODE_LOCATION,
     connector_id="muskiness_cumulative",
     connector_name="instagram_business",
-    cron_schedule="0 * * * *",
+    cron_schedule="0 6 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
 schedules = [
     adp_workforce_now_start_resync_schedule,
-    adp_workforce_now_start_sync_schedule,
     coupa_start_sync_schedule,
     facebook_pages_start_sync_schedule,
     illuminate_start_sync_schedule,

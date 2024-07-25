@@ -43,6 +43,9 @@ def google_sheets_asset_sensor(
                 continue
             else:
                 raise e
+        except Exception as e:
+            context.log.error(msg=str(e))
+            raise e
 
         last_update_time = _check.inst(
             pendulum.parse(text=spreadsheet.get_lastUpdateTime()), pendulum.DateTime
