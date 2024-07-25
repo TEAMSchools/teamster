@@ -1,5 +1,7 @@
 from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudResource
+from dagster_embedded_elt.dlt import DagsterDltResource
+from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
 from dagster_fivetran import FivetranResource
 
 from teamster.libraries.adp.workforce_manager.resources import (
@@ -50,6 +52,8 @@ AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
 DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
     username=EnvVar("AMPLIFY_DDS_USERNAME"), password=EnvVar("AMPLIFY_DDS_PASSWORD")
 )
+
+DLT_RESOURCE = DagsterDltResource()
 
 FIVETRAN_RESOURCE = FivetranResource(
     api_key=EnvVar("FIVETRAN_API_KEY"),
@@ -161,4 +165,21 @@ SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_port=EnvVar("LITTLESIS_SFTP_PORT"),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
+)
+
+SLING_RESOURCE = SlingResource(
+    connections=[
+        SlingConnectionResource(
+            name="ILLUMINATE",
+            type="postgres",
+            host=EnvVar("SNOWFLAKE_HOST"),
+            user=EnvVar("SNOWFLAKE_USER"),
+        ),
+        SlingConnectionResource(
+            name="BIGQUERY",
+            type="bigquery",
+            host=EnvVar("SNOWFLAKE_HOST"),
+            user=EnvVar("SNOWFLAKE_USER"),
+        ),
+    ]
 )
