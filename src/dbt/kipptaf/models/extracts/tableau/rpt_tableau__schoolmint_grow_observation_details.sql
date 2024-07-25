@@ -129,7 +129,7 @@ select
 
     sr.sam_account_name,
     sr.report_to_sam_account_name,
-    sr.preferred_name_lastfirst as observer_name,
+    sr2.preferred_name_lastfirst as observer_name,
 
     if(od.observation_id is not null, 1, 0) as is_observed,
     if(od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0) as met_goal_miami
