@@ -28,7 +28,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # install python project
 COPY src/teamster/ ./src/teamster/
-RUN uv pip install -e . --no-cache-dir
+RUN uv pip install \
+    -e . \
+    --override overrides.txt \
+    --no-cache-dir
 
 # # install dbt project
 COPY src/dbt/ ./src/dbt/
