@@ -16,6 +16,7 @@ from dagster import (
     sensor,
 )
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from sshtunnel import HandlerSSHTunnelForwarderError
 
 from teamster.libraries.sqlalchemy.resources import OracleResource
@@ -90,20 +91,30 @@ def build_powerschool_sensor(
                 tz=execution_timezone
             ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
-            [(count,)] = _check.inst(
-                db_powerschool.engine.execute_query(
-                    query=text(
-                        # trunk-ignore(bandit/B608)
-                        f"SELECT COUNT(*) FROM {table_name} "
-                        f"WHERE {partition_column} >= "
-                        f"TO_TIMESTAMP('{latest_materialization_fmt}', "
-                        "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
-                    ),
-                    partition_size=1,
-                    output_format=None,
-                ),
-                list,
+            query = text(
+                # trunk-ignore(bandit/B608)
+                f"SELECT COUNT(*) FROM {table_name} "
+                f"WHERE {partition_column} >= "
+                f"TO_TIMESTAMP('{latest_materialization_fmt}', "
+                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
             )
+
+            try:
+                [(count,)] = _check.inst(
+                    db_powerschool.engine.execute_query(
+                        query=query, partition_size=1, output_format=None
+                    ),
+                    list,
+                )
+            except OperationalError as e:
+                if "DPY-6003" in str(e):
+                    context.log.error(msg=str(e))
+                    return SkipReason(str(e))
+                else:
+                    raise e
+            except Exception as e:
+                context.log.error(msg=str(e))
+                raise e
 
             context.log.info(f"count: {count}")
 
