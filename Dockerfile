@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/python
-ARG PYTHON_VERSION
+ARG PYTHON_VERSION=3.12
 FROM python:"${PYTHON_VERSION}"-slim
 
 # set shell to bash
@@ -19,7 +19,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     && uv venv
 
 # install dependencies
-COPY pyproject.toml requirements.txt ./
+COPY pyproject.toml requirements.txt overrides.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip \
     uv pip install \
     -r requirements.txt \
