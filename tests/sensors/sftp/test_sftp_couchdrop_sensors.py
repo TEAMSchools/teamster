@@ -3,8 +3,8 @@ from dagster import SensorResult, build_sensor_context
 from teamster.libraries.core.resources import SSH_COUCHDROP
 
 
-def _test_sensor(sftp_sensor):
-    context = build_sensor_context(sensor_name=sftp_sensor.name)
+def _test_sensor(sftp_sensor, cursor=None):
+    context = build_sensor_context(sensor_name=sftp_sensor.name, cursor=cursor)
 
     result: SensorResult = sftp_sensor(context=context, ssh_couchdrop=SSH_COUCHDROP)
 
@@ -30,7 +30,10 @@ def test_couchdrop_sftp_sensor_kippmiami():
         couchdrop_sftp_sensor,
     )
 
-    _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
+    _test_sensor(
+        sftp_sensor=couchdrop_sftp_sensor,
+        cursor='{"kippmiami__fldoe__eoc": 1716380580, "kippmiami__fldoe__fast": 1716937706, "kippmiami__fldoe__science": 1716380612}',
+    )
 
 
 def test_couchdrop_sftp_sensor_kippnewark():
