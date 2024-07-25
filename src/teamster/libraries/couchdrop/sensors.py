@@ -83,6 +83,12 @@ def build_couchdrop_sftp_sensor(
                 return SkipReason(str(e))
             else:
                 raise e
+        except FileNotFoundError as e:
+            if "[Errno 2] no such file" in e.args:
+                context.log.error(msg=str(e))
+                return SkipReason(str(e))
+            else:
+                raise e
         except Exception as e:
             context.log.error(msg=str(e))
             raise e
