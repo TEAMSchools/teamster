@@ -92,11 +92,11 @@ def build_couchdrop_sftp_sensor(
             metadata = a.metadata_by_key[a.key]
             partitions_def = _check.not_none(value=a.partitions_def)
 
-            cursor_st_mtime = cursor.get(asset_identifier, 0)
+            max_st_mtime = cursor_st_mtime = cursor.get(asset_identifier, 0)
 
             pattern = re.compile(
                 pattern=(
-                    f"{metadata["remote_dir_regex"]}/{metadata["remote_file_regex"]}"
+                    rf"{metadata["remote_dir_regex"]}/{metadata["remote_file_regex"]}"
                 )
             )
 
@@ -109,6 +109,11 @@ def build_couchdrop_sftp_sensor(
             ]
 
             for f, path in file_matches:
+                f_st_mtime = f.st_mtime or 0
+
+                if f_st_mtime > max_st_mtime:
+                    max_st_mtime = f_st_mtime
+
                 match = _check.not_none(value=pattern.match(string=path))
 
                 if isinstance(a.partitions_def, MultiPartitionsDefinition):
@@ -130,7 +135,7 @@ def build_couchdrop_sftp_sensor(
                     }
                 )
 
-                cursor[asset_identifier] = f.st_mtime
+            cursor[asset_identifier] = max_st_mtime
 
         if run_request_kwargs:
             for (job_name, parition_key), group in groupby(
