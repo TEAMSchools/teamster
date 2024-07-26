@@ -429,7 +429,7 @@ select
     m.teacher_name,
     m.course_number,
     m.course_name,
-    m.teacher_id_current,
+    m.teacher_number_current,
     m.teacher_name_current,
 
     'Actual' as results_type,
