@@ -94,8 +94,8 @@ with
             cc_academic_year,
             students_student_number,
             courses_credittype,
-            teachernumber,
-            teacher_lastfirst as teacher_name,
+            teachernumber as teacher_number_current,
+            teacher_lastfirst as teacher_name_current,
             courses_course_name as course_name,
             cc_course_number as course_number,
 
@@ -127,8 +127,8 @@ with
             e.courses_course_name as course_name,
             e.cc_course_number as course_number,
 
-            c.teachernumber as teacher_id_current,
-            c.teacher_name as teacher_name_current,
+            c.teachernumber as teacher_number,
+            c.teacher_name as teacher_name,
 
             case
                 e.courses_credittype
