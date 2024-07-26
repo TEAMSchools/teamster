@@ -86,10 +86,12 @@ with
             on co.academic_year = w.academic_year
             and co.schoolid = w.schoolid
             and w.week_end_sunday between co.entrydate and co.exitdate
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="w") }}
         left join
             {{ ref("stg_deanslist__behavior") }} as b
             on co.student_number = b.student_school_id
             and b.behavior_date between w.week_start_monday and w.week_end_sunday
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
         inner join
             behavior_categories as bc
             on co.region = bc.region
