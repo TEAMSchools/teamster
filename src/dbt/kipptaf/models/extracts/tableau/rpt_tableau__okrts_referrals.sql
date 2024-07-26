@@ -63,18 +63,16 @@ select
     cf.restraint_used,
     cf.ssds_incident_id,
 
-    ada.days_absent_unexcused,
-
     st.suspension_type,
 
-    round(ada.ada, 2) as ada,
+    ada.days_absent_unexcused,
 
+    if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
     if(co.is_504, 'Has 504', 'No 504') as status_504,
     if(
         co.is_self_contained, 'Self-contained', 'Not self-contained'
     ) as self_contained_status,
-    if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
     concat(dli.create_last, ', ', dli.create_first) as entry_staff,
     concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
@@ -96,21 +94,29 @@ select
         else 'Other'
     end as referral_tier,
 
+    round(ada.ada, 2) as ada,
+    if(round(ada.ada, 2) <= 0.90, true, false) as is_chronically_absent,
+
     count(distinct co.student_number) over (
         partition by w.week_start_monday, co.school_abbreviation
     ) as school_enrollment_by_week,
 
-    if(round(ada.ada, 2) <= .90, true, false) as is_chronically_absent,
-
     max(if(dlp.is_suspension, 1, 0)) over (
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_int,
+
     max(if(st.suspension_type = 'OSS', 1, 0)) over (
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_oss_int,
+
     max(if(st.suspension_type = 'ISS', 1, 0)) over (
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_iss_int,
+
+    row_number() over (
+        partition by co.academic_year, co.student_number
+        order by w.week_start_monday asc
+    ) as rn_student_year,
 
     if(
         dli.incident_id is null,
@@ -120,11 +126,6 @@ select
             order by dlp.is_suspension desc
         )
     ) as rn_incident,
-
-    row_number() over (
-        partition by co.academic_year, co.student_number
-        order by w.week_start_monday asc
-    ) as rn_student_year,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("base_powerschool__course_enrollments") }} as hr
@@ -133,8 +134,8 @@ left join
     and co.schoolid = hr.cc_schoolid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
     and hr.cc_course_number = 'HR'
-    and not hr.is_dropped_section
     and hr.rn_course_number_year = 1
+    and not hr.is_dropped_section
 inner join
     {{ ref("int_powerschool__calendar_week") }} as w
     on co.academic_year = w.academic_year
@@ -145,9 +146,10 @@ left join
     {{ ref("stg_deanslist__incidents") }} as dli
     on co.student_number = dli.student_school_id
     and co.academic_year = dli.create_ts_academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
     and extract(date from dli.create_ts_date)
     between w.week_start_monday and w.week_end_sunday
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
+    and {{ union_dataset_join_clause(left_alias="w", right_alias="dli") }}
 left join
     {{ ref("stg_deanslist__incidents__penalties") }} as dlp
     on dli.incident_id = dlp.incident_id
@@ -163,6 +165,6 @@ left join
     and co.yearid = ada.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
 where
-    co.academic_year >= {{ var("current_academic_year") }} - 1
-    and co.rn_year = 1
+    co.rn_year = 1
+    and co.academic_year >= {{ var("current_academic_year") }} - 1
     and co.grade_level != 99
