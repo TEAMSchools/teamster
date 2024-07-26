@@ -9,7 +9,6 @@ select
     credit,
     memo,
     glentry_classid as gl_entry_class_id,
-    file_number,
     gldimfunction as gl_dim_function,
     gldimdonor_restriction as gl_dim_donor_restriction,
     position_id,
@@ -21,13 +20,18 @@ select
     parse_date('%m/%d/%Y', `date`) as `date`,
 
     coalesce(acct_no.long_value, safe_cast(acct_no.string_value as int)) as acct_no,
+
+    coalesce(dept_id.long_value, safe_cast(dept_id.double_value as int)) as dept_id,
+    coalesce(
+        file_number.long_value, safe_cast(file_number.double_value as int)
+    ) as file_number,
+    coalesce(
+        glentry_projectid.long_value, safe_cast(glentry_projectid.double_value as int)
+    ) as gl_entry_project_id,
+
     coalesce(
         location_id.long_value,
         safe_cast(location_id.string_value as int),
         safe_cast(location_id.double_value as int)
     ) as location_id,
-    coalesce(dept_id.long_value, safe_cast(dept_id.double_value as int)) as dept_id,
-    coalesce(
-        glentry_projectid.long_value, safe_cast(glentry_projectid.double_value as int)
-    ) as gl_entry_project_id,
 from {{ source("adp_payroll", "src_adp_payroll__general_ledger_file") }}
