@@ -67,12 +67,15 @@ def build_titan_sftp_sensor(
             if "No existing session" in e.args:
                 return SkipReason(str(e))
             else:
-                raise SSHException from e
+                raise e
         except TimeoutError as e:
             if "timed out" in e.args:
                 return SkipReason(str(e))
             else:
-                raise TimeoutError from e
+                raise e
+        except Exception as e:
+            context.log.error(msg=str(e))
+            raise e
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()
