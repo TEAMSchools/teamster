@@ -31,7 +31,7 @@ select
 
     coalesce(
         location_id.long_value,
-        cast(location_id.double_value as int)
-        safe_cast(location_id.string_value as int),
+        cast(location_id.double_value as int),
+        safe_cast(location_id.string_value as int)
     ) as location_id,
 from {{ source("adp_payroll", "src_adp_payroll__general_ledger_file") }}
