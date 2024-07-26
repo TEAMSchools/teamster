@@ -41,5 +41,6 @@
   "dbt.enableNewLineagePanel": true,
   "[python]": {
     "editor.defaultFormatter": "trunk.io"
-  }
+  },
+  "dbt.perspectiveTheme": "Vintage"
 }
