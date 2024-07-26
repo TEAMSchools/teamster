@@ -94,8 +94,8 @@ with
             cc_academic_year,
             students_student_number,
             courses_credittype,
-            teachernumber as teacher_number_current,
-            teacher_lastfirst as teacher_name_current,
+            teachernumber,
+            teacher_lastfirst as teacher_name,
             courses_course_name as course_name,
             cc_course_number as course_number,
 
@@ -123,12 +123,13 @@ with
             e._dbt_source_relation,
             e.cc_academic_year,
             e.students_student_number,
+            e.teachernumber,
             e.teacher_lastfirst as teacher_name,
             e.courses_course_name as course_name,
             e.cc_course_number as course_number,
 
-            c.teachernumber as teacher_number,
-            c.teacher_name as teacher_name,
+            c.teachernumber as teachernumber_current,
+            c.teacher_name as teacher_name_current,
 
             case
                 e.courses_credittype
@@ -429,7 +430,7 @@ select
     m.teacher_name,
     m.course_number,
     m.course_name,
-    m.teacher_number_current,
+    m.teachernumber_current,
     m.teacher_name_current,
 
     'Actual' as results_type,
@@ -516,7 +517,7 @@ select
     m.teacher_name,
     m.course_number,
     m.course_name,
-    m.teacher_id_current,
+    m.teachernumber_current,
     m.teacher_name_current,
 
     'Actual' as results_type,
@@ -598,7 +599,7 @@ select
     teacher_name,
     course_number,
     course_name,
-    teacher_id_current,
+    teacher_number_current as teachernumber_current,
     teacher_name_current,
     results_type,
 from {{ ref("rpt_tableau__state_assessments_dashboard_nj_preelim") }}
