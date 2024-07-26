@@ -23,7 +23,6 @@ select
 
     o.employee_number,
     o.academic_year,
-    o.metric_id,
     o.assignment_id,
     o.notes_boy,
     o.rating_moy,
@@ -48,10 +47,21 @@ select
     c.eoy_self_complete,
     c.eoy_manager_complete,
 
+    r.preferred_name_lastfirst,
+    r.sam_account_name,
+    r.job_title,
+    r.business_unit_home_name as entity,
+    r.home_work_location_name as location,
+    r.department_home_name as department,
+    r.report_to_preferred_name_lastfirst as manager,
+    r.report_to_sam_account_name,
+
 from {{ ref("stg_leadership_development_output") }} as o
 left join metrics_lookup as m on o.metric_id = m.metric_id
 left join
     round_completion as c
     on o.employee_number = c.employee_number
     and o.academic_year = c.academic_year
-where active_assignment
+left join {{ ref('base_people__staff_roster') }} as r
+on o.employee_number = r.employee_number
+where o.active_assignment
