@@ -9,7 +9,6 @@ class GeneralLedger(BaseModel):
     description: str | None = None
     document: str | None = None
     employee_name: str | None = None
-    file_number: int | None = None
     gldimdonor_restriction: str | None = None
     gldimfunction: str | None = None
     glentry_classid: int | None = None
@@ -26,5 +25,6 @@ class GeneralLedger(BaseModel):
 
     acct_no: str | int | None = None
     dept_id: int | float | None = None
+    file_number: int | float | None = None
     glentry_projectid: int | float | None = None
     location_id: str | int | float | None = None
