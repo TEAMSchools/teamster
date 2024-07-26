@@ -20,7 +20,6 @@ from teamster.code_locations.kipptaf.resources import (
     SSH_RESOURCE_ILLUMINATE,
     SSH_RESOURCE_LITTLESIS,
     TABLEAU_SERVER_RESOURCE,
-    ZENDESK_RESOURCE,
 )
 from teamster.libraries.core.resources import (  # DB_POWERSCHOOL,; get_ssh_resource_powerschool,
     BIGQUERY_RESOURCE,
@@ -149,10 +148,6 @@ def test_ssh_titan():
 
 def test_tableau_server_resource():
     _test_resource_init(TABLEAU_SERVER_RESOURCE)
-
-
-def test_zendesk_resource():
-    _test_resource_init(ZENDESK_RESOURCE)
 
 
 # def test_db_powerschool():
