@@ -36,8 +36,9 @@ license = { text = "GPL-3.0-or-later" }
 requires = ["pdm-pep517>=1.0.0"]
 build-backend = "pdm.pep517.api"
 
-[tool]
-[tool.pdm]
+[tool.pdm.resolution.overrides]
+urllib3 = ">=2.2.2"
+
 [tool.pdm.dev-dependencies]
 dev = [
   "pytest>=7.4.3",

@@ -28,8 +28,8 @@ inner join
     and t.academic_year = {{ var("current_academic_year") }}
 left join
     {{ ref("int_performance_management__observations") }} as o
-    on t.type = o.observation_type_abbreviation
-    and srh.employee_number = o.employee_number
+    on srh.employee_number = o.employee_number
+    and t.type = o.observation_type_abbreviation
     and o.observed_at between t.start_date and t.end_date
 where
     srh.job_title in ("Teacher", "Teacher in Residence", "Learning Specialist")
