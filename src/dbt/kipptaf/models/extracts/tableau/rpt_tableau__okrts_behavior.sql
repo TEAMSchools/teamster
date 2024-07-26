@@ -1,171 +1,174 @@
 with
-    behavior_categories as (
-        select region, 'BEAT' as category_type, 'Values' as behavior_category,
-        from unnest(['Camden', 'Newark']) as region
-
-        union all
-
-        select 'Miami' as region, 'BEAT' as category_type, behavior_category,
-        from
-            unnest(
-                [
-                    'Be Kind (Love)',
-                    'Be Kind (Revolutionary Love)',
-                    'Effort (Perseverance)',
-                    'Effort (Pride)',
-                    'Accountability (Purpose, Courage)',
-                    'Accountability (Empowerment)',
-                    'Teamwork (Community)'
-                ]
-            ) as behavior_category
-
-        union all
-
-        select 'Miami' as region, 'Corrective' as category_type, behavior_category,
-        from unnest(['Written Reminders', 'Big Reminders']) as behavior_category
-
-        union all
-
+    behaviors as (
         select
-            region,
-            'Incentives' as category_type,
-            'Earned Incentives' as behavior_category,
-        from unnest(['Camden', 'Newark', 'Miami']) as region
+            _dbt_source_relation,
+            dl_said,
+            school_name,
+            student_school_id,
+            behavior_date,
+            behavior_category,
+            point_value,
+
+            concat(staff_last_name, ', ', staff_first_name) as entry_staff,
+
+            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
+
+            if(
+                regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami',
+                regexp_extract(behavior_category, r'([\w\s]+) \('),
+                behavior
+            ) as behavior,
+        from {{ ref("stg_deanslist__behavior") }}
+        where
+            behavior_category in (
+                'Earned Incentives',
+                'Values',
+                'Be Kind (Love)',
+                'Be Kind (Revolutionary Love)',
+                'Effort (Perseverance)',
+                'Effort (Pride)',
+                'Accountability (Purpose, Courage)',
+                'Accountability (Empowerment)',
+                'Teamwork (Community)'
+            )
+            and behavior_date >= date({{ var("current_academic_year") - 1 }}, 7, 1)
     ),
 
-    roster as (
+    behavior_category_type as (
         select
-            co._dbt_source_relation,
-            co.studentid,
-            co.yearid,
-            co.student_number,
-            co.lastfirst as student_name,
-            co.academic_year,
-            co.schoolid,
-            co.school_abbreviation as school,
-            co.region,
-            co.grade_level,
-            co.enroll_status,
-            co.cohort,
-            co.school_level,
-            co.gender,
-            co.ethnicity,
-            co.lunch_status,
-            co.is_retained_year,
+            _dbt_source_relation,
+            dl_said,
+            school_name,
+            student_school_id,
+            behavior,
+            behavior_date,
+            behavior_category,
+            point_value,
+            entry_staff,
 
+            case
+                when
+                    code_location in ('kippnewark', 'kippcamden')
+                    and behavior_category = 'Earned Incentives'
+                then 'Incentives'
+                when
+                    code_location in ('kippnewark', 'kippcamden')
+                    and behavior_category = 'Values'
+                then 'BEAT'
+                when
+                    code_location = 'kippmiami'
+                    and behavior_category in ('Written Reminders', 'Big Reminders')
+                then 'Corrective'
+                when
+                    code_location = 'kippmiami'
+                    and behavior_category
+                    in ('Be Kind', 'Effort', 'Accountability', 'Teamwork')
+                then 'BEAT'
+            end as category_type,
+        from behaviors
+    ),
+
+    behavior_week as (
+        select
+            b._dbt_source_relation,
+            b.dl_said,
+            b.student_school_id,
+            b.behavior,
+            b.behavior_category,
+            b.point_value,
+            b.category_type,
+            b.entry_staff,
+
+            w.academic_year,
+            w.quarter as term,
             w.week_start_monday,
             w.week_end_sunday,
             w.date_count as days_in_session,
-            w.quarter as term,
-
-            bc.category_type,
-
-            b.dl_said,
-            b.point_value,
-
-            concat(b.staff_last_name, ', ', b.staff_first_name) as entry_staff,
-            if(
-                co.region = 'Miami',
-                regexp_extract(b.behavior_category, r'^(.*?) \('),
-                b.behavior
-            ) as behavior,
-
-            count(distinct co.student_number) over (
-                partition by w.week_start_monday, co.school_abbreviation
-            ) as school_enrollment_by_week,
-
-            if(co.lep_status, 'ML', 'Not ML') as ml_status,
-            if(co.is_504, 'Has 504', 'No 504') as status_504,
-            if(
-                co.is_self_contained, 'Self-contained', 'Not self-contained'
-            ) as self_contained_status,
-            if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from behavior_category_type as b
+        inner join
+            {{ ref("stg_people__location_crosswalk") }} as lc on b.school_name = lc.name
         inner join
             {{ ref("int_powerschool__calendar_week") }} as w
-            on co.academic_year = w.academic_year
-            and co.schoolid = w.schoolid
-            and w.week_end_sunday between co.entrydate and co.exitdate
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="w") }}
-        left join
-            {{ ref("stg_deanslist__behavior") }} as b
-            on co.student_number = b.student_school_id
-            and b.behavior_date between w.week_start_monday and w.week_end_sunday
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
-        inner join
-            behavior_categories as bc
-            on co.region = bc.region
-            and b.behavior_category = bc.behavior_category
-        where
-            co.academic_year >= {{ var("current_academic_year") }} - 1
-            and co.rn_year = 1
-            and co.grade_level != 99
+            on b.behavior_date between w.week_start_monday and w.week_end_sunday
+            and {{ union_dataset_join_clause(left_alias="w", right_alias="b") }}
+            and lc.powerschool_school_id = w.schoolid
+        where b.category_type is not null
     ),
 
     behavior_aggregation as (
         select
-            student_number,
-            academic_year,
-            week_start_monday,
-            category_type,
+            _dbt_source_relation,
+            student_school_id,
             behavior,
+            behavior_category,
+            category_type,
+            academic_year,
+            term,
+            week_start_monday,
+            week_end_sunday,
+            days_in_session,
             entry_staff,
 
-            count(distinct dl_said) as behavior_count,
             sum(point_value) as total_points,
-        from roster
-        group by
-            student_number,
-            academic_year,
-            week_start_monday,
-            category_type,
-            behavior,
-            entry_staff
+            count(distinct dl_said) as behavior_count,
+        from behavior_week
+        group by all
     )
 
 select
-    r.student_number,
-    r.student_name,
-    r.academic_year,
-    r.schoolid,
-    r.school,
-    r.region,
-    r.grade_level,
-    r.enroll_status,
-    r.cohort,
-    r.school_level,
-    r.gender,
-    r.ethnicity,
-    r.week_start_monday,
-    r.week_end_sunday,
-    r.days_in_session,
-    r.term,
-    r.school_enrollment_by_week,
-    r.ml_status,
-    r.status_504,
-    r.self_contained_status,
-    r.iep_status,
+    co.student_number,
+    co.lastfirst as student_name,
+    co.enroll_status,
+    co.cohort,
+    co.academic_year,
+    co.region,
+    co.school_level,
+    co.school_abbreviation as school,
+    co.grade_level,
+    co.gender,
+    co.ethnicity,
+    co.lunch_status,
+    co.is_retained_year,
+
+    b.term,
+    b.week_start_monday,
+    b.week_end_sunday,
+    b.days_in_session,
+    b.category_type,
+    b.behavior,
+    b.entry_staff,
+    b.total_points,
+    b.behavior_count,
 
     hr.sections_section_number as homeroom_section,
     hr.teacher_lastfirst as homeroom_teacher_name,
 
-    b.category_type,
-    b.behavior,
-    b.entry_staff,
-    b.behavior_count,
-    b.total_points,
-from roster as r
-left join
-    {{ ref("base_powerschool__course_enrollments") }} as hr
-    on r.studentid = hr.cc_studentid
-    and r.yearid = hr.cc_yearid
-    and r.schoolid = hr.cc_schoolid
-    and {{ union_dataset_join_clause(left_alias="r", right_alias="hr") }}
-    and hr.cc_course_number = 'HR'
-    and not hr.is_dropped_section
-    and hr.rn_course_number_year = 1
+    if(co.lep_status, 'ML', 'Not ML') as ml_status,
+    if(co.is_504, 'Has 504', 'No 504') as status_504,
+    if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+    if(
+        co.is_self_contained, 'Self-contained', 'Not self-contained'
+    ) as self_contained_status,
+
+    count(distinct co.student_number) over (
+        partition by co.schoolid, b.week_start_monday
+    ) as school_enrollment_by_week,
+from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     behavior_aggregation as b
-    on r.student_number = b.student_number
-    and r.academic_year = b.academic_year
-    and r.week_start_monday = b.week_start_monday
+    on co.student_number = b.student_school_id
+    and co.academic_year = b.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as hr
+    on co.studentid = hr.cc_studentid
+    and co.yearid = hr.cc_yearid
+    and co.schoolid = hr.cc_schoolid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
+    and hr.cc_course_number = 'HR'
+    and hr.rn_course_number_year = 1
+    and not hr.is_dropped_section
+where
+    co.rn_year = 1
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}
+    and co.grade_level != 99
