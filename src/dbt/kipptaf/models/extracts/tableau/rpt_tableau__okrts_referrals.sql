@@ -140,6 +140,7 @@ inner join
     on co.academic_year = w.academic_year
     and co.schoolid = w.schoolid
     and w.week_end_sunday between co.entrydate and co.exitdate
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="w") }}
 left join
     {{ ref("stg_deanslist__incidents") }} as dli
     on co.student_number = dli.student_school_id
