@@ -37,7 +37,6 @@ requires = ["pdm-pep517>=1.0.0"]
 build-backend = "pdm.pep517.api"
 
 [tool.pdm.resolution.overrides]
-urllib3 = ">=2.2.2"
 
 [tool.pdm.dev-dependencies]
 dev = [

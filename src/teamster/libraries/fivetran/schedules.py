@@ -15,7 +15,9 @@ def build_fivetran_start_sync_schedule(
         execution_timezone=execution_timezone,
         job=_job,
     )
-    def _schedule(context: ScheduleEvaluationContext, fivetran: FivetranResource):
+    def _schedule(
+        context: ScheduleEvaluationContext, fivetran: FivetranResource
+    ) -> SkipReason:
         fivetran.start_sync(connector_id=connector_id)
         return SkipReason("This schedule doesn't actually return any runs.")
 
@@ -35,7 +37,9 @@ def build_fivetran_start_resync_schedule(
         execution_timezone=execution_timezone,
         job=_job,
     )
-    def _schedule(context: ScheduleEvaluationContext, fivetran: FivetranResource):
+    def _schedule(
+        context: ScheduleEvaluationContext, fivetran: FivetranResource
+    ) -> SkipReason:
         fivetran.start_resync(connector_id=connector_id)
         return SkipReason("This schedule doesn't actually return any runs.")
 
