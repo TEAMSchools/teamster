@@ -64,6 +64,7 @@ with
             e._dbt_source_relation,
             e.cc_academic_year,
             e.students_student_number,
+            e.teachernumber,
             e.teacher_lastfirst as teacher_name,
             e.courses_course_name as course_name,
             e.cc_course_number as course_number,
@@ -199,10 +200,12 @@ select
     a.performance_band_level,
     a.is_proficient,
 
+    m.teachernumber,
     m.teacher_name,
     m.course_number,
     m.course_name,
 
+    mcur.teachernumber as teacher_number_current,
     mcur.teacher_name as teacher_name_current,
 
     c.city as proficiency_city,
