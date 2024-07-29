@@ -15,5 +15,5 @@ def test_schedule():
         )
 
     assert output is not None
-    for o in output:
-        context.log.info(o)
+
+    context.log.info(output)

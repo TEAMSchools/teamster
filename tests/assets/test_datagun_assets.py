@@ -155,7 +155,7 @@ def test_littlesis_extract():
 
 def test_deanslist_jsongz():
     from teamster.code_locations.kipptaf.datagun.assets import (
-        deanslist_continuous_extract_gzip,
+        deanslist_continuous_extract,
     )
 
-    _test_asset(asset=deanslist_continuous_extract_gzip)
+    _test_asset(asset=deanslist_continuous_extract)
