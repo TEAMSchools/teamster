@@ -1,5 +1,5 @@
 select
-    id as id,
+    id,
     name as `name`,
     createdbyid as created_by_id,
     createddate as created_date,
