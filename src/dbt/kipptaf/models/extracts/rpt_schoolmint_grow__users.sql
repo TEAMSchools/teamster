@@ -5,15 +5,19 @@ with
             sr.report_to_employee_number as manager_internal_id,
             sr.google_email as user_email,
             sr.department_home_name as course_name,
+
             sr.preferred_name_given_name
             || ' '
             || sr.preferred_name_family_name as user_name,
+
             if(
                 sr.home_work_location_powerschool_school_id != 0,
                 sr.home_work_location_name,
                 null
             ) as school_name,
+
             if(sr.assignment_status in ('Terminated', 'Deceased'), 1, 0) as inactive,
+
             if(
                 sr.primary_grade_level_taught = 0,
                 'K',
@@ -132,6 +136,7 @@ with
             user_id,
             school_id,
             observation_group_name,
+
             string_agg(role_name, ';') as role_names,
         from observation_groups
         where observation_group_name = 'Teachers'
@@ -164,6 +169,7 @@ with
     roles_agg as (
         select
             user_id,
+
             '"' || string_agg(distinct role_id, '" , "') || '"' as role_ids,
             '"' || string_agg(distinct role_name, '" , "') || '"' as role_names,
         from roles_union
@@ -176,29 +182,10 @@ with
             p.user_name,
             p.user_email,
             p.inactive,
-            case
-                when
-                    current_date('{{ var("local_timezone") }}')
-                    = date({{ var("current_academic_year") }}, 8, 1)
-                then null
-                when p.role_name = 'Coach'
-                then 'observees;observers'
-                when p.role_name like '%Admin%'
-                then 'observers'
-                else 'observees'
-            end as group_type,
-            case
-                when
-                    current_date('{{ var("local_timezone") }}')
-                    = date({{ var("current_academic_year") }}, 8, 1)
-                then null
-                else 'Teachers'
-            end as group_name,
 
             u.user_id,
             u.email as user_email_ws,
             u.name as user_name_ws,
-            if(u.inactive, 1, 0) as inactive_ws,
             u.default_information_school as school_id_ws,
             u.default_information_grade_level as grade_id_ws,
             u.default_information_course as course_id_ws,
@@ -213,16 +200,23 @@ with
 
             cou.tag_id as course_id,
 
-            '[' || er.role_ids || ']' as role_id_ws,
-
             og.role_names as group_type_ws,
 
+            'Teachers' as group_name,
+
+            '[' || er.role_ids || ']' as role_id_ws,
+
+            if(u.inactive, 1, 0) as inactive_ws,
+
+            case
+                when p.role_name = 'Coach'
+                then 'observees;observers'
+                when p.role_name like '%Admin%'
+                then 'observers'
+                else 'observees'
+            end as group_type,
+
             '[' || case
-                /* removing last year roles every August */
-                when
-                    current_date('{{ var("local_timezone") }}')
-                    = date({{ var("current_academic_year") }}, 8, 1)
-                then '"' || p.role_name || '"'
                 /* no roles = add assigned role */
                 when er.role_names is null
                 then '"' || p.role_name || '"'
@@ -235,11 +229,6 @@ with
             || ']' as role_names,
 
             '[' || case
-                /* removing last year roles every August */
-                when
-                    current_date('{{ var("local_timezone") }}')
-                    = date({{ var("current_academic_year") }}, 8, 1)
-                then '"' || r.role_id || '"'
                 /* no roles = add assigned role */
                 when er.role_ids is null
                 then '"' || r.role_id || '"'
@@ -281,6 +270,7 @@ with
     surrogate_keys as (
         select
             *,
+
             {{
                 dbt_utils.generate_surrogate_key(
                     [
@@ -296,6 +286,7 @@ with
                     ]
                 )
             }} as surrogate_key_source,
+
             {{
                 dbt_utils.generate_surrogate_key(
                     [
@@ -317,13 +308,13 @@ with
 select *,
 from surrogate_keys
 where
-    {# create/update in SMG #}
+    /* create/update in SMG */
     (user_id is null or surrogate_key_source != surrogate_key_destination)
     and (
-        {# active in SMG #}
+        /* active in SMG */
         (inactive_ws = 0)
-        {# to reactivate in SMG #}
+        /* to reactivate in SMG */
         or (inactive = 0 and inactive_ws = 1)
-        {# to archive in SMG #}
+        /* to archive in SMG */
         or (inactive = 1 and inactive_ws = 1 and archived_at is null)
     )
