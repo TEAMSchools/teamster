@@ -11,6 +11,10 @@ dagsterCloud:
   # organization.
   branchDeployments: true
 
+  # Optionally specify the timeout in seconds to use when making requests to Dagster
+  # Cloud servers.
+  timeout: 120
+
 ########################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ########################################################################################
@@ -56,15 +60,15 @@ workspace:
       ttlSeconds: 300
 
   # Specifies the timeout in seconds the agent should use when waiting for a code
-  # server to be ready after the Kubernetes deployment is created. If not set, defaults
-  # to 180 seconds.
+  # server to be ready after the Kubernetes deployment is created.
+  # If not set, defaults to 180 seconds.
   # This timeout should be increased if your code locations can take more than 3
   # minutes to load your Dagster definitions.
-  serverProcessStartupTimeout: 600
+  serverProcessStartupTimeout: 300
 
   # Specifies the timeout when creating a new Kubernetes deployment for a code server.
   # If not set, defaults to 300 seconds.
-  deploymentStartupTimeout: 600
+  deploymentStartupTimeout: 300
 
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
