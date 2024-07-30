@@ -20,29 +20,30 @@ from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_powerschool_table_asset(
-    asset_key,
+    code_location,
     local_timezone,
+    table_name: str,
     partitions_def: (
         FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition | None
     ) = None,
-    table_name=None,
+    partition_column: str | None = None,
     select_columns: list[str] | None = None,
-    partition_column=None,
     op_tags: dict | None = None,
-    **kwargs,
 ) -> AssetsDefinition:
-    if table_name is None:
-        table_name = asset_key[-1]
-
     if select_columns is None:
         select_columns = ["*"]
 
     @asset(
-        key=asset_key,
-        metadata={"partition_column": partition_column},
-        io_manager_key="io_manager_gcs_file",
+        key=[code_location, "powerschool", table_name],
+        metadata={
+            "table_name": table_name,
+            "partition_column": partition_column,
+            "select_columns": select_columns,
+            "op_tags": op_tags,
+        },
         partitions_def=partitions_def,
         op_tags=op_tags,
+        io_manager_key="io_manager_gcs_file",
         group_name="powerschool",
         compute_kind="python",
     )
