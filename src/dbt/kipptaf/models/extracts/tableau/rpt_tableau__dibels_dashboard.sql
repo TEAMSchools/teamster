@@ -21,6 +21,7 @@ with
             e.lunch_status,
             e.gifted_and_talented,
             e.enroll_status,
+            e.advisory,
 
             a.admin_season as expected_test,
             a.month_round,
@@ -39,123 +40,33 @@ with
             and e.grade_level <= 8
             and not e.is_self_contained
             and a.scope = 'DIBELS'
-    )
-
-select
-    _dbt_source_relation,
-    cc_academic_year,
-    cc_studentid,
-    cc_teacherid as teacherid,
-    teacher_lastfirst as teacher_name,
-    courses_course_name as course_name,
-    cc_course_number as course_number,
-    cc_section_number as section_number,
-
-    1 as scheduled,
-
-    right(courses_course_name, 1) as schedule_student_grade_level,
-
-from {{ ref("base_powerschool__course_enrollments") }}
-where
-    cc_academic_year >= {{ var("current_academic_year") }} - 1
-    and not is_dropped_course
-    and not is_dropped_section
-    and rn_course_number_year = 1
-    and courses_course_name in (
-        'ELA GrK',
-        'ELA K',
-        'ELA Gr1',
-        'ELA Gr2',
-        'ELA Gr3',
-        'ELA Gr4',
-        'ELA Gr5',
-        'ELA Gr6',
-        'ELA Gr7',
-        'ELA Gr8'
-    )
-
-    /* PLEASE IGNORE THE REST - IT IS MY GUIDE TO REWRITING THIS QUERY FOR NEW DIBELS STUFF
-{% set periods = ["BOY", "BOY->MOY", "MOY", "MOY->EOY", "EOY"] %}
-
-with
-    student_number as (
-        select
-            _dbt_source_relation,
-            cast(academic_year as string) as academic_year,
-            region,
-            schoolid,
-            school_abbreviation as school,
-            studentid,
-            student_number,
-            enroll_status,
-            advisory_name,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where
-            academic_year >= {{ var("current_academic_year") }} - 1
-            and rn_year = 1
-            and grade_level <= 8
     ),
 
     schedules as (
-        select distinct
-            c._dbt_source_relation,
-            cast(c.cc_academic_year as string) as schedule_academic_year,
-            'KIPP NJ/MIAMI' as schedule_district,
-            c.cc_schoolid as schedule_schoolid,
-            c.cc_studentid as schedule_studentid,
-            c.cc_teacherid as teacherid,
-            c.teacher_lastfirst as teacher_name,
-            c.courses_course_name as course_name,
-            c.cc_course_number as course_number,
-            c.cc_section_number as section_number,
-            e.region as schedule_region,
-            e.student_number as schedule_student_number,
-            e.advisory_name,
-            e.enroll_status,
-            period as expected_test,
+
+        select
+            _dbt_source_relation,
+            cc_academic_year,
+            cc_schoolid,
+            cc_studentid,
+            students_student_number as student_number,
+            cc_teacherid as teacherid,
+            teacher_lastfirst as teacher_name,
+            courses_course_name as course_name,
+            cc_course_number as course_number,
+            cc_section_number as section_number,
+
             1 as scheduled,
 
-            case
-                when c.courses_course_name in ('ELA GrK', 'ELA K')
-                then 'K'
-                when c.courses_course_name = 'ELA Gr1'
-                then '1'
-                when c.courses_course_name = 'ELA Gr2'
-                then '2'
-                when c.courses_course_name = 'ELA Gr3'
-                then '3'
-                when c.courses_course_name = 'ELA Gr4'
-                then '4'
-                when c.courses_course_name = 'ELA Gr5'
-                then '5'
-                when c.courses_course_name = 'ELA Gr6'
-                then '6'
-                when c.courses_course_name = 'ELA Gr7'
-                then '7'
-                when c.courses_course_name = 'ELA Gr8'
-                then '8'
-            end as schedule_student_grade_level,
+            right(courses_course_name, 1) as schedule_student_grade_level,
 
-            case
-                when e.region in ('Camden', 'Newark')
-                then 'NJ'
-                when e.region = 'Miami'
-                then 'FL'
-            end as schedule_state,
-
-        from {{ ref("base_powerschool__course_enrollments") }} as c
-        left join
-            student_number as e
-            on cast(c.cc_academic_year as string) = e.academic_year
-            and c.cc_studentid = e.studentid
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="e") }}
-        cross join unnest({{ periods }}) as period
+        from {{ ref("base_powerschool__course_enrollments") }}
         where
-            c.cc_academic_year >= {{ var("current_academic_year") }} - 1
-            and not c.is_dropped_course
-            and not c.is_dropped_section
-            and c.rn_course_number_year = 1
-            and c.courses_course_name in (
+            cc_academic_year >= {{ var("current_academic_year") }} - 1
+            and not is_dropped_course
+            and not is_dropped_section
+            and rn_course_number_year = 1
+            and courses_course_name in (
                 'ELA GrK',
                 'ELA K',
                 'ELA Gr1',
@@ -171,7 +82,7 @@ with
 
     assessments_scores as (
         select
-            left(bss.school_year, 4) as mclass_academic_year,
+            safe_cast(left(bss.school_year, 4) as int) as mclass_academic_year,
             bss.student_primary_id as mclass_student_number,
             'benchmark' as assessment_type,
             bss.assessment_grade as mclass_assessment_grade,
@@ -206,7 +117,7 @@ with
             >= {{ var("current_academic_year") }} - 1
         union all
         select
-            left(school_year, 4) as mclass_academic_year,
+            safe_cast(left(school_year, 4) as int) as mclass_academic_year,
             student_primary_id as mclass_student_number,
             'pm' as assessment_type,
             cast(assessment_grade as string) as mclass_assessment_grade,
@@ -226,125 +137,77 @@ with
         from {{ ref("stg_amplify__pm_student_summary") }}
         where
             cast(left(school_year, 4) as int) >= {{ var("current_academic_year") }} - 1
-    ),
+    )
 
-    students_schedules_and_assessments_scores as (
-        select
-            s._dbt_source_relation,
-            s.academic_year,
-            s.district,
-            s.region,
-            s.state,
-            s.schoolid,
-            s.school,
-            s.studentid,
-            s.student_number,
-            s.student_name,
-            s.student_first_name,
-            s.student_last_name,
-            s.grade_level,
-            s.is_out_of_district,
-            s.gender,
-            s.ethnicity,
-            s.enroll_status,
-            s.is_homeless,
-            s.is_504,
-            s.sped,
-            s.lep_status,
-            s.lunch_status,
-            s.gifted_and_talented,
-            s.region as schedule_region,
+select
+    s._dbt_source_relation,
+    s.academic_year,
+    s.district,
+    s.region,
+    s.state,
+    s.schoolid,
+    s.school,
+    s.studentid,
+    s.student_number,
+    s.student_name,
+    s.grade_level,
+    s.is_out_of_district,
+    s.gender,
+    s.ethnicity,
+    s.enroll_status,
+    s.is_homeless,
+    s.is_504,
+    s.iep_status,
+    s.lep_status,
+    s.lunch_status,
+    s.gifted_and_talented,
+    s.advisory,
+    s.expected_test,
 
-            m.schedule_academic_year,
-            m.schedule_district,
-            m.schedule_state,
-            m.schedule_schoolid,
-            m.schedule_studentid,
-            m.schedule_student_number,
-            m.schedule_student_grade_level,
-            m.teacherid,
-            m.teacher_name,
-            m.course_name,
-            m.course_number,
-            m.section_number,
-            m.advisory_name,
-            m.expected_test,
-            m.scheduled,
+    m.schedule_student_grade_level,
+    m.teacherid,
+    m.teacher_name,
+    m.course_name,
+    m.course_number,
+    m.section_number,
+    m.scheduled,
 
-            a.mclass_academic_year,
-            a.mclass_student_number,
-            a.assessment_type,
-            a.mclass_assessment_grade,
-            a.mclass_period,
-            a.mclass_client_date,
-            a.mclass_sync_date,
-            a.mclass_measure,
-            a.mclass_measure_score,
-            a.mclass_measure_level,
-            a.mclass_measure_level_int,
-            a.mclass_measure_percentile,
-            a.mclass_measure_semester_growth,
-            a.mclass_measure_year_growth,
-            a.mclass_probe_number,
-            a.mclass_total_number_of_probes,
-            a.mclass_score_change,
+    a.mclass_student_number,
+    a.assessment_type,
+    a.mclass_assessment_grade,
+    a.mclass_period,
+    a.mclass_client_date,
+    a.mclass_sync_date,
+    a.mclass_measure,
+    a.mclass_measure_score,
+    a.mclass_measure_level,
+    a.mclass_measure_level_int,
+    a.mclass_measure_percentile,
+    a.mclass_measure_semester_growth,
+    a.mclass_measure_year_growth,
+    a.mclass_probe_number,
+    a.mclass_total_number_of_probes,
+    a.mclass_score_change,
 
-        from students as s
-        left join
-            schedules as m
-            on s.academic_year = m.schedule_academic_year
-            and s.schoolid = m.schedule_schoolid
-            and s.student_number = m.schedule_student_number
-        left join
-            assessments_scores as a
-            on m.schedule_academic_year = a.mclass_academic_year
-            and m.schedule_student_number = a.mclass_student_number
-            and m.expected_test = a.mclass_period
-        where m.section_number not like '%SC%'
-    ),
+from students as s
+left join
+    schedules as m
+    on s.academic_year = m.cc_academic_year
+    and s.schoolid = m.cc_schoolid
+    and s.student_number = m.student_number
+left join
+    assessments_scores as a
+    on s.academic_year = a.mclass_academic_year
+    and s.student_number = a.mclass_student_number
+    and s.expected_test = a.mclass_period
+where
+    m.section_number not like '%SC%'
 
-    composite_only as (
-        select distinct
-            academic_year, student_number, expected_test, mclass_measure_level,
-        from students_schedules_and_assessments_scores
-        where mclass_measure = 'Composite'
-    ),
+    /* PLEASE IGNORE THE REST - IT IS MY GUIDE TO REWRITING THIS QUERY FOR NEW DIBELS STUFF
+{% set periods = ["BOY", "BOY->MOY", "MOY", "MOY->EOY", "EOY"] %}
 
-    overall_composite_by_window as (
-        select distinct academic_year, student_number, p.boy, p.moy, p.eoy,
-        from
-            composite_only pivot (
-                max(mclass_measure_level) for expected_test in ('BOY', 'MOY', 'EOY')
-            ) as p
-    ),
-
-    probe_eligible_tag as (
-        select distinct
-            s.academic_year,
-            s.student_number,
-            c.boy,
-            c.moy,
-            c.eoy,
-            case
-                when c.boy in ('Below Benchmark', 'Well Below Benchmark')
-                then 'Yes'
-                when c.boy is null
-                then 'No data'
-                else 'No'
-            end as boy_probe_eligible,
-            case
-                when c.moy in ('Below Benchmark', 'Well Below Benchmark')
-                then 'Yes'
-                when c.moy is null
-                then 'No data'
-                else 'No'
-            end as moy_probe_eligible,
-        from students_schedules_and_assessments_scores as s
-        left join
-            overall_composite_by_window as c
-            on s.academic_year = c.academic_year
-            and s.student_number = c.student_number
-    ),
+with
+   
 
     base_roster as (
         select
