@@ -78,6 +78,23 @@ with
                 'ELA Gr7',
                 'ELA Gr8'
             )
+    ),
+
+    expanded_terms as (
+        select
+            academic_year,
+            name,
+            start_date,
+            region,
+            coalesce(
+                lead(start_date, 1) over (
+                    partition by academic_year, region order by code asc
+                )
+                - 1,
+                date({{ var("current_academic_year") + 1 }}, 06, 30)
+            ) as end_date,
+        from {{ ref("stg_reporting__terms") }}
+        where type = 'LIT' and academic_year >= {{ var("current_academic_year") }} - 1
     )
 
 select
@@ -139,6 +156,15 @@ select
     coalesce(a.mclass_probe_number, 0) as mclass_probe_number,
     coalesce(a.mclass_total_number_of_probes, 0) as mclass_total_number_of_probes,
 
+    t.name,
+    t.start_date,
+    t.end_date,
+
+    f.nj_student_tier,
+    f.tutoring_nj,
+
+    hos.head_of_school_preferred_name_lastfirst as hos,
+
 from students as s
 left join
     schedules as m
@@ -150,28 +176,27 @@ left join
     on s.academic_year = a.mclass_academic_year
     and s.student_number = a.mclass_student_number
     and s.expected_test = a.mclass_period
+
+left join
+    expanded_terms as t
+    on s.academic_year = t.academic_year
+    and s.expected_test = t.name
+    and s.region = t.region
+left join
+    {{ ref("int_reporting__student_filters") }} as f
+    on s.academic_year = f.academic_year
+    and s.student_number = f.student_number
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
+    and f.iready_subject = 'Reading'
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on s.schoolid = hos.home_work_location_powerschool_school_id
 where
     m.section_number not like '%SC%'
 
     /* PLEASE IGNORE THE REST - IT IS MY GUIDE TO REWRITING THIS QUERY FOR NEW DIBELS STUFF
 
-with
-    expanded_terms as (
-        select
-            academic_year,
-            name,
-            start_date,
-            region,
-            coalesce(
-                lead(start_date, 1) over (
-                    partition by academic_year, region order by code asc
-                )
-                - 1,
-                date({{ var("current_academic_year") + 1 }}, 06, 30)
-            ) as end_date,
-        from {{ ref("stg_reporting__terms") }}
-        where type = 'LIT' and academic_year >= {{ var("current_academic_year") }} - 1
-    )
+
 
 select
     b._dbt_source_relation,
@@ -241,19 +266,6 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 from base_roster as b
-left join
-    expanded_terms as t
-    on cast(b.academic_year as int) = t.academic_year
-    and b.expected_test = t.name
-    and b.region = t.region
-left join
-    {{ ref("int_reporting__student_filters") }} as f
-    on cast(b.academic_year as int) = f.academic_year
-    and b.student_number = f.student_number
-    and {{ union_dataset_join_clause(left_alias="b", right_alias="f") }}
-    and f.iready_subject = 'Reading'
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as hos
-    on b.schoolid = hos.home_work_location_powerschool_school_id
+
 */
     
