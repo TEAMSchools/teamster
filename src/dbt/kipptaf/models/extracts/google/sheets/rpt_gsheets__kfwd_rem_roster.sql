@@ -91,6 +91,8 @@ select  -- noqa: ST06
         then 'REM Graduated'
         when ei.cur_status = 'Withdrawn' and rs.subject like 'REM%FY%Q% Enrolled'
         then 'REM Withdrawn'
+        when ei.cur_status = 'Matriculated' and rs.subject like 'REM%FY%Q% Enrolled'
+        then 'REM Matriculated'
     end as rem_enrollment_status,
 
     case
