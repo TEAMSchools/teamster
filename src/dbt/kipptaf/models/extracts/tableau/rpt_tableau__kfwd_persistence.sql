@@ -31,7 +31,7 @@ select
     r.lastfirst as student_name,
     r.last_name as student_last_name,
     r.first_name as student_first_name,
-    r.record_type_name as record_type_name,
+    r.record_type_name,
     r.contact_owner_name as counselor_name,
     r.contact_kipp_ms_graduate as is_kipp_ms_graduate,
     r.contact_kipp_hs_graduate as is_kipp_hs_graduate,
@@ -77,6 +77,5 @@ select
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
-
 from {{ ref("int_kippadb__persistence") }} as p
 left join {{ ref("int_kippadb__roster") }} as r on p.student_number = r.student_number

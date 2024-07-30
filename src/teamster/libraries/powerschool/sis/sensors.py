@@ -40,7 +40,7 @@ def build_powerschool_sensor(
         context: SensorEvaluationContext,
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
-    ):
+    ) -> SensorResult | SkipReason:
         run_requests = []
 
         now = pendulum.now()
