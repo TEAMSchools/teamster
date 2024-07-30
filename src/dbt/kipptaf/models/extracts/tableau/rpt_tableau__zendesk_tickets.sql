@@ -48,7 +48,7 @@ select
     tm.group_stations,
     tm.replies as comments_count,
     tm.full_resolution_time_in_minutes_business as total_bh_minutes,
-    tm.reply_time_in_minutes_business as reply_time_in_minutes_business,
+    tm.reply_time_in_minutes_business,
 
     gu.max_created_at as group_updated,
 
