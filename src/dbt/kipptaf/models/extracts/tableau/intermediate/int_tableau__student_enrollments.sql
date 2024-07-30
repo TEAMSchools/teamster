@@ -23,6 +23,7 @@ select
     e.region,
     e.schoolid,
     e.school_abbreviation as school,
+    e.studentid,
     e.student_number,
     e.lastfirst as student_name,
     e.grade_level,
