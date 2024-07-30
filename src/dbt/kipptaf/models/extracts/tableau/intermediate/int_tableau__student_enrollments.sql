@@ -33,6 +33,7 @@ select
     e.cohort,
     e.is_out_of_district,
     e.is_self_contained,
+    e.is_504,
     e.lunch_status,
     e.gifted_and_talented,
     e.is_homeless,
