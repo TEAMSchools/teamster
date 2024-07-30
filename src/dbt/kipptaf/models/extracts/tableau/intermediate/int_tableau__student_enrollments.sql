@@ -35,6 +35,7 @@ select
     e.is_self_contained,
     e.lunch_status,
     e.gifted_and_talented,
+    e.is_homeless,
 
     m.ms_attended,
 
