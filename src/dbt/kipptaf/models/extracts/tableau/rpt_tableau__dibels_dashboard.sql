@@ -1,51 +1,83 @@
-{% set periods = ["BOY", "BOY->MOY", "MOY", "MOY->EOY", "EOY"] %}
-
 with
     students as (
         select
-            _dbt_source_relation,
-            cast(academic_year as string) as academic_year,
-            'KIPP NJ/MIAMI' as district,
-            region,
-            schoolid,
-            school_abbreviation as school,
-            studentid,
-            student_number,
-            lastfirst as student_name,
-            first_name as student_first_name,
-            last_name as student_last_name,
-            is_out_of_district,
-            gender,
-            ethnicity,
-            is_homeless,
-            is_504,
-            lep_status,
-            lunch_status,
-            gifted_and_talented,
-            enroll_status,
+            e._dbt_source_relation,
+            e.academic_year,
+            e.district,
+            e.state,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.studentid,
+            e.student_number,
+            e.student_name,
+            e.is_out_of_district,
+            e.gender,
+            e.ethnicity,
+            e.is_homeless,
+            e.iep_status,
+            e.is_504,
+            e.lep_status,
+            e.lunch_status,
+            e.gifted_and_talented,
+            e.enroll_status,
 
-            case
-                when region in ('Camden', 'Newark')
-                then 'NJ'
-                when region = 'Miami'
-                then 'FL'
-            end as state,
+            a.admin_season as expected_test,
+            a.month_round,
 
-            case
-                when cast(grade_level as string) = '0'
-                then 'K'
-                else cast(grade_level as string)
-            end as grade_level,
+            if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
 
-            case when spedlep in ('No IEP', null) then 0 else 1 end as sped,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_tableau__student_enrollments") }} as e
+        left join
+            {{ ref("stg_assessments__assessment_expectations") }} as a
+            on e.academic_year = a.academic_year
+            and e.region = a.region
+            and e.grade_level = a.grade
+        -- and a.scope = 'DIBELS'
         where
-            academic_year >= {{ var("current_academic_year") }} - 1
-            and rn_year = 1
-            and grade_level <= 8
-            and not is_self_contained
-    ),
+            e.academic_year >= {{ var("current_academic_year") }} - 1
+            and e.grade_level <= 8
+            and not e.is_self_contained
+            and a.scope = 'DIBELS'
+    )
 
+select
+    _dbt_source_relation,
+    cc_academic_year,
+    cc_studentid,
+    cc_teacherid as teacherid,
+    teacher_lastfirst as teacher_name,
+    courses_course_name as course_name,
+    cc_course_number as course_number,
+    cc_section_number as section_number,
+
+    1 as scheduled,
+
+    right(courses_course_name, 1) as schedule_student_grade_level,
+
+from {{ ref("base_powerschool__course_enrollments") }}
+where
+    cc_academic_year >= {{ var("current_academic_year") }} - 1
+    and not is_dropped_course
+    and not is_dropped_section
+    and rn_course_number_year = 1
+    and courses_course_name in (
+        'ELA GrK',
+        'ELA K',
+        'ELA Gr1',
+        'ELA Gr2',
+        'ELA Gr3',
+        'ELA Gr4',
+        'ELA Gr5',
+        'ELA Gr6',
+        'ELA Gr7',
+        'ELA Gr8'
+    )
+
+    /* PLEASE IGNORE THE REST - IT IS MY GUIDE TO REWRITING THIS QUERY FOR NEW DIBELS STUFF
+{% set periods = ["BOY", "BOY->MOY", "MOY", "MOY->EOY", "EOY"] %}
+
+with
     student_number as (
         select
             _dbt_source_relation,
@@ -518,3 +550,5 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on b.schoolid = hos.home_work_location_powerschool_school_id
+*/
+    
