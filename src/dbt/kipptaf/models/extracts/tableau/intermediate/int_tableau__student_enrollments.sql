@@ -28,6 +28,7 @@ select
     e.lastfirst as student_name,
     e.grade_level,
     e.gender,
+    e.ethnicity,
     e.enroll_status,
     e.cohort,
     e.is_out_of_district,
