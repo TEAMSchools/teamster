@@ -9,12 +9,6 @@ with
             ) as rn,
         from {{ ref("base_powerschool__student_enrollments") }}
         where school_level = 'MS'
-    ),
-
-    dlm as (
-        select distinct student_number,
-        from {{ ref("int_students__graduation_path_codes") }}
-        where code = 'M'
     )
 
 select
@@ -24,6 +18,7 @@ select
     e.schoolid,
     e.school_abbreviation as school,
     e.studentid,
+    e.students_dcid,
     e.student_number,
     e.lastfirst as student_name,
     e.grade_level,
@@ -49,7 +44,7 @@ select
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
-    if(d.student_number is null, false, true) as dlm,
+    if(dlm.studentsdcid is null, false, true) as is_dlm,
     if(sp.studentid is not null, 1, null) as is_counseling_services,
     if(sa.studentid is not null, 1, null) as is_student_athlete,
 
@@ -74,7 +69,11 @@ left join
     and m.rn = 1
 left join
     {{ ref("int_kippadb__roster") }} as adb on e.student_number = adb.student_number
-left join dlm as d on e.student_number = d.student_number
+left join
+    {{ ref("graduation_pathway_code_unpivot") }} as dlm
+    on e.students_dcid = dlm.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="dlm") }}
+    and dlm.code = 'M'
 left join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on e.studentid = sp.studentid
