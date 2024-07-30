@@ -1,4 +1,4 @@
-from dagster import DagsterInstance, build_sensor_context
+from dagster import DagsterInstance, SensorResult, _check, build_sensor_context
 
 from teamster.code_locations.kippnewark import LOCAL_TIMEZONE
 from teamster.code_locations.kippnewark.powerschool.assets import partition_assets
@@ -23,6 +23,9 @@ def test_powerschool_sensor():
         db_powerschool=DB_POWERSCHOOL,
     )
 
-    assert sensor_results is not None
-    for result in sensor_results:
+    sensor_results = _check.inst(obj=sensor_results, ttype=SensorResult)
+
+    assert sensor_results.run_requests is not None
+
+    for result in sensor_results.run_requests:
         context.log.info(result)

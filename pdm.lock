@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:ee7e2e3b0c8680caf57fef293312d1f99fe07e01cd8bcd6a54543e844558182c"
+content_hash = "sha256:1a90dc546e328c5fbc239d5bce486818211457f0d7089f864eb67a1d36ee6d84"
 
 [[metadata.targets]]
 requires_python = ">=3.12,<3.13"
@@ -387,7 +387,7 @@ files = [
 
 [[package]]
 name = "croniter"
-version = "3.0.1"
+version = "3.0.3"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,>=2.6"
 summary = "croniter provides iteration for datetime object with cron like format"
 groups = ["default", "dev"]
@@ -396,8 +396,8 @@ dependencies = [
     "pytz>2021.1",
 ]
 files = [
-    {file = "croniter-3.0.1-py2.py3-none-any.whl", hash = "sha256:bd95885f7241d0b3df40c7648bf1d88fa5c97c859c2ede8880e4622d58ecea57"},
-    {file = "croniter-3.0.1.tar.gz", hash = "sha256:cb7e23c4309bbacb141e0ecd2f6bd063ee8cbc9226479a831ee8b3d55328adee"},
+    {file = "croniter-3.0.3-py2.py3-none-any.whl", hash = "sha256:b3bd11f270dc54ccd1f2397b813436015a86d30ffc5a7a9438eec1ed916f2101"},
+    {file = "croniter-3.0.3.tar.gz", hash = "sha256:34117ec1741f10a7bd0ec3ad7d8f0eb8fa457a2feb9be32e6a2250e158957668"},
 ]
 
 [[package]]
@@ -2068,13 +2068,13 @@ files = [
 
 [[package]]
 name = "pex"
-version = "2.12.0"
+version = "2.12.1"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,<3.14,>=2.7"
 summary = "The PEX packaging toolchain."
 groups = ["default"]
 files = [
-    {file = "pex-2.12.0-py2.py3-none-any.whl", hash = "sha256:78a564eb8c242f236ad86e9f8b28d54b1922f26fa26cd3875bd10471f190e501"},
-    {file = "pex-2.12.0.tar.gz", hash = "sha256:68882ddf98814a834eb2485b6ad5590faf6474845b877534dbcb54bf632606ab"},
+    {file = "pex-2.12.1-py2.py3-none-any.whl", hash = "sha256:d219171777c728b8dc315bd5516c31003e868512e8b2bfedcd8de89ab947a74a"},
+    {file = "pex-2.12.1.tar.gz", hash = "sha256:2810fdb11aad413d3645fc97bab5221b2dbc6ee701ee5fe2ac5fdf3e655e1b07"},
 ]
 
 [[package]]
@@ -2828,7 +2828,7 @@ files = [
 
 [[package]]
 name = "starlette"
-version = "0.38.1"
+version = "0.38.2"
 requires_python = ">=3.8"
 summary = "The little ASGI library that shines."
 groups = ["dev"]
@@ -2837,8 +2837,8 @@ dependencies = [
     "typing-extensions>=3.10.0; python_version < \"3.10\"",
 ]
 files = [
-    {file = "starlette-0.38.1-py3-none-any.whl", hash = "sha256:42688a287165bd6acc53068457b5cbf28a3204110b704930411728a633f0f7b8"},
-    {file = "starlette-0.38.1.tar.gz", hash = "sha256:890e89d9b1b367bad6fd11a6e191f40d03504df1ff55fd15674a3b35a122990e"},
+    {file = "starlette-0.38.2-py3-none-any.whl", hash = "sha256:4ec6a59df6bbafdab5f567754481657f7ed90dc9d69b0c9ff017907dd54faeff"},
+    {file = "starlette-0.38.2.tar.gz", hash = "sha256:c7c0441065252160993a1a37cf2a73bb64d271b17303e0b0c1eb7191cfb12d75"},
 ]
 
 [[package]]
@@ -2854,7 +2854,7 @@ files = [
 
 [[package]]
 name = "tableauserverclient"
-version = "0.31"
+version = "0.32"
 requires_python = ">=3.7"
 summary = "A Python module for working with the Tableau Server REST API."
 groups = ["default"]
@@ -2863,11 +2863,11 @@ dependencies = [
     "packaging>=23.1",
     "requests>=2.31",
     "typing-extensions>=4.0.1",
-    "urllib3==2.0.7",
+    "urllib3==2.2.2",
 ]
 files = [
-    {file = "tableauserverclient-0.31-py3-none-any.whl", hash = "sha256:7b66c83cc3f159d311e527953cb74223d4ba0ce07de5085da3a6fbb85675e166"},
-    {file = "tableauserverclient-0.31.tar.gz", hash = "sha256:7b4d3ffb254a83b7461aadceb3ea16bbf17dde3e5ef5d9f0599c4ac26faca2a3"},
+    {file = "tableauserverclient-0.32-py3-none-any.whl", hash = "sha256:ac704c1711912b37eb1689047937059d472570ded8a13d54f6a4066adc6ceb71"},
+    {file = "tableauserverclient-0.32.tar.gz", hash = "sha256:f51b9dabfff5fce5b649785d1ed3a732bf23f8596836e870e4b1ef5ca6616227"},
 ]
 
 [[package]]
@@ -2883,13 +2883,13 @@ files = [
 
 [[package]]
 name = "tenacity"
-version = "8.5.0"
+version = "9.0.0"
 requires_python = ">=3.8"
 summary = "Retry code until it succeeds"
 groups = ["default"]
 files = [
-    {file = "tenacity-8.5.0-py3-none-any.whl", hash = "sha256:b594c2a5945830c267ce6b79a166228323ed52718f30302c1359836112346687"},
-    {file = "tenacity-8.5.0.tar.gz", hash = "sha256:8bc6c0c8a09b31e6cad13c47afbed1a567518250a9a171418582ed8d9c20ca78"},
+    {file = "tenacity-9.0.0-py3-none-any.whl", hash = "sha256:93de0c98785b27fcf659856aa9f54bfbd399e29969b0621bc7f762bd441b4539"},
+    {file = "tenacity-9.0.0.tar.gz", hash = "sha256:807f37ca97d62aa361264d497b0e31e92b8027044942bfa756160d908320d73b"},
 ]
 
 [[package]]
