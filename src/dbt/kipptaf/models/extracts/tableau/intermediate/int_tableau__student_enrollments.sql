@@ -31,6 +31,7 @@ select
     e.cohort,
     e.is_out_of_district,
     e.lunch_status,
+    e.gifted_and_talented,
 
     m.ms_attended,
 
