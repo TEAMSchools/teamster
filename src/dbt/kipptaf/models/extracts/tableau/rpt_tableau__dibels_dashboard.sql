@@ -126,9 +126,18 @@ select
     a.mclass_measure_percentile,
     a.mclass_measure_semester_growth,
     a.mclass_measure_year_growth,
-    a.mclass_probe_number,
-    a.mclass_total_number_of_probes,
     a.mclass_score_change,
+
+    coalesce(a.pm_probe_eligible, 'No data') as pm_probe_eligible,
+    coalesce(a.pm_probe_tested, 'No data') as pm_probe_tested,
+    coalesce(a.boy_probe_eligible, 'No data') as boy_probe_eligible,
+    coalesce(a.moy_probe_eligible, 'No data') as moy_probe_eligible,
+    coalesce(a.boy_composite, 'No data') as boy_composite,
+    coalesce(a.moy_composite, 'No data') as moy_composite,
+    coalesce(a.eoy_composite, 'No data') as eoy_composite,
+
+    coalesce(a.mclass_probe_number, 0) as mclass_probe_number,
+    coalesce(a.mclass_total_number_of_probes, 0) as mclass_total_number_of_probes,
 
 from students as s
 left join
