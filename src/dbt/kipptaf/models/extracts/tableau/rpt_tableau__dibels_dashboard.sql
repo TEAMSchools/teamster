@@ -78,65 +78,6 @@ with
                 'ELA Gr7',
                 'ELA Gr8'
             )
-    ),
-
-    assessments_scores as (
-        select
-            safe_cast(left(bss.school_year, 4) as int) as mclass_academic_year,
-            bss.student_primary_id as mclass_student_number,
-            'benchmark' as assessment_type,
-            bss.assessment_grade as mclass_assessment_grade,
-            bss.benchmark_period as mclass_period,
-            bss.client_date as mclass_client_date,
-            bss.sync_date as mclass_sync_date,
-            u.measure as mclass_measure,
-            u.score as mclass_measure_score,
-            u.level as mclass_measure_level,
-            u.national_norm_percentile as mclass_measure_percentile,
-            u.semester_growth as mclass_measure_semester_growth,
-            u.year_growth as mclass_measure_year_growth,
-            null as mclass_probe_number,
-            null as mclass_total_number_of_probes,
-            null as mclass_score_change,
-            case
-                when u.level = 'Above Benchmark'
-                then 4
-                when u.level = 'At Benchmark'
-                then 3
-                when u.level = 'Below Benchmark'
-                then 2
-                when u.level = 'Well Below Benchmark'
-                then 1
-            end as mclass_measure_level_int,
-        from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
-        inner join
-            {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
-            on bss.surrogate_key = u.surrogate_key
-        where
-            cast(left(bss.school_year, 4) as int)
-            >= {{ var("current_academic_year") }} - 1
-        union all
-        select
-            safe_cast(left(school_year, 4) as int) as mclass_academic_year,
-            student_primary_id as mclass_student_number,
-            'pm' as assessment_type,
-            cast(assessment_grade as string) as mclass_assessment_grade,
-            pm_period as mclass_period,
-            client_date as mclass_client_date,
-            sync_date as mclass_sync_date,
-            measure as mclass_measure,
-            score as mclass_measure_score,
-            null as mclass_measure_level,
-            null as mclass_measure_percentile,
-            null as mclass_measure_semester_growth,
-            null as mclass_measure_year_growth,
-            probe_number as mclass_probe_number,
-            total_number_of_probes as mclass_total_number_of_probes,
-            score_change as mclass_score_change,
-            null as mclass_measure_level_int,
-        from {{ ref("stg_amplify__pm_student_summary") }}
-        where
-            cast(left(school_year, 4) as int) >= {{ var("current_academic_year") }} - 1
     )
 
 select
@@ -196,7 +137,7 @@ left join
     and s.schoolid = m.cc_schoolid
     and s.student_number = m.student_number
 left join
-    assessments_scores as a
+    {{ ref("int_amplify__all_assessments") }} as a
     on s.academic_year = a.mclass_academic_year
     and s.student_number = a.mclass_student_number
     and s.expected_test = a.mclass_period

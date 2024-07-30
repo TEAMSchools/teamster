@@ -117,6 +117,7 @@ select
     s.mclass_measure_score,
     s.mclass_measure_level,
     s.mclass_measure_level_int,
+
     s.mclass_measure_percentile,
     s.mclass_measure_semester_growth,
     s.mclass_measure_year_growth,
