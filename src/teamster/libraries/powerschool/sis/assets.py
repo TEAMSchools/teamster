@@ -65,11 +65,11 @@ def build_powerschool_table_asset(
         elif context.partition_key == first_partition_key:
             constructed_where = ""
         else:
-            window_start = pendulum.from_format(
+            partition_start = pendulum.from_format(
                 string=context.partition_key, fmt="YYYY-MM-DDTHH:mm:ssZZ"
             )
 
-            window_start_fmt = window_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+            partition_start_fmt = partition_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
             if isinstance(partitions_def, FiscalYearPartitionsDefinition):
                 date_add_kwargs = {"years": 1}
@@ -78,8 +78,8 @@ def build_powerschool_table_asset(
             else:
                 date_add_kwargs = {}
 
-            window_end_fmt = (
-                window_start.add(**date_add_kwargs)
+            partition_end_fmt = (
+                partition_start.add(**date_add_kwargs)
                 .subtract(days=1)
                 .end_of("day")
                 .format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
@@ -87,9 +87,10 @@ def build_powerschool_table_asset(
 
             constructed_where = (
                 f"{partition_column} BETWEEN "
-                f"TO_TIMESTAMP('{window_start_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') "
-                "AND "
-                f"TO_TIMESTAMP('{window_end_fmt}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                f"TO_TIMESTAMP('{partition_start_fmt}', "
+                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
+                f"TO_TIMESTAMP('{partition_end_fmt}', "
+                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
             )
 
         sql = (

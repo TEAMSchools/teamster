@@ -1,17 +1,17 @@
+from collections import defaultdict
+from itertools import groupby
+from operator import itemgetter
+
 import pendulum
 from dagster import (
-    MAX_RUNTIME_SECONDS_TAG,
-    AssetMaterialization,
+    AssetKey,
     AssetsDefinition,
-    EventLogEntry,
-    MonthlyPartitionsDefinition,
-    PartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
-    TimeWindow,
     _check,
+    define_asset_job,
     sensor,
 )
 from sqlalchemy import text
@@ -22,27 +22,65 @@ from teamster.libraries.sqlalchemy.resources import OracleResource
 from teamster.libraries.ssh.resources import SSHResource
 
 
-def build_powerschool_sensor(
-    name,
+def get_query_text(table: str, column: str, value: str | None):
+    if value is None:
+        # trunk-ignore(bandit/B608)
+        query = f"SELECT COUNT(*) FROM {table}"
+    else:
+        query = (
+            # trunk-ignore(bandit/B608)
+            f"SELECT COUNT(*) FROM {table} WHERE "
+            f"{column} >= TO_TIMESTAMP('{value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+        )
+
+    return text(query)
+
+
+def build_powerschool_asset_sensor(
+    code_location,
     asset_selection: list[AssetsDefinition],
-    asset_defs: list[AssetsDefinition],
     execution_timezone,
-    max_runtime_seconds,
     minimum_interval_seconds=None,
 ):
+    jobs = []
+    keys_by_partitions_def = defaultdict(set[AssetKey])
+
+    base_job_name = f"{code_location}_powerschool_sis_asset_job"
+
+    asset_keys = [a.key for a in asset_selection]
+
+    for assets_def in asset_selection:
+        keys_by_partitions_def[assets_def.partitions_def].add(assets_def.key)
+
+    for partitions_def, keys in keys_by_partitions_def.items():
+        if partitions_def is None:
+            job_name = f"{base_job_name}_None"
+        else:
+            job_name = (
+                f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
+            )
+
+        jobs.append(define_asset_job(name=job_name, selection=list(keys)))
+
     @sensor(
-        name=name,
+        name=f"{base_job_name}_sensor",
+        jobs=jobs,
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=asset_selection,
     )
     def _sensor(
         context: SensorEvaluationContext,
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ) -> SensorResult | SkipReason:
-        now = pendulum.now()
+        # limit run requests to 1/hr
+        hour_timestamp = pendulum.now().start_of("hour").timestamp()
 
         run_requests = []
+        run_request_kwargs = []
+
+        latest_materialization_events = (
+            context.instance.get_latest_materialization_events(asset_keys)
+        )
 
         ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
 
@@ -53,78 +91,89 @@ def build_powerschool_sensor(
                 return SkipReason(str(e))
             else:
                 raise e
-        except Exception as e:
-            context.log.error(msg=str(e))
-            raise e
 
-        for asset in asset_defs:
+        for asset in asset_selection:
             asset_key_identifier = asset.key.to_python_identifier()
+            metadata = asset.metadata_by_key[asset.key]
+            latest_materialization_event = latest_materialization_events[asset.key]
 
-            if isinstance(asset.partitions_def, MonthlyPartitionsDefinition):
-                partition_keys = asset.partitions_def.get_partition_keys_in_time_window(
-                    time_window=TimeWindow(
-                        start=latest_materialization_datetime.start_of("month"),
-                        end=now.end_of("month"),
-                    )
+            table_name = metadata["table_name"]
+            partition_column = metadata["partition_column"]
+
+            if asset.partitions_def is not None:
+                partition_key = _check.not_none(
+                    value=asset.partitions_def.get_last_partition_key()
                 )
-            elif isinstance(asset.partitions_def, PartitionsDefinition):
-                partition_keys = [asset.partitions_def.get_last_partition_key()]
+
+                partition_key_datetime_fmt = pendulum.from_format(
+                    string=partition_key, fmt="YYYY-MM-DDTHH:mm:ssZZ"
+                ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+
+                job_name = (
+                    f"{base_job_name}_"
+                    f"{asset.partitions_def.get_serializable_unique_identifier()}"
+                )
             else:
-                partition_keys = []
+                partition_key_datetime_fmt = partition_key = None
+                job_name = f"{base_job_name}_None"
 
-            latest_materialization_event = (
-                context.instance.get_latest_materialization_event(asset.key)
-            )
-
+            # request run if asset never materialized
             if latest_materialization_event is None:
-                run_requests.extend(
-                    [
-                        RunRequest(
-                            run_key=(
-                                f"{asset_key_identifier}_"
-                                f"{partition_key}_"
-                                f"{now.timestamp()}"
-                            ),
-                            asset_selection=[asset.key],
-                            partition_key=partition_key,
-                            tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
-                        )
-                        for partition_key in partition_keys
-                    ]
+                context.log.info(msg=f"{asset_key_identifier} never materialized")
+                run_request_kwargs.append(
+                    {
+                        "asset_key": asset.key,
+                        "job_name": job_name,
+                        "partition_key": partition_key,
+                    }
                 )
 
-            asset_materialization = _check.not_none(
+                continue
+
+            latest_asset_materialization = _check.not_none(
                 value=latest_materialization_event.asset_materialization
             )
 
-            latest_materialization_timestamp = asset_materialization.metadata.get(
-                "latest_materialization_timestamp"
-            )
+            # request run if latest partition not materialized
+            if (
+                partition_key is not None
+                and partition_key != latest_asset_materialization.partition
+            ):
+                context.log.info(
+                    msg=f"{asset_key_identifier}\n{partition_key} never materialized"
+                )
+                run_request_kwargs.append(
+                    {
+                        "asset_key": asset.key,
+                        "job_name": job_name,
+                        "partition_key": partition_key,
+                    }
+                )
 
-            records = _check.inst(
-                obj=asset_materialization.metadata.get("records"), ttype=int
-            )
+                continue
 
             latest_materialization_datetime = pendulum.from_timestamp(
-                timestamp=(
-                    _check.inst(latest_materialization_timestamp.value, float)
-                    if latest_materialization_timestamp is not None
-                    else 0.0
+                timestamp=_check.inst(
+                    obj=latest_asset_materialization.metadata[
+                        "latest_materialization_timestamp"
+                    ].value,
+                    ttype=float,
                 )
             )
 
-            latest_materialization_fmt = latest_materialization_datetime.in_timezone(
-                tz=execution_timezone
-            ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+            latest_materialization_record_count = latest_asset_materialization.metadata[
+                "records"
+            ]
 
             try:
                 [(modified_count,)] = _check.inst(
                     db_powerschool.engine.execute_query(
-                        query=text(
-                            f"SELECT COUNT(*) FROM {asset.key.path[-1]} "
-                            f"WHERE {asset.metadata_by_key[asset.key]["partition_column"]} >= "
-                            f"TO_TIMESTAMP('{latest_materialization_fmt}', "
-                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                        query=get_query_text(
+                            table=table_name,
+                            column=partition_column,
+                            value=latest_materialization_datetime.in_timezone(
+                                tz=execution_timezone
+                            ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS"),
                         ),
                         partition_size=1,
                         output_format=None,
@@ -134,11 +183,10 @@ def build_powerschool_sensor(
 
                 [(partition_count,)] = _check.inst(
                     db_powerschool.engine.execute_query(
-                        query=text(
-                            f"SELECT COUNT(*) FROM {asset.key.path[-1]} "
-                            f"WHERE {asset.metadata_by_key[asset.key]["partition_column"]} >= "
-                            f"TO_TIMESTAMP('{latest_materialization_fmt}', "
-                            "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+                        query=get_query_text(
+                            table=table_name,
+                            column=partition_column,
+                            value=partition_key_datetime_fmt,
                         ),
                         partition_size=1,
                         output_format=None,
@@ -155,137 +203,40 @@ def build_powerschool_sensor(
                 context.log.error(msg=str(e))
                 raise e
 
-            if modified_count > 0:
-                context.log.info(asset.key)
-                context.log.info(f"modified_count: {modified_count}")
-
-                context.log.info(partition_keys)
-
-                run_requests.extend(
-                    [
-                        RunRequest(
-                            run_key=(
-                                f"{asset_key_identifier}_"
-                                f"{partition_key}_"
-                                f"{now.timestamp()}"
-                            ),
-                            asset_selection=[asset.key],
-                            partition_key=partition_key,
-                            tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
-                        )
-                        for partition_key in partition_keys
-                    ]
-                )
-
-        ssh_tunnel.stop()
-
-        return SensorResult(run_requests=run_requests)
-
-    return _sensor
-
-
-def build_powerschool_partitioned_asset_count_sensor(
-    name,
-    asset_selection: list[AssetsDefinition],
-    max_runtime_seconds,
-    minimum_interval_seconds=None,
-):
-    @sensor(
-        name=name,
-        asset_selection=asset_selection,
-        minimum_interval_seconds=minimum_interval_seconds,
-    )
-    def _sensor(
-        context: SensorEvaluationContext,
-        ssh_powerschool: SSHResource,
-        db_powerschool: OracleResource,
-    ) -> SensorResult | SkipReason:
-        now_timestamp = pendulum.now().timestamp()
-
-        run_requests = []
-
-        ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
-
-        try:
-            ssh_tunnel.start()
-        except HandlerSSHTunnelForwarderError as e:
-            if "An error occurred while opening tunnels." in e.args:
-                return SkipReason(str(e))
-            else:
-                raise e
-        except Exception as e:
-            context.log.error(msg=str(e))
-            raise e
-
-        for asset in asset_selection:
-            context.log.info(asset.key)
-
-            partition_column = asset.metadata_by_key[asset.key]["partition_column"]
-            partitions_def = _check.not_none(value=asset.partitions_def)
-
-            last_partition_key = _check.not_none(
-                value=partitions_def.get_last_partition_key()
-            )
-
-            last_partition_key_fmt = pendulum.from_format(
-                string=last_partition_key, fmt="YYYY-MM-DDTHH:mm:ssZZ"
-            ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
-
-            latest_materialization_event = _check.inst(
-                context.instance.get_latest_materialization_event(asset.key),
-                EventLogEntry,
-            )
-
-            asset_materialization = _check.inst(
-                obj=latest_materialization_event.asset_materialization,
-                ttype=AssetMaterialization,
-            )
-
-            records = _check.inst(
-                obj=asset_materialization.metadata["records"], ttype=int
-            )
-
-            query = text(
-                # trunk-ignore(bandit/B608)
-                f"SELECT COUNT(*) FROM {asset.key.path[-1]} "
-                f"WHERE {partition_column} >= "
-                f"TO_TIMESTAMP('{last_partition_key_fmt}', "
-                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
-            )
-
-            try:
-                [(count,)] = _check.inst(
-                    db_powerschool.engine.execute_query(
-                        query=query, partition_size=1, output_format=None
-                    ),
-                    list,
-                )
-            except OperationalError as e:
-                if "DPY-6003" in str(e):
-                    context.log.error(msg=str(e))
-                    return SkipReason(str(e))
-                else:
-                    raise e
-            except Exception as e:
-                context.log.error(msg=str(e))
-                raise e
-
-            context.log.info(f"count: {count}")
-
-            if int(count) > records:
-                run_requests.append(
-                    RunRequest(
-                        run_key=(
-                            f"{asset.key.to_python_identifier()}_{last_partition_key}_"
-                            f"{now_timestamp}"
-                        ),
-                        asset_selection=[asset.key],
-                        partition_key=last_partition_key,
-                        tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
+            if (
+                modified_count > 0
+                or partition_count != latest_materialization_record_count.value
+            ):
+                context.log.info(
+                    msg=(
+                        f"{asset_key_identifier}\n{partition_key}\n"
+                        f"modified count ({modified_count}) > 0 OR "
+                        f"partition count ({partition_count}) "
+                        f"!= {latest_materialization_record_count.value}"
                     )
                 )
 
+                run_request_kwargs.append(
+                    {
+                        "asset_key": asset.key,
+                        "job_name": job_name,
+                        "partition_key": partition_key,
+                    }
+                )
+
         ssh_tunnel.stop()
+
+        for (job_name, parition_key), group in groupby(
+            iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
+        ):
+            run_requests.append(
+                RunRequest(
+                    run_key=f"{job_name}_{parition_key}_{hour_timestamp}",
+                    job_name=job_name,
+                    partition_key=parition_key,
+                    asset_selection=[g["asset_key"] for g in group],
+                )
+            )
 
         return SensorResult(run_requests=run_requests)
 
