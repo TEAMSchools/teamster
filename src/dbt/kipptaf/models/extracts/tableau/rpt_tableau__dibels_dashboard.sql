@@ -38,7 +38,7 @@ with
         where
             e.academic_year >= {{ var("current_academic_year") }} - 1
             and e.grade_level <= 8
-            and not e.is_self_contained
+            -- and not e.is_self_contained
             and a.scope = 'DIBELS'
     ),
 
@@ -176,7 +176,6 @@ left join
     on s.academic_year = a.mclass_academic_year
     and s.student_number = a.mclass_student_number
     and s.expected_test = a.mclass_period
-
 left join
     expanded_terms as t
     on s.academic_year = t.academic_year
@@ -191,81 +190,4 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on s.schoolid = hos.home_work_location_powerschool_school_id
-where
-    m.section_number not like '%SC%'
-
-    /* PLEASE IGNORE THE REST - IT IS MY GUIDE TO REWRITING THIS QUERY FOR NEW DIBELS STUFF
-
-
-
-select
-    b._dbt_source_relation,
-    b.academic_year,
-    b.district,
-    b.region,
-    b.schoolid,
-    b.school,
-    b.student_number,
-    b.studentid,
-    b.student_name,
-    b.student_last_name,
-    b.student_first_name,
-    b.grade_level,
-    b.schedule_academic_year,
-    b.schedule_district,
-    b.schedule_region,
-    b.schedule_schoolid,
-    b.schedule_student_number,
-    b.schedule_student_grade_level,
-    b.is_out_of_district,
-    b.gender,
-    b.ethnicity,
-    b.gifted_and_talented,
-    b.is_homeless,
-    b.is_504,
-    b.sped,
-    b.lep_status,
-    b.lunch_status,
-    b.teacherid,
-    b.teacher_name,
-    b.course_name,
-    b.course_number,
-    b.section_number,
-    b.advisory_name,
-    b.expected_test,
-    b.scheduled,
-    b.mclass_student_number,
-    b.mclass_assessment_grade,
-    b.mclass_period,
-    b.mclass_client_date,
-    b.mclass_sync_date,
-    b.boy_composite,
-    b.moy_composite,
-    b.eoy_composite,
-    b.mclass_probe_number,
-    b.mclass_total_number_of_probes,
-    b.boy_probe_eligible,
-    b.moy_probe_eligible,
-    b.pm_probe_eligible,
-    b.pm_probe_tested,
-    b.mclass_measure,
-    b.mclass_measure_score,
-    b.mclass_score_change,
-    b.mclass_measure_level,
-    b.mclass_measure_level_int,
-    b.mclass_measure_percentile,
-    b.mclass_measure_semester_growth,
-    b.mclass_measure_year_growth,
-
-    t.name,
-    t.start_date,
-    t.end_date,
-
-    f.nj_student_tier,
-    f.tutoring_nj,
-
-    hos.head_of_school_preferred_name_lastfirst as hos,
-from base_roster as b
-
-*/
-    
+where m.section_number not like '%SC%'
