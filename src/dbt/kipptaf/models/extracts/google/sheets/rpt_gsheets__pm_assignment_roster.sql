@@ -1,7 +1,7 @@
 select
     sr.employee_number,
     sr.preferred_name_lastfirst as preferred_name,
-    sr.job_title as job_title,
+    sr.job_title,
     sr.google_email,
     sr.user_principal_name as email,
     sr.sam_account_name as tableau_username,

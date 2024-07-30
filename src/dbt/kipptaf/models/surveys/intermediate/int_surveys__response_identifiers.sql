@@ -122,7 +122,7 @@ with
             ) as rn_survey_response_campaign_desc,
         from identifier_responses_pivot as rp
         left join
-            {{ source("alchemer", "src_alchemer__response_id_override") }} as ab
+            {{ ref("stg_alchemer__response_id_override") }} as ab
             on rp.survey_id = ab.survey_id
             and rp.response_id = ab.survey_response_id
     )

@@ -667,14 +667,14 @@ sources:
               - kippnewark
               - powerschool
               - int_powerschool__gpa_cumulative
-      - name: int_powerschool__gradebook_assignment_scores
+      - name: int_powerschool__assignment_score_rollup
         meta:
           dagster:
             group: powerschool
             asset_key:
               - kippnewark
               - powerschool
-              - int_powerschool__gradebook_assignment_scores
+              - int_powerschool__assignment_score_rollup
       - name: int_powerschool__gradebook_assignments
         meta:
           dagster:
@@ -755,3 +755,11 @@ sources:
               - kippnewark
               - powerschool
               - stg_powerschool__sced_code_mapping
+      - name: int_powerschool__calendar_week
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippnewark
+              - powerschool
+              - int_powerschool__calendar_week

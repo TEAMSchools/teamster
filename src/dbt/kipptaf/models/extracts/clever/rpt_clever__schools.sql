@@ -5,7 +5,7 @@ select
     null as state_id,
     if(low_grade = 0, 'Kindergarten', cast(low_grade as string)) as low_grade,
     cast(high_grade as string) as high_grade,
-    principal as principal,
+    principal,
     principalemail as principal_email,
     schooladdress as school_address,
     schoolcity as school_city,

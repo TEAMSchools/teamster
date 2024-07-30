@@ -17,6 +17,8 @@ select
     region,
     `state`,
     zip,
+
+    /* repeated records */
     admins,
     assistantadmins as assistant_admins,
     noninstructionaladmins as non_instructional_admins,

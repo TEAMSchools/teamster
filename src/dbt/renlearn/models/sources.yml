@@ -9,6 +9,12 @@ sources:
       - stage_external_sources
     tables:
       - name: src_renlearn__accelerated_reader
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - renlearn
+              - accelerated_reader
         external:
           location: "{{ var('cloud_storage_uri_base') }}/renlearn/accelerated_reader/*"
           options:
@@ -17,6 +23,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__star
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - renlearn
+              - star
         external:
           location: "{{ var('cloud_storage_uri_base') }}/renlearn/star/*"
           options:
@@ -24,6 +36,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__star_skill_area
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - renlearn
+              - star_skill_area
         external:
           location: "{{ var('cloud_storage_uri_base') }}/renlearn/star_skill_area/*"
           options:
@@ -32,6 +50,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__star_dashboard_standards
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - renlearn
+              - star_dashboard_standards
         external:
           location: "{{ var('cloud_storage_uri_base') }}/renlearn/star_dashboard_standards/*"
           options:
@@ -40,6 +64,12 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__fast_star
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - renlearn
+              - fast_star
         external:
           location: "{{ var('cloud_storage_uri_base') }}/renlearn/fast_star/*"
           options:

@@ -55,7 +55,6 @@ select
     dlp.num_days as numdays,
     dlp.is_suspension as issuspension,
 
-    -- trunk-ignore-begin(sqlfluff/RF05)
     cf.behavior_category as `Behavior Category`,
     cf.nj_state_reporting as `NJ State Reporting`,
     cf.others_involved as `Others Involved`,
@@ -63,7 +62,7 @@ select
     cf.perceived_motivation as `Perceived Motivation`,
     cf.restraint_used as `Restraint Used`,
     cf.ssds_incident_id as `SSDS Incident ID`,
-    -- trunk-ignore-end(sqlfluff/RF05)
+
     d.name as term,
 
     att.days_suspended_att,
@@ -111,4 +110,4 @@ where
     co.rn_year = 1
     and co.region in ('Newark', 'Camden')
     and co.grade_level != 99
-    and co.academic_year >= ({{ var("current_academic_year") }} - 1)
+    and co.academic_year >= ({{ var("current_academic_year") - 1 }})

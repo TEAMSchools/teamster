@@ -1,23 +1,21 @@
 import json
 
-from dagster import build_sensor_context
+from dagster import SensorResult, build_sensor_context
 
-from teamster.kipptaf.resources import TABLEAU_SERVER_RESOURCE
-from teamster.kipptaf.tableau.sensors import tableau_asset_sensor
+from teamster.code_locations.kipptaf.resources import TABLEAU_SERVER_RESOURCE
+from teamster.code_locations.kipptaf.tableau.sensors import tableau_asset_sensor
 
 
 def test_tableau_asset_sensor():
     cursor = {}
 
-    context = build_sensor_context(
-        cursor=json.dumps(obj=cursor), sensor_name=tableau_asset_sensor.name
-    )
+    with build_sensor_context(
+        sensor_name=tableau_asset_sensor.name,
+        resources={"tableau": TABLEAU_SERVER_RESOURCE},
+        cursor=json.dumps(obj=cursor),
+    ) as context:
+        sensor_result = tableau_asset_sensor(context=context)
 
-    sensor_result = tableau_asset_sensor(
-        context=context, tableau=TABLEAU_SERVER_RESOURCE
-    )
+    assert isinstance(sensor_result, SensorResult)
 
-    asset_events = sensor_result.asset_events  # type: ignore
-
-    context.log.info(msg=asset_events)
-    assert len(asset_events) > 0
+    assert len(sensor_result.asset_events) > 0

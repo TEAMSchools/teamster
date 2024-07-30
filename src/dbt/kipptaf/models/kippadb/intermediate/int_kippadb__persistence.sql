@@ -138,7 +138,7 @@ with
             {{ ref("stg_kippadb__enrollment") }} as e
             on r.contact_id = e.student
             and r.persistence_date_fall between e.start_date and coalesce(
-                e.actual_end_date, date(({{ var("current_academic_year") }} + 1), 6, 30)
+                e.actual_end_date, date(({{ var("current_academic_year") + 1 }}), 6, 30)
             )
             and e.pursuing_degree_type
             in ("Bachelor's (4-year)", "Associate's (2 year)")
@@ -261,7 +261,7 @@ with
             {{ ref("stg_kippadb__enrollment") }} as e
             on r.contact_id = e.student
             and r.persistence_date_spring between e.start_date and coalesce(
-                e.actual_end_date, date(({{ var("current_academic_year") }} + 1), 6, 30)
+                e.actual_end_date, date(({{ var("current_academic_year") + 1 }}), 6, 30)
             )
             and e.pursuing_degree_type
             in ("Bachelor's (4-year)", "Associate's (2 year)")

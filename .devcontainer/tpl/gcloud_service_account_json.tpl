@@ -1,1 +1,1 @@
-op://Data Team/GCP Service Account - TEAMster/service_account_gserviceaccount.json
+op://Data Team/Teamster Service Account - Default/service_account_gserviceaccount.json

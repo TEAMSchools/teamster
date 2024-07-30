@@ -19,6 +19,27 @@ with
                 'imp_9',
                 'imp_10'
             )
+        union all
+
+        select
+            item_title,
+            item_abbreviation,
+            cast(text_value as numeric) as response_numeric_value,
+        from {{ ref("base_google_forms__form_responses") }}
+        where
+            form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
+            and item_abbreviation in (
+                'imp_1',
+                'imp_2',
+                'imp_3',
+                'imp_4',
+                'imp_5',
+                'imp_6',
+                'imp_7',
+                'imp_8',
+                'imp_9',
+                'imp_10'
+            )
     ),
 
     weight_denominator as (

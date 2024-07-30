@@ -32,4 +32,3 @@ models:
 
 vars:
   cloud_storage_uri_base: null
-  couchdrop_cloud_storage_uri_base: null

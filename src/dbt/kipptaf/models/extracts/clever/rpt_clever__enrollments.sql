@@ -18,7 +18,7 @@ union all
 select
     schoolid as school_id,
     concat(
-        {{ var("current_academic_year") }} - 1990,
+        {{ var("current_academic_year") - 1990 }},
         schoolid,
         right(concat(0, grade_level), 2)
     ) as section_id,

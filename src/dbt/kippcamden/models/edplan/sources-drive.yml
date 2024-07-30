@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  - name: edplan
+    schema: "{{ var('edplan_schema', 'edplan') }}"
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_edplan__njsmart_powerschool_archive
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - edplan
+              - njsmart_powerschool_archive
+        external:
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1DRkhapaCivhvrJqEEuKzJja2bMFcUkkh

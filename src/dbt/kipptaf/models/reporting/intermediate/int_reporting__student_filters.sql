@@ -11,20 +11,34 @@ with
             case
                 subject when 'Reading' then 'ela' when 'Math' then 'math'
             end as grad_unpivot_subject,
+            case
+                subject when 'Reading' then 'ELA' when 'Math' then 'Math'
+            end as discipline,
         from unnest(['Reading', 'Math']) as subject
     ),
 
     intervention_nj as (
         select
             st.local_student_id as student_number,
-
-            regexp_extract(g.group_name, r'Bucket 2 - (Math|Reading) -') as subject,
-        from {{ source("illuminate", "group_student_aff") }} as s
+            g.nj_intervention_subject,
+            row_number() over (
+                partition by st.local_student_id, g.nj_intervention_subject
+                order by s.gsa_id desc
+            ) as rn_bucket,
+        from {{ ref("stg_illuminate__group_student_aff") }} as s
         inner join
-            {{ source("illuminate", "groups") }} as g
+            {{ ref("stg_illuminate__groups") }} as g
             on s.group_id = g.group_id
-            and g.group_name like 'Bucket 2%'
-        left join
+            and g.nj_intervention_tier = 2
+            and g.group_name in (
+                'Bucket 2 - Math - HS',
+                'Bucket 2 - Reading - HS',
+                'Bucket 2 - Reading - Gr5-8',
+                'Bucket 2 - Math - Gr5-8',
+                'Bucket 2 - Reading - GrK-4',
+                'Bucket 2 - Math - GrK-4'
+            )
+        inner join
             {{ ref("stg_illuminate__students") }} as st on s.student_id = st.student_id
         where
             s.end_date is null
@@ -91,7 +105,7 @@ with
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
         where
-            bss.academic_year = {{ var("current_academic_year") }}
+            bss.academic_year >= {{ var("current_academic_year") - 1 }}
             and u.measure = 'Composite'
     ),
 
@@ -141,11 +155,13 @@ select
     co._dbt_source_relation,
     co.student_number,
     co.studentid,
+    co.gifted_and_talented,
 
     sj.iready_subject,
     sj.illuminate_subject_area,
     sj.powerschool_credittype,
     sj.grad_unpivot_subject,
+    sj.discipline,
 
     a.is_iep_eligible as is_grad_iep_exempt,
 
@@ -154,8 +170,11 @@ select
     coalesce(db.boy, 'No Test') as dibels_boy_composite,
     coalesce(db.moy, 'No Test') as dibels_moy_composite,
     coalesce(db.eoy, 'No Test') as dibels_eoy_composite,
+    coalesce(
+        db.eoy, db.moy, db.boy, 'No Composite Score Available'
+    ) as dibels_most_recent_composite,
 
-    if(nj.subject is not null, true, false) as bucket_two,
+    if(nj.nj_intervention_subject is not null, true, false) as bucket_two,
 
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
@@ -170,7 +189,7 @@ select
         then 'Bucket 1'
         when co.grade_level >= 4 and py.njsla_proficiency = 'At/Above'
         then 'Bucket 1'
-        when nj.subject is not null
+        when nj.nj_intervention_subject is not null
         then 'Bucket 2'
     end as nj_student_tier,
 
@@ -184,7 +203,8 @@ cross join subjects as sj
 left join
     intervention_nj as nj
     on co.student_number = nj.student_number
-    and sj.iready_subject = nj.subject
+    and sj.iready_subject = nj.nj_intervention_subject
+    and nj.rn_bucket = 1
 left join
     prev_yr_state_test as py
     {# TODO: find records that only match on SID #}
@@ -220,4 +240,4 @@ left join
     and a.values_column = 'M'
 left join
     mia_territory as mt on co.student_number = mt.student_number and mt.rn_territory = 1
-where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") }} - 1
+where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}

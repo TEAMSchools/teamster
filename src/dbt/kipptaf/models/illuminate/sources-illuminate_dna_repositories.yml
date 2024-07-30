@@ -41,3 +41,184 @@ sources:
               - illuminate
               - dna_repositories
               - fields
+      - name: repository_365
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_365
+      - name: repository_413
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_413
+
+      - name: repository_426
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_426
+      - name: repository_427
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_427
+      - name: repository_428
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_428
+      - name: repository_429
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_429
+      - name: repository_430
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_430
+      - name: repository_431
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_431
+      - name: repository_432
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_432
+      - name: repository_433
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_433
+      - name: repository_434
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_434
+      - name: repository_435
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_435
+      - name: repository_436
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_436
+      - name: repository_437
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_437
+      - name: repository_438
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_438
+      - name: repository_439
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_439
+      - name: repository_440
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_440
+      - name: repository_441
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_441
+      - name: repository_442
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_442
+      - name: repository_443
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - dna_repositories
+              - repository_443

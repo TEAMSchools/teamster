@@ -1,4 +1,4 @@
-from teamster.kipptaf.resources import LDAP_RESOURCE
+from teamster.code_locations.kipptaf.resources import LDAP_RESOURCE
 
 SEARCH_BASE = "dc=teamschools,dc=kipp,dc=org"
 TESTS = [

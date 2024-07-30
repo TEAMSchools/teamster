@@ -1,23 +1,19 @@
 with
     courses as (
         select
-            c.cc_academic_year as academic_year,
-            c.students_student_number as student_number,
-            c.courses_credittype as credittype,
+            cc_academic_year as academic_year,
+            students_student_number as student_number,
+            courses_credittype as credittype,
             case
-                when c.courses_credittype = 'MATH' and nj.nces_course_id = '052'
+                when courses_credittype = 'MATH' and nces_course_id = '052'
                 then 'ALG01'
-                when c.courses_credittype = 'MATH' and nj.nces_course_id = '072'
+                when courses_credittype = 'MATH' and nces_course_id = '072'
                 then 'GEO01'
-                when c.courses_credittype = 'MATH' and nj.nces_course_id = '056'
+                when courses_credittype = 'MATH' and nces_course_id = '056'
                 then 'ALG02'
             end as math_course,
-        from {{ ref("base_powerschool__course_enrollments") }} as c
-        left join
-            {{ ref("stg_powerschool__s_nj_crs_x") }} as nj
-            on c.courses_dcid = nj.coursesdcid
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="nj") }}
-        where c.rn_credittype_year = 1 and not c.is_dropped_section
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where rn_credittype_year = 1 and not is_dropped_section
     ),
 
     roster as (
@@ -35,10 +31,15 @@ with
             co.lastfirst as student_name,
             co.special_education_code,
 
-            subj as subject,
+            subj as `subject`,
 
             if(co.enroll_status = 0, 'Enrolled', 'Transferred Out') as enroll_status,
+            if(co.spedlep like 'SPED%', 'IEP', 'No IEP') as iep_status,
+            if(co.lep_status, 'LEP', 'Not LEP') as lep_status,
+            if(co.is_504, 'Has 504', 'No 504') as status_504,
+
             concat(co.lastfirst, ' - ', co.student_number, ' - ', subj) as student,
+
             case
                 when subj = 'MATH' and nj.asmt_extended_time_math is not null
                 then true
@@ -48,9 +49,7 @@ with
                 then true
                 else false
             end as has_extended_time,
-            if(co.spedlep like 'SPED%', 'IEP', 'No IEP') as iep_status,
-            if(co.lep_status, 'LEP', 'Not LEP') as lep_status,
-            if(co.is_504, 'Has 504', 'No 504') as status_504,
+
             case
                 when subj = 'MATH' and nj.graduation_pathway_math = 'M'
                 then null
@@ -75,6 +74,11 @@ with
                 then 'ELAGP'
                 when subj = 'ENG'
                 then concat('ELA', '0', co.grade_level)
+                when
+                    subj = 'SCI'
+                    and co.grade_level in (5, 8, 11)
+                    and nj.math_state_assessment_name = '3'
+                then null
                 when subj = 'SCI' and co.grade_level in (5, 8)
                 then concat('SC', '0', co.grade_level)
                 when subj = 'SCI' and co.grade_level = 11
@@ -107,16 +111,16 @@ select
     status_504,
     test_code,
     has_extended_time,
+
     concat(student_number, '_', test_code) as sn_test_hash,
     concat(
         school_abbreviation, '-', test_code, if(has_extended_time, '-ET', '')
     ) as session_name,
 from roster
 where
-    academic_year = 2023
+    academic_year = {{ var("current_academic_year") }}
     and rn_year = 1
-    and region != 'Miami'
-    and (grade_level between 3 and 9 or grade_level = 11)
-    and not (is_self_contained and special_education_code in ('CMI', 'CMO', 'CSE'))
-    and school_level != 'OD'
     and test_code is not null
+    and (grade_level between 3 and 9 or grade_level = 11)
+    and region != 'Miami'
+    and school_level != 'OD'

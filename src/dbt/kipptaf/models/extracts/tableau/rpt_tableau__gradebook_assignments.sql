@@ -23,7 +23,7 @@ select
     gb.storecode as grade_category_abbreviation,
     gb.grade_calc_formula_weight as weighting,
     gb.is_in_final_grades as includeinfinalgrades,
-    left(gb.storecode, 1) as finalgrade_category,
+    gb.storecode_type as finalgrade_category,
 
     a.assignmentid,
     a.duedate as assign_date,
@@ -55,11 +55,11 @@ left join
     and a.duedate between gb.term_start_date and gb.term_end_date
     and {{ union_dataset_join_clause(left_alias="gb", right_alias="a") }}
 left join
-    {{ ref("int_powerschool__gradebook_assignment_scores") }} as s
+    {{ ref("stg_powerschool__assignmentscore") }} as s
     on a.assignmentsectionid = s.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
     and enr.students_dcid = s.studentsdcid
-where enr.cc_academic_year >= {{ var("current_academic_year") }} - 1
+where enr.cc_academic_year >= {{ var("current_academic_year") - 1 }}
 
 union all
 
@@ -88,7 +88,7 @@ select
     gb.storecode as grade_category_abbreviation,
     gb.grade_calc_formula_weight as weighting,
     gb.is_in_final_grades as includeinfinalgrades,
-    left(gb.storecode, 1) as finalgrade_category,
+    gb.storecode_type as finalgrade_category,
 
     a.assignmentid,
     a.duedate as assign_date,
@@ -121,7 +121,7 @@ left join
     and a.duedate between gb.term_start_date and gb.term_end_date
     and {{ union_dataset_join_clause(left_alias="gb", right_alias="a") }}
 left join
-    {{ ref("int_powerschool__gradebook_assignment_scores") }} as s
+    {{ ref("stg_powerschool__assignmentscore") }} as s
     on a.assignmentsectionid = s.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
     and enr.students_dcid = s.studentsdcid

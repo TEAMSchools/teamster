@@ -7,7 +7,6 @@ select
     cleverid as clever_id,
     coach,
     created,
-    district,
     email,
     endofyearvisible as end_of_year_visible,
     evaluator,
@@ -44,7 +43,6 @@ select
 
     defaultinformation.course as default_information_course,
     defaultinformation.gradelevel as default_information_grade_level,
-    defaultinformation.period as default_information_period,
     defaultinformation.school as default_information_school,
 
     pluconfig.enddate as plu_config_end_date,

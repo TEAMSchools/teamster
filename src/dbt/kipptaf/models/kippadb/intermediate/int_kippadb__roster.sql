@@ -29,9 +29,10 @@ with
             || se.state
             || ' '
             || se.zip as powerschool_mailing_address,
-            (
-                ({{ var("current_academic_year") }} - se.academic_year) + se.grade_level
-            ) as current_grade_level_projection,
+
+            {{ var("current_academic_year") }}
+            - se.academic_year
+            + se.grade_level as current_grade_level_projection,
 
             {{
                 dbt_utils.star(

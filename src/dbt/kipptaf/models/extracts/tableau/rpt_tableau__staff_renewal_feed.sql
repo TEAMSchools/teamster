@@ -1,14 +1,3 @@
-with
-    pm_scores as (
-        select employee_number, avg(overall_score) as pm4_overall_score,
-        from {{ ref("int_performance_management__observation_details") }}
-        where
-            academic_year = {{ var("current_academic_year") }}
-            and overall_score is not null
-            and form_term in ('PM2', 'PM3')
-        group by employee_number
-    )
-
 select
     b.employee_number as df_employee_number,
     b.legal_name_given_name as first_name,
@@ -43,10 +32,13 @@ select
     s.scale_ny_salary,
     s.scale_step,
 
-    p.pm4_overall_score,
+    p.final_score as pm4_overall_score,
 from {{ ref("base_people__staff_roster") }} as b
 left join
     {{ ref("int_people__expected_next_year_salary") }} as s
     on b.employee_number = s.employee_number
-left join pm_scores as p on b.employee_number = p.employee_number
+left join
+    {{ ref("int_performance_management__overall_scores") }} as p
+    on b.employee_number = p.employee_number
+    and p.academic_year = {{ var("current_academic_year") }}
 where b.assignment_status not in ('Terminated', 'Deceased')

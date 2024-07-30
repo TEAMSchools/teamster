@@ -6,18 +6,47 @@ on:
     branches:
       - main
     paths:
-      - Dockerfile
-      - pdm.lock
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kippmiami.yaml
-      - src/teamster/core/**
-      - src/teamster/kippmiami/**
-      - src/dbt/kippmiami/**
+      - Dockerfile
+      - requirements.txt
       - src/dbt/deanslist/**
       - src/dbt/iready/**
+      - src/dbt/kippmiami/**
       - src/dbt/powerschool/**
       - src/dbt/renlearn/**
       - src/dbt/teamster_utils/**
+      - src/teamster/code_locations/kippmiami/**
+      - src/teamster/libraries/core/**
+      - src/teamster/libraries/couchdrop/**
+      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/fldoe/**
+      - src/teamster/libraries/iready/**
+      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/renlearn/**
+      - src/teamster/libraries/sqlalchemy/**
+      - src/teamster/libraries/ssh/**
+  pull_request:
+    paths:
+      - src/teamster/code_locations/kippmiami/**
+      - src/teamster/libraries/core/**
+      - src/teamster/libraries/couchdrop/**
+      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/fldoe/**
+      - src/teamster/libraries/iready/**
+      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/renlearn/**
+      - src/teamster/libraries/sqlalchemy/**
+      - src/teamster/libraries/ssh/**
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
 
 jobs:
   dagster-cloud-deploy:

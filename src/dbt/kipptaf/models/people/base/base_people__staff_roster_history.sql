@@ -531,6 +531,7 @@ with
             ldap.uac_account_disable,
             ldap.google_email,
 
+            sis.last_submitted_timestamp as survey_last_submitted_timestamp,
             sis.additional_languages,
             sis.alumni_status,
             sis.community_grew_up,
@@ -607,6 +608,7 @@ with
             ldap.user_principal_name as report_to_user_principal_name,
             ldap.mail as report_to_mail,
             ldap.sam_account_name as report_to_sam_account_name,
+            ldap.google_email as report_to_google_email,
         from crosswalk as cw
         left join
             {{ ref("stg_people__employee_numbers") }} as en

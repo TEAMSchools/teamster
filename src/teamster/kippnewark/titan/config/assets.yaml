@@ -1,9 +1,0 @@
-assets:
-  - asset_name: person_data
-    remote_dir: .
-    remote_file_regex: 'persondata(?P<fiscal_year>\d{4})\.csv'
-    partition_start_date: 2020-07-01
-  - asset_name: income_form_data
-    remote_dir: .
-    remote_file_regex: 'incomeformdata(?P<fiscal_year>\d{4})\.csv'
-    partition_start_date: 2021-07-01

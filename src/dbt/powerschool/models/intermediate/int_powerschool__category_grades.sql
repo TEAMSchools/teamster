@@ -10,14 +10,15 @@ with
 
             tb.yearid,
             tb.storecode,
+            tb.storecode_type,
+            tb.storecode_order,
             tb.date1 as termbin_start_date,
             tb.date2 as termbin_end_date,
-            left(tb.storecode, 1) as storecode_type,
-            'RT' || right(tb.storecode, 1) as reporting_term,
+            'RT' || tb.storecode_order as reporting_term,
             case
                 when
                     tb.date2 < current_date('{{ var("local_timezone") }}')
-                    and right(tb.storecode, 1) = '4'
+                    and tb.storecode_order = '4'
                 then true
                 when
                     current_date('{{ var("local_timezone") }}')
@@ -65,12 +66,13 @@ select
     credittype,
     is_dropped_section,
     yearid,
-    storecode,
+    reporting_term,
     termbin_start_date,
     termbin_end_date,
-    storecode_type,
-    reporting_term,
     is_current,
+    storecode,
+    storecode_type,
+    storecode_order,
     percent_grade,
     citizenship_grade,
     round(

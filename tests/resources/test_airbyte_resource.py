@@ -1,7 +1,7 @@
 from urllib.parse import urlencode
 
 import pendulum
-from dagster import AssetKey, EnvVar, build_resources
+from dagster import AssetKey, EnvVar, _check, build_resources
 from dagster_airbyte import AirbyteCloudResource
 
 
@@ -11,7 +11,11 @@ def test_resource():
     ) as resources:
         airbyte: AirbyteCloudResource = resources.airbyte
 
-    connections = airbyte.make_request(endpoint="/connections", method="GET")["data"]
+    connections_response = _check.not_none(
+        airbyte.make_request(endpoint="/connections", method="GET")
+    )
+
+    connections = _check.inst(connections_response["data"], dict)
 
     # airbyte_outputs: list[AirbyteOutput] = []
     for connection in connections:
@@ -27,11 +31,11 @@ def test_resource():
             }
         )
 
-        successful_jobs = airbyte.make_request(
-            endpoint=f"/jobs?{params}", method="GET"
-        ).get("data", [])
+        succeeded_jobs_response = _check.not_none(
+            airbyte.make_request(endpoint=f"/jobs?{params}", method="GET")
+        )
 
-        if successful_jobs:
+        if succeeded_jobs_response.get("data") is not None:
             namespace_parts = connection["namespaceFormat"].split("_")
             for stream in connection["configurations"]["streams"]:
                 asset_key = AssetKey(

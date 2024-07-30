@@ -424,6 +424,14 @@ select
     uga.competitiveness_ranking as ugrad_competitiveness_ranking,
     uga.adjusted_6_year_minority_graduation_rate
     as ugrad_adjusted_6_year_minority_graduation_rate,
+
+    if(
+        ew.ba_enrollment_id is null
+        and ew.aa_enrollment_id is null
+        and ew.cte_enrollment_id is null,
+        true,
+        false
+    ) as is_never_enrolled,
 from enrollment_wide as ew
 left join {{ ref("stg_kippadb__enrollment") }} as ug on ew.ugrad_enrollment_id = ug.id
 left join {{ ref("stg_kippadb__account") }} as uga on ug.school = uga.id

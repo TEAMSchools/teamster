@@ -3,9 +3,22 @@
 ) %}
 
 select
-    {{ dbt_utils.star(from=src_model, except=["completion_date"]) }},
+    {{
+        dbt_utils.star(
+            from=src_model,
+            except=["completion_date", "score", "total_time_on_lesson_min"],
+        )
+    }},
+
+    cast(left(academic_year, 4) as int) as academic_year_int,
+
+    coalesce(safe_cast(score.double_value as int), score.long_value) as score,
+    coalesce(
+        safe_cast(total_time_on_lesson_min.double_value as int),
+        total_time_on_lesson_min.long_value
+    ) as total_time_on_lesson_min,
 
     parse_date('%m/%d/%Y', completion_date) as completion_date,
-    safe_cast(left(academic_year, 4) as int) as academic_year_int,
+
     if(passed_or_not_passed = 'Passed', 1.0, 0.0) as passed_or_not_passed_numeric,
 from {{ src_model }}

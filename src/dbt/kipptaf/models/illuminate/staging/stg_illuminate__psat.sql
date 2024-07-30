@@ -343,7 +343,7 @@ select
     coalesce(psat_2023_gradeassessed, psat_2024_gradeassessed) as grade_assessed,
     coalesce(
         psat_2023_firstchoicemajor, psat_2024_firstchoicemajor
-    ) as first_choic_emajor,
+    ) as first_choice_major,
     coalesce(psat_2023_gpa, psat_2024_gpa) as gpa,
     coalesce(
         psat_2023_numyearsgrade912, psat_2024_numyearsgrade912
@@ -375,4 +375,10 @@ select
     coalesce(psat_2023_apusgovpol, psat_2024_apusgovpol) as ap_us_gov_pol,
     coalesce(psat_2023_apushist, psat_2024_apushist) as ap_us_hist,
     coalesce(psat_2023_apworldhist, psat_2024_apworldhist) as ap_world_hist,
+
+    {{
+        teamster_utils.date_to_fiscal_year(
+            date_field="test_date", start_month=7, year_source="start"
+        )
+    }} as academic_year,
 from combined_years

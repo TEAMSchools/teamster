@@ -14,3 +14,9 @@ sources:
             enable_logical_types: true
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/zendesk/ticket_metrics_archive/"
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - zendesk
+              - ticket_metrics_archive

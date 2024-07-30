@@ -6,12 +6,7 @@ select
     fr.item_title as question_title,
     fr.item_abbreviation as question_shortname,
     fr.rn_form_item_respondent_submitted_desc as rn,
-    concat(
-        'https://docs.google.com/forms/d/',
-        fr.form_id,
-        '/edit#response=',
-        fr.response_id
-    ) as survey_response_link,
+    fr.respondent_email,
 
     rt.code as survey_code,
     rt.type as survey_type,
@@ -38,14 +33,20 @@ select
     eh.primary_grade_level_taught,
     eh.assignment_status,
 
+    safe_cast(fr.text_value as numeric) as answer_value,
     timestamp(fr.create_time) as date_started,
     timestamp(fr.last_submitted_time) as date_submitted,
-    safe_cast(fr.text_value as numeric) as answer_value,
-    case
-        when safe_cast(fr.text_value as integer) is null then 1 else 0
-    end as is_open_ended,
+
+    concat(
+        'https://docs.google.com/forms/d/',
+        fr.form_id,
+        '/edit#response=',
+        fr.response_id
+    ) as survey_response_link,
+
+    if(safe_cast(fr.text_value as integer) is null, 1, 0) as is_open_ended,
 from {{ ref("base_google_forms__form_responses") }} as fr
-inner join
+left join
     {{ ref("base_people__staff_roster_history") }} as eh
     on fr.respondent_email = eh.google_email
     and timestamp(fr.last_submitted_time)
@@ -54,25 +55,22 @@ left join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = fr.info_title
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
-    and eh.assignment_status not in ('Terminated', 'Deceased')
 
 union all
 
 select
     safe_cast(sr.survey_id as string) as survey_id,
-    sr.survey_title as survey_title,
+    sr.survey_title,
     safe_cast(sr.response_id as string) as survey_response_id,
     sr.response_value as answer,
     sr.question_title_english as question_title,
     sr.question_short_name as question_shortname,
     1 as rn,
-    concat(
-        sr.survey_link_default, '?snc=', sr.response_session_id, '&sg_navigate=start'
-    ) as survey_response_link,
+    ri.respondent_mail as respondent_email,
 
-    regexp_extract(sr.campaign_name, r'\s(.*)') as survey_code,
+    coalesce(regexp_extract(sr.campaign_name, r'\s(.*)'), rt.code) as survey_code,
     'SURVEY' as survey_type,
-    sr.campaign_fiscal_year - 1 as academic_year,
+    coalesce(sr.campaign_fiscal_year - 1, rt.academic_year) as academic_year,
 
     eh.employee_number,
     eh.preferred_name_lastfirst as respondent_name,
@@ -95,24 +93,27 @@ select
     eh.primary_grade_level_taught,
     eh.assignment_status,
 
+    safe_cast(sr.response_value as numeric) as answer_value,
+
     sr.response_date_started as date_started,
     sr.response_date_submitted as date_submitted,
-    safe_cast(sr.response_value as numeric) as answer_value,
-    case
-        when safe_cast(sr.response_value as integer) is null then 1 else 0
-    end as is_open_ended,
+
+    concat(
+        sr.survey_link_default, '?snc=', sr.response_session_id, '&sg_navigate=start'
+    ) as survey_response_link,
+
+    if(safe_cast(sr.response_value as integer) is null, 1, 0) as is_open_ended,
 from {{ ref("base_alchemer__survey_results") }} as sr
-left join
+inner join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = sr.survey_title
     and sr.response_date_submitted_date between rt.start_date and rt.end_date
-inner join
+left join
     {{ ref("int_surveys__response_identifiers") }} as ri
     on sr.survey_id = ri.survey_id
     and sr.response_id = ri.response_id
-inner join
+left join
     {{ ref("base_people__staff_roster_history") }} as eh
     on ri.respondent_employee_number = eh.employee_number
     and sr.response_date_submitted
     between eh.work_assignment_start_date and eh.work_assignment_end_date
-    and eh.assignment_status not in ('Terminated', 'Deceased')
