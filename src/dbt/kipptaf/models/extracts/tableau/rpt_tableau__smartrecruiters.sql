@@ -27,6 +27,7 @@ with
     )
 
 select
+    s.*,
     a.application_id,
     a.job_city,
     a.recruiters,
@@ -38,7 +39,6 @@ select
     a.resume_score,
     a.status_type,
     a.date_val,
-    s.*,
 from applications as a
 left join
     {{ ref("stg_smartrecruiters__applicants") }} as s on a.candidate_id = s.candidate_id
