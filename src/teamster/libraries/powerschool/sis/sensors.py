@@ -95,7 +95,7 @@ def build_powerschool_asset_sensor(
         for asset in asset_selection:
             asset_key_identifier = asset.key.to_python_identifier()
             metadata = asset.metadata_by_key[asset.key]
-            latest_materialization_event = latest_materialization_events[asset.key]
+            latest_materialization_event = latest_materialization_events.get(asset.key)
 
             table_name = metadata["table_name"]
             partition_column = metadata["partition_column"]
