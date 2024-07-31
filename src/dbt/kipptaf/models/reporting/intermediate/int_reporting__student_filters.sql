@@ -154,49 +154,20 @@ with
         select
             'ELA' as discipline,
 
-            co.academic_year,
-            co.student_number,
-
-            case
-                when
-                    co.grade_level < 3
-                    and co.is_self_contained
-                    and co.special_education_code in ('CSE', 'CMO', 'CMI')
-                then true
-                when co.grade_level >= 4 and nj.state_assessment_name in ('2', '3', '4')
-                then true
-                else false
-            end as is_exempt,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
-        left join
-            {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
-            on co.students_dcid = nj.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
-        where student_number = 100949
+            studentsdcid,
+            _dbt_source_relation,
+            state_assessment_name as test_type_code,
+        from {{ ref("stg_powerschool__s_nj_stu_x") }}
 
         union all
 
         select
             'Math' as discipline,
 
-            co.academic_year,
-            co.student_number,
-
-            case
-                when
-                    co.grade_level < 3
-                    and co.is_self_contained
-                    and co.special_education_code in ('CSE', 'CMO', 'CMI')
-                then true
-                when co.grade_level >= 4 and nj.math_state_assessment_name = '3'
-                then true
-                else false
-            end as is_exempt,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
-        left join
-            {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
-            on co.students_dcid = nj.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
+            studentsdcid,
+            _dbt_source_relation,
+            math_state_assessment_name as test_type_code,
+        from {{ ref("stg_powerschool__s_nj_stu_x") }}
     )
 
 select
@@ -247,6 +218,19 @@ select
     if(
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
     ) as assessment_dashboard_join,
+
+    case
+        when
+            co.grade_level < 3
+            and co.is_self_contained
+            and co.special_education_code in ('CMI', 'CMO', 'CSE')
+        then true
+        when sj.discipline = 'ELA' and test_type_code in ('2', '3', '4')
+        then true
+        when sj.discipline = 'Math' and test_type_code = '3'
+        then true
+        else false
+    end as is_exempt_state_testing,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -291,7 +275,7 @@ left join
     mia_territory as mt on co.student_number = mt.student_number and mt.rn_territory = 1
 left join
     state_assessment_exempt as se
-    on co.student_number = se.student_number
-    and co.academic_year = se.academic_year
+    on co.students_dcid = se.studentsdcid
     and sj.discipline = se.discipline
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}
