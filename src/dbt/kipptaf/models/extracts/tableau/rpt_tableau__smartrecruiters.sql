@@ -26,8 +26,7 @@ with
             )
     )
 
-select a.*,s.*,
+select a.*, s.*,
 from applications as a
 left join
-    {{ ref("stg_smartrecruiters__applicants") }} as s
-    on a.candidate_id = s.candidate_id
+    {{ ref("stg_smartrecruiters__applicants") }} as s on a.candidate_id = s.candidate_id
