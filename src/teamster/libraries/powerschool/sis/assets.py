@@ -1,4 +1,6 @@
+import hashlib
 import pathlib
+from io import BufferedReader
 
 import pendulum
 from dagster import (
@@ -19,9 +21,23 @@ from teamster.libraries.sqlalchemy.resources import OracleResource
 from teamster.libraries.ssh.resources import SSHResource
 
 
+def hash_bytestr_iter(bytesiter, hasher):
+    for block in bytesiter:
+        hasher.update(block)
+
+    return hasher.hexdigest()
+
+
+def file_as_blockiter(file: BufferedReader, size: int = 65536):
+    with file:
+        block = file.read(size)
+        while len(block) > 0:
+            yield block
+            block = file.read(size)
+
+
 def build_powerschool_table_asset(
     code_location,
-    local_timezone,
     table_name: str,
     partitions_def: (
         FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition | None
@@ -52,7 +68,7 @@ def build_powerschool_table_asset(
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ):
-        now = pendulum.now(tz=local_timezone).start_of("hour")
+        hour_timestamp = pendulum.now().start_of("hour").timestamp()
 
         first_partition_key = (
             partitions_def.get_first_partition_key()
@@ -121,12 +137,16 @@ def build_powerschool_table_asset(
         try:
             with file_path.open(mode="rb") as f:
                 num_records = sum(block.num_records for block in block_reader(f))
+                digest = hash_bytestr_iter(
+                    bytesiter=file_as_blockiter(file=f), hasher=hashlib.sha256()
+                )
 
             yield Output(
                 value=file_path,
                 metadata={
                     "records": num_records,
-                    "latest_materialization_timestamp": now.timestamp(),
+                    "digest": digest,
+                    "latest_materialization_timestamp": hour_timestamp,
                 },
             )
         except FileNotFoundError:
