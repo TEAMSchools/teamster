@@ -32,17 +32,16 @@ class SqlAlchemyEngineResource(ConfigurableResource):
     def execute_query(
         self,
         query,
-        partition_size,
+        partition_size: int,
         connect_kwargs: dict | None = None,
-        output_format=None,
-        data_filepath="env/data.avro",
+        output_format: str | None = None,
     ):
         if connect_kwargs is None:
             connect_kwargs = {}
 
-        data_filepath = pathlib.Path(data_filepath).absolute()
+        data_filepath = pathlib.Path("env/data.avro").absolute()
 
-        self._log.info("Opening connection to engine")
+        self._log.debug("Opening connection to engine")
         with self._engine.connect(**connect_kwargs) as conn:
             self._log.info(f"Executing query:\n{query}")
             cursor_result = conn.execute(statement=query)
@@ -92,7 +91,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         return output
 
     def result_to_tuple_list(self, partitions) -> list[tuple]:
-        self._log.info("Retrieving rows from all partitions")
+        self._log.debug("Retrieving rows from all partitions")
         pt_rows = [rows for pt in partitions for rows in pt]
 
         self._log.debug("Unpacking partition rows")
@@ -105,7 +104,7 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         return output_data
 
     def result_to_dict_list(self, partitions):
-        self._log.info("Retrieving rows from all partitions")
+        self._log.debug("Retrieving rows from all partitions")
         pt_rows = [rows for pt in partitions for rows in pt]
 
         self._log.debug("Unpacking partition rows")
