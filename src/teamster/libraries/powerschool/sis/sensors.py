@@ -176,7 +176,6 @@ def build_powerschool_asset_sensor(
                             ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS"),
                         ),
                         partition_size=1,
-                        output_format=None,
                     ),
                     list,
                 )
@@ -189,7 +188,6 @@ def build_powerschool_asset_sensor(
                             value=partition_key_datetime_fmt,
                         ),
                         partition_size=1,
-                        output_format=None,
                     ),
                     list,
                 )
