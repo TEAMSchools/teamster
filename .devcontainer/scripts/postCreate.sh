@@ -7,8 +7,7 @@ git config pull.rebase false # merge
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
   sudo apt-get -y --no-install-recommends install \
-    bash-completion \
-    google-cloud-cli-gke-gcloud-auth-plugin &&
+    bash-completion &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
