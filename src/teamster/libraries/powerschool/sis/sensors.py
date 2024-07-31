@@ -105,7 +105,7 @@ def build_powerschool_asset_sensor(
                     value=asset.partitions_def.get_last_partition_key()
                 )
 
-                partition_key_datetime_fmt = pendulum.from_format(
+                partition_key_fmt = pendulum.from_format(
                     string=partition_key, fmt="YYYY-MM-DDTHH:mm:ssZZ"
                 ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
 
@@ -114,7 +114,7 @@ def build_powerschool_asset_sensor(
                     f"{asset.partitions_def.get_serializable_unique_identifier()}"
                 )
             else:
-                partition_key_datetime_fmt = partition_key = None
+                partition_key_fmt = partition_key = None
                 job_name = f"{base_job_name}_None"
 
             # request run if asset never materialized
@@ -130,14 +130,14 @@ def build_powerschool_asset_sensor(
 
                 continue
 
-            latest_asset_materialization = _check.not_none(
+            asset_materialization = _check.not_none(
                 value=latest_materialization_event.asset_materialization
             )
 
             # request run if latest partition not materialized
             if (
                 partition_key is not None
-                and partition_key != latest_asset_materialization.partition
+                and partition_key != asset_materialization.partition
             ):
                 context.log.info(
                     msg=f"{asset_key_identifier}\n{partition_key} never materialized"
@@ -152,40 +152,44 @@ def build_powerschool_asset_sensor(
 
                 continue
 
-            latest_materialization_datetime = pendulum.from_timestamp(
-                timestamp=_check.inst(
-                    obj=latest_asset_materialization.metadata[
+            record_count = asset_materialization.metadata["records"].value
+
+            if asset.partitions_def is not None:
+                timestamp = _check.inst(
+                    obj=asset_materialization.metadata[
                         "latest_materialization_timestamp"
                     ].value,
                     ttype=float,
                 )
-            )
 
-            latest_materialization_record_count = latest_asset_materialization.metadata[
-                "records"
-            ]
+                timestamp_fmt = pendulum.from_timestamp(
+                    timestamp=timestamp, tz=execution_timezone
+                ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+            else:
+                timestamp_fmt = None
 
             try:
-                [(modified_count,)] = _check.inst(
-                    db_powerschool.engine.execute_query(
-                        query=get_query_text(
-                            table=table_name,
-                            column=partition_column,
-                            value=latest_materialization_datetime.in_timezone(
-                                tz=execution_timezone
-                            ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS"),
+                if timestamp_fmt is None:
+                    modified_count = 0
+                else:
+                    [(modified_count,)] = _check.inst(
+                        db_powerschool.engine.execute_query(
+                            query=get_query_text(
+                                table=table_name,
+                                column=partition_column,
+                                value=timestamp_fmt,
+                            ),
+                            partition_size=1,
                         ),
-                        partition_size=1,
-                    ),
-                    list,
-                )
+                        list,
+                    )
 
                 [(partition_count,)] = _check.inst(
                     db_powerschool.engine.execute_query(
                         query=get_query_text(
                             table=table_name,
                             column=partition_column,
-                            value=partition_key_datetime_fmt,
+                            value=partition_key_fmt,
                         ),
                         partition_size=1,
                     ),
@@ -201,16 +205,13 @@ def build_powerschool_asset_sensor(
                 context.log.error(msg=str(e))
                 raise e
 
-            if (
-                modified_count > 0
-                or partition_count != latest_materialization_record_count.value
-            ):
+            if modified_count > 0 or partition_count != record_count:
                 context.log.info(
                     msg=(
                         f"{asset_key_identifier}\n{partition_key}\n"
                         f"modified count ({modified_count}) > 0 OR "
                         f"partition count ({partition_count}) "
-                        f"!= {latest_materialization_record_count.value}"
+                        f"!= {record_count}"
                     )
                 )
 
