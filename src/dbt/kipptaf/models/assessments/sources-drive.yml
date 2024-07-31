@@ -168,6 +168,8 @@ sources:
               - assessments
               - state_test_comparison
       - name: src_assessments__college_readiness_expected_tests
+        tags:
+          - retired
         external:
           options:
             format: GOOGLE_SHEETS
@@ -182,8 +184,6 @@ sources:
               - assessments
               - college_readiness_expected_tests
       - name: src_assessments__assessment_expectations
-        tags:
-          - retired
         external:
           options:
             format: GOOGLE_SHEETS

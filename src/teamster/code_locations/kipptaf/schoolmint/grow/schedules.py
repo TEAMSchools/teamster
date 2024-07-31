@@ -1,7 +1,6 @@
 from typing import Generator
 
 from dagster import (
-    MAX_RUNTIME_SECONDS_TAG,
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
@@ -22,7 +21,6 @@ from teamster.code_locations.kipptaf.schoolmint.grow.jobs import (
 job = define_asset_job(
     name=f"{CODE_LOCATION}_schoolmint_grow_static_partitions_assets_job",
     selection=schoolmint_grow_static_partitions_assets,
-    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
 )
 
 
