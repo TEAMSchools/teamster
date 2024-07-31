@@ -2,16 +2,13 @@
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "features": {
     "ghcr.io/devcontainers-contrib/features/pdm:2": {},
-    "ghcr.io/trunk-io/devcontainer-feature/trunk:1": {},
-    "ghcr.io/devcontainers-contrib/features/mkdocs:2": {
-      "plugins": "mkdocs-material mkdocstrings[python]"
-    },
+    "ghcr.io/devcontainers-contrib/features/mkdocs:2": {},
     "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/trunk-io/devcontainer-feature/trunk:1": {},
+    "ghcr.io/itsmechlark/features/1password:1": {},
     "ghcr.io/dhoeric/features/google-cloud-cli:1": {
       "installGkeGcloudAuthPlugin": true
-    },
-    "ghcr.io/flexwie/devcontainer-features/op:1": {}
+    }
   },
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
