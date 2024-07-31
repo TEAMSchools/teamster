@@ -1,6 +1,7 @@
 assets:
   - connection_id: ee23720c-c82f-45be-ab40-f72dcf8ac3cd
     group_name: zendesk
+    dataset_id: kipptaf_zendesk
     destination_tables:
       - groups
       - ticket_audits
@@ -10,6 +11,7 @@ assets:
       - users
   - connection_id: e4856fb7-1f97-4bcd-bc4e-e616c5ae4e52
     group_name: kippadb
+    dataset_id: kipptaf_kippadb
     destination_tables:
       - Account
       - Application__c

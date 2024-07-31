@@ -1,4 +1,4 @@
-/* current academic year */
+/* 2024+ All Observation Types */
 select
     o.observation_id,
     o.rubric_id,
@@ -12,21 +12,13 @@ select
     o.observed_at_date_local as observed_at,
     o.academic_year,
     o.is_published,
-
-    gt.name as observation_type,
-    gt.abbreviation as observation_type_abbreviation,
+    o.teacher_internal_id as employee_number,
+    o.observer_internal_id as observer_employee_number,
+    o.observation_type_name as observation_type,
+    o.observation_type_abbreviation,
 
     t.code as term_code,
     t.name as term_name,
-
-    sr.employee_number,
-
-    sr2.employee_number as observer_employee_number,
-
-    null as etr_score,
-    null as etr_tier,
-    null as so_score,
-    null as so_tier,
 
     case
         when o.score >= 3.495
@@ -38,6 +30,7 @@ select
         when o.score < 1.75
         then 1
     end as overall_tier,
+
     case
         when t.code = 'PM1'
         then date(o.academic_year, 10, 1)
@@ -46,18 +39,52 @@ select
         when t.code = 'PM3'
         then date(o.academic_year + 1, 3, 1)
     end as eval_date,
-from {{ ref("stg_schoolmint_grow__observations") }} as o
-left join
-    {{ ref("stg_schoolmint_grow__generic_tags") }} as gt
-    on o.observation_type = gt.tag_id
+from {{ ref("int_schoolmint_grow__observations") }} as o
+inner join {{ ref("stg_people__location_crosswalk") }} as lc on o.school_name = lc.name
 left join
     {{ ref("stg_reporting__terms") }} as t
-    on gt.abbreviation = t.type
+    on o.observation_type_abbreviation = t.type
     and o.observed_at_date_local between t.start_date and t.end_date
-/* join on google email and date for employee_number*/
+    and lc.region = t.region
+/* data prior to 2024 in snapshot */
+where o.is_published and o.academic_year >= 2024
+
+union all
+
+/* 2023 Walkthroughs */
+select
+    o.observation_id,
+    o.rubric_id,
+    o.rubric_name,
+    o.score as observation_score,
+    o.score_averaged_by_strand as strand_score,
+    o.glows,
+    o.grows,
+    o.locked,
+    o.observed_at as observed_at_timestamp,
+    o.observed_at_date_local as observed_at,
+    o.academic_year,
+    o.is_published,
+    o.teacher_internal_id as employee_number,
+    o.observer_internal_id as observer_employee_number,
+
+    'Walkthrough' as observation_type,
+    'WT' as observation_type_abbreviation,
+
+    t.code as term_code,
+    t.name as term_name,
+
+    null as overall_tier,
+    null as eval_date,
+from {{ ref("int_schoolmint_grow__observations") }} as o
 left join
-    {{ ref("base_people__staff_roster") }} as sr on o.teacher_email = sr.google_email
-/* join on google email and date for observer_employee_number*/
-left join
-    {{ ref("base_people__staff_roster") }} as sr2 on o.observer_email = sr2.google_email
-where o.is_published and o.academic_year >= 2024  /* data prior to 2024 in snapshot */
+    {{ ref("stg_reporting__terms") }} as t
+    on o.observed_at_date_local between t.start_date and t.end_date
+    and t.type = 'WT'
+where
+    o.academic_year = 2023
+    and o.is_published
+    and (
+        contains_substr(o.rubric_name, 'Walkthrough')
+        or contains_substr(o.rubric_name, 'Strong Start')
+    )

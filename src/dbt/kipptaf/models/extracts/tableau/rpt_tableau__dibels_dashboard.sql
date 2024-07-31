@@ -1,24 +1,6 @@
 {% set periods = ["BOY", "BOY->MOY", "MOY", "MOY->EOY", "EOY"] %}
 
 with
-    iready_roster as (
-        select
-            academic_year,
-            region,
-            school_abbreviation,
-            student_id as student_number,
-            student_grade,
-            subject,
-        from {{ ref("base_iready__diagnostic_results") }}
-        where
-            test_round = 'BOY'
-            and student_grade in ('3', '4')
-            and rn_subj_round = 1
-            and overall_relative_placement_int <= 2
-            and academic_year_int = {{ var("current_academic_year") }}
-            and subject = 'Reading'
-    ),
-
     students as (
         select
             _dbt_source_relation,
@@ -39,60 +21,29 @@ with
             is_504,
             lep_status,
             lunch_status,
+            gifted_and_talented,
+            enroll_status,
+
             case
                 when region in ('Camden', 'Newark')
                 then 'NJ'
                 when region = 'Miami'
                 then 'FL'
-            end as city,
+            end as state,
+
             case
                 when cast(grade_level as string) = '0'
                 then 'K'
                 else cast(grade_level as string)
             end as grade_level,
+
             case when spedlep in ('No IEP', null) then 0 else 1 end as sped,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
-            academic_year = {{ var("current_academic_year") }}
-            and enroll_status = 0
+            academic_year >= {{ var("current_academic_year") }} - 1
             and rn_year = 1
-            and grade_level <= 2
+            and grade_level <= 8
             and not is_self_contained
-        union all
-        select
-            e._dbt_source_relation,
-            cast(e.academic_year as string) as academic_year,
-            'KIPP NJ/MIAMI' as district,
-            e.region,
-            e.schoolid,
-            e.school_abbreviation as school,
-            e.studentid,
-            e.student_number,
-            e.lastfirst as student_name,
-            e.first_name as student_first_name,
-            e.last_name as student_last_name,
-            e.is_out_of_district,
-            e.gender,
-            e.ethnicity,
-            e.is_homeless,
-            e.is_504,
-            e.lep_status,
-            e.lunch_status,
-            case
-                when e.region in ('Camden', 'Newark')
-                then 'NJ'
-                when e.region = 'Miami'
-                then 'FL'
-            end as city,
-            cast(e.grade_level as string) as grade_level,
-            case when e.spedlep in ('No IEP', null) then 0 else 1 end as sped,
-        from {{ ref("base_powerschool__student_enrollments") }} as e
-        inner join iready_roster as i on e.student_number = i.student_number
-        where
-            e.academic_year = {{ var("current_academic_year") }}
-            and e.enroll_status = 0
-            and e.rn_year = 1
-            and not e.is_self_contained
     ),
 
     student_number as (
@@ -108,10 +59,9 @@ with
             advisory_name,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
-            academic_year = {{ var("current_academic_year") }}
-            and enroll_status = 0
+            academic_year >= {{ var("current_academic_year") }} - 1
             and rn_year = 1
-            and grade_level <= 4
+            and grade_level <= 8
     ),
 
     schedules as (
@@ -129,8 +79,10 @@ with
             e.region as schedule_region,
             e.student_number as schedule_student_number,
             e.advisory_name,
+            e.enroll_status,
             period as expected_test,
             1 as scheduled,
+
             case
                 when c.courses_course_name in ('ELA GrK', 'ELA K')
                 then 'K'
@@ -142,13 +94,23 @@ with
                 then '3'
                 when c.courses_course_name = 'ELA Gr4'
                 then '4'
+                when c.courses_course_name = 'ELA Gr5'
+                then '5'
+                when c.courses_course_name = 'ELA Gr6'
+                then '6'
+                when c.courses_course_name = 'ELA Gr7'
+                then '7'
+                when c.courses_course_name = 'ELA Gr8'
+                then '8'
             end as schedule_student_grade_level,
+
             case
                 when e.region in ('Camden', 'Newark')
                 then 'NJ'
                 when e.region = 'Miami'
                 then 'FL'
-            end as schedule_city,
+            end as schedule_state,
+
         from {{ ref("base_powerschool__course_enrollments") }} as c
         left join
             student_number as e
@@ -157,13 +119,22 @@ with
             and {{ union_dataset_join_clause(left_alias="c", right_alias="e") }}
         cross join unnest({{ periods }}) as period
         where
-            c.cc_academic_year = {{ var("current_academic_year") }}
+            c.cc_academic_year >= {{ var("current_academic_year") }} - 1
             and not c.is_dropped_course
             and not c.is_dropped_section
             and c.rn_course_number_year = 1
-            and c.courses_course_name
-            in ('ELA GrK', 'ELA K', 'ELA Gr1', 'ELA Gr2', 'ELA Gr3', 'ELA Gr4')
-            and e.enroll_status = 0
+            and c.courses_course_name in (
+                'ELA GrK',
+                'ELA K',
+                'ELA Gr1',
+                'ELA Gr2',
+                'ELA Gr3',
+                'ELA Gr4',
+                'ELA Gr5',
+                'ELA Gr6',
+                'ELA Gr7',
+                'ELA Gr8'
+            )
     ),
 
     assessments_scores as (
@@ -198,7 +169,9 @@ with
         inner join
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
-        where cast(left(bss.school_year, 4) as int) = {{ var("current_academic_year") }}
+        where
+            cast(left(bss.school_year, 4) as int)
+            >= {{ var("current_academic_year") }} - 1
         union all
         select
             left(school_year, 4) as mclass_academic_year,
@@ -219,7 +192,8 @@ with
             score_change as mclass_score_change,
             null as mclass_measure_level_int,
         from {{ ref("stg_amplify__pm_student_summary") }}
-        where cast(left(school_year, 4) as int) = {{ var("current_academic_year") }}
+        where
+            cast(left(school_year, 4) as int) >= {{ var("current_academic_year") }} - 1
     ),
 
     students_schedules_and_assessments_scores as (
@@ -228,7 +202,7 @@ with
             s.academic_year,
             s.district,
             s.region,
-            s.city,
+            s.state,
             s.schoolid,
             s.school,
             s.studentid,
@@ -240,15 +214,18 @@ with
             s.is_out_of_district,
             s.gender,
             s.ethnicity,
+            s.enroll_status,
             s.is_homeless,
             s.is_504,
             s.sped,
             s.lep_status,
             s.lunch_status,
+            s.gifted_and_talented,
+            s.region as schedule_region,
+
             m.schedule_academic_year,
             m.schedule_district,
-            s.region as schedule_region,
-            m.schedule_city,
+            m.schedule_state,
             m.schedule_schoolid,
             m.schedule_studentid,
             m.schedule_student_number,
@@ -261,6 +238,7 @@ with
             m.advisory_name,
             m.expected_test,
             m.scheduled,
+
             a.mclass_academic_year,
             a.mclass_student_number,
             a.assessment_type,
@@ -278,6 +256,7 @@ with
             a.mclass_probe_number,
             a.mclass_total_number_of_probes,
             a.mclass_score_change,
+
         from students as s
         left join
             schedules as m
@@ -357,6 +336,7 @@ with
             s.schedule_student_grade_level,
             s.is_out_of_district,
             s.gender,
+            s.gifted_and_talented,
             s.ethnicity,
             s.is_homeless,
             s.is_504,
@@ -375,8 +355,6 @@ with
             s.mclass_period,
             s.mclass_client_date,
             s.mclass_sync_date,
-            p.boy_probe_eligible,
-            p.moy_probe_eligible,
             s.mclass_measure,
             s.mclass_measure_score,
             s.mclass_score_change,
@@ -385,6 +363,10 @@ with
             s.mclass_measure_percentile,
             s.mclass_measure_semester_growth,
             s.mclass_measure_year_growth,
+
+            p.boy_probe_eligible,
+            p.moy_probe_eligible,
+
             coalesce(s.scheduled, 0) as scheduled,
             coalesce(p.boy, 'No data') as boy_composite,
             coalesce(p.moy, 'No data') as moy_composite,
@@ -393,6 +375,7 @@ with
             coalesce(
                 s.mclass_total_number_of_probes, 0
             ) as mclass_total_number_of_probes,
+
             case
                 when p.boy_probe_eligible = 'Yes' and s.expected_test = 'BOY->MOY'
                 then p.boy_probe_eligible
@@ -404,6 +387,7 @@ with
                 then 'No'
                 else 'Not applicable'
             end as pm_probe_eligible,
+
             case
                 when
                     p.boy_probe_eligible = 'Yes'
@@ -427,6 +411,7 @@ with
                 then 'No'
                 else 'Not applicable'
             end as pm_probe_tested,
+
         from students_schedules_and_assessments_scores as s
         left join
             probe_eligible_tag as p
@@ -448,7 +433,7 @@ with
                 date({{ var("current_academic_year") + 1 }}, 06, 30)
             ) as end_date,
         from {{ ref("stg_reporting__terms") }}
-        where type = 'LIT' and academic_year = {{ var("current_academic_year") }}
+        where type = 'LIT' and academic_year >= {{ var("current_academic_year") }} - 1
     )
 
 select
@@ -473,6 +458,7 @@ select
     b.is_out_of_district,
     b.gender,
     b.ethnicity,
+    b.gifted_and_talented,
     b.is_homeless,
     b.is_504,
     b.sped,
@@ -508,10 +494,14 @@ select
     b.mclass_measure_percentile,
     b.mclass_measure_semester_growth,
     b.mclass_measure_year_growth,
+
     t.name,
     t.start_date,
     t.end_date,
+
     f.nj_student_tier,
+    f.tutoring_nj,
+
     hos.head_of_school_preferred_name_lastfirst as hos,
 from base_roster as b
 left join

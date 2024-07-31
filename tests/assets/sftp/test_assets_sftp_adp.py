@@ -60,7 +60,9 @@ def test_adp_payroll_general_ledger_file_kipptaf():
 
     with instance_for_test() as instance:
         instance.add_dynamic_partitions(
-            partitions_def_name=partitions_def_name, partition_keys=["20240229"]
+            partitions_def_name=partitions_def_name, partition_keys=["20240731"]
         )
 
-        _test_asset(asset=general_ledger_file, instance=instance)
+        _test_asset(
+            asset=general_ledger_file, instance=instance, partition_key="20240731|2Z3"
+        )
