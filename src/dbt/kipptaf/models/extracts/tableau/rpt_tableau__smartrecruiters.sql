@@ -26,7 +26,19 @@ with
             )
     )
 
-select a.*, s.*,
+select
+    application_id,
+    job_city,
+    recruiters,
+    department_internal,
+    job_title,
+    application_status,
+    reason_for_rejection,
+    phone_interview_score,
+    resume_score,
+    status_type,
+    date_val,
+    s.*,
 from applications as a
 left join
     {{ ref("stg_smartrecruiters__applicants") }} as s on a.candidate_id = s.candidate_id

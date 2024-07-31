@@ -1,5 +1,6 @@
 select
     * except (
+        application_id,
         application_field_school_shared_with_miami,
         application_field_school_shared_with_new_jersey,
         screening_question_answer_miami_grad_gpa,
