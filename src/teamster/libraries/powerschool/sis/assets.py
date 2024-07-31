@@ -110,10 +110,10 @@ def build_powerschool_table_asset(
                 raise HandlerSSHTunnelForwarderError from e
 
         file_path = _check.inst(
-            db_powerschool.engine.execute_query(
+            obj=db_powerschool.engine.execute_query(
                 query=sql, partition_size=100000, output_format="avro"
             ),
-            pathlib.Path,
+            ttype=pathlib.Path,
         )
 
         ssh_tunnel.stop()
