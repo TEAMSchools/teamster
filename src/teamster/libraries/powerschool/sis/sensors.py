@@ -154,29 +154,35 @@ def build_powerschool_asset_sensor(
 
             record_count = asset_materialization.metadata["records"].value
 
-            timestamp = _check.inst(
-                obj=asset_materialization.metadata[
-                    "latest_materialization_timestamp"
-                ].value,
-                ttype=float,
-            )
+            if asset.partitions_def is not None:
+                timestamp = _check.inst(
+                    obj=asset_materialization.metadata[
+                        "latest_materialization_timestamp"
+                    ].value,
+                    ttype=float,
+                )
 
-            timestamp_fmt = pendulum.from_timestamp(
-                timestamp=timestamp, tz=execution_timezone
-            ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+                timestamp_fmt = pendulum.from_timestamp(
+                    timestamp=timestamp, tz=execution_timezone
+                ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+            else:
+                timestamp_fmt = None
 
             try:
-                [(modified_count,)] = _check.inst(
-                    db_powerschool.engine.execute_query(
-                        query=get_query_text(
-                            table=table_name,
-                            column=partition_column,
-                            value=timestamp_fmt,
+                if timestamp_fmt is None:
+                    modified_count = 0
+                else:
+                    [(modified_count,)] = _check.inst(
+                        db_powerschool.engine.execute_query(
+                            query=get_query_text(
+                                table=table_name,
+                                column=partition_column,
+                                value=timestamp_fmt,
+                            ),
+                            partition_size=1,
                         ),
-                        partition_size=1,
-                    ),
-                    list,
-                )
+                        list,
+                    )
 
                 [(partition_count,)] = _check.inst(
                     db_powerschool.engine.execute_query(
