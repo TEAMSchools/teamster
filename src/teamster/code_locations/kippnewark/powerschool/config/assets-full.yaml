@@ -7,9 +7,9 @@ assets:
         container_config:
           resources:
             requests:
-              cpu: 1000m
+              cpu: 1250m
             limits:
-              cpu: 1000m
+              cpu: 1250m
   - asset_name: courses
     partition_column: transaction_date
   - asset_name: schools
