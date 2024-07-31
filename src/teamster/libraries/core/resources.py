@@ -103,3 +103,30 @@ def get_dbt_cli_resource(code_location, test=False):
         )
     else:
         return DbtCliResource(project_dir=f"src/dbt/{code_location}")
+
+
+def get_db_powerschool_resource(code_location: str):
+    return OracleResource(
+        engine=SqlAlchemyEngineResource(
+            dialect="oracle",
+            driver="oracledb",
+            host=EnvVar(f"PS_DB_HOST_{code_location}"),
+            database=EnvVar(f"PS_DB_DATABASE_{code_location}"),
+            port=EnvVar(f"PS_DB_PORT_{code_location}"),
+            username=EnvVar(f"PS_DB_USERNAME_{code_location}"),
+            password=EnvVar(f"PS_DB_PASSWORD_{code_location}"),
+        ),
+        version="19.0.0.0.0",
+        prefetchrows=100000,
+        arraysize=100000,
+    )
+
+
+def get_ssh_powerschool_resource(code_location: str):
+    return SSHResource(
+        remote_host=EnvVar(f"PS_SSH_HOST_{code_location}"),
+        remote_port=EnvVar(f"PS_SSH_PORT_{code_location}"),
+        username=EnvVar(f"PS_SSH_USERNAME_{code_location}"),
+        password=EnvVar(f"PS_SSH_PASSWORD_{code_location}"),
+        tunnel_remote_host=EnvVar(f"PS_SSH_REMOTE_BIND_HOST_{code_location}"),
+    )
