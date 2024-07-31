@@ -12,7 +12,6 @@ config_dir = pathlib.Path(__file__).parent / "config"
 powerschool_table_assets_full = [
     build_powerschool_table_asset(
         code_location=CODE_LOCATION,
-        local_timezone=LOCAL_TIMEZONE,
         table_name=a["asset_name"],
         partition_column=a["partition_column"],
         op_tags=a.get("op_tags"),
@@ -23,7 +22,6 @@ powerschool_table_assets_full = [
 powerschool_table_assets_no_partition = [
     build_powerschool_table_asset(
         code_location=CODE_LOCATION,
-        local_timezone=LOCAL_TIMEZONE,
         table_name=a["asset_name"],
         op_tags=a.get("op_tags"),
     )
@@ -33,7 +31,6 @@ powerschool_table_assets_no_partition = [
 powerschool_table_assets_transaction_date = [
     build_powerschool_table_asset(
         code_location=CODE_LOCATION,
-        local_timezone=LOCAL_TIMEZONE,
         table_name=a["asset_name"],
         partitions_def=FiscalYearPartitionsDefinition(
             start_date=pendulum.datetime(year=2018, month=7, day=1),
@@ -50,7 +47,6 @@ powerschool_table_assets_transaction_date = [
 powerschool_table_assets_whenmodified = [
     build_powerschool_table_asset(
         code_location=CODE_LOCATION,
-        local_timezone=LOCAL_TIMEZONE,
         table_name=a["asset_name"],
         partitions_def=MonthlyPartitionsDefinition(
             start_date=pendulum.datetime(year=2018, month=7, day=1),
