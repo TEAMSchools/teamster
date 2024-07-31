@@ -27,17 +27,17 @@ with
     )
 
 select
-    application_id,
-    job_city,
-    recruiters,
-    department_internal,
-    job_title,
-    application_status,
-    reason_for_rejection,
-    phone_interview_score,
-    resume_score,
-    status_type,
-    date_val,
+    a.application_id,
+    a.job_city,
+    a.recruiters,
+    a.department_internal,
+    a.job_title,
+    a.application_status,
+    a.reason_for_rejection,
+    a.phone_interview_score,
+    a.resume_score,
+    a.status_type,
+    a.date_val,
     s.*,
 from applications as a
 left join
