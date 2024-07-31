@@ -211,7 +211,7 @@ with
             if(n.testscalescore >= 725, true, false) as njgpa_pass,
         from students as s
         left join
-            {{ ref("graduation_pathway_code_unpivot") }} as c
+            {{ ref("int_powerschool__graduation_pathway_code_unpivot") }} as c
             on s.students_dcid = c.studentsdcid
             and s.discipline = c.discipline
             and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
@@ -268,7 +268,7 @@ left join
     on r.student_number = o2.local_student_id
     and r.discipline = o2.discipline
 left join
-    {{ ref("graduation_pathway_code_unpivot") }} as u
+    {{ ref("int_powerschool__graduation_pathway_code_unpivot") }} as u
     on r.students_dcid = u.studentsdcid
     and r.discipline = u.discipline
     and {{ union_dataset_join_clause(left_alias="r", right_alias="u") }}
