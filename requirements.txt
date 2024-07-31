@@ -312,9 +312,9 @@ grpcio==1.64.1 \
     --hash=sha256:b1a82e0b9b3022799c336e1fc0f6210adc019ae84efb7321d668129d28ee1efb \
     --hash=sha256:c1a786ac592b47573a5bb7e35665c08064a5d77ab88a076eec11f8ae86b3e3f6 \
     --hash=sha256:ee73a2f5ca4ba44fa33b4d7d2c71e2c8a9e9f78d53f6507ad68e7d2ad5f64a22
-grpcio-health-checking==1.62.2 \
-    --hash=sha256:a44d1ea1e1510b5c62265dada04d86621bb1491d75de987713c9c0ea005c10a8 \
-    --hash=sha256:f0d77e02457aa00e98ce12c741dca6df7e34dbcc3859681c4a473dc589288e56
+grpcio-health-checking==1.65.2 \
+    --hash=sha256:998016aee92093e2919a22d4f8232afe3b9c9f134bf669efef8a7cd5b812eedb \
+    --hash=sha256:aeb8306304111b5e69e4af3a9aba7a8247abcf9843ab9a90e478beb627303cb6
 grpcio-status==1.62.2 \
     --hash=sha256:206ddf0eb36bc99b033f03b2c8e95d319f0044defae9b41ae21408e7e0cda48f \
     --hash=sha256:62e1bfcb02025a1cd73732a2d33672d3e9d0df4d21c12c51e0bbcaf09bab742a
