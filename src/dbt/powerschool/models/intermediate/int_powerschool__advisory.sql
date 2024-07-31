@@ -6,7 +6,7 @@ with
             cc_schoolid as schoolid,
             cc_dateenrolled,
             cc_dateleft,
-            teachernumber as teachernumber,
+            teachernumber,
             is_dropped_section,
             sections_section_number,
             teacher_lastfirst,
@@ -30,6 +30,7 @@ select
     schoolid,
     teachernumber as advisor_teachernumber,
     teacher_lastfirst as advisor_lastfirst,
+
     coalesce(
         nullif(regexp_extract(sections_section_number, r'(\D+)'), ''), teacher_lastfirst
     ) as advisory_name,

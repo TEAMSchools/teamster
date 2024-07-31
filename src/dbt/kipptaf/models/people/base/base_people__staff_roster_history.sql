@@ -531,6 +531,7 @@ with
             ldap.uac_account_disable,
             ldap.google_email,
 
+            sis.last_submitted_timestamp as survey_last_submitted_timestamp,
             sis.additional_languages,
             sis.alumni_status,
             sis.community_grew_up,

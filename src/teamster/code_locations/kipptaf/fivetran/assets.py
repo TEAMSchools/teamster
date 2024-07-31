@@ -22,6 +22,9 @@ def fivetran_external_assets_from_specs(config_file: pathlib.Path, code_location
 
         if schema_name is not None:
             asset_key_prefix.append(schema_name)
+            dataset_id = f"{connector_name}_{schema_name}"
+        else:
+            dataset_id = connector_name
 
         for table in schema["destination_tables"]:
             specs.append(
@@ -31,8 +34,8 @@ def fivetran_external_assets_from_specs(config_file: pathlib.Path, code_location
                     metadata={
                         "connector_id": connector_id,
                         "connector_name": connector_name,
-                        "schema_name": schema_name,
-                        "table_name": table,
+                        "dataset_id": dataset_id,
+                        "table_id": table,
                     },
                 )
             )

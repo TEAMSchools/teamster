@@ -66,6 +66,4 @@ select
         when white = 'Y'
         then 'W'
     end as race_ethnicity,
-
-    regexp_extract(_dbt_source_relation, r'__(\w+)`$') as assessment_name,
 from union_relations

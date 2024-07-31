@@ -2,29 +2,18 @@ from dagster import ScheduleDefinition, define_asset_job
 
 from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kippnewark.powerschool.assets import (
-    full_assets,
-    nonpartition_assets,
-)
-from teamster.libraries.powerschool.sis.schedules import build_powerschool_schedule
-
-last_modified_schedule = build_powerschool_schedule(
-    code_location=CODE_LOCATION,
-    cron_schedule="0 * * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
-    asset_defs=full_assets,
-    max_runtime_seconds=(60 * 10),
+    powerschool_table_assets_no_partition,
 )
 
-nonpartition_asset_job_schedule = ScheduleDefinition(
+powerschool_sis_asset_no_partition_job_schedule = ScheduleDefinition(
     job=define_asset_job(
-        name=f"{CODE_LOCATION}_powerschool_nonpartition_asset_job",
-        selection=nonpartition_assets,
+        name=f"{CODE_LOCATION}_powerschool_sis_assets_no_partition_job",
+        selection=powerschool_table_assets_no_partition,
     ),
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
 schedules = [
-    last_modified_schedule,
-    nonpartition_asset_job_schedule,
+    powerschool_sis_asset_no_partition_job_schedule,
 ]

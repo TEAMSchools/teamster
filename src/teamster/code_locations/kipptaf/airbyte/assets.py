@@ -9,7 +9,11 @@ config_dir = pathlib.Path(__file__).parent
 specs = [
     AssetSpec(
         key=AssetKey([CODE_LOCATION, a["group_name"], table]),
-        metadata={"connection_id": a["connection_id"]},
+        metadata={
+            "connection_id": a["connection_id"],
+            "dataset_id": a["dataset_id"],
+            "table_id": table,
+        },
         group_name=a["group_name"],
     )
     for a in config_from_files([f"{config_dir}/config/assets.yaml"])["assets"]

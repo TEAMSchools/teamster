@@ -4,7 +4,7 @@
 op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env
 
 # update pip
-python -m pip install --no-cache-dir --upgrade pip
+sudo python -m pip install --no-cache-dir --upgrade pip
 
 # update pdm
 sudo /usr/local/py-utils/bin/pdm self update
@@ -13,7 +13,7 @@ sudo /usr/local/py-utils/bin/pdm self update
 trunk upgrade -y --no-progress
 
 # update dbt cloud cli
-sudo python -m pip install --upgrade dbt
+# sudo python -m pip install --upgrade dbt
 
 # set default kubectl context
 kubectl config set-context --current --namespace=dagster-cloud
