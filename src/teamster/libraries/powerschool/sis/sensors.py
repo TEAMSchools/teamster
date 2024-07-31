@@ -72,8 +72,7 @@ def build_powerschool_asset_sensor(
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ) -> SensorResult | SkipReason:
-        # limit run requests to 1/hr
-        hour_timestamp = pendulum.now().start_of("hour").timestamp()
+        now_timestamp = pendulum.now().timestamp()
 
         run_requests = []
         run_request_kwargs = []
@@ -230,7 +229,7 @@ def build_powerschool_asset_sensor(
         ):
             run_requests.append(
                 RunRequest(
-                    run_key=f"{job_name}_{parition_key}_{hour_timestamp}",
+                    run_key=f"{job_name}_{parition_key}_{now_timestamp}",
                     job_name=job_name,
                     partition_key=parition_key,
                     asset_selection=[g["asset_key"] for g in group],
