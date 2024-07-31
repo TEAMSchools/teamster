@@ -20,24 +20,36 @@ select
         screening_question_answer_national_are_you_alumnus,
         screening_question_answer_national_in_which_regions_alumnus,
         screening_question_answer_new_jersey_out_of_state_sped_credits,
-        -- trunk-ignore(sqlfluff/LT05)
+        screening_question_answer_miami_teacher_certification_endorsement_question,
+        screening_question_answer_new_jersey_miami_city_of_interest,
+        screening_question_answer_new_jersey_miami_how_did_you_hear_about_kipp_nj_miami,
+        -- trunk-ignore-begin(sqlfluff/LT05)
+        screening_question_answer_new_jersey_out_of_state_teacher_certification_sped_credits,
         screening_question_answer_new_jersey_miami_current_or_former_kipp_nj_miami_employee
+    -- trunk-ignore-end(sqlfluff/LT05)
     ),
 
+    screening_question_answer_miami_teacher_certification_endorsement_question
+    as teacher_certification_endorsement_question,
     screening_question_answer_national_are_you_alumnus as kf_are_you_alumnus,
     screening_question_answer_national_gender as kf_gender,
     screening_question_answer_national_in_which_regions_alumnus
     as kf_in_which_regions_alumnus,
     screening_question_answer_national_race as kf_race,
     screening_question_answer_new_jersey_miami_affiliated_orgs as taf_affiliated_orgs,
+    screening_question_answer_new_jersey_miami_city_of_interest as city_of_interest,
     screening_question_answer_new_jersey_miami_current_or_former_kipp_employee
     as taf_current_or_former_kipp_employee,
     screening_question_answer_new_jersey_miami_current_or_former_kipp_nj_miami_employee
     as taf_current_or_former_kipp_nj_miami_employee,
     screening_question_answer_new_jersey_miami_expected_salary as taf_expected_salary,
+    screening_question_answer_new_jersey_miami_how_did_you_hear_about_kipp_nj_miami
+    as how_did_you_hear_about_kipp_nj_miami,
     screening_question_answer_new_jersey_miami_other_orgs as taf_other_orgs,
     screening_question_answer_new_jersey_out_of_state_sped_credits
     as nj_out_of_state_sped_credits,
+    screening_question_answer_new_jersey_out_of_state_teacher_certification_sped_credits
+    as out_of_state_teacher_certification_sped_credits,
 
     concat(candidate_last_name, ', ', candidate_first_name) as candidate_last_first,
 
