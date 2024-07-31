@@ -72,8 +72,7 @@ def build_powerschool_asset_sensor(
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ) -> SensorResult | SkipReason:
-        # limit run requests to 1/hr
-        hour_timestamp = pendulum.now().start_of("hour").timestamp()
+        now_timestamp = pendulum.now().timestamp()
 
         run_requests = []
         run_request_kwargs = []
@@ -154,29 +153,35 @@ def build_powerschool_asset_sensor(
 
             record_count = asset_materialization.metadata["records"].value
 
-            timestamp = _check.inst(
-                obj=asset_materialization.metadata[
-                    "latest_materialization_timestamp"
-                ].value,
-                ttype=float,
-            )
+            if asset.partitions_def is not None:
+                timestamp = _check.inst(
+                    obj=asset_materialization.metadata[
+                        "latest_materialization_timestamp"
+                    ].value,
+                    ttype=float,
+                )
 
-            timestamp_fmt = pendulum.from_timestamp(
-                timestamp=timestamp, tz=execution_timezone
-            ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+                timestamp_fmt = pendulum.from_timestamp(
+                    timestamp=timestamp, tz=execution_timezone
+                ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+            else:
+                timestamp_fmt = None
 
             try:
-                [(modified_count,)] = _check.inst(
-                    db_powerschool.engine.execute_query(
-                        query=get_query_text(
-                            table=table_name,
-                            column=partition_column,
-                            value=timestamp_fmt,
+                if timestamp_fmt is None:
+                    modified_count = 0
+                else:
+                    [(modified_count,)] = _check.inst(
+                        db_powerschool.engine.execute_query(
+                            query=get_query_text(
+                                table=table_name,
+                                column=partition_column,
+                                value=timestamp_fmt,
+                            ),
+                            partition_size=1,
                         ),
-                        partition_size=1,
-                    ),
-                    list,
-                )
+                        list,
+                    )
 
                 [(partition_count,)] = _check.inst(
                     db_powerschool.engine.execute_query(
@@ -224,7 +229,7 @@ def build_powerschool_asset_sensor(
         ):
             run_requests.append(
                 RunRequest(
-                    run_key=f"{job_name}_{parition_key}_{hour_timestamp}",
+                    run_key=f"{job_name}_{parition_key}_{now_timestamp}",
                     job_name=job_name,
                     partition_key=parition_key,
                     asset_selection=[g["asset_key"] for g in group],
