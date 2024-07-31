@@ -1,11 +1,11 @@
 with
     survey_reconciliation as (
         select
-            `Survey response ID` as survey_response_id,
-            `Salesforce contact ID` as sf_contact_id,
+            survey_response_id,
+            sf_contact_id,
 
             row_number() over (
-                partition by `Survey response ID` order by date_submitted desc
+                partition by survey_response_id order by date_submitted desc
             ) as rn_response_id,
         from
             (
@@ -15,8 +15,10 @@ with
                     survey_title
                     = 'Career Launch Survey invalid response reconciliation'
             ) pivot (
-                max(answer) for question_title
-                in ('Survey response ID', 'Salesforce contact ID')
+                max(answer) for question_title in (
+                    'Survey response ID' as survey_response_id,
+                    'Salesforce contact ID' as sf_contact_id
+                )
             )
     ),
 
