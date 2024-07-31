@@ -9,6 +9,7 @@ from dagster import (
     MonthlyPartitionsDefinition,
     Output,
     SkipReason,
+    TimeWindowPartitionsDefinition,
     _check,
     asset,
 )
@@ -39,9 +40,7 @@ def file_as_blockiter(file: BufferedReader, size: int = 65536):
 def build_powerschool_table_asset(
     code_location,
     table_name: str,
-    partitions_def: (
-        FiscalYearPartitionsDefinition | MonthlyPartitionsDefinition | None
-    ) = None,
+    partitions_def: TimeWindowPartitionsDefinition | None = None,
     partition_column: str | None = None,
     select_columns: list[str] | None = None,
     op_tags: dict | None = None,
