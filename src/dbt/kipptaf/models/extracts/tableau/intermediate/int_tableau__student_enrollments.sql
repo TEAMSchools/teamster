@@ -70,7 +70,7 @@ left join
 left join
     {{ ref("int_kippadb__roster") }} as adb on e.student_number = adb.student_number
 left join
-    {{ ref("graduation_pathway_code_unpivot") }} as dlm
+    {{ ref("int_powerschool__graduation_pathway_code_unpivot") }} as dlm
     on e.students_dcid = dlm.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="dlm") }}
     and dlm.code = 'M'
