@@ -4,11 +4,7 @@ import pendulum
 from dagster import AssetsDefinition, DagsterInstance, MultiPartitionKey, materialize
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
-from teamster.libraries.core.resources import (
-    BIGQUERY_RESOURCE,
-    GCS_RESOURCE,
-    SSH_COUCHDROP,
-)
+from teamster.core.resources import BIGQUERY_RESOURCE, GCS_RESOURCE, SSH_COUCHDROP
 from teamster.libraries.datagun.assets import format_file_name
 
 

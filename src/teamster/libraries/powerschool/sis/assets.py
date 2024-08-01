@@ -17,7 +17,7 @@ from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 from sshtunnel import HandlerSSHTunnelForwarderError
 
-from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.sqlalchemy.resources import OracleResource
 from teamster.libraries.ssh.resources import SSHResource
 

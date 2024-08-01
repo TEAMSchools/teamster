@@ -2,7 +2,7 @@ import random
 
 from dagster import materialize
 
-from teamster.libraries.core.resources import SSH_COUCHDROP, get_io_manager_gcs_avro
+from teamster.core.resources import SSH_COUCHDROP, get_io_manager_gcs_avro
 
 
 def _test_asset(asset, partition_key=None):

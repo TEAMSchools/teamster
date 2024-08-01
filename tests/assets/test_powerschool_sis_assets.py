@@ -3,7 +3,7 @@ import random
 from dagster import _check, materialize
 from dagster._core.events import StepMaterializationData
 
-from teamster.libraries.core.resources import (
+from teamster.core.resources import (
     get_db_powerschool_resource,
     get_io_manager_gcs_file,
     get_ssh_powerschool_resource,

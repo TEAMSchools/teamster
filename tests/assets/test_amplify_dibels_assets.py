@@ -3,7 +3,7 @@ from dagster._core.events import StepMaterializationData
 
 from teamster.code_locations.kipptaf.amplify.dibels.assets import data_farming
 from teamster.code_locations.kipptaf.resources import DIBELS_DATA_SYSTEM_RESOURCE
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def test_data_farming():

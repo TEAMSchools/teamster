@@ -3,7 +3,7 @@ from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
 
 from teamster import GCS_PROJECT_NAME
-from teamster.libraries.core.io_managers.gcs import GCSIOManager
+from teamster.core.io_managers.gcs import GCSIOManager
 from teamster.libraries.deanslist.resources import DeansListResource
 from teamster.libraries.sqlalchemy.resources import (
     OracleResource,
