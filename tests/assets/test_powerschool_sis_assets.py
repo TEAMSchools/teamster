@@ -67,3 +67,15 @@ def test_reenrollments_kippnewark():
         ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
         db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
     )
+
+
+def test_cc_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="cc",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )

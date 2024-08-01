@@ -179,6 +179,8 @@ def build_powerschool_asset_sensor(
                                 value=timestamp_fmt,
                             ),
                             partition_size=1,
+                            prefetch_rows=1,
+                            array_size=1,
                         ),
                         list,
                     )
@@ -191,6 +193,8 @@ def build_powerschool_asset_sensor(
                             value=partition_key_fmt,
                         ),
                         partition_size=1,
+                        prefetch_rows=1,
+                        array_size=1,
                     ),
                     list,
                 )

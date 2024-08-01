@@ -42,6 +42,9 @@ def build_powerschool_table_asset(
     table_name: str,
     partitions_def: TimeWindowPartitionsDefinition | None = None,
     partition_column: str | None = None,
+    partition_size: int = 50000,
+    prefetch_rows: int = 50000,
+    array_size: int = 500000,
     select_columns: list[str] | None = None,
     op_tags: dict | None = None,
 ) -> AssetsDefinition:
@@ -118,20 +121,24 @@ def build_powerschool_table_asset(
 
         try:
             ssh_tunnel.start()
+
+            file_path = _check.inst(
+                obj=db_powerschool.execute_query(
+                    query=sql,
+                    output_format="avro",
+                    partition_size=partition_size,
+                    prefetch_rows=prefetch_rows,
+                    array_size=array_size,
+                ),
+                ttype=pathlib.Path,
+            )
         except HandlerSSHTunnelForwarderError as e:
             if "An error occurred while opening tunnels." in e.args:
                 return SkipReason(str(e))
             else:
-                raise HandlerSSHTunnelForwarderError from e
-
-        file_path = _check.inst(
-            obj=db_powerschool.engine.execute_query(
-                query=sql, partition_size=100000, output_format="avro"
-            ),
-            ttype=pathlib.Path,
-        )
-
-        ssh_tunnel.stop()
+                raise e
+        finally:
+            ssh_tunnel.stop()
 
         with file_path.open(mode="rb") as f:
             num_records = sum(block.num_records for block in block_reader(f))
