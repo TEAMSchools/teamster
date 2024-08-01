@@ -1,6 +1,6 @@
 from dagster import (
     Definitions,
-    load_asset_checks_from_modules,
+    build_sensor_for_freshness_checks,
     load_assets_from_modules,
 )
 from dagster_k8s import k8s_job_executor
@@ -56,7 +56,7 @@ defs = Definitions(
             tableau,
         ]
     ),
-    asset_checks=load_asset_checks_from_modules(modules=[asset_checks]),
+    asset_checks=asset_checks.freshness_checks,
     schedules=[
         *_dbt.schedules,
         *_google.schedules,
@@ -75,6 +75,9 @@ defs = Definitions(
         *adp.sensors,
         *deanslist.sensors,
         *tableau.sensors,
+        build_sensor_for_freshness_checks(
+            freshness_checks=asset_checks.freshness_checks
+        ),
     ],
     resources={
         # shared
