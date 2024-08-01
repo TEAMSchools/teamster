@@ -7,7 +7,10 @@ from dagster import (
     _check,
     sensor,
 )
-from tableauserverclient.server.endpoint.exceptions import InternalServerError
+from tableauserverclient.server.endpoint.exceptions import (
+    InternalServerError,
+    NotSignedInError,
+)
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.tableau.assets import external_assets
@@ -32,7 +35,7 @@ def tableau_asset_sensor(
 
         try:
             workbook = tableau._server.workbooks.get_by_id(asset_metadata["id"])
-        except InternalServerError as e:
+        except (InternalServerError, NotSignedInError) as e:
             context.log.exception(e)
             continue
 

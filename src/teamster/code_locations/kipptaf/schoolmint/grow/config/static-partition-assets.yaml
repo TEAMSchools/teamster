@@ -9,7 +9,6 @@ endpoints:
   - asset_name: generic-tags/observationtypes
   - asset_name: generic-tags/rubrictag1
   - asset_name: generic-tags/schooltag1
-  - asset_name: generic-tags/tags
   - asset_name: generic-tags/usertag1
   - asset_name: generic-tags/usertypes
   - asset_name: informals
@@ -20,3 +19,12 @@ endpoints:
   - asset_name: schools
   - asset_name: users
   - asset_name: videos
+  - asset_name: generic-tags/tags
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              cpu: 750m
+            limits:
+              cpu: 750m
