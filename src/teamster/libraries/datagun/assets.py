@@ -83,10 +83,12 @@ def load_sftp(
     context: AssetExecutionContext,
     ssh: SSHResource,
     data,
-    file_name,
-    destination_path,
+    file_name: str,
+    destination_path: str,
 ):
     with ssh.get_connection().open_sftp() as sftp:
+        _check.not_none(value=sftp.get_channel()).settimeout(ssh.timeout)
+
         sftp.chdir(".")
 
         cwd_path = pathlib.Path(str(sftp.getcwd()))

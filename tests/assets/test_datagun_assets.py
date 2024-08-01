@@ -4,10 +4,6 @@ import pendulum
 from dagster import AssetsDefinition, DagsterInstance, MultiPartitionKey, materialize
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.resources import (
-    SSH_RESOURCE_DEANSLIST,
-    SSH_RESOURCE_LITTLESIS,
-)
 from teamster.libraries.core.resources import (
     BIGQUERY_RESOURCE,
     GCS_RESOURCE,
@@ -16,7 +12,9 @@ from teamster.libraries.core.resources import (
 from teamster.libraries.datagun.assets import format_file_name
 
 
-def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
+def _test_asset(
+    asset: AssetsDefinition, partition_key=None, instance=None, **ssh_kwargs
+):
     if asset.partitions_def is not None and partition_key is None:
         partition_keys = asset.partitions_def.get_partition_keys(
             dynamic_partitions_store=instance
@@ -28,13 +26,7 @@ def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
         assets=[asset],
         partition_key=partition_key,
         instance=instance,
-        resources={
-            "gcs": GCS_RESOURCE,
-            "db_bigquery": BIGQUERY_RESOURCE,
-            "ssh_couchdrop": SSH_COUCHDROP,
-            "ssh_littlesis": SSH_RESOURCE_LITTLESIS,
-            "ssh_deanslist": SSH_RESOURCE_DEANSLIST,
-        },
+        resources={"gcs": GCS_RESOURCE, "db_bigquery": BIGQUERY_RESOURCE, **ssh_kwargs},
     )
 
     assert result.success
@@ -132,6 +124,7 @@ def test_intacct_extract_asset():
         instance=DagsterInstance.from_config(
             config_dir=".dagster/home", config_filename="dagster-cloud.yaml"
         ),
+        ssh_couchdrop=SSH_COUCHDROP,
     )
 
 
@@ -143,19 +136,36 @@ def test_datagun_powerschool_kippnewark():
     _test_asset(
         asset=powerschool_extract_assets[
             random.randint(a=0, b=(len(powerschool_extract_assets) - 1))
-        ]
+        ],
+        ssh_couchdrop=SSH_COUCHDROP,
     )
 
 
 def test_littlesis_extract():
     from teamster.code_locations.kipptaf.datagun.assets import littlesis_extract
+    from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_LITTLESIS
 
-    _test_asset(asset=littlesis_extract)
+    _test_asset(asset=littlesis_extract, ssh_littlesis=SSH_RESOURCE_LITTLESIS)
 
 
 def test_deanslist_jsongz():
     from teamster.code_locations.kipptaf.datagun.assets import (
         deanslist_continuous_extract,
     )
+    from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_DEANSLIST
 
-    _test_asset(asset=deanslist_continuous_extract)
+    _test_asset(
+        asset=deanslist_continuous_extract, ssh_deanslist=SSH_RESOURCE_DEANSLIST
+    )
+
+
+def test_clever_extract():
+    from teamster.code_locations.kipptaf.datagun.assets import clever_extract_assets
+    from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_CLEVER
+
+    _test_asset(
+        asset=clever_extract_assets[
+            random.randint(a=0, b=(len(clever_extract_assets) - 1))
+        ],
+        ssh_clever=SSH_RESOURCE_CLEVER,
+    )
