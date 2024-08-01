@@ -36,7 +36,7 @@ with
 
             if(e.spedlep in ('No IEP', null), 0, 1) as sped,
 
-        -- if(d.student_number is null, false, true) as dlm,
+            if(d.student_number is null, false, true) as dlm,
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -59,7 +59,7 @@ with
             on e.academic_year = t.academic_year
             and e.grade_level = t.grade
             and t.assessment_type = 'College Entrance'
-        -- left join dlm as d on e.student_number = d.student_number
+        left join dlm as d on e.student_number = d.student_number
         where
             e.academic_year >= {{ var("current_academic_year") }} - 1
             and e.rn_year = 1
