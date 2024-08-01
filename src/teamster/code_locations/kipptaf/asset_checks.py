@@ -21,3 +21,7 @@ adp_wfn_freshness_checks = build_last_update_freshness_checks(
     deadline_cron="0 4 * * *",
     timezone=LOCAL_TIMEZONE.name,
 )
+
+freshness_checks = [
+    *adp_wfn_freshness_checks,
+]
