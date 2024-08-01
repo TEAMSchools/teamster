@@ -253,3 +253,4 @@ left join
     on r.students_dcid = u.studentsdcid
     and r.discipline = u.discipline
     and {{ union_dataset_join_clause(left_alias="r", right_alias="u") }}
+    and u.value_type = 'Graduation Pathway'
