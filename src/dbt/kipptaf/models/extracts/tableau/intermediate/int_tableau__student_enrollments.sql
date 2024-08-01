@@ -76,6 +76,7 @@ left join
     {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as dlm
     on e.students_dcid = dlm.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="dlm") }}
+    and dlm.value_type = 'Graduation Pathway'
     and dlm.values_column = 'M'
 left join
     {{ ref("int_powerschool__spenrollments") }} as sp
