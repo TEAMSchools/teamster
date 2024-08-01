@@ -5,10 +5,7 @@ from dagster_gcp import BigQueryResource, GCSResource
 from teamster import GCS_PROJECT_NAME
 from teamster.core.io_managers.gcs import GCSIOManager
 from teamster.libraries.deanslist.resources import DeansListResource
-from teamster.libraries.sqlalchemy.resources import (
-    OracleResource,
-    SqlAlchemyEngineResource,
-)
+from teamster.libraries.sqlalchemy.resources import OracleResource
 from teamster.libraries.ssh.resources import SSHResource
 
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
@@ -16,18 +13,14 @@ GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 BIGQUERY_RESOURCE = BigQueryResource(project=GCS_PROJECT_NAME)
 
 DB_POWERSCHOOL = OracleResource(
-    engine=SqlAlchemyEngineResource(
-        dialect="oracle",
-        driver="oracledb",
-        host=EnvVar("PS_DB_HOST"),
-        database=EnvVar("PS_DB_DATABASE"),
-        port=EnvVar("PS_DB_PORT"),
-        username=EnvVar("PS_DB_USERNAME"),
-        password=EnvVar("PS_DB_PASSWORD"),
-    ),
+    dialect="oracle",
+    driver="oracledb",
+    host=EnvVar("PS_DB_HOST"),
+    database=EnvVar("PS_DB_DATABASE"),
+    port=EnvVar("PS_DB_PORT"),
+    username=EnvVar("PS_DB_USERNAME"),
+    password=EnvVar("PS_DB_PASSWORD"),
     version="19.0.0.0.0",
-    prefetchrows=100000,
-    arraysize=100000,
 )
 
 DEANSLIST_RESOURCE = DeansListResource(
@@ -107,18 +100,14 @@ def get_dbt_cli_resource(code_location, test=False):
 
 def get_db_powerschool_resource(code_location: str):
     return OracleResource(
-        engine=SqlAlchemyEngineResource(
-            dialect="oracle",
-            driver="oracledb",
-            host=EnvVar(f"PS_DB_HOST_{code_location}"),
-            database=EnvVar(f"PS_DB_DATABASE_{code_location}"),
-            port=EnvVar(f"PS_DB_PORT_{code_location}"),
-            username=EnvVar(f"PS_DB_USERNAME_{code_location}"),
-            password=EnvVar(f"PS_DB_PASSWORD_{code_location}"),
-        ),
+        dialect="oracle",
+        driver="oracledb",
+        host=EnvVar(f"PS_DB_HOST_{code_location}"),
+        database=EnvVar(f"PS_DB_DATABASE_{code_location}"),
+        port=EnvVar(f"PS_DB_PORT_{code_location}"),
+        username=EnvVar(f"PS_DB_USERNAME_{code_location}"),
+        password=EnvVar(f"PS_DB_PASSWORD_{code_location}"),
         version="19.0.0.0.0",
-        prefetchrows=100000,
-        arraysize=100000,
     )
 
 
