@@ -318,13 +318,8 @@ with
         select
             r.student_number,
 
-            case
-                a.subject when 'ela' then 'ELA' when 'math' then 'Math'
-            end as discipline,
-
-            case
-                a.subject when 'ela' then 'ELA' when 'math' then 'Math'
-            end as `subject`,
+            a.discipline,
+            a.discipline as `subject`,
 
             case
                 when a.is_iep_eligible
@@ -340,8 +335,8 @@ with
         from roster as r
         inner join
             {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as a
-            on co.students_dcid = a.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
+            on r.students_dcid = a.studentsdcid
+            and {{ union_dataset_join_clause(left_alias="r", right_alias="a") }}
             and a.value_type = 'Graduation Pathway'
             and a.values_column in ('M', 'N')
     )
