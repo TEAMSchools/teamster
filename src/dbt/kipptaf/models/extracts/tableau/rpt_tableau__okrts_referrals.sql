@@ -67,6 +67,8 @@ select
 
     ada.days_absent_unexcused,
 
+    gpa.gpa_y1,
+
     if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
     if(co.is_504, 'Has 504', 'No 504') as status_504,
@@ -112,6 +114,8 @@ select
     max(if(st.suspension_type = 'ISS', 1, 0)) over (
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_iss_int,
+
+    if(ra.student_school_id is not null, true, false) as is_tier3_4,
 
     row_number() over (
         partition by co.academic_year, co.student_number
@@ -164,6 +168,19 @@ left join
     on co.studentid = ada.studentid
     and co.yearid = ada.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
+left join
+    {{ ref("int_powerschool__gpa_term") }} as gpa
+    on co.studentid = gpa.studentid
+    and co.yearid = gpa.yearid
+    and gpa.is_current
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+left join
+    {{ ref("stg_deanslist__roster_assignments") }} as ra
+    on co.student_number = ra.student_school_id
+inner join
+    {{ ref("stg_deanslist__rosters") }} as r
+    on ra.dl_roster_id = r.roster_id
+    and r.roster_name = 'Tier 3/Tier 4 Intervention'
 where
     co.rn_year = 1
     and co.academic_year >= {{ var("current_academic_year") }} - 1
