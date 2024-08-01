@@ -10,14 +10,14 @@ with
             e.grade_level,
             e.enroll_status,
 
-            adb.contact_id as kippadb_contact_id,
-
             discipline,
+
+            adb.contact_id as kippadb_contact_id,
         from {{ ref("base_powerschool__student_enrollments") }} as e
+        cross join unnest(['Math', 'ELA']) as discipline
         left join
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
-        cross join unnest(['Math', 'ELA']) as discipline
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.grade_level between 9 and 12
@@ -170,12 +170,15 @@ with
 
         select
             localstudentidentifier as student_number,
+
             safe_cast(statestudentidentifier as string) as state_studentnumber,
+
             `subject`,
             testcode,
             testscalescore,
+
             case
-                when testcode = 'ELAGP' then 'ELA' when testcode = 'MATGP' then 'Math'
+                testcode when 'ELAGP' then 'ELA' when 'MATGP' then 'Math'
             end as discipline,
         from {{ ref("stg_pearson__njgpa") }}
         where testscorecomplete = 1 and testcode in ('ELAGP', 'MATGP')
@@ -188,37 +191,10 @@ with
             testcode,
             `subject`,
             discipline,
+
             max(testscalescore) as testscalescore,
         from njgpa
         group by student_number, state_studentnumber, testcode, `subject`, discipline
-    ),
-
-    roster as (
-        select
-            s._dbt_source_relation,
-            s.academic_year,
-            s.student_number,
-            s.students_dcid,
-            s.state_studentnumber,
-            s.kippadb_contact_id,
-            s.grade_level,
-            s.enroll_status,
-            s.discipline,
-
-            c.code,
-
-            if(n.testscalescore is null, false, true) as njgpa_attempt,
-            if(n.testscalescore >= 725, true, false) as njgpa_pass,
-        from students as s
-        left join
-            {{ ref("int_powerschool__graduation_pathway_code_unpivot") }} as c
-            on s.students_dcid = c.studentsdcid
-            and s.discipline = c.discipline
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
-        left join
-            njgpa_rollup as n
-            on s.state_studentnumber = n.state_studentnumber
-            and s.discipline = n.discipline
     )
 
 select
@@ -228,15 +204,16 @@ select
     r.grade_level,
     r.enroll_status,
     r.discipline,
-    r.njgpa_attempt,
-    r.njgpa_pass,
+
+    if(n.testscalescore is null, false, true) as njgpa_attempt,
+    if(n.testscalescore >= 725, true, false) as njgpa_pass,
 
     coalesce(o1.act, false) as act,
     coalesce(o1.sat, false) as sat,
 
     coalesce(o2.psat10, false) as psat10,
 
-    if(r.grade_level = 12, r.code, u.code) as code,
+    if(r.grade_level = 12, r.code, u.values_column) as code,
 
     case
         when r.grade_level != 12
@@ -258,7 +235,11 @@ select
         then 'J'
         else 'R'
     end as final_grad_path,
-from roster as r
+from students as r
+left join
+    njgpa_rollup as n
+    on r.state_studentnumber = n.state_studentnumber
+    and r.discipline = n.discipline
 left join
     act_sat_pivot as o1
     on r.kippadb_contact_id = o1.contact
@@ -268,7 +249,7 @@ left join
     on r.student_number = o2.local_student_id
     and r.discipline = o2.discipline
 left join
-    {{ ref("int_powerschool__graduation_pathway_code_unpivot") }} as u
+    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as u
     on r.students_dcid = u.studentsdcid
     and r.discipline = u.discipline
     and {{ union_dataset_join_clause(left_alias="r", right_alias="u") }}
