@@ -148,6 +148,26 @@ with
             {{ ref("stg_deanslist__roster_assignments") }} as a
             on r.roster_id = a.dl_roster_id
         where r.school_id = 472 and r.roster_type = 'House' and r.active = 'Y'
+    ),
+
+    state_assessment_exempt as (
+        select
+            'ELA' as discipline,
+
+            studentsdcid,
+            _dbt_source_relation,
+            state_assessment_name as test_type_code,
+        from {{ ref("stg_powerschool__s_nj_stu_x") }}
+
+        union all
+
+        select
+            'Math' as discipline,
+
+            studentsdcid,
+            _dbt_source_relation,
+            math_state_assessment_name as test_type_code,
+        from {{ ref("stg_powerschool__s_nj_stu_x") }}
     )
 
 select
@@ -198,6 +218,19 @@ select
     if(
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
     ) as assessment_dashboard_join,
+
+    case
+        when
+            co.grade_level < 3
+            and co.is_self_contained
+            and co.special_education_code in ('CMI', 'CMO', 'CSE')
+        then true
+        when sj.discipline = 'ELA' and test_type_code in ('2', '3', '4')
+        then true
+        when sj.discipline = 'Math' and test_type_code = '3'
+        then true
+        else false
+    end as is_exempt_state_testing,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -240,4 +273,9 @@ left join
     and a.values_column = 'M'
 left join
     mia_territory as mt on co.student_number = mt.student_number and mt.rn_territory = 1
+left join
+    state_assessment_exempt as se
+    on co.students_dcid = se.studentsdcid
+    and sj.discipline = se.discipline
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}
