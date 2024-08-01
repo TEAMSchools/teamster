@@ -44,8 +44,11 @@ select
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
     if(dlm.studentsdcid is null, false, true) as is_dlm,
+
     if(sp.studentid is not null, 1, null) as is_counseling_services,
+
     if(sa.studentid is not null, 1, null) as is_student_athlete,
 
     case
@@ -70,10 +73,10 @@ left join
 left join
     {{ ref("int_kippadb__roster") }} as adb on e.student_number = adb.student_number
 left join
-    {{ ref("int_powerschool__graduation_pathway_code_unpivot") }} as dlm
+    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as dlm
     on e.students_dcid = dlm.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="dlm") }}
-    and dlm.code = 'M'
+    and dlm.values_column = 'M'
 left join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on e.studentid = sp.studentid
