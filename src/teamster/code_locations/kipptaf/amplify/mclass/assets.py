@@ -1,5 +1,3 @@
-from dagster import MAX_RUNTIME_SECONDS_TAG
-
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.amplify.mclass.schema import (
     BENCHMARK_STUDENT_SUMMARY_SCHEMA,
@@ -26,7 +24,6 @@ benchmark_student_summary = build_mclass_asset(
     dyd_payload={**DYD_PAYLOAD, "dyd_results": "BM"},
     partitions_def=PARTITIONS_DEF,
     schema=BENCHMARK_STUDENT_SUMMARY_SCHEMA,
-    op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 15)},
 )
 
 pm_student_summary = build_mclass_asset(
