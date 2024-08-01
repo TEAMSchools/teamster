@@ -66,8 +66,6 @@ assets:
     partition_column: whenmodified
   - asset_name: teachercategory
     partition_column: whenmodified
-  - asset_name: u_def_ext_students
-    partition_column: whenmodified
   - asset_name: u_studentsuserfields
     partition_column: whenmodified
   - asset_name: users
