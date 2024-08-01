@@ -5,7 +5,7 @@ from dagster import SensorResult, build_sensor_context
 
 from teamster.code_locations.kipptaf.fivetran.sensors import fivetran_sync_status_sensor
 from teamster.code_locations.kipptaf.resources import FIVETRAN_RESOURCE
-from teamster.libraries.core.resources import BIGQUERY_RESOURCE
+from teamster.core.resources import BIGQUERY_RESOURCE
 
 
 def test_fivetran_sync_status_sensor():

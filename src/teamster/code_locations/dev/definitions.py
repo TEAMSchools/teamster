@@ -11,7 +11,7 @@ from teamster.code_locations.kipptaf import (  # adp,; airbyte,; amplify,; couch
     CODE_LOCATION,
     _dbt,
 )
-from teamster.libraries.core.resources import (  # BIGQUERY_RESOURCE,; SSH_COUCHDROP,
+from teamster.core.resources import (  # BIGQUERY_RESOURCE,; SSH_COUCHDROP,
     GCS_RESOURCE,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,

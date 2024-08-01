@@ -5,7 +5,7 @@ from dagster._core.events import StepMaterializationData
 
 from teamster.code_locations.kipptaf.resources import SCHOOLMINT_GROW_RESOURCE
 from teamster.code_locations.kipptaf.schoolmint.grow.assets import assets
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(assets, asset_name, partition_key=None):

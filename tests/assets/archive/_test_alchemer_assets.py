@@ -12,7 +12,7 @@ from teamster.code_locations.kipptaf.alchemer.assets import (
 
 # trunk-ignore(pyright/reportAttributeAccessIssue)
 from teamster.code_locations.kipptaf.resources import ALCHEMER_RESOURCE
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 
 SURVEY_IDS = [
     "2934233",

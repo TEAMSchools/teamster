@@ -55,12 +55,13 @@ with
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
         left join
-            {{ ref("stg_assessments__college_readiness_expected_tests") }} as t
+            {{ ref("stg_assessments__assessment_expectations") }} as t
             on e.academic_year = t.academic_year
             and e.grade_level = t.grade
+            and t.assessment_type = 'College Entrance'
         left join dlm as d on e.student_number = d.student_number
         where
-            e.academic_year = {{ var("current_academic_year") }}
+            e.academic_year >= {{ var("current_academic_year") }} - 1
             and e.rn_year = 1
             and e.school_level = 'HS'
             and e.schoolid != 999999
