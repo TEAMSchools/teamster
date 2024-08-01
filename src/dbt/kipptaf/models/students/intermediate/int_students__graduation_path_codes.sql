@@ -205,13 +205,13 @@ select
     r.enroll_status,
     r.discipline,
 
-    if(n.testscalescore is null, false, true) as njgpa_attempt,
-    if(n.testscalescore >= 725, true, false) as njgpa_pass,
-
     coalesce(o1.act, false) as act,
     coalesce(o1.sat, false) as sat,
 
     coalesce(o2.psat10, false) as psat10,
+
+    if(n.testscalescore is null, false, true) as njgpa_attempt,
+    if(n.testscalescore >= 725, true, false) as njgpa_pass,
 
     if(r.grade_level = 12, r.code, u.values_column) as code,
 
