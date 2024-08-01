@@ -15,11 +15,11 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.libraries.core.utils.functions import regex_pattern_replace
+from teamster.core.utils.functions import regex_pattern_replace
 from teamster.libraries.ssh.resources import SSHResource
 
 

@@ -9,7 +9,7 @@ from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from pydantic import PrivateAttr
 from sqlalchemy.engine import URL, Engine, Row, create_engine, result
 
-from teamster.libraries.core.utils.classes import CustomJSONEncoder
+from teamster.core.utils.classes import CustomJSONEncoder
 from teamster.libraries.sqlalchemy.schema import ORACLE_AVRO_SCHEMA_TYPES
 
 

@@ -5,8 +5,8 @@ from teamster.code_locations.kipptaf.amplify.mclass.schema import (
     BENCHMARK_STUDENT_SUMMARY_SCHEMA,
     PM_STUDENT_SUMMARY_SCHEMA,
 )
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.amplify.mclass.assets import build_mclass_asset
-from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
 
 PARTITIONS_DEF = FiscalYearPartitionsDefinition(
     start_date="2022-07-01", timezone=LOCAL_TIMEZONE.name, start_month=7
