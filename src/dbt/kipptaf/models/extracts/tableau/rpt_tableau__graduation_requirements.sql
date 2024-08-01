@@ -399,5 +399,4 @@ left join
 left join
     {{ ref("int_students__graduation_path_codes") }} as c
     on r.student_number = c.student_number
-    and r.academic_year = c.academic_year
     and r.discipline = c.discipline

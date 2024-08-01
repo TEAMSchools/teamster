@@ -14,6 +14,7 @@ select
         when name_column in ('state_assessment_name', 'math_state_assessment_name')
         then 'State Assessment Name'
     end as value_type,
+
     case
         when name_column in ('graduation_pathway_ela', 'state_assessment_name')
         then 'ELA'
