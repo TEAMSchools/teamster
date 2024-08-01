@@ -22,6 +22,7 @@ with
         where
             behavior_category in (
                 'Earned Incentives',
+                'Corrective Behaviors',
                 'Values',
                 'Be Kind (Love)',
                 'Be Kind (Revolutionary Love)',
@@ -47,10 +48,12 @@ with
             entry_staff,
 
             case
+                when behavior_category = 'Earned Incentives'
+                then 'Incentives'
                 when
                     code_location in ('kippnewark', 'kippcamden')
-                    and behavior_category = 'Earned Incentives'
-                then 'Incentives'
+                    and behavior_category = 'Corrective Behaviors'
+                then 'Corrective'
                 when
                     code_location in ('kippnewark', 'kippcamden')
                     and behavior_category = 'Values'
