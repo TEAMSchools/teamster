@@ -209,9 +209,9 @@ select
             and co.is_self_contained
             and co.special_education_code in ('CMI', 'CMO', 'CSE')
         then true
-        when sj.discipline = 'ELA' and test_type_code in ('2', '3', '4')
+        when sj.discipline = 'ELA' and se.values_column in ('2', '3', '4')
         then true
-        when sj.discipline = 'Math' and test_type_code = '3'
+        when sj.discipline = 'Math' and se.values_column = '3'
         then true
         else false
     end as is_exempt_state_testing,
@@ -250,12 +250,6 @@ left join
     and co.student_number = ie.student_number
     and sj.iready_subject = ie.iready_subject
 left join
-    {{ ref("int_powerschool__nj_graduation_pathway_unpivot") }} as a
-    on co.students_dcid = a.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
-    and sj.grad_unpivot_subject = a.subject
-    and a.values_column = 'M'
-left join
     mia_territory as mt on co.student_number = mt.student_number and mt.rn_territory = 1
 left join
     {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
@@ -263,4 +257,11 @@ left join
     and sj.discipline = se.discipline
     and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
     and se.value_type = 'State Assessment Name'
+left join
+    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as a
+    on co.students_dcid = a.studentsdcid
+    and sj.discipline = a.discipline
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
+    and a.value_type = 'Graduation Pathway'
+    and a.values_column = 'M'
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}

@@ -4,6 +4,10 @@ select
     name_column,
     values_column,
 
+    if(values_column = 'N', true, false) as is_portfolio_eligible,
+    if(values_column = 'M', true, false) as is_iep_eligible,
+    if(values_column in ('M', 'N'), true, false) as met_requirement,
+
     case
         when name_column in ('graduation_pathway_ela', 'graduation_pathway_math')
         then 'Graduation Pathway'
