@@ -2,7 +2,7 @@ import re
 
 
 def test_regex_pattern_replace():
-    from teamster.libraries.core.utils.functions import regex_pattern_replace
+    from teamster.core.utils.functions import regex_pattern_replace
 
     test_patterns = [
         r"(?P<fiscal_year>\d+)_NJ-\d+-\d+_\w+GPA\w+\.csv",

@@ -4,7 +4,7 @@ import pendulum
 from dagster import MonthlyPartitionsDefinition, config_from_files
 
 from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.assets import build_powerschool_table_asset
 
 config_dir = pathlib.Path(__file__).parent / "config"

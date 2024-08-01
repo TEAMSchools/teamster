@@ -5,7 +5,7 @@ from dagster._core.events import StepMaterializationData
 
 from teamster.code_locations.kipptaf.resources import TABLEAU_SERVER_RESOURCE
 from teamster.code_locations.kipptaf.tableau.assets import workbook
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def test_workbook():

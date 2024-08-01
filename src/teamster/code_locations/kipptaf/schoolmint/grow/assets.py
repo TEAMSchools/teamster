@@ -34,6 +34,7 @@ schoolmint_grow_static_partitions_assets = [
         endpoint=e["asset_name"],
         partitions_def=STATIC_PARTITONS_DEF,
         schema=ASSET_SCHEMA[e["asset_name"]],
+        op_tags=e.get("op_tags"),
     )
     for e in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
         "endpoints"

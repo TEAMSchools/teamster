@@ -95,12 +95,16 @@ class SchoolMintGrowResource(ConfigurableResource):
                 del response
                 gc.collect()
 
-                count = response_json.get("count", 0)
-                data = response_json.get("data", [])
+                count = response_json["count"]
+                data = response_json["data"]
                 del response_json
                 gc.collect()
 
                 all_data["data"].extend(data)
+
+                if len(all_data["data"]) < count and len(data) == 0:
+                    raise Exception("API returned an incomplete response")
+
                 del data
                 gc.collect()
 

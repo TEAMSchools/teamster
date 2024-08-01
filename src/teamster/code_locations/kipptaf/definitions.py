@@ -25,7 +25,7 @@ from teamster.code_locations.kipptaf import (
     smartrecruiters,
     tableau,
 )
-from teamster.libraries.core.resources import (
+from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     GCS_RESOURCE,
     SSH_COUCHDROP,

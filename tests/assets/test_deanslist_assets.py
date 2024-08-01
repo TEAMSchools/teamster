@@ -3,10 +3,7 @@ import random
 from dagster import TextMetadataValue, _check, materialize
 from dagster._core.events import StepMaterializationData
 
-from teamster.libraries.core.resources import (
-    DEANSLIST_RESOURCE,
-    get_io_manager_gcs_avro,
-)
+from teamster.core.resources import DEANSLIST_RESOURCE, get_io_manager_gcs_avro
 
 
 def _test_asset(assets, asset_name, partition_key: str | None = None):
