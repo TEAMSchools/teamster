@@ -8,7 +8,6 @@ assets:
   - asset_name: fte
   - asset_name: gen
   - asset_name: log
-  - asset_name: period
   - asset_name: reenrollments
   - asset_name: spenrollments
   - asset_name: studenttest
