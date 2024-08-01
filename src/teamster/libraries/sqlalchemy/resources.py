@@ -30,19 +30,12 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         self._log = _check.not_none(value=context.log)
 
     def execute_query(
-        self,
-        query,
-        partition_size: int,
-        connect_kwargs: dict | None = None,
-        output_format: str | None = None,
+        self, query, partition_size: int, output_format: str | None = None
     ):
-        if connect_kwargs is None:
-            connect_kwargs = {}
-
         data_filepath = pathlib.Path("env/data.avro").absolute()
 
         self._log.debug("Opening connection to engine")
-        with self._engine.connect(**connect_kwargs) as conn:
+        with self._engine.connect() as conn:
             self._log.info(f"Executing query:\n{query}")
             cursor_result = conn.execute(statement=query)
 
@@ -163,29 +156,16 @@ class SqlAlchemyEngineResource(ConfigurableResource):
         return data_filepath
 
 
-class MSSQLResource(ConfigurableResource):
-    engine: SqlAlchemyEngineResource
-    driver: str
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        self.engine._engine = create_engine(
-            url=URL.create(
-                drivername=f"{self.engine.dialect}+{self.engine.driver}",
-                username=self.engine.username,
-                password=self.engine.password,
-                host=self.engine.host,
-                port=int(self.engine.port),
-                database=self.engine.database,
-                query={"driver": self.driver},
-            )
-        )
-
-
 class OracleResource(ConfigurableResource):
     engine: SqlAlchemyEngineResource
     version: str
     prefetchrows: int = oracledb.defaults.prefetchrows
     arraysize: int = oracledb.defaults.arraysize
+
+    expire_time: int = 1
+    retry_count: int = 0
+    retry_delay: int = 1
+    tcp_connect_timeout: float = 20.0
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         oracledb.version = self.version
@@ -202,4 +182,10 @@ class OracleResource(ConfigurableResource):
                 query=self.engine.query,
             ),
             arraysize=self.arraysize,
+            connect_args={
+                "expire_time": self.expire_time,
+                "retry_count": self.retry_count,
+                "retry_delay": self.retry_delay,
+                "tcp_connect_timeout": self.tcp_connect_timeout,
+            },
         )

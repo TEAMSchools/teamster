@@ -133,22 +133,19 @@ def build_powerschool_table_asset(
 
         ssh_tunnel.stop()
 
-        try:
-            with file_path.open(mode="rb") as f:
-                num_records = sum(block.num_records for block in block_reader(f))
-                digest = hash_bytestr_iter(
-                    bytesiter=file_as_blockiter(file=f), hasher=hashlib.sha256()
-                )
-
-            yield Output(
-                value=file_path,
-                metadata={
-                    "records": num_records,
-                    "digest": digest,
-                    "latest_materialization_timestamp": hour_timestamp,
-                },
+        with file_path.open(mode="rb") as f:
+            num_records = sum(block.num_records for block in block_reader(f))
+            digest = hash_bytestr_iter(
+                bytesiter=file_as_blockiter(file=f), hasher=hashlib.sha256()
             )
-        except FileNotFoundError:
-            pass
+
+        return Output(
+            value=file_path,
+            metadata={
+                "records": num_records,
+                "digest": digest,
+                "latest_materialization_timestamp": hour_timestamp,
+            },
+        )
 
     return _asset
