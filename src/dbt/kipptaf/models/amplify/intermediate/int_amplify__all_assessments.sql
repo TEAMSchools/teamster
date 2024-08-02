@@ -49,17 +49,23 @@ with
     ),
 
     composite_only as (
-        select distinct
+        select
             mclass_academic_year,
             mclass_student_number,
             mclass_period as expected_test,
             mclass_measure_level,
         from assessments_scores
         where mclass_measure = 'Composite'
-    ),
+    )
 
+select *
+from composite_only
+where
+    mclass_student_number in (302293, 106548, 106271, 203602)
+
+    /*
     overall_composite_by_window as (
-        select distinct
+        select
             mclass_academic_year, mclass_student_number, p.boy, p.moy, p.eoy,
         from
             composite_only pivot (
@@ -68,7 +74,7 @@ with
     ),
 
     probe_eligible_tag as (
-        select distinct
+        select 
             s.mclass_academic_year,
             s.mclass_student_number,
             c.boy,
@@ -162,3 +168,5 @@ left join
     probe_eligible_tag as p
     on s.mclass_academic_year = p.mclass_academic_year
     and s.mclass_student_number = p.mclass_student_number
+*/
+    
