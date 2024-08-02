@@ -11,11 +11,11 @@ from teamster.code_locations.kipptaf.alchemer.schema import (
     SURVEY_RESPONSE_SCHEMA,
     SURVEY_SCHEMA,
 )
-from teamster.libraries.alchemer.resources import AlchemerResource
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
+from teamster.libraries.alchemer.resources import AlchemerResource
 
 key_prefix = [CODE_LOCATION, "alchemer"]
 

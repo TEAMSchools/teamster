@@ -9,7 +9,7 @@ from dagster import (
 
 from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kippmiami.deanslist.schema import ASSET_SCHEMA
-from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.deanslist.assets import (
     build_deanslist_multi_partition_asset,
     build_deanslist_static_partition_asset,

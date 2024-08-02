@@ -1,7 +1,7 @@
 import pendulum
 from dagster import StaticPartitionsDefinition
 
-from teamster.libraries.core.utils.classes import FiscalYear
+from teamster.core.utils.classes import FiscalYear
 from teamster.libraries.sftp.assets import build_sftp_file_asset
 
 

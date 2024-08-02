@@ -21,7 +21,7 @@ from google.cloud.storage import Client as CloudStorageClient
 from pandas import DataFrame
 from sqlalchemy.sql.expression import literal_column, select, table, text
 
-from teamster.libraries.core.utils.classes import CustomJSONEncoder
+from teamster.core.utils.classes import CustomJSONEncoder
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -83,10 +83,12 @@ def load_sftp(
     context: AssetExecutionContext,
     ssh: SSHResource,
     data,
-    file_name,
-    destination_path,
+    file_name: str,
+    destination_path: str,
 ):
     with ssh.get_connection().open_sftp() as sftp:
+        _check.not_none(value=sftp.get_channel()).settimeout(ssh.timeout)
+
         sftp.chdir(".")
 
         cwd_path = pathlib.Path(str(sftp.getcwd()))

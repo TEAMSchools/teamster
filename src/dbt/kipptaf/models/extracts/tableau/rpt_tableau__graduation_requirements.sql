@@ -266,10 +266,13 @@ with
 
             a.discipline,
             a.subject,
-            safe_cast(a.testscalescore as string) as `value`,
-            if(a.testscalescore >= 725, true, false) as met_pathway_requirement,
             a.testcode as test_type,
+
             'State Assessment' as pathway_option,
+
+            safe_cast(a.testscalescore as string) as `value`,
+
+            if(a.testscalescore >= 725, true, false) as met_pathway_requirement,
         from roster as r
         inner join njgpa_rollup as a on r.state_studentnumber = a.statestudentidentifier
 
@@ -280,10 +283,13 @@ with
 
             a.discipline,
             a.subject,
-            safe_cast(a.score as string) as `value`,
-            a.met_pathway_requirement,
             a.test_type,
+
             'ACT/SAT' as pathway_option,
+
+            safe_cast(a.score as string) as `value`,
+
+            a.met_pathway_requirement,
         from roster as r
         inner join act_sat_psat10_official as a on r.kippadb_contact_id = a.contact
         where a.test_type in ('ACT', 'SAT')
@@ -295,10 +301,13 @@ with
 
             a.discipline,
             a.subject,
-            safe_cast(a.score as string) as `value`,
-            a.met_pathway_requirement,
             a.test_type,
+
             'PSAT10' as pathway_option,
+
+            safe_cast(a.score as string) as `value`,
+
+            a.met_pathway_requirement,
         from roster as r
         inner join
             act_sat_psat10_official as a on cast(r.student_number as string) = a.contact
@@ -309,26 +318,26 @@ with
         select
             r.student_number,
 
-            case
-                a.subject when 'ela' then 'ELA' when 'math' then 'Math'
-            end as discipline,
-            case
-                a.subject when 'ela' then 'ELA' when 'math' then 'Math'
-            end as `subject`,
-            a.values_column as `value`,
-            a.met_requirement as met_pathway_requirement,
+            a.discipline,
+            a.discipline as `subject`,
+
             case
                 when a.is_iep_eligible
                 then 'IEP'
                 when a.is_portfolio_eligible
                 then 'Portfolio'
             end as test_type,
+
             'Alternative' as pathway_option,
+
+            a.values_column as `value`,
+            a.met_requirement as met_pathway_requirement,
         from roster as r
         inner join
-            {{ ref("int_powerschool__nj_graduation_pathway_unpivot") }} as a
+            {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as a
             on r.students_dcid = a.studentsdcid
             and {{ union_dataset_join_clause(left_alias="r", right_alias="a") }}
+            and a.value_type = 'Graduation Pathway'
             and a.values_column in ('M', 'N')
     )
 
@@ -363,11 +372,13 @@ select distinct
     r.sections_external_expression as ccr_period,
     r.section_number as ccr_section_number,
     r.discipline,
+
     g.pathway_option,
     g.test_type,
     g.subject,
     g.value,
     g.met_pathway_requirement,
+
     c.code,
     c.njgpa_attempt,
     c.njgpa_pass,
@@ -383,5 +394,4 @@ left join
 left join
     {{ ref("int_students__graduation_path_codes") }} as c
     on r.student_number = c.student_number
-    and r.academic_year = c.academic_year
     and r.discipline = c.discipline

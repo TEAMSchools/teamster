@@ -5,7 +5,7 @@ from teamster.code_locations.kippnewark.renlearn.schema import (
     ACCELERATED_READER_SCHEMA,
     STAR_SCHEMA,
 )
-from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.sftp.assets import build_sftp_archive_asset
 
 asset_key_prefix = [CODE_LOCATION, "renlearn"]

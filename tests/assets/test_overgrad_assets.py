@@ -16,7 +16,7 @@ from teamster.code_locations.kipptaf.overgrad.assets import (
     students,
     universities,
 )
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.libraries.overgrad.resources import OvergradResource
 
 

@@ -4,7 +4,7 @@ import pathlib
 from dagster import AssetExecutionContext, AssetMaterialization, materialize
 from dagster_dbt import DbtCliResource, dbt_assets
 
-from teamster.libraries.core.resources import get_dbt_cli_resource
+from teamster.core.resources import get_dbt_cli_resource
 from teamster.libraries.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
 MANIFEST = json.loads(

@@ -1,6 +1,6 @@
 from dagster import AssetExecutionContext, Output, asset
 
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
