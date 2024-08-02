@@ -23,4 +23,6 @@ select
         then 'Inactive'
         else plan_status
     end as plan_status,
+    export_date  as valid_from,
+    export_date + 6 as valid_to,
 from {{ source("google_appsheet", "src_seat_tracker__log_archive") }}
