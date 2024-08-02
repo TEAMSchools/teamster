@@ -45,28 +45,33 @@ with
     schedules as (
 
         select
-            _dbt_source_relation,
-            cc_academic_year,
-            cc_schoolid,
-            cc_studentid,
-            students_student_number as student_number,
-            cc_teacherid as teacherid,
-            teacher_lastfirst as teacher_name,
-            courses_course_name as course_name,
-            cc_course_number as course_number,
-            cc_section_number as section_number,
+            m._dbt_source_relation,
+            m.cc_academic_year,
+            m.cc_schoolid,
+            m.cc_studentid,
+            m.students_student_number as student_number,
+            m.cc_teacherid as teacherid,
+            m.teacher_lastfirst as teacher_name,
+            m.courses_course_name as course_name,
+            m.cc_course_number as course_number,
+            m.cc_section_number as section_number,
 
             1 as scheduled,
 
-            right(courses_course_name, 1) as schedule_student_grade_level,
+            right(m.courses_course_name, 1) as schedule_student_grade_level,
 
-        from {{ ref("base_powerschool__course_enrollments") }}
+            hos.head_of_school_preferred_name_lastfirst as hos,
+
+        from {{ ref("base_powerschool__course_enrollments") }} as m
+        left join
+            {{ ref("int_people__leadership_crosswalk") }} as hos
+            on m.cc_schoolid = hos.home_work_location_powerschool_school_id
         where
-            cc_academic_year >= {{ var("current_academic_year") }} - 1
-            and not is_dropped_course
-            and not is_dropped_section
-            and rn_course_number_year = 1
-            and courses_course_name in (
+            m.cc_academic_year >= {{ var("current_academic_year") }} - 1
+            and not m.is_dropped_course
+            and not m.is_dropped_section
+            and m.rn_course_number_year = 1
+            and m.courses_course_name in (
                 'ELA GrK',
                 'ELA K',
                 'ELA Gr1',
@@ -129,6 +134,7 @@ select
     m.course_number,
     m.section_number,
     m.scheduled,
+    m.hos,
 
     a.mclass_student_number,
     a.assessment_type,
@@ -163,8 +169,6 @@ select
     f.nj_student_tier,
     f.tutoring_nj,
 
-    hos.head_of_school_preferred_name_lastfirst as hos,
-
 from students as s
 left join
     schedules as m
@@ -187,7 +191,4 @@ left join
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as hos
-    on s.schoolid = hos.home_work_location_powerschool_school_id
 where m.section_number not like '%SC%'
