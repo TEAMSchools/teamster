@@ -141,7 +141,7 @@ with
         group by applicant
     ),
 
-    semester_gpa as (
+    gpa_by_semester as (
         select
             student,
             transcript_date,
@@ -152,6 +152,7 @@ with
             credits_required_for_graduation,
             academic_year,
             semester,
+
             row_number() over (
                 partition by student, academic_year, semester
                 order by transcript_date desc
@@ -161,7 +162,7 @@ with
             record_type_id in (
                 select id,
                 from {{ ref("stg_kippadb__record_type") }}
-                where name = 'Cumulative College'
+                where `name` = 'Cumulative College'
             )
     ),
 
@@ -749,13 +750,13 @@ left join
     on c.contact_id = cnr.contact_id
     and ay.academic_year = cnr.academic_year
 left join
-    semester_gpa as gpa_fall
+    gpa_by_semester as gpa_fall
     on c.contact_id = gpa_fall.student
     and ay.academic_year = gpa_fall.academic_year
     and gpa_fall.semester = 'Fall'
     and gpa_fall.rn_semester = 1
 left join
-    semester_gpa as gpa_spr
+    gpa_by_semester as gpa_spr
     on c.contact_id = gpa_spr.student
     and ay.academic_year = gpa_spr.academic_year
     and gpa_spr.semester = 'Spring'

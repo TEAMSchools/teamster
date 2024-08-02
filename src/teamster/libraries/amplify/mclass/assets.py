@@ -5,11 +5,11 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.libraries.amplify.mclass.resources import MClassResource
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
+from teamster.libraries.amplify.mclass.resources import MClassResource
 
 
 def build_mclass_asset(asset_key, dyd_payload, partitions_def, schema, op_tags=None):

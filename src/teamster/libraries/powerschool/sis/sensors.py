@@ -172,25 +172,29 @@ def build_powerschool_asset_sensor(
                     modified_count = 0
                 else:
                     [(modified_count,)] = _check.inst(
-                        db_powerschool.engine.execute_query(
+                        db_powerschool.execute_query(
                             query=get_query_text(
                                 table=table_name,
                                 column=partition_column,
                                 value=timestamp_fmt,
                             ),
                             partition_size=1,
+                            prefetch_rows=1,
+                            array_size=1,
                         ),
                         list,
                     )
 
                 [(partition_count,)] = _check.inst(
-                    db_powerschool.engine.execute_query(
+                    db_powerschool.execute_query(
                         query=get_query_text(
                             table=table_name,
                             column=partition_column,
                             value=partition_key_fmt,
                         ),
                         partition_size=1,
+                        prefetch_rows=1,
+                        array_size=1,
                     ),
                     list,
                 )
