@@ -1,7 +1,7 @@
 select
     srh.employee_number,
     srh.preferred_name_lastfirst as teammate,
-    srh.business_unit_home_name and entity,
+    srh.business_unit_home_name as entity,
     srh.home_work_location_name as location,
     srh.home_work_location_grade_band as grade_band,
     srh.department_home_name as department,
