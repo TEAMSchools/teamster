@@ -14,8 +14,8 @@ from dagster import (
     define_asset_job,
     sensor,
 )
+from oracledb import OperationalError
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError
 from sshtunnel import HandlerSSHTunnelForwarderError
 
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource

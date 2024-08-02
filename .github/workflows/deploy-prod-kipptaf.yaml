@@ -13,14 +13,14 @@ on:
       - src/dbt/kipptaf/**
       - src/dbt/teamster_utils/**
       - src/teamster/code_locations/kipptaf/**
+      - src/teamster/core/**
       - src/teamster/libraries/adp/**
       - src/teamster/libraries/airbyte/**
       - src/teamster/libraries/amplify/**
-      - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/datagun/**
       - src/teamster/libraries/dbt/**
-      - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/deanslist/schema.py
       - src/teamster/libraries/fivetran/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**
@@ -29,22 +29,20 @@ on:
       - src/teamster/libraries/powerschool/enrollment/**
       - src/teamster/libraries/schoolmint/**
       - src/teamster/libraries/smartrecruiters/**
-      - src/teamster/libraries/sqlalchemy/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/tableau/**
-      - src/teamster/libraries/zendesk/**
   pull_request:
     paths:
       - requirements.txt
       - src/teamster/code_locations/kipptaf/**
+      - src/teamster/core/**
       - src/teamster/libraries/adp/**
       - src/teamster/libraries/airbyte/**
       - src/teamster/libraries/amplify/**
-      - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/datagun/**
       - src/teamster/libraries/dbt/**
-      - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/deanslist/schema.py
       - src/teamster/libraries/fivetran/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**
@@ -53,10 +51,8 @@ on:
       - src/teamster/libraries/powerschool/enrollment/**
       - src/teamster/libraries/schoolmint/**
       - src/teamster/libraries/smartrecruiters/**
-      - src/teamster/libraries/sqlalchemy/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/tableau/**
-      - src/teamster/libraries/zendesk/**
     types:
       - opened
       - synchronize
