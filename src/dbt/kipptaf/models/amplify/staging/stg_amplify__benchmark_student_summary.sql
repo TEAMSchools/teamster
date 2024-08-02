@@ -244,6 +244,8 @@ select
         word_reading_wrf_national_norm_percentile
     ),
 
+    'benchmark' as assessment_type,
+
     safe_cast(
         if(
             composite_national_norm_percentile in ('Tested Out', 'Discontinued'),

@@ -5,6 +5,17 @@ select
     measure,
     score,
     level,
+    case
+        level
+        when 'Above Benchmark'
+        then 4
+        when 'At Benchmark'
+        then 3
+        when 'Below Benchmark'
+        then 2
+        when 'Well Below Benchmark'
+        then 1
+    end as mclass_measure_level_int,
     national_norm_percentile,
     semester_growth,
     year_growth,
