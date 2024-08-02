@@ -21,6 +21,15 @@ with
                     'KNJ: Out-of-School Suspension'
                 ]
             ) as penalty_name
+    ),
+
+    intervention_rosters as (
+        select ra.student_school_id,
+        from {{ ref("stg_deanslist__roster_assignments") }} as ra
+        inner join
+            {{ ref("stg_deanslist__rosters") }} as r
+            on ra.dl_roster_id = r.roster_id
+            and r.roster_name = 'Tier 3/Tier 4 Intervention'
     )
 
 select
@@ -115,7 +124,7 @@ select
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_iss_int,
 
-    if(ra.student_school_id is not null, true, false) as is_tier3_4,
+    if(tr.student_school_id is not null, true, false) as is_tier3_4,
 
     row_number() over (
         partition by co.academic_year, co.student_number
@@ -174,13 +183,7 @@ left join
     and co.yearid = gpa.yearid
     and gpa.is_current
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
-left join
-    {{ ref("stg_deanslist__roster_assignments") }} as ra
-    on co.student_number = ra.student_school_id
-inner join
-    {{ ref("stg_deanslist__rosters") }} as r
-    on ra.dl_roster_id = r.roster_id
-    and r.roster_name = 'Tier 3/Tier 4 Intervention'
+left join intervention_rosters as tr on co.student_number = tr.student_school_id
 where
     co.rn_year = 1
     and co.academic_year >= {{ var("current_academic_year") }} - 1
