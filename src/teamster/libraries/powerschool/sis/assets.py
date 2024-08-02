@@ -18,7 +18,7 @@ from sqlalchemy import literal_column, select, table, text
 from sshtunnel import HandlerSSHTunnelForwarderError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.libraries.sqlalchemy.resources import OracleResource
+from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -42,8 +42,8 @@ def build_powerschool_table_asset(
     table_name: str,
     partitions_def: TimeWindowPartitionsDefinition | None = None,
     partition_column: str | None = None,
-    partition_size: int = 50000,
-    prefetch_rows: int = 50000,
+    partition_size: int = 10000,
+    prefetch_rows: int = 10000,
     array_size: int = 500000,
     select_columns: list[str] | None = None,
     op_tags: dict | None = None,
@@ -68,7 +68,7 @@ def build_powerschool_table_asset(
     def _asset(
         context: AssetExecutionContext,
         ssh_powerschool: SSHResource,
-        db_powerschool: OracleResource,
+        db_powerschool: PowerSchoolODBCResource,
     ):
         hour_timestamp = pendulum.now().start_of("hour").timestamp()
 
@@ -126,7 +126,7 @@ def build_powerschool_table_asset(
                 obj=db_powerschool.execute_query(
                     query=sql,
                     output_format="avro",
-                    partition_size=partition_size,
+                    batch_size=partition_size,
                     prefetch_rows=prefetch_rows,
                     array_size=array_size,
                 ),
