@@ -1,9 +1,9 @@
 with
     assessments_scores as (
         select
-            safe_cast(left(bss.school_year, 4) as int) as mclass_academic_year,
+            bss.academic_year as mclass_academic_year,
             bss.student_primary_id as mclass_student_number,
-            'benchmark' as assessment_type,
+            bss.assessment_type,
             bss.assessment_grade as mclass_assessment_grade,
             bss.benchmark_period as mclass_period,
             bss.client_date as mclass_client_date,
@@ -17,29 +17,20 @@ with
             null as mclass_probe_number,
             null as mclass_total_number_of_probes,
             null as mclass_score_change,
-            case
-                when u.level = 'Above Benchmark'
-                then 4
-                when u.level = 'At Benchmark'
-                then 3
-                when u.level = 'Below Benchmark'
-                then 2
-                when u.level = 'Well Below Benchmark'
-                then 1
-            end as mclass_measure_level_int,
+            mclass_measure_level_int,
         from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
         inner join
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
-        where
-            cast(left(bss.school_year, 4) as int)
-            >= {{ var("current_academic_year") }} - 1
+        where bss.academic_year >= {{ var("current_academic_year") - 1 }}
+
         union all
+
         select
-            safe_cast(left(school_year, 4) as int) as mclass_academic_year,
+            academic_year as mclass_academic_year,
             student_primary_id as mclass_student_number,
-            'pm' as assessment_type,
-            cast(assessment_grade as string) as mclass_assessment_grade,
+            assessment_type,
+            assessment_grade as mclass_assessment_grade,
             pm_period as mclass_period,
             client_date as mclass_client_date,
             sync_date as mclass_sync_date,
@@ -54,8 +45,7 @@ with
             score_change as mclass_score_change,
             null as mclass_measure_level_int,
         from {{ ref("stg_amplify__pm_student_summary") }}
-        where
-            cast(left(school_year, 4) as int) >= {{ var("current_academic_year") }} - 1
+        where academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
     composite_only as (

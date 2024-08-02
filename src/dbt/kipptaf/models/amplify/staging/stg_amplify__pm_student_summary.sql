@@ -23,6 +23,8 @@ select
         )
     }},
 
+    'pm' as assessment_type,
+
     safe_cast(client_date as date) as client_date,
     safe_cast(sync_date as date) as sync_date,
 
