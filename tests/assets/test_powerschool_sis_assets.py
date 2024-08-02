@@ -3,7 +3,7 @@ import random
 from dagster import _check, materialize
 from dagster._core.events import StepMaterializationData
 
-from teamster.libraries.core.resources import (
+from teamster.core.resources import (
     get_db_powerschool_resource,
     get_io_manager_gcs_file,
     get_ssh_powerschool_resource,
@@ -64,6 +64,18 @@ def test_reenrollments_kippnewark():
     _test_asset(
         assets=assets,
         asset_name="reenrollments",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_cc_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="cc",
         ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
         db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
     )

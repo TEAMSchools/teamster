@@ -1,6 +1,6 @@
 from dagster import DagsterInstance, SensorResult, _check, build_sensor_context
 
-from teamster.libraries.core.resources import (
+from teamster.core.resources import (
     get_db_powerschool_resource,
     get_ssh_powerschool_resource,
 )

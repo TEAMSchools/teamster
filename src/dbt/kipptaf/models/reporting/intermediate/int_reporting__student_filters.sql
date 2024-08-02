@@ -1,20 +1,24 @@
 with
     subjects as (
         select
-            subject as iready_subject,
+            `subject` as iready_subject,
             case
-                subject when 'Reading' then 'Text Study' when 'Math' then 'Mathematics'
+                `subject`
+                when 'Reading'
+                then 'Text Study'
+                when 'Math'
+                then 'Mathematics'
             end as illuminate_subject_area,
             case
-                subject when 'Reading' then 'ENG' when 'Math' then 'MATH'
+                `subject` when 'Reading' then 'ENG' when 'Math' then 'MATH'
             end as powerschool_credittype,
             case
-                subject when 'Reading' then 'ela' when 'Math' then 'math'
+                `subject` when 'Reading' then 'ela' when 'Math' then 'math'
             end as grad_unpivot_subject,
             case
-                subject when 'Reading' then 'ELA' when 'Math' then 'Math'
+                `subject` when 'Reading' then 'ELA' when 'Math' then 'Math'
             end as discipline,
-        from unnest(['Reading', 'Math']) as subject
+        from unnest(['Reading', 'Math']) as `subject`
     ),
 
     intervention_nj as (
@@ -51,12 +55,12 @@ with
             safe_cast(statestudentidentifier as string) as statestudentidentifier,
             academic_year + 1 as academic_year_plus,
             case
-                when subject like 'English Language Arts%'
+                when `subject` like 'English Language Arts%'
                 then 'Text Study'
-                when subject in ('Algebra I', 'Algebra II', 'Geometry')
+                when `subject` in ('Algebra I', 'Algebra II', 'Geometry')
                 then 'Mathematics'
-                else subject
-            end as subject,
+                else `subject`
+            end as `subject`,
             case
                 when testperformancelevel < 3
                 then 'Below/Far Below'
@@ -80,7 +84,7 @@ with
     prev_yr_iready as (
         select
             student_id,
-            subject,
+            `subject`,
             academic_year_int + 1 as academic_year_plus,
             case
                 when overall_relative_placement_int < 3
@@ -174,15 +178,21 @@ select
         db.eoy, db.moy, db.boy, 'No Composite Score Available'
     ) as dibels_most_recent_composite,
 
-    if(nj.nj_intervention_subject is not null, true, false) as bucket_two,
-
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
-
-    if(t.iready_subject is not null, true, false) as tutoring_nj,
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
 
+    coalesce(ie.value, false) as is_exempt_iready,
+
+    if(nj.nj_intervention_subject is not null, true, false) as bucket_two,
+
+    if(t.iready_subject is not null, true, false) as tutoring_nj,
+
     if(co.grade_level < 4, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
+
+    if(
+        co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
+    ) as assessment_dashboard_join,
 
     case
         when co.grade_level < 4 and pr.iready_proficiency = 'At/Above'
@@ -193,11 +203,18 @@ select
         then 'Bucket 2'
     end as nj_student_tier,
 
-    coalesce(ie.value, false) as is_exempt_iready,
-
-    if(
-        co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
-    ) as assessment_dashboard_join,
+    case
+        when
+            co.grade_level < 3
+            and co.is_self_contained
+            and co.special_education_code in ('CMI', 'CMO', 'CSE')
+        then true
+        when sj.discipline = 'ELA' and se.values_column in ('2', '3', '4')
+        then true
+        when sj.discipline = 'Math' and se.values_column = '3'
+        then true
+        else false
+    end as is_exempt_state_testing,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -233,11 +250,18 @@ left join
     and co.student_number = ie.student_number
     and sj.iready_subject = ie.iready_subject
 left join
-    {{ ref("int_powerschool__nj_graduation_pathway_unpivot") }} as a
-    on co.students_dcid = a.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
-    and sj.grad_unpivot_subject = a.subject
-    and a.values_column = 'M'
-left join
     mia_territory as mt on co.student_number = mt.student_number and mt.rn_territory = 1
+left join
+    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
+    on co.students_dcid = se.studentsdcid
+    and sj.discipline = se.discipline
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
+    and se.value_type = 'State Assessment Name'
+left join
+    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as a
+    on co.students_dcid = a.studentsdcid
+    and sj.discipline = a.discipline
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
+    and a.value_type = 'Graduation Pathway'
+    and a.values_column = 'M'
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}

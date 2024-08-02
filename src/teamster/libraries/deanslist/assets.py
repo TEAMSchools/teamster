@@ -11,14 +11,11 @@ from dagster import (
     asset,
 )
 
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.libraries.core.utils.classes import (
-    FiscalYear,
-    FiscalYearPartitionsDefinition,
-)
+from teamster.core.utils.classes import FiscalYear, FiscalYearPartitionsDefinition
 from teamster.libraries.deanslist.resources import DeansListResource
 
 
