@@ -38,7 +38,7 @@ with
         where
             e.academic_year >= {{ var("current_academic_year") }} - 1
             and e.grade_level <= 8
-            -- and not e.is_self_contained
+            and not e.is_self_contained
             and a.scope = 'DIBELS'
     ),
 
