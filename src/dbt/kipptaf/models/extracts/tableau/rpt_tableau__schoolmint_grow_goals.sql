@@ -1,13 +1,13 @@
 select
     srh.employee_number,
-    srh.preferred_name_lastfirst,
-    srh.business_unit_home_name,
-    srh.home_work_location_name,
-    srh.home_work_location_grade_band,
-    srh.department_home_name,
-    srh.primary_grade_level_taught,
+    srh.preferred_name_lastfirst as teammate,
+    srh.business_unit_home_name and entity,
+    srh.home_work_location_name as location,
+    srh.home_work_location_grade_band as grade_band,
+    srh.department_home_name as department,
+    srh.primary_grade_level_taught as grade_taught,
     srh.job_title,
-    srh.report_to_preferred_name_lastfirst,
+    srh.report_to_preferred_name_lastfirst as manager,
     srh.worker_original_hire_date,
     srh.assignment_status,
     srh.sam_account_name,
@@ -26,7 +26,7 @@ select
 
     a.assignment_id,
     a.created as assignment_date,
-    a.creator_name,
+    a.creator_name as observer,
     if(a.assignment_id is not null, 1, 0) as is_assigned,
 
 from {{ ref("base_people__staff_roster_history") }} as srh
