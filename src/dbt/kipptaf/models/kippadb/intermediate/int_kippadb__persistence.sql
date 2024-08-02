@@ -10,6 +10,10 @@ with
             r.ktc_cohort + n as academic_year,
             date(r.ktc_cohort + n, 10, 31) as persistence_date_fall,
             date(r.ktc_cohort + n + 1, 3, 31) as persistence_date_spring,
+            date(r.ktc_cohort + n, 12, 31) as transcript_min_fall,
+            date(r.ktc_cohort + n + 1, 1, 20) as transcript_max_fall,
+            date(r.ktc_cohort + n + 1, 5, 1) as transcript_min_spring,
+            date(r.ktc_cohort + n + 1, 6, 15) as transcript_max_spring,
         from {{ ref("int_kippadb__roster") }} as r
         cross join unnest([0, 1, 2, 3, 4, 5]) as n
     ),
@@ -18,12 +22,29 @@ with
         select
             enrollment,
             cumulative_credits_earned,
+            semester_credits_earned,
+            cumulative_credits_attempted,
+            semester_credits_earned,
             credits_required_for_graduation,
+
+            if(
+                credits_required_for_graduation > 0,
+                round(cumulative_credits_earned / credits_required_for_graduation, 2),
+                null
+            ) as degree_percent_complete,
+            if(
+                cumulative_credits_attempted > 0,
+                round(cumulative_credits_earned / cumulative_credits_attempted, 2),
+                null
+            ) as attempted_percent_earned,
+
             row_number() over (
                 partition by enrollment order by transcript_date desc
             ) as rn_transcript_date,
         from {{ ref("stg_kippadb__gpa") }}
     ),
+
+    gpa_semester as ()
 
     persistence_union as (
         select
