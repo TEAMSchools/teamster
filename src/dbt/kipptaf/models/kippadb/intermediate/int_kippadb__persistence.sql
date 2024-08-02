@@ -20,31 +20,45 @@ with
 
     gpa_enrollment_recent as (
         select
-            enrollment,
-            cumulative_credits_earned,
-            semester_credits_earned,
-            cumulative_credits_attempted,
-            semester_credits_earned,
-            credits_required_for_graduation,
+            g.student,
+            g.enrollment,
+            g.transcript_date,
+            g.cumulative_credits_earned,
+            g.semester_credits_earned,
+            g.cumulative_credits_attempted,
+            g.semester_credits_earned,
+            g.credits_required_for_graduation,
 
             if(
-                credits_required_for_graduation > 0,
-                round(cumulative_credits_earned / credits_required_for_graduation, 2),
+                g.credits_required_for_graduation > 0,
+                round(
+                    g.cumulative_credits_earned / g.credits_required_for_graduation, 2
+                ),
                 null
             ) as degree_percent_complete,
             if(
-                cumulative_credits_attempted > 0,
-                round(cumulative_credits_earned / cumulative_credits_attempted, 2),
+                g.cumulative_credits_attempted > 0,
+                round(g.cumulative_credits_earned / g.cumulative_credits_attempted, 2),
                 null
             ) as attempted_percent_earned,
 
             row_number() over (
-                partition by enrollment order by transcript_date desc
+                partition by g.enrollment order by g.transcript_date desc
             ) as rn_transcript_date,
-        from {{ ref("stg_kippadb__gpa") }}
-    ),
 
-    gpa_semester as ()
+            row_number() over(partition by g.enrollment)
+        from {{ ref("stg_kippadb__gpa") }} as g
+        left join
+            roster_scaffold as f
+            on g.student = r.contact_id
+            and g.transcript_date
+            between f.transcript_min_fall and f.transcript_max_fall
+        left join
+            roster_scaffold as s
+            on g.student = s.contact_id
+            and g.transcript_date
+            between s.transcript_min_fall and s.transcript_max_fall
+    ),
 
     persistence_union as (
         select
