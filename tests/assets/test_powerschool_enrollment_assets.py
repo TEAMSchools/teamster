@@ -6,7 +6,7 @@ from dagster._core.events import StepMaterializationData
 from teamster.code_locations.kipptaf.powerschool.enrollment.assets import (
     submission_records,
 )
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.libraries.powerschool.enrollment.resources import (
     PowerSchoolEnrollmentResource,
 )

@@ -1,15 +1,5 @@
 # has partition col but not using it
 assets:
-  - asset_name: cc
-    partition_column: transaction_date
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              cpu: 1000m
-            limits:
-              cpu: 1000m
   - asset_name: courses
     partition_column: transaction_date
   - asset_name: schools
@@ -46,6 +36,52 @@ assets:
     partition_column: whenmodified
   - asset_name: originalcontactmap
     partition_column: whenmodified
+  - asset_name: personaddress
+    partition_column: whenmodified
+  - asset_name: personaddressassoc
+    partition_column: whenmodified
+  - asset_name: personemailaddressassoc
+    partition_column: whenmodified
+  - asset_name: phonenumber
+    partition_column: whenmodified
+  - asset_name: roledef
+    partition_column: whenmodified
+  - asset_name: s_nj_crs_x
+    partition_column: whenmodified
+  - asset_name: s_nj_ren_x
+    partition_column: whenmodified
+  - asset_name: s_nj_usr_x
+    partition_column: whenmodified
+  - asset_name: schoolstaff
+    partition_column: whenmodified
+  - asset_name: sectionteacher
+    partition_column: whenmodified
+  - asset_name: studentcontactassoc
+    partition_column: whenmodified
+  - asset_name: studentcorefields
+    partition_column: whenmodified
+  - asset_name: studentrace
+    partition_column: whenmodified
+  - asset_name: teachercategory
+    partition_column: whenmodified
+  - asset_name: u_studentsuserfields
+    partition_column: whenmodified
+  - asset_name: users
+    partition_column: whenmodified
+  - asset_name: u_clg_et_stu
+    partition_column: whenmodified
+  - asset_name: u_clg_et_stu_alt
+    partition_column: whenmodified
+  - asset_name: cc
+    partition_column: transaction_date
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              cpu: 1250m
+            limits:
+              cpu: 1250m
   - asset_name: person
     partition_column: whenmodified
     op_tags:
@@ -56,12 +92,6 @@ assets:
               cpu: 750m
             limits:
               cpu: 750m
-  - asset_name: personaddress
-    partition_column: whenmodified
-  - asset_name: personaddressassoc
-    partition_column: whenmodified
-  - asset_name: personemailaddressassoc
-    partition_column: whenmodified
   - asset_name: personphonenumberassoc
     partition_column: whenmodified
     op_tags:
@@ -72,24 +102,6 @@ assets:
               cpu: 750m
             limits:
               cpu: 750m
-  - asset_name: phonenumber
-    partition_column: whenmodified
-  - asset_name: roledef
-    partition_column: whenmodified
-  - asset_name: s_nj_crs_x
-    partition_column: whenmodified
-  - asset_name: s_nj_ren_x
-    partition_column: whenmodified
-  - asset_name: s_nj_stu_x
-    partition_column: whenmodified
-  - asset_name: s_nj_usr_x
-    partition_column: whenmodified
-  - asset_name: schoolstaff
-    partition_column: whenmodified
-  - asset_name: sectionteacher
-    partition_column: whenmodified
-  - asset_name: studentcontactassoc
-    partition_column: whenmodified
   - asset_name: studentcontactdetail
     partition_column: whenmodified
     op_tags:
@@ -100,17 +112,13 @@ assets:
               cpu: 750m
             limits:
               cpu: 750m
-  - asset_name: studentcorefields
+  - asset_name: s_nj_stu_x
     partition_column: whenmodified
-  - asset_name: studentrace
-    partition_column: whenmodified
-  - asset_name: teachercategory
-    partition_column: whenmodified
-  - asset_name: u_def_ext_students
-    partition_column: whenmodified
-  - asset_name: u_studentsuserfields
-    partition_column: whenmodified
-  - asset_name: users
-    partition_column: whenmodified
-  - asset_name: sced_code_mapping
-    partition_column: last_modified_ts
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              memory: 2.5Gi
+            limits:
+              memory: 2.5Gi

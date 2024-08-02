@@ -7,7 +7,7 @@ from teamster.code_locations.kipptaf.deanslist.assets import (
     reconcile_suspensions,
 )
 from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_DEANSLIST
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(asset, partition_key=None, instance=None):

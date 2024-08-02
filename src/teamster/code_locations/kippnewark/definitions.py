@@ -14,7 +14,7 @@ from teamster.code_locations.kippnewark import (
     renlearn,
     titan,
 )
-from teamster.libraries.core.resources import (
+from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DB_POWERSCHOOL,
     DEANSLIST_RESOURCE,

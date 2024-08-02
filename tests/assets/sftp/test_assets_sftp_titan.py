@@ -2,7 +2,7 @@ import random
 
 from dagster import EnvVar, materialize
 
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.libraries.ssh.resources import SSHResource
 
 SSH_TITAN_KIPPNEWARK = SSHResource(
