@@ -50,8 +50,6 @@ assets:
     partition_column: whenmodified
   - asset_name: s_nj_ren_x
     partition_column: whenmodified
-  - asset_name: s_nj_stu_x
-    partition_column: whenmodified
   - asset_name: s_nj_usr_x
     partition_column: whenmodified
   - asset_name: schoolstaff
@@ -114,3 +112,13 @@ assets:
               cpu: 750m
             limits:
               cpu: 750m
+  - asset_name: s_nj_stu_x
+    partition_column: whenmodified
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              memory: 2.5Gi
+            limits:
+              memory: 2.5Gi
