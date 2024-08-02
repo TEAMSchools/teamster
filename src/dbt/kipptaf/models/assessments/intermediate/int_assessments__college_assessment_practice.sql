@@ -62,7 +62,10 @@ with
             {{ ref("stg_assessments__act_scale_score_key") }} as ssk
             on a.assessment_id = ssk.assessment_id
             and a.points between ssk.raw_score_low and ssk.raw_score_high
-        where a.scope in ('ACT', 'SAT') and a.response_type in ('group', 'overall')
+        where
+            a.scope in ('ACT', 'SAT')
+            and a.academic_year = {{ var("current_academic_year") }}
+            and a.response_type in ('group', 'overall')
     ),
 
     practice_scale_score_by_subject as (
