@@ -93,6 +93,7 @@ select
     dli.reported_details,
     dli.admin_summary,
 
+    dlp.incident_penalty_id,
     dlp.num_days,
     dlp.is_suspension,
     dlp.penalty_name,
