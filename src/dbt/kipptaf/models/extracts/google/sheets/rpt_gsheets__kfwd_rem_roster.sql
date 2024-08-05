@@ -16,6 +16,8 @@ with
             contact,
             `date`,
             subject,
+
+            cast(concat('20', right(left(subject, 8), 2)) as int) as fiscal_year,
             row_number() over (partition by contact order by date desc) as rn_note,
         from {{ ref("stg_kippadb__contact_note") }}
         where subject like 'REM FY%'
@@ -125,7 +127,10 @@ select  -- noqa: ST06
     r.contact_mobile_phone,
     r.contact_email,
     r.contact_secondary_email,
+
     gpa.gpa,
+
+    rs.fiscal_year,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
