@@ -51,6 +51,13 @@ def tableau_workbook_asset_job_schedule(
         )
 
 
+tableau_workbook_refresh_schedules = [
+    build_tableau_workbook_refresh_schedule(asset=asset)
+    for asset in external_assets
+    if asset.metadata_by_key[asset.key].get("cron_schedule") is not None
+]
+
 schedules = [
     tableau_workbook_asset_job_schedule,
+    *tableau_workbook_refresh_schedules,
 ]
