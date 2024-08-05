@@ -1,4 +1,4 @@
-external_assets:
+assets:
   - name: Academic Priorities [NJ]
     deps:
       - [kipptaf, tableau, rpt_tableau__power_standards]
@@ -27,6 +27,7 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__staff_attrition_details]
     metadata:
       id: 5bf99669-00bb-4906-b2b4-79f2976ac3a4
+      cron_schedule: 0 7 * * *
   - name: Coaching Conversation Tool
     deps:
       - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
@@ -44,6 +45,7 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__student_info_audit]
     metadata:
       id: 8aff929f-9e6b-4fc9-833a-7edfab8500b6
+      cron_schedule: 0 1 * * *
   - name: Early Literacy Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__dibels_dashboard]
@@ -55,6 +57,7 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__grants_timesheets]
     metadata:
       id: c7c821a4-a236-4da8-b41e-52b2fd62cbed
+      cron_schedule: 0 * * * *
   - name: Finance & Accounting Tools & Resources
     deps:
       - [kipptaf, tableau, rpt_tableau__adp_pension_and_benefits_enrollments]
@@ -62,6 +65,7 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__staff_attrition]
     metadata:
       id: c29963fb-8516-4148-b43f-cddc0f2b4093
+      cron_schedule: 0 13 * * *
   - name: Gradebook Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__gpa_analysis]
@@ -85,6 +89,9 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__kfwd_verification]
     metadata:
       id: ad72c094-ad35-48f4-86a0-9d2e5b53f59a
+      cron_schedule:
+        - 0 4 * * *
+        - 0 17 * * *
   - name: KIPP Miami FAST & i-Ready Analysis
     deps:
       - [kipptaf, tableau, rpt_tableau__miami_fast]
@@ -100,6 +107,7 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__marketing_instagram_post]
     metadata:
       id: f6aa0647-55a0-425b-b991-160965f6f2ad
+      cron_schedule: 0 7 * * *
   - name: Master Renewal Tracking Tool
     deps:
       - [kipptaf, tableau, rpt_tableau__staff_performance_compliance_history]
@@ -116,6 +124,7 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__staff_roster]
     metadata:
       id: ed2976ea-0b3c-4afb-a5d9-7e7e83227e3b
+      cron_schedule: 0 8 * * *
   - name: Ops Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__ops_dashboard]
@@ -141,11 +150,13 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__staff_roster]
     metadata:
       id: fc15566f-0bcf-453c-aaed-04fbee94d7d7
+      cron_schedule: 0 11 * * 1
   - name: Staff Roster
     deps:
       - [kipptaf, tableau, rpt_tableau__staff_roster]
     metadata:
       id: 6e0915eb-9a46-4971-8e97-6e0749066b9f
+      cron_schedule: 0 7 * * *
   - name: State Testing Accommodations Tracker
     deps:
       - [kipptaf, tableau, rpt_tableau__state_testing_accomodations]
@@ -166,3 +177,6 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__zendesk_tickets]
     metadata:
       id: 7adabf6e-fa59-4d60-bca8-de3a67005a53
+      cron_schedule: 0 6 * * *
+  # prospects_import - Daily 4:00 AM America/Los_Angeles
+  # Recent Job & Salary Changes - Daily 11:00 PM America/Los_Angeles

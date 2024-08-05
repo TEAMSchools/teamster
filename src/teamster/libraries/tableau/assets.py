@@ -9,14 +9,14 @@ from dagster import (
     asset,
 )
 
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
 from teamster.libraries.tableau.resources import TableauServerResource
 
 
-def build_tableau_workbook_asset(
+def build_tableau_workbook_stats_asset(
     code_location: str, workbook_ids: list[str], partition_start_date: str, schema
 ):
     asset_key = [code_location, "tableau", "workbook"]
