@@ -14,7 +14,7 @@ from tableauserverclient.server.endpoint.exceptions import (
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.tableau.assets import external_assets
-from teamster.libraries.tableau.resources import TableauServerResource
+from teamster.libraries.tableau.sensors import build_tableau_asset_sensor
 
 
 @sensor(
