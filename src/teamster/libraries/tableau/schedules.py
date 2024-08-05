@@ -1,4 +1,5 @@
 from dagster import (
+    AssetObservation,
     AssetsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -14,16 +15,16 @@ from dagster import (
 from teamster.libraries.tableau.resources import TableauServerResource
 
 
-def build_tableau_workbook_asset_job_schedule(
+def build_tableau_workbook_stats_schedule(
     asset_def: AssetsDefinition, cron_schedule, execution_timezone
 ):
-    job_def = define_asset_job(
+    job = define_asset_job(
         name=f"{asset_def.key.to_python_identifier()}_asset_job", selection=[asset_def]
     )
 
     @schedule(
-        name=f"{job_def.name}_schedule",
-        job=job_def,
+        name=f"{job.name}_schedule",
+        job=job,
         cron_schedule=cron_schedule,
         execution_timezone=execution_timezone,
     )
@@ -57,24 +58,31 @@ def build_tableau_workbook_asset_job_schedule(
     return _schedule
 
 
-@job
-def tableau_workbook_refresh_job():
-    """Placeholder job"""
-
-
-def build_tableau_workbook_refresh_schedule(asset: AssetsDefinition):
-    asset_metadata = asset.metadata_by_key[asset.key]
+def build_tableau_workbook_refresh_schedule(
+    asset: AssetsDefinition, execution_timezone: str
+):
+    @job(name=f"{asset.key.to_python_identifier()}_job")
+    def _job():
+        """Placehoder job"""
 
     @schedule(
-        cron_schedule=asset_metadata["cron_schedule"],
-        name=f"{asset.key.to_python_identifier()}_schedule",
-        execution_timezone=asset_metadata["cron_schedule"],
-        job=tableau_workbook_refresh_job,
+        name=f"{_job.name}_schedule",
+        cron_schedule=asset.metadata_by_key[asset.key]["cron_schedule"],
+        execution_timezone=execution_timezone,
+        job=_job,
     )
     def _schedule(context: ScheduleEvaluationContext, tableau: TableauServerResource):
-        workbook = tableau._server.workbooks.get_by_id(asset_metadata["id"])
+        workbook = tableau._server.workbooks.get_by_id(
+            asset.metadata_by_key[asset.key]["id"]
+        )
 
-        tableau._server.workbooks.refresh(workbook)
+        job = tableau._server.workbooks.refresh(workbook)
+
+        context.log.info(msg=str(job))
+
+        context.instance.report_runless_asset_event(
+            AssetObservation(asset_key=asset.key)
+        )
 
         return SkipReason("This schedule doesn't actually return any runs.")
 
