@@ -64,11 +64,17 @@ assets:
     partition_column: whenmodified
   - asset_name: teachercategory
     partition_column: whenmodified
-  - asset_name: u_studentsuserfields
-    partition_column: whenmodified
   - asset_name: users
     partition_column: whenmodified
   - asset_name: u_clg_et_stu
     partition_column: whenmodified
   - asset_name: u_clg_et_stu_alt
     partition_column: whenmodified
+  - asset_name: u_studentsuserfields
+    partition_column: whenmodified
+    select_columns:
+      - studentsdcid
+      - c_504_status
+      - infosnap_id
+      - media_release
+      - fleid

@@ -14,6 +14,7 @@ powerschool_table_assets_full = [
         code_location=CODE_LOCATION,
         table_name=a["asset_name"],
         partition_column=a["partition_column"],
+        select_columns=a.get("select_columns"),
         op_tags=a.get("op_tags"),
     )
     for a in config_from_files([(f"{config_dir}/assets-full.yaml")])["assets"]
