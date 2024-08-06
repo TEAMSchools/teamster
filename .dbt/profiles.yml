@@ -45,7 +45,8 @@ kipptaf:
       type: bigquery
       method: service-account
       project: teamster-332318
-      schema: _dev_kipptaf
+      schema: kipptaf
+      # schema: _dev_kipptaf
       keyfile: /etc/secret-volume/dbt_user_creds_json
 
 integration_tests:

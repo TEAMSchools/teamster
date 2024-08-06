@@ -28,7 +28,6 @@ dependencies = [
   "scikit-learn>=1.4.0",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
-  "zenpy>=2.0.42",
 ]
 requires-python = ">=3.12,<3.13"
 license = { text = "GPL-3.0-or-later" }
@@ -37,8 +36,8 @@ license = { text = "GPL-3.0-or-later" }
 requires = ["pdm-pep517>=1.0.0"]
 build-backend = "pdm.pep517.api"
 
-[tool]
-[tool.pdm]
+[tool.pdm.resolution.overrides]
+
 [tool.pdm.dev-dependencies]
 dev = [
   "pytest>=7.4.3",

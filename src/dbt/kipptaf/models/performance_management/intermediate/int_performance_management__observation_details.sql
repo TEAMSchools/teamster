@@ -17,10 +17,11 @@ select
     o.observer_employee_number,
     o.eval_date,
     o.overall_tier,
-    o.etr_score,
-    o.etr_tier,
-    o.so_score,
-    o.so_tier,
+
+    null as etr_score,
+    null as etr_tier,
+    null as so_score,
+    null as so_tier,
 
     os.value_score as row_score,
 
@@ -28,7 +29,8 @@ select
 
     mg.measurement_group_name as strand_name,
 
-    tb.value_clean as text_box,
+    /* os.value_text is dropdown selections, text box values are comments */
+    coalesce(os.value_text, tb.value_clean) as text_box,
 from {{ ref("int_performance_management__observations") }} as o
 left join
     {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
@@ -55,7 +57,9 @@ select
     observation_id,
     rubric_name,
     score as observation_score,
+
     null as strand_score,
+
     glows,
     grows,
     locked,

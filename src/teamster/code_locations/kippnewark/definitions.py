@@ -3,9 +3,9 @@ from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kippnewark import (
     CODE_LOCATION,
+    _dbt,
     couchdrop,
     datagun,
-    dbt,
     deanslist,
     edplan,
     iready,
@@ -14,7 +14,7 @@ from teamster.code_locations.kippnewark import (
     renlearn,
     titan,
 )
-from teamster.libraries.core.resources import (
+from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DB_POWERSCHOOL,
     DEANSLIST_RESOURCE,
@@ -35,8 +35,8 @@ defs = Definitions(
     executor=k8s_job_executor,
     assets=load_assets_from_modules(
         modules=[
+            _dbt,
             datagun,
-            dbt,
             deanslist,
             edplan,
             iready,
@@ -47,8 +47,8 @@ defs = Definitions(
         ]
     ),
     schedules=[
+        *_dbt.schedules,
         *datagun.schedules,
-        *dbt.schedules,
         *deanslist.schedules,
         *powerschool.schedules,
     ],

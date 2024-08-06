@@ -126,13 +126,9 @@ with
         select
             lg._dbt_source_relation,
             lg.studentid,
+            lg.academic_year,
             lg.entry_date,
             lg.entry,
-            {{
-                teamster_utils.date_to_fiscal_year(
-                    date_field="lg.entry_date", start_month=7, year_source="start"
-                )
-            }} as academic_year,
         from {{ ref("stg_powerschool__log") }} as lg
         inner join
             {{ ref("stg_powerschool__gen") }} as g

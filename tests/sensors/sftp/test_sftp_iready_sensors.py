@@ -1,6 +1,6 @@
 from dagster import SensorResult, build_sensor_context
 
-from teamster.libraries.core.resources import SSH_IREADY
+from teamster.core.resources import SSH_IREADY
 
 
 def _test_sensor(sftp_sensor, **kwargs):
