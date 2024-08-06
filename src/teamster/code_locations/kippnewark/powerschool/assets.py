@@ -24,6 +24,7 @@ powerschool_table_assets_no_partition = [
     build_powerschool_table_asset(
         code_location=CODE_LOCATION,
         table_name=a["asset_name"],
+        select_columns=a.get("select_columns"),
         op_tags=a.get("op_tags"),
     )
     for a in config_from_files([(f"{config_dir}/assets-nonpartition.yaml")])["assets"]

@@ -14,6 +14,13 @@ assets:
   - asset_name: testscore
   - asset_name: prefs
     partition_column: transaction_date
+  - asset_name: log
+    select_columns:
+      - dcid
+      - studentid
+      - logtypeid
+      - entry
+      - entry_date
   - asset_name: studenttestscore
     op_tags:
       dagster-k8s/config:
@@ -23,12 +30,3 @@ assets:
               cpu: 750m
             limits:
               cpu: 750m
-  - asset_name: log
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              cpu: 1000m
-            limits:
-              cpu: 1000m
