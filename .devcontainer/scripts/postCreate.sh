@@ -1,12 +1,14 @@
 #!/bin/bash
 
+# specify how to reconcile divergent branches
+git config pull.rebase false # merge
+
 # update/install apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
   sudo apt-get -y --no-install-recommends install \
-    bash-completion \
-    google-cloud-cli-gke-gcloud-auth-plugin &&
-  rm -rf /var/lib/apt/lists/*
+    bash-completion &&
+  sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
 mkdir -p ./env
@@ -75,4 +77,4 @@ find ./src/dbt/ -maxdepth 2 -name "dbt_project.yml" -print0 |
   done
 
 # install dbt cloud cli
-sudo pip install dbt
+# sudo pip install dbt

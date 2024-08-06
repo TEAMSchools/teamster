@@ -18,12 +18,12 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.libraries.adp.workforce_manager.resources import (
-    AdpWorkforceManagerResource,
-)
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
+)
+from teamster.libraries.adp.workforce_manager.resources import (
+    AdpWorkforceManagerResource,
 )
 
 
@@ -117,9 +117,16 @@ def build_adp_wfm_asset(
                 if rex["id"] == report_execution_id
             ][0]
 
-            context.log.info(report_execution_record)
+            context.log.debug(report_execution_record)
 
-            if report_execution_record["status"]["qualifier"] == "Completed":
+            status_qualifier = report_execution_record["status"]["qualifier"]
+
+            if status_qualifier == "Failed":
+                api_output_error = report_execution_record["apiOutputError"]
+
+                context.log.error(msg=api_output_error)
+                raise Exception(api_output_error)
+            elif status_qualifier == "Completed":
                 context.log.info(f"Downloading {report_name}")
 
                 file_response = _check.not_none(

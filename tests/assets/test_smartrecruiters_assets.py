@@ -6,7 +6,7 @@ from teamster.code_locations.kipptaf.smartrecruiters.assets import (
     applicants,
     applications,
 )
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(asset):

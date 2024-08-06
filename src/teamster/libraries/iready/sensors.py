@@ -1,14 +1,19 @@
 import json
 import re
+from collections import defaultdict
+from itertools import groupby
+from operator import itemgetter
 
 import pendulum
 from dagster import (
+    AssetKey,
     AssetsDefinition,
     MultiPartitionKey,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
     _check,
+    define_asset_job,
     sensor,
 )
 
@@ -17,37 +22,55 @@ from teamster.libraries.ssh.resources import SSHResource
 
 def build_iready_sftp_sensor(
     code_location: str,
-    asset_defs: list[AssetsDefinition],
+    asset_selection: list[AssetsDefinition],
     timezone,
     remote_dir_regex: str,
     current_fiscal_year: int,
     minimum_interval_seconds=None,
 ):
+    base_job_name = f"{code_location}_iready_sftp_asset_job"
+
+    keys_by_partitions_def = defaultdict(set[AssetKey])
+
+    for assets_def in asset_selection:
+        keys_by_partitions_def[assets_def.partitions_def].add(assets_def.key)
+
+    jobs = [
+        define_asset_job(
+            name=(
+                f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
+            ),
+            selection=list(keys),
+        )
+        for partitions_def, keys in keys_by_partitions_def.items()
+    ]
+
     @sensor(
-        name=f"{code_location}_iready_sftp_sensor",
+        name=f"{base_job_name}_sensor",
+        jobs=jobs,
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=asset_defs,
     )
     def _sensor(context: SensorEvaluationContext, ssh_iready: SSHResource):
-        now = pendulum.now(tz=timezone)
+        now_timestamp = pendulum.now(tz=timezone).timestamp()
 
-        cursor: dict = json.loads(context.cursor or "{}")
-
+        run_request_kwargs = []
         run_requests = []
+        cursor: dict = json.loads(context.cursor or "{}")
 
         files = ssh_iready.listdir_attr_r(remote_dir=remote_dir_regex)
 
-        for asset in asset_defs:
-            metadata_by_key = asset.metadata_by_key[asset.key]
+        for asset in asset_selection:
             asset_identifier = asset.key.to_python_identifier()
-
+            metadata_by_key = asset.metadata_by_key[asset.key]
+            partitions_def = _check.not_none(value=asset.partitions_def)
             context.log.info(asset_identifier)
+
             last_run = cursor.get(asset_identifier, 0)
 
             pattern = re.compile(
                 pattern=(
-                    f"{metadata_by_key["remote_dir_regex"]}/"
-                    f"{metadata_by_key["remote_file_regex"]}"
+                    rf"{metadata_by_key["remote_dir_regex"]}/"
+                    rf"{metadata_by_key["remote_file_regex"]}"
                 )
             )
 
@@ -75,17 +98,30 @@ def build_iready_sftp_sensor(
                     partition_key = MultiPartitionKey(group_dict)
 
                 context.log.info(f"{f.filename}: {partition_key}")
-                run_requests.append(
-                    RunRequest(
-                        run_key=(
-                            f"{asset_identifier}__{partition_key}__{now.timestamp()}"
+                run_request_kwargs.append(
+                    {
+                        "asset_key": asset.key,
+                        "partition_key": partition_key,
+                        "job_name": (
+                            f"{base_job_name}_"
+                            f"{partitions_def.get_serializable_unique_identifier()}"
                         ),
-                        asset_selection=[asset.key],
-                        partition_key=partition_key,
-                    )
+                    }
                 )
 
-                cursor[asset_identifier] = now.timestamp()
+                cursor[asset_identifier] = now_timestamp
+
+        for (job_name, parition_key), group in groupby(
+            iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
+        ):
+            run_requests.append(
+                RunRequest(
+                    run_key=f"{job_name}_{parition_key}_{now_timestamp}",
+                    job_name=job_name,
+                    partition_key=parition_key,
+                    asset_selection=[g["asset_key"] for g in group],
+                )
+            )
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

@@ -1,4 +1,4 @@
-from dagster import MAX_RUNTIME_SECONDS_TAG, ScheduleDefinition
+from dagster import ScheduleDefinition
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.datagun.jobs import (
@@ -16,7 +16,6 @@ clever_extract_assets_schedule = ScheduleDefinition(
     job=clever_extract_asset_job,
     cron_schedule="@hourly",
     execution_timezone=LOCAL_TIMEZONE.name,
-    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 10)},
 )
 
 coupa_extract_assets_schedule = ScheduleDefinition(
@@ -29,14 +28,12 @@ deanslist_annual_extract_asset_job_schedule = ScheduleDefinition(
     job=deanslist_annual_extract_asset_job,
     cron_schedule="25 1 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
-    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 15)},
 )
 
 deanslist_continuous_extract_asset_job_schedule = ScheduleDefinition(
     job=deanslist_continuous_extract_asset_job,
     cron_schedule="25 1 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
-    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 15)},
 )
 
 egencia_extract_assets_schedule = ScheduleDefinition(
@@ -49,7 +46,6 @@ idauto_extract_assets_schedule = ScheduleDefinition(
     job=idauto_extract_asset_job,
     cron_schedule="0 4 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
-    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 10)},
 )
 
 illuminate_extract_assets_schedule = ScheduleDefinition(
