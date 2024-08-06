@@ -98,6 +98,12 @@ assets:
     metadata:
       id: 7adabf6e-fa59-4d60-bca8-de3a67005a53
       cron_schedule: 0 6 * * *
+  - name: Recent Job & Salary Changes
+    deps:
+      - [kipptaf, tableau, rpt_tableau__staff_job_salary_audit]
+    metadata:
+      id: a571cf7d-9893-4f33-970d-46dd7a392c8e
+      cron_schedule: 0 2 * * *
   # - name: Academic Priorities [NJ]
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__power_standards]
@@ -183,4 +189,3 @@ assets:
   #   metadata:
   #     id: b11542a2-6780-4feb-a1dd-534ffe724faf
   # prospects_import - Daily 4:00 AM America/Los_Angeles
-  # Recent Job & Salary Changes - Daily 11:00 PM America/Los_Angeles
