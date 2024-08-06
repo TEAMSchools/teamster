@@ -17,7 +17,7 @@ from teamster.code_locations.kipptaf.adp.workforce_now.api.jobs import (
 
 adp_wfn_worker_fields_update_schedule = ScheduleDefinition(
     job=adp_wfn_update_workers_job,
-    cron_schedule="0 6* * *",
+    cron_schedule="0 6 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
