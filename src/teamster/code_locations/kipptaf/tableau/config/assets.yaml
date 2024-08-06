@@ -180,3 +180,7 @@ assets:
       cron_schedule: 0 6 * * *
   # prospects_import - Daily 4:00 AM America/Los_Angeles
   # Recent Job & Salary Changes - Daily 11:00 PM America/Los_Angeles
+  # Ops Dashboard - Hourly
+  # High School Early Warning Dashboard - Daily 3:00 AM America/Los_Angeles
+  # College Admission Readiness Assessments Tracker (CARAT) - Daily 3:00 AM America/Los_Angeles
+  # Teacher Attendance Dashboard - Daily 9:00 AM America/Los_Angeles
