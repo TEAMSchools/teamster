@@ -1,7 +1,7 @@
 with
     survey_reconciliation as (
         select
-            survey_response_id,
+            survey_response_id as response_id,
             sf_contact_id,
 
             row_number() over (
@@ -24,7 +24,21 @@ with
 
     alumni_data as (
         select
-            e.student,
+            r.contact_id as student,
+            r.first_name as sf_first_name,
+            r.last_name as sf_last_name,
+            r.lastfirst as sf_lastfirst,
+            r.contact_email as sf_email,
+            r.contact_secondary_email as sf_secondary_email,
+            r.ktc_cohort as kipp_hs_class,
+            r.contact_kipp_hs_graduate as kipp_hs_graduate,
+            r.contact_college_match_display_gpa as college_match_display_gpa,
+            r.contact_kipp_region_name as kipp_region_name,
+            r.contact_description as description,
+            r.contact_gender as gender,
+            r.contact_ethnicity as ethnicity,
+            r.contact_expected_college_graduation as expected_college_graduation,
+
             e.name,
             e.pursuing_degree_type,
             e.type,
@@ -33,32 +47,28 @@ with
             e.major,
             e.status,
 
-            c.first_name as sf_first_name,
-            c.last_name as sf_last_name,
-            c.email as sf_email,
-            c.secondary_email as sf_secondary_email,
-            c.kipp_ms_graduate,
-            c.kipp_hs_graduate,
-            c.kipp_hs_class,
-            c.college_match_display_gpa,
-            c.kipp_region_name,
-            c.description,
-            c.gender,
-            c.ethnicity,
-
             a.adjusted_6_year_minority_graduation_rate as ecc,
             a.name as institution,
 
             extract(month from e.actual_end_date) as actual_end_date_month,
             extract(year from e.actual_end_date) as actual_end_date_year,
 
-            row_number() over (
-                partition by e.student order by e.actual_end_date desc
+            if(
+                e.name is not null,
+                row_number() over (
+                    partition by e.student order by e.actual_end_date desc
+                ),
+                1
             ) as rn_latest,
-        from {{ ref("stg_kippadb__enrollment") }} as e
+        from {{ ref("int_kippadb__roster") }} as r
+        left join
+            {{ ref("stg_kippadb__enrollment") }} as e
+            on r.contact_id = e.student
+            and e.type not in ('High School', 'Middle School')
         left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
-        inner join {{ ref("stg_kippadb__contact") }} as c on e.student = c.id
-        where e.status = 'Graduated' and e.type not in ('High School', 'Middle School')
+        where
+            r.contact_id is not null
+            and r.ktc_cohort < {{ var("current_academic_year") }} + 1
     ),
 
     survey_data as (
@@ -272,16 +282,15 @@ select
         when ad.actual_end_date_month between 7 and 12
         then concat('Fall ', ad.actual_end_date_year)
     end as season_label,
-from survey_weighted as sw
+from alumni_data as ad
 left join
     survey_reconciliation as sr
-    on sw.response_id = sr.survey_response_id
+    on ad.student = sr.sf_contact_id
     and sr.rn_response_id = 1
-full join
-    alumni_data as ad
-    on ad.rn_latest = 1
-    and (
-        sw.respondent_user_principal_name = ad.sf_email
-        or sw.respondent_user_principal_name = ad.sf_secondary_email
-        or sr.sf_contact_id = ad.student
+left join
+    survey_weighted as sw
+    on (
+        ad.sf_email = sw.respondent_user_principal_name
+        or ad.sf_secondary_email = sw.respondent_user_principal_name
+        or sr.response_id = sw.response_id
     )
