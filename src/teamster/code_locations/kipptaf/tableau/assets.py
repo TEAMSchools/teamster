@@ -24,7 +24,7 @@ workbook_refresh_assets = [
     build_tableau_workbook_refresh_asset(
         code_location=CODE_LOCATION,
         timezone=LOCAL_TIMEZONE.name,
-        cron_schedule=a["metadata"]["cron_schedule"],
+        cron_schedule=a["metadata"].get("cron_schedule"),
         **a,
     )
     for a in config_assets
