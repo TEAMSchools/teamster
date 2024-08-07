@@ -1,4 +1,5 @@
 select
+    _dbt_source_relation,
     academic_year,
     assessment_name,
     season,
@@ -19,6 +20,7 @@ where not is_invalidated
 union all
 
 select
+    _dbt_source_relation,
     academic_year,
     assessment_name,
     season,
@@ -38,6 +40,7 @@ from {{ ref("stg_fldoe__science") }}
 union all
 
 select
+    _dbt_source_relation,
     academic_year,
     assessment_name,
     season,
@@ -59,6 +62,7 @@ where achievement_level not in ('Insufficient to score', 'Invalidated')
 union all
 
 select
+    _dbt_source_relation,
     academic_year,
     test_name as assessment_name,
     'Spring' as season,
