@@ -24,11 +24,30 @@ def build_tableau_workbook_refresh_asset(
     name: str,
     deps: list[str],
     metadata: dict[str, str],
-    cron_schedule: str | list[str],
-    timezone: str,
+    cron_schedule: str | list[str] | None = None,
+    timezone: str | None = None,
 ):
-    if isinstance(cron_schedule, str):
-        cron_schedule = [cron_schedule]
+    if cron_schedule is None:
+        auto_materialize_policy = None
+    elif isinstance(cron_schedule, str):
+        auto_materialize_policy = AutoMaterializePolicy(
+            rules={
+                AutoMaterializeRule.materialize_on_cron(
+                    cron_schedule=cron_schedule,
+                    timezone=_check.not_none(value=timezone),
+                )
+            }
+        )
+    else:
+        auto_materialize_policy = AutoMaterializePolicy(
+            rules={
+                AutoMaterializeRule.materialize_on_cron(
+                    cron_schedule=cs,
+                    timezone=_check.not_none(value=timezone),
+                )
+                for cs in cron_schedule
+            }
+        )
 
     @asset(
         key=[
@@ -39,14 +58,7 @@ def build_tableau_workbook_refresh_asset(
         description=name,
         deps=deps,
         metadata=metadata,
-        auto_materialize_policy=AutoMaterializePolicy(
-            rules={
-                AutoMaterializeRule.materialize_on_cron(
-                    cron_schedule=cs, timezone=timezone
-                )
-                for cs in cron_schedule
-            }
-        ),
+        auto_materialize_policy=auto_materialize_policy,
         compute_kind="tableau",
         group_name="tableau",
         output_required=False,
