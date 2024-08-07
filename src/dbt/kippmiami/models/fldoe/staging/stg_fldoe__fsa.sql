@@ -7,7 +7,6 @@ with
             schoolyear as school_year,
             scoreflag as score_flag,
 
-            'Spring' as administration_window,
             'FSA' as assessment_name,
             'Spring' as season,
 
@@ -49,6 +48,7 @@ with
     transformations as (
         select
             fleid,
+            assessment_name,
             test_name,
             season,
             test_grade,
@@ -88,7 +88,7 @@ with
 
             cast(regexp_extract(test_name, r'^\w+\s(\d+)') as int) - 1 as academic_year,
 
-            regexp_extract(test_name, r'^(\w+)\s') as administration_round,
+            proper(regexp_extract(test_name, r'^(\w+)\s')) as administration_round,
             regexp_extract(test_name, r'^\w+\s\d+\s(\w+)\s\d+$') as discipline,
 
             if(performance_level >= 3, true, false) as is_proficient,
