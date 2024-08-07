@@ -56,7 +56,7 @@ with
             if(
                 e.name is not null,
                 row_number() over (
-                    partition by e.student order by e.actual_end_date desc
+                    partition by r.contact_id order by e.actual_end_date desc
                 ),
                 1
             ) as rn_latest,
@@ -282,6 +282,10 @@ select
         when ad.actual_end_date_month between 7 and 12
         then concat('Fall ', ad.actual_end_date_year)
     end as season_label,
+
+    row_number() over (
+        partition by ad.student order by sw.response_date_submitted desc
+    ) as rn_survey,
 from alumni_data as ad
 left join
     survey_reconciliation as sr
@@ -294,3 +298,4 @@ left join
         or ad.sf_secondary_email = sw.respondent_user_principal_name
         or sr.response_id = sw.response_id
     )
+where ad.rn_latest = 1
