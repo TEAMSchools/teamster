@@ -8,14 +8,12 @@ from dagster import (
     AssetsDefinition,
     MonthlyPartitionsDefinition,
     Output,
-    SkipReason,
     TimeWindowPartitionsDefinition,
     _check,
     asset,
 )
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
-from sshtunnel import HandlerSSHTunnelForwarderError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
@@ -132,11 +130,6 @@ def build_powerschool_table_asset(
                 ),
                 ttype=pathlib.Path,
             )
-        except HandlerSSHTunnelForwarderError as e:
-            if "An error occurred while opening tunnels." in e.args:
-                return SkipReason(str(e))
-            else:
-                raise e
         finally:
             ssh_tunnel.stop()
 

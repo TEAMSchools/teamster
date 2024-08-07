@@ -4,17 +4,17 @@ from dagster import TextMetadataValue, _check, materialize
 from dagster._core.events import StepMaterializationData
 
 from teamster.code_locations.kipptaf.resources import TABLEAU_SERVER_RESOURCE
-from teamster.code_locations.kipptaf.tableau.assets import workbook
+from teamster.code_locations.kipptaf.tableau.assets import workbook_stats
 from teamster.core.resources import get_io_manager_gcs_avro
 
 
-def test_workbook():
-    partitions_def = _check.not_none(value=workbook.partitions_def)
+def test_workbook_stats_assets():
+    partitions_def = _check.not_none(value=workbook_stats.partitions_def)
 
     partition_keys = partitions_def.get_partition_keys()
 
     result = materialize(
-        assets=[workbook],
+        assets=[workbook_stats],
         resources={
             "io_manager_gcs_avro": get_io_manager_gcs_avro(
                 code_location="test", test=True
