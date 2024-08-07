@@ -1,16 +1,4 @@
 with
-    ms_grad_sub as (
-        select
-            _dbt_source_relation,
-            student_number,
-            school_abbreviation as ms_attended,
-            row_number() over (
-                partition by student_number order by exitdate desc
-            ) as rn,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where school_level = 'MS'
-    ),
-
     students_nj as (
         select
             e._dbt_source_relation,
@@ -27,13 +15,16 @@ with
             e.is_out_of_district,
             e.gender,
             e.lunch_status,
-            e.advisory,
-            e.iep_status,
 
             m.ms_attended,
 
-  advisory,
-        from {{ ref("int_tableau__student_enrollments") }} as e
+            case
+                when e.school_level in ('ES', 'MS')
+                then e.advisory_name
+                when e.school_level = 'HS'
+                then e.advisor_lastfirst
+            end as advisory,
+        from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             ms_grad_sub as m
             on e.student_number = m.student_number
