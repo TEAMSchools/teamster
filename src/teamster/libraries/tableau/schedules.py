@@ -1,18 +1,13 @@
 from dagster import (
-    AssetObservation,
     AssetsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
-    SkipReason,
     _check,
     define_asset_job,
-    job,
     schedule,
 )
-
-from teamster.libraries.tableau.resources import TableauServerResource
 
 
 def build_tableau_workbook_stats_schedule(
@@ -54,36 +49,5 @@ def build_tableau_workbook_stats_schedule(
                 partition_key=partition_key,
                 tags={"tableau_pat_session_limit": "true"},
             )
-
-    return _schedule
-
-
-def build_tableau_workbook_refresh_schedule(
-    asset: AssetsDefinition, execution_timezone: str
-):
-    @job(name=f"{asset.key.to_python_identifier()}_job")
-    def _job():
-        """Placehoder job"""
-
-    @schedule(
-        name=f"{_job.name}_schedule",
-        cron_schedule=asset.metadata_by_key[asset.key]["cron_schedule"],
-        execution_timezone=execution_timezone,
-        job=_job,
-    )
-    def _schedule(context: ScheduleEvaluationContext, tableau: TableauServerResource):
-        workbook = tableau._server.workbooks.get_by_id(
-            asset.metadata_by_key[asset.key]["id"]
-        )
-
-        job = tableau._server.workbooks.refresh(workbook)
-
-        context.log.info(msg=str(job))
-
-        context.instance.report_runless_asset_event(
-            AssetObservation(asset_key=asset.key)
-        )
-
-        return SkipReason("This schedule doesn't actually return any runs.")
 
     return _schedule

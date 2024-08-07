@@ -1,11 +1,13 @@
 import pathlib
 
-from dagster import AssetSpec, config_from_files, external_assets_from_specs
-from slugify import slugify
+from dagster import config_from_files
 
-from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.tableau.schema import WORKBOOK_SCHEMA
-from teamster.libraries.tableau.assets import build_tableau_workbook_stats_asset
+from teamster.libraries.tableau.assets import (
+    build_tableau_workbook_refresh_asset,
+    build_tableau_workbook_stats_asset,
+)
 
 config_assets = config_from_files(
     [f"{pathlib.Path(__file__).parent}/config/assets.yaml"]
@@ -18,22 +20,15 @@ workbook_stats = build_tableau_workbook_stats_asset(
     schema=WORKBOOK_SCHEMA,
 )
 
-specs = [
-    AssetSpec(
-        key=[
-            CODE_LOCATION,
-            "tableau",
-            slugify(text=a["name"], separator="_", regex_pattern=r"[^A-Za-z0-9_]"),
-        ],
-        description=a["name"],
-        deps=a["deps"],
-        metadata=a["metadata"],
-        group_name="tableau",
+workbook_refresh_assets = [
+    build_tableau_workbook_refresh_asset(
+        code_location=CODE_LOCATION,
+        timezone=LOCAL_TIMEZONE.name,
+        cron_schedule=a["metadata"]["cron_schedule"],
+        **a,
     )
     for a in config_assets
 ]
-
-workbook_refresh_assets = external_assets_from_specs(specs)
 
 assets = [
     workbook_stats,

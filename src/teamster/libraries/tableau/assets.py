@@ -1,5 +1,7 @@
 from dagster import (
     AssetExecutionContext,
+    AutoMaterializePolicy,
+    AutoMaterializeRule,
     DailyPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -8,12 +10,57 @@ from dagster import (
     _check,
     asset,
 )
+from slugify import slugify
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
 from teamster.libraries.tableau.resources import TableauServerResource
+
+
+def build_tableau_workbook_refresh_asset(
+    code_location: str,
+    name: str,
+    deps: list[str],
+    metadata: dict[str, str],
+    cron_schedule: str | list[str],
+    timezone: str,
+):
+    if isinstance(cron_schedule, str):
+        cron_schedule = [cron_schedule]
+
+    @asset(
+        key=[
+            code_location,
+            "tableau",
+            slugify(text=name, separator="_", regex_pattern=r"[^A-Za-z0-9_]"),
+        ],
+        description=name,
+        deps=deps,
+        metadata=metadata,
+        auto_materialize_policy=AutoMaterializePolicy(
+            rules={
+                AutoMaterializeRule.materialize_on_cron(
+                    cron_schedule=cs, timezone=timezone
+                )
+                for cs in cron_schedule
+            }
+        ),
+        compute_kind="tableau",
+        group_name="tableau",
+        output_required=False,
+    )
+    def _asset(context: AssetExecutionContext, tableau: TableauServerResource):
+        workbook = tableau._server.workbooks.get_by_id(
+            context.assets_def.metadata_by_key[context.asset_key]["id"]
+        )
+
+        tableau._server.workbooks.refresh(workbook)
+
+        return None
+
+    return _asset
 
 
 def build_tableau_workbook_stats_asset(
