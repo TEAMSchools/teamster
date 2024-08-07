@@ -64,8 +64,8 @@ union all
 select
     _dbt_source_relation,
     academic_year,
-    test_name as assessment_name,
-    'Spring' as season,
+    assessment_name,
+    season,
     discipline,
     test_code,
     is_proficient,
