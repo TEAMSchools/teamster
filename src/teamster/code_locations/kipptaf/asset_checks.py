@@ -11,7 +11,6 @@ adp_wfn_dbt_asset_selection = [
     AssetKey(["kipptaf", "adp_workforce_now", "int_adp_workforce_now__worker_person"]),
     AssetKey(["kipptaf", "adp_workforce_now", "src_adp_workforce_now__workers"]),
     AssetKey(["kipptaf", "adp_workforce_now", "stg_adp_workforce_now__person_history"]),
-    AssetKey(["kipptaf", "adp_workforce_now", "stg_adp_workforce_now__person_history"]),
     AssetKey(["kipptaf", "adp_workforce_now", "stg_adp_workforce_now__workers"]),
     AssetKey(["kipptaf", "people", "stg_people__employee_numbers"]),
     AssetKey(
