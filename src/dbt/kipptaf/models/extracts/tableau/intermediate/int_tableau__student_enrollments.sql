@@ -42,6 +42,10 @@ select
 
     'KTAF' as district,
 
+    cast(sp.academic_year as string)
+    || '-'
+    || right(cast(sp.academic_year + 1 as string), 2) as academic_year_display,
+
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
