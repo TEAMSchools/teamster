@@ -38,7 +38,7 @@ select
     end as region_state,
     case
         /* see everything, edit everything*/
-        when sr.department_home_name in ('Data', 'Human Resources')
+        when sr.department_home_name in ('Data')
         then 7
         when
             sr.department_home_name = 'Recruitment'
@@ -72,7 +72,7 @@ select
             contains_substr(sr.job_title, 'Director')
             and sr.department_home_name = 'Special Education'
         then 3
-        when sr.department_home_name = 'Teaching and Learning'
+        when sr.department_home_name in ('Leadership Development', 'Human Resources')
         then 3
         /* see your state/region, edit nothing */
         when
