@@ -104,6 +104,14 @@ assets:
     metadata:
       id: a571cf7d-9893-4f33-970d-46dd7a392c8e
       cron_schedule: 0 2 * * *
+  - name: OKRTS Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__okrts_behavior]
+      - [kipptaf, tableau, rpt_tableau__okrts_referrals]
+      - [kipptaf, tableau, rpt_tableau__suspension_over_time]
+    metadata:
+      id: b3365fc1-7f74-48e6-9d1c-37a5cb67c12d
+      cron_schedule: 0 4 * * *
   # - name: Academic Priorities [NJ]
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__power_standards]
