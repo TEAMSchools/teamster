@@ -27,16 +27,13 @@ with
             e.is_out_of_district,
             e.gender,
             e.lunch_status,
+            e.advisory,
+            e.iep_status,
 
             m.ms_attended,
 
-            case
-                when e.school_level in ('ES', 'MS')
-                then e.advisory_name
-                when e.school_level = 'HS'
-                then e.advisor_lastfirst
-            end as advisory,
-        from {{ ref("base_powerschool__student_enrollments") }} as e
+  advisory,
+        from {{ ref("int_tableau__student_enrollments") }} as e
         left join
             ms_grad_sub as m
             on e.student_number = m.student_number
