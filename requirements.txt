@@ -273,9 +273,9 @@ google-cloud-core==2.4.1 \
 google-cloud-dataproc==5.10.2 \
     --hash=sha256:6a3732edd1a5b4df58a7c5cf198a660c11cf9d89ae10bd7f9ee1244e1f621771 \
     --hash=sha256:776c556450fdf5593ff34a8020b587683a45840c49eeee07bd313b4beb1a466c
-google-cloud-storage==2.18.0 \
-    --hash=sha256:0aa3f7c57f3632f81b455d91558d2b27ada96eee2de3aaa17f689db1470d9578 \
-    --hash=sha256:e8e1a9577952143c3fca8163005ecfadd2d70ec080fa158a8b305000e2c22fbb
+google-cloud-storage==2.18.1 \
+    --hash=sha256:6707a6f30a05aee36faca81296419ca2907ac750af1c0457f278bc9a6fb219ad \
+    --hash=sha256:9d8db6bde3a979cca7150511cd0e4cb363e5f69d31259d890ba1124fa109418c
 google-crc32c==1.5.0 \
     --hash=sha256:89284716bc6a5a415d4eaa11b1726d2d60a0cd12aadf5439828353662ede9dd7
 google-resumable-media==2.7.1 \
