@@ -1,19 +1,8 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
-    dcid_filter as (
-        select *, _file_name,
-        from {{ source("powerschool", "src_powerschool__storedgrades") }}
-        where
-            dcid.int_value in (
-                select dcid.int_value,
-                from {{ source("powerschool", "src_powerschool__storedgrades_dcid") }}
-            )
-    ),
-
     deduplicate as (
         {{
             dbt_utils.deduplicate(
-                relation="dcid_filter",
+                relation=source("powerschool", "src_powerschool__storedgrades"),
                 partition_by="dcid.int_value",
                 order_by="_file_name desc",
             )
@@ -85,7 +74,9 @@ with
             executionid,
 
             percent.double_value / 100.000 as percent_decimal,
-            left(storecode, 2) as storecode_type,
+
+            left(storecode, 1) as storecode_type,
+
             safe_cast(left(safe_cast(termid.int_value as string), 2) as int) as yearid,
         from deduplicate
     ),
@@ -97,6 +88,7 @@ with
 
 select
     *,
+
     case
         /* unweighted pre-2016 */
         when academic_year < 2016 and gradescale_name = 'NCA Honors'
