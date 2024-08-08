@@ -7,7 +7,6 @@ assets:
   - asset_name: cycle_day
   - asset_name: fte
   - asset_name: gen
-  - asset_name: log
   - asset_name: reenrollments
   - asset_name: spenrollments
   - asset_name: studenttest
@@ -16,3 +15,10 @@ assets:
   - asset_name: testscore
   - asset_name: prefs
     partition_column: transaction_date
+  - asset_name: log
+    select_columns:
+      - dcid
+      - studentid
+      - logtypeid
+      - entry
+      - entry_date

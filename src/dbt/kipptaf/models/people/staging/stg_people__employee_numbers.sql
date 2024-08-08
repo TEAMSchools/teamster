@@ -1,3 +1,4 @@
+-- depends_on: {{ ref('stg_adp_workforce_now__workers') }}
 {{-
     config(
         materialized="incremental",
@@ -20,30 +21,42 @@
     {%- endif -%}
 {%- endif -%}
 
-with
-    using_clause as (select id from {{ source("adp_workforce_now", "worker") }}),
-
-    updates as (
-        select id
-        from using_clause
-        {% if is_incremental() -%}
-            where id in (select adp_associate_id from {{ this }})
-        {%- endif %}
-    ),
-
-    inserts as (select id from using_clause where id not in (select id from updates))
-
 {% if is_incremental() %}
+    with
+        workers as (
+            select worker_id__id_value,
+            from {{ ref("stg_adp_workforce_now__workers") }}
+            where is_current_record
+        ),
+
+        updates as (
+            select worker_id__id_value,
+            from workers
+            where worker_id__id_value in (select adp_associate_id, from {{ this }})
+        ),
+
+        inserts as (
+            select
+                worker_id__id_value,
+
+                row_number() over (order by worker_id__id_value) as rn,
+            from workers
+            where worker_id__id_value not in (select worker_id__id_value, from updates)
+        ),
+
+        men as (select max(employee_number) as max_employee_number, from {{ this }})
+
+    -- trunk-ignore(sqlfluff/ST06)
     select
-        (
-            men.max_employee_number + row_number() over (order by ins.id)
-        ) as employee_number,
-        ins.id as adp_associate_id,
+        men.max_employee_number + ins.rn as employee_number,
+
+        ins.worker_id__id_value as adp_associate_id,
+
         cast(null as string) as adp_associate_id_legacy,
-        true as is_active
-    from inserts ins
-    cross join
-        (select max(employee_number) as max_employee_number from {{ this }}) as men
+
+        true as is_active,
+    from inserts as ins
+    cross join men
 {% else %}
     select employee_number, adp_associate_id, adp_associate_id_legacy, is_active
     from {{ source("people", "src_people__employee_numbers_archive") }}

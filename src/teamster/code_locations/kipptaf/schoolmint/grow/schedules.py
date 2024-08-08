@@ -52,7 +52,7 @@ schoolmint_grow_multi_partitions_assets_job_schedule = (
 )
 
 schoolmint_grow_user_update_job_schedule = ScheduleDefinition(
-    cron_schedule="30 5 * * *",
+    cron_schedule="0 6 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
     job=schoolmint_grow_user_update_job,
 )
