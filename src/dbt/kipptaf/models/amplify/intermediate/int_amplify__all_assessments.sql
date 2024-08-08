@@ -11,18 +11,24 @@ with
             u.measure as mclass_measure,
             u.score as mclass_measure_score,
             u.level as mclass_measure_level,
+            u.level_int as mclass_measure_level_int,
             u.national_norm_percentile as mclass_measure_percentile,
             u.semester_growth as mclass_measure_semester_growth,
             u.year_growth as mclass_measure_year_growth,
             null as mclass_probe_number,
             null as mclass_total_number_of_probes,
             null as mclass_score_change,
-            mclass_measure_level_int,
+
+            row_number() over (
+                partition by u.surrogate_key, u.measure order by u.level_int desc
+            ) as rn_highest,
         from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
         inner join
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
-        where bss.academic_year >= {{ var("current_academic_year") - 1 }}
+        where
+            bss.academic_year >= {{ var("current_academic_year") - 1 }}
+            and bss.enrollment_grade = bss.assessment_grade
 
         union all
 
@@ -36,64 +42,62 @@ with
             sync_date as mclass_sync_date,
             measure as mclass_measure,
             score as mclass_measure_score,
-            null as mclass_measure_level,
+            'NA' as mclass_measure_level,
+            null as mclass_measure_level_int,
             null as mclass_measure_percentile,
-            null as mclass_measure_semester_growth,
-            null as mclass_measure_year_growth,
+            'NA' as mclass_measure_semester_growth,
+            'NA' as mclass_measure_year_growth,
             probe_number as mclass_probe_number,
             total_number_of_probes as mclass_total_number_of_probes,
             score_change as mclass_score_change,
-            null as mclass_measure_level_int,
+
+            row_number() over (
+                partition by surrogate_key, measure order by score desc
+            ) as rn_highest,
         from {{ ref("stg_amplify__pm_student_summary") }}
-        where academic_year >= {{ var("current_academic_year") - 1 }}
+        where
+            academic_year >= {{ var("current_academic_year") - 1 }}
+            and enrollment_grade = assessment_grade
     ),
 
     composite_only as (
         select
             mclass_academic_year,
             mclass_student_number,
-            mclass_period as expected_test,
+            mclass_period,
             mclass_measure_level,
         from assessments_scores
-        where mclass_measure = 'Composite'
-    )
+        where mclass_measure = 'Composite' and rn_highest = 1
+    ),
 
-select *
-from composite_only
-where
-    mclass_student_number in (302293, 106548, 106271, 203602)
-
-    /*
     overall_composite_by_window as (
         select
-            mclass_academic_year, mclass_student_number, p.boy, p.moy, p.eoy,
+            mclass_academic_year,
+            mclass_student_number,
+            coalesce(p.boy, 'No data') as boy,
+            coalesce(p.moy, 'No data') as moy,
+            coalesce(p.eoy, 'No data') as eoy,
         from
             composite_only pivot (
-                max(mclass_measure_level) for expected_test in ('BOY', 'MOY', 'EOY')
+                max(mclass_measure_level) for mclass_period in ('BOY', 'MOY', 'EOY')
             ) as p
     ),
 
     probe_eligible_tag as (
-        select 
+        select
             s.mclass_academic_year,
             s.mclass_student_number,
             c.boy,
             c.moy,
             c.eoy,
-            case
-                when c.boy in ('Below Benchmark', 'Well Below Benchmark')
-                then 'Yes'
-                when c.boy is null
-                then 'No data'
-                else 'No'
-            end as boy_probe_eligible,
-            case
-                when c.moy in ('Below Benchmark', 'Well Below Benchmark')
-                then 'Yes'
-                when c.moy is null
-                then 'No data'
-                else 'No'
-            end as moy_probe_eligible,
+            if(
+                c.boy in ('Below Benchmark', 'Well Below Benchmark'), 'Yes', 'No'
+            ) as boy_probe_eligible,
+
+            if(
+                c.moy in ('Below Benchmark', 'Well Below Benchmark'), 'Yes', 'No'
+            ) as moy_probe_eligible,
+
         from assessments_scores as s
         left join
             overall_composite_by_window as c
@@ -168,5 +172,3 @@ left join
     probe_eligible_tag as p
     on s.mclass_academic_year = p.mclass_academic_year
     and s.mclass_student_number = p.mclass_student_number
-*/
-    
