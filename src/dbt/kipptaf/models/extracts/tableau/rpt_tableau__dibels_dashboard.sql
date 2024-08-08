@@ -43,7 +43,6 @@ with
     ),
 
     schedules as (
-
         select
             m._dbt_source_relation,
             m.cc_academic_year,
