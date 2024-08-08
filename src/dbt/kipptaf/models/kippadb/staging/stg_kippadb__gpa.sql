@@ -49,7 +49,7 @@ with
             source_gpa.transcript_date__c as transcript_date,
             source_gpa.type__c as `type`,
         from {{ source("kippadb", "gpa") }} as source_gpa
-        where not isdeleted
+        where not source_gpa.isdeleted
     )
 
 select
@@ -58,7 +58,7 @@ select
     case
         when extract(month from transcript_date) in (1, 12)
         then 'Fall'
-        when extract(month from transcript_date) = 5
+        when extract(month from transcript_date) in (5, 6)
         then 'Spring'
     end as semester,
 
