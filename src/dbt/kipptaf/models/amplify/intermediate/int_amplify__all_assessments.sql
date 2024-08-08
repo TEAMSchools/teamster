@@ -172,3 +172,4 @@ left join
     probe_eligible_tag as p
     on s.mclass_academic_year = p.mclass_academic_year
     and s.mclass_student_number = p.mclass_student_number
+where rn_highest = 1
