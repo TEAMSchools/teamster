@@ -31,6 +31,15 @@ select
 
     gpa.cumulative_y1_gpa_unweighted as gpa,
 
+  c.contact_1_name,
+  c.contact_1_phone_home,
+  c.contact_1_phone_mobile,
+  c.contact_1_email_current,
+  c.contact_2_name,
+  c.contact_2_phone_home,
+  c.contact_2_phone_mobile,
+  c.contact_2_email_current,
+
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     fast_pivot as fp on co.academic_year - 1 = fp.academic_year and co.fleid = fp.fleid
@@ -39,6 +48,8 @@ left join
     on co.studentid = gpa.studentid
     and co.schoolid = gpa.schoolid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+
+    left join {{ ref('int_powerschool__student_contacts_pivot') }} as c on c.student_id = co.student_id
 where
     co.academic_year >= {{ var("current_academic_year") }} - 1
     and co.rn_year = 1
