@@ -12,7 +12,7 @@ from teamster.libraries.schoolmint.grow.ops import (
 
 
 @job(
-    name=f"{CODE_LOCATION}_schoolmint_grow_user_update_job",
+    name=f"{CODE_LOCATION}__schoolmint_grow__user_update_job",
     config=RunConfig(
         ops={
             "bigquery_get_table_op": BigQueryGetTableOpConfig(
@@ -28,8 +28,3 @@ def schoolmint_grow_user_update_job():
     updated_users = schoolmint_grow_user_update_op(users=users)
 
     schoolmint_grow_school_update_op(users=updated_users)
-
-
-jobs = [
-    schoolmint_grow_user_update_job,
-]
