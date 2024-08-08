@@ -10,10 +10,6 @@ assets = [
     *workforce_now.assets,
 ]
 
-jobs = [
-    *workforce_now.jobs,
-]
-
 schedules = [
     *workforce_manager.schedules,
     *workforce_now.schedules,
@@ -26,7 +22,6 @@ sensors = [
 
 __all__ = [
     "assets",
-    "jobs",
     "schedules",
     "sensors",
 ]

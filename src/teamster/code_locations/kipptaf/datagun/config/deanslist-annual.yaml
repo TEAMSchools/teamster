@@ -95,7 +95,8 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_transcript_gpas
-      suffix: json.gz
+      suffix: json
+      # suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:
@@ -117,7 +118,8 @@ assets:
           schema: kipptaf_extracts
     file_config:
       stem: deanslist_transcript_grades
-      suffix: json.gz
+      suffix: json
+      # suffix: json.gz
     destination_config:
       name: deanslist
   - query_config:

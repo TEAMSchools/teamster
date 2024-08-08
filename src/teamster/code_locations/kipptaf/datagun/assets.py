@@ -21,6 +21,13 @@ clever_extract_assets = [
     for a in config_from_files([f"{config_dir}/clever.yaml"])["assets"]
 ]
 
+illuminate_extract_assets = [
+    build_bigquery_extract_sftp_asset(
+        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+    )
+    for a in config_from_files([f"{config_dir}/illuminate.yaml"])["assets"]
+]
+
 coupa_extract = build_bigquery_extract_sftp_asset(
     code_location=CODE_LOCATION,
     timezone=LOCAL_TIMEZONE,
@@ -36,13 +43,6 @@ egencia_extract = build_bigquery_extract_sftp_asset(
     file_config={"stem": "users_{today}", "suffix": "csv"},
     destination_config={"name": "egencia", "path": "/global/50323/USERS"},
 )
-
-illuminate_extract_assets = [
-    build_bigquery_extract_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
-    )
-    for a in config_from_files([f"{config_dir}/illuminate.yaml"])["assets"]
-]
 
 littlesis_extract = build_bigquery_extract_sftp_asset(
     code_location=CODE_LOCATION,
