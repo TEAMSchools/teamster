@@ -79,3 +79,75 @@ def test_cc_kippnewark():
         ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
         db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
     )
+
+
+def test_u_studentsuserfields_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="u_studentsuserfields",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_u_studentsuserfields_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="u_studentsuserfields",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_u_studentsuserfields_kippmiami():
+    from teamster.code_locations.kippmiami import CODE_LOCATION
+    from teamster.code_locations.kippmiami.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="u_studentsuserfields",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_log_kippmiami():
+    from teamster.code_locations.kippmiami import CODE_LOCATION
+    from teamster.code_locations.kippmiami.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="log",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_log_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="log",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_log_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="log",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )

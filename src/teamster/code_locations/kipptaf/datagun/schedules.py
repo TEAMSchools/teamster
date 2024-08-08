@@ -20,7 +20,7 @@ clever_extract_assets_schedule = ScheduleDefinition(
 
 coupa_extract_assets_schedule = ScheduleDefinition(
     job=coupa_extract_asset_job,
-    cron_schedule="30 5 * * *",
+    cron_schedule="0 6 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
@@ -38,25 +38,25 @@ deanslist_continuous_extract_asset_job_schedule = ScheduleDefinition(
 
 egencia_extract_assets_schedule = ScheduleDefinition(
     job=egencia_extract_asset_job,
-    cron_schedule="30 5 * * *",
+    cron_schedule="0 6 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
 idauto_extract_assets_schedule = ScheduleDefinition(
     job=idauto_extract_asset_job,
-    cron_schedule="0 4 * * *",
+    cron_schedule="30 4 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
 illuminate_extract_assets_schedule = ScheduleDefinition(
     job=illuminate_extract_asset_job,
-    cron_schedule="30 5 * * *",
+    cron_schedule="0 6 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
 littlesis_extract_assets_schedule = ScheduleDefinition(
     job=littlesis_extract_asset_job,
-    cron_schedule="30 5 * * *",
+    cron_schedule="0 6 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 

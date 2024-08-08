@@ -14,11 +14,11 @@ from dagster import (
     define_asset_job,
     sensor,
 )
+from oracledb import OperationalError
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError
 from sshtunnel import HandlerSSHTunnelForwarderError
 
-from teamster.libraries.sqlalchemy.resources import OracleResource
+from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -70,7 +70,7 @@ def build_powerschool_asset_sensor(
     def _sensor(
         context: SensorEvaluationContext,
         ssh_powerschool: SSHResource,
-        db_powerschool: OracleResource,
+        db_powerschool: PowerSchoolODBCResource,
     ) -> SensorResult | SkipReason:
         now_timestamp = pendulum.now().timestamp()
 
@@ -178,8 +178,7 @@ def build_powerschool_asset_sensor(
                                 column=partition_column,
                                 value=timestamp_fmt,
                             ),
-                            partition_size=1,
-                            prefetch_rows=1,
+                            prefetch_rows=2,
                             array_size=1,
                         ),
                         list,
@@ -192,8 +191,7 @@ def build_powerschool_asset_sensor(
                             column=partition_column,
                             value=partition_key_fmt,
                         ),
-                        partition_size=1,
-                        prefetch_rows=1,
+                        prefetch_rows=2,
                         array_size=1,
                     ),
                     list,

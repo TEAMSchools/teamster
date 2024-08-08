@@ -21,6 +21,46 @@ with
                     'KNJ: Out-of-School Suspension'
                 ]
             ) as penalty_name
+    ),
+
+    intervention_rosters as (
+        select ra.student_school_id,
+        from {{ ref("stg_deanslist__roster_assignments") }} as ra
+        inner join
+            {{ ref("stg_deanslist__rosters") }} as r
+            on ra.dl_roster_id = r.roster_id
+            and r.roster_name = 'Tier 3/Tier 4 Intervention'
+    ),
+
+    att_reconciliation_rollup as (
+        select
+            ra.student_id as student_number,
+
+            lc.powerschool_school_id as schoolid,
+
+            count(*) as att_discrepancy_count,
+        from {{ ref("stg_deanslist__reconcile_attendance") }} as ra
+        inner join
+            {{ ref("stg_people__location_crosswalk") }} as lc
+            on ra.school_name = lc.name
+        group by ra.student_id, lc.powerschool_school_id
+    ),
+
+    suspension_reconciliation_rollup as (
+        select
+            rs.student_id as student_number,
+            rs.dl_incident_id as incident_id,
+
+            lc.powerschool_school_id as schoolid,
+
+            row_number() over (
+                partition by rs.student_id, rs.dl_incident_id, lc.powerschool_school_id
+                order by rs.consequence desc
+            ) as rn_incident,
+        from {{ ref("stg_deanslist__reconcile_suspensions") }} as rs
+        inner join
+            {{ ref("stg_people__location_crosswalk") }} as lc
+            on rs.school_name = lc.name
     )
 
 select
@@ -53,6 +93,7 @@ select
     dli.reported_details,
     dli.admin_summary,
 
+    dlp.incident_penalty_id,
     dlp.num_days,
     dlp.is_suspension,
     dlp.penalty_name,
@@ -68,6 +109,10 @@ select
     ada.days_absent_unexcused,
 
     gpa.gpa_y1,
+
+    ar.att_discrepancy_count,
+
+    if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
     if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
@@ -115,7 +160,7 @@ select
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_iss_int,
 
-    if(ra.student_school_id is not null, true, false) as is_tier3_4,
+    if(tr.student_school_id is not null, true, false) as is_tier3_4,
 
     row_number() over (
         partition by co.academic_year, co.student_number
@@ -174,13 +219,17 @@ left join
     and co.yearid = gpa.yearid
     and gpa.is_current
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+left join intervention_rosters as tr on co.student_number = tr.student_school_id
 left join
-    {{ ref("stg_deanslist__roster_assignments") }} as ra
-    on co.student_number = ra.student_school_id
-inner join
-    {{ ref("stg_deanslist__rosters") }} as r
-    on ra.dl_roster_id = r.roster_id
-    and r.roster_name = 'Tier 3/Tier 4 Intervention'
+    att_reconciliation_rollup as ar
+    on co.student_number = ar.student_number
+    and co.schoolid = ar.schoolid
+left join
+    suspension_reconciliation_rollup as sr
+    on co.student_number = sr.student_number
+    and dli.incident_id = sr.incident_id
+    and co.schoolid = sr.schoolid
+    and sr.rn_incident = 1
 where
     co.rn_year = 1
     and co.academic_year >= {{ var("current_academic_year") }} - 1

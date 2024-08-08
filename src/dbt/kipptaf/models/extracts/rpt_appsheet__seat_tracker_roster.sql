@@ -68,6 +68,12 @@ select
         /* see everything, edit nothing */
         when contains_substr(sr.job_title, 'Chief')
         then 3
+        when
+            contains_substr(sr.job_title, 'Director')
+            and sr.department_home_name = 'Special Education'
+        then 3
+        when sr.department_home_name in ('Leadership Development', 'Human Resources')
+        then 3
         /* see your state/region, edit nothing */
         when
             contains_substr(sr.job_title, 'Managing Director')
