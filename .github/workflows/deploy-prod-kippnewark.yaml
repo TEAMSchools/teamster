@@ -30,7 +30,6 @@ on:
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
       - src/teamster/libraries/renlearn/**
-      - src/teamster/libraries/sqlalchemy/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
   pull_request:
@@ -46,7 +45,6 @@ on:
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
       - src/teamster/libraries/renlearn/**
-      - src/teamster/libraries/sqlalchemy/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
     types:

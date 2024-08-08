@@ -50,8 +50,6 @@ assets:
     partition_column: whenmodified
   - asset_name: s_nj_ren_x
     partition_column: whenmodified
-  - asset_name: s_nj_stu_x
-    partition_column: whenmodified
   - asset_name: s_nj_usr_x
     partition_column: whenmodified
   - asset_name: schoolstaff
@@ -66,14 +64,22 @@ assets:
     partition_column: whenmodified
   - asset_name: teachercategory
     partition_column: whenmodified
-  - asset_name: u_studentsuserfields
-    partition_column: whenmodified
   - asset_name: users
     partition_column: whenmodified
   - asset_name: u_clg_et_stu
     partition_column: whenmodified
   - asset_name: u_clg_et_stu_alt
     partition_column: whenmodified
+  - asset_name: u_studentsuserfields
+    partition_column: whenmodified
+    select_columns:
+      - studentsdcid
+      - c_504_status
+      - newark_enrollment_number
+      - infosnap_id
+      - infosnap_opt_in
+      - media_release
+      - rides_staff
   - asset_name: cc
     partition_column: transaction_date
     op_tags:
@@ -114,3 +120,13 @@ assets:
               cpu: 750m
             limits:
               cpu: 750m
+  - asset_name: s_nj_stu_x
+    partition_column: whenmodified
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              memory: 2.5Gi
+            limits:
+              memory: 2.5Gi

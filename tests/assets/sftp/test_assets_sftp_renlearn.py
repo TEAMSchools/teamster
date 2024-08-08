@@ -102,4 +102,8 @@ def test_renlearn_star_dashboard_standards_kippmiami():
 def test_renlearn_fast_star_kippmiami():
     from teamster.code_locations.kippmiami.renlearn.assets import fast_star
 
-    _test_asset(asset=fast_star, ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI})
+    _test_asset(
+        asset=fast_star,
+        ssh_resource={"ssh_renlearn": SSH_RENLEARN_KIPPMIAMI},
+        partition_key="2024-07-01|SR",
+    )

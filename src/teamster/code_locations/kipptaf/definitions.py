@@ -74,7 +74,6 @@ defs = Definitions(
         *_google.sensors,
         *adp.sensors,
         *deanslist.sensors,
-        *tableau.sensors,
         build_sensor_for_freshness_checks(
             freshness_checks=asset_checks.freshness_checks
         ),

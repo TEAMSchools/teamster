@@ -61,7 +61,7 @@ with
             and t.assessment_type = 'College Entrance'
         left join dlm as d on e.student_number = d.student_number
         where
-            e.academic_year >= {{ var("current_academic_year") }} - 1
+            e.academic_year = {{ var("current_academic_year") }}
             and e.rn_year = 1
             and e.school_level = 'HS'
             and e.schoolid != 999999
