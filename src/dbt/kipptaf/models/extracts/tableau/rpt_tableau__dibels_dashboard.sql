@@ -27,49 +27,46 @@ with
             a.month_round,
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
-
         from {{ ref("int_tableau__student_enrollments") }} as e
-        left join
+        inner join
             {{ ref("stg_assessments__assessment_expectations") }} as a
             on e.academic_year = a.academic_year
             and e.region = a.region
             and e.grade_level = a.grade
-        -- and a.scope = 'DIBELS'
-        where
-            e.academic_year >= {{ var("current_academic_year") }} - 1
-            and e.grade_level <= 8
-            and not e.is_self_contained
             and a.scope = 'DIBELS'
+        where
+            not e.is_self_contained
+            and e.academic_year >= {{ var("current_academic_year") - 1 }}
+            and e.grade_level <= 8
     ),
 
     schedules as (
         select
             m._dbt_source_relation,
-            m.cc_academic_year,
-            m.cc_schoolid,
             m.cc_studentid,
-            m.students_student_number as student_number,
-            m.cc_teacherid as teacherid,
-            m.teacher_lastfirst as teacher_name,
-            m.courses_course_name as course_name,
+            m.cc_academic_year,
             m.cc_course_number as course_number,
+            m.cc_schoolid,
             m.cc_section_number as section_number,
+            m.cc_teacherid as teacherid,
+            m.courses_course_name as course_name,
+            m.students_student_number as student_number,
+            m.teacher_lastfirst as teacher_name,
+
+            hos.head_of_school_preferred_name_lastfirst as hos,
 
             1 as scheduled,
 
             right(m.courses_course_name, 1) as schedule_student_grade_level,
-
-            hos.head_of_school_preferred_name_lastfirst as hos,
-
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
             {{ ref("int_people__leadership_crosswalk") }} as hos
             on m.cc_schoolid = hos.home_work_location_powerschool_school_id
         where
-            m.cc_academic_year >= {{ var("current_academic_year") }} - 1
-            and not m.is_dropped_course
+            m.rn_course_number_year = 1
             and not m.is_dropped_section
-            and m.rn_course_number_year = 1
+            and m.cc_academic_year >= {{ var("current_academic_year") - 1 }}
+            and m.cc_section_number not like '%SC%'
             and m.courses_course_name in (
                 'ELA GrK',
                 'ELA K',
@@ -87,18 +84,19 @@ with
     expanded_terms as (
         select
             academic_year,
-            name,
-            start_date,
+            `name`,
+            `start_date`,
             region,
+
             coalesce(
-                lead(start_date, 1) over (
+                lead(`start_date`, 1) over (
                     partition by academic_year, region order by code asc
                 )
                 - 1,
                 date({{ var("current_academic_year") + 1 }}, 06, 30)
             ) as end_date,
         from {{ ref("stg_reporting__terms") }}
-        where type = 'LIT' and academic_year >= {{ var("current_academic_year") }} - 1
+        where `type` = 'LIT' and academic_year >= {{ var("current_academic_year") - 1 }}
     )
 
 select
@@ -150,17 +148,6 @@ select
     a.mclass_measure_year_growth,
     a.mclass_score_change,
 
-    coalesce(a.pm_probe_eligible, 'No data') as pm_probe_eligible,
-    coalesce(a.pm_probe_tested, 'No data') as pm_probe_tested,
-    coalesce(a.boy_probe_eligible, 'No data') as boy_probe_eligible,
-    coalesce(a.moy_probe_eligible, 'No data') as moy_probe_eligible,
-    coalesce(a.boy_composite, 'No data') as boy_composite,
-    coalesce(a.moy_composite, 'No data') as moy_composite,
-    coalesce(a.eoy_composite, 'No data') as eoy_composite,
-
-    coalesce(a.mclass_probe_number, 0) as mclass_probe_number,
-    coalesce(a.mclass_total_number_of_probes, 0) as mclass_total_number_of_probes,
-
     t.name,
     t.start_date,
     t.end_date,
@@ -168,6 +155,15 @@ select
     f.nj_student_tier,
     f.tutoring_nj,
 
+    coalesce(a.pm_probe_eligible, 'No data') as pm_probe_eligible,
+    coalesce(a.pm_probe_tested, 'No data') as pm_probe_tested,
+    coalesce(a.boy_probe_eligible, 'No data') as boy_probe_eligible,
+    coalesce(a.moy_probe_eligible, 'No data') as moy_probe_eligible,
+    coalesce(a.boy_composite, 'No data') as boy_composite,
+    coalesce(a.moy_composite, 'No data') as moy_composite,
+    coalesce(a.eoy_composite, 'No data') as eoy_composite,
+    coalesce(a.mclass_probe_number, 0) as mclass_probe_number,
+    coalesce(a.mclass_total_number_of_probes, 0) as mclass_total_number_of_probes,
 from students as s
 left join
     schedules as m
@@ -190,4 +186,3 @@ left join
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
-where m.section_number not like '%SC%'

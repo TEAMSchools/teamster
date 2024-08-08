@@ -3,11 +3,11 @@ with
         select
             bss.academic_year as mclass_academic_year,
             bss.student_primary_id as mclass_student_number,
-            bss.assessment_type,
             bss.assessment_grade as mclass_assessment_grade,
             bss.benchmark_period as mclass_period,
             bss.client_date as mclass_client_date,
             bss.sync_date as mclass_sync_date,
+
             u.measure as mclass_measure,
             u.score as mclass_measure_score,
             u.level as mclass_measure_level,
@@ -15,6 +15,8 @@ with
             u.national_norm_percentile as mclass_measure_percentile,
             u.semester_growth as mclass_measure_semester_growth,
             u.year_growth as mclass_measure_year_growth,
+
+            'Benchmark' as assessment_type,
             null as mclass_probe_number,
             null as mclass_total_number_of_probes,
             null as mclass_score_change,
@@ -35,18 +37,22 @@ with
         select
             academic_year as mclass_academic_year,
             student_primary_id as mclass_student_number,
-            assessment_type,
             assessment_grade as mclass_assessment_grade,
             pm_period as mclass_period,
             client_date as mclass_client_date,
             sync_date as mclass_sync_date,
             measure as mclass_measure,
             score as mclass_measure_score,
+
             'NA' as mclass_measure_level,
+
             null as mclass_measure_level_int,
             null as mclass_measure_percentile,
+
             'NA' as mclass_measure_semester_growth,
             'NA' as mclass_measure_year_growth,
+            'PM' as assessment_type,
+
             probe_number as mclass_probe_number,
             total_number_of_probes as mclass_total_number_of_probes,
             score_change as mclass_score_change,
@@ -74,6 +80,7 @@ with
         select
             mclass_academic_year,
             mclass_student_number,
+
             coalesce(p.boy, 'No data') as boy,
             coalesce(p.moy, 'No data') as moy,
             coalesce(p.eoy, 'No data') as eoy,
@@ -87,9 +94,11 @@ with
         select
             s.mclass_academic_year,
             s.mclass_student_number,
+
             c.boy,
             c.moy,
             c.eoy,
+
             if(
                 c.boy in ('Below Benchmark', 'Well Below Benchmark'), 'Yes', 'No'
             ) as boy_probe_eligible,
@@ -97,7 +106,6 @@ with
             if(
                 c.moy in ('Below Benchmark', 'Well Below Benchmark'), 'Yes', 'No'
             ) as moy_probe_eligible,
-
         from assessments_scores as s
         left join
             overall_composite_by_window as c
@@ -117,7 +125,6 @@ select
     s.mclass_measure_score,
     s.mclass_measure_level,
     s.mclass_measure_level_int,
-
     s.mclass_measure_percentile,
     s.mclass_measure_semester_growth,
     s.mclass_measure_year_growth,
@@ -133,9 +140,9 @@ select
 
     case
         when p.boy_probe_eligible = 'Yes' and s.mclass_period = 'BOY->MOY'
-        then p.boy_probe_eligible
+        then 'Yes'
         when p.moy_probe_eligible = 'Yes' and s.mclass_period = 'MOY->EOY'
-        then p.moy_probe_eligible
+        then 'Yes'
         when p.boy_probe_eligible = 'No' and s.mclass_period = 'BOY->MOY'
         then 'No'
         when p.moy_probe_eligible = 'No' and s.mclass_period = 'MOY->EOY'
@@ -155,18 +162,17 @@ select
             and s.mclass_total_number_of_probes is not null
         then 'Yes'
         when
-            p.boy_probe_eligible = 'Yes'
+            p.boy_probe_eligible = 'No'
             and s.mclass_period = 'BOY->MOY'
             and s.mclass_total_number_of_probes is null
         then 'No'
         when
-            p.moy_probe_eligible = 'Yes'
+            p.moy_probe_eligible = 'No'
             and s.mclass_period = 'MOY->EOY'
             and s.mclass_total_number_of_probes is null
         then 'No'
         else 'Not applicable'
     end as pm_probe_tested,
-
 from assessments_scores as s
 left join
     probe_eligible_tag as p
