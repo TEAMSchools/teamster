@@ -15,7 +15,7 @@ select
         then 2
         when 'Well Below Benchmark'
         then 1
-    end as mclass_measure_level_int,
+    end as level_int,
     national_norm_percentile,
     semester_growth,
     year_growth,
