@@ -1,4 +1,17 @@
 with
+    ms_grad_sub as (
+        select
+            _dbt_source_relation,
+            student_number,
+            school_abbreviation as ms_attended,
+
+            row_number() over (
+                partition by student_number order by exitdate desc
+            ) as rn,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where school_level = 'MS'
+    ),
+
     students_nj as (
         select
             e._dbt_source_relation,
@@ -56,6 +69,7 @@ with
             is_504,
             lep_status,
             lunch_status,
+
             case
                 ethnicity when 'T' then 'T' when 'H' then 'H' else ethnicity
             end as race_ethnicity,
@@ -184,84 +198,20 @@ with
 
     assessments_fl as (
         select
-            academic_year,
-            assessment_name,
-            season,
-            discipline,
-            test_code,
-            is_proficient,
-            administration_window as admin,
-            assessment_subject as subject,
             student_id as state_id,
-            achievement_level as performance_band,
-            achievement_level_int as performance_band_level,
-            scale_score as score,
-
-            safe_cast(enrolled_grade as string) as test_grade,
-        from {{ ref("stg_fldoe__eoc") }}
-        where not is_invalidated
-
-        union all
-
-        select
-            academic_year,
             assessment_name,
-            season,
-            discipline,
-            test_code,
-            is_proficient,
-            administration_window as admin,
-            assessment_subject as subject,
-            student_id as state_id,
-            achievement_level as performance_band,
-            achievement_level_int as performance_band_level,
-            scale_score as score,
-
-            safe_cast(test_grade_level as string) as test_grade,
-        from {{ ref("stg_fldoe__science") }}
-
-        union all
-
-        select
             academic_year,
-            assessment_name,
             season,
-            discipline,
             test_code,
-            is_proficient,
-            administration_window as admin,
-            assessment_subject as subject,
-            student_id as state_id,
-            achievement_level as performance_band,
-            achievement_level_int as performance_band_level,
+            discipline,
+            administration_window as `admin`,
+            assessment_subject as `subject`,
+            assessment_grade as test_grade,
             scale_score as score,
-
-            safe_cast(assessment_grade as string) as test_grade,
-
-        from {{ ref("stg_fldoe__fast") }}
-        where achievement_level not in ('Insufficient to score', 'Invalidated')
-
-        union all
-
-        select
-            academic_year,
-            'FSA' as assessment_name,
-            'Spring' as season,
-            discipline,
-            test_code,
-            is_proficient,
-            administration_round as admin,
-            assessment_subject as subject,
-            fleid as state_id,
             achievement_level as performance_band,
             performance_level as performance_band_level,
-            scale_score as score,
-
-            safe_cast(test_grade as string) as test_grade,
-
-        from {{ ref("stg_fldoe__fsa") }}
-        where performance_level is not null
-
+            is_proficient,
+        from {{ ref("int_fldoe__all_assessments") }}
     ),
 
     nj_final as (
