@@ -88,7 +88,7 @@ with
 
             cast(regexp_extract(test_name, r'^\w+\s(\d+)') as int) - 1 as academic_year,
 
-            proper(regexp_extract(test_name, r'^(\w+)\s')) as administration_round,
+            initcap(regexp_extract(test_name, r'^(\w+)\s')) as administration_round,
             regexp_extract(test_name, r'^\w+\s\d+\s(\w+)\s\d+$') as discipline,
 
             if(performance_level >= 3, true, false) as is_proficient,
