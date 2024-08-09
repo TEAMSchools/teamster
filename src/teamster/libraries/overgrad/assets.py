@@ -8,33 +8,35 @@ from teamster.libraries.overgrad.resources import OvergradResource
 
 
 def build_overgrad_asset(
-    asset_key,
+    code_location: str,
+    name: str,
     schema,
     partitions_def=None,
     auto_materialize_policy=None,
     deps=None,
-    universities_partitions_def_name: str | None = None,
 ):
-    endpoint = asset_key[-1]
+    key = [code_location, "overgrad", name]
 
     @asset(
-        key=asset_key,
+        key=key,
         io_manager_key="io_manager_gcs_avro",
         group_name="overgrad",
         partitions_def=partitions_def,
         auto_materialize_policy=auto_materialize_policy,
-        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
+        check_specs=[build_check_spec_avro_schema_valid(key)],
         deps=deps,
+        compute_kind="python",
+        op_tags={"dagster/concurrency_key": "overgrad_api_limit"},
     )
     def _asset(context: AssetExecutionContext, overgrad: OvergradResource):
         if context.assets_def.partitions_def is not None:
-            response_json = overgrad.get(endpoint, context.partition_key).json()
+            response_json = overgrad.get(name, context.partition_key).json()
 
             data = [response_json["data"]]
         else:
-            data = overgrad.get_list(path=endpoint)
+            data = overgrad.get_list(path=name)
 
-        if universities_partitions_def_name is not None:
+        if name in ["admissions", "followings"]:
             university_ids = set()
 
             for d in data:
@@ -44,7 +46,7 @@ def build_overgrad_asset(
                     university_ids.add(str(university_id))
 
             context.instance.add_dynamic_partitions(
-                partitions_def_name=universities_partitions_def_name,
+                partitions_def_name="overgrad__universities__id",
                 partition_keys=list(university_ids),
             )
 
