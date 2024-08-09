@@ -1,6 +1,7 @@
 select
     td.employee_number,
     td.observer_employee_number,
+    td.observer_name,
     td.observation_id,
     td.rubric_name,
     td.observation_score,
@@ -33,8 +34,9 @@ select
     os.final_score as performance_management_final_score,
     os.final_tier as performance_management_final_tier,
 
-    coalesce(sr.preferred_name_lastfirst, td.observer_name) as observer_name,
-    if(sr.department_home_name = 'New Teacher Development', 'TDT', 'NTNC') as observer_team,
+    if(
+        sr.department_home_name = 'New Teacher Development', 'TDT', 'NTNC'
+    ) as observer_team,
 from {{ ref("int_performance_management__teacher_development") }} as td
 left join
     {{ ref("base_people__staff_roster_history") }} as srh
