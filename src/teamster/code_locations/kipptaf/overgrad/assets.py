@@ -1,4 +1,8 @@
-from dagster import AutoMaterializePolicy, DynamicPartitionsDefinition
+from dagster import (
+    AutoMaterializePolicy,
+    AutoMaterializeRule,
+    DynamicPartitionsDefinition,
+)
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.overgrad.schema import (
@@ -36,7 +40,10 @@ universities = build_overgrad_asset(
     name="universities",
     schema=UNIVERSITY_SCHEMA,
     partitions_def=DynamicPartitionsDefinition(name="overgrad__universities__id"),
-    auto_materialize_policy=AutoMaterializePolicy.eager(),
+    auto_materialize_policy=AutoMaterializePolicy(
+        rules={AutoMaterializeRule.materialize_on_missing()},
+        max_materializations_per_minute=10000,
+    ),
     deps=[admissions.key, followings.key],
 )
 
