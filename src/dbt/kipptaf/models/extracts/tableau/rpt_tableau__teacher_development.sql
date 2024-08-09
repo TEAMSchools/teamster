@@ -30,11 +30,11 @@ select
     srh.sam_account_name,
     srh.report_to_sam_account_name,
 
-    coalesce(sr.preferred_name_lastfirst, td.observer_name) as observer_name,
-    if(sr.department_home_name = 'Teacher Development', 'TDT', 'NTNC') as observer_team,
-
     os.final_score as performance_management_final_score,
     os.final_tier as performance_management_final_tier,
+
+    coalesce(sr.preferred_name_lastfirst, td.observer_name) as observer_name,
+    if(sr.department_home_name = 'Teacher Development', 'TDT', 'NTNC') as observer_team,
 from {{ ref("int_performance_management__teacher_development") }} as td
 left join
     {{ ref("base_people__staff_roster_history") }} as srh
@@ -42,9 +42,9 @@ left join
     and cast(td.observed_at as timestamp)
     between srh.work_assignment_start_date and srh.work_assignment_end_date
 left join
-    {{ ref("base_people__staff_roster") }} as sr
-    on td.observer_employee_number = sr.employee_number
-left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on td.employee_number = os.employee_number
     and td.academic_year = os.academic_year
+left join
+    {{ ref("base_people__staff_roster") }} as sr
+    on td.observer_employee_number = sr.employee_number
