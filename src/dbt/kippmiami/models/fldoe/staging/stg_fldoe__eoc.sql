@@ -28,7 +28,6 @@ with
             `3_non_linear_relationships_performance`,
 
             'PM3' as administration_window,
-            'EOC' as assessment_name,
             'Spring' as season,
 
             cast(_dagster_partition_school_year_term as int) as academic_year,
@@ -74,9 +73,8 @@ with
             safe_cast(scale_score as int) as scale_score,
 
             safe_cast(right(achievement_level, 1) as int) as achievement_level_int,
-
-            if(scale_score = 'Invalidated', true, false) as is_invalidated,
         from eoc
+        where scale_score != 'Invalidated'
     )
 
 select *, if(achievement_level_int >= 3, true, false) as is_proficient,
