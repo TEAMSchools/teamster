@@ -245,7 +245,7 @@ with
 
         select
             academic_year,
-            test_name as assessment_name,
+            'FSA' as assessment_name,
             'Spring' as season,
             discipline,
             test_code,
