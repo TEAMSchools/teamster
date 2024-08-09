@@ -38,7 +38,7 @@ with
     ),
 
     archive_average_scores as (
-        select od.observation_id, avg(od.row_score), as average_row_score
+        select od.observation_id, avg(od.row_score) as average_row_score,
         from
             {{
                 ref(
