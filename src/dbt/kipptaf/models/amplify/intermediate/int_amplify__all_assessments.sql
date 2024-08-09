@@ -162,12 +162,12 @@ select
             and s.mclass_total_number_of_probes is not null
         then 'Yes'
         when
-            p.boy_probe_eligible = 'No'
+            p.boy_probe_eligible = 'Yes'
             and s.mclass_period = 'BOY->MOY'
             and s.mclass_total_number_of_probes is null
         then 'No'
         when
-            p.moy_probe_eligible = 'No'
+            p.moy_probe_eligible = 'Yes'
             and s.mclass_period = 'MOY->EOY'
             and s.mclass_total_number_of_probes is null
         then 'No'
