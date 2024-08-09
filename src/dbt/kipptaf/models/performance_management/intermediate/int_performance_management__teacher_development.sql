@@ -35,6 +35,18 @@ with
             o.observation_type_abbreviation,
             o.observation_course,
             o.observation_grade
+    ),
+
+    archive_average_scores as (
+        select od.observation_id, avg(od.row_score), as average_row_score
+        from
+            {{
+                ref(
+                    "stg_performance_management__teacher_development_observation_details"
+                )
+            }}
+            as od
+        group by od.observation_id
     )
 select
     o.employee_number,
@@ -55,7 +67,7 @@ select
     p.growth_area,
     p.glow_area,
     null as observer_team,
-    null as observer_name
+    null as observer_name,
 from {{ ref("int_performance_management__observations") }} as o
 left join
     {{ ref("int_performance_management__observation_details") }} as od
@@ -70,7 +82,7 @@ select
     null as observer_employee_number,
     o.observation_id,
     concat('Teacher Development: ', o.observation_type) as rubric_name,
-    avg(row_score) as observation_score,
+    av.average_row_score as observation_score,
     o.observed_at,
     2023 as academic_year,
     'Teacher Development' as observation_type,
@@ -81,7 +93,6 @@ select
     od.measurement_name,
     od.strand_name,
     od.text_box,
-
     o.growth_area,
     o.glow_area,
     o.observer_team,
@@ -91,18 +102,5 @@ left join
     {{ ref("stg_performance_management__teacher_development_observation_details") }}
     as od
     on o.observation_id = od.observation_id
-where row_score is not null
-group by
-    o.employee_number,
-    o.observation_id,
-    o.observation_type,
-    o.observed_at,
-    od.row_score,
-    od.measurement_name,
-    od.strand_name,
-    od.text_box,
-    o.subject,
-    o.growth_area,
-    o.glow_area,
-    o.observer_team,
-    o.observer_name
+left join archive_average_scores as av on o.observation_id = av.observation_id
+where od.row_score is not null
