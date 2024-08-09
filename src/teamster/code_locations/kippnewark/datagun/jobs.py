@@ -7,7 +7,3 @@ powerschool_extract_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}_datagun_powerschool_extract_asset_job",
     selection=powerschool_extract_assets,
 )
-
-jobs = [
-    powerschool_extract_asset_job,
-]

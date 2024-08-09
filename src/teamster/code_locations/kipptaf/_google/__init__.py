@@ -14,10 +14,6 @@ assets = [
     *sheets.assets,
 ]
 
-jobs = [
-    *directory.jobs,
-]
-
 schedules = [
     *directory.schedules,
     *forms.schedules,
