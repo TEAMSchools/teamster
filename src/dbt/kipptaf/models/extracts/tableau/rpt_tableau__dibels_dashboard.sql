@@ -50,7 +50,7 @@ with
             m.cc_section_number as section_number,
             m.cc_teacherid as teacherid,
             m.courses_course_name as course_name,
-            m.students_student_number as student_number,
+            m.students_student_number as schedule_student_number,
             m.teacher_lastfirst as teacher_name,
 
             hos.head_of_school_preferred_name_lastfirst as hos,
@@ -124,6 +124,7 @@ select
     s.advisory,
     s.expected_test,
 
+    m.schedule_student_number,
     m.schedule_student_grade_level,
     m.teacherid,
     m.teacher_name,
@@ -169,7 +170,7 @@ left join
     schedules as m
     on s.academic_year = m.cc_academic_year
     and s.schoolid = m.cc_schoolid
-    and s.student_number = m.student_number
+    and s.student_number = m.schedule_student_number
 left join
     {{ ref("int_amplify__all_assessments") }} as a
     on s.academic_year = a.mclass_academic_year
