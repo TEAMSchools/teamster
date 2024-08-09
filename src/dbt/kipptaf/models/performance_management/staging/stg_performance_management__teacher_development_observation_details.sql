@@ -7,5 +7,10 @@ select
     row_score,
     measurement_name,
     strand_name,
-from {{ source("google_appsheet", "src_teacher_development__observation_details_archive") }}
+from
+    {{
+        source(
+            "google_appsheet", "src_teacher_development__observation_details_archive"
+        )
+    }}
 where esog is not null

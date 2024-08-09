@@ -10,6 +10,6 @@ select
     growth_notes,
     glow_area,
     glow_notes,
-    TRIM(SPLIT(observer, ' - ')[OFFSET(0)]) AS observer_name,
+    trim(split(observer, ' - ')[offset(0)]) as observer_name,
 from {{ source("google_appsheet", "src_teacher_development__observation_archive") }}
 where observation_id is not null
