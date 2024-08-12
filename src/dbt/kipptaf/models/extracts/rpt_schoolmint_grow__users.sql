@@ -36,30 +36,16 @@ with
                         'School Support',
                         'New Teacher Development'
                     )
-                    and sr.job_title in (
-                        'Achievement Director',
-                        'Chief Academic Officer',
-                        'Chief Of Staff',
-                        'Director',
-                        'Director High School Literacy Curriculum',
-                        'Director Literacy Achievement',
-                        'Director Math Achievement',
-                        'Director Middle School Literacy Curriculum',
-                        'Head of Schools in Residence',
-                        'Assistant Dean',
-                        'Assistant School Leader',
-                        'Assistant School Leader, SPED',
-                        'Dean',
-                        'Dean of Students',
-                        'Director of New Teacher Development',
-                        'School Leader in Residence',
-                        'School Leader'
+                    and (
+                        contains_substr(sr.job_title, 'Chief')
+                        or contains_substr(sr.job_title, 'Leader')
+                        or contains_substr(sr.job_title, 'Director')
+                        or contains_substr(sr.job_title, 'Dean')
                     )
                 then 'Sub Admin'
                 when
                     sr.department_home_name = 'Special Education'
-                    and sr.job_title
-                    in ('Managing Director', 'Director', 'Achievement Director')
+                    and contains_substr(sr.job_title, 'Director')
                 then 'Sub Admin'
                 when sr.department_home_name = 'Human Resources'
                 then 'Sub Admin'
@@ -68,15 +54,9 @@ with
                 then 'School Admin'
                 when
                     sr.department_home_name = 'School Leadership'
-                    and sr.job_title in (
-                        'Assistant Dean',
-                        'Assistant School Leader',
-                        'Assistant School Leader, SPED',
-                        'Assistant School Leader, School Culture',
-                        'Dean',
-                        'Dean of Students',
-                        'Director of New Teacher Development',
-                        'School Leader in Residence'
+                    and (
+                        contains_substr(sr.job_title, 'Assistant School Leader')
+                        or contains_substr(sr.job_title, 'Dean')
                     )
                 then 'School Assistant Admin'
                 /* basic roles */
