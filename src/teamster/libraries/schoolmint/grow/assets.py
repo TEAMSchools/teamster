@@ -9,7 +9,7 @@ from dagster import (
     asset,
 )
 
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
@@ -17,7 +17,7 @@ from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 
 
 def build_schoolmint_grow_asset(
-    asset_key, endpoint, partitions_def, schema
+    asset_key, endpoint, partitions_def, schema, op_tags=None
 ) -> AssetsDefinition:
     @asset(
         key=asset_key,
@@ -26,6 +26,7 @@ def build_schoolmint_grow_asset(
         group_name="schoolmint",
         compute_kind="python",
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
+        op_tags=op_tags,
     )
     def _asset(context: AssetExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         if isinstance(context.assets_def.partitions_def, MultiPartitionsDefinition):

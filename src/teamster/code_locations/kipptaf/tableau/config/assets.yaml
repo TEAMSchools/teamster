@@ -1,71 +1,30 @@
-workbook:
-  partitions_def:
-    start_date: 2024-02-26
-  asset_def:
-    key_prefix:
-      - kipptaf
-      - tableau
-    name: workbook
-    io_manager_key: io_manager_gcs_avro
-    compute_kind: tableau
-    group_name: tableau
-external_assets:
-  - name: Academic Priorities [NJ]
-    deps:
-      - [kipptaf, tableau, rpt_tableau__power_standards]
-      - [kipptaf, tableau, rpt_tableau__qbl]
-    metadata:
-      id: 0e0e4f6a-7401-4c12-a542-393f6f6edb1b
-  - name: APM Dashboard
-    deps:
-      - [kipptaf, tableau, rpt_tableau__iready_apm]
-    metadata:
-      id: eb91563d-760b-4f2d-b9f8-65437fe22242
-  - name: Assessment Dashboard
-    deps:
-      - [kipptaf, tableau, rpt_tableau__assessment_dashboard]
-    metadata:
-      id: 30fe4f82-8022-4dbc-9a29-5d805e64319f
-  - name: Attendance Dashboard
-    deps:
-      - [kipptaf, tableau, rpt_tableau__attendance_dashboard]
-      - [kipptaf, tableau, rpt_tableau__attendance_chronic_absenteeism_log]
-      - [kipptaf, tableau, rpt_tableau__attendance_comm_log]
-    metadata:
-      id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+assets:
   - name: Attrition Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__staff_attrition_details]
     metadata:
       id: 5bf99669-00bb-4906-b2b4-79f2976ac3a4
-  - name: Coaching Conversation Tool
-    deps:
-      - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
-    metadata:
-      id: db88d328-0d54-4dac-8003-6197841e1432
+      cron_schedule: 0 7 * * *
   - name: College Admission Readiness Assessments Tracker (CARAT)
     deps:
       - [kipptaf, tableau, rpt_tableau__ap_assessment_dashboard]
       - [kipptaf, tableau, rpt_tableau__college_assessment_dashboard]
     metadata:
       id: 286156c4-2f9e-4983-926b-63c9b11f44f4
+      cron_schedule: 0 6 * * *
   - name: Data Quality Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__assessment_entry_audit]
       - [kipptaf, tableau, rpt_tableau__student_info_audit]
     metadata:
       id: 8aff929f-9e6b-4fc9-833a-7edfab8500b6
-  - name: Early Literacy Dashboard
-    deps:
-      - [kipptaf, tableau, rpt_tableau__dibels_dashboard]
-      - [kipptaf, tableau, rpt_tableau__sight_words_dashboard]
-    metadata:
-      id: bef17623-af5e-4a18-9e05-7a8f4e6951bf
+      cron_schedule: 0 1 * * *
   - name: Federal Grants Timesheet Approval
     deps:
       - [kipptaf, tableau, rpt_tableau__grants_timesheets]
     metadata:
       id: c7c821a4-a236-4da8-b41e-52b2fd62cbed
+      # cron_schedule: 0 * * * *
   - name: Finance & Accounting Tools & Resources
     deps:
       - [kipptaf, tableau, rpt_tableau__adp_pension_and_benefits_enrollments]
@@ -73,19 +32,14 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__staff_attrition]
     metadata:
       id: c29963fb-8516-4148-b43f-cddc0f2b4093
-  - name: Gradebook Dashboard
-    deps:
-      - [kipptaf, tableau, rpt_tableau__gpa_analysis]
-      - [kipptaf, tableau, rpt_tableau__gradebook_assignments]
-      - [kipptaf, tableau, rpt_tableau__gradebook_dashboard]
-    metadata:
-      id: 452a4eaf-082b-4f83-aa8e-1a7a9c31a7a9
+      cron_schedule: 0 13 * * *
   - name: High School Early Warning Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__graduation_requirements]
       - [kipptaf, tableau, rpt_tableau__hs_early_warning_dashboard]
     metadata:
       id: 6333e047-e7a9-4d8f-a740-3df30f179d11
+      cron_schedule: 0 6 * * *
   - name: KIPP Forward Data Suite
     deps:
       - [kipptaf, tableau, rpt_tableau__kfwd_career_launch_survey]
@@ -96,13 +50,9 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__kfwd_verification]
     metadata:
       id: ad72c094-ad35-48f4-86a0-9d2e5b53f59a
-  - name: KIPP Miami FAST & i-Ready Analysis
-    deps:
-      - [kipptaf, tableau, rpt_tableau__miami_fast]
-      - [kipptaf, tableau, rpt_tableau__miami_k2_iready]
-      - [kipptaf, tableau, rpt_tableau__miami_k2_star]
-    metadata:
-      id: 9a4decae-3707-468f-8098-d3f625d770eb
+      cron_schedule:
+        - 0 4 * * *
+        - 0 17 * * *
   - name: "Marketing Data: Social Media"
     deps:
       - [kipptaf, tableau, rpt_tableau__marketing_facebook_page]
@@ -111,69 +61,143 @@ external_assets:
       - [kipptaf, tableau, rpt_tableau__marketing_instagram_post]
     metadata:
       id: f6aa0647-55a0-425b-b991-160965f6f2ad
-  - name: Master Renewal Tracking Tool
-    deps:
-      - [kipptaf, tableau, rpt_tableau__staff_performance_compliance_history]
-    metadata:
-      id: 1b363885-e6b2-4396-afff-ece0f8c6c77a
-  - name: Newark Home Instruction Tracker
-    deps:
-      - [kipptaf, tableau, rpt_tableau__approved_home_instruction]
-      - [kipptaf, tableau, rpt_tableau__home_instruction_queue]
-    metadata:
-      id: 2de24a25-5e9b-4fcd-8c07-307d0ea57660
+      cron_schedule: 0 7 * * *
   - name: NJ Certification Dashboard (Schools View)
     deps:
       - [kipptaf, tableau, rpt_tableau__staff_roster]
     metadata:
       id: ed2976ea-0b3c-4afb-a5d9-7e7e83227e3b
+      cron_schedule: 0 8 * * *
   - name: Ops Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__ops_dashboard]
     metadata:
       id: d4124f15-087a-4f27-8694-e47d2ce6ae9c
-  - name: Promotional Status Dashboard
-    deps:
-      - [kipptaf, tableau, rpt_tableau__promo_status]
-    metadata:
-      id: 5698ccc2-b952-4123-878b-48166b686b16
-  - name: School Culture Dashboard [NJ]
-    deps:
-      - [kipptaf, tableau, rpt_tableau__school_culture_dashboard_nj]
-    metadata:
-      id: af792f71-03f3-4a10-9f5e-ab946b1f35ae
-  - name: SchoolMint Grow Dashboard
-    deps:
-      - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
-    metadata:
-      id: 6791f835-28fe-48d9-a4b6-9c2fc2be9cb0
+      cron_schedule: 0 * * * *
   - name: Staff Demographic Explorer
     deps:
       - [kipptaf, tableau, rpt_tableau__staff_roster]
     metadata:
       id: fc15566f-0bcf-453c-aaed-04fbee94d7d7
+      cron_schedule: 0 11 * * 1
   - name: Staff Roster
     deps:
       - [kipptaf, tableau, rpt_tableau__staff_roster]
     metadata:
       id: 6e0915eb-9a46-4971-8e97-6e0749066b9f
-  - name: State Testing Accommodations Tracker
-    deps:
-      - [kipptaf, tableau, rpt_tableau__state_testing_accomodations]
-    metadata:
-      id: aca88e07-170f-4d1a-9a4f-a3816463ab27
-  - name: Survey Dashboard
-    deps:
-      - [kipptaf, tableau, rpt_tableau__survey_responses]
-    metadata:
-      id: b11542a2-6780-4feb-a1dd-534ffe724faf
+      cron_schedule: 0 7 * * *
   - name: Teacher Attendance Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__staff_attendance]
     metadata:
       id: acedcb63-36e0-4232-953c-64cbd11b5149
+      cron_schedule: 0 12 * * *
   - name: Zendesk Reporting
     deps:
       - [kipptaf, tableau, rpt_tableau__zendesk_tickets]
     metadata:
       id: 7adabf6e-fa59-4d60-bca8-de3a67005a53
+      cron_schedule: 0 6 * * *
+  - name: Recent Job & Salary Changes
+    deps:
+      - [kipptaf, tableau, rpt_tableau__staff_job_salary_audit]
+    metadata:
+      id: a571cf7d-9893-4f33-970d-46dd7a392c8e
+      cron_schedule: 0 2 * * *
+  - name: OKRTS Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__okrts_behavior]
+      - [kipptaf, tableau, rpt_tableau__okrts_referrals]
+      - [kipptaf, tableau, rpt_tableau__suspension_over_time]
+    metadata:
+      id: b3365fc1-7f74-48e6-9d1c-37a5cb67c12d
+      cron_schedule: 0 4 * * *
+  - name: SchoolMint Grow Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
+      - [kipptaf, tableau, rpt_tableau__schoolmint_grow_goals]
+    metadata:
+      id: b529ca04-3560-4cff-8898-fd0a65f3e994
+      cron_schedule:
+        - 0 6 * * *
+        - 30 14 * * *
+  # - name: Academic Priorities [NJ]
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__power_standards]
+  #     - [kipptaf, tableau, rpt_tableau__qbl]
+  #   metadata:
+  #     id: 0e0e4f6a-7401-4c12-a542-393f6f6edb1b
+  # - name: APM Dashboard
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__iready_apm]
+  #   metadata:
+  #     id: eb91563d-760b-4f2d-b9f8-65437fe22242
+  # - name: Assessment Dashboard
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__assessment_dashboard]
+  #   metadata:
+  #     id: 30fe4f82-8022-4dbc-9a29-5d805e64319f
+  # - name: Attendance Dashboard
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__attendance_dashboard]
+  #     - [kipptaf, tableau, rpt_tableau__attendance_chronic_absenteeism_log]
+  #     - [kipptaf, tableau, rpt_tableau__attendance_comm_log]
+  #   metadata:
+  #     id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+  # - name: Coaching Conversation Tool
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
+  #   metadata:
+  #     id: db88d328-0d54-4dac-8003-6197841e1432
+  # - name: Early Literacy Dashboard
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__dibels_dashboard]
+  #     - [kipptaf, tableau, rpt_tableau__sight_words_dashboard]
+  #   metadata:
+  #     id: bef17623-af5e-4a18-9e05-7a8f4e6951bf
+  # - name: Gradebook Dashboard
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__gpa_analysis]
+  #     - [kipptaf, tableau, rpt_tableau__gradebook_assignments]
+  #     - [kipptaf, tableau, rpt_tableau__gradebook_dashboard]
+  #   metadata:
+  #     id: 452a4eaf-082b-4f83-aa8e-1a7a9c31a7a9
+  # - name: KIPP Miami FAST & i-Ready Analysis
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__miami_fast]
+  #     - [kipptaf, tableau, rpt_tableau__miami_k2_iready]
+  #     - [kipptaf, tableau, rpt_tableau__miami_k2_star]
+  #   metadata:
+  #     id: 9a4decae-3707-468f-8098-d3f625d770eb
+  # - name: Master Renewal Tracking Tool
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__staff_performance_compliance_history]
+  #   metadata:
+  #     id: 1b363885-e6b2-4396-afff-ece0f8c6c77a
+  # - name: Newark Home Instruction Tracker
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__approved_home_instruction]
+  #     - [kipptaf, tableau, rpt_tableau__home_instruction_queue]
+  #   metadata:
+  #     id: 2de24a25-5e9b-4fcd-8c07-307d0ea57660
+  # - name: Promotional Status Dashboard
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__promo_status]
+  #   metadata:
+  #     id: 5698ccc2-b952-4123-878b-48166b686b16
+  # - name: School Culture Dashboard [NJ]
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__school_culture_dashboard_nj]
+  #   metadata:
+  #     id: af792f71-03f3-4a10-9f5e-ab946b1f35ae
+  # - name: State Testing Accommodations Tracker
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__state_testing_accomodations]
+  #   metadata:
+  #     id: aca88e07-170f-4d1a-9a4f-a3816463ab27
+  # - name: Survey Dashboard
+  #   deps:
+  #     - [kipptaf, tableau, rpt_tableau__survey_responses]
+  #   metadata:
+  #     id: b11542a2-6780-4feb-a1dd-534ffe724faf
+  # prospects_import - Daily 4:00 AM America/Los_Angeles

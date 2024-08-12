@@ -1,19 +1,14 @@
 from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kippmiami.powerschool.assets import (
-    dcid_assets,
-    partition_assets,
-)
-from teamster.libraries.powerschool.sis.sensors import build_powerschool_sensor
+from teamster.code_locations.kippmiami.powerschool.assets import assets
+from teamster.libraries.powerschool.sis.sensors import build_powerschool_asset_sensor
 
-partition_sensor = build_powerschool_sensor(
-    name=f"{CODE_LOCATION}_powerschool_partition_sensor",
-    asset_selection=[*dcid_assets, *partition_assets],
-    asset_defs=partition_assets,
+powerschool_asset_sensor = build_powerschool_asset_sensor(
+    code_location=CODE_LOCATION,
+    asset_selection=assets,
     execution_timezone=LOCAL_TIMEZONE,
     minimum_interval_seconds=(60 * 10),
-    max_runtime_seconds=(60 * 5),
 )
 
 sensors = [
-    partition_sensor,
+    powerschool_asset_sensor,
 ]

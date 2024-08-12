@@ -21,7 +21,7 @@ from teamster.code_locations.kipptaf.resources import (
     SSH_RESOURCE_LITTLESIS,
     TABLEAU_SERVER_RESOURCE,
 )
-from teamster.libraries.core.resources import (  # DB_POWERSCHOOL,; get_ssh_resource_powerschool,
+from teamster.core.resources import (  # DB_POWERSCHOOL,; get_ssh_resource_powerschool,
     BIGQUERY_RESOURCE,
     DEANSLIST_RESOURCE,
     GCS_RESOURCE,

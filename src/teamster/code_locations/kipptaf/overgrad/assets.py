@@ -1,4 +1,8 @@
-from dagster import AutoMaterializePolicy, DynamicPartitionsDefinition
+from dagster import (
+    AutoMaterializePolicy,
+    AutoMaterializeRule,
+    DynamicPartitionsDefinition,
+)
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.overgrad.schema import (
@@ -11,37 +15,35 @@ from teamster.code_locations.kipptaf.overgrad.schema import (
 )
 from teamster.libraries.overgrad.assets import build_overgrad_asset
 
-key_prefix = [CODE_LOCATION, "overgrad"]
-universities_partitions_def_name = "overgrad__universities__id"
-
-
-schools = build_overgrad_asset(asset_key=[*key_prefix, "schools"], schema=SCHOOL_SCHEMA)
+schools = build_overgrad_asset(
+    code_location=CODE_LOCATION, name="schools", schema=SCHOOL_SCHEMA
+)
 
 students = build_overgrad_asset(
-    asset_key=[*key_prefix, "students"], schema=STUDENT_SCHEMA
+    code_location=CODE_LOCATION, name="students", schema=STUDENT_SCHEMA
 )
 
 custom_fields = build_overgrad_asset(
-    asset_key=[*key_prefix, "custom_fields"], schema=CUSTOM_FIELD_SCHEMA
+    code_location=CODE_LOCATION, name="custom_fields", schema=CUSTOM_FIELD_SCHEMA
 )
 
 admissions = build_overgrad_asset(
-    asset_key=[*key_prefix, "admissions"],
-    schema=ADMISSION_SCHEMA,
-    universities_partitions_def_name=universities_partitions_def_name,
+    code_location=CODE_LOCATION, name="admissions", schema=ADMISSION_SCHEMA
 )
 
 followings = build_overgrad_asset(
-    asset_key=[*key_prefix, "followings"],
-    schema=FOLLOWING_SCHEMA,
-    universities_partitions_def_name=universities_partitions_def_name,
+    code_location=CODE_LOCATION, name="followings", schema=FOLLOWING_SCHEMA
 )
 
 universities = build_overgrad_asset(
-    asset_key=[*key_prefix, "universities"],
+    code_location=CODE_LOCATION,
+    name="universities",
     schema=UNIVERSITY_SCHEMA,
-    partitions_def=DynamicPartitionsDefinition(name=universities_partitions_def_name),
-    auto_materialize_policy=AutoMaterializePolicy.eager(),
+    partitions_def=DynamicPartitionsDefinition(name="overgrad__universities__id"),
+    auto_materialize_policy=AutoMaterializePolicy(
+        rules={AutoMaterializeRule.materialize_on_missing()},
+        max_materializations_per_minute=10000,
+    ),
     deps=[admissions.key, followings.key],
 )
 

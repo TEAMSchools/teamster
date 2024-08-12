@@ -74,11 +74,19 @@ assets:
     partition_column: whenmodified
   - asset_name: teachercategory
     partition_column: whenmodified
-  - asset_name: u_def_ext_students
+  - asset_name: users
+    partition_column: whenmodified
+  - asset_name: u_clg_et_stu
+    partition_column: whenmodified
+  - asset_name: u_clg_et_stu_alt
     partition_column: whenmodified
   - asset_name: u_studentsuserfields
     partition_column: whenmodified
-  - asset_name: users
-    partition_column: whenmodified
-  - asset_name: sced_code_mapping
-    partition_column: last_modified_ts
+    select_columns:
+      - studentsdcid
+      - c_504_status
+      - infosnap_id
+      - infosnap_opt_in
+      - media_release
+      - newark_enrollment_number
+      - rides_staff
