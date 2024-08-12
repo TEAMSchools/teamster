@@ -20,10 +20,6 @@ with
 
             coalesce(n_lessons_passed_reading, 0) as n_lessons_passed_reading,
             coalesce(n_lessons_passed_math, 0) as n_lessons_passed_math,
-            coalesce(pct_lessons_passed_reading, 0) as pct_lessons_passed_reading,
-            coalesce(pct_lessons_passed_math, 0) as pct_lessons_passed_math,
-            coalesce(time_on_task_reading, 0) as time_on_task_reading,
-            coalesce(time_on_task_math, 0) as time_on_task_math,
 
             row_number() over (
                 partition by student_id, last_week_start_date
@@ -31,9 +27,7 @@ with
             ) as rn_iready_week,
         from
             iready_usage pivot (
-                max(last_week_lessons_passed) as n_lessons_passed,
-                max(last_week_percent_lessons_passed) as pct_lessons_passed,
-                max(last_week_time_on_task_min) as time_on_task for `subject`
+                max(last_week_lessons_passed) as n_lessons_passed for `subject`
                 in ('reading', 'math')
             )
     ),
@@ -73,6 +67,8 @@ with
             r.performance_band_label_number,
             r.performance_band_label,
             r.is_replacement,
+
+            sd.standard_domain,
 
             cc.sections_section_number as course_section,
             cc.courses_course_name as course_name,
@@ -149,6 +145,9 @@ with
             and r.administered_at between w.week_start_monday and w.week_end_sunday
             and r.module_type is not null
         left join
+            {{ ref("stg_assessments__standard_domains") }} as sd
+            on r.response_type_code = sd.standard_code
+        left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
             and co.yearid = cc.cc_yearid
@@ -223,7 +222,10 @@ select
 
     if(qbl.qbl is not null, true, false) as is_qbl,
 
-    -- if(iw.n_lessons_passed_reading >= 2, 1, 0) as is_passed_iready_2plus_reading,
+    if(iw.n_lessons_passed_reading >= 2, 1, 0) as is_passed_iready_2plus_reading_int,
+    if(iw.n_lessons_passed_reading >= 4, 1, 0) as is_passed_iready_4plus_reading_int,
+    if(iw.n_lessons_passed_math >= 2, 1, 0) as is_passed_iready_2plus_math_int,
+    if(iw.n_lessons_passed_math >= 4, 1, 0) as is_passed_iready_4plus_math_int,
 from identifiers as co
 left join
     {{ ref("int_reporting__student_filters") }} as sf
@@ -233,6 +235,7 @@ left join
 left join
     {{ ref("stg_assessments__qbls_power_standards") }} as qbl
     on co.academic_year = qbl.academic_year
+    and co.term = qbl.term_name
     and co.region = qbl.region
     and co.grade_level = qbl.grade_level
     and co.response_type_code = qbl.standard_code
@@ -272,6 +275,11 @@ select
     sf.nj_student_tier,
 
     if(qbl.qbl is not null, true, false) as is_qbl,
+
+    null as is_passed_iready_2plus_reading_int,
+    null as is_passed_iready_4plus_reading_int,
+    null as is_passed_iready_2plus_math_int,
+    null as is_passed_iready_4plus_math_int,
 from identifiers as co
 left join
     {{ ref("int_reporting__student_filters") }} as sf
@@ -281,6 +289,7 @@ left join
 left join
     {{ ref("stg_assessments__qbls_power_standards") }} as qbl
     on co.academic_year = qbl.academic_year
+    and co.term = qbl.term_name
     and co.region = qbl.region
     and co.response_type_code = qbl.standard_code
     and co.subject_area = qbl.illuminate_subject_area
@@ -339,6 +348,7 @@ select
     null as performance_band_label_number,
     null as performance_band_label,
     null as is_replacement,
+    null as standard_domain,
     null as course_section,
     null as course_name,
     null as course_number,
@@ -376,6 +386,11 @@ select
     null as nj_student_tier,
 
     null as is_qbl,
+
+    null as is_passed_iready_2plus_reading_int,
+    null as is_passed_iready_4plus_reading_int,
+    null as is_passed_iready_2plus_math_int,
+    null as is_passed_iready_4plus_math_int,
 from {{ ref("int_performance_management__observation_details") }} as o
 inner join
     {{ ref("base_people__staff_roster") }} as r on o.employee_number = r.employee_number
