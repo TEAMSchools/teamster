@@ -24,7 +24,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__grants_timesheets]
     metadata:
       id: c7c821a4-a236-4da8-b41e-52b2fd62cbed
-      cron_schedule: 0 * * * *
+      # cron_schedule: 0 * * * *
   - name: Finance & Accounting Tools & Resources
     deps:
       - [kipptaf, tableau, rpt_tableau__adp_pension_and_benefits_enrollments]
@@ -104,6 +104,23 @@ assets:
     metadata:
       id: a571cf7d-9893-4f33-970d-46dd7a392c8e
       cron_schedule: 0 2 * * *
+  - name: OKRTS Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__okrts_behavior]
+      - [kipptaf, tableau, rpt_tableau__okrts_referrals]
+      - [kipptaf, tableau, rpt_tableau__suspension_over_time]
+    metadata:
+      id: b3365fc1-7f74-48e6-9d1c-37a5cb67c12d
+      cron_schedule: 0 4 * * *
+  - name: SchoolMint Grow Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
+      - [kipptaf, tableau, rpt_tableau__schoolmint_grow_goals]
+    metadata:
+      id: b529ca04-3560-4cff-8898-fd0a65f3e994
+      cron_schedule:
+        - 0 6 * * *
+        - 30 14 * * *
   # - name: Academic Priorities [NJ]
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__power_standards]
@@ -173,11 +190,6 @@ assets:
   #     - [kipptaf, tableau, rpt_tableau__school_culture_dashboard_nj]
   #   metadata:
   #     id: af792f71-03f3-4a10-9f5e-ab946b1f35ae
-  # - name: SchoolMint Grow Dashboard
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
-  #   metadata:
-  #     id: 6791f835-28fe-48d9-a4b6-9c2fc2be9cb0
   # - name: State Testing Accommodations Tracker
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__state_testing_accomodations]

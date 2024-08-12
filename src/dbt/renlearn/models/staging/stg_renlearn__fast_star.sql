@@ -104,7 +104,6 @@ select
     sgp_sf,
     sgp_ss,
     sgp_ws,
-    sgrade,
     sid_sid,
     sw_ed,
     sw_name,
@@ -178,4 +177,5 @@ select
     subdomain_vs_skillset_b as sub_domain_vs_skill_set_b,
 
     coalesce(lexile.string_value, cast(lexile.long_value as string)) as lexile,
+    coalesce(sgrade.string_value, cast(sgrade.long_value as string)) as sgrade,
 from {{ source("renlearn", "src_renlearn__fast_star") }}

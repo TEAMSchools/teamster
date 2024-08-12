@@ -1,17 +1,29 @@
 select
     surrogate_key,
 
-    {# unpivot cols #}
+    /* unpivot cols */
     measure,
     score,
-    level,
+    `level`,
     national_norm_percentile,
     semester_growth,
     year_growth,
+
+    case
+        `level`
+        when 'Above Benchmark'
+        then 4
+        when 'At Benchmark'
+        then 3
+        when 'Below Benchmark'
+        then 2
+        when 'Well Below Benchmark'
+        then 1
+    end as level_int,
 from
     {{ ref("stg_amplify__benchmark_student_summary") }} unpivot (
         (
-            level,
+            `level`,
             national_norm_percentile,
             score,
             semester_growth,

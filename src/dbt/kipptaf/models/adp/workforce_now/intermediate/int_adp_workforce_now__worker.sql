@@ -191,6 +191,7 @@ with
                 partition by work_assignment_id order by work_assignment_start_date asc
             ) as work_assignment_start_date_lead,
             max(work_assignment__effective_date_timestamp) over (
+                partition by work_assignment_id
             ) as work_assignment__effective_date_timestamp_max,
         from with_start_end_dates
         where work_assignment_start_date <= work_assignment_end_date
