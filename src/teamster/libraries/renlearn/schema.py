@@ -316,7 +316,6 @@ class FastStarCore(BaseModel):
     SGP_SF: float | None = None
     SGP_SS: float | None = None
     SGP_WS: float | None = None
-    Sgrade: str | None = None
     SID_SID: int | None = None
     SW_ED: str | None = None
     SW_Name: str | None = None
@@ -332,6 +331,7 @@ class FastStarCore(BaseModel):
     UnifiedScore: int | None = None
 
     Grade_E: float | str | None = None
+    Sgrade: str | int | None = None
 
 
 class FastStar(FastStarCore):
