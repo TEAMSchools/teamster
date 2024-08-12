@@ -20,7 +20,7 @@ on:
       - src/dbt/teamster_utils/**
       - src/dbt/titan/**
       - src/teamster/code_locations/kippnewark/**
-      - src/teamster/libraries/core/**
+      - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/datagun/**
       - src/teamster/libraries/dbt/**
@@ -30,13 +30,12 @@ on:
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
       - src/teamster/libraries/renlearn/**
-      - src/teamster/libraries/sqlalchemy/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
   pull_request:
     paths:
       - src/teamster/code_locations/kippnewark/**
-      - src/teamster/libraries/core/**
+      - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/datagun/**
       - src/teamster/libraries/dbt/**
@@ -46,7 +45,6 @@ on:
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
       - src/teamster/libraries/renlearn/**
-      - src/teamster/libraries/sqlalchemy/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
     types:

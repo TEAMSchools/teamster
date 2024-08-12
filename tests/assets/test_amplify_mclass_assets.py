@@ -8,7 +8,7 @@ from teamster.code_locations.kipptaf.amplify.mclass.assets import (
     pm_student_summary,
 )
 from teamster.code_locations.kipptaf.resources import MCLASS_RESOURCE
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(asset):

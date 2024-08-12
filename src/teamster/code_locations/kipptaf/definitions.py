@@ -1,6 +1,6 @@
 from dagster import (
     Definitions,
-    load_asset_checks_from_modules,
+    build_sensor_for_freshness_checks,
     load_assets_from_modules,
 )
 from dagster_k8s import k8s_job_executor
@@ -25,7 +25,7 @@ from teamster.code_locations.kipptaf import (
     smartrecruiters,
     tableau,
 )
-from teamster.libraries.core.resources import (
+from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     GCS_RESOURCE,
     SSH_COUCHDROP,
@@ -56,7 +56,7 @@ defs = Definitions(
             tableau,
         ]
     ),
-    asset_checks=load_asset_checks_from_modules(modules=[asset_checks]),
+    asset_checks=asset_checks.freshness_checks,
     schedules=[
         *_dbt.schedules,
         *_google.schedules,
@@ -74,7 +74,10 @@ defs = Definitions(
         *_google.sensors,
         *adp.sensors,
         *deanslist.sensors,
-        *tableau.sensors,
+        *fivetran.sensors,
+        build_sensor_for_freshness_checks(
+            freshness_checks=asset_checks.freshness_checks
+        ),
     ],
     resources={
         # shared

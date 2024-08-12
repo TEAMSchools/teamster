@@ -49,14 +49,3 @@ littlesis_extract_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}_datagun_littlesis_extract_asset_job",
     selection=[littlesis_extract],
 )
-
-jobs = [
-    clever_extract_asset_job,
-    coupa_extract_asset_job,
-    deanslist_annual_extract_asset_job,
-    deanslist_continuous_extract_asset_job,
-    egencia_extract_asset_job,
-    idauto_extract_asset_job,
-    illuminate_extract_asset_job,
-    littlesis_extract_asset_job,
-]

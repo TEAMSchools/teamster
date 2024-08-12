@@ -58,6 +58,9 @@ models:
         +schema: adp_workforce_now
         staging:
           +materialized: table
+        workers:
+          staging:
+            +materialized: table
     alchemer:
       +schema: alchemer
       staging:
@@ -140,8 +143,7 @@ models:
         +materialized: table
     overgrad:
       +schema: overgrad
-      staging:
-        +materialized: table
+      +materialized: table
     pearson:
       +schema: pearson
     people:

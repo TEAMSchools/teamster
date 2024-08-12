@@ -1,4 +1,27 @@
 with
+    survey_reconciliation as (
+        select
+            survey_response_id,
+            sf_contact_id,
+
+            row_number() over (
+                partition by survey_response_id order by date_submitted desc
+            ) as rn_response_id,
+        from
+            (
+                select date_submitted, answer, question_title,
+                from {{ ref("int_surveys__survey_responses") }}
+                where
+                    survey_title
+                    = 'Career Launch Survey invalid response reconciliation'
+            ) pivot (
+                max(answer) for question_title in (
+                    'Survey response ID' as survey_response_id,
+                    'Salesforce contact ID' as sf_contact_id
+                )
+            )
+    ),
+
     alumni_data as (
         select
             e.student,
@@ -250,10 +273,15 @@ select
         then concat('Fall ', ad.actual_end_date_year)
     end as season_label,
 from survey_weighted as sw
+left join
+    survey_reconciliation as sr
+    on sw.response_id = sr.survey_response_id
+    and sr.rn_response_id = 1
 full join
     alumni_data as ad
     on ad.rn_latest = 1
     and (
         sw.respondent_user_principal_name = ad.sf_email
         or sw.respondent_user_principal_name = ad.sf_secondary_email
+        or sr.sf_contact_id = ad.student
     )

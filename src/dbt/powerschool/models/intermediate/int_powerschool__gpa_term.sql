@@ -64,7 +64,7 @@ with
         where
             sg.storecode_type in ('Q', 'T')
             and sg.excludefromgpa = 0
-            and sg.yearid < {{ var("current_academic_year") }}
+            and sg.yearid < {{ var("current_academic_year") - 1990 }}
     ),
 
     grade_rollup as (

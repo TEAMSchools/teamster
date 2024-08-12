@@ -12,7 +12,7 @@ from teamster.code_locations.kippcamden import (
     powerschool,
     titan,
 )
-from teamster.libraries.core.resources import (
+from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DB_POWERSCHOOL,
     DEANSLIST_RESOURCE,
