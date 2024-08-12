@@ -22,6 +22,7 @@ select
     ar.term_administered,
 
     null as standard_domain,
+
     round(avg(ar.percent_correct), 2) as avg_percent_correct,
     case
         when round(avg(ar.percent_correct), 2) >= 85
@@ -91,7 +92,7 @@ inner join
 inner join
     report_card_region as r
     on ar.assessment_id = r.assessment_id
-    and co.region = r.progress_report_region
+    and co.region = r.report_card_region
 where ar.response_type = 'standard'
 group by
     ar.academic_year,
