@@ -1,55 +1,3 @@
-with
-    -- trunk-ignore(sqlfluff/ST03)
-    workers as (
-        select
-            associate_oid,
-            worker_id__id_value,
-            worker_dates__rehire_date,
-            worker_dates__termination_date,
-            person__birth_date,
-            person__preferred_name__given_name,
-            person__legal_name__given_name,
-            person__preferred_name__family_name_1,
-            person__legal_name__family_name_1,
-            effective_date_start,
-        from {{ ref("stg_adp_workforce_now__workers") }}
-        where is_current_record
-
-        union all
-
-        select
-            associate_oid,
-            worker_id__id_value,
-            worker_dates__rehire_date,
-            worker_dates__termination_date,
-            person__birth_date,
-            person__preferred_name__given_name,
-            person__legal_name__given_name,
-            person__preferred_name__family_name_1,
-            person__legal_name__family_name_1,
-            effective_date_start,
-        from {{ ref("stg_adp_workforce_now__workers") }}
-        where
-            effective_date_start_lag is null
-            and not is_current_record
-            and date_diff(
-                coalesce(worker_dates__rehire_date, worker_dates__original_hire_date),
-                current_date('{{ var("local_timezone") }}'),
-                day
-            )
-            <= 10
-    ),
-
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="workers",
-                partition_by="associate_oid",
-                order_by="effective_date_start desc",
-            )
-        }}
-    )
-
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     w.worker_id__id_value as `Associate ID`,
@@ -83,7 +31,7 @@ select
 
     safe_cast(enm.employee_number as string) as `Business Unit Code`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from deduplicate as w
+from {{ ref("stg_adp_workforce_now__workers") }} as w
 inner join
     {{ ref("stg_people__employee_numbers") }} as en
     on w.worker_id__id_value = en.adp_associate_id
@@ -112,3 +60,11 @@ left join
     {{ ref("stg_people__employee_numbers") }} as enm
     on rt.reports_to_worker_id__id_value = enm.adp_associate_id
     and enm.is_active
+where
+    w.is_current_record
+    and date_diff(
+        coalesce(w.worker_dates__rehire_date, w.worker_dates__original_hire_date),
+        current_date('{{ var("local_timezone") }}'),
+        day
+    )
+    <= 10
