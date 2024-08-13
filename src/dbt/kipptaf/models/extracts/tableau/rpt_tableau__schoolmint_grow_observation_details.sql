@@ -4,7 +4,7 @@ with
         from {{ ref("base_people__staff_roster_history") }} as srh
         where
             date(srh.work_assignment_start_date)
-            >= date({{ var("current_academic_year") }}-1, 07, 01)
+            >= date({{ var("current_academic_year") }} - 1, 07, 01)
             and srh.assignment_status = 'Active'
             and srh.job_title = 'Teacher in Residence'
         group by employee_number
