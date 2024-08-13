@@ -1,4 +1,4 @@
-import random
+"""import random
 
 from dagster import TextMetadataValue, _check, instance_for_test, materialize
 from dagster._core.events import StepMaterializationData
@@ -9,8 +9,6 @@ from teamster.code_locations.kipptaf.alchemer.assets import (
     survey_question,
     survey_response,
 )
-
-# trunk-ignore(pyright/reportAttributeAccessIssue)
 from teamster.code_locations.kipptaf.resources import ALCHEMER_RESOURCE
 from teamster.core.resources import get_io_manager_gcs_avro
 
@@ -109,3 +107,4 @@ def test_asset_alchemer_survey_campaign():
 
 def test_asset_alchemer_survey_response():
     _test_asset(asset=survey_response, partition_key="4561325_1656651600")
+"""
