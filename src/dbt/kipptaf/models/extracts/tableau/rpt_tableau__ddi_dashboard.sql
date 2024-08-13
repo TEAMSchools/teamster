@@ -310,7 +310,16 @@ select
 
     r.home_work_location_powerschool_school_id as schoolid,
     r.home_work_location_abbreviation as school,
-    r.home_work_location_region as region,
+    
+    case
+        when r.home_work_location_region = 'TEAM Academy Charter School'
+        then 'Newark'
+        when r.home_work_location_region = 'KIPP Cooper Norcross Academy'
+        then 'Camden'
+        when r.home_work_location_region = 'KIPP Miami'
+        then 'Miami'
+        else r.home_work_location_region
+    end as region,
 
     null as grade_level,
     null as enroll_status,
