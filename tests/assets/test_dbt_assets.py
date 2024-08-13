@@ -13,9 +13,7 @@ MANIFEST = json.loads(
 
 MANIFEST_NODES = MANIFEST["nodes"]
 
-DAGSTER_DBT_TRANSLATOR = CustomDagsterDbtTranslator(
-    asset_key_prefix="kipptaf", source_asset_key_prefix="kipptaf"
-)
+DAGSTER_DBT_TRANSLATOR = CustomDagsterDbtTranslator(code_location="kipptaf")
 
 
 @dbt_assets(
