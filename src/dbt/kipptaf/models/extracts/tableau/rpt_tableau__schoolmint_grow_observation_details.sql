@@ -1,3 +1,15 @@
+with
+    tir_previous as (
+        select srh.employee_number, true as prior_year_tir,
+        from {{ ref("base_people__staff_roster_history") }} as srh
+        where
+            date(srh.work_assignment_start_date)
+            >= date({{ var("current_academic_year") }}-1, 07, 01)
+            and srh.assignment_status = 'Active'
+            and srh.job_title = 'Teacher in Residence'
+        group by employee_number
+    )
+
 /* tracking for current year */
 select
     srh.employee_number,
@@ -49,6 +61,17 @@ select
     if(
         od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0
     ) as met_goal_miami,
+    case
+        when srh.job_title = 'Teacher in Residence'
+        then true
+        when
+            srh.worker_original_hire_date
+            >= date({{ var("current_academic_year") }}, 7, 1)
+        then true
+        when tir.prior_year_tir is true
+        then true
+        else false
+    end as boy_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as t
@@ -75,6 +98,7 @@ left join
 left join
     {{ ref("base_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
+left join tir_previous as tir on srh.employee_number = tir.employee_number
 where
     srh.job_title in ('Teacher', 'Teacher in Residence', 'Learning Specialist')
     and srh.assignment_status = 'Active'
@@ -132,6 +156,7 @@ select
     if(
         od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0
     ) as met_goal_miami,
+    null as boy_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("int_performance_management__observation_details") }} as od
