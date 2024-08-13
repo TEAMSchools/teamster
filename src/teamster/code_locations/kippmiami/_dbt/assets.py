@@ -12,9 +12,7 @@ manifest = json.loads(
     s=pathlib.Path(f"src/dbt/{CODE_LOCATION}/target/manifest.json").read_text()
 )
 
-dagster_dbt_translator = CustomDagsterDbtTranslator(
-    asset_key_prefix=CODE_LOCATION, source_asset_key_prefix=CODE_LOCATION
-)
+dagster_dbt_translator = CustomDagsterDbtTranslator(code_location=CODE_LOCATION)
 
 dbt_assets = build_dbt_assets(
     manifest=manifest,

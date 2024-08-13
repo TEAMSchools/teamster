@@ -197,7 +197,7 @@ def build_powerschool_asset_sensor(
                     list,
                 )
             except OperationalError as e:
-                if "DPY-6003" in str(e):
+                if "DPY-6003" in str(e) or "DPY-4011" in str(e):
                     context.log.error(msg=str(e))
                     return SkipReason(str(e))
                 else:
