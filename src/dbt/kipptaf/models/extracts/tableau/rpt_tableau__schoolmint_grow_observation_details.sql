@@ -138,6 +138,7 @@ inner join
     on srh.employee_number = od.employee_number
     and od.observed_at
     between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date)
+    and srh.assignment_status = 'Active'
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on srh.employee_number = os.employee_number
