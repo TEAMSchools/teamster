@@ -353,10 +353,6 @@ with
                 interval 1 millisecond
             ) as effective_date_timestamp,
 
-            lag(effective_date_start, 1) over (
-                partition by associate_oid order by effective_date_start asc
-            ) as effective_date_start_lag,
-
             coalesce(
                 date_sub(
                     lead(effective_date_start, 1) over (
