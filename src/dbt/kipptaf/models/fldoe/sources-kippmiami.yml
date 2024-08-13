@@ -43,3 +43,11 @@ sources:
               - kippmiami
               - fldoe
               - int_fldoe__fast_standard_performance_unpivot
+      - name: int_fldoe__all_assessments
+        meta:
+          dagster:
+            group: fldoe
+            asset_key:
+              - kippmiami
+              - fldoe
+              - int_fldoe__all_assessments

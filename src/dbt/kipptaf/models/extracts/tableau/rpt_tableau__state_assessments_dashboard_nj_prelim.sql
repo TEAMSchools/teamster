@@ -2,61 +2,33 @@
 {%- set academic_year = "2023" -%}
 
 with
-    ms_grad as (
-        select
-            _dbt_source_relation,
-            student_number,
-            school_abbreviation as ms_attended,
-
-            row_number() over (
-                partition by student_number order by exitdate desc
-            ) as rn,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where school_level = 'MS'
-    ),
-
     students_nj as (
         select
-            e._dbt_source_relation,
-            e.academic_year,
-            e.region,
-            e.schoolid,
-            e.school_abbreviation as school,
-            e.student_number,
-            e.state_studentnumber,
-            e.lastfirst as student_name,
-            e.grade_level,
-            e.cohort,
-            e.enroll_status,
-            e.is_out_of_district,
-            e.gender,
-            e.lunch_status,
-            e.is_504,
-            e.lep_status,
-            e.ethnicity as race_ethnicity,
-
-            m.ms_attended,
-
-            if(e.spedlep like '%SPED%', 'Has IEP', 'No IEP') as iep_status,
-
-            case
-                when e.school_level in ('ES', 'MS')
-                then e.advisory_name
-                when e.school_level = 'HS'
-                then e.advisor_lastfirst
-            end as advisory,
-        from {{ ref("base_powerschool__student_enrollments") }} as e
-        left join
-            ms_grad as m
-            on e.student_number = m.student_number
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
-            and m.rn = 1
+            _dbt_source_relation,
+            academic_year,
+            region,
+            schoolid,
+            school,
+            student_number,
+            state_studentnumber,
+            student_name,
+            grade_level,
+            cohort,
+            enroll_status,
+            is_out_of_district,
+            gender,
+            lunch_status,
+            is_504,
+            lep_status,
+            ethnicity as race_ethnicity,
+            ms_attended,
+            iep_status,
+            advisory,
+        from {{ ref("int_tableau__student_enrollments") }}
         where
-            e.rn_year = 1
-            and e.region in ('Camden', 'Newark')
-            and e.schoolid != 999999
-            and e.academic_year >= {{ academic_year }}
-            and e.grade_level > 2
+            region in ('Camden', 'Newark')
+            and academic_year >= {{ academic_year }}
+            and grade_level > 2
     ),
 
     schedules as (

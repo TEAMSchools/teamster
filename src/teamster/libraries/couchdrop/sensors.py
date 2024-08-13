@@ -71,7 +71,7 @@ def build_couchdrop_sftp_sensor(
         except (SSHException, AuthenticationException) as e:
             if isinstance(e, SSHException) and (
                 "Error reading SSH protocol banner" in e.args
-                or "Server connection dropped" in e.args
+                or "Server connection dropped:" in e.args
             ):
                 context.log.error(msg=str(e))
                 return SkipReason(str(e))

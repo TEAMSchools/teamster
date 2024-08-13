@@ -118,9 +118,9 @@ assets:
       - [kipptaf, tableau, rpt_tableau__schoolmint_grow_goals]
     metadata:
       id: b529ca04-3560-4cff-8898-fd0a65f3e994
-      # cron_schedule:
-      #   - 0 6 * * *
-      #   - 30 14 * * *
+      cron_schedule:
+        - 0 6 * * *
+        - 30 14 * * *
   # - name: Academic Priorities [NJ]
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__power_standards]
