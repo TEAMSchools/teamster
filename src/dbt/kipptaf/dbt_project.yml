@@ -117,13 +117,11 @@ models:
         +schema: google_appsheet
     illuminate:
       +schema: illuminate
+      +materialized: table
       staging:
-        +materialized: table
         repositories:
           archive:
             +enabled: false
-      base:
-        +materialized: table
     instagram:
       business:
         +schema: instagram_business
