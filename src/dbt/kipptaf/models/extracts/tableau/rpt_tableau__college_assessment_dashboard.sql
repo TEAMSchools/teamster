@@ -77,9 +77,7 @@ with
             on s.cc_academic_year = f.academic_year
             and s.students_student_number = f.student_number
             and s.courses_credittype = f.powerschool_credittype
-        where
-            e.academic_year = {{ var("current_academic_year") }}
-            and e.school_level = 'HS'
+        where e.school_level = 'HS'
     ),
 
     college_assessments_official as (
@@ -258,7 +256,7 @@ left join
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official' and e.expected_scope != 'PSAT10'
+where e.expected_test_type = 'Official' and e.expected_scope in ('ACT', 'SAT')
 
 union all
 
