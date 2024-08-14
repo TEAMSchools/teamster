@@ -8,7 +8,6 @@ select
             except=["_fivetran_deleted", "_fivetran_synced", "deleted_at"],
         )
     }},
-    a.academic_year - 1 as academic_year_clean,
 
     u.local_user_id as creator_local_user_id,
     u.username as creator_username,
@@ -21,6 +20,8 @@ select
     ds.code_translation as scope,
 
     dsa.code_translation as subject_area,
+
+    a.academic_year - 1 as academic_year_clean,
 from {{ src_assessments }} as a
 inner join
     {{ source("illuminate", "users") }} as u
