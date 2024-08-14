@@ -1,30 +1,21 @@
 with
-    dlm as (
-        select distinct student_number,
-        from {{ ref("int_students__graduation_path_codes") }}
-        where code = 'M'
-    ),
-
     roster as (
         select
             e.academic_year,
             e.region,
             e.schoolid,
-            e.school_abbreviation,
+            e.school,
             e.student_number,
-            e.lastfirst,
+            e.student_name,
             e.grade_level,
             e.enroll_status,
             e.cohort,
-            e.entrydate,
-            e.exitdate,
-            e.is_504 as c_504_status,
+            e.is_504,
             e.lep_status,
-            e.advisor_lastfirst,
-
-            adb.contact_id,
-            adb.ktc_cohort,
-            adb.contact_owner_name,
+            e.advisory,
+            e.contact_id,
+            e.ktc_cohort,
+            e.contact_owner_name,
 
             s.courses_course_name,
             s.teacher_lastfirst,
@@ -34,15 +25,13 @@ with
             t.scope as expected_scope,
             t.subject_area as expected_subject_area,
 
-            if(e.spedlep in ('No IEP', null), 0, 1) as sped,
+            if(e.iep_status = 'No IEP', 0, 1) as sped,
 
-            if(d.student_number is null, false, true) as dlm,
-        from {{ ref("base_powerschool__student_enrollments") }} as e
+        from {{ ref("int_tableau__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
-            on e.studentid = s.cc_studentid
+            on e.student_number = s.students_student_number
             and e.academic_year = s.cc_academic_year
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
             and s.courses_course_name in (
@@ -52,19 +41,13 @@ with
                 'College and Career II'
             )
         left join
-            {{ ref("int_kippadb__roster") }} as adb
-            on e.student_number = adb.student_number
-        left join
             {{ ref("stg_assessments__assessment_expectations") }} as t
             on e.academic_year = t.academic_year
             and e.grade_level = t.grade
             and t.assessment_type = 'College Entrance'
-        left join dlm as d on e.student_number = d.student_number
         where
             e.academic_year = {{ var("current_academic_year") }}
-            and e.rn_year = 1
             and e.school_level = 'HS'
-            and e.schoolid != 999999
     ),
 
     course_subjects_roster as (
@@ -72,26 +55,31 @@ with
             e._dbt_source_relation,
             e.academic_year,
             e.student_number,
+            e.contact_id,
 
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
             s.courses_credittype,
 
-            adb.contact_id,
-        from {{ ref("base_powerschool__student_enrollments") }} as e
+            f.is_exempt_state_testing,
+
+        from {{ ref("int_tableau__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
-            on e.studentid = s.cc_studentid
+            on e.student_number = s.students_student_number
             and e.academic_year = s.cc_academic_year
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
             and s.courses_credittype in ('ENG', 'MATH')
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
         left join
-            {{ ref("int_kippadb__roster") }} as adb
-            on e.student_number = adb.student_number
-        where e.rn_year = 1 and e.school_level = 'HS' and e.schoolid != 999999
+            {{ ref("int_reporting__student_filters") }} as f
+            on s.cc_academic_year = f.academic_year
+            and s.students_student_number = f.student_number
+            and s.courses_credittype = f.powerschool_credittype
+        where
+            e.academic_year = {{ var("current_academic_year") }}
+            and e.school_level = 'HS'
     ),
 
     college_assessments_official as (
@@ -212,18 +200,16 @@ select
     e.academic_year,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
     e.student_number,
-    e.lastfirst,
+    e.student_name,
     e.grade_level,
     e.enroll_status,
     e.cohort,
-    e.entrydate,
-    e.exitdate,
     e.sped,
-    e.c_504_status,
+    e.is_504,
     e.lep_status,
-    e.advisor_lastfirst,
+    e.advisory,
     e.contact_id,
     e.ktc_cohort,
     e.contact_owner_name,
@@ -233,7 +219,6 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
-    e.dlm,
 
     o.test_type,
     o.scope,
@@ -260,6 +245,7 @@ select
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
+    c.is_exempt_state_testing,
 from roster as e
 left join
     college_assessments_official as o
@@ -280,18 +266,16 @@ select
     e.academic_year,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
     e.student_number,
-    e.lastfirst,
+    e.student_name,
     e.grade_level,
     e.enroll_status,
     e.cohort,
-    e.entrydate,
-    e.exitdate,
     e.sped,
-    e.c_504_status,
+    e.is_504,
     e.lep_status,
-    e.advisor_lastfirst,
+    e.advisory,
     e.contact_id,
     e.ktc_cohort,
     e.contact_owner_name,
@@ -301,7 +285,6 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
-    e.dlm,
 
     o.test_type,
     o.scope,
@@ -328,6 +311,7 @@ select
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
+    c.is_exempt_state_testing,
 from roster as e
 left join
     college_assessments_official as o
@@ -348,18 +332,16 @@ select
     e.academic_year,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
     e.student_number,
-    e.lastfirst,
+    e.student_name,
     e.grade_level,
     e.enroll_status,
     e.cohort,
-    e.entrydate,
-    e.exitdate,
     e.sped,
-    e.c_504_status,
+    e.is_504,
     e.lep_status,
-    e.advisor_lastfirst,
+    e.advisory,
     e.contact_id,
     e.ktc_cohort,
     e.contact_owner_name,
@@ -369,7 +351,6 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
-    e.dlm,
 
     p.test_type,
     p.scope,
@@ -395,6 +376,7 @@ select
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
+    c.is_exempt_state_testing,
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment_practice") }} as p
