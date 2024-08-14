@@ -37,9 +37,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         if not auto_materialize_policy_config.get("enabled", True):
             return None
         else:
-            return (
-                AutomationCondition.eager() | AutomationCondition.code_version_changed()
-            )
+            return AutomationCondition.eager()
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         group = super().get_group_name(dbt_resource_props)
