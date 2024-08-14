@@ -64,7 +64,8 @@ select
         od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0
     ) as met_goal_miami,
     case
-        when srh.business_unit_home_name = 'KIPP Miami' then true
+        when srh.business_unit_home_name = 'KIPP Miami'
+        then true
         when srh.job_title = 'Teacher in Residence'
         then true
         when
