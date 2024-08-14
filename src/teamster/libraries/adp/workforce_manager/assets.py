@@ -3,7 +3,7 @@ from io import StringIO
 
 from dagster import (
     AssetsDefinition,
-    AutoMaterializePolicy,
+    AutomationCondition,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionKey,
@@ -46,7 +46,7 @@ def build_adp_wfm_asset(
             }
         ),
         group_name="adp_workforce_manager",
-        auto_materialize_policy=AutoMaterializePolicy.eager(),
+        automation_condition=AutomationCondition.eager(),
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
