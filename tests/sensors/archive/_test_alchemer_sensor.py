@@ -1,4 +1,4 @@
-import json
+"""import json
 
 from dagster import (
     RunRequest,
@@ -12,8 +12,6 @@ from teamster.code_locations.kipptaf.alchemer.sensors import (
     alchemer_survey_metadata_asset_sensor,
     alchemer_survey_response_asset_sensor,
 )
-
-# trunk-ignore(pyright/reportAttributeAccessIssue)
 from teamster.code_locations.kipptaf.resources import ALCHEMER_RESOURCE
 
 
@@ -53,3 +51,4 @@ def test_alchemer_survey_response_asset_sensor():
     run_requests = _check.inst(sensor_result.run_requests, list[RunRequest])
 
     assert len(run_requests) > 0
+"""

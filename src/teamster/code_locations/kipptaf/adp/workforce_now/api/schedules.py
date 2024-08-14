@@ -17,7 +17,7 @@ from teamster.code_locations.kipptaf.adp.workforce_now.api.jobs import (
 
 adp_wfn_worker_fields_update_schedule = ScheduleDefinition(
     job=adp_wfn_update_workers_job,
-    cron_schedule="0 6 * * *",
+    cron_schedule="30 2 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
@@ -31,7 +31,7 @@ job = define_asset_job(
 @schedule(
     name=f"{job.name}_schedule",
     job=job,
-    cron_schedule="0 0 * * *",
+    cron_schedule="30 0 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 def adp_wfn_api_workers_asset_schedule(context: ScheduleEvaluationContext) -> Generator:
