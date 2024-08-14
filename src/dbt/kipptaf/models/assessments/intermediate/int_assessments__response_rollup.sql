@@ -217,7 +217,7 @@ select
     rtt.name as term_taken,
 from response_union as ru
 left join
-    {{ ref("base_illuminate__performance_band_sets") }} as pbl
+    {{ ref("int_illuminate__performance_band_sets") }} as pbl
     on ru.performance_band_set_id = pbl.performance_band_set_id
     and ru.percent_correct between pbl.minimum_value and pbl.maximum_value
 left join
