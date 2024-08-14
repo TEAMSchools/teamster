@@ -1,4 +1,5 @@
 {
+  "dbt.enableNewLineagePanel": true,
   "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
@@ -37,10 +38,5 @@
   },
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  },
-  "dbt.enableNewLineagePanel": true,
-  "[python]": {
-    "editor.defaultFormatter": "trunk.io"
-  },
-  "python.analysis.diagnosticMode": "workspace"
+  }
 }
