@@ -6,7 +6,7 @@ authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
 dependencies = [
-  "dagster>=1.7,<1.8",
+  "dagster>=1.8,<1.9",
   "dagster-airbyte",
   "dagster-cloud",
   "dagster-dbt",
@@ -28,6 +28,7 @@ dependencies = [
   "scikit-learn>=1.4.0",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
+  "pendulum>=3.0.0",
 ]
 requires-python = ">=3.12,<3.13"
 license = { text = "GPL-3.0-or-later" }
@@ -35,8 +36,6 @@ license = { text = "GPL-3.0-or-later" }
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]
 build-backend = "pdm.pep517.api"
-
-[tool.pdm.resolution.overrides]
 
 [tool.pdm.dev-dependencies]
 dev = ["pytest>=7.4.3", "datamodel-code-generator>=0.25.4", "dagster-webserver"]
