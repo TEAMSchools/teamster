@@ -4,6 +4,7 @@ with
         from {{ ref("stg_illuminate__assessment_grade_levels") }}
         group by assessment_id
     )
+
 select
     a.academic_year_clean as academic_year,
     a.assessment_id,
@@ -25,7 +26,7 @@ select
     ps.is_power_standard,
 
     coalesce(ps.qbl, 'No QBL mapped') as qbl,
-from {{ ref("base_assessments__assessments") }} as a
+from {{ ref("int_assessments__assessments") }} as a
 left join grade_level as g on a.assessment_id = g.assessment_id
 left join
     {{ ref("stg_illuminate__assessment_standards") }} as st
@@ -52,7 +53,9 @@ where
     )
     and a.academic_year_clean = {{ var("current_academic_year") }}
     and g.grade_level < 9
+
 union all
+
 select
     a.academic_year_clean as academic_year,
     a.assessment_id,
@@ -74,7 +77,7 @@ select
     ps.is_power_standard,
 
     coalesce(ps.qbl, 'No QBL mapped') as qbl,
-from {{ ref("base_assessments__assessments") }} as a
+from {{ ref("int_assessments__assessments") }} as a
 left join grade_level as g on a.assessment_id = g.assessment_id
 left join
     {{ ref("stg_illuminate__assessment_standards") }} as st

@@ -22,7 +22,7 @@ with
             round(
                 safe_divide(asr.percent_correct, 100) * asr.number_of_questions, 0
             ) as overall_number_correct,
-        from {{ ref("base_illuminate__assessments") }} as ais
+        from {{ ref("int_illuminate__assessments") }} as ais
         inner join
             {{ ref("stg_illuminate__assessment_grade_levels") }} as agl
             on ais.assessment_id = agl.assessment_id
@@ -190,6 +190,6 @@ select
     ) as rn_student_assessment,
 from sub
 left join
-    {{ ref("base_illuminate__agg_student_responses_standard") }} as std
+    {{ ref("int_illuminate__agg_student_responses_standard") }} as std
     on sub.assessment_id = std.assessment_id
     and sub.illuminate_student_id = std.student_id

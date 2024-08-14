@@ -54,7 +54,7 @@ select
     sg.standard_codes as question_standard_codes,
 
     a.creator_first_name || ' ' || a.creator_last_name as created_by,
-from {{ ref("base_assessments__assessments") }} as a
+from {{ ref("int_assessments__assessments") }} as a
 inner join
     {{ ref("stg_illuminate__assessment_fields") }} as f
     on a.assessment_id = f.assessment_id

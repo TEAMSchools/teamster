@@ -28,7 +28,7 @@ select
     hos.head_of_school_preferred_name_lastfirst as hos,
 
     false as is_replacement,
-from {{ ref("base_illuminate__repositories") }} as r
+from {{ ref("int_illuminate__repositories") }} as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on r.date_administered between rt.start_date and rt.end_date
@@ -47,7 +47,7 @@ inner join
     and co.is_enrolled_recent
     and co.rn_year = 1
 left join
-    {{ ref("base_illuminate__repository_data") }} as sw
+    {{ ref("int_illuminate__repository_data") }} as sw
     on co.student_number = sw.local_student_id
     and r.repository_id = sw.repository_id
     and f.label = sw.field_label
@@ -95,7 +95,7 @@ select
     hos.head_of_school_preferred_name_lastfirst as hos,
 
     true as is_replacement,
-from {{ ref("base_illuminate__repositories") }} as r
+from {{ ref("int_illuminate__repositories") }} as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on r.date_administered between rt.start_date and rt.end_date
@@ -114,7 +114,7 @@ inner join
     and co.is_enrolled_recent
     and co.rn_year = 1
 inner join
-    {{ ref("base_illuminate__repository_data") }} as sw
+    {{ ref("int_illuminate__repository_data") }} as sw
     on co.student_number = sw.local_student_id
     and r.repository_id = sw.repository_id
     and f.label = sw.field_label
