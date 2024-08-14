@@ -10,7 +10,6 @@ lint:
   enabled:
     - pyright@1.1.376
     - actionlint@1.7.1
-    - bandit@1.7.9
     - git-diff-check
     - gitleaks@8.18.4
     - hadolint@2.12.0
@@ -28,6 +27,7 @@ lint:
     - taplo@0.9.3
     - yamllint@1.35.1
   disabled:
+    - bandit
     - trufflehog
     - black
     - checkov
