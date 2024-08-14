@@ -58,7 +58,6 @@ defs = Definitions(
     ),
     asset_checks=asset_checks.freshness_checks,
     schedules=[
-        *_dbt.schedules,
         *_google.schedules,
         *adp.schedules,
         *airbyte.schedules,
