@@ -54,6 +54,8 @@ select
     od.strand_name,
     od.text_box,
     od.overall_tier,
+    null as etr_score,
+    null as so_score,
 
     sro.preferred_name_lastfirst as observer_name,
 
@@ -62,11 +64,13 @@ select
         od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0
     ) as met_goal_miami,
     case
+        when srh.business_unit_home_name = 'KIPP Miami'
+        then true
         when srh.job_title = 'Teacher in Residence'
         then true
         when
             srh.worker_original_hire_date
-            >= date({{ var("current_academic_year") }}, 7, 1)
+            >= date({{ var("current_academic_year") }}, 4, 1)
         then true
         when tir.prior_year_tir is true
         then true
@@ -149,6 +153,8 @@ select
     od.strand_name,
     od.text_box,
     od.overall_tier,
+    od.etr_score,
+    od.so_score,
 
     sro.preferred_name_lastfirst as observer_name,
 
