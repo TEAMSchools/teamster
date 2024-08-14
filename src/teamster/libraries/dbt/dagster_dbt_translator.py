@@ -34,7 +34,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             "auto_materialize_policy", {}
         )
 
-        if not auto_materialize_policy_config.get("enabled"):
+        if not auto_materialize_policy_config.get("enabled", True):
             return None
         else:
             return (
