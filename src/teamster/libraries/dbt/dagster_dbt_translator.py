@@ -15,7 +15,11 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         asset_key = super().get_asset_key(dbt_resource_props)
 
-        if dbt_resource_props["resource_type"] == "source":
+        if dbt_resource_props[
+            "resource_type"
+        ] == "source" and "stage_external_sources" not in dbt_resource_props.get(
+            "tags", []
+        ):
             return asset_key
         else:
             return asset_key.with_prefix(self.code_location)
