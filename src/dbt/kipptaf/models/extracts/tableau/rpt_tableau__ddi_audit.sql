@@ -14,7 +14,7 @@ select
     a.assessment_type,
     a.scope,
     a.module_type,
-    a.module_number,
+    a.module_code as module_number,
 
     g.grade_level,
 
@@ -65,7 +65,7 @@ select
     a.assessment_type,
     a.scope,
     a.module_type,
-    a.module_number,
+    a.module_code as module_number,
 
     g.grade_level,
 

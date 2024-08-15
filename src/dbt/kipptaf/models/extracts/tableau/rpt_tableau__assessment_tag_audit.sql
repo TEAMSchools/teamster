@@ -36,7 +36,7 @@ select
     a.subject_area,
     a.tags,
     a.module_type,
-    a.module_number,
+    a.module_code as module_number,
     a.is_internal_assessment as is_normed_scope,
 
     f.field_id,
