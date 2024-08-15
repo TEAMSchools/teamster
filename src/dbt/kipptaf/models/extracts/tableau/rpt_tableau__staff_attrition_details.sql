@@ -1,21 +1,26 @@
 with
     dates as (
         select
+            date_day as default_entry_date,
+
             extract(year from date_day) as academic_year,
             extract(year from date_day) + 1 as next_academic_year,
 
-            date(extract(year from date_day), 7, 1) as default_entry_date,
-            date((extract(year from date_day) + 1), 6, 30) as default_exit_date,
-
             date(extract(year from date_day), 9, 1) as denominator_start_date,
-            date((extract(year from date_day) + 1), 8, 31) as attrition_date,
-
-            date((extract(year from date_day) + 1), 4, 30) as effective_date,
-        from {{ ref("utils__date_spine") }}
-        where extract(month from date_day) = 7 and extract(day from date_day) = 1
+            date(extract(year from date_day) + 1, 6, 30) as default_exit_date,
+            date(extract(year from date_day) + 1, 8, 31) as attrition_date,
+            date(extract(year from date_day) + 1, 4, 30) as effective_date,
+        from
+            unnest(
+                generate_date_array(
+                    '2002-07-01',
+                    date({{ var("current_academic_year") + 1 }}, 6, 30),
+                    interval 1 year
+                )
+            ) as date_day
     ),
 
-    denom as (
+     denom as (
         select distinct
             d.academic_year, d.attrition_date, d.effective_date, srh.employee_number,
         from {{ ref("base_people__staff_roster_history") }} as srh
@@ -34,8 +39,8 @@ with
                 between d.denominator_start_date and d.effective_date
             )
         where
-            srh.primary_indicator = true
-            and srh.assignment_status not in ('Terminated', 'Deceased')
+            srh.primary_indicator
+            and srh.assignment_status not in ('Terminated', 'Deceased','Pre-Start')
             and srh.job_title != 'Intern'
             and coalesce(srh.assignment_status_reason, 'Missing/no Reason')
             != 'Internship Ended'
@@ -63,9 +68,9 @@ with
             )
             and dc.employee_number = srh.employee_number
             and srh.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
-    ),
+    )--,
 
-    combined_statuses as (
+    -- combined_statuses as (
         select
             academic_year,
             effective_date,
@@ -105,6 +110,7 @@ with
             and an.employee_number = srh.employee_number
         /* removing duplicate rows - entity changers + rehires have ongoing term rows*/
         where an.employee_number is null
+          and srh.employee_number = 102314
     ),
 
     core_attrition_table as (
