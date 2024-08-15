@@ -2,10 +2,9 @@ select
     srh.employee_number,
     srh.preferred_name_lastfirst as teammate,
     srh.business_unit_home_name as entity,
-    srh.home_work_location_name as location,
+    srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
     srh.department_home_name as department,
-    srh.primary_grade_level_taught as grade_taught,
     srh.job_title,
     srh.report_to_preferred_name_lastfirst as manager,
     srh.worker_original_hire_date,
@@ -27,8 +26,10 @@ select
     a.assignment_id,
     a.created as assignment_date,
     a.creator_name as observer,
-    if(a.assignment_id is not null, 1, 0) as is_assigned,
 
+    tgl.grade_level as grade_taught,
+
+    if(a.assignment_id is not null, 1, 0) as is_assigned,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as rt
@@ -54,6 +55,11 @@ left join
     {{ ref("stg_schoolmint_grow__assignments__tags") }} as t
     on a.assignment_id = t.assignment_id
 left join {{ ref("stg_schoolmint_grow__microgoals") }} as m on t.tag_id = m.goal_tag_id
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on srh.powerschool_teacher_number = tgl.teachernumber
+    and rt.academic_year = tgl.academic_year
+    and tgl.grade_level_rank = 1
 where
     srh.job_title in ('Teacher', 'Teacher in Residence', 'Learning Specialist')
     and srh.assignment_status = 'Active'

@@ -583,49 +583,39 @@ with
         left join
             {{ ref("int_surveys__staff_information_survey_pivot") }} as sis
             on wd.employee_number = sis.employee_number
-    ),
-
-    with_manager as (
-        select
-            cw.* except (report_to_employee_number),
-
-            coalesce(
-                cw.report_to_employee_number, en.employee_number
-            ) as report_to_employee_number,
-
-            coalesce(
-                ph.preferred_name_given_name, ph.legal_name_given_name
-            ) as report_to_preferred_name_given_name,
-            coalesce(
-                ph.preferred_name_family_name_1, ph.legal_name_family_name_1
-            ) as report_to_preferred_name_family_name,
-            coalesce(ph.preferred_name_family_name_1, ph.legal_name_family_name_1)
-            || ', '
-            || coalesce(
-                ph.preferred_name_given_name, ph.legal_name_given_name
-            ) as report_to_preferred_name_lastfirst,
-
-            ldap.user_principal_name as report_to_user_principal_name,
-            ldap.mail as report_to_mail,
-            ldap.sam_account_name as report_to_sam_account_name,
-            ldap.google_email as report_to_google_email,
-        from crosswalk as cw
-        left join
-            {{ ref("stg_people__employee_numbers") }} as en
-            on cw.report_to_worker_id = en.adp_associate_id
-            and en.is_active
-        left join
-            {{ ref("stg_adp_workforce_now__person_history") }} as ph
-            on cw.report_to_worker_id = ph.worker_id
-        left join
-            {{ ref("stg_ldap__user_person") }} as ldap
-            on en.employee_number = ldap.employee_number
     )
 
-select wm.*, tgl.grade_level as primary_grade_level_taught
-from with_manager as wm
+select
+    cw.* except (report_to_employee_number),
+
+    coalesce(
+        cw.report_to_employee_number, en.employee_number
+    ) as report_to_employee_number,
+
+    coalesce(
+        ph.preferred_name_given_name, ph.legal_name_given_name
+    ) as report_to_preferred_name_given_name,
+    coalesce(
+        ph.preferred_name_family_name_1, ph.legal_name_family_name_1
+    ) as report_to_preferred_name_family_name,
+    coalesce(ph.preferred_name_family_name_1, ph.legal_name_family_name_1)
+    || ', '
+    || coalesce(
+        ph.preferred_name_given_name, ph.legal_name_given_name
+    ) as report_to_preferred_name_lastfirst,
+
+    ldap.user_principal_name as report_to_user_principal_name,
+    ldap.mail as report_to_mail,
+    ldap.sam_account_name as report_to_sam_account_name,
+    ldap.google_email as report_to_google_email,
+from crosswalk as cw
 left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
-    on wm.powerschool_teacher_number = tgl.teachernumber
-    and tgl.academic_year = {{ var("current_academic_year") }}
-    and tgl.grade_level_rank = 1
+    {{ ref("stg_people__employee_numbers") }} as en
+    on cw.report_to_worker_id = en.adp_associate_id
+    and en.is_active
+left join
+    {{ ref("stg_adp_workforce_now__person_history") }} as ph
+    on cw.report_to_worker_id = ph.worker_id
+left join
+    {{ ref("stg_ldap__user_person") }} as ldap
+    on en.employee_number = ldap.employee_number

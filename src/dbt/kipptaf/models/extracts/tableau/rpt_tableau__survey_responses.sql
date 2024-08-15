@@ -13,7 +13,7 @@ select
     respondent_legal_entity_name as legal_entity,
     respondent_manager_name as manager,
     respondent_primary_job as job_title,
-    respondent_primary_site as location,
+    respondent_primary_site as `location`,
     race_ethnicity_reporting as race_ethnicity,
     gender,
     mail,
@@ -31,6 +31,7 @@ select
     is_open_ended,
     assignment_status,
     rn,
+
     regexp_replace(answer, r'<[^>]*>', '') as answer,
     regexp_replace(question_title, r'<[^>]*>', '') as question_title,
     lower(question_shortname) as question_shortname,

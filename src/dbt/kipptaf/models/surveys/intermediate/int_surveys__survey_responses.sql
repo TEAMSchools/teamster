@@ -30,8 +30,9 @@ select
     eh.community_grew_up,
     eh.community_professional_exp,
     eh.level_of_education,
-    eh.primary_grade_level_taught,
     eh.assignment_status,
+
+    tgl.grade_level as primary_grade_level_taught,
 
     safe_cast(fr.text_value as numeric) as answer_value,
     timestamp(fr.create_time) as date_started,
@@ -44,7 +45,7 @@ select
         fr.response_id
     ) as survey_response_link,
 
-    if(safe_cast(fr.text_value as integer) is null, 1, 0) as is_open_ended,
+    if(safe_cast(fr.text_value as int) is null, 1, 0) as is_open_ended,
 from {{ ref("base_google_forms__form_responses") }} as fr
 left join
     {{ ref("base_people__staff_roster_history") }} as eh
@@ -55,6 +56,11 @@ left join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = fr.info_title
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on eh.powerschool_teacher_number = tgl.teachernumber
+    and rt.academic_year = tgl.academic_year
+    and tgl.grade_level_rank = 1
 
 union all
 
@@ -90,8 +96,9 @@ select
     eh.community_grew_up,
     eh.community_professional_exp,
     eh.level_of_education,
-    eh.primary_grade_level_taught,
     eh.assignment_status,
+
+    tgl.grade_level as primary_grade_level_taught,
 
     safe_cast(sr.response_value as numeric) as answer_value,
 
@@ -102,7 +109,7 @@ select
         sr.survey_link_default, '?snc=', sr.response_session_id, '&sg_navigate=start'
     ) as survey_response_link,
 
-    if(safe_cast(sr.response_value as integer) is null, 1, 0) as is_open_ended,
+    if(safe_cast(sr.response_value as int) is null, 1, 0) as is_open_ended,
 from {{ ref("base_alchemer__survey_results") }} as sr
 inner join
     {{ ref("stg_reporting__terms") }} as rt
@@ -117,3 +124,8 @@ left join
     on ri.respondent_employee_number = eh.employee_number
     and sr.response_date_submitted
     between eh.work_assignment_start_date and eh.work_assignment_end_date
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on eh.powerschool_teacher_number = tgl.teachernumber
+    and rt.academic_year = tgl.academic_year
+    and tgl.grade_level_rank = 1
