@@ -19,5 +19,10 @@
     "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
     "DAGSTER_HOME": "/workspaces/teamster/.dagster/home",
     "TRUNK_TELEMETRY": "off"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["innoverio.vscode-dbt-power-user", "trunk.io", "ms-python.python"]
+    }
   }
 }
