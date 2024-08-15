@@ -18,7 +18,6 @@ select
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
     srh.department_home_name as department,
-    srh.primary_grade_level_taught as grade_taught,
     srh.job_title,
     srh.report_to_preferred_name_lastfirst as manager,
     srh.worker_original_hire_date,
@@ -54,15 +53,20 @@ select
     od.strand_name,
     od.text_box,
     od.overall_tier,
-    null as etr_score,
-    null as so_score,
 
     sro.preferred_name_lastfirst as observer_name,
 
+    tgl.grade_level as grade_taught,
+
+    null as etr_score,
+    null as so_score,
+
     if(od.observation_id is not null, 1, 0) as is_observed,
+
     if(
         od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0
     ) as met_goal_miami,
+
     case
         when srh.business_unit_home_name = 'KIPP Miami'
         then true
@@ -103,6 +107,11 @@ left join
     {{ ref("base_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
 left join tir_previous as tir on srh.employee_number = tir.employee_number
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on srh.powerschool_teacher_number = tgl.teachernumber
+    and t.academic_year = tgl.academic_year
+    and tgl.grade_level_rank = 1
 where
     srh.job_title in ('Teacher', 'Teacher in Residence', 'Learning Specialist')
     and srh.assignment_status = 'Active'
@@ -117,7 +126,6 @@ select
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
     srh.department_home_name as department,
-    srh.primary_grade_level_taught as grade_taught,
     srh.job_title,
     srh.report_to_preferred_name_lastfirst as manager,
     srh.worker_original_hire_date,
@@ -153,15 +161,20 @@ select
     od.strand_name,
     od.text_box,
     od.overall_tier,
-    od.etr_score,
-    od.so_score,
 
     sro.preferred_name_lastfirst as observer_name,
 
+    tgl.grade_level as grade_taught,
+
+    od.etr_score,
+    od.so_score,
+
     if(od.observation_id is not null, 1, 0) as is_observed,
+
     if(
         od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0
     ) as met_goal_miami,
+
     null as boy_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
@@ -177,3 +190,8 @@ left join
 left join
     {{ ref("base_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on srh.powerschool_teacher_number = tgl.teachernumber
+    and od.academic_year = tgl.academic_year
+    and tgl.grade_level_rank = 1
