@@ -17,7 +17,7 @@ sources:
         meta:
           dagster:
             auto_materialize_policy:
-              type: none
+              enabled: false
             parent_asset_key_path:
               - kipptaf
               - adp
