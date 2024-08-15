@@ -20,12 +20,13 @@ with
             c.semester,
             c.quarter,
             c.week_number_quarter,
-            c.week_start_date,
-            c.week_end_date,
+            c.week_start_monday,
+            c.week_end_sunday,
             c.school_week_start_date,
             c.school_week_end_date,
             c.school_week_start_date_lead,
 
+            ge.week_number,
             ge.assignment_category_code,
             ge.assignment_category_name,
             ge.assignment_category_term,
@@ -115,7 +116,7 @@ with
             on c.academic_year = ge.academic_year
             and c.region = ge.region
             and c.quarter = ge.quarter
-            and c.week_number_quarter = ge.week_number
+            and c.week_number_quarter - 3 = ge.week_number  -- please let this live -_-;
             and sch.school_level = ge.school_level
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
