@@ -1,3 +1,4 @@
+{#- TODO: drop previous years after migrating to appsheet table -#}
 select
     a.assessment_id,
     a.title,
@@ -57,7 +58,15 @@ select
     null as module_sequence,
     null as grade_level,
     null as illuminate_grade_level_id,
-    null as regions_assessed,
+
+    case
+        when left(a.title, 3) = 'FL-'
+        then 'Miami'
+        when right(a.title, 2) = 'FL'
+        then 'Miami'
+        else 'Newark,Camden,Miami'
+    end as regions_assessed,
+
     null as regions_report_card,
     null as regions_progress_report,
 

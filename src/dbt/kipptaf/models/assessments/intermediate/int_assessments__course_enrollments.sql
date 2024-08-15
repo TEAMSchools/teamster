@@ -12,6 +12,8 @@ with
             ce.illuminate_subject_area,
             ce.is_foundations,
 
+            co.region,
+
             ce.cc_academic_year + 1 as illuminate_academic_year,
 
             co.grade_level + 1 as illuminate_grade_level_id,
@@ -47,12 +49,14 @@ with
             'Writing' as illuminate_subject_area,
             false as is_foundations,
 
+            co.region,
+
             co.academic_year + 1 as illuminate_academic_year,
             co.grade_level + 1 as illuminate_grade_level_id,
 
             false as is_advanced_math,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        where co.code_location in ('kippnewark', 'kippcamden') and co.grade_level <= 4
+        where co.region in ('Newark', 'Camden') and co.grade_level <= 4
     )
 
     {{
