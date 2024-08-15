@@ -11,7 +11,7 @@ def build_dbt_code_version_schedule(
     code_location, cron_schedule, execution_timezone, dbt_assets: AssetsDefinition
 ):
     job = define_asset_job(
-        name=f"{code_location}_dbt_code_version_job", selection=[dbt_assets]
+        name=f"{code_location}__dbt__code_version_job", selection=[dbt_assets]
     )
 
     @schedule(
@@ -21,13 +21,14 @@ def build_dbt_code_version_schedule(
         job=job,
     )
     def _schedule(context: ScheduleEvaluationContext):
+        asset_selection = []
+
         latest_code_versions = (
             context.instance.get_latest_materialization_code_versions(
-                asset_keys=list(dbt_assets.code_versions_by_key.keys())
+                asset_keys=dbt_assets.keys
             )
         )
 
-        asset_selection = []
         for asset_key, current_code_version in dbt_assets.code_versions_by_key.items():
             latest_code_version = latest_code_versions.get(asset_key)
 

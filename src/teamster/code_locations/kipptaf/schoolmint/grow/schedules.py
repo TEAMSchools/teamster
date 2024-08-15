@@ -1,4 +1,6 @@
 from dagster import (
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
@@ -71,15 +73,34 @@ schoolmint_grow_observations_asset_job = define_asset_job(
 def schoolmint_grow_observations_asset_job_schedule(
     context: ScheduleEvaluationContext,
 ):
-    partitions_def = _check.not_none(
-        value=schoolmint_grow_observations_asset_job.partitions_def
+    multi_partitions_def = _check.inst(
+        obj=schoolmint_grow_observations_asset_job.partitions_def,
+        ttype=MultiPartitionsDefinition,
     )
 
-    partition_key = partitions_def.get_last_partition_key()
-
-    yield RunRequest(
-        run_key=f"{context._schedule_name}_{partition_key}", partition_key=partition_key
+    archived_partitions_def = multi_partitions_def.get_partitions_def_for_dimension(
+        "archived"
     )
+    last_modified_partitions_def = (
+        multi_partitions_def.get_partitions_def_for_dimension("last_modified")
+    )
+
+    last_modified_partition_key = _check.not_none(
+        value=last_modified_partitions_def.get_last_partition_key()
+    )
+
+    for archived_partition_key in archived_partitions_def.get_partition_keys():
+        partition_key = MultiPartitionKey(
+            {
+                "archived": archived_partition_key,
+                "last_modified": last_modified_partition_key,
+            }
+        )
+
+        yield RunRequest(
+            run_key=f"{context._schedule_name}_{partition_key}",
+            partition_key=partition_key,
+        )
 
 
 schedules = [

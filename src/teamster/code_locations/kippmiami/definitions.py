@@ -41,6 +41,7 @@ defs = Definitions(
         ]
     ),
     schedules=[
+        *_dbt.schedules,
         *datagun.schedules,
         *deanslist.schedules,
         *powerschool.schedules,
