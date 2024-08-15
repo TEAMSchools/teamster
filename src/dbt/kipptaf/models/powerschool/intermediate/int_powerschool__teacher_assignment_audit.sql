@@ -22,8 +22,6 @@ with
             c.week_number_quarter,
             c.week_start_monday,
             c.week_end_sunday,
-            c.school_week_start_date,
-            c.school_week_end_date,
             c.school_week_start_date_lead,
 
             ge.week_number,
