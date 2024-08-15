@@ -1,7 +1,27 @@
 {{- config(materialized="table") -}}
 
 with
-    internal_assessment_grade_level as (
+    assessment_region_scaffold as (
+        select
+            a.assessment_id,
+            a.title,
+            a.academic_year,
+            a.academic_year_clean,
+            a.administered_at,
+            a.subject_area,
+            a.performance_band_set_id,
+            a.illuminate_grade_level_id as grade_level_id,
+            a.scope,
+            a.module_type,
+            a.module_code,
+
+            trim(region) as region,
+        from {{ ref("int_assessments__assessments") }} as a
+        cross join unnest(split(a.regions_assessed, ',')) as region
+        where a.is_internal_assessment
+    ),
+
+    grade_scaffold as (
         select
             assessment_id,
             title,
@@ -10,12 +30,13 @@ with
             administered_at,
             subject_area,
             performance_band_set_id,
-            illuminate_grade_level_id as grade_level_id,
+            grade_level_id,
             scope,
             module_type,
             module_code,
-        from {{ ref("int_assessments__assessments") }}
-        where is_internal_assessment and academic_year >= 2025
+            region,
+        from assessment_region_scaffold
+        where academic_year >= 2025  /* first year using appsheet table */
 
         union all
 
@@ -50,11 +71,13 @@ with
                 replace(a.module_code, 'CRQ', 'CP'),
                 a.module_code
             ) as module_code,
-        from {{ ref("int_assessments__assessments") }} as a
+
+            a.region,
+        from assessment_region_scaffold as a
         inner join
             {{ ref("stg_illuminate__assessment_grade_levels") }} as agl
             on a.assessment_id = agl.assessment_id
-        where a.is_internal_assessment and a.academic_year < 2025
+        where a.academic_year < 2025
     ),
 
     internal_assessments as (
@@ -94,7 +117,7 @@ with
                 replace(a.module_code, 'CRQ', 'CP'),
                 a.module_code
             ) as module_code,
-        from internal_assessment_grade_level as a
+        from grade_scaffold as a
         inner join
             {{ ref("int_illuminate__student_session_aff") }} as ssa
             on a.academic_year = ssa.academic_year
@@ -105,6 +128,7 @@ with
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
             on a.subject_area = ce.illuminate_subject_area
+            and a.region = ce.region
             and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
             and s.local_student_id = ce.powerschool_student_number
             and not ce.is_advanced_math_student
@@ -131,16 +155,16 @@ with
             a.scope,
             a.module_type,
             a.module_code,
-        from {{ ref("int_assessments__assessments") }} as a
+        from assessment_region_scaffold as a
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
             on a.subject_area = ce.illuminate_subject_area
+            and a.region = ce.region
             and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
         inner join
             {{ ref("stg_illuminate__students") }} as s
             on ce.powerschool_student_number = s.local_student_id
             and ce.illuminate_grade_level_id >= 10
-        where a.is_internal_assessment
     )
 
 /* internal assessments */
