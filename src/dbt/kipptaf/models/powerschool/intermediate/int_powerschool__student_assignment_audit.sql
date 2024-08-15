@@ -23,10 +23,11 @@ with
             c.semester,
             c.week_number_quarter,
             c.week_number_academic_year,
-            c.week_start_date,
-            c.week_end_date,
+            c.week_start_monday,
+            c.week_end_sunday,
             c.school_week_start_date_lead,
 
+            ge.week_number,
             ge.assignment_category_code,
             ge.assignment_category_term,
             ge.expectation,
@@ -64,7 +65,7 @@ with
             {{ ref("stg_reporting__gradebook_expectations") }} as ge
             on c.academic_year = ge.academic_year
             and c.quarter = ge.quarter
-            and c.week_number_quarter = ge.week_number
+            and c.week_number_quarter - 3 = ge.week_number
             and c.region = ge.region
             and sch.school_level = ge.school_level
         left join
@@ -108,9 +109,9 @@ select
     `quarter`,
     semester,
     week_number_academic_year,
-    week_number_quarter,
-    week_start_date,
-    week_end_date,
+    week_number,
+    week_start_monday,
+    week_end_sunday,
     school_week_start_date_lead,
 
     school_level,
