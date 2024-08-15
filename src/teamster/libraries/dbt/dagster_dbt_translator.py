@@ -1,51 +1,52 @@
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 
 from dagster import AssetKey, AutoMaterializePolicy
-from dagster_dbt import KeyPrefixDagsterDbtTranslator
-from dagster_dbt.asset_utils import default_group_from_dbt_resource_props
+from dagster_dbt import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 
-class CustomDagsterDbtTranslator(KeyPrefixDagsterDbtTranslator):
+class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+    def __init__(
+        self, code_location: str, settings: DagsterDbtTranslatorSettings | None = None
+    ):
+        self.code_location = code_location
+
+        super().__init__(settings)
+
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        asset_key_config = (
-            dbt_resource_props.get("meta", {}).get("dagster", {}).get("asset_key", [])
-        )
+        asset_key = super().get_asset_key(dbt_resource_props)
 
-        if asset_key_config:
-            return AssetKey(asset_key_config)
+        dbt_meta = dbt_resource_props.get("config", {}).get(
+            "meta", {}
+        ) or dbt_resource_props.get("meta", {})
+
+        if dbt_meta.get("dagster", {}).get("asset_key", []):
+            return asset_key
         else:
-            return super().get_asset_key(dbt_resource_props)
+            return asset_key.with_prefix(self.code_location)
 
     def get_auto_materialize_policy(
         self, dbt_resource_props: Mapping[str, Any]
-    ) -> Optional[AutoMaterializePolicy]:
-        auto_materialize_policy_config = (
-            dbt_resource_props.get("meta", {})
-            .get("dagster", {})
-            .get("auto_materialize_policy", {})
+    ) -> AutoMaterializePolicy | None:
+        dagster_metadata: dict = dbt_resource_props.get("meta", {}).get("dagster", {})
+
+        auto_materialize_policy_config: dict = dagster_metadata.get(
+            "auto_materialize_policy", {}
         )
 
-        amp_type = auto_materialize_policy_config.get("type")
-
-        if amp_type == "none":
+        if not auto_materialize_policy_config.get("enabled", True):
             return None
-        elif amp_type == "lazy":
-            return AutoMaterializePolicy.lazy()
         else:
-            return AutoMaterializePolicy.eager(
-                auto_materialize_policy_config.get("max_materializations_per_minute")
-            )
+            return AutoMaterializePolicy.eager()
 
-    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
-        code_location = self._asset_key_prefix[0]
+    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
+        group = super().get_group_name(dbt_resource_props)
 
-        group = default_group_from_dbt_resource_props(dbt_resource_props)
         package_name = dbt_resource_props["package_name"]
         fqn_1 = dbt_resource_props["fqn"][1]
 
         if group is not None:
             return group
-        elif package_name == code_location:
+        elif package_name == self.code_location:
             return fqn_1
         elif package_name is None:
             return fqn_1
