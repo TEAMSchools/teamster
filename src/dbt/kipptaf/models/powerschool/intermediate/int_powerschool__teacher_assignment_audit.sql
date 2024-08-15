@@ -21,7 +21,6 @@ with
             c.quarter,
             c.week_number_quarter,
             c.week_start_monday,
-            c.week_end_sunday,
             c.school_week_start_date_lead,
 
             ge.week_number,
@@ -43,6 +42,8 @@ with
             asg.n_expected,
             asg.n_expected_scored,
             asg.avg_expected_scored_percent,
+
+            c.week_end_sunday - 2 as week_end_friday,
 
             sum(a.totalpointvalue) over (
                 partition by sec._dbt_source_relation, sec.sections_id, c.quarter
@@ -152,7 +153,7 @@ select
     week_number_quarter,
     week_number,
     week_start_monday,
-    week_end_sunday,
+    week_end_friday,
     school_week_start_date_lead,
     assignment_category_code,
     assignment_category_name,
