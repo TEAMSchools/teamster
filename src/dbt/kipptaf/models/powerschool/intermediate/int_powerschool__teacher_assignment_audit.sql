@@ -60,7 +60,7 @@ with
                     sec.sections_id,
                     c.quarter,
                     ge.assignment_category_code
-                order by c.week_number_quarter asc
+                order by ge.week_number asc
             ) as assignment_count_section_quarter_category_running_week,
 
             sum(asg.n_expected) over (
@@ -68,7 +68,7 @@ with
                     sec._dbt_source_relation,
                     sec.sections_id,
                     c.quarter,
-                    c.week_number_quarter,
+                    ge.week_number,
                     ge.assignment_category_code
             ) as total_expected_section_quarter_week_category,
 
@@ -77,7 +77,7 @@ with
                     sec._dbt_source_relation,
                     sec.sections_id,
                     c.quarter,
-                    c.week_number_quarter,
+                    ge.week_number,
                     ge.assignment_category_code
             ) as total_expected_scored_section_quarter_week_category,
 
@@ -87,7 +87,7 @@ with
                     sec.teachernumber,
                     sec.sections_schoolid,
                     c.quarter,
-                    c.week_number_quarter,
+                    ge.week_number,
                     ge.assignment_category_code
             ) as total_expected_teacher_school_quarter_week_category,
 
@@ -97,7 +97,7 @@ with
                     sec.teachernumber,
                     sec.sections_schoolid,
                     c.quarter,
-                    c.week_number_quarter,
+                    ge.week_number,
                     ge.assignment_category_code
             ) as total_expected_scored_teacher_school_quarter_week_category,
         from {{ ref("base_powerschool__sections") }} as sec
@@ -151,9 +151,9 @@ select
     teacher_number,
     `quarter`,
     semester,
-    week_number_quarter,
-    week_start_date,
-    week_end_date,
+    week_number,
+    week_start_monday,
+    week_end_sunday,
     school_week_start_date_lead,
     assignment_category_code,
     assignment_category_name,

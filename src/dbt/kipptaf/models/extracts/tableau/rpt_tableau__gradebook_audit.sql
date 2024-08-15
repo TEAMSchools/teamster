@@ -74,9 +74,9 @@ with
             f.category_quarter_percent_grade,
             f.category_quarter_average_all_courses,
 
-            t.week_number_quarter,
-            t.week_start_date,
-            t.week_end_date,
+            t.week_number,
+            t.week_start_monday,
+            t.week_end_sunday,
             t.school_week_start_date_lead,
 
             t.assignment_category_code,
@@ -146,7 +146,7 @@ with
             and f.sectionid = s.sectionid
             and f.quarter = s.quarter
             and {{ union_dataset_join_clause(left_alias="f", right_alias="s") }}
-            and t.week_number_quarter = s.week_number_quarter
+            and t.week_number = s.week_number
             and t.assignmentid = s.assignmentid
             and {{ union_dataset_join_clause(left_alias="t", right_alias="s") }}
         where
@@ -383,9 +383,9 @@ select
     quarter_comment_value,
     category_quarter_percent_grade,
     category_quarter_average_all_courses,
-    week_number_quarter as audit_qt_week_number,
-    week_start_date as audit_start_date,
-    week_end_date as audit_end_date,
+    week_number as audit_qt_week_number,
+    week_start_monday as audit_start_date,
+    week_end_sunday - 2 as audit_end_date,
     school_week_start_date_lead as audit_due_date,
     assignment_category_code as expected_teacher_assign_category_code,
     assignment_category_name as expected_teacher_assign_category_name,
