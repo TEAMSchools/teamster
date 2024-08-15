@@ -1,4 +1,4 @@
-from dagster import AutoMaterializePolicy, DailyPartitionsDefinition
+from dagster import AutomationCondition, DailyPartitionsDefinition
 
 from teamster.code_locations.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kippcamden.edplan.schema import NJSMART_POWERSCHOOL
@@ -16,7 +16,7 @@ njsmart_powerschool = build_sftp_file_asset(
         fmt="%Y-%m-%d",
         end_offset=1,
     ),
-    auto_materialize_policy=AutoMaterializePolicy.eager(),
+    automation_condition=AutomationCondition.eager(),
 )
 
 assets = [
