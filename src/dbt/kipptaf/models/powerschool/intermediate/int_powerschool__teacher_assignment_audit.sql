@@ -151,6 +151,7 @@ select
     teacher_number,
     `quarter`,
     semester,
+    week_number_quarter,
     week_number,
     week_start_monday,
     week_end_sunday,
