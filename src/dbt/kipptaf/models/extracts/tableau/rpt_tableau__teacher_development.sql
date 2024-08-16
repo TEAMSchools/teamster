@@ -41,7 +41,7 @@ from {{ ref("int_performance_management__teacher_development") }} as td
 left join
     {{ ref("base_people__staff_roster_history") }} as srh
     on td.employee_number = srh.employee_number
-    and cast(td.observed_at as timestamp)
+    and td.observed_at
     between srh.work_assignment_start_date and srh.work_assignment_end_date
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
