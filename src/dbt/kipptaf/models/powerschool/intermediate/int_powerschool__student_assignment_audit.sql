@@ -24,7 +24,6 @@ with
             c.week_number_quarter,
             c.week_number_academic_year,
             c.week_start_monday,
-            c.week_end_sunday,
             c.school_week_start_date_lead,
 
             ge.week_number,
@@ -40,6 +39,8 @@ with
             a.category_name,
 
             s.scorepoints,
+
+            c.week_end_sunday - 2 as week_end_friday,
 
             if(s.islate is null, false, true) as islate,
             if(s.isexempt is null, false, true) as isexempt,
@@ -109,9 +110,10 @@ select
     `quarter`,
     semester,
     week_number_academic_year,
+    week_number_quarter,
     week_number,
     week_start_monday,
-    week_end_sunday,
+    week_end_friday,
     school_week_start_date_lead,
 
     school_level,

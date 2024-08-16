@@ -115,7 +115,9 @@ with
             on c.academic_year = ge.academic_year
             and c.region = ge.region
             and c.quarter = ge.quarter
-            and c.week_number_quarter - 3 = ge.week_number  -- please let this live -_-;
+            -- please let this live: the audit weeks do not match the regular school
+            -- weeks -_-;
+            and c.week_number_quarter - 3 = ge.week_number
             and sch.school_level = ge.school_level
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
