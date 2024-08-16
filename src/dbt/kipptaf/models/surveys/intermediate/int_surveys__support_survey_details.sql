@@ -5,25 +5,23 @@ with
             fr.info_title as survey_title,
             fr.response_id as survey_response_id,
             fr.respondent_email,
+            fr.last_submitted_timestamp as date_submitted,
+            fr.create_timestamp as date_started,
+
+            up.employee_number as respondent_df_employee_number,
 
             rt.academic_year as campaign_academic_year,
             rt.name as campaign_name,
             rt.code as campaign_reporting_term,
-
-            up.employee_number as respondent_df_employee_number,
-
-            timestamp(fr.create_time) as date_started,
-            timestamp(fr.last_submitted_time) as date_submitted,
-
         from {{ ref("base_google_forms__form_responses") }} as fr
-        left join
-            {{ ref("stg_reporting__terms") }} as rt
-            on date(fr.last_submitted_time) between rt.start_date and rt.end_date
-            and rt.type = 'SURVEY'
-            and rt.code in ('SUP1', 'SUP2')
         inner join
             {{ ref("stg_ldap__user_person") }} as up
             on fr.respondent_email = up.google_email
+        left join
+            {{ ref("stg_reporting__terms") }} as rt
+            on fr.last_submitted_date_local between rt.start_date and rt.end_date
+            and rt.type = 'SURVEY'
+            and rt.code in ('SUP1', 'SUP2')
         where
             fr.question_id = '55f7fb30'
             and fr.form_id = '1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI'
@@ -45,7 +43,9 @@ select
     fr.item_abbreviation as question_shortname,
     fr.item_title as question_title,
     fr.text_value as answer,
+
     safe_cast(fr.text_value as numeric) as answer_value,
+
     if(safe_cast(fr.text_value as integer) is null, 1, 0) as is_open_ended,
 
     eh.preferred_name_lastfirst,
@@ -67,7 +67,7 @@ inner join
     {{ ref("base_people__staff_roster_history") }} as eh
     on ri.respondent_df_employee_number = eh.employee_number
     and ri.date_submitted
-    between eh.work_assignment_start_date and eh.work_assignment_end_date
+    between eh.work_assignment_start_timestamp and eh.work_assignment_end_timestamp
     and eh.assignment_status not in ('Terminated', 'Deceased')
 
 union all
@@ -77,18 +77,26 @@ select
     'CMO & Support Survey History' as survey_title,
     null as survey_response_id,
     null as date_started,
+
     timestamp(sda.date_submitted) as date_submitted,
+
     sda.campaign_academic_year,
+
     null as campaign_name,
+
     sda.campaign_reporting_term,
     sda.respondent_df_employee_number,
+
     null as respondent_email,
 
     sda.question_shortname,
+
     coalesce(fi.title, sda.question_shortname) as question_title,
 
     sda.answer,
+
     safe_cast(sda.answer_value as numeric) as answer_value,
+
     if(sda.answer_value is null, 1, 0) as is_open_ended,
 
     eh.preferred_name_lastfirst,
@@ -108,6 +116,6 @@ inner join
 left join
     {{ ref("base_people__staff_roster_history") }} as eh
     on sda.respondent_df_employee_number = eh.employee_number
-    and timestamp(sda.date_submitted)
-    between eh.work_assignment_start_date and eh.work_assignment_end_date
+    and sda.date_submitted
+    between eh.work_assignment_start_timestamp and eh.work_assignment_end_timestamp
     and eh.assignment_status not in ('Terminated', 'Deceased')
