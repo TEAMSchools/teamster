@@ -98,13 +98,14 @@ select
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
     srh.department_home_name as department,
-    srh.primary_grade_level_taught as grade_taught,
     srh.job_title,
     srh.report_to_preferred_name_lastfirst as manager,
     srh.worker_original_hire_date,
     srh.assignment_status,
     srh.sam_account_name,
     srh.report_to_sam_account_name,
+
+    tgl.grade_level as grade_taught,
 
     os.final_score as performance_management_final_score,
     os.final_tier as performance_management_final_tier,
@@ -118,6 +119,11 @@ left join
     on td.employee_number = srh.employee_number
     and td.observed_at
     between srh.work_assignment_start_date and srh.work_assignment_end_date
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on srh.powerschool_teacher_number = tgl.teachernumber
+    and td.academic_year = tgl.academic_year
+    and tgl.grade_level_rank = 1
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on td.employee_number = os.employee_number
