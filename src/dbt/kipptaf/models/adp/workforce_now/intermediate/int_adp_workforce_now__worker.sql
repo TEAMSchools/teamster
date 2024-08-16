@@ -26,10 +26,19 @@
 with
     source as (
         select
+            timestamp(
+                datetime(wah._fivetran_start), 'America/New_York'
+            ) as work_assignment__fivetran_start,
+
+            coalesce(
+                safe.timestamp(datetime(wah._fivetran_end), 'America/New_York'),
+                timestamp('9999-12-31 23:59:59.999999')
+            ) as work_assignment__fivetran_end,
+
             {{
                 dbt_utils.star(
                     from=src_work_assignment_history,
-                    except=["_fivetran_synced"],
+                    except=["_fivetran_start", "_fivetran_end", "_fivetran_synced"],
                     relation_alias="wah",
                     prefix="work_assignment_",
                 )
@@ -142,7 +151,7 @@ with
             dbt_utils.deduplicate(
                 relation="with_work_assignments",
                 partition_by="work_assignment_id, work_assignment__fivetran_start, work_assignment__fivetran_end, work_assignment__surrogate_key",
-                order_by="work_assignment__effective_date_timestamp desc",
+                order_by="work_assignment__effective_date_timestamp asc",
             )
         }}
     ),
