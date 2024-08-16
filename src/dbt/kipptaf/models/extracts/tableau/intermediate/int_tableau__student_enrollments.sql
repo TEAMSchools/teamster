@@ -40,6 +40,8 @@ select
     adb.ktc_cohort,
     adb.contact_owner_name,
 
+    hr.sections_section_number as team,
+
     'KTAF' as district,
 
     cast(sp.academic_year as string)
@@ -66,6 +68,7 @@ select
         when e.region = 'Miami'
         then 'FL'
     end as `state`,
+
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     ms_grad_sub as m
@@ -88,4 +91,13 @@ left join
     and current_date('{{ var("local_timezone") }}')
     between sa.enter_date and sa.exit_date
     and sa.specprog_name = 'Student Athlete'
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as hr
+    on e.student_number = hr.students_student_number
+    and e.yearid = hr.cc_yearid
+    and e.schoolid = hr.cc_schoolid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="hr") }}
+    and not hr.is_dropped_section
+    and hr.cc_course_number = 'HR'
+    and hr.rn_course_number_year = 1
 where e.rn_year = 1 and e.schoolid != 999999
