@@ -90,9 +90,16 @@ select
     m.manager_effective_end_date,
     m.manager_employee_number,
 
-    e.preferred_last_name || ', ' || e.preferred_first_name as preferred_name_lastfirst,
+    timestamp(
+        ed.effective_start_date, '{{ var("local_timezone") }}'
+    ) as effective_start_timestamp,
+    timestamp(
+        ed.effective_end_date, '{{ var("local_timezone") }}'
+    ) as effective_end_timestamp,
 
     if(ed.effective_end_date = '2020-12-31', true, false) as is_active,
+
+    e.preferred_last_name || ', ' || e.preferred_first_name as preferred_name_lastfirst,
 
     case
         e.ethnicity
