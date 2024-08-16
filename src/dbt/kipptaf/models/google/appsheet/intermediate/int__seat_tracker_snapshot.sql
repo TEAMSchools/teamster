@@ -17,7 +17,7 @@ with
                 status_detail in ('New Hire', 'Transfer In'), true, false
             ) as is_new_hire,
         from {{ ref("snapshot__seat_tracker__seats") }}
-        /*last day of manual snapshot from appsheet*/
+        /* last day of manual snapshot from appsheet*/
         where dbt_updated_at > ('2024-08-07')
 
         union all
@@ -61,11 +61,7 @@ select
     os1.is_active,
     os1.is_new_hire,
     os1.valid_from,
-    case
-    when os1.academic_year >= {{ var('current_academic_year') }} 
-    then COALESCE(os1.valid_to, os2.valid_from - 1)
-    else date(os1.academic_year, 06,30)
-    end as valid_to,
+    coalesce(os1.valid_to, os2.valid_from - 1) as valid_to,
 from ordered_snapshot as os1
 left join
     ordered_snapshot as os2
