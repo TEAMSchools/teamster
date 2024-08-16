@@ -26,10 +26,19 @@
 with
     source as (
         select
+            timestamp(
+                datetime(wah._fivetran_start), 'America/New_York'
+            ) as work_assignment__fivetran_start,
+
+            coalesce(
+                safe.timestamp(datetime(wah._fivetran_end), 'America/New_York'),
+                timestamp('9999-12-31 23:59:59.999999')
+            ) as work_assignment__fivetran_end,
+
             {{
                 dbt_utils.star(
                     from=src_work_assignment_history,
-                    except=["_fivetran_synced"],
+                    except=["_fivetran_start", "_fivetran_end", "_fivetran_synced"],
                     relation_alias="wah",
                     prefix="work_assignment_",
                 )
@@ -142,80 +151,51 @@ with
             dbt_utils.deduplicate(
                 relation="with_work_assignments",
                 partition_by="work_assignment_id, work_assignment__fivetran_start, work_assignment__fivetran_end, work_assignment__surrogate_key",
-                order_by="work_assignment__effective_date_timestamp desc",
+                order_by="work_assignment__effective_date_timestamp asc",
             )
         }}
     ),
 
-    with_effective_date_timestamp_lag as (
-        -- trunk-ignore(sqlfluff/AM04)
-        select
-            *,
-
-            lag(work_assignment__effective_date_timestamp, 1) over (
-                partition by work_assignment_id
-                order by work_assignment__effective_date_timestamp asc
-            ) as work_assignment__effective_date_timestamp_lag,
-        from deduplicate_work_assignments
-    ),
-
-    with_start_end_dates as (
+    with_work_assignment_start as (
         select
             *,
 
             coalesce(
-                timestamp_add(
-                    work_assignment__effective_date_timestamp_lag,
-                    interval 1 millisecond
+                timestamp_trunc(
+                    work_assignment__effective_date_timestamp,
+                    day,
+                    '{{ var("local_timezone") }}'
                 ),
                 work_assignment__fivetran_start
-            ) as work_assignment_start_date,
-
-            (
-                select min(col),
-                from
-                    unnest(
-                        [
-                            work_assignment__fivetran_end,
-                            work_assignment__effective_date_timestamp
-                        ]
-                    ) as col
-            ) as work_assignment_end_date,
-        from with_effective_date_timestamp_lag
+            ) as work_assignment_start_timestamp,
+        from deduplicate_work_assignments
     ),
 
-    with_start_date_lead as (
+    with_work_assignment_end as (
         select
             *,
-            lead(work_assignment_start_date, 1) over (
-                partition by work_assignment_id order by work_assignment_start_date asc
-            ) as work_assignment_start_date_lead,
-            max(work_assignment__effective_date_timestamp) over (
-                partition by work_assignment_id
-            ) as work_assignment__effective_date_timestamp_max,
-        from with_start_end_dates
-        where work_assignment_start_date <= work_assignment_end_date
+
+            timestamp_sub(
+                lead(
+                    work_assignment_start_timestamp,
+                    1,
+                    timestamp(date(9999, 12, 31), '{{ var("local_timezone") }}')
+                ) over (
+                    partition by work_assignment_id
+                    order by work_assignment_start_timestamp asc
+                ),
+                interval 1 millisecond
+            ) as work_assignment_end_timestamp,
+        from with_work_assignment_start
     )
 
 select
-    * except (
-        work_assignment__surrogate_key,
-        work_assignment__fivetran_start,
-        work_assignment__fivetran_end,
-        work_assignment__effective_date_timestamp,
-        work_assignment__effective_date_timestamp_lag,
-        work_assignment__effective_date_timestamp_max,
-        work_assignment_start_date_lead,
-        work_assignment_end_date
-    ),
+    *,
 
-    case
-        when
-            work_assignment_start_date_lead
-            > work_assignment__effective_date_timestamp_max
-        then timestamp_sub(work_assignment_start_date_lead, interval 1 millisecond)
-        when work_assignment_end_date = work_assignment__effective_date_timestamp_max
-        then timestamp('9999-12-31 23:59:59.999')
-        else work_assignment_end_date
-    end as work_assignment_end_date,
-from with_start_date_lead
+    date(
+        work_assignment_start_timestamp, '{{ var("local_timezone") }}'
+    ) as work_assignment_start_date,
+    date(
+        work_assignment_end_timestamp, '{{ var("local_timezone") }}'
+    ) as work_assignment_end_date,
+from with_work_assignment_end

@@ -48,7 +48,6 @@ left join
 left join
     {{ ref("base_people__staff_roster_history") }} as srh
     on gl.position_id = srh.position_id
-    and timestamp(gl.date)
-    between srh.work_assignment_start_date and srh.work_assignment_end_date
+    and gl.date between srh.work_assignment_start_date and srh.work_assignment_end_date
     and srh.primary_indicator
 order by gl.line_no

@@ -20,12 +20,15 @@ select
     lag(h.department_home_name, 1) over (
         partition by h.employee_number order by h.work_assignment_start_date asc
     ) as prev_home_department,
+
     lag(h.job_title, 1) over (
         partition by h.employee_number order by h.work_assignment_start_date asc
     ) as prev_job_title,
+
     lag(h.base_remuneration_annual_rate_amount_amount_value, 1) over (
         partition by h.employee_number order by h.work_assignment_start_date asc
     ) as prev_annual_salary,
+
     /* dedupe positions */
     row_number() over (
         partition by h.employee_number
@@ -35,6 +38,7 @@ select
             case when h.assignment_status = 'Terminated' then 0 else 1 end desc,
             h.work_assignment_start_date desc
     ) as rn_position,
+
     row_number() over (
         partition by h.employee_number order by h.work_assignment_start_date desc
     ) as rn_curr,
@@ -43,7 +47,5 @@ inner join
     {{ ref("base_people__staff_roster") }} as r
     on (h.employee_number = r.employee_number)
 where
-    (
-        h.job_title is not null
-        or h.base_remuneration_annual_rate_amount_amount_value is not null
-    )
+    h.job_title is not null
+    or h.base_remuneration_annual_rate_amount_amount_value is not null
