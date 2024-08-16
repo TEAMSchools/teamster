@@ -186,8 +186,9 @@ with
             end as race_ethnicity_reporting,
 
             if(
-                work_assignment_start_date < timestamp('2021-01-01'),
-                timestamp('2021-01-01'),
+                work_assignment_start_date
+                < timestamp('2021-01-01', '{{ var("local_timezone") }}'),
+                timestamp('2021-01-01', '{{ var("local_timezone") }}'),
                 work_assignment_start_date
             ) as work_assignment_start_date,
             if(
@@ -203,7 +204,9 @@ with
         from {{ ref("int_adp_workforce_now__worker_person") }}
         where
             not worker__fivetran_deleted
-            and work_assignment_end_date >= timestamp('2021-01-01')  -- after transistion from Dayforce
+            /* after transistion from Dayforce */
+            and work_assignment_end_date
+            >= timestamp('2021-01-01', '{{ var("local_timezone") }}')
     ),
 
     with_dayforce as (
