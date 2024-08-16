@@ -59,6 +59,11 @@ select
     *,
 
     timestamp(last_submitted_time) as last_submitted_timestamp,
+    timestamp(create_time) as create_timestamp,
+
+    date(
+        timestamp(last_submitted_time), '{{ var("local_timezone") }}'
+    ) as last_submitted_date_local,
 
     safe_cast(
         regexp_extract(
