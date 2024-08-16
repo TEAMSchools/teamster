@@ -6,6 +6,7 @@ with
             work_assignment_position_id as position_id,
             work_assignment_primary_indicator as primary_indicator,
             work_assignment_end_date,
+            work_assignment_end_timestamp,
             work_assignment_hire_date,
             work_assignment_actual_start_date,
             work_assignment_termination_date,
@@ -192,6 +193,12 @@ with
                 '2021-01-01',
                 work_assignment_start_date
             ) as work_assignment_start_date,
+            if(
+                work_assignment_start_timestamp
+                < timestamp('2021-01-01', '{{ var("local_timezone") }}'),
+                timestamp('2021-01-01', '{{ var("local_timezone") }}'),
+                work_assignment_start_timestamp
+            ) as work_assignment_start_timestamp,
 
             case
                 person_race_long_name
@@ -223,6 +230,8 @@ with
 
     with_dayforce as (
         select
+            wp.work_assignment_start_timestamp,
+            wp.work_assignment_end_timestamp,
             wp.work_assignment_start_date,
             wp.work_assignment_end_date,
             wp.work_assignment__fivetran_active,
@@ -356,6 +365,8 @@ with
         union all
 
         select
+            effective_start_timestamp as work_assignment_start_timestamp,
+            effective_end_timestamp as work_assignment_end_timestamp,
             effective_start_date as work_assignment_start_date,
             effective_end_date as work_assignment_end_date,
             is_active as work_assignment__fivetran_active,
