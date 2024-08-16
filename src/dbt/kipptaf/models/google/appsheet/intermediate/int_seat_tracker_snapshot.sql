@@ -61,7 +61,11 @@ select
     os1.is_active,
     os1.is_new_hire,
     os1.valid_from,
-    coalesce(os1.valid_to, os2.valid_from - 1) as valid_to,
+    if(
+        coalesce(os1.valid_to, os2.valid_from - 1) is null,
+        date({{ var('current_fiscal_year') }}, 6, 30),
+        coalesce(os1.valid_to, os2.valid_from - 1)
+    ) as valid_to,
 from ordered_snapshot as os1
 left join
     ordered_snapshot as os2
