@@ -15,6 +15,7 @@ select
     e._dbt_source_relation,
     e.academic_year,
     e.region,
+    e.school_level,
     e.schoolid,
     e.school_abbreviation as school,
     e.studentid,
