@@ -76,7 +76,8 @@ with
             {{ ref("base_people__staff_roster_history") }} as srh
             on obs.employee_number = srh.employee_number
             and obs.observed_at_timestamp
-            between srh.work_assignment_start_date and srh.work_assignment_end_date
+            between srh.work_assignment_start_timestamp
+            and srh.work_assignment_end_timestamp
             and obs.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
         group by
             obs.employee_number,
@@ -156,7 +157,7 @@ inner join
     {{ ref("base_people__staff_roster_history") }} as srh
     on sd.observer_employee_number = srh.employee_number
     and sd.end_date_timestamp
-    between srh.work_assignment_start_date and srh.work_assignment_end_date
+    between srh.work_assignment_start_timestamp and srh.work_assignment_end_timestamp
 inner join
     score_aggs as sa
     on sd.observer_employee_number = sa.observer_employee_number

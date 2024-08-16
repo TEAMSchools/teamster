@@ -3,7 +3,7 @@ with
         select srh.employee_number, true as prior_year_tir,
         from {{ ref("base_people__staff_roster_history") }} as srh
         where
-            date(srh.work_assignment_start_date)
+            srh.work_assignment_start_date
             >= date({{ var("current_academic_year") }} - 1, 07, 01)
             and srh.assignment_status = 'Active'
             and srh.job_title = 'Teacher in Residence'
@@ -81,12 +81,10 @@ inner join
     {{ ref("stg_reporting__terms") }} as t
     on srh.business_unit_home_name = t.region
     and (
-        t.start_date between date(srh.work_assignment_start_date) and date(
-            srh.work_assignment_end_date
-        )
-        or t.end_date between date(srh.work_assignment_start_date) and date(
-            srh.work_assignment_end_date
-        )
+        t.start_date
+        between srh.work_assignment_start_date and srh.work_assignment_end_date
+        or t.end_date
+        between srh.work_assignment_start_date and srh.work_assignment_end_date
     )
     and t.type in ('PMS', 'PMC', 'TR', 'O3', 'WT')
     and t.academic_year = {{ var("current_academic_year") }}
@@ -168,7 +166,7 @@ inner join
     {{ ref("int_performance_management__observation_details") }} as od
     on srh.employee_number = od.employee_number
     and od.observed_at
-    between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date)
+    between srh.work_assignment_start_date and srh.work_assignment_end_date
     and srh.assignment_status = 'Active'
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
