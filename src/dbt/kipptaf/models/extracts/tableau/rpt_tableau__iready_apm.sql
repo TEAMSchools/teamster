@@ -1,14 +1,4 @@
 with
-    date_range as (
-        select safe_cast(date_day as date) as date_day,
-        from {{ ref("utils__date_spine") }}
-        where
-            date_day
-            between date({{ var("current_academic_year") }}, 7, 1) and current_date(
-                '{{ var("local_timezone") }}'
-            )
-    ),
-
     expanded_terms as (
         select
             academic_year,

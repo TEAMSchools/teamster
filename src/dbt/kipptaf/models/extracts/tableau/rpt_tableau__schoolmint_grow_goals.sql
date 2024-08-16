@@ -35,12 +35,10 @@ inner join
     {{ ref("stg_reporting__terms") }} as rt
     on srh.business_unit_home_name = rt.region
     and (
-        rt.start_date between date(srh.work_assignment_start_date) and date(
-            srh.work_assignment_end_date
-        )
-        or rt.end_date between date(srh.work_assignment_start_date) and date(
-            srh.work_assignment_end_date
-        )
+        rt.start_date
+        between srh.work_assignment_start_date and srh.work_assignment_end_date
+        or rt.end_date
+        between srh.work_assignment_start_date and srh.work_assignment_end_date
     )
     and rt.type = 'MG'
     and rt.academic_year = {{ var("current_academic_year") }}

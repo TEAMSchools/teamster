@@ -1,5 +1,5 @@
-/* Student Number from Family Surveys*/
 with
+    /* Student Number from Family Surveys */
     family_responses as (
         select
             survey_id,
@@ -8,15 +8,14 @@ with
 
             safe_cast(
                 max(
-                    case
-                        when
-                            question_shortname
-                            in ('student_number', 'family_respondent_number')
-                        then answer
-                    end
+                    if(
+                        question_shortname
+                        in ('student_number', 'family_respondent_number'),
+                        answer,
+                        null
+                    )
                 ) over (partition by answer order by date_submitted) as int
             ) as respondent_number,
-
         from {{ ref("int_surveys__survey_responses") }}
         where
             survey_title in (
@@ -79,7 +78,7 @@ left join
     {{ ref("base_people__staff_roster_history") }} as srh
     on sr.employee_number = srh.employee_number
     and sr.date_submitted
-    between srh.work_assignment_start_date and srh.work_assignment_end_date
+    between srh.work_assignment_start_timestamp and srh.work_assignment_end_timestamp
 left join
     {{ ref("base_powerschool__student_enrollments") }} as se1
     on sr.respondent_email = se1.student_email_google
@@ -139,6 +138,7 @@ select
     se.gender,
     se.school_level as grade_band,
     se.grade_level,
+
     'Family' as survey_audience,
 from {{ ref("stg_powerschool_enrollment__submission_records") }} as sr
 left join
