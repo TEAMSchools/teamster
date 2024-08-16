@@ -44,7 +44,7 @@ select
     coalesce(se1.spedlep, se2.spedlep) as student_spedlep,
 
     coalesce(
-        sr.employee_number, se1.student_number, fr.respondent_number
+        srh.employee_number, se1.student_number, fr.respondent_number
     ) as respondent_number,
 
     coalesce(srh.home_work_location_region, se1.region, se2.region) as region,
@@ -76,7 +76,7 @@ select
 from {{ ref("int_surveys__survey_responses") }} as sr
 left join
     {{ ref("base_people__staff_roster_history") }} as srh
-    on sr.employee_number = srh.employee_number
+    on sr.respondent_email = srh.google_email
     and sr.date_submitted
     between srh.work_assignment_start_timestamp and srh.work_assignment_end_timestamp
 left join
