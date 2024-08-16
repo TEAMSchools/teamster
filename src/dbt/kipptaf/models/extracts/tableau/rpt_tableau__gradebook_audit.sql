@@ -348,6 +348,7 @@ select
     lastfirst,
     gender,
     grade_level,
+    enroll_status,
     ethnicity,
     lep_status,
     is_504,
