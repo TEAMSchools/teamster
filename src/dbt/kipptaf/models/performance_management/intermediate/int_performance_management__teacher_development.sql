@@ -10,6 +10,7 @@ with
             as od
         group by od.observation_id
     )
+
 select
     o.employee_number,
     o.observer_employee_number,
@@ -26,6 +27,8 @@ select
     od.measurement_name,
     od.strand_name,
     od.text_box,
+    null as growth_area,
+    null as glow_area,
     null as observer_team,
     null as observer_name,
 from {{ ref("int_performance_management__observations") }} as o
