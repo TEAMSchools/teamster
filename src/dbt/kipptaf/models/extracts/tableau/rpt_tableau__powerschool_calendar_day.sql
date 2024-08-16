@@ -8,4 +8,4 @@ with
 select cd.date_value, cd.insession, cd.schoolid, sc.region, sc.clean_name,
 from {{ ref("stg_powerschool__calendar_day") }} as cd
 join schools_clean as sc on cd.schoolid = sc.powerschool_school_id
-where schoolid != 0
+where cd.schoolid != 0
