@@ -40,6 +40,8 @@ select
     adb.ktc_cohort,
     adb.contact_owner_name,
 
+    hr.sections_section_number as team,
+
     'KTAF' as district,
 
     cast(sp.academic_year as string)
@@ -66,8 +68,6 @@ select
         when e.region = 'Miami'
         then 'FL'
     end as `state`,
-
-    hr.sections_section_number as team,
 
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
