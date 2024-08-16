@@ -53,7 +53,8 @@ select
 
     subj as subject,
 
-    w.date_day as `date`,
+    w.week_start_monday,
+    w.week_end_sunday,
 
     hr.sections_section_number as team,
 
@@ -109,19 +110,24 @@ select
     dr.mid_on_grade_level_scale_score
     - dr.overall_scale_score as scale_pts_to_mid_on_grade_level,
 from {{ ref("base_powerschool__student_enrollments") }} as co
+inner join
+    {{ ref("int_powerschool__calendar_week") }} as w
+    on co.schoolid = w.schoolid
+    and co.academic_year = w.academic_year
+    and w.week_start_monday between co.entrydate and co.exitdate
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="w") }}
 cross join unnest(['Reading', 'Math']) as subj
-cross join date_range as w
 left join
     expanded_terms as rt
     on co.academic_year = rt.academic_year
     and co.region = rt.region
-    and w.date_day between rt.start_date and rt.end_date
+    and w.week_start_monday between rt.start_date and rt.end_date
 left join
     {{ ref("stg_iready__personalized_instruction_by_lesson") }} as il
     on co.student_number = il.student_id
     and co.academic_year = il.academic_year_int
     and subj = il.subject
-    and w.date_day = il.completion_date
+    and il.completion_date between w.week_start_monday and w.week_end_sunday
 left join
     {{ ref("base_iready__diagnostic_results") }} as dr
     on co.student_number = dr.student_id
@@ -134,7 +140,7 @@ left join
     on co.student_number = iu.student_id
     and co.academic_year = cast(left(iu.academic_year, 4) as int)
     and subj = iu.subject
-    and w.date_day = iu.last_week_start_date
+    and w.week_start_monday = iu.last_week_start_date
 left join
     {{ ref("base_powerschool__course_enrollments") }} as hr
     on co.student_number = hr.students_student_number
