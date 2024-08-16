@@ -137,6 +137,14 @@ assets:
     metadata:
       id: bef17623-af5e-4a18-9e05-7a8f4e6951bf
       cron_schedule: 0 5 * * *
+  - name: Teacher Development Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__teacher_development]
+    metadata:
+      id: 8977a813-36c8-48df-8a61-479f374ae78a
+      cron_schedule:
+        - 0 6 * * *
+        - 30 14 * * *
   # - name: Academic Priorities [NJ]
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__power_standards]
