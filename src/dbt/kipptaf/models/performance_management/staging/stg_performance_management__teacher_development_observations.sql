@@ -1,6 +1,7 @@
 select
     observation_id,
     employee_number,
+    `datetime` as observed_at,
     observation_type,
     `subject`,
     observation_notes,
@@ -10,7 +11,8 @@ select
     glow_area,
     glow_notes,
 
-    timestamp(`datetime`, '{{ var("local_timezone") }}') as observed_at,
+    2023 as academic_year,
+    'TDT' as observation_type_abbreviation,
 
     trim(split(observer, '-')[0]) as observer_name,
 from {{ source("google_appsheet", "src_teacher_development__observation_archive") }}
