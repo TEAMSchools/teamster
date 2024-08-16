@@ -1,64 +1,39 @@
 with
     archive_average_scores as (
-        select od.observation_id, avg(od.row_score) as average_row_score,
+        select observation_id, avg(row_score) as average_row_score,
         from
             {{
                 ref(
                     "stg_performance_management__teacher_development_observation_details"
                 )
             }}
-            as od
-        group by od.observation_id
+        group by observation_id
     )
 
 select
     o.employee_number,
-    o.observer_employee_number,
     o.observation_id,
-    o.rubric_name,
-    o.observation_score,
-    o.observed_at,
     o.academic_year,
-    o.observation_type,
-    o.observation_type_abbreviation,
-    o.observation_course as observation_subject,
-    o.observation_grade,
-    od.row_score,
-    od.measurement_name,
-    od.strand_name,
-    od.text_box,
-    null as growth_area,
-    null as glow_area,
-    null as observer_team,
-    null as observer_name,
-from {{ ref("int_performance_management__observations") }} as o
-left join
-    {{ ref("int_performance_management__observation_details") }} as od
-    on o.observation_id = od.observation_id
-where o.observation_type_abbreviation = 'TDT' and od.row_score is not null
-
-union all
-
-select
-    o.employee_number,
-    sr.employee_number as observer_employee_number,
-    o.observation_id,
-    concat('Teacher Development: ', o.observation_type) as rubric_name,
-    av.average_row_score as observation_score,
     o.observed_at,
-    2023 as academic_year,
-    'Teacher Development' as observation_type,
-    'TDT' as observation_type_abbreviation,
     o.subject as observation_subject,
-    null as observation_grade,
-    od.row_score,
-    od.measurement_name,
-    od.strand_name,
-    od.text_box,
     o.growth_area,
     o.glow_area,
     o.observer_team,
     o.observer_name,
+    o.observation_type_abbreviation,
+
+    od.row_score,
+    od.measurement_name,
+    od.strand_name,
+    od.text_box,
+
+    av.average_row_score as observation_score,
+
+    sr.employee_number as observer_employee_number,
+
+    'Teacher Development' as observation_type,
+
+    concat('Teacher Development: ', o.observation_type) as rubric_name,
 from {{ ref("stg_performance_management__teacher_development_observations") }} as o
 left join
     {{ ref("stg_performance_management__teacher_development_observation_details") }}
