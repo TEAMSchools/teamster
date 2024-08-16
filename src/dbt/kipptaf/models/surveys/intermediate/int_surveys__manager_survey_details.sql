@@ -5,28 +5,27 @@ with
             fr.info_title as survey_title,
             fr.response_id as survey_response_id,
             fr.respondent_email,
+            fr.create_timestamp as date_started,
+            fr.last_submitted_timestamp as date_submitted,
+
+            up.employee_number as respondent_df_employee_number,
 
             rt.academic_year as campaign_academic_year,
             rt.name as campaign_name,
             rt.code as campaign_reporting_term,
 
-            up.employee_number as respondent_df_employee_number,
-
             safe_cast(
                 regexp_extract(fr.text_value, r'\((\d{6})\)') as integer
             ) as subject_df_employee_number,
-            timestamp(fr.create_time) as date_started,
-            timestamp(fr.last_submitted_time) as date_submitted,
-
         from {{ ref("base_google_forms__form_responses") }} as fr
-        left join
-            {{ ref("stg_reporting__terms") }} as rt
-            on date(fr.last_submitted_time) between rt.start_date and rt.end_date
-            and rt.type = 'SURVEY'
-            and rt.code in ('MGR1', 'MGR2')
         inner join
             {{ ref("stg_ldap__user_person") }} as up
             on fr.respondent_email = up.google_email
+        left join
+            {{ ref("stg_reporting__terms") }} as rt
+            on fr.last_submitted_date_local between rt.start_date and rt.end_date
+            and rt.type = 'SURVEY'
+            and rt.code in ('MGR1', 'MGR2')
         where
             fr.form_id = '1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0'
             and fr.question_id = '315a6c37'
@@ -45,6 +44,7 @@ with
             subject_df_employee_number,
             date_started,
             date_submitted,
+
             row_number() over (
                 partition by
                     survey_id,
@@ -73,7 +73,9 @@ select
     fr.item_abbreviation as question_shortname,
     fr.item_title as question_title,
     fr.text_value as answer,
+
     safe_cast(fr.text_value as numeric) as answer_value,
+
     if(safe_cast(fr.text_value as integer) is null, 1, 0) as is_open_ended,
 
     reh.preferred_name_lastfirst as respondent_preferred_name,
@@ -106,7 +108,7 @@ inner join
     {{ ref("base_people__staff_roster_history") }} as reh
     on ri.respondent_df_employee_number = reh.employee_number
     and ri.date_submitted
-    between reh.work_assignment_start_date and reh.work_assignment_end_date
+    between reh.work_assignment_start_timestamp and reh.work_assignment_end_timestamp
     and reh.assignment_status not in ('Terminated', 'Deceased')
 inner join
     {{ ref("base_people__staff_roster") }} as sr
@@ -119,21 +121,33 @@ select
     'Manager Survey' as survey_title,
     null as survey_response_id,
     null as date_started,
+
     timestamp(sda.date_submitted) as date_submitted,
+
     sda.campaign_academic_year,
+
     null as campaign_name,
+
     sda.campaign_reporting_term,
     sda.respondent_df_employee_number,
     sda.subject_df_employee_number,
+
     null as respondent_email,
+
     sda.question_shortname,
+
     coalesce(fi.title, sda.question_shortname) as question_title,
+
     sda.answer,
+
     safe_cast(sda.answer_value as numeric) as answer_value,
+
     case when sda.answer_value is null then 1 else 0 end as is_open_ended,
+
     reh.preferred_name_lastfirst as respondent_preferred_name,
     reh.race_ethnicity_reporting as respondent_race_ethnicity_reporting,
     reh.gender_identity as respondent_gender,
+
     sr.preferred_name_lastfirst as subject_preferred_name,
     sr.management_position_indicator as is_manager,
     sr.department_home_name as subject_department_name,
@@ -153,12 +167,12 @@ inner join
     {{ ref("stg_google_forms__form_items_extension") }} as fi
     on sda.question_shortname = fi.abbreviation
     and fi.form_id = '1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0'
+inner join
+    {{ ref("base_people__staff_roster") }} as sr
+    on sda.subject_df_employee_number = sr.employee_number
 left join
     {{ ref("base_people__staff_roster_history") }} as reh
     on sda.respondent_df_employee_number = reh.employee_number
     and sda.date_submitted
-    between reh.work_assignment_start_date and reh.work_assignment_end_date
+    between reh.work_assignment_start_timestamp and reh.work_assignment_end_timestamp
     and reh.assignment_status not in ('Terminated', 'Deceased')
-inner join
-    {{ ref("base_people__staff_roster") }} as sr
-    on sda.subject_df_employee_number = sr.employee_number
