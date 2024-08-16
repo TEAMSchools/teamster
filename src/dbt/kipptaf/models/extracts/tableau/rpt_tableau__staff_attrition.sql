@@ -19,6 +19,7 @@ with
         select
             position_id,
             assignment_status_effective_date as termination_effective_date,
+
             coalesce(
                 assignment_status_reason_long_name, assignment_status_reason_short_name
             ) as termination_reason,
@@ -34,6 +35,7 @@ with
     final_termination as (
         select
             *,
+
             row_number() over (
                 partition by position_id order by termination_effective_date desc
             ) as rn_position_termination_desc,
@@ -97,7 +99,7 @@ with
             and t.rn_position_termination_desc = 1
         left join
             {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
-            on srh.powerschool_teacher_number = tgl.teachernumber
+            on r.powerschool_teacher_number = tgl.teachernumber
             and tgl.academic_year = {{ var("current_academic_year") }}
             and tgl.grade_level_rank = 1
     ),
