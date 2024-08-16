@@ -19,9 +19,7 @@ with
             if(sr.assignment_status in ('Terminated', 'Deceased'), 1, 0) as inactive,
 
             if(
-                sr.primary_grade_level_taught = 0,
-                'K',
-                safe_cast(sr.primary_grade_level_taught as string)
+                tgl.grade_level = 0, 'K', cast(tgl.grade_level as string)
             ) as grade_abbreviation,
 
             case
@@ -79,6 +77,11 @@ with
                 else 'No Role'
             end as role_name,
         from {{ ref("base_people__staff_roster") }} as sr
+        left join
+            {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+            on sr.powerschool_teacher_number = tgl.teachernumber
+            and tgl.academic_year = {{ var("current_academic_year") }}
+            and tgl.grade_level_rank = 1
         where
             sr.user_principal_name is not null
             and coalesce(
