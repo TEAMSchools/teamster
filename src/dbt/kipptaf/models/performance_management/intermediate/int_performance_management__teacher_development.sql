@@ -1,42 +1,4 @@
 with
-    observation_details_pivot as (
-        select
-            o.employee_number,
-            o.observer_employee_number,
-            o.observation_id,
-            o.rubric_name,
-            o.observation_score,
-            o.observed_at_timestamp as observed_at,
-            o.academic_year,
-            o.observation_type,
-            o.observation_type_abbreviation,
-            o.observation_course,
-            o.observation_grade,
-            max(
-                case when od.measurement_name like '%Grow%' then od.text_box end
-            ) as growth_area,
-            max(
-                case when od.measurement_name like '%Glow%' then od.text_box end
-            ) as glow_area,
-        from {{ ref("int_performance_management__observations") }} as o
-        left join
-            {{ ref("int_performance_management__observation_details") }} as od
-            on o.observation_id = od.observation_id
-        where o.observation_type_abbreviation = 'TDT'
-        group by
-            o.employee_number,
-            o.observer_employee_number,
-            o.observation_id,
-            o.rubric_name,
-            o.observation_score,
-            o.observed_at_timestamp,
-            o.academic_year,
-            o.observation_type,
-            o.observation_type_abbreviation,
-            o.observation_course,
-            o.observation_grade
-    ),
-
     archive_average_scores as (
         select od.observation_id, avg(od.row_score) as average_row_score,
         from
@@ -64,15 +26,12 @@ select
     od.measurement_name,
     od.strand_name,
     od.text_box,
-    p.growth_area,
-    p.glow_area,
     null as observer_team,
     null as observer_name,
 from {{ ref("int_performance_management__observations") }} as o
 left join
     {{ ref("int_performance_management__observation_details") }} as od
     on o.observation_id = od.observation_id
-left join observation_details_pivot as p on o.observation_id = p.observation_id
 where o.observation_type_abbreviation = 'TDT' and od.row_score is not null
 
 union all
