@@ -49,8 +49,8 @@ from {{ ref("base_google_forms__form_responses") }} as fr
 left join
     {{ ref("base_people__staff_roster_history") }} as eh
     on fr.respondent_email = eh.google_email
-    and fr.last_submitted_time
-    between eh.work_assignment_start_date and eh.work_assignment_end_date
+    and fr.last_submitted_timestamp
+    between eh.work_assignment_start_timestamp and eh.work_assignment_end_timestamp
 left join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = fr.info_title
@@ -116,4 +116,4 @@ left join
     {{ ref("base_people__staff_roster_history") }} as eh
     on ri.respondent_employee_number = eh.employee_number
     and sr.response_date_submitted
-    between eh.work_assignment_start_date and eh.work_assignment_end_date
+    between eh.work_assignment_start_timestamp and eh.work_assignment_end_timestamp
