@@ -147,7 +147,7 @@ with
         }}
     ),
 
-    with_work_assignment_start_date as (
+    with_work_assignment_start as (
         select
             *,
 
@@ -158,21 +158,35 @@ with
                     '{{ var("local_timezone") }}'
                 ),
                 work_assignment__fivetran_start
-            ) as work_assignment_start_date,
+            ) as work_assignment_start_timestamp,
         from deduplicate_work_assignments
+    ),
+
+    with_work_assignment_end as (
+        select
+            *,
+
+            timestamp_sub(
+                lead(
+                    work_assignment_start_timestamp,
+                    1,
+                    timestamp(date(9999, 12, 31), '{{ var("local_timezone") }}')
+                ) over (
+                    partition by work_assignment_id
+                    order by work_assignment_start_timestamp asc
+                ),
+                interval 1 millisecond
+            ) as work_assignment_end_timestamp,
+        from with_work_assignment_start
     )
 
 select
     *,
 
-    timestamp_sub(
-        lead(
-            work_assignment_start_date,
-            1,
-            timestamp(date(9999, 12, 31), '{{ var("local_timezone") }}')
-        ) over (
-            partition by work_assignment_id order by work_assignment_start_date asc
-        ),
-        interval 1 millisecond
+    date(
+        work_assignment_start_timestamp, '{{ var("local_timezone") }}'
+    ) as work_assignment_start_date,
+    date(
+        work_assignment_end_timestamp, '{{ var("local_timezone") }}'
     ) as work_assignment_end_date,
-from with_work_assignment_start_date
+from with_work_assignment_end

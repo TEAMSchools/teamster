@@ -50,9 +50,8 @@ with
 
 select
     ed.employee_number,
-    safe_cast(ed.effective_start_date as timestamp) as effective_start_date,
-    safe_cast(ed.effective_end_date as timestamp) as effective_end_date,
-    if(ed.effective_end_date = '2020-12-31', true, false) as is_active,
+    ed.effective_start_date,
+    ed.effective_end_date,
 
     e.legal_first_name,
     e.legal_last_name,
@@ -69,17 +68,6 @@ select
     e.birth_date,
     e.gender,
     e.ethnicity,
-    e.preferred_last_name || ', ' || e.preferred_first_name as preferred_name_lastfirst,
-    case
-        e.ethnicity
-        when 'Black or African American'
-        then 'Black/African American'
-        when 'Hispanic or Latino'
-        then 'Latinx/Hispanic/Chicana(o)'
-        when 'Two or more races (Not Hispanic or Latino)'
-        then 'Bi/Multiracial'
-        else e.ethnicity
-    end as race_ethnicity_reporting,
 
     wa.work_assignment_effective_start_date,
     wa.work_assignment_effective_end_date,
@@ -101,6 +89,21 @@ select
     m.manager_effective_start_date,
     m.manager_effective_end_date,
     m.manager_employee_number,
+
+    e.preferred_last_name || ', ' || e.preferred_first_name as preferred_name_lastfirst,
+
+    if(ed.effective_end_date = '2020-12-31', true, false) as is_active,
+
+    case
+        e.ethnicity
+        when 'Black or African American'
+        then 'Black/African American'
+        when 'Hispanic or Latino'
+        then 'Latinx/Hispanic/Chicana(o)'
+        when 'Two or more races (Not Hispanic or Latino)'
+        then 'Bi/Multiracial'
+        else e.ethnicity
+    end as race_ethnicity_reporting,
 
     {{
         dbt_utils.generate_surrogate_key(

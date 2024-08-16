@@ -1,33 +1,41 @@
 with
     adp_worker_person as (
         select
-            work_assignment_end_date,
-            work_assignment__fivetran_active,
             work_assignment_id,
             work_assignment_worker_id as worker_id,
-            work_assignment_actual_start_date,
+            work_assignment_position_id as position_id,
+            work_assignment_primary_indicator as primary_indicator,
+            work_assignment_end_date,
             work_assignment_hire_date,
+            work_assignment_actual_start_date,
             work_assignment_termination_date,
+            work_assignment__fivetran_active,
+
             work_assignment_assignment_status_long_name as assignment_status,
             work_assignment_assignment_status_long_name_prev as assignment_status_prev,
             work_assignment_assignment_status_effective_date
             as assignment_status_effective_date,
+
             work_assignment_management_position_indicator
             as management_position_indicator,
+
             work_assignment_payroll_processing_status_short_name
             as payroll_processing_status_short_name,
             work_assignment_payroll_group_code as payroll_group_code,
             work_assignment_payroll_file_number as payroll_file_number,
             work_assignment_payroll_schedule_group_id as payroll_schedule_group_id,
-            work_assignment_position_id as position_id,
-            work_assignment_primary_indicator as primary_indicator,
+
             work_assignment_pay_cycle_short_name as pay_cycle_short_name,
+
             work_assignment_job_title as job_title,
+
             work_assignment_wage_law_coverage_name_long_name
             as wage_law_coverage_name_long_name,
             work_assignment_wage_law_coverage_short_name
             as wage_law_coverage_short_name,
+
             work_assignment_seniority_date,
+
             work_assignment_standard_pay_period_hour_hours_quantity
             as standard_pay_period_hour_hours_quantity,
             work_assignment_standard_hour_hours_quantity
@@ -35,6 +43,7 @@ with
             work_assignment_standard_hour_unit_short_name
             as standard_hour_unit_short_name,
             work_assignment_full_time_equivalence_ratio as full_time_equivalence_ratio,
+
             work_assignment_custom_payroll_custom_area_1
             as custom_payroll_custom_area_1,
             work_assignment_custom_payroll_custom_area_2
@@ -42,10 +51,12 @@ with
             work_assignment_custom_payroll_custom_area_3
             as custom_payroll_custom_area_3,
             work_assignment_custom_payroll_data_control as custom_payroll_data_control,
+
             work_assignment__base_remuneration__effective_date
             as base_remuneration_effective_date,
             work_assignment__base_remuneration__annual_rate_amount__amount_value
             as base_remuneration_annual_rate_amount_amount_value,
+
             reports_to_associate_oid as report_to_associate_oid,
             reports_to_position_id as report_to_position_id,
             reports_to_worker_id__id_value as report_to_worker_id,
@@ -55,6 +66,7 @@ with
             worker_original_hire_date,
             worker_rehire_date,
             worker_termination_date,
+
             worker_custom_nj_pension_number as custom_nj_pension_number,
             worker_custom_employee_number as custom_employee_number,
             worker_custom_wfmgr_accrual_profile as custom_wfmgr_accrual_profile,
@@ -105,74 +117,81 @@ with
 
             disability_long_name as disability,
 
+            organizational_unit_business_unit_home_name as business_unit_home_code,
             organizational_unit_business_unit_assigned_name
             as business_unit_assigned_code,
-            organizational_unit_business_unit_home_name as business_unit_home_code,
-            organizational_unit_cost_number_assigned_name_short_name
-            as cost_number_assigned_name,
-            organizational_unit_cost_number_assigned_name as cost_number_assigned_code,
             organizational_unit_cost_number_home_name_short_name
             as cost_number_home_name,
+            organizational_unit_cost_number_assigned_name_short_name
+            as cost_number_assigned_name,
             organizational_unit_cost_number_home_name as cost_number_home_code,
-            organizational_unit_department_assigned_name as department_assigned_code,
+            organizational_unit_cost_number_assigned_name as cost_number_assigned_code,
             organizational_unit_department_home_name as department_home_code,
+            organizational_unit_department_assigned_name as department_assigned_code,
 
             additional_remuneration_effective_date,
             additional_remuneration_rate_amount_value,
             additional_remuneration_name_short_name as additional_remuneration_name,
 
-            communication_person_email,
-            communication_person_mobile,
             communication_business_email,
+            communication_business_landline,
+            communication_business_mobile,
+            communication_person_email,
+            communication_person_landline,
+            communication_person_mobile,
 
             group_name_long_name as worker_group_name,
-
-            communication_person_landline,
-            communication_business_mobile,
-            communication_business_landline,
 
             safe_cast(
                 worker_custom_miami_aces_number as int
             ) as custom_miami_aces_number,
 
-            ifnull(
+            coalesce(
                 work_assignment_assignment_status_reason_long_name,
                 work_assignment_assignment_status_reason_short_name
             ) as assignment_status_reason,
-            ifnull(
+            coalesce(
                 work_assignment_home_work_location_name_long_name,
                 work_assignment_home_work_location_name_short_name
             ) as home_work_location_name,
-            ifnull(
+            coalesce(
                 work_assignment_worker_type_long_name,
                 work_assignment_worker_type_short_name
             ) as worker_type,
-            ifnull(
+            coalesce(
                 person_preferred_name_given_name, person_legal_name_given_name
             ) as preferred_name_given_name,
-            ifnull(
+            coalesce(
                 person_preferred_name_middle_name, person_legal_name_middle_name
             ) as preferred_name_middle_name,
-            ifnull(
+            coalesce(
                 person_preferred_name_family_name_1, person_legal_name_family_name_1
             ) as preferred_name_family_name,
-            ifnull(
+            coalesce(
                 organizational_unit_business_unit_assigned_name_long_name,
                 organizational_unit_business_unit_assigned_name_short_name
             ) as business_unit_assigned_name,
-            ifnull(
+            coalesce(
                 organizational_unit_business_unit_home_name_long_name,
                 organizational_unit_business_unit_home_name_short_name
             ) as business_unit_home_name,
-            ifnull(
+            coalesce(
                 organizational_unit_department_assigned_name_long_name,
                 organizational_unit_department_assigned_name_short_name
             ) as department_assigned_name,
-            ifnull(
+            coalesce(
                 organizational_unit_department_home_name_long_name,
                 organizational_unit_department_home_name_short_name
             ) as department_home_name,
-            ifnull(group_group_long_name, group_group_short_name) as worker_group_value,
+            coalesce(
+                group_group_long_name, group_group_short_name
+            ) as worker_group_value,
+
+            if(
+                work_assignment_start_date < '2021-01-01',
+                '2021-01-01',
+                work_assignment_start_date
+            ) as work_assignment_start_date,
 
             case
                 person_race_long_name
@@ -185,12 +204,6 @@ with
                 else person_race_long_name
             end as race_ethnicity_reporting,
 
-            if(
-                work_assignment_start_date
-                < timestamp('2021-01-01', '{{ var("local_timezone") }}'),
-                timestamp('2021-01-01', '{{ var("local_timezone") }}'),
-                work_assignment_start_date
-            ) as work_assignment_start_date,
             if(
                 work_assignment_hire_date > current_date('{{ var("local_timezone") }}')
                 and work_assignment_assignment_status_long_name = 'Active'
@@ -205,8 +218,7 @@ with
         where
             not worker__fivetran_deleted
             /* after transistion from Dayforce */
-            and work_assignment_end_date
-            >= timestamp('2021-01-01', '{{ var("local_timezone") }}')
+            and work_assignment_end_date >= '2021-01-01'
     ),
 
     with_dayforce as (
@@ -348,6 +360,7 @@ with
             effective_end_date as work_assignment_end_date,
             is_active as work_assignment__fivetran_active,
             surrogate_key as work_assignment_id,
+
             null as worker_id,
 
             work_assignment_effective_start_date as work_assignment_actual_start_date,
@@ -569,7 +582,7 @@ with
                 sis.race_ethnicity_reporting, wd.race_ethnicity_reporting
             ) as race_ethnicity_reporting,
 
-            ifnull(
+            coalesce(
                 idps.powerschool_teacher_number, safe_cast(wd.employee_number as string)
             ) as powerschool_teacher_number,
         from with_dayforce as wd
@@ -592,6 +605,11 @@ with
         select
             cw.* except (report_to_employee_number),
 
+            ldap.user_principal_name as report_to_user_principal_name,
+            ldap.mail as report_to_mail,
+            ldap.sam_account_name as report_to_sam_account_name,
+            ldap.google_email as report_to_google_email,
+
             coalesce(
                 cw.report_to_employee_number, en.employee_number
             ) as report_to_employee_number,
@@ -599,19 +617,16 @@ with
             coalesce(
                 ph.preferred_name_given_name, ph.legal_name_given_name
             ) as report_to_preferred_name_given_name,
+
             coalesce(
                 ph.preferred_name_family_name_1, ph.legal_name_family_name_1
             ) as report_to_preferred_name_family_name,
+
             coalesce(ph.preferred_name_family_name_1, ph.legal_name_family_name_1)
             || ', '
             || coalesce(
                 ph.preferred_name_given_name, ph.legal_name_given_name
             ) as report_to_preferred_name_lastfirst,
-
-            ldap.user_principal_name as report_to_user_principal_name,
-            ldap.mail as report_to_mail,
-            ldap.sam_account_name as report_to_sam_account_name,
-            ldap.google_email as report_to_google_email,
         from crosswalk as cw
         left join
             {{ ref("stg_people__employee_numbers") }} as en
