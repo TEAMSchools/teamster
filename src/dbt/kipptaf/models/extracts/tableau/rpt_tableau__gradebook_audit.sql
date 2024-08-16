@@ -76,7 +76,7 @@ with
 
             t.week_number,
             t.week_start_monday,
-            t.week_end_sunday,
+            t.week_end_friday,
             t.school_week_start_date_lead,
 
             t.assignment_category_code,
@@ -386,7 +386,7 @@ select
     category_quarter_average_all_courses,
     week_number as audit_qt_week_number,
     week_start_monday as audit_start_date,
-    week_end_sunday - 2 as audit_end_date,
+    week_end_friday as audit_end_date,
     school_week_start_date_lead as audit_due_date,
     assignment_category_code as expected_teacher_assign_category_code,
     assignment_category_name as expected_teacher_assign_category_name,
