@@ -95,6 +95,7 @@ class UserPerson(BaseModel):
     msExchMDBRulesQuota: int | None = None
     msExchMobileMailboxFlags: int | None = None
     msExchMobileMailboxPolicyLink: str | None = None
+    msExchModeratedObjectsBL: str | None = None
     msExchOmaAdminWirelessEnable: int | None = None
     msExchPoliciesExcluded: str | None = None
     msExchPoliciesIncluded: str | None = None
