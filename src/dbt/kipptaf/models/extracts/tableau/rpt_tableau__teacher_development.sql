@@ -37,12 +37,13 @@ with
             od.strand_name,
             od.text_box,
 
-            null as growth_area,
-            null as glow_area,
+            sgg.growth_area,
+            sgg.glow_area,
         from {{ ref("int_performance_management__observations") }} as o
         left join
             {{ ref("int_performance_management__observation_details") }} as od
             on o.observation_id = od.observation_id
+        left join smg_glows_grows as sgg on o.observation_id = sgg.observation_id
         where o.observation_type_abbreviation = 'TDT' and od.row_score is not null
 
         union all
@@ -116,7 +117,7 @@ select
 from observations_td_union as td
 left join
     {{ ref("base_people__staff_roster_history") }} as srh
-    on td.employee_number = srh.employee_number
+    on td.observer_employee_number = srh.employee_number
     and td.observed_at
     between srh.work_assignment_start_date and srh.work_assignment_end_date
 left join
