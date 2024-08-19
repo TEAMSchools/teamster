@@ -22,11 +22,15 @@ select
     null as smart_recruiter_id,
 
     coalesce(
-        safe_cast(sr.primary_grade_level_taught as string), sr.department_home_name
+        cast(tgl.grade_level as string), sr.department_home_name
     ) as grade_department,
+
     coalesce(lc.region, sr.business_unit_home_name) as location_entity,
+
     coalesce(lc.abbreviation, sr.home_work_location_name) as location_shortname,
+
     coalesce(cc.name, sr.home_work_location_name) as campus,
+
     case
         when
             sr.business_unit_home_name
@@ -36,6 +40,7 @@ select
         then 'Miami'
         else 'CMO'
     end as region_state,
+
     case
         /* see everything, edit everything*/
         when sr.department_home_name in ('Data')
@@ -91,10 +96,15 @@ inner join
 left join
     {{ ref("stg_people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.location_name
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on sr.powerschool_teacher_number = tgl.teachernumber
+    and tgl.academic_year = {{ var("current_academic_year") }}
+    and tgl.grade_level_rank = 1
 
-/* generic roster names used for positions that are open, closed, pre-start, or subs */
 union all
 
+/* generic roster names used for positions that are open, closed, pre-start, or subs */
 select
     999999 as employee_number,
     'Active' as assignment_status,
