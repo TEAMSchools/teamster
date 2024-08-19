@@ -317,9 +317,9 @@ grpcio==1.64.3 \
 grpcio-health-checking==1.62.3 \
     --hash=sha256:5074ba0ce8f0dcfe328408ec5c7551b2a835720ffd9b69dade7fa3e0dc1c7a93 \
     --hash=sha256:f29da7dd144d73b4465fe48f011a91453e9ff6c8af0d449254cf80021cab3e0d
-grpcio-status==1.62.2 \
-    --hash=sha256:206ddf0eb36bc99b033f03b2c8e95d319f0044defae9b41ae21408e7e0cda48f \
-    --hash=sha256:62e1bfcb02025a1cd73732a2d33672d3e9d0df4d21c12c51e0bbcaf09bab742a
+grpcio-status==1.65.5 \
+    --hash=sha256:2c9fa3af32efd26f01837d44305dce106973bc5357b9a9fc8bbd87bb8bf833d1 \
+    --hash=sha256:44a445ce55375545a913e005be36fbec7999a4cc320d7aecb7a4469d3d49366c
 gspread==6.1.2 \
     --hash=sha256:345996fbb74051ee574e3d330a375ac625774f289459f73cb1f8b6fb3cf4cac5 \
     --hash=sha256:b147688b8c7a18c9835d5f998997ec17c97c0470babcab17f65ac2b3a32402b7
