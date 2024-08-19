@@ -8,7 +8,7 @@ adp_workforce_now_start_resync_schedule = build_fivetran_start_resync_schedule(
     code_location=CODE_LOCATION,
     connector_id="sameness_cunning",
     connector_name="adp_workforce_now",
-    cron_schedule="0 0 * * *",
+    cron_schedule="30 0 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 

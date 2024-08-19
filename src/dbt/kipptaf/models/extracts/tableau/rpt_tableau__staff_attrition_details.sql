@@ -1,23 +1,18 @@
 with
     dates as (
         select
-            date_day as default_entry_date,
-
             extract(year from date_day) as academic_year,
             extract(year from date_day) + 1 as next_academic_year,
 
+            date(extract(year from date_day), 7, 1) as default_entry_date,
+            date((extract(year from date_day) + 1), 6, 30) as default_exit_date,
+
             date(extract(year from date_day), 9, 1) as denominator_start_date,
-            date(extract(year from date_day) + 1, 6, 30) as default_exit_date,
-            date(extract(year from date_day) + 1, 8, 31) as attrition_date,
-            date(extract(year from date_day) + 1, 4, 30) as effective_date,
-        from
-            unnest(
-                generate_date_array(
-                    '2002-07-01',
-                    date({{ var("current_academic_year") + 1 }}, 6, 30),
-                    interval 1 year
-                )
-            ) as date_day
+            date((extract(year from date_day) + 1), 8, 31) as attrition_date,
+
+            date((extract(year from date_day) + 1), 4, 30) as effective_date,
+        from {{ ref("utils__date_spine") }}
+        where extract(month from date_day) = 7 and extract(day from date_day) = 1
     ),
 
     denom as (
@@ -27,19 +22,19 @@ with
         inner join
             dates as d
             on (
-                date(srh.work_assignment_start_date) <= d.denominator_start_date
-                and date(srh.work_assignment_end_date) >= d.effective_date
+                srh.work_assignment_start_date <= d.denominator_start_date
+                and srh.work_assignment_end_date >= d.effective_date
             )
             or (
-                date(srh.work_assignment_start_date)
+                srh.work_assignment_start_date
                 between d.denominator_start_date and d.effective_date
             )
             or (
-                date(srh.work_assignment_end_date)
+                srh.work_assignment_end_date
                 between d.denominator_start_date and d.effective_date
             )
         where
-            srh.primary_indicator
+            srh.primary_indicator = true
             and srh.assignment_status not in ('Terminated', 'Deceased')
             and srh.job_title != 'Intern'
             and coalesce(srh.assignment_status_reason, 'Missing/no Reason')
@@ -51,26 +46,23 @@ with
             dc.academic_year,
             dc.effective_date,
             dc.employee_number,
-
             srh.job_title,
             srh.assignment_status,
 
-            if(
-                srh.assignment_status in ('Terminated', 'Deceased'), 1, 0
-            ) as is_attrition,
+            case
+                when srh.assignment_status in ('Terminated', 'Deceased')
+                then coalesce(srh.assignment_status_reason, 'Missing/no Reason')
+            end as termination_reason,
 
-            if(
-                srh.assignment_status in ('Terminated', 'Deceased'),
-                coalesce(srh.assignment_status_reason, 'Missing/no Reason'),
-                null
-            ) as termination_reason,
+            case
+                when srh.assignment_status in ('Terminated', 'Deceased') then 1 else 0
+            end as is_attrition,
         from denom as dc
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            on dc.employee_number = srh.employee_number
-            and dc.attrition_date between date(srh.work_assignment_start_date) and date(
-                srh.work_assignment_end_date
-            )
+            on dc.attrition_date
+            between srh.work_assignment_start_date and srh.work_assignment_end_date
+            and dc.employee_number = srh.employee_number
             and srh.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
     ),
 
@@ -81,8 +73,8 @@ with
             employee_number,
             job_title,
             assignment_status,
-            is_attrition,
             termination_reason,
+            is_attrition,
         from active_next_year
 
         union all
@@ -91,26 +83,23 @@ with
             dc.academic_year,
             dc.effective_date,
             dc.employee_number,
-
             srh.job_title,
             srh.assignment_status,
 
-            if(
-                srh.assignment_status in ('Terminated', 'Deceased'), 1, 0
-            ) as is_attrition,
+            case
+                when srh.assignment_status in ('Terminated', 'Deceased')
+                then coalesce(srh.assignment_status_reason, 'Missing/no Reason')
+            end as termination_reason,
 
-            if(
-                srh.assignment_status in ('Terminated', 'Deceased'),
-                coalesce(srh.assignment_status_reason, 'Missing/no Reason'),
-                null
-            ) as termination_reason,
+            case
+                when srh.assignment_status in ('Terminated', 'Deceased') then 1 else 0
+            end as is_attrition,
         from denom as dc
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            on dc.employee_number = srh.employee_number
-            and dc.attrition_date between date(srh.work_assignment_start_date) and date(
-                srh.work_assignment_end_date
-            )
+            on dc.attrition_date
+            between srh.work_assignment_start_date and srh.work_assignment_end_date
+            and dc.employee_number = srh.employee_number
             and srh.assignment_status in ('Terminated', 'Deceased')
         left join
             active_next_year as an
@@ -133,20 +122,21 @@ with
             ) as year_at_kipp,  /* Counting year as the year a person is in*/
 
             sum(
-                if(
-                    job_title in (
-                        'Teacher',
-                        'Teacher in Residence',
-                        'Learning Specialist',
-                        'Teacher ESL',
-                        'Teacher,ESL',
-                        'Teacher in Residence ESL',
-                        'Co-Teacher',
-                        'Co-Teacher_historical'
-                    ),
-                    1,
-                    0
-                )
+                case
+                    when
+                        job_title in (
+                            'Teacher',
+                            'Teacher in Residence',
+                            'Learning Specialist',
+                            'Teacher ESL',
+                            'Teacher,ESL',
+                            'Teacher in Residence ESL',
+                            'Co-Teacher',
+                            'Co-Teacher_historical'
+                        )
+                    then 1
+                    else 0
+                end
             ) over (partition by employee_number order by academic_year)
             as years_teaching_at_kipp,  /* Counting year as the year a person is in*/
         from combined_statuses
@@ -159,7 +149,6 @@ with
             cat.is_attrition,
             cat.year_at_kipp,
             cat.termination_reason,
-
             srh.preferred_name_lastfirst,
             srh.business_unit_home_name,
             srh.home_work_location_name,
@@ -175,24 +164,29 @@ with
             srh.race_ethnicity_reporting,
             srh.community_grew_up,
             srh.community_professional_exp,
-            srh.primary_grade_level_taught,
             srh.level_of_education,
             srh.alumni_status,
             srh.worker_termination_date as termination_date,
             srh.worker_original_hire_date as original_hire_date,
+
+            tgl.grade_level,
 
             coalesce(srh.years_exp_outside_kipp, 0)
             + cat.years_teaching_at_kipp as total_years_teaching,
         from core_attrition_table as cat
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            on cat.employee_number = srh.employee_number
-            and cat.effective_date
-            between date(srh.work_assignment_start_date) and date(
-                srh.work_assignment_end_date
-            )  /* where you worked on 4/30 is the reporting data*/
+            /* where you worked on 4/30 is the reporting data */
+            on cat.effective_date
+            between srh.work_assignment_start_date and srh.work_assignment_end_date
+            and cat.employee_number = srh.employee_number
             and srh.job_title != 'Intern'
             and srh.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
+        left join
+            {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+            on srh.powerschool_teacher_number = tgl.teachernumber
+            and cat.academic_year = tgl.academic_year
+            and tgl.grade_level_rank = 1
     ),
 
     ly_combined as (
@@ -217,7 +211,7 @@ with
             race_ethnicity_reporting,
             community_grew_up,
             community_professional_exp,
-            primary_grade_level_taught,
+            grade_level,
             level_of_education,
             alumni_status,
             termination_date,
@@ -233,7 +227,6 @@ with
             cat.is_attrition,
             cat.year_at_kipp,
             cat.termination_reason,
-
             srh.preferred_name_lastfirst,
             srh.business_unit_home_name,
             srh.home_work_location_name,
@@ -249,7 +242,9 @@ with
             srh.race_ethnicity_reporting,
             srh.community_grew_up,
             srh.community_professional_exp,
-            srh.primary_grade_level_taught,
+
+            tgl.grade_level,
+
             srh.level_of_education,
             srh.alumni_status,
             srh.worker_termination_date as termination_date,
@@ -260,17 +255,21 @@ with
         from core_attrition_table as cat
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            on cat.employee_number = srh.employee_number
-            and cat.effective_date
-            between date(srh.work_assignment_start_date) and date(
-                srh.work_assignment_end_date
-            )  /* where you worked on 4/30 is the reporting data*/
+            /* where you worked on 4/30 is the reporting data */
+            on cat.effective_date
+            between srh.work_assignment_start_date and srh.work_assignment_end_date
+            and cat.employee_number = srh.employee_number
             and srh.job_title != 'Intern'
             and srh.assignment_status in ('Terminated', 'Deceased')
         left join
             ly_active as lya
             on lya.academic_year = cat.academic_year
             and lya.employee_number = cat.employee_number
+        left join
+            {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+            on srh.powerschool_teacher_number = tgl.teachernumber
+            and cat.academic_year = tgl.academic_year
+            and tgl.grade_level_rank = 1
         where lya.employee_number is null
     ),
 
@@ -296,23 +295,24 @@ with
             race_ethnicity_reporting,
             community_grew_up,
             community_professional_exp,
-            primary_grade_level_taught,
+            grade_level,
             level_of_education,
             alumni_status,
             termination_date,
             original_hire_date,
             total_years_teaching,
 
-            if(
-                count(employee_number) over (
-                    partition by employee_number, academic_year
-                )
-                > 1
-                and termination_reason
-                in ('Import Created Action', 'Upgrade Created Action'),
-                'dupe',
-                'not dupe'
-            ) as dupe_check,
+            case
+                when
+                    count(employee_number) over (
+                        partition by employee_number, academic_year
+                    )
+                    > 1
+                    and termination_reason
+                    in ('Import Created Action', 'Upgrade Created Action')
+                then 'dupe'
+                else 'not dupe'
+            end as dupe_check,
         from ly_combined
     )
 
@@ -337,7 +337,7 @@ select distinct
     l.race_ethnicity_reporting,
     l.community_grew_up,
     l.community_professional_exp,
-    l.primary_grade_level_taught,
+    l.grade_level as primary_grade_level_taught,
     l.level_of_education,
     l.alumni_status,
     l.termination_date,

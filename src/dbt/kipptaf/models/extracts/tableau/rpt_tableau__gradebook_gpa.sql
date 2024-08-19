@@ -163,7 +163,7 @@ with
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gt") }}
             and term.storecode = gt.term_name
         where
-            enr.academic_year >= {{ var("current_academic_year") - 1 }}
+            enr.academic_year = {{ var("current_academic_year") }}
             and enr.rn_year = 1
             and not enr.is_out_of_district
             and enr.grade_level != 99

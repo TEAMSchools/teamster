@@ -72,9 +72,8 @@ inner join
 left join
     {{ ref("base_people__staff_roster_history") }} as e
     on s.employee_number = e.employee_number
-    and y.effective_date between cast(e.work_assignment_start_date as date) and cast(
-        e.work_assignment_end_date as date
-    )
+    and y.effective_date
+    between e.work_assignment_start_date and e.work_assignment_end_date
     and e.primary_indicator
     and e.job_title is not null
 left join
