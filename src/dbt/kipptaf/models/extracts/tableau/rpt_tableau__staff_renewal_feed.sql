@@ -24,7 +24,6 @@ select
     b.report_to_mail as manager_mail,
     b.race_ethnicity_reporting,
     b.gender_identity,
-    b.primary_grade_level_taught,
     b.base_remuneration_annual_rate_amount_amount_value as base_salary,
 
     s.salary_rule,
@@ -33,6 +32,8 @@ select
     s.scale_step,
 
     p.final_score as pm4_overall_score,
+
+    tgl.grade_level as primary_grade_level_taught,
 from {{ ref("base_people__staff_roster") }} as b
 left join
     {{ ref("int_people__expected_next_year_salary") }} as s
@@ -41,4 +42,9 @@ left join
     {{ ref("int_performance_management__overall_scores") }} as p
     on b.employee_number = p.employee_number
     and p.academic_year = {{ var("current_academic_year") }}
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on b.powerschool_teacher_number = tgl.teachernumber
+    and tgl.academic_year = {{ var("current_academic_year") }}
+    and tgl.grade_level_rank = 1
 where b.assignment_status not in ('Terminated', 'Deceased')
