@@ -8,6 +8,7 @@ with
             n as persistence_year,
 
             r.ktc_cohort + n as academic_year,
+
             date(r.ktc_cohort + n, 10, 31) as persistence_date_fall,
             date(r.ktc_cohort + n + 1, 3, 31) as persistence_date_spring,
         from {{ ref("int_kippadb__roster") }} as r
@@ -16,12 +17,38 @@ with
 
     gpa_enrollment_recent as (
         select
+            student,
             enrollment,
+            academic_year,
+            semester,
+            transcript_date,
             cumulative_credits_earned,
+            semester_credits_earned,
+            cumulative_credits_attempted,
+            semester_credits_earned,
             credits_required_for_graduation,
+            gpa,
+
+            if(
+                credits_required_for_graduation > 0,
+                round(cumulative_credits_earned / credits_required_for_graduation, 2),
+                null
+            ) as degree_percent_complete,
+
+            if(
+                cumulative_credits_attempted > 0,
+                round(cumulative_credits_earned / cumulative_credits_attempted, 2),
+                null
+            ) as attempted_percent_earned,
+
+            row_number() over (
+                partition by enrollment, academic_year, semester
+                order by transcript_date desc
+            ) as rn_transcript_date_year_semester_recent,
+
             row_number() over (
                 partition by enrollment order by transcript_date desc
-            ) as rn_transcript_date,
+            ) as rn_transcript_date_enrollment_recent,
         from {{ ref("stg_kippadb__gpa") }}
     ),
 
@@ -41,6 +68,8 @@ with
 
             a.name as account_name,
             a.type as account_type,
+            a.competitiveness_ranking,
+            a.adjusted_6_year_minority_graduation_rate,
 
             eis.hs_account_name,
             eis.ecc_pursuing_degree_type,
@@ -165,6 +194,8 @@ with
 
             a.name as account_name,
             a.type as account_type,
+            a.competitiveness_ranking,
+            a.adjusted_6_year_minority_graduation_rate,
 
             eis.hs_account_name,
             eis.ecc_pursuing_degree_type,
@@ -285,6 +316,8 @@ select
     p.actual_end_date,
     p.account_name,
     p.account_type,
+    p.competitiveness_ranking,
+    p.adjusted_6_year_minority_graduation_rate,
     p.hs_account_name,
     p.ecc_pursuing_degree_type,
     p.semester,
@@ -297,8 +330,13 @@ select
     p.persistence_status,
     p.rn_enrollment_year,
 
-    gpa.cumulative_credits_earned,
-    gpa.credits_required_for_graduation,
+    gpr.cumulative_credits_earned as cumulative_credits_earned_recent,
+    gpr.credits_required_for_graduation as credits_required_for_graduation_recent,
+    gpr.gpa as cumulative_gpa_recent,
+
+    gps.cumulative_credits_earned as cumulative_credits_earned_semester,
+    gps.credits_required_for_graduation as credits_required_for_graduation_semester,
+    gps.gpa as cumulative_gpa_semester,
 
     dense_rank() over (
         partition by p.student_number order by p.persistence_year asc, p.semester asc
@@ -317,6 +355,12 @@ select
     ) as progress_multiplier_6yr,
 from persistence_union as p
 left join
-    gpa_enrollment_recent as gpa
-    on p.enrollment_id = gpa.enrollment
-    and gpa.rn_transcript_date = 1
+    gpa_enrollment_recent as gpr
+    on p.enrollment_id = gpr.enrollment
+    and gpr.rn_transcript_date_enrollment_recent = 1
+left join
+    gpa_enrollment_recent as gps
+    on p.enrollment_id = gps.enrollment
+    and p.academic_year = gps.academic_year
+    and p.semester = gps.semester
+    and gps.rn_transcript_date_year_semester_recent = 1
