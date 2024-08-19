@@ -10,20 +10,19 @@ from teamster.code_locations.kipptaf._google.appsheet.assets import (
     assets as google_appsheet_assets,
 )
 from teamster.code_locations.kipptaf.airbyte.assets import assets as airbyte_assets
-from teamster.code_locations.kipptaf.fivetran.assets import assets as fivetran_assets
 
-asset_selection = [*google_appsheet_assets, *airbyte_assets, *fivetran_assets]
+asset_selection = [*google_appsheet_assets, *airbyte_assets]
 
 
 @sensor(
-    name=f"{CODE_LOCATION}_bigquery_table_modified_sensor",
+    name=f"{CODE_LOCATION}__google__bigquery__table_modified_sensor",
     minimum_interval_seconds=(60 * 5),
 )
 def bigquery_table_modified_sensor(
     context: SensorEvaluationContext, db_bigquery: BigQueryResource
 ):
     asset_events = []
-    cursor = json.loads(context.cursor or "{}")
+    cursor: dict = json.loads(context.cursor or "{}")
 
     with db_bigquery.get_client() as bq:
         bq = bq

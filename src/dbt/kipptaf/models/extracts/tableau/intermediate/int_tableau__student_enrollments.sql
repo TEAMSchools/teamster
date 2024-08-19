@@ -15,6 +15,7 @@ select
     e._dbt_source_relation,
     e.academic_year,
     e.region,
+    e.school_level,
     e.schoolid,
     e.school_abbreviation as school,
     e.studentid,
@@ -40,6 +41,8 @@ select
     adb.ktc_cohort,
     adb.contact_owner_name,
 
+    hr.sections_section_number as team,
+
     'KTAF' as district,
 
     cast(sp.academic_year as string)
@@ -48,8 +51,6 @@ select
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
-
-    if(dlm.studentsdcid is null, false, true) as is_dlm,
 
     if(sp.studentid is not null, 1, null) as is_counseling_services,
 
@@ -68,6 +69,7 @@ select
         when e.region = 'Miami'
         then 'FL'
     end as `state`,
+
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     ms_grad_sub as m
@@ -76,12 +78,6 @@ left join
     and m.rn = 1
 left join
     {{ ref("int_kippadb__roster") }} as adb on e.student_number = adb.student_number
-left join
-    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as dlm
-    on e.students_dcid = dlm.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="dlm") }}
-    and dlm.value_type = 'Graduation Pathway'
-    and dlm.values_column = 'M'
 left join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on e.studentid = sp.studentid
@@ -96,4 +92,13 @@ left join
     and current_date('{{ var("local_timezone") }}')
     between sa.enter_date and sa.exit_date
     and sa.specprog_name = 'Student Athlete'
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as hr
+    on e.student_number = hr.students_student_number
+    and e.yearid = hr.cc_yearid
+    and e.schoolid = hr.cc_schoolid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="hr") }}
+    and not hr.is_dropped_section
+    and hr.cc_course_number = 'HR'
+    and hr.rn_course_number_year = 1
 where e.rn_year = 1 and e.schoolid != 999999

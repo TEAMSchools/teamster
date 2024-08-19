@@ -52,3 +52,19 @@ sources:
               - google
               - appsheet
               - src_seat_tracker__seats
+      - name: src_teacher_development__observation_archive
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - src_teacher_development__observation_archive
+      - name: src_teacher_development__observation_details_archive
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - src_teacher_development__observation_details_archive
