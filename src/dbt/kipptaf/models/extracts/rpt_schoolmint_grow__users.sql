@@ -25,7 +25,7 @@ with
             case
                 /* network admins */
                 when sr.department_home_name = 'Executive'
-                then 'Regional Admin'
+                then 'Sub Admin'
                 when sr.job_title = 'Head of Schools'
                 then 'Regional Admin'
                 when
@@ -38,7 +38,6 @@ with
                         contains_substr(sr.job_title, 'Chief')
                         or contains_substr(sr.job_title, 'Leader')
                         or contains_substr(sr.job_title, 'Director')
-                        or contains_substr(sr.job_title, 'Dean')
                     )
                 then 'Sub Admin'
                 when
@@ -60,19 +59,10 @@ with
                 /* basic roles */
                 when
                     sr.management_position_indicator
-                    and sr.job_title
-                    in ('Teacher', 'Teacher ESL', 'Learning Specialist')
+                    and (sr.job_title like '%Teacher%' or sr.job_title like '%Learning%')
                 then 'Coach'
                 when
-                    sr.job_title in (
-                        'Teacher',
-                        'Teacher ESL',
-                        'Co-Teacher',
-                        'Learning Specialist',
-                        'Learning Specialist Coordinator',
-                        'Teacher in Residence',
-                        'Teaching Fellow'
-                    )
+                    (sr.job_title like '%Teacher%' or sr.job_title like '%Learning%')
                 then 'Teacher'
                 else 'No Role'
             end as role_name,
@@ -302,3 +292,4 @@ where
         /* to archive in SMG */
         or (inactive = 1 and inactive_ws = 1 and archived_at is null)
     )
+
