@@ -243,7 +243,8 @@ select
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
-    c.is_exempt_state_testing,
+
+    coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
 from roster as e
 left join
     college_assessments_official as o
@@ -309,7 +310,8 @@ select
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
-    c.is_exempt_state_testing,
+
+    coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
 from roster as e
 left join
     college_assessments_official as o
@@ -374,7 +376,8 @@ select
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
-    c.is_exempt_state_testing,
+
+    coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment_practice") }} as p
