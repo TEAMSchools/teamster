@@ -11,6 +11,8 @@ select
     p.actual_end_date,
     p.account_name,
     p.account_type,
+    p.competitiveness_ranking,
+    p.adjusted_6_year_minority_graduation_rate,
     p.hs_account_name,
     p.semester,
     p.ecc_pursuing_degree_type,
