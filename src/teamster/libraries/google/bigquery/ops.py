@@ -48,7 +48,6 @@ def bigquery_query_op(
     context.log.info(msg=f"Querying table: {object_id}")
 
     with db_bigquery.get_client() as bq:
-        # trunk-ignore(bandit/B608)
         query = bq.query(query=f"select * from {object_id}", project=project)
 
     arrow = query.to_arrow()

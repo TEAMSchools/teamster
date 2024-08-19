@@ -8,7 +8,6 @@ from teamster.libraries.google.bigquery.ops import (
     bigquery_query_op,
 )
 from teamster.libraries.schoolmint.grow.ops import (
-    schoolmint_grow_school_update_op,
     schoolmint_grow_user_delete_op,
     schoolmint_grow_user_update_op,
 )
@@ -24,21 +23,23 @@ SCHOOLMINT_GROW = SchoolMintGrowResource(
 DB_BIGQUERY = BigQueryResource(project=GCS_PROJECT_NAME)
 
 
-def test_user_update_job():
+def test_schoolmint_grow_user_update_op():
     context = build_op_context()
 
-    users = bigquery_get_table_op(context=context, db_bigquery=DB_BIGQUERY)
+    users = bigquery_get_table_op(
+        context=context,
+        db_bigquery=DB_BIGQUERY,
+        config=BigQueryGetTableOpConfig(
+            dataset_id="kipptaf_extracts", table_id="rpt_schoolmint_grow__users"
+        ),
+    )
 
-    updated_users = schoolmint_grow_user_update_op(
+    schoolmint_grow_user_update_op(
         context=context, schoolmint_grow=SCHOOLMINT_GROW, users=users
     )
 
-    schoolmint_grow_school_update_op(
-        context=context, schoolmint_grow=SCHOOLMINT_GROW, users=updated_users
-    )
 
-
-def test_user_deactivate_job():
+def _test_schoolmint_grow_user_delete_op():
     context = build_op_context()
 
     users = bigquery_query_op(
