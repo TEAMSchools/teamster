@@ -27,6 +27,7 @@ with
             cumulative_credits_attempted,
             semester_credits_earned,
             credits_required_for_graduation,
+            gpa,
 
             if(
                 credits_required_for_graduation > 0,
@@ -323,8 +324,13 @@ select
     p.persistence_status,
     p.rn_enrollment_year,
 
-    gpa.cumulative_credits_earned,
-    gpa.credits_required_for_graduation,
+    gpr.cumulative_credits_earned as cumulative_credits_earned_recent,
+    gpr.credits_required_for_graduation as credits_required_for_graduation_recent,
+    gpr.gpa as cumulative_gpa_recent,
+
+    gps.cumulative_credits_earned as cumulative_credits_earned_semester,
+    gps.credits_required_for_graduation as credits_required_for_graduation_semester,
+    gps.gpa as cumulative_gpa_semester,
 
     dense_rank() over (
         partition by p.student_number order by p.persistence_year asc, p.semester asc
@@ -343,6 +349,12 @@ select
     ) as progress_multiplier_6yr,
 from persistence_union as p
 left join
-    gpa_enrollment_recent as gpa
-    on p.enrollment_id = gpa.enrollment
-    and gpa.rn_transcript_date_enrollment_recent = 1
+    gpa_enrollment_recent as gpr
+    on p.enrollment_id = gpr.enrollment
+    and gpr.rn_transcript_date_enrollment_recent = 1
+left join
+    gpa_enrollment_recent as gps
+    on p.enrollment_id = gps.enrollment
+    and p.academic_year = gps.academic_year
+    and p.semester = gps.semester
+    and gps.rn_transcript_date_year_semester_recent = 1
