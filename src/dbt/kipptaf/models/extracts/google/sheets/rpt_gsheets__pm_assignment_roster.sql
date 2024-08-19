@@ -38,12 +38,10 @@ select
     end as tntp_assignment,
 
     case
-        when sr.primary_grade_level_taught = 0
+        when tgl.grade_level = 0
         then 'Grade K'
-        when
-            sr.department_home_name = 'Elementary'
-            and sr.primary_grade_level_taught is not null
-        then concat('Grade ', sr.primary_grade_level_taught)
+        when sr.department_home_name = 'Elementary' and tgl.grade_level is not null
+        then concat('Grade ', tgl.grade_level)
         else sr.department_home_name
     end as department_grade,
 
@@ -72,7 +70,11 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
     on sr.home_work_location_name = lc.home_work_location_name
-
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on sr.powerschool_teacher_number = tgl.teachernumber
+    and tgl.academic_year = {{ var("current_academic_year") }}
+    and tgl.grade_level_rank = 1
 where
     sr.assignment_status != 'Terminated'
     and sr.job_title != 'Intern'
