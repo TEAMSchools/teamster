@@ -68,6 +68,8 @@ with
 
             a.name as account_name,
             a.type as account_type,
+            a.competitiveness_ranking,
+            a.adjusted_6_year_minority_graduation_rate,
 
             eis.hs_account_name,
             eis.ecc_pursuing_degree_type,
@@ -192,6 +194,8 @@ with
 
             a.name as account_name,
             a.type as account_type,
+            a.competitiveness_ranking,
+            a.adjusted_6_year_minority_graduation_rate,
 
             eis.hs_account_name,
             eis.ecc_pursuing_degree_type,
@@ -312,6 +316,8 @@ select
     p.actual_end_date,
     p.account_name,
     p.account_type,
+    p.competitiveness_ranking,
+    p.adjusted_6_year_minority_graduation_rate,
     p.hs_account_name,
     p.ecc_pursuing_degree_type,
     p.semester,
