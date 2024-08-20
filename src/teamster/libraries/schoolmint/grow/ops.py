@@ -14,14 +14,19 @@ def schoolmint_grow_user_update_op(
         inactive = u["inactive"]
         user_email = u["user_email"]
 
-        try:
-            # restore
-            if inactive == 0 and u["inactive_ws"] == 1:
+        # restore
+        if inactive == 0 and u["inactive_ws"] == 1:
+            try:
                 context.log.info(f"RESTORING\t{user_email}")
-                schoolmint_grow.put("users", user_id, "restore")
-        except Exception as e:
-            context.log.exception(e)
-            continue
+                schoolmint_grow.put(
+                    "users",
+                    user_id,
+                    "restore",
+                    params={"district": schoolmint_grow.district_id},
+                )
+            except Exception as e:
+                context.log.exception(e)
+                continue
 
         # build user payload
         payload = {
@@ -50,13 +55,8 @@ def schoolmint_grow_user_update_op(
             elif inactive == 0:
                 context.log.info(f"UPDATING\t{user_email}")
                 schoolmint_grow.put("users", user_id, json=payload)
-        except Exception as e:
-            context.log.exception(e)
-            continue
-
-        try:
             # archive
-            if inactive == 1 and u["archived_at"] is None:
+            elif inactive == 1 and user_id is not None and u["archived_at"] is None:
                 context.log.info(f"ARCHIVING\t{user_email}")
                 schoolmint_grow.delete("users", user_id)
         except Exception as e:

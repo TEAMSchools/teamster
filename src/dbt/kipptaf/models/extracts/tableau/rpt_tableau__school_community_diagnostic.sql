@@ -35,27 +35,33 @@ select
     sr.academic_year,
 
     qc.question_text,
+
     ac.response_string as answer_text,
     ac.response_int as answer_value,
 
     srh.job_title as staff_job_title,
 
     coalesce(se1.spedlep, se2.spedlep) as student_spedlep,
+
     coalesce(
-        sr.employee_number, se1.student_number, fr.respondent_number
+        srh.employee_number, se1.student_number, fr.respondent_number
     ) as respondent_number,
+
     coalesce(srh.home_work_location_region, se1.region, se2.region) as region,
+
     coalesce(
         srh.home_work_location_name, se1.school_name, se2.school_name
     ) as `location`,
+
     coalesce(srh.race_ethnicity, se1.ethnicity, se2.ethnicity) as race_ethnicity,
+
     coalesce(srh.gender_identity, se1.gender, se2.gender) as gender,
+
     coalesce(
         srh.home_work_location_grade_band, se1.school_level, se2.school_level
     ) as grade_band,
-    coalesce(
-        srh.primary_grade_level_taught, se1.grade_level, se2.grade_level
-    ) as grade_level,
+
+    coalesce(tgl.grade_level, se1.grade_level, se2.grade_level) as grade_level,
 
     case
         when sr.survey_title like '%Staff%'
@@ -70,7 +76,7 @@ select
 from {{ ref("int_surveys__survey_responses") }} as sr
 left join
     {{ ref("base_people__staff_roster_history") }} as srh
-    on sr.employee_number = srh.employee_number
+    on sr.respondent_email = srh.google_email
     and sr.date_submitted
     between srh.work_assignment_start_timestamp and srh.work_assignment_end_timestamp
 left join
@@ -92,6 +98,11 @@ left join
 left join
     {{ ref("stg_surveys__scd_question_crosswalk") }} as qc
     on sr.question_shortname = qc.question_code
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on srh.powerschool_teacher_number = tgl.teachernumber
+    and sr.academic_year = tgl.academic_year
+    and tgl.grade_level_rank = 1
 where
     sr.survey_title in (
         'Engagement & Support Surveys',

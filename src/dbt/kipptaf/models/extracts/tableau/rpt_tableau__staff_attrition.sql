@@ -19,6 +19,7 @@ with
         select
             position_id,
             assignment_status_effective_date as termination_effective_date,
+
             coalesce(
                 assignment_status_reason_long_name, assignment_status_reason_short_name
             ) as termination_reason,
@@ -34,6 +35,7 @@ with
     final_termination as (
         select
             *,
+
             row_number() over (
                 partition by position_id order by termination_effective_date desc
             ) as rn_position_termination_desc,
@@ -70,11 +72,12 @@ with
             r.community_professional_exp,
             r.alumni_status,
             r.path_to_education,
-            r.primary_grade_level_taught,
 
             y.years_at_kipp_total,
             y.years_teaching_total,
             y.years_experience_total,
+
+            tgl.grade_level,
 
             coalesce(
                 r.worker_rehire_date, r.worker_original_hire_date
@@ -94,6 +97,11 @@ with
             final_termination as t
             on r.position_id = t.position_id
             and t.rn_position_termination_desc = 1
+        left join
+            {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+            on r.powerschool_teacher_number = tgl.teachernumber
+            and tgl.academic_year = {{ var("current_academic_year") }}
+            and tgl.grade_level_rank = 1
     ),
 
     with_academic_year as (
@@ -223,8 +231,9 @@ select
     wd.community_professional_exp,
     wd.alumni_status,
     wd.path_to_education,
-    wd.primary_grade_level_taught,
+    wd.grade_level as primary_grade_level_taught,
     wd.academic_year_exitdate_next as next_academic_year_exitdate,
+
     case
         when date_diff(wd.academic_year_exitdate, wd.academic_year_entrydate, day) <= 0
         then 0
@@ -234,22 +243,28 @@ select
         then 1
         else 0
     end as is_denominator,
+
     if(wd.attrition_exitdate <= wd.attrition_date, 1.0, 0.0) as is_attrition,
 
     coalesce(
         wd.business_unit_home_name, sr.business_unit_home_name
     ) as legal_entity_name,
+
     coalesce(
         wd.home_work_location_grade_band, sr.home_work_location_grade_band
     ) as primary_site_school_level,
+
     coalesce(wd.home_work_location_name, sr.home_work_location_name) as primary_site,
+
     coalesce(
         wd.home_work_location_reporting_school_id,
         sr.home_work_location_reporting_school_id
     ) as primary_site_reporting_schoolid,
+
     coalesce(
         wd.department_home_name, sr.department_home_name
     ) as primary_on_site_department,
+
     coalesce(wd.job_title, sr.job_title) as primary_job,
 
     wd.years_at_kipp_total - date_diff(
