@@ -1,40 +1,75 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="dcid.int_value",
-        transform_cols=[
-            {"name": "dcid", "extract": "int_value"},
-            {"name": "id", "extract": "int_value"},
-            {"name": "studentid", "extract": "int_value"},
-            {"name": "sectionid", "extract": "int_value"},
-            {"name": "schoolid", "extract": "int_value"},
-            {"name": "termid", "extract": "int_value"},
-            {"name": "attendance_type_code", "extract": "int_value"},
-            {"name": "unused2", "extract": "int_value"},
-            {"name": "currentabsences", "extract": "int_value"},
-            {"name": "currenttardies", "extract": "int_value"},
-            {"name": "teacherid", "extract": "int_value"},
-            {"name": "origsectionid", "extract": "int_value"},
-            {"name": "unused3", "extract": "int_value"},
-            {"name": "studyear", "extract": "int_value"},
-            {"name": "whomodifiedid", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
-    )
-}},
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("powerschool", "src_powerschool__cc"),
+                partition_by="dcid.int_value",
+                order_by="_file_name desc",
+            )
+        }}
+    ),
 
-calcs as (
-    select
-        *,
-        abs(termid) as abs_termid,
-        abs(sectionid) as abs_sectionid,
-        safe_cast(left(safe_cast(abs(termid) as string), 2) as int) as yearid,
-    from staging
-)
+    staging as (
+        select
+            * except (
+                dcid,
+                id,
+                studentid,
+                sectionid,
+                schoolid,
+                termid,
+                attendance_type_code,
+                unused2,
+                currentabsences,
+                currenttardies,
+                teacherid,
+                origsectionid,
+                unused3,
+                studyear,
+                whomodifiedid
+            ),
+
+            currentabsences.int_value as currentabsences,
+            currenttardies.int_value as currenttardies,
+            dcid.int_value as dcid,
+            id.int_value as id,
+            schoolid.int_value as schoolid,
+            sectionid.int_value as sectionid,
+            studentid.int_value as studentid,
+            studyear.int_value as studyear,
+            teacherid.int_value as teacherid,
+            termid.int_value as termid,
+        {#- attendance_type_code.int_value as attendance_type_code, #}
+        {#- origsectionid.int_value as origsectionid, #}
+        {#- unused2.int_value as unused2, #}
+        {#- unused3.int_value as unused3, #}
+        {#- whomodifiedid.int_value as whomodifiedid, #}
+        from deduplicate
+    ),
+
+    calcs as (
+        select
+            dcid,
+            id,
+            studentid,
+            sectionid,
+            section_number,
+            schoolid,
+            studyear,
+            termid,
+            dateenrolled,
+            dateleft,
+            course_number,
+            teacherid,
+            currentabsences,
+            currenttardies,
+
+            abs(termid) as abs_termid,
+            abs(sectionid) as abs_sectionid,
+
+            safe_cast(left(cast(abs(termid) as string), 2) as int) as yearid,
+        from staging
+    )
 
 select *, (yearid + 1990) as academic_year, (yearid + 1991) as fiscal_year,
 from calcs
