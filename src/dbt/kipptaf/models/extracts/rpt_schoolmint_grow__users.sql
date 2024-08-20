@@ -65,7 +65,6 @@ with
                 then 'Coach'
                 when (sr.job_title like '%Teacher%' or sr.job_title like '%Learning%')
                 then 'Teacher'
-                else 'No Role'
             end as role_name,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
@@ -105,6 +104,8 @@ with
             p.inactive,
             p.role_name,
 
+            r.role_id,
+
             u.user_id,
             u.archived_at,
             u.email as user_email_ws,
@@ -122,8 +123,6 @@ with
 
             gr.tag_id as grade_id,
 
-            r.role_id,
-
             u.roles[0]._id as role_id_ws,
 
             if(u.inactive, 1, 0) as inactive_ws,
@@ -136,6 +135,7 @@ with
                 else 'observees'
             end as group_type,
         from people as p
+        inner join {{ ref("stg_schoolmint_grow__roles") }} as r on p.role_name = r.name
         left join
             {{ ref("stg_schoolmint_grow__users") }} as u
             on p.user_internal_id = u.internal_id_int
@@ -152,8 +152,6 @@ with
             {{ ref("stg_schoolmint_grow__generic_tags") }} as gr
             on p.grade_abbreviation = gr.abbreviation
             and gr.tag_type = 'grades'
-        left join {{ ref("stg_schoolmint_grow__roles") }} as r on p.role_name = r.name
-        where p.role_name != 'No Role'
     ),
 
     surrogate_keys as (
