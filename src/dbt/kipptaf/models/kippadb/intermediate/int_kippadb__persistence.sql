@@ -70,6 +70,7 @@ with
             a.type as account_type,
             a.competitiveness_ranking,
             a.adjusted_6_year_minority_graduation_rate,
+            a.credits_required,
 
             eis.hs_account_name,
             eis.ecc_pursuing_degree_type,
@@ -196,6 +197,7 @@ with
             a.type as account_type,
             a.competitiveness_ranking,
             a.adjusted_6_year_minority_graduation_rate,
+            a.credits_required,
 
             eis.hs_account_name,
             eis.ecc_pursuing_degree_type,
@@ -331,12 +333,17 @@ select
     p.rn_enrollment_year,
 
     gpr.cumulative_credits_earned as cumulative_credits_earned_recent,
-    gpr.credits_required_for_graduation as credits_required_for_graduation_recent,
     gpr.gpa as cumulative_gpa_recent,
 
     gps.cumulative_credits_earned as cumulative_credits_earned_semester,
-    gps.credits_required_for_graduation as credits_required_for_graduation_semester,
     gps.gpa as cumulative_gpa_semester,
+
+    coalesce(
+        gpr.credits_required_for_graduation, p.credits_required
+    ) as credits_required_for_graduation_recent,
+    coalesce(
+        gps.credits_required_for_graduation, p.credits_required
+    ) as credits_required_for_graduation_semester,
 
     dense_rank() over (
         partition by p.student_number order by p.persistence_year asc, p.semester asc
