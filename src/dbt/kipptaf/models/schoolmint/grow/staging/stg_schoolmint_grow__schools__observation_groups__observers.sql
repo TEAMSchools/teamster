@@ -1,4 +1,7 @@
+{{- config(enabled=false) -}}
+
 select
+    og.school_id,
     og.observation_group_id,
 
     ogo._id as observer_id,
