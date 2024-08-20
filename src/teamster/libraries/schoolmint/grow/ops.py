@@ -8,6 +8,9 @@ def schoolmint_grow_user_update_op(
     context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource, users
 ):
     for u in users:
+        if u["surrogate_key_source"] == u["surrogate_key_destination"]:
+            continue
+
         user_id = u["user_id"]
         inactive = u["inactive"]
         user_email = u["user_email"]
