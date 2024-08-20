@@ -223,7 +223,7 @@ class Group(BaseModel):
     msExchGroupJoinRestriction: int | None = None
     msExchGroupMemberCount: int | None = None
     msExchHideFromAddressLists: bool | None = None
-    msExchModeratedByLink: bool | None = None
+    msExchModeratedByLink: str | None = None
     msExchPoliciesExcluded: str | None = None
     msExchPoliciesIncluded: str | None = None
     msExchRecipientDisplayType: int | None = None
