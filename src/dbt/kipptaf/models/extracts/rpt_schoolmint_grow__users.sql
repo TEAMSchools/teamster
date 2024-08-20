@@ -193,13 +193,9 @@ with
 select *,
 from surrogate_keys
 where
-    /* create/update in SMG */
-    (user_id is null or surrogate_key_source != surrogate_key_destination)
-    and (
-        /* active in SMG */
-        (inactive_ws = 0)
-        /* to reactivate in SMG */
-        or (inactive = 0 and inactive_ws = 1)
-        /* to archive in SMG */
-        or (inactive = 1 and inactive_ws = 1 and archived_at is null)
-    )
+    /* create */
+    user_id is null
+    /* update/reactivate */
+    or inactive = 0
+    /* archive */
+    or (inactive = 1 and archived_at is null)
