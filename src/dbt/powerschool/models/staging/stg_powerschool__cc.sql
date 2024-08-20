@@ -12,21 +12,16 @@ with
     staging as (
         select
             * except (
-                dcid,
-                id,
-                studentid,
-                sectionid,
-                schoolid,
-                termid,
-                attendance_type_code,
-                unused2,
                 currentabsences,
                 currenttardies,
-                teacherid,
-                origsectionid,
-                unused3,
+                dcid,
+                id,
+                schoolid,
+                sectionid,
+                studentid,
                 studyear,
-                whomodifiedid
+                teacherid,
+                termid
             ),
 
             currentabsences.int_value as currentabsences,
