@@ -1,7 +1,7 @@
 select
     log_id,
     export_date as valid_from,
-    cast(academic_year as int) as academic_year,
+    academic_year,
     staffing_model_id,
     teammate,
     staffing_status,

@@ -2,11 +2,11 @@ with
     combined_snapshot as (
         select
             staffing_model_id,
-            academic_year,
             staffing_status,
             status_detail,
             mid_year_hire as is_mid_year_hire,
             plan_status,
+            cast(academic_year as string) as academic_year,
             cast(dbt_valid_from as date) as valid_from,
             cast(dbt_valid_to as date) as valid_to,
             cast(teammate as string) as teammate,
@@ -24,17 +24,17 @@ with
 
         select
             staffing_model_id,
-            academic_year,
             staffing_status,
             status_detail,
             is_mid_year_hire,
             plan_status,
+            academic_year,
             valid_from,
             null as valid_to,
             teammate,
             is_open,
-            is_active,
             is_staffed,
+            is_active,
             is_new_hire,
         from {{ ref("stg_seat_tracker__log_archive") }}
     ),
@@ -63,7 +63,7 @@ select
     os1.valid_from,
     if(
         coalesce(os1.valid_to, os2.valid_from - 1) is null,
-        date({{ var('current_fiscal_year') }}, 6, 30),
+        date({{ var("current_fiscal_year") }}, 6, 30),
         coalesce(os1.valid_to, os2.valid_from - 1)
     ) as valid_to,
 from ordered_snapshot as os1

@@ -32,4 +32,3 @@ select
 from date_spine as ds
 left join {{ ref("int_seat_tracker_snapshot") }} as ts
 on ds.date_week between ts.valid_from and ts.valid_to
-order by ds.date_week desc
