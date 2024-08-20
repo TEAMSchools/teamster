@@ -76,21 +76,6 @@ with
             >= date({{ var("current_academic_year") - 1 }}, 7, 1)
     ),
 
-    roles_agg as (
-        select
-            u.user_id,
-
-            '"' || r.role_id || '"' as role_ids,
-            '"' || r.name || '"' as role_names,
-        from {{ ref("base_people__staff_roster") }} as s
-        inner join
-            {{ ref("stg_schoolmint_grow__users") }} as u
-            on s.employee_number = u.internal_id_int
-        inner join
-            {{ ref("stg_schoolmint_grow__roles") }} as r on r.name = 'School Admin'
-        where s.job_title = 'School Leader'
-    ),
-
     roster as (
         select
             p.user_internal_id,
