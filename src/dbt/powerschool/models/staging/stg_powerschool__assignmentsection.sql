@@ -22,7 +22,9 @@ select
         publishdaysbeforedue,
         publishedscoretypeid,
         relatedgradescaleitemdcid,
+        scoreentrypoints,
         sectionsdcid,
+        totalpointvalue,
         `weight`,
         whomodifiedid,
         yearid
