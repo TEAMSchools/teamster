@@ -12,43 +12,45 @@ with
 -- trunk-ignore(sqlfluff/AM04)
 select
     * except (
-        assignmentsectionid,
-        yearid,
-        sectionsdcid,
         assignmentid,
-        relatedgradescaleitemdcid,
-        scoreentrypoints,
+        assignmentsectionid,
         extracreditpoints,
-        `weight`,
-        totalpointvalue,
         iscountedinfinalgrade,
+        isscorespublish,
         isscoringneeded,
+        maxretakeallowed,
         publishdaysbeforedue,
         publishedscoretypeid,
-        isscorespublish,
-        maxretakeallowed,
-        whomodifiedid
+        relatedgradescaleitemdcid,
+        sectionsdcid,
+        `weight`,
+        whomodifiedid,
+        yearid
     ),
 
-    assignmentsectionid.int_value as assignmentsectionid,
-    yearid.int_value as yearid,
-    sectionsdcid.int_value as sectionsdcid,
     assignmentid.int_value as assignmentid,
-    relatedgradescaleitemdcid.int_value as relatedgradescaleitemdcid,
+    assignmentsectionid.int_value as assignmentsectionid,
     extracreditpoints.bytes_decimal_value as extracreditpoints,
-    weight.bytes_decimal_value as `weight`,
-    totalpointvalue.bytes_decimal_value as totalpointvalue,
     iscountedinfinalgrade.int_value as iscountedinfinalgrade,
+    isscorespublish.int_value as isscorespublish,
     isscoringneeded.int_value as isscoringneeded,
+    maxretakeallowed.int_value as maxretakeallowed,
     publishdaysbeforedue.int_value as publishdaysbeforedue,
     publishedscoretypeid.int_value as publishedscoretypeid,
-    isscorespublish.int_value as isscorespublish,
-    maxretakeallowed.int_value as maxretakeallowed,
+    relatedgradescaleitemdcid.int_value as relatedgradescaleitemdcid,
+    sectionsdcid.int_value as sectionsdcid,
+    weight.bytes_decimal_value as `weight`,
     whomodifiedid.int_value as whomodifiedid,
+    yearid.int_value as yearid,
 
     coalesce(
         scoreentrypoints.bytes_decimal_value,
         scoreentrypoints.double_value,
         scoreentrypoints.int_value
     ) as scoreentrypoints,
+    coalesce(
+        totalpointvalue.bytes_decimal_value,
+        totalpointvalue.double_value,
+        totalpointvalue.int_value
+    ) as totalpointvalue,
 from deduplicate
