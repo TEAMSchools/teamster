@@ -217,11 +217,13 @@ class Group(BaseModel):
     msExchArbitrationMailbox: str | None = None
     msExchCoManagedByLink: str | None = None
     msExchCoManagedObjectsBL: str | None = None
+    msExchEnableModeration: bool | None = None
     msExchGroupDepartRestriction: int | None = None
     msExchGroupExternalMemberCount: int | None = None
     msExchGroupJoinRestriction: int | None = None
     msExchGroupMemberCount: int | None = None
     msExchHideFromAddressLists: bool | None = None
+    msExchModeratedByLink: bool | None = None
     msExchPoliciesExcluded: str | None = None
     msExchPoliciesIncluded: str | None = None
     msExchRecipientDisplayType: int | None = None
