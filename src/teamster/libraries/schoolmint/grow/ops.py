@@ -1,5 +1,3 @@
-import json
-
 from dagster import OpExecutionContext, op
 
 from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
@@ -41,7 +39,7 @@ def schoolmint_grow_user_update_op(
                 "course": u["course_id"],
             },
             "coach": u["coach_id"],
-            "roles": json.loads(u["role_id"]),
+            "roles": [u["role_id"]],
         }
 
         try:
@@ -49,10 +47,10 @@ def schoolmint_grow_user_update_op(
             if inactive == 0 and user_id is None:
                 context.log.info(f"CREATING\t{user_email}")
                 create_resp = schoolmint_grow.post("users", json=payload)
-                user_id = create_resp["_id"]
-                u["user_id"] = user_id
+
+                u["user_id"] = create_resp["_id"]
             # update
-            elif inactive == 0:
+            elif inactive == 0 and user_id is not None:
                 context.log.info(f"UPDATING\t{user_email}")
                 schoolmint_grow.put("users", user_id, json=payload)
             # archive
