@@ -65,12 +65,13 @@ with
             e.status as enrollment_status,
             e.start_date as start_date,
             e.actual_end_date as actual_end_date,
+            e.of_credits_required_for_graduation as credits_required_enrollment,
 
             a.name as account_name,
             a.type as account_type,
             a.competitiveness_ranking,
             a.adjusted_6_year_minority_graduation_rate,
-            a.credits_required,
+            a.credits_required as credits_required_account,
 
             eis.hs_account_name,
             eis.ecc_pursuing_degree_type,
@@ -192,12 +193,13 @@ with
             e.status as enrollment_status,
             e.start_date as start_date,
             e.actual_end_date as actual_end_date,
+            e.of_credits_required_for_graduation as credits_required_enrollment,
 
             a.name as account_name,
             a.type as account_type,
             a.competitiveness_ranking,
             a.adjusted_6_year_minority_graduation_rate,
-            a.credits_required,
+            a.credits_required as credits_required_account,
 
             eis.hs_account_name,
             eis.ecc_pursuing_degree_type,
@@ -339,10 +341,14 @@ select
     gps.gpa as cumulative_gpa_semester,
 
     coalesce(
-        gpr.credits_required_for_graduation, p.credits_required
+        gpr.credits_required_for_graduation,
+        p.credits_required_enrollment,
+        p.credits_required_account
     ) as credits_required_for_graduation_recent,
     coalesce(
-        gps.credits_required_for_graduation, p.credits_required
+        gps.credits_required_for_graduation,
+        p.credits_required_enrollment,
+        p.credits_required_account
     ) as credits_required_for_graduation_semester,
 
     dense_rank() over (
