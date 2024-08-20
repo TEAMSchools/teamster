@@ -5,16 +5,11 @@ with
             sr.report_to_employee_number as manager_internal_id,
             sr.google_email as user_email,
             sr.department_home_name as course_name,
+            sr.home_work_location_name as school_name,
 
             sr.preferred_name_given_name
             || ' '
             || sr.preferred_name_family_name as user_name,
-
-            if(
-                sr.home_work_location_powerschool_school_id != 0,
-                sr.home_work_location_name,
-                null
-            ) as school_name,
 
             if(sr.assignment_status in ('Terminated', 'Deceased'), 1, 0) as inactive,
 
