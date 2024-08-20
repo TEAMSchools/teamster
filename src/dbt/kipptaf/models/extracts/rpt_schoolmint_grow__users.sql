@@ -194,8 +194,8 @@ select *,
 from surrogate_keys
 where
     /* create */
-    user_id is null
+    (inactive = 0 and user_id is null)
+    /* archive */
+    or (inactive = 1 and user_id is not null and archived_at is null)
     /* update/reactivate */
     or inactive = 0
-    /* archive */
-    or (inactive = 1 and archived_at is null)
