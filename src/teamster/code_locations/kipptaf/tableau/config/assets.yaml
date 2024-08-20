@@ -145,6 +145,13 @@ assets:
       cron_schedule:
         - 0 6 * * *
         - 30 14 * * *
+  - name: Gradebook and GPA Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__gradebook_audit]
+      - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
+    metadata:
+      id: 5046a976-ed0e-4c77-93fe-78b732cb5548
+      cron_schedule: 0 4 * * *
   # - name: Academic Priorities [NJ]
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__power_standards]
@@ -166,13 +173,6 @@ assets:
   #     - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
   #   metadata:
   #     id: db88d328-0d54-4dac-8003-6197841e1432
-  # - name: Gradebook Dashboard
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__gpa_analysis]
-  #     - [kipptaf, tableau, rpt_tableau__gradebook_assignments]
-  #     - [kipptaf, tableau, rpt_tableau__gradebook_dashboard]
-  #   metadata:
-  #     id: 452a4eaf-082b-4f83-aa8e-1a7a9c31a7a9
   # - name: KIPP Miami FAST & i-Ready Analysis
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__miami_fast]

@@ -255,6 +255,7 @@ def test_asset_schoolmint_grow_users():
             for a in schoolmint_grow_static_partitions_assets
             if a.key.path[-1] == "users"
         ][0],
+        partition_key="f",
     )
 
 

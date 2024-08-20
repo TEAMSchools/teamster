@@ -48,10 +48,12 @@ with
             dc.employee_number,
             srh.job_title,
             srh.assignment_status,
+
             case
                 when srh.assignment_status in ('Terminated', 'Deceased')
                 then coalesce(srh.assignment_status_reason, 'Missing/no Reason')
             end as termination_reason,
+
             case
                 when srh.assignment_status in ('Terminated', 'Deceased') then 1 else 0
             end as is_attrition,
@@ -83,10 +85,12 @@ with
             dc.employee_number,
             srh.job_title,
             srh.assignment_status,
+
             case
                 when srh.assignment_status in ('Terminated', 'Deceased')
                 then coalesce(srh.assignment_status_reason, 'Missing/no Reason')
             end as termination_reason,
+
             case
                 when srh.assignment_status in ('Terminated', 'Deceased') then 1 else 0
             end as is_attrition,
@@ -112,9 +116,11 @@ with
             employee_number,
             termination_reason,
             is_attrition,
+
             sum(1) over (
                 partition by employee_number order by academic_year
             ) as year_at_kipp,  /* Counting year as the year a person is in*/
+
             sum(
                 case
                     when
@@ -158,11 +164,13 @@ with
             srh.race_ethnicity_reporting,
             srh.community_grew_up,
             srh.community_professional_exp,
-            srh.primary_grade_level_taught,
             srh.level_of_education,
             srh.alumni_status,
             srh.worker_termination_date as termination_date,
             srh.worker_original_hire_date as original_hire_date,
+
+            tgl.grade_level,
+
             coalesce(srh.years_exp_outside_kipp, 0)
             + cat.years_teaching_at_kipp as total_years_teaching,
         from core_attrition_table as cat
@@ -174,6 +182,11 @@ with
             and cat.employee_number = srh.employee_number
             and srh.job_title != 'Intern'
             and srh.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
+        left join
+            {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+            on srh.powerschool_teacher_number = tgl.teachernumber
+            and cat.academic_year = tgl.academic_year
+            and tgl.grade_level_rank = 1
     ),
 
     ly_combined as (
@@ -198,7 +211,7 @@ with
             race_ethnicity_reporting,
             community_grew_up,
             community_professional_exp,
-            primary_grade_level_taught,
+            grade_level,
             level_of_education,
             alumni_status,
             termination_date,
@@ -229,11 +242,14 @@ with
             srh.race_ethnicity_reporting,
             srh.community_grew_up,
             srh.community_professional_exp,
-            srh.primary_grade_level_taught,
+
+            tgl.grade_level,
+
             srh.level_of_education,
             srh.alumni_status,
             srh.worker_termination_date as termination_date,
             srh.worker_original_hire_date as original_hire_date,
+
             coalesce(srh.years_exp_outside_kipp, 0)
             + cat.years_teaching_at_kipp as total_years_teaching,
         from core_attrition_table as cat
@@ -249,6 +265,11 @@ with
             ly_active as lya
             on lya.academic_year = cat.academic_year
             and lya.employee_number = cat.employee_number
+        left join
+            {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+            on srh.powerschool_teacher_number = tgl.teachernumber
+            and cat.academic_year = tgl.academic_year
+            and tgl.grade_level_rank = 1
         where lya.employee_number is null
     ),
 
@@ -274,12 +295,13 @@ with
             race_ethnicity_reporting,
             community_grew_up,
             community_professional_exp,
-            primary_grade_level_taught,
+            grade_level,
             level_of_education,
             alumni_status,
             termination_date,
             original_hire_date,
             total_years_teaching,
+
             case
                 when
                     count(employee_number) over (
@@ -315,7 +337,7 @@ select distinct
     l.race_ethnicity_reporting,
     l.community_grew_up,
     l.community_professional_exp,
-    l.primary_grade_level_taught,
+    l.grade_level as primary_grade_level_taught,
     l.level_of_education,
     l.alumni_status,
     l.termination_date,
