@@ -37,12 +37,13 @@ with
             od.strand_name,
             od.text_box,
 
-            null as growth_area,
-            null as glow_area,
+            gg.growth_area,
+            gg.glow_area,
         from {{ ref("int_performance_management__observations") }} as o
         left join
             {{ ref("int_performance_management__observation_details") }} as od
             on o.observation_id = od.observation_id
+        left join smg_glows_grows as gg on o.observation_id = gg.observation_id
         where o.observation_type_abbreviation = 'TDT' and od.row_score is not null
 
         union all
@@ -66,11 +67,9 @@ with
             td.measurement_name,
             td.strand_name,
             td.text_box,
-
-            coalesce(gg.growth_area, td.growth_area) as growth_area,
-            coalesce(gg.growth_area, td.glow_area) as glow_area,
+            td.growth_area,
+            td.glow_area,
         from {{ ref("int_performance_management__teacher_development") }} as td
-        left join smg_glows_grows as gg on gg.observation_id = td.observation_id
     )
 
 select
@@ -111,7 +110,7 @@ select
     os.final_tier as performance_management_final_tier,
 
     if(
-        srh.department_home_name = 'New Teacher Development', 'TDT', 'NTNC'
+        sr.department_home_name = 'New Teacher Development', 'TDT', 'NTNC'
     ) as observer_team,
 from observations_td_union as td
 left join
@@ -128,3 +127,6 @@ left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on td.employee_number = os.employee_number
     and td.academic_year = os.academic_year
+left join
+    {{ ref("base_people__staff_roster") }} as sr
+    on td.observer_employee_number = sr.employee_number
