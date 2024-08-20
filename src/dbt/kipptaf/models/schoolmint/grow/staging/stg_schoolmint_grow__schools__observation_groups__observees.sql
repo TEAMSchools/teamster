@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 select
     og.school_id,
     og.observation_group_id,
