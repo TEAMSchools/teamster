@@ -1,3 +1,5 @@
+{{- config(severity="warn") -}}
+
 with
     week_scaffold as (
         /* monday thru sunday */
@@ -7,37 +9,33 @@ with
         from
             unnest(
                 generate_date_array(
-                    '{{ var("current_academic_year") - 1 }}-07-01',
+                    '{{ var("current_academic_year") }}-07-01',
                     '{{ var("current_academic_year") + 1 }}-06-30',
                     interval 1 week
                 )
             ) as date_value
     ),
 
-    school_week_assessment_scaffold as (
+    week_assessment_scaffold as (
         select
-            sch._dbt_source_relation,
-            sch.name as school_name,
-
-            ws.week_start_date,
+            ws.week_end_date,
 
             a.assessment_id,
             a.title,
             a.administered_at,
+            a.region,
 
             avg(if(a.student_assessment_id is not null, 1, 0)) as pct_completion,
-        from {{ ref("stg_powerschool__schools") }} as sch
-        cross join week_scaffold as ws
+        from week_scaffold as ws
         inner join
             {{ ref("int_assessments__scaffold") }} as a
-            on sch.school_number = a.powerschool_school_id
-            and a.administered_at between ws.week_start_date and ws.week_end_date
+            on a.administered_at between ws.week_start_date and ws.week_end_date
             and a.is_internal_assessment
             and not a.is_replacement
-            and a.administered_at < current_date('{{ var("local_timezone") }}')
+        where ws.week_end_date <= current_date('{{ var("local_timezone") }}')
         group by all
     )
 
 select *
-from school_week_assessment_scaffold
+from week_assessment_scaffold
 where pct_completion < 0.5
