@@ -1,18 +1,14 @@
 with
-    date_spine as (
-        {%- set end_date = (
-            "cast('" + var("current_fiscal_year")
-            | string + "-06-30' as date)"
-        ) -%}
+    date_array as (
+        select
+            generate_date_array(
+                date '2023-08-04',
+                date({{ var("current_fiscal_year") }}, 6, 30),
+                interval 1 week
+            ) as dates
+    ),
 
-        {{-
-            dbt_utils.date_spine(
-                start_date="cast('2023-08-04' as date)",
-                end_date=end_date,
-                datepart="week",
-            )
-        -}}
-    )
+    date_spine as (select date_week from date_array, unnest(dates) as date_week)
 
 select
     ds.date_week,
