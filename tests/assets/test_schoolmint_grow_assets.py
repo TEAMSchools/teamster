@@ -7,7 +7,7 @@ from teamster.code_locations.kipptaf.resources import SCHOOLMINT_GROW_RESOURCE
 from teamster.code_locations.kipptaf.schoolmint.grow.assets import (
     assignments,
     observations,
-    schoolmint_grow_static_partitions_assets,
+    schoolmint_grow_static_partition_assets,
 )
 from teamster.core.resources import get_io_manager_gcs_avro
 
@@ -49,7 +49,7 @@ def test_asset_schoolmint_grow_generic_tags_assignmentpresets():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_assignmentpresets"
         ][0],
         partition_key="f",
@@ -60,7 +60,7 @@ def test_asset_schoolmint_grow_generic_tags_courses():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_courses"
         ][0],
         partition_key="f",
@@ -71,7 +71,7 @@ def test_asset_schoolmint_grow_generic_tags_eventtag1():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_eventtag1"
         ][0],
         partition_key="t",
@@ -82,7 +82,7 @@ def test_asset_schoolmint_grow_generic_tags_goaltypes():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_goaltypes"
         ][0],
         partition_key="f",
@@ -93,7 +93,7 @@ def test_asset_schoolmint_grow_generic_tags_grades():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_grades"
         ][0],
         partition_key="f",
@@ -104,7 +104,7 @@ def test_asset_schoolmint_grow_generic_tags_measurementgroups():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_measurementgroups"
         ][0],
         partition_key="f",
@@ -115,7 +115,7 @@ def test_asset_schoolmint_grow_generic_tags_meetingtypes():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_meetingtypes"
         ][0],
         partition_key="f",
@@ -126,7 +126,7 @@ def test_asset_schoolmint_grow_generic_tags_observationtypes():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_observationtypes"
         ][0],
         partition_key="f",
@@ -137,7 +137,7 @@ def test_asset_schoolmint_grow_generic_tags_rubrictag1():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_rubrictag1"
         ][0],
         partition_key="f",
@@ -148,7 +148,7 @@ def test_asset_schoolmint_grow_generic_tags_schooltag1():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_schooltag1"
         ][0],
         partition_key="f",
@@ -159,7 +159,7 @@ def test_asset_schoolmint_grow_generic_tags_tags():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_tags"
         ][0],
         partition_key="t",
@@ -170,7 +170,7 @@ def test_asset_schoolmint_grow_generic_tags_usertag1():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_usertag1"
         ][0],
         partition_key="t",
@@ -181,7 +181,7 @@ def test_asset_schoolmint_grow_generic_tags_usertypes():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "generic_tags_usertypes"
         ][0],
         partition_key="f",
@@ -192,7 +192,7 @@ def test_asset_schoolmint_grow_informals():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "informals"
         ][0],
     )
@@ -202,7 +202,7 @@ def test_asset_schoolmint_grow_measurements():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "measurements"
         ][0],
     )
@@ -212,7 +212,7 @@ def test_asset_schoolmint_grow_meetings():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "meetings"
         ][0],
     )
@@ -222,7 +222,7 @@ def test_asset_schoolmint_grow_roles():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "roles"
         ][0],
     )
@@ -232,7 +232,7 @@ def test_asset_schoolmint_grow_rubrics():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "rubrics"
         ][0],
     )
@@ -242,7 +242,7 @@ def test_asset_schoolmint_grow_schools():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "schools"
         ][0],
     )
@@ -252,7 +252,7 @@ def test_asset_schoolmint_grow_users():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "users"
         ][0],
         partition_key="f",
@@ -263,7 +263,7 @@ def test_asset_schoolmint_grow_videos():
     _test_asset(
         asset=[
             a
-            for a in schoolmint_grow_static_partitions_assets
+            for a in schoolmint_grow_static_partition_assets
             if a.key.path[-1] == "videos"
         ][0],
     )

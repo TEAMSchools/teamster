@@ -44,7 +44,7 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
 )
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"), request_max_retries=2, request_timeout=6
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"), client_secret=EnvVar("AIRBYTE_CLIENT_SECRET")
 )
 
 DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
