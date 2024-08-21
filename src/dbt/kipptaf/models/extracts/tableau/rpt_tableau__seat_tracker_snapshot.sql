@@ -8,7 +8,7 @@ with
             ) as dates
     ),
 
-    date_spine as (select date_week from date_array, unnest(dates) as date_week)
+    date_spine as (select date_week, from date_array, unnest(dates) as date_week)
 
 select
     ds.date_week,
