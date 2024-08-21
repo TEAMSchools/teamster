@@ -9,7 +9,7 @@ with
             dbt_utils.date_spine(
                 start_date="cast('2023-08-04' as date)",
                 end_date=end_date,
-                datepart="week",
+                datepart="week"
             )
         -}}
     )
