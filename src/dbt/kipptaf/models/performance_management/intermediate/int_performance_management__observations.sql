@@ -16,6 +16,8 @@ select
     o.observer_internal_id as observer_employee_number,
     o.observation_type_name as observation_type,
     o.observation_type_abbreviation,
+    o.observation_course,
+    o.observation_grade,
 
     t.code as term_code,
     t.name as term_name,
@@ -70,6 +72,8 @@ select
 
     'Walkthrough' as observation_type,
     'WT' as observation_type_abbreviation,
+    null as observation_course,
+    null as observation_grade,
 
     t.code as term_code,
     t.name as term_name,

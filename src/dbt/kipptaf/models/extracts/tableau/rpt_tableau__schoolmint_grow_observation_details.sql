@@ -3,7 +3,7 @@ with
         select srh.employee_number, true as prior_year_tir,
         from {{ ref("base_people__staff_roster_history") }} as srh
         where
-            date(srh.work_assignment_start_date)
+            srh.work_assignment_start_date
             >= date({{ var("current_academic_year") }} - 1, 07, 01)
             and srh.assignment_status = 'Active'
             and srh.job_title = 'Teacher in Residence'
@@ -18,7 +18,6 @@ select
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
     srh.department_home_name as department,
-    srh.primary_grade_level_taught as grade_taught,
     srh.job_title,
     srh.report_to_preferred_name_lastfirst as manager,
     srh.worker_original_hire_date,
@@ -54,15 +53,28 @@ select
     od.strand_name,
     od.text_box,
     od.overall_tier,
-    null as etr_score,
-    null as so_score,
 
     sro.preferred_name_lastfirst as observer_name,
 
+    tgl.grade_level as grade_taught,
+
+    null as etr_score,
+    null as so_score,
+
     if(od.observation_id is not null, 1, 0) as is_observed,
-    if(
-        od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0
-    ) as met_goal_miami,
+
+    case
+        when
+            srh.business_unit_home_name = 'KIPP Miami'
+            and od.observation_score >= .87
+            and od.observation_type_abbreviation = 'WT'
+        then 1
+        when
+            srh.business_unit_home_name = 'KIPP Miami'
+            and od.observation_score < .87
+            and od.observation_type_abbreviation = 'WT'
+        then 0
+    end as met_goal_miami,
     case
         when srh.business_unit_home_name = 'KIPP Miami'
         then true
@@ -81,12 +93,10 @@ inner join
     {{ ref("stg_reporting__terms") }} as t
     on srh.business_unit_home_name = t.region
     and (
-        t.start_date between date(srh.work_assignment_start_date) and date(
-            srh.work_assignment_end_date
-        )
-        or t.end_date between date(srh.work_assignment_start_date) and date(
-            srh.work_assignment_end_date
-        )
+        t.start_date
+        between srh.work_assignment_start_date and srh.work_assignment_end_date
+        or t.end_date
+        between srh.work_assignment_start_date and srh.work_assignment_end_date
     )
     and t.type in ('PMS', 'PMC', 'TR', 'O3', 'WT')
     and t.academic_year = {{ var("current_academic_year") }}
@@ -103,8 +113,13 @@ left join
     {{ ref("base_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
 left join tir_previous as tir on srh.employee_number = tir.employee_number
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on srh.powerschool_teacher_number = tgl.teachernumber
+    and t.academic_year = tgl.academic_year
+    and tgl.grade_level_rank = 1
 where
-    srh.job_title in ('Teacher', 'Teacher in Residence', 'Learning Specialist')
+    (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
     and srh.assignment_status = 'Active'
 
 union all
@@ -117,7 +132,6 @@ select
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
     srh.department_home_name as department,
-    srh.primary_grade_level_taught as grade_taught,
     srh.job_title,
     srh.report_to_preferred_name_lastfirst as manager,
     srh.worker_original_hire_date,
@@ -153,22 +167,27 @@ select
     od.strand_name,
     od.text_box,
     od.overall_tier,
-    od.etr_score,
-    od.so_score,
 
     sro.preferred_name_lastfirst as observer_name,
 
+    tgl.grade_level as grade_taught,
+
+    od.etr_score,
+    od.so_score,
+
     if(od.observation_id is not null, 1, 0) as is_observed,
+
     if(
         od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0
     ) as met_goal_miami,
+
     null as boy_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("int_performance_management__observation_details") }} as od
     on srh.employee_number = od.employee_number
     and od.observed_at
-    between date(srh.work_assignment_start_date) and date(srh.work_assignment_end_date)
+    between srh.work_assignment_start_date and srh.work_assignment_end_date
     and srh.assignment_status = 'Active'
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
@@ -177,3 +196,8 @@ left join
 left join
     {{ ref("base_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on srh.powerschool_teacher_number = tgl.teachernumber
+    and od.academic_year = tgl.academic_year
+    and tgl.grade_level_rank = 1

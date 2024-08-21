@@ -349,7 +349,10 @@ with
             safe_cast(person.birthdate as date) as person__birth_date,
 
             timestamp_sub(
-                timestamp_add(timestamp(effective_date_start), interval 1 day),
+                timestamp_add(
+                    timestamp(effective_date_start, '{{ var("local_timezone") }}'),
+                    interval 1 day
+                ),
                 interval 1 millisecond
             ) as effective_date_timestamp,
 
