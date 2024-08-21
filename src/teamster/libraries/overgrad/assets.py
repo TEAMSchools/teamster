@@ -12,7 +12,7 @@ def build_overgrad_asset(
     name: str,
     schema,
     partitions_def=None,
-    auto_materialize_policy=None,
+    automation_condition=None,
     deps=None,
 ):
     key = [code_location, "overgrad", name]
@@ -22,7 +22,7 @@ def build_overgrad_asset(
         io_manager_key="io_manager_gcs_avro",
         group_name="overgrad",
         partitions_def=partitions_def,
-        auto_materialize_policy=auto_materialize_policy,
+        automation_condition=automation_condition,
         check_specs=[build_check_spec_avro_schema_valid(key)],
         deps=deps,
         compute_kind="python",
