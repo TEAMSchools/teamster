@@ -4,12 +4,6 @@ with
     benchmark_student_summary as (
         select
             {{
-                dbt_utils.generate_surrogate_key(
-                    ["student_primary_id", "school_year", "benchmark_period"]
-                )
-            }} as surrogate_key,
-
-            {{
                 dbt_utils.star(
                     from=src_bss,
                     except=[
@@ -407,4 +401,15 @@ select
     if(
         word_reading_wrf_national_norm_percentile = 'Discontinued', true, false
     ) as word_reading_wrf_discontinued,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            [
+                "student_primary_id",
+                "school_year",
+                "benchmark_period",
+                "assessment_grade",
+            ]
+        )
+    }} as surrogate_key,
 from benchmark_student_summary
