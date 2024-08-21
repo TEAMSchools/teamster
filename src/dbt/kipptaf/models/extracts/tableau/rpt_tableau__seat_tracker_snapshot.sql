@@ -5,7 +5,7 @@ with
             unnest(
                 generate_date_array(
                     /* first date of the appsheet snapshot*/
-                    date('2023-08-04'),
+                    '2023-08-04',
                     current_date('{{ var("local_timezone") }}'),
                     interval 1 week
                 )
@@ -30,5 +30,5 @@ select
 
 from date_spine as ds
 left join
-    {{ ref("int_seat_tracker_snapshot") }} as ts
+    {{ ref("int_seat_tracker__snapshot") }} as ts
     on ds.date_week between ts.valid_from and ts.valid_to
