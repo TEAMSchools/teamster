@@ -12,7 +12,7 @@ with
                 datepart="week"
             )
         -}}
-    )
+        )
 
 select
     ds.date_week,
