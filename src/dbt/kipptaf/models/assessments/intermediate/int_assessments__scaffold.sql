@@ -89,6 +89,7 @@ with
             a.performance_band_set_id,
             a.academic_year_clean,
             a.subject_area,
+            a.region,
             a.grade_level_id,
 
             ssa.student_id as illuminate_student_id,
@@ -144,6 +145,7 @@ with
             a.performance_band_set_id,
             a.academic_year_clean,
             a.subject_area,
+            a.region,
 
             ce.illuminate_grade_level_id as grade_level_id,
 
@@ -178,6 +180,7 @@ select
     ia.administered_at,
     ia.performance_band_set_id,
     ia.powerschool_school_id,
+    ia.region,
     ia.grade_level_id,
     ia.scope,
     ia.module_type,
@@ -211,6 +214,7 @@ select
 
     ssa.site_id as powerschool_school_id,
 
+    null as region,
     null as grade_level_id,
 
     a.scope,
@@ -259,6 +263,7 @@ select
 
     ssa.site_id as powerschool_school_id,
 
+    null as region,
     null as grade_level_id,
 
     a.scope,
