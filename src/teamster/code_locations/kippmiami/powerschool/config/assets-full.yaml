@@ -1,7 +1,5 @@
 assets:
   # not using partitions
-  - asset_name: cc
-    partition_column: transaction_date
   - asset_name: courses
     partition_column: transaction_date
   - asset_name: schools
@@ -70,6 +68,23 @@ assets:
     partition_column: whenmodified
   - asset_name: u_clg_et_stu_alt
     partition_column: whenmodified
+  - asset_name: cc
+    partition_column: transaction_date
+    select_columns:
+      - dcid
+      - id
+      - studentid
+      - sectionid
+      - section_number
+      - schoolid
+      - studyear
+      - termid
+      - dateenrolled
+      - dateleft
+      - course_number
+      - teacherid
+      - currentabsences
+      - currenttardies
   - asset_name: u_studentsuserfields
     partition_column: whenmodified
     select_columns:

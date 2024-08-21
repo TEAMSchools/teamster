@@ -101,11 +101,16 @@ locations:
                   secretKeyRef:
                     name: op-adp-wfn-api
                     key: client-secret
-              - name: AIRBYTE_API_KEY
+              - name: AIRBYTE_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
                     name: op-airbyte-api
-                    key: api-key
+                    key: username
+              - name: AIRBYTE_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-airbyte-api
+                    key: credential
               - name: AMPLIFY_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -419,11 +424,16 @@ locations:
                   secretKeyRef:
                     name: op-adp-wfn-api
                     key: client-secret
-              - name: AIRBYTE_API_KEY
+              - name: AIRBYTE_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
                     name: op-airbyte-api
-                    key: api-key
+                    key: username
+              - name: AIRBYTE_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-airbyte-api
+                    key: credential
               - name: AMPLIFY_PASSWORD
                 valueFrom:
                   secretKeyRef:
