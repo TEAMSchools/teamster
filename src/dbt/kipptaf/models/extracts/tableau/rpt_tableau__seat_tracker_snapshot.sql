@@ -1,14 +1,16 @@
 with
-    date_array as (
-        select
-            generate_date_array(
-                date '2023-08-04',
-                date({{ var("current_fiscal_year") }}, 6, 30),
-                interval 1 week
-            ) as dates
-    ),
-
-    date_spine as (select date_week, from date_array, unnest(dates) as date_week)
+    date_spine as (
+        select date_week,
+        from
+            unnest(
+                generate_date_array(
+                    /* first date of the appsheet snapshot*/
+                    date('2023-08-04'),
+                    current_date('{{ var("local_timezone") }}'),
+                    interval 1 week
+                )
+            ) as date_week
+    )
 
 select
     ds.date_week,
