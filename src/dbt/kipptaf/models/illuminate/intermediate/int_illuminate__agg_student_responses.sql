@@ -4,8 +4,8 @@ with
             dbt_utils.union_relations(
                 relations=[
                     ref("stg_illuminate__agg_student_responses_overall"),
-                    ref("base_illuminate__agg_student_responses_standard"),
-                    ref("base_illuminate__agg_student_responses_group"),
+                    ref("int_illuminate__agg_student_responses_standard"),
+                    ref("int_illuminate__agg_student_responses_group"),
                 ]
             )
         }}
