@@ -12,7 +12,6 @@ with
                 datepart="week",
             )
         -}}
-
     )
 
 select
