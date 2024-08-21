@@ -16,7 +16,7 @@ def schoolmint_grow_user_update_op(
         user_email = u["user_email"]
 
         # restore
-        if inactive == 0 and u["inactive_ws"] == 1:
+        if inactive == 0 and u["archived_at"] is not None:
             try:
                 context.log.info(f"RESTORING\t{user_email}")
                 schoolmint_grow.put(
