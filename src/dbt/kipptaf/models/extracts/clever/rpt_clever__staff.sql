@@ -1,9 +1,9 @@
 with
     staff_union as (
-        {#
+        /*
             School staff assigned to primary school only
             Campus staff assigned to all schools at campus
-        #}
+        */
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
@@ -34,7 +34,7 @@ with
 
         union all
 
-        {# T&L/EDs/Data to all schools under CMO #}
+        /* T&L/EDs/Data to all schools under CMO */
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
@@ -59,7 +59,7 @@ with
 
         union all
 
-        {# all region #}
+        /* all region */
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
@@ -82,7 +82,7 @@ with
 
         union all
 
-        {# all NJ #}
+        /* all NJ */
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,

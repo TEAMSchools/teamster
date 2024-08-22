@@ -16,7 +16,7 @@ select
     case
         swd.`value` when 'yes' then 1 when 'retested' then 1 when 'no' then 0
     end as is_mastery,
-from {{ ref("base_illuminate__repository_data") }} as swd
+from {{ ref("int_illuminate__repository_data") }} as swd
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on swd.date_administered between rt.start_date and rt.end_date

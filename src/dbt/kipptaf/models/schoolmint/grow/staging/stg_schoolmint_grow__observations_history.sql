@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 with
     -- trunk-ignore(sqlfluff/ST03)
     observations as (

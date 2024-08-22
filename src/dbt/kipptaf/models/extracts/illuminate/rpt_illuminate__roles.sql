@@ -1,14 +1,16 @@
+-- trunk-ignore-all(sqlfluff/RF05)
 /* KNJ specific departments = all CMO schools */
 select
-    -- noqa: disable=RF05
     sr.powerschool_teacher_number as `01 Local User ID`,
 
     sch.school_number as `02 Site ID`,
 
     'School Leadership' as `03 Role Name`,
+
     concat(
         {{ var("current_academic_year") }}, '-', {{ var("current_fiscal_year") }}
     ) as `04 Academic Year`,
+
     1 as `05 Session Type ID`,
 from {{ ref("base_people__staff_roster") }} as sr
 inner join
@@ -27,9 +29,11 @@ select
     cc.powerschool_school_id as `02 Site ID`,
 
     'School Leadership' as `03 Role Name`,
+
     concat(
         {{ var("current_academic_year") }}, '-', {{ var("current_fiscal_year") }}
     ) as `04 Academic Year`,
+
     1 as `05 Session Type ID`,
 from {{ ref("base_people__staff_roster") }} as sr
 inner join
@@ -49,9 +53,11 @@ select
     home_work_location_powerschool_school_id as `02 Site ID`,
 
     'School Leadership' as `03 Role Name`,
+
     concat(
         {{ var("current_academic_year") }}, '-', {{ var("current_fiscal_year") }}
     ) as `04 Academic Year`,
+
     1 as `05 Session Type ID`,
 from {{ ref("base_people__staff_roster") }}
 where

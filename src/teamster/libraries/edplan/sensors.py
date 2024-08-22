@@ -45,7 +45,11 @@ def build_edplan_sftp_sensor(
                 "[Errno -3] Temporary failure in name resolution" in e.args
                 or "[Errno -5] No address associated with hostname" in e.args
             ):
-                context.log.error(msg=str(e))
+                return SkipReason(str(e))
+            else:
+                raise e
+        except TimeoutError as e:
+            if "timed out" in e.args:
                 return SkipReason(str(e))
             else:
                 raise e

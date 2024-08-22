@@ -1,12 +1,17 @@
-select  -- noqa: disable=ST06
-    -- noqa: disable=RF05
+-- trunk-ignore(sqlfluff/ST06)
+select
+    -- trunk-ignore-begin(sqlfluff/RF05)
     concat(sr.employee_number, '@kippnj.org') as `Username`,
+
     sr.mail as `Email`,
     sr.user_principal_name as `Single Sign On ID`,
     sr.employee_number as `Employee ID`,
+
     if(sr.assignment_status = 'Terminated', 'Disabled', 'Active') as `Status`,
+
     sr.legal_name_given_name as `First name`,  /* legal name */
     sr.legal_name_family_name as `Last name`,  /* legal name */
+
     if(tm.employee_number is not null, 'Travel Manager', 'Traveler') as `Role`,
 
     /* cascading match on home_work_location_name/dept/job */
@@ -16,6 +21,7 @@ select  -- noqa: disable=ST06
         tg3.egencia_traveler_group,
         'General Traveler Group'
     ) as `Traveler Group`,
+-- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("base_people__staff_roster") }} as sr
 left join
     {{ source("egencia", "src_egencia__traveler_groups") }} as tg
