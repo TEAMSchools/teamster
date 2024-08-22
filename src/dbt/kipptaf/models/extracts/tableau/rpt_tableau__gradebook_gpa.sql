@@ -547,6 +547,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
     and ce.sectionid = c.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="c") }}
+where s.term_start_date <= current_date('{{ var("local_timezone") }}')
 
 union all
 
