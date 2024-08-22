@@ -232,4 +232,4 @@ left join
     and co.schoolid = sr.schoolid
     and sr.rn_incident = 1
 where
-    co.academic_year >= {{ var("current_academic_year") }} - 1 and co.grade_level != 99
+    co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99
