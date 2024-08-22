@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 select
     -- noqa: disable=RF05
     employee_number as `Employee ID`,
