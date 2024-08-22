@@ -222,10 +222,8 @@ with
                 false
             ) as is_prestart,
         from {{ ref("int_adp_workforce_now__worker_person") }}
-        where
-            not worker__fivetran_deleted
-            /* after transistion from Dayforce */
-            and work_assignment_end_date >= '2021-01-01'
+        /* after transistion from Dayforce */
+        where work_assignment_end_date >= '2021-01-01'
     ),
 
     with_dayforce as (
