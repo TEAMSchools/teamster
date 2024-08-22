@@ -1,9 +1,4 @@
 with
-    leadership_development_metrics as (
-        select *,
-        from {{ ref("stg_performance_management__leadership_development_metrics") }}
-    ),
-
     assignment_group as (
         select
             sr.employee_number,
@@ -26,23 +21,24 @@ with
                 ),
                 sr.job_title,
                 'CMO and Other Leaders'
-            ) as route,
+            ) as `route`,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
             {{ ref("stg_leadership_development_active_users") }} as au
-            on sr.employee_number = safe_cast(au.employee_number as int)
+            on sr.employee_number = au.employee_number
         where au.active_title
-
     )
 
 select
     ag.employee_number,
+
     ldm.academic_year,
     ldm.metric_id,
+
     concat(ag.employee_number, ldm.metric_id) as assignment_id,
 from assignment_group as ag
 inner join
-    leadership_development_metrics as ldm
+    {{ ref("stg_performance_management__leadership_development_metrics") }} as ldm
     on ag.route = ldm.role
     and ag.business_unit_home_name = ldm.region
 
@@ -50,9 +46,13 @@ union all
 
 select
     ag.employee_number,
+
     ldm.academic_year,
     ldm.metric_id,
+
     concat(ag.employee_number, ldm.metric_id) as assignment_id,
 from assignment_group as ag
 inner join
-    leadership_development_metrics as ldm on ag.route = ldm.role and ldm.region = 'All'
+    {{ ref("stg_performance_management__leadership_development_metrics") }} as ldm
+    on ag.route = ldm.role
+    and ldm.region = 'All'

@@ -148,6 +148,12 @@ select
 
     mt.territory,
 
+    coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
+
+    coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
+
+    coalesce(ie.value, false) as is_exempt_iready,
+
     coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
     coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
     coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
@@ -157,12 +163,6 @@ select
         db.boy_composite,
         'No Composite Score Available'
     ) as dibels_most_recent_composite,
-
-    coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
-
-    coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
-
-    coalesce(ie.value, false) as is_exempt_iready,
 
     if(nj.nj_intervention_subject is not null, true, false) as bucket_two,
 
@@ -220,12 +220,6 @@ left join
     and co.academic_year = pr.academic_year_plus
     and sj.iready_subject = pr.subject
 left join
-    {{ ref("int_amplify__all_assessments") }} as db
-    on co.academic_year = db.mclass_academic_year
-    and co.student_number = db.mclass_student_number
-    and db.mclass_measure = 'Composite'
-    and sj.iready_subject = 'Reading'
-left join
     iready_exempt as ie
     on co.academic_year = ie.academic_year
     and co.student_number = ie.student_number
@@ -245,4 +239,10 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
     and a.value_type = 'Graduation Pathway'
     and a.values_column = 'M'
+left join
+    {{ ref("int_amplify__all_assessments") }} as db
+    on co.academic_year = db.mclass_academic_year
+    and co.student_number = db.mclass_student_number
+    and db.mclass_measure = 'Composite'
+    and sj.iready_subject = 'Reading'
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}

@@ -1,13 +1,13 @@
 {%- set ref_person_history = ref("stg_adp_workforce_now__person_history") -%}
+{%- set ref_person_disability = ref("stg_adp_workforce_now__person_disability") -%}
+{%- set ref_other_personal_address = ref(
+    "stg_adp_workforce_now__other_personal_address"
+) -%}
 {%- set ref_person_preferred_salutation = ref(
-    "stg_adp_workforce_now__person_preferred_salutation_pivot"
+    "int_adp_workforce_now__person_preferred_salutation_pivot"
 ) -%}
 {%- set ref_person_communication = ref(
-    "stg_adp_workforce_now__person_communication_pivot"
-) -%}
-{%- set src_person_disability = source("adp_workforce_now", "person_disability") -%}
-{%- set src_other_personal_address = source(
-    "adp_workforce_now", "other_personal_address"
+    "int_adp_workforce_now__person_communication_pivot"
 ) -%}
 
 select
@@ -19,6 +19,7 @@ select
             prefix="person_",
         )
     }},
+
     {{
         dbt_utils.star(
             from=ref_person_preferred_salutation,
@@ -27,6 +28,7 @@ select
             prefix="preferred_salutation_",
         )
     }},
+
     {{
         dbt_utils.star(
             from=ref_person_communication,
@@ -35,17 +37,19 @@ select
             prefix="communication_",
         )
     }},
+
     {{
         dbt_utils.star(
-            from=src_other_personal_address,
+            from=ref_other_personal_address,
             except=["_fivetran_synced", "worker_id"],
             relation_alias="opa",
             prefix="other_personal_address_",
         )
     }},
+
     {{
         dbt_utils.star(
-            from=src_person_disability,
+            from=ref_person_disability,
             except=["_fivetran_synced", "worker_id"],
             relation_alias="pd",
             prefix="disability_",
@@ -54,5 +58,5 @@ select
 from {{ ref_person_history }} as ph
 left join {{ ref_person_preferred_salutation }} as pps on ph.worker_id = pps.worker_id
 left join {{ ref_person_communication }} as pc on ph.worker_id = pc.worker_id
-left join {{ src_other_personal_address }} as opa on ph.worker_id = opa.worker_id
-left join {{ src_person_disability }} as pd on ph.worker_id = pd.worker_id
+left join {{ ref_other_personal_address }} as opa on ph.worker_id = opa.worker_id
+left join {{ ref_person_disability }} as pd on ph.worker_id = pd.worker_id

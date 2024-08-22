@@ -7,7 +7,6 @@ with
             score,
 
             concat('psat10_', score_type) as score_type,
-
         from
             {{ ref("stg_illuminate__psat") }} unpivot (
                 score for score_type in (
@@ -32,6 +31,7 @@ with
 
 select
     *,
+
     row_number() over (
         partition by local_student_id, score_type order by score desc
     ) as rn_highest,

@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 select
     s.school_id,
 

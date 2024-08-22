@@ -44,5 +44,10 @@
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "dbt.perspectiveTheme": "Vintage"
+  "dbt.perspectiveTheme": "Vintage",
+  "dbt.deferConfigPerProject": {
+    "src/dbt/kipptaf": {
+      "deferToProduction": false
+    }
+  }
 }

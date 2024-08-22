@@ -4,9 +4,10 @@ with
             id,
             name_column,
             values_column,
+
             lower(regexp_replace(type_short_name, r'\W', '_')) as type_short_name,
         from
-            {{ source("adp_workforce_now", "organizational_unit") }} unpivot (
+            {{ ref("stg_adp_workforce_now__organizational_unit") }} unpivot (
                 values_column for name_column
                 in (`name`, name_long_name, name_short_name)
             )
@@ -16,14 +17,8 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source(
-                        "adp_workforce_now",
-                        "worker_assigned_organizational_unit",
-                    ),
-                    source(
-                        "adp_workforce_now",
-                        "worker_home_organizational_unit",
-                    ),
+                    ref("stg_adp_workforce_now__worker_assigned_organizational_unit"),
+                    ref("stg_adp_workforce_now__worker_home_organizational_unit"),
                 ],
                 exclude=["_fivetran_synced"],
             )
@@ -35,6 +30,7 @@ with
             ur.worker_assignment_id,
 
             ouu.values_column,
+
             lower(regexp_replace(ouu.type_short_name, r'\W', '_'))
             || '_'
             || regexp_extract(

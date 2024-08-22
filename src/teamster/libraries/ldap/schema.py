@@ -95,6 +95,7 @@ class UserPerson(BaseModel):
     msExchMDBRulesQuota: int | None = None
     msExchMobileMailboxFlags: int | None = None
     msExchMobileMailboxPolicyLink: str | None = None
+    msExchModeratedObjectsBL: str | None = None
     msExchOmaAdminWirelessEnable: int | None = None
     msExchPoliciesExcluded: str | None = None
     msExchPoliciesIncluded: str | None = None
@@ -216,11 +217,13 @@ class Group(BaseModel):
     msExchArbitrationMailbox: str | None = None
     msExchCoManagedByLink: str | None = None
     msExchCoManagedObjectsBL: str | None = None
+    msExchEnableModeration: bool | None = None
     msExchGroupDepartRestriction: int | None = None
     msExchGroupExternalMemberCount: int | None = None
     msExchGroupJoinRestriction: int | None = None
     msExchGroupMemberCount: int | None = None
     msExchHideFromAddressLists: bool | None = None
+    msExchModeratedByLink: str | None = None
     msExchPoliciesExcluded: str | None = None
     msExchPoliciesIncluded: str | None = None
     msExchRecipientDisplayType: int | None = None
