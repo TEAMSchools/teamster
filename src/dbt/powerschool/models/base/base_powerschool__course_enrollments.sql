@@ -32,6 +32,7 @@ with
 
 select
     *,
+
     if(
         avg(if(is_dropped_section, 1, 0)) over (
             partition by cc_studyear, cc_course_number
@@ -40,10 +41,12 @@ select
         true,
         false
     ) as is_dropped_course,
+
     row_number() over (
         partition by cc_studyear, courses_credittype
         order by cc_termid desc, cc_dateenrolled desc, cc_dateleft desc
     ) as rn_credittype_year,
+
     row_number() over (
         partition by cc_studyear, cc_course_number
         order by cc_termid desc, cc_dateenrolled desc, cc_dateleft desc

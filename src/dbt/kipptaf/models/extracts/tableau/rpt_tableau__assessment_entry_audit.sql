@@ -7,7 +7,7 @@ select
     s.academic_year,
     s.administered_at,
     s.module_type,
-    s.module_number,
+    s.module_code as module_number,
 
     co.lastfirst,
     co.enroll_status,
