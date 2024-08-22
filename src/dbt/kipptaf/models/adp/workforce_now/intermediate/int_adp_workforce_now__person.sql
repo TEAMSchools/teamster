@@ -10,87 +10,53 @@
     "int_adp_workforce_now__person_communication_pivot"
 ) -%}
 
-with
-    person as (
-        select
-            {{
-                dbt_utils.star(
-                    from=ref_person_history,
-                    except=["_fivetran_synced", "_fivetran_id"],
-                    relation_alias="ph",
-                    prefix="person_",
-                )
-            }},
-
-            {{
-                dbt_utils.star(
-                    from=ref_person_preferred_salutation,
-                    except=["_fivetran_synced", "worker_id"],
-                    relation_alias="pps",
-                    prefix="preferred_salutation_",
-                )
-            }},
-
-            {{
-                dbt_utils.star(
-                    from=ref_person_communication,
-                    except=["_fivetran_synced", "worker_id"],
-                    relation_alias="pc",
-                    prefix="communication_",
-                )
-            }},
-
-            {{
-                dbt_utils.star(
-                    from=ref_other_personal_address,
-                    except=["_fivetran_synced", "worker_id"],
-                    relation_alias="opa",
-                    prefix="other_personal_address_",
-                )
-            }},
-
-            {{
-                dbt_utils.star(
-                    from=ref_person_disability,
-                    except=["_fivetran_synced", "worker_id"],
-                    relation_alias="pd",
-                    prefix="disability_",
-                )
-            }},
-
-            case
-                ph.race_long_name
-                when 'Black or African American'
-                then 'Black/African American'
-                when 'Hispanic or Latino'
-                then 'Latinx/Hispanic/Chicana(o)'
-                when 'Two or more races (Not Hispanic or Latino)'
-                then 'Bi/Multiracial'
-                else ph.race_long_name
-            end as race_ethnicity_reporting,
-
-            coalesce(
-                ph.preferred_name_given_name, ph.legal_name_given_name
-            ) as preferred_name_given_name,
-            coalesce(
-                ph.preferred_name_middle_name, ph.legal_name_middle_name
-            ) as preferred_name_middle_name,
-            coalesce(
-                ph.preferred_name_family_name_1, ph.legal_name_family_name_1
-            ) as preferred_name_family_name,
-        from {{ ref_person_history }} as ph
-        left join
-            {{ ref_person_preferred_salutation }} as pps on ph.worker_id = pps.worker_id
-        left join {{ ref_person_communication }} as pc on ph.worker_id = pc.worker_id
-        left join
-            {{ ref_other_personal_address }} as opa on ph.worker_id = opa.worker_id
-        left join {{ ref_person_disability }} as pd on ph.worker_id = pd.worker_id
-    )
-
 select
-    *,
+    {{
+        dbt_utils.star(
+            from=ref_person_history,
+            except=["_fivetran_synced", "_fivetran_id"],
+            relation_alias="ph",
+            prefix="person_",
+        )
+    }},
 
-    preferred_name_family_name
-    || ', '
-    || preferred_name_given_name as preferred_name_lastfirst,
-from person
+    {{
+        dbt_utils.star(
+            from=ref_person_preferred_salutation,
+            except=["_fivetran_synced", "worker_id"],
+            relation_alias="pps",
+            prefix="preferred_salutation_",
+        )
+    }},
+
+    {{
+        dbt_utils.star(
+            from=ref_person_communication,
+            except=["_fivetran_synced", "worker_id"],
+            relation_alias="pc",
+            prefix="communication_",
+        )
+    }},
+
+    {{
+        dbt_utils.star(
+            from=ref_other_personal_address,
+            except=["_fivetran_synced", "worker_id"],
+            relation_alias="opa",
+            prefix="other_personal_address_",
+        )
+    }},
+
+    {{
+        dbt_utils.star(
+            from=ref_person_disability,
+            except=["_fivetran_synced", "worker_id"],
+            relation_alias="pd",
+            prefix="disability_",
+        )
+    }},
+from {{ ref_person_history }} as ph
+left join {{ ref_person_preferred_salutation }} as pps on ph.worker_id = pps.worker_id
+left join {{ ref_person_communication }} as pc on ph.worker_id = pc.worker_id
+left join {{ ref_other_personal_address }} as opa on ph.worker_id = opa.worker_id
+left join {{ ref_person_disability }} as pd on ph.worker_id = pd.worker_id

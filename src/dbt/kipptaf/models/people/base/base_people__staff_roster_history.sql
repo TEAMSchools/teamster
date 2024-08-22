@@ -41,7 +41,7 @@ with
             wp.assignment_status_effective_date,
             wp.assignment_status,
             wp.assignment_status_reason,
-            wp.assignment_status_prev,
+            wp.assignment_status_lag,
 
             wp.report_to_associate_oid,
             wp.report_to_worker_id,
