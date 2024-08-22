@@ -1,26 +1,24 @@
-{%- set src_work_assignment_history = source(
-    "adp_workforce_now", "work_assignment_history"
+{%- set ref_work_assignment_history = ref(
+    "stg_adp_workforce_now__work_assignment_history"
 ) -%}
-{%- set src_worker = source("adp_workforce_now", "worker") -%}
-{%- set src_worker_group = source("adp_workforce_now", "worker_group") -%}
-{%- set src_groups = source("adp_workforce_now", "groups") -%}
-{%- set src_worker_additional_remuneration = source(
-    "adp_workforce_now",
-    "worker_additional_remuneration",
+{%- set ref_worker = ref("stg_adp_workforce_now__worker") -%}
+{%- set ref_worker_group = ref("stg_adp_workforce_now__worker_group") -%}
+{%- set ref_groups = ref("stg_adp_workforce_now__groups") -%}
+{%- set ref_worker_additional_remuneration = ref(
+    "stg_adp_workforce_now__worker_additional_remuneration"
 ) -%}
-{%- set src_worker_assigned_location = source(
-    "adp_workforce_now", "worker_assigned_location"
+{%- set ref_worker_assigned_location = ref(
+    "stg_adp_workforce_now__worker_assigned_location"
 ) -%}
-{%- set src_location = source("adp_workforce_now", "location") -%}
-
-{%- set ref_worker_organizational_unit = ref(
-    "stg_adp_workforce_now__worker_organizational_unit_pivot"
-) -%}
+{%- set ref_location = ref("stg_adp_workforce_now__location") -%}
 {%- set ref_work_assignments = ref(
     "stg_adp_workforce_now__workers__work_assignments"
 ) -%}
 {%- set ref_reports_to = ref(
     "stg_adp_workforce_now__workers__work_assignments__reports_to"
+) -%}
+{%- set ref_worker_organizational_unit = ref(
+    "int_adp_workforce_now__worker_organizational_unit_pivot"
 ) -%}
 
 with
@@ -37,7 +35,7 @@ with
 
             {{
                 dbt_utils.star(
-                    from=src_work_assignment_history,
+                    from=ref_work_assignment_history,
                     except=["_fivetran_start", "_fivetran_end", "_fivetran_synced"],
                     relation_alias="wah",
                     prefix="work_assignment_",
@@ -46,7 +44,7 @@ with
 
             {{
                 dbt_utils.star(
-                    from=src_worker,
+                    from=ref_worker,
                     except=["_fivetran_synced", "worker_id"],
                     relation_alias="w",
                     prefix="worker_",
@@ -55,7 +53,7 @@ with
 
             {{
                 dbt_utils.star(
-                    from=src_groups,
+                    from=ref_groups,
                     except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
                     relation_alias="grp",
                     prefix="group_",
@@ -64,7 +62,7 @@ with
 
             {{
                 dbt_utils.star(
-                    from=src_worker_additional_remuneration,
+                    from=ref_worker_additional_remuneration,
                     except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
                     relation_alias="war",
                     prefix="additional_remuneration_",
@@ -73,7 +71,7 @@ with
 
             {{
                 dbt_utils.star(
-                    from=src_location,
+                    from=ref_location,
                     except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
                     relation_alias="loc",
                     prefix="location_",
@@ -93,21 +91,21 @@ with
                 partition by wah.worker_id
                 order by wah.assignment_status_effective_date asc
             ) as work_assignment_assignment_status_long_name_prev,
-        from {{ src_work_assignment_history }} as wah
-        inner join {{ src_worker }} as w on wah.worker_id = w.id
-        left join {{ src_worker_group }} as wg on wah.id = wg.worker_assignment_id
-        left join {{ src_groups }} as grp on wg.id = grp.id
+        from {{ ref_work_assignment_history }} as wah
+        inner join {{ ref_worker }} as w on wah.worker_id = w.id
+        left join {{ ref_worker_group }} as wg on wah.id = wg.worker_assignment_id
+        left join {{ ref_groups }} as grp on wg.id = grp.id
         left join
-            {{ src_worker_additional_remuneration }} as war
+            {{ ref_worker_additional_remuneration }} as war
             on wah.id = war.worker_assignment_id
             and war.effective_date
             between extract(date from wah._fivetran_start) and extract(
                 date from wah._fivetran_end
             )
         left join
-            {{ src_worker_assigned_location }} as wal
+            {{ ref_worker_assigned_location }} as wal
             on wah.id = wal.worker_assignment_id
-        left join {{ src_location }} as loc on wal.id = loc.id
+        left join {{ ref_location }} as loc on wal.id = loc.id
         left join
             {{ ref_worker_organizational_unit }} as wou
             on wah.id = wou.worker_assignment_id

@@ -11,7 +11,6 @@ sources:
       - name: other_personal_address
       - name: person_communication
       - name: person_disability
-      - name: person_government_id
       - name: person_history
       - name: person_military_classification
       - name: person_preferred_salutation

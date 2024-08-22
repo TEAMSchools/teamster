@@ -9,5 +9,6 @@ with
         }}
     )
 
-select *,  -- noqa: AM04
+-- trunk-ignore(sqlfluff/AM04)
+select *,
 from deduplicate
