@@ -328,9 +328,9 @@ with
             null as sg_letter_grade,
             null as sg_grade_points,
 
-            term_percent_grade_adjusted,
-            term_letter_grade_adjusted,
-            term_grade_points,
+            y1_percent_grade_adjusted as term_percent_grade_adjusted,
+            y1_letter_grade_adjusted as term_letter_grade_adjusted,
+            y1_grade_points as term_grade_points,
 
             y1_percent_grade,
             y1_percent_grade_adjusted,
