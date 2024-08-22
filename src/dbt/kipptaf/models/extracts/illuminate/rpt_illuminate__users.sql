@@ -1,5 +1,6 @@
-select  -- noqa: disable=ST06
-    -- noqa: disable=RF05
+-- trunk-ignore(sqlfluff/ST06)
+select
+    -- trunk-ignore-begin(sqlfluff/RF05)
     powerschool_teacher_number as `01 User ID`,
     preferred_name_family_name as `02 User Last Name`,
     preferred_name_given_name as `03 User First Name`,
@@ -42,4 +43,5 @@ select  -- noqa: disable=ST06
     null as `29 Email2`,
     null as `30 Phone1`,
     null as `31 Phone2`,
+-- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("base_people__staff_roster") }}

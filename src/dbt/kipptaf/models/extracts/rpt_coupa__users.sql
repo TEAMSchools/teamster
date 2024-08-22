@@ -40,18 +40,20 @@ with
             sr.custom_wfmgr_pay_rule,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
-            lower(sr.sam_account_name) as sam_account_name,
-            lower(sr.user_principal_name) as user_principal_name,
-            lower(sr.mail) as mail,
 
             cu.active,
-            case
-                when cu.purchasing_user then 'Yes' when not cu.purchasing_user then 'No'
-            end as purchasing_user,
 
             r.roles,
 
             bg.business_group_names as content_groups,
+
+            lower(sr.sam_account_name) as sam_account_name,
+            lower(sr.user_principal_name) as user_principal_name,
+            lower(sr.mail) as mail,
+
+            case
+                cu.purchasing_user when true then 'Yes' when false then 'No'
+            end as purchasing_user,
         from {{ ref("base_people__staff_roster") }} as sr
         inner join
             {{ source("coupa", "user") }} as cu
@@ -86,14 +88,16 @@ with
             sr.custom_wfmgr_pay_rule,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
+
+            true as active,
+            'Expense User' as roles,
+            null as content_groups,
+
             lower(sr.sam_account_name) as sam_account_name,
             lower(sr.user_principal_name) as user_principal_name,
             lower(sr.mail) as mail,
 
-            true as active,
             'No' as purchasing_user,
-            'Expense User' as roles,
-            null as content_groups,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
             {{ source("coupa", "user") }} as cu
@@ -128,6 +132,17 @@ with
             au.sam_account_name,
             au.user_principal_name,
             au.mail,
+
+            a.location_code,
+            a.street_1,
+            a.city,
+            a.state,
+            a.postal_code,
+            a.name as address_name,
+
+            nullif(a.street_2, '') as street_2,
+            nullif(a.attention, '') as attention,
+
             case
                 /* no interns */
                 when au.worker_type like 'Intern%'
@@ -136,15 +151,6 @@ with
                 then 'active'
                 else 'inactive'
             end as coupa_status,
-
-            a.location_code,
-            a.street_1,
-            a.city,
-            a.state,
-            a.postal_code,
-            a.name as address_name,
-            nullif(a.street_2, '') as street_2,
-            nullif(a.attention, '') as attention,
 
             {#
             > override
@@ -187,8 +193,8 @@ with
             and a.active
     )
 
-select  -- noqa: disable=ST06
-    -- noqa: disable=RF05
+select
+    -- trunk-ignore-begin(sqlfluff/RF05)
     sub.sam_account_name as `Login`,
     sub.user_principal_name as `Sso Identifier`,
     sub.mail as `Email`,
@@ -224,7 +230,6 @@ select  -- noqa: disable=ST06
         else 'Yes'
     end as `Expense User`,
 
-    /* preserve Coupa, otherwise No */
     case
         when sub.coupa_status = 'inactive'
         then 'No'
@@ -247,6 +252,7 @@ select  -- noqa: disable=ST06
             else sub.business_unit_home_code
         end
     ) as `Content Groups`,
+
     concat(
         if(sub.assignment_status = 'Terminated', 'X', ''),
         coalesce(
@@ -291,6 +297,7 @@ select  -- noqa: disable=ST06
             safe_cast(ill3.sage_intacct_location as int)
         )
     ) as `Sage Intacct Location`,
+-- trunk-ignore-end(sqlfluff/RF05)
 from sub
 left join
     {{ source("coupa", "src_coupa__school_name_crosswalk") }} as sna

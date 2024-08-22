@@ -20,6 +20,7 @@ with
             position_id,
             associate_oid,
             dbt_valid_from,
+
             {{ dbt_utils.generate_surrogate_key(field_list=surrogate_key_field_list) }}
             as surrogate_key,
         from {{ ref("snapshot_people__staff_roster") }}
@@ -36,6 +37,7 @@ with
             worker_id,
             dbt_valid_from,
             surrogate_key as surrogate_key_new,
+
             lag(surrogate_key, 1) over (
                 partition by position_id order by dbt_valid_from
             ) as surrogate_key_prev,
@@ -50,6 +52,7 @@ with
             dbt_valid_from,
             surrogate_key_prev,
             surrogate_key_new,
+
             row_number() over (
                 partition by associate_oid order by dbt_valid_from desc
             ) as rn,
