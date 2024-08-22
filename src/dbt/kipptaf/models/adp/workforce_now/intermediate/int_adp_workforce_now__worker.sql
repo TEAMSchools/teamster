@@ -190,10 +190,54 @@ with
 select
     *,
 
+    safe_cast(worker_custom_miami_aces_number as int) as custom_miami_aces_number,
+
+    coalesce(
+        work_assignment_assignment_status_reason_long_name,
+        work_assignment_assignment_status_reason_short_name
+    ) as assignment_status_reason,
+    coalesce(
+        work_assignment_home_work_location_name_long_name,
+        work_assignment_home_work_location_name_short_name
+    ) as home_work_location_name,
+    coalesce(
+        work_assignment_worker_type_long_name, work_assignment_worker_type_short_name
+    ) as worker_type,
+
+    coalesce(
+        organizational_unit_business_unit_assigned_name_long_name,
+        organizational_unit_business_unit_assigned_name_short_name
+    ) as business_unit_assigned_name,
+    coalesce(
+        organizational_unit_business_unit_home_name_long_name,
+        organizational_unit_business_unit_home_name_short_name
+    ) as business_unit_home_name,
+    coalesce(
+        organizational_unit_department_assigned_name_long_name,
+        organizational_unit_department_assigned_name_short_name
+    ) as department_assigned_name,
+    coalesce(
+        organizational_unit_department_home_name_long_name,
+        organizational_unit_department_home_name_short_name
+    ) as department_home_name,
+
+    coalesce(group_group_long_name, group_group_short_name) as worker_group_value,
+
     date(
         work_assignment_start_timestamp, '{{ var("local_timezone") }}'
     ) as work_assignment_start_date,
     date(
         work_assignment_end_timestamp, '{{ var("local_timezone") }}'
     ) as work_assignment_end_date,
+
+    if(
+        work_assignment_hire_date > current_date('{{ var("local_timezone") }}')
+        and work_assignment_assignment_status_long_name = 'Active'
+        and (
+            work_assignment_assignment_status_long_name_prev is null
+            or work_assignment_assignment_status_long_name_prev = 'Terminated'
+        ),
+        true,
+        false
+    ) as is_prestart,
 from with_work_assignment_end
