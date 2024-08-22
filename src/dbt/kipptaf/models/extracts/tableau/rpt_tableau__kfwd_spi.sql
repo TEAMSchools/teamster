@@ -35,6 +35,7 @@ select
 
     null as match_type,
     null as application_admission_type,
+    null as application_status,
     null as application_submission_status,
     null as matriculation_decision,
 
@@ -135,6 +136,7 @@ select
 
     a.match_type,
     a.application_admission_type,
+    a.application_status,
     a.application_submission_status,
     a.matriculation_decision,
 

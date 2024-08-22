@@ -14,7 +14,7 @@ from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.schoolmint.grow.assets import (
     assignments,
     observations,
-    schoolmint_grow_static_partitions_assets,
+    schoolmint_grow_static_partition_assets,
 )
 from teamster.code_locations.kipptaf.schoolmint.grow.jobs import (
     schoolmint_grow_user_update_job,
@@ -35,19 +35,19 @@ schoolmint_grow_assignments_job_schedule = build_schedule_from_partitioned_job(
 )
 
 
-schoolmint_grow_static_partitions_asset_job = define_asset_job(
-    name=f"{CODE_LOCATION}__schoolmint_grow__static_partitions_asset_job",
-    selection=schoolmint_grow_static_partitions_assets,
+schoolmint_grow_static_partition_asset_job = define_asset_job(
+    name=f"{CODE_LOCATION}__schoolmint__grow__static_partition_asset_job",
+    selection=schoolmint_grow_static_partition_assets,
 )
 
 
 @schedule(
-    name=f"{schoolmint_grow_static_partitions_asset_job.name}_schedule",
+    name=f"{schoolmint_grow_static_partition_asset_job.name}_schedule",
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
-    job=schoolmint_grow_static_partitions_asset_job,
+    job=schoolmint_grow_static_partition_asset_job,
 )
-def schoolmint_grow_static_partitions_assets_job_schedule(
+def schoolmint_grow_static_partition_asset_job_schedule(
     context: ScheduleEvaluationContext,
 ):
     for partition_key in ["t", "f"]:
@@ -106,6 +106,6 @@ def schoolmint_grow_observations_asset_job_schedule(
 schedules = [
     schoolmint_grow_assignments_job_schedule,
     schoolmint_grow_observations_asset_job_schedule,
-    schoolmint_grow_static_partitions_assets_job_schedule,
+    schoolmint_grow_static_partition_asset_job_schedule,
     schoolmint_grow_user_update_job_schedule,
 ]

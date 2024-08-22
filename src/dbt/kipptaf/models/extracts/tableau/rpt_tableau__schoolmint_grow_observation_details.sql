@@ -63,10 +63,18 @@ select
 
     if(od.observation_id is not null, 1, 0) as is_observed,
 
-    if(
-        od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0
-    ) as met_goal_miami,
-
+    case
+        when
+            srh.business_unit_home_name = 'KIPP Miami'
+            and od.observation_score >= .87
+            and od.observation_type_abbreviation = 'WT'
+        then 1
+        when
+            srh.business_unit_home_name = 'KIPP Miami'
+            and od.observation_score < .87
+            and od.observation_type_abbreviation = 'WT'
+        then 0
+    end as met_goal_miami,
     case
         when srh.business_unit_home_name = 'KIPP Miami'
         then true
@@ -111,7 +119,7 @@ left join
     and t.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 where
-    srh.job_title in ('Teacher', 'Teacher in Residence', 'Learning Specialist')
+    (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
     and srh.assignment_status = 'Active'
 
 union all
