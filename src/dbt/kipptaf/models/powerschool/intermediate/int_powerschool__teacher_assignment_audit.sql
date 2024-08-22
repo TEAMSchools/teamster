@@ -21,9 +21,9 @@ with
             c.quarter,
             c.week_number_quarter,
             c.week_start_monday,
+            c.week_end_sunday,
             c.school_week_start_date_lead,
 
-            ge.week_number,
             ge.assignment_category_code,
             ge.assignment_category_name,
             ge.assignment_category_term,
@@ -43,8 +43,6 @@ with
             asg.n_expected_scored,
             asg.avg_expected_scored_percent,
 
-            c.week_end_sunday - 2 as week_end_friday,
-
             sum(a.totalpointvalue) over (
                 partition by sec._dbt_source_relation, sec.sections_id, c.quarter
             ) as total_totalpointvalue_section_quarter,
@@ -59,7 +57,7 @@ with
                     sec.sections_id,
                     c.quarter,
                     ge.assignment_category_code
-                order by ge.week_number asc
+                order by c.week_number_quarter asc
             ) as assignment_count_section_quarter_category_running_week,
 
             sum(asg.n_expected) over (
@@ -67,7 +65,7 @@ with
                     sec._dbt_source_relation,
                     sec.sections_id,
                     c.quarter,
-                    ge.week_number,
+                    c.week_number_quarter,
                     ge.assignment_category_code
             ) as total_expected_section_quarter_week_category,
 
@@ -76,7 +74,7 @@ with
                     sec._dbt_source_relation,
                     sec.sections_id,
                     c.quarter,
-                    ge.week_number,
+                    c.week_number_quarter,
                     ge.assignment_category_code
             ) as total_expected_scored_section_quarter_week_category,
 
@@ -86,7 +84,7 @@ with
                     sec.teachernumber,
                     sec.sections_schoolid,
                     c.quarter,
-                    ge.week_number,
+                    c.week_number_quarter,
                     ge.assignment_category_code
             ) as total_expected_teacher_school_quarter_week_category,
 
@@ -96,7 +94,7 @@ with
                     sec.teachernumber,
                     sec.sections_schoolid,
                     c.quarter,
-                    ge.week_number,
+                    c.week_number_quarter,
                     ge.assignment_category_code
             ) as total_expected_scored_teacher_school_quarter_week_category,
         from {{ ref("base_powerschool__sections") }} as sec
@@ -115,9 +113,7 @@ with
             on c.academic_year = ge.academic_year
             and c.region = ge.region
             and c.quarter = ge.quarter
-            -- please let this live: the audit weeks do not match the regular school
-            -- weeks -_-;
-            and c.week_number_quarter - 3 = ge.week_number
+            and c.week_number_quarter = ge.week_number
             and sch.school_level = ge.school_level
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
@@ -141,7 +137,11 @@ with
                 'LOG300',
                 'LOG9',
                 'SEM22106G1',
-                'SEM22106S1'
+                'SEM22106S1',
+                'SEM72005G1',
+                'SEM72005G2',
+                'SEM72005G3',
+                'SEM72005G4'
             )
             and sec.terms_firstday >= date({{ var("current_academic_year") }}, 7, 1)
     )
@@ -153,9 +153,8 @@ select
     `quarter`,
     semester,
     week_number_quarter,
-    week_number,
     week_start_monday,
-    week_end_friday,
+    week_end_sunday,
     school_week_start_date_lead,
     assignment_category_code,
     assignment_category_name,
