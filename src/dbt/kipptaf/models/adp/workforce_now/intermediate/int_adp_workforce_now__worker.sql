@@ -24,19 +24,9 @@
 with
     source as (
         select
-            timestamp(
-                datetime(wah._fivetran_start), 'America/New_York'
-            ) as work_assignment__fivetran_start,
-
-            coalesce(
-                safe.timestamp(datetime(wah._fivetran_end), 'America/New_York'),
-                timestamp('9999-12-31 23:59:59.999999')
-            ) as work_assignment__fivetran_end,
-
             {{
                 dbt_utils.star(
                     from=ref_work_assignment_history,
-                    except=["_fivetran_start", "_fivetran_end", "_fivetran_synced"],
                     relation_alias="wah",
                     prefix="work_assignment_",
                 )
@@ -56,7 +46,7 @@ with
                     from=ref_groups,
                     except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
                     relation_alias="grp",
-                    prefix="group_",
+                    prefix="worker_group_",
                 )
             }},
 
@@ -86,11 +76,6 @@ with
                     prefix="organizational_unit_",
                 )
             }},
-
-            lag(wah.assignment_status_long_name) over (
-                partition by wah.worker_id
-                order by wah.assignment_status_effective_date asc
-            ) as work_assignment_assignment_status_long_name_prev,
         from {{ ref_work_assignment_history }} as wah
         inner join {{ ref_worker }} as w on wah.worker_id = w.id
         left join {{ ref_worker_group }} as wg on wah.id = wg.worker_assignment_id
@@ -99,9 +84,7 @@ with
             {{ ref_worker_additional_remuneration }} as war
             on wah.id = war.worker_assignment_id
             and war.effective_date
-            between extract(date from wah._fivetran_start) and extract(
-                date from wah._fivetran_end
-            )
+            between wah._fivetran_start_date and wah._fivetran_end_date
         left join
             {{ ref_worker_assigned_location }} as wal
             on wah.id = wal.worker_assignment_id
@@ -131,6 +114,13 @@ with
                     prefix="work_assignment__",
                 )
             }},
+
+            coalesce(
+                timestamp_trunc(
+                    wa.effective_date_timestamp, day, '{{ var("local_timezone") }}'
+                ),
+                s.work_assignment__fivetran_start
+            ) as work_assignment_start_timestamp,
         from source as s
         left join
             {{ ref_work_assignments }} as wa
@@ -154,37 +144,22 @@ with
         }}
     ),
 
-    with_work_assignment_start as (
+    with_work_assignment_end as (
+        -- trunk-ignore(sqlfluff/AM04)
         select
             *,
 
             coalesce(
-                timestamp_trunc(
-                    work_assignment__effective_date_timestamp,
-                    day,
-                    '{{ var("local_timezone") }}'
+                timestamp_sub(
+                    lead(work_assignment_start_timestamp, 1) over (
+                        partition by work_assignment_id
+                        order by work_assignment_start_timestamp asc
+                    ),
+                    interval 1 millisecond
                 ),
-                work_assignment__fivetran_start
-            ) as work_assignment_start_timestamp,
-        from deduplicate_work_assignments
-    ),
-
-    with_work_assignment_end as (
-        select
-            *,
-
-            timestamp_sub(
-                lead(
-                    work_assignment_start_timestamp,
-                    1,
-                    timestamp(date(9999, 12, 31), '{{ var("local_timezone") }}')
-                ) over (
-                    partition by work_assignment_id
-                    order by work_assignment_start_timestamp asc
-                ),
-                interval 1 millisecond
+                timestamp('9999-12-31 23:59:59.999999')
             ) as work_assignment_end_timestamp,
-        from with_work_assignment_start
+        from deduplicate_work_assignments
     )
 
 select
