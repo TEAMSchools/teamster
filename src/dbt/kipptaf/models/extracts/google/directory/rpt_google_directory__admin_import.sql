@@ -53,7 +53,7 @@ with
                 then 'KSE'
                 /* KMS */
                 when 30200803
-                then 'Courage'
+                then 'Courage Academy'
                 when 30200804
                 then 'Royalty Academy'
             end as org_unit_path,
