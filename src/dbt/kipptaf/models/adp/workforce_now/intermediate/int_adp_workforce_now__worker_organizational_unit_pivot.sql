@@ -4,6 +4,7 @@ with
             id,
             name_column,
             values_column,
+
             lower(regexp_replace(type_short_name, r'\W', '_')) as type_short_name,
         from
             {{ ref("stg_adp_workforce_now__organizational_unit") }} unpivot (
@@ -29,6 +30,7 @@ with
             ur.worker_assignment_id,
 
             ouu.values_column,
+
             lower(regexp_replace(ouu.type_short_name, r'\W', '_'))
             || '_'
             || regexp_extract(

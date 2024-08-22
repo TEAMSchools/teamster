@@ -19,6 +19,7 @@ select
             prefix="person_",
         )
     }},
+
     {{
         dbt_utils.star(
             from=ref_person_preferred_salutation,
@@ -27,6 +28,7 @@ select
             prefix="preferred_salutation_",
         )
     }},
+
     {{
         dbt_utils.star(
             from=ref_person_communication,
@@ -35,6 +37,7 @@ select
             prefix="communication_",
         )
     }},
+
     {{
         dbt_utils.star(
             from=ref_other_personal_address,
@@ -43,6 +46,7 @@ select
             prefix="other_personal_address_",
         )
     }},
+
     {{
         dbt_utils.star(
             from=ref_person_disability,

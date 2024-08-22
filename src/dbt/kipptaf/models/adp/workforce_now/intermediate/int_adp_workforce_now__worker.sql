@@ -78,7 +78,7 @@ with
                 )
             }},
 
-            {{-
+            {{
                 dbt_utils.star(
                     from=ref_worker_organizational_unit,
                     except=["_fivetran_synced", "worker_assignment_id"],
@@ -116,6 +116,13 @@ with
         select
             s.*,
 
+            rt.reports_to_associate_oid,
+            rt.reports_to_position_id,
+            rt.reports_to_worker_name__formatted_name,
+            rt.reports_to_worker_id__id_value,
+            rt.reports_to_worker_id__scheme_code__code_value,
+            rt.reports_to_worker_id__scheme_code__short_name,
+
             {{
                 dbt_utils.star(
                     from=ref_work_assignments,
@@ -124,13 +131,6 @@ with
                     prefix="work_assignment__",
                 )
             }},
-
-            rt.reports_to_associate_oid,
-            rt.reports_to_position_id,
-            rt.reports_to_worker_name__formatted_name,
-            rt.reports_to_worker_id__id_value,
-            rt.reports_to_worker_id__scheme_code__code_value,
-            rt.reports_to_worker_id__scheme_code__short_name,
         from source as s
         left join
             {{ ref_work_assignments }} as wa
