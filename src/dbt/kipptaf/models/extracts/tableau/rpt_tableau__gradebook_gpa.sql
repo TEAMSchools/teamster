@@ -547,7 +547,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
     and ce.sectionid = c.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="c") }}
-where s.region != 'Miami'
 
 union all
 
