@@ -3,14 +3,8 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source(
-                        "adp_workforce_now",
-                        "person_communication",
-                    ),
-                    source(
-                        "adp_workforce_now",
-                        "business_communication",
-                    ),
+                    ref("stg_adp_workforce_now__person_communication"),
+                    ref("stg_adp_workforce_now__business_communication"),
                 ],
                 include=[
                     "worker_id",
@@ -26,6 +20,7 @@ with
     source_relation_parsed as (
         select
             *,
+
             regexp_extract(
                 _dbt_source_relation, r'(\w+)_communication'
             ) as source_relation_type,
@@ -36,6 +31,7 @@ with
         select
             worker_id,
             email_uri as pivot_column,
+
             source_relation_type || '_' || `type` as input_column,
         from source_relation_parsed
         where `type` = 'email'
@@ -45,6 +41,7 @@ with
         select
             worker_id,
             formatted_number as pivot_column,
+
             source_relation_type || '_' || `type` as input_column,
         from source_relation_parsed
         where `type` in ('mobile', 'landline')

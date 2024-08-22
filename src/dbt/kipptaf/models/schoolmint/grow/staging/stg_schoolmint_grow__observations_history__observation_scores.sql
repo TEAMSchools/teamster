@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 select
     o.observation_id,
     o.last_modified_date,

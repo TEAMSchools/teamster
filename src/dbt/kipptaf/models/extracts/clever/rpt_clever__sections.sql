@@ -28,11 +28,20 @@ with
             sec.sections_course_number,
             sec.courses_course_name,
             sec.terms_abbreviation,
+
+            r.sortorder,
+
+            t.teachernumber,
+
+            null as grade,
+
             format_date('%m/%d/%Y', sec.terms_firstday) as terms_firstday,
             format_date('%m/%d/%Y', sec.terms_lastday) as terms_lastday,
+
             concat(
                 regexp_extract(sec._dbt_source_relation, r'(kipp\w+)_'), sec.sections_id
             ) as section_id,
+
             case
                 sec.courses_credittype
                 when 'ART'
@@ -64,12 +73,6 @@ with
                 when 'WLANG'
                 then 'Language'
             end as `subject`,
-
-            r.sortorder,
-
-            t.teachernumber,
-
-            null as grade,
         from {{ ref("base_powerschool__sections") }} as sec
         inner join
             {{ ref("stg_powerschool__sectionteacher") }} as st
@@ -103,6 +106,17 @@ with
                 '-',
                 right(cast(({{ var("current_academic_year") + 1 }}) as string), 2)
             ) as terms_abbreviation,
+
+            1 as sortorder,
+
+            dsos.powerschool_teacher_number as teachernumber,
+
+            case
+                when grade_level = 0
+                then 'Kindergarten'
+                else cast(grade_level as string)
+            end as grade,
+
             format_date(
                 '%m/%d/%Y', date({{ var("current_academic_year") }}, 7, 1)
             ) as terms_firstday,
@@ -117,16 +131,6 @@ with
             ) as section_id,
 
             'Homeroom/advisory' as `subject`,
-
-            1 as sortorder,
-
-            dsos.powerschool_teacher_number as teachernumber,
-
-            case
-                when grade_level = 0
-                then 'Kindergarten'
-                else cast(grade_level as string)
-            end as grade,
         from dsos
         inner join
             {{ ref("stg_powerschool__schools") }} as s
@@ -147,6 +151,7 @@ with
             `subject`,
             teachernumber,
             grade,
+
             concat(
                 'teacher_',
                 row_number() over (partition by section_id order by sortorder asc),
@@ -168,12 +173,16 @@ select
     teacher_8_id,
     teacher_9_id,
     teacher_10_id,
+
     null as `name`,
+
     sections_section_number as section_number,
     grade,
     courses_course_name as course_name,
     sections_course_number as course_number,
+
     null as course_description,
+
     sections_section_number as `period`,
     `subject`,
     terms_abbreviation as term_name,
