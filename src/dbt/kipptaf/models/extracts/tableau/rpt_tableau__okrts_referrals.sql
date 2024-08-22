@@ -78,6 +78,7 @@ select
     co.ethnicity,
     co.lunch_status,
     co.is_retained_year,
+    co.rn_year,
 
     hr.sections_section_number as homeroom_section,
     hr.teacher_lastfirst as homeroom_teacher_name,
@@ -231,6 +232,4 @@ left join
     and co.schoolid = sr.schoolid
     and sr.rn_incident = 1
 where
-    co.rn_year = 1
-    and co.academic_year >= {{ var("current_academic_year") }} - 1
-    and co.grade_level != 99
+    co.academic_year >= {{ var("current_academic_year") }} - 1 and co.grade_level != 99

@@ -132,6 +132,7 @@ select
     co.ethnicity,
     co.lunch_status,
     co.is_retained_year,
+    co.rn_year,
 
     b.term,
     b.week_start_monday,
@@ -172,6 +173,4 @@ left join
     and hr.rn_course_number_year = 1
     and not hr.is_dropped_section
 where
-    co.rn_year = 1
-    and co.academic_year >= {{ var("current_academic_year") - 1 }}
-    and co.grade_level != 99
+    co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99
