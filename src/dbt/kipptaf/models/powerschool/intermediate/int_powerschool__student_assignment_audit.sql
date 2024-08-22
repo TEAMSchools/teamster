@@ -24,9 +24,9 @@ with
             c.week_number_quarter,
             c.week_number_academic_year,
             c.week_start_monday,
+            c.week_end_sunday,
             c.school_week_start_date_lead,
 
-            ge.week_number,
             ge.assignment_category_code,
             ge.assignment_category_term,
             ge.expectation,
@@ -39,8 +39,6 @@ with
             a.category_name,
 
             s.scorepoints,
-
-            c.week_end_sunday - 2 as week_end_friday,
 
             if(s.islate is null, false, true) as islate,
             if(s.isexempt is null, false, true) as isexempt,
@@ -66,7 +64,7 @@ with
             {{ ref("stg_reporting__gradebook_expectations") }} as ge
             on c.academic_year = ge.academic_year
             and c.quarter = ge.quarter
-            and c.week_number_quarter - 3 = ge.week_number
+            and c.week_number_quarter = ge.week_number
             and c.region = ge.region
             and sch.school_level = ge.school_level
         left join
@@ -99,6 +97,10 @@ with
                 'LOG9',
                 'SEM22106G1',
                 'SEM22106S1'
+                'SEM72005G1',
+                'SEM72005G2',
+                'SEM72005G3',
+                'SEM72005G4'
             )
     )
 
@@ -111,9 +113,8 @@ select
     semester,
     week_number_academic_year,
     week_number_quarter,
-    week_number,
     week_start_monday,
-    week_end_friday,
+    week_end_sunday,
     school_week_start_date_lead,
 
     school_level,
