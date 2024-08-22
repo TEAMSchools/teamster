@@ -30,8 +30,7 @@ select
     rf.label as field_label,
 from union_relations as ur
 inner join
-    {{ ref("base_illuminate__repositories") }} as r
-    on ur.repository_id = r.repository_id
+    {{ ref("int_illuminate__repositories") }} as r on ur.repository_id = r.repository_id
 inner join {{ ref("stg_illuminate__students") }} as s on ur.student_id = s.student_id
 inner join
     {{ ref("stg_illuminate__repository_fields") }} as rf
