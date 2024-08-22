@@ -42,7 +42,31 @@ with
         inner join ou_unpivot as ouu on ur.id = ouu.id
     )
 
-select *,
+select
+    worker_assignment_id,
+
+    cost_number_assigned_name,
+    cost_number_assigned_name_short_name,
+    cost_number_home_name,
+    cost_number_home_name_short_name,
+
+    business_unit_assigned_name as business_unit_assigned_code,
+    business_unit_home_name as business_unit_home_code,
+    department_assigned_name as department_assigned_code,
+    department_home_name as department_home_code,
+
+    coalesce(
+        business_unit_assigned_name_long_name, business_unit_assigned_name_short_name
+    ) as business_unit_assigned_name,
+    coalesce(
+        business_unit_home_name_long_name, business_unit_home_name_short_name
+    ) as business_unit_home_name,
+    coalesce(
+        department_assigned_name_long_name, department_assigned_name_short_name
+    ) as department_assigned_name,
+    coalesce(
+        department_home_name_long_name, department_home_name_short_name
+    ) as department_home_name,
 from
     wou_join pivot (
         max(values_column) for input_column in (
