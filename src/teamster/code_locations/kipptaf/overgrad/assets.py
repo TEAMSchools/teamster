@@ -10,7 +10,9 @@ universities = build_overgrad_asset(
     schema=UNIVERSITY_SCHEMA,
     partitions_def=DynamicPartitionsDefinition(name="overgrad__universities__id"),
     automation_condition=(
-        AutomationCondition.missing() & ~AutomationCondition.in_progress()
+        AutomationCondition.missing()
+        & ~AutomationCondition.in_progress()
+        & ~AutomationCondition.any_deps_match(AutomationCondition.in_progress())
     ),
     deps=[
         AssetKey(["kippcamden", "overgrad", "admissions"]),
