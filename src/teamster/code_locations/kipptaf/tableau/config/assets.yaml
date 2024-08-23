@@ -152,6 +152,13 @@ assets:
     metadata:
       id: 5046a976-ed0e-4c77-93fe-78b732cb5548
       cron_schedule: 0 4 * * *
+  - name: Gradebook Audit - Teacher Report
+    deps:
+      - [kipptaf, tableau, rpt_tableau__gradebook_audit]
+      - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
+    metadata:
+      id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
+      cron_schedule: 0 8 * * 2
   # - name: Academic Priorities [NJ]
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__power_standards]
