@@ -1,12 +1,28 @@
- with
+with
     smg_glows_grows as (
         select
             o.observation_id,
-
-            max(if(od.measurement_name like '%Glow%', od.text_box, null)) as glow_area,
             max(
-                if(od.measurement_name like '%Grow%', od.text_box, null)
+                if(
+                    od.measurement_name like '%Glow%',
+                    od.measurement_dropdown_selection,
+                    null
+                )
+            ) as glow_area,
+            max(
+                if(
+                    od.measurement_name like '%Grow%',
+                    od.measurement_dropdown_selection,
+                    null
+                )
             ) as growth_area,
+            max(
+                if(od.measurement_name like '%Glow%', od.measurement_comments, null)
+            ) as glow_notes,
+            max(
+                if(od.measurement_name like '%Grow%', od.measurement_comments, null)
+            ) as growth_notes,
+
         from {{ ref("int_performance_management__observations") }} as o
         inner join
             {{ ref("int_performance_management__observation_details") }} as od
@@ -36,12 +52,13 @@
             od.row_score,
             od.measurement_name,
             od.strand_name,
-            od.text_box,
+            od.measurement_dropdown_selection,
+            od.measurement_comments,
 
-            gg.growth_area,
             gg.glow_area,
-            null as growth_notes,
-            null as glow_notes,
+            gg.growth_area,
+            gg.glow_notes,
+            gg.growth_notes,
         from {{ ref("int_performance_management__observations") }} as o
         left join
             {{ ref("int_performance_management__observation_details") }} as od
@@ -49,38 +66,37 @@
         left join smg_glows_grows as gg on o.observation_id = gg.observation_id
         where o.observation_type_abbreviation = 'TDT' and od.row_score is not null
 
-        union all
-
-        select
-            td.employee_number,
-            td.observer_employee_number,
-            td.observer_name,
-            td.observation_id,
-            td.rubric_name,
-            td.observation_score,
-            td.observed_at,
-            td.academic_year,
-            td.observation_type,
-            td.observation_type_abbreviation,
-            td.observation_subject,
-            /*grades not noted in archive data*/
-            null as observation_grade,
-            td.observation_notes,
-            td.row_score,
-            td.measurement_name,
-            td.strand_name,
-            td.text_box,
-            td.growth_area,
-            td.glow_area,
-            td.growth_notes,
-            td.glow_notes,
-        from {{ ref("int_performance_management__teacher_development") }} as td
+    -- union all
+    -- select
+    -- td.employee_number,
+    -- td.observer_employee_number,
+    -- td.observer_name,
+    -- td.observation_id,
+    -- td.rubric_name,
+    -- td.observation_score,
+    -- td.observed_at,
+    -- td.academic_year,
+    -- td.observation_type,
+    -- td.observation_type_abbreviation,
+    -- td.observation_subject,
+    -- /* grades not noted in archive data*/
+    -- null as observation_grade,
+    -- td.observation_notes,
+    -- td.row_score,
+    -- td.measurement_name,
+    -- td.strand_name,
+    -- null as measurement_dropdown_selection,
+    -- td.text_box,
+    -- td.glow_area,
+    -- td.growth_area,
+    -- td.glow_notes,
+    -- td.growth_notes,
+    -- from {{ ref("int_performance_management__teacher_development") }} as td
     )
 
 select
     td.employee_number,
     td.observer_employee_number,
-    td.observer_name,
     td.observation_id,
     td.rubric_name,
     td.observation_score,
@@ -94,11 +110,12 @@ select
     td.row_score,
     td.measurement_name,
     td.strand_name,
-    td.text_box,
-    td.growth_area,
+    td.measurement_dropdown_selection,
+    td.measurement_comments,
     td.glow_area,
-    td.growth_notes,
+    td.growth_area,
     td.glow_notes,
+    td.growth_notes,
 
     srh.preferred_name_lastfirst as teammate,
     srh.business_unit_home_name as entity,
@@ -117,6 +134,7 @@ select
     os.final_score as performance_management_final_score,
     os.final_tier as performance_management_final_tier,
 
+    sr.preferred_name_lastfirst as observer_name,
     if(
         sr.department_home_name = 'New Teacher Development', 'TDT', 'NTNC'
     ) as observer_team,
