@@ -43,7 +43,8 @@ with
         from {{ ref("base_powerschool__student_enrollments") }} as s
         left join
             {{ ref("int_amplify__all_assessments") }} as c
-            on s.student_number = c.mclass_student_number
+            on s.academic_year = c.mclass_academic_year
+            and s.student_number = c.mclass_student_number
             and s.grade_level = c.mclass_assessment_grade_int
             and c.mclass_measure = 'Composite'
         left join
