@@ -22,6 +22,7 @@ with
             e.gifted_and_talented,
             e.enroll_status,
             e.advisory,
+            e.cohort,
 
             a.admin_season as expected_test,
             a.month_round,
@@ -122,6 +123,7 @@ select
     s.lunch_status,
     s.gifted_and_talented,
     s.advisory,
+    s.cohort,
     s.expected_test,
 
     m.schedule_student_number,
