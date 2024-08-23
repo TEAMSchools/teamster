@@ -15,7 +15,7 @@ WORKDIR /app
 
 # install uv & create venv
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install "uv==0.3.0" --no-cache-dir \
+    pip install "uv==0.3.2" --no-cache-dir \
     && uv venv
 
 # install dependencies
@@ -33,5 +33,5 @@ RUN uv pip install \
     --override overrides.txt \
     --no-cache-dir
 
-# # install dbt project
+# install dbt project
 COPY src/dbt/ ./src/dbt/
