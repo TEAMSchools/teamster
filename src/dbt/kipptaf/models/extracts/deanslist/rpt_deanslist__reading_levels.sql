@@ -18,7 +18,7 @@ with
             c.mclass_measure_semester_growth,
             c.mclass_measure_year_growth,
 
-            nc.mclass_measure_level as literacy_key_concept,
+            nc.mclass_measure as literacy_key_concept,
             nc.mclass_measure_level as performance_level,
 
             m.description,
