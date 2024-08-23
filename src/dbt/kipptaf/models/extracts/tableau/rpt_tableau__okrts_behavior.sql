@@ -155,13 +155,20 @@ select
     ) as self_contained_status,
 
     count(distinct co.student_number) over (
-        partition by co.schoolid, b.week_start_monday
+        partition by co.schoolid, cw.week_start_monday
     ) as school_enrollment_by_week,
 from {{ ref("base_powerschool__student_enrollments") }} as co
+inner join
+    {{ ref("int_powerschool__calendar_week") }} as cw
+    on co.schoolid = cw.schoolid
+    and co.academic_year = cw.academic_year
+    and cw.week_start_monday between co.entrydate and co.exitdate
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="cw") }}
 left join
     behavior_aggregation as b
     on co.student_number = b.student_school_id
     and co.academic_year = b.academic_year
+    and cw.week_start_monday = b.week_start_monday
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as hr
