@@ -13,6 +13,7 @@ on:
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
       - src/dbt/kippcamden/**
+      - src/dbt/overgrad/**
       - src/dbt/pearson/**
       - src/dbt/powerschool/**
       - src/dbt/teamster_utils/**
@@ -24,6 +25,7 @@ on:
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**
+      - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
       - src/teamster/libraries/ssh/**
@@ -37,6 +39,7 @@ on:
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**
+      - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
       - src/teamster/libraries/ssh/**
