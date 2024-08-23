@@ -2,6 +2,7 @@ packages:
   - local: ../deanslist
   - local: ../edplan
   - local: ../iready
+  - local: ../overgrad
   - local: ../pearson
   - local: ../powerschool
   - local: ../renlearn

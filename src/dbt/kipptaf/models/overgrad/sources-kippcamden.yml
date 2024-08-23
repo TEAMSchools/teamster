@@ -1,0 +1,77 @@
+version: 2
+
+sources:
+  - name: kippcamden_overgrad
+    tables:
+      - name: stg_overgrad__admissions
+        meta:
+          dagster:
+            group: overgrad
+            asset_key:
+              - kippcamden
+              - overgrad
+              - stg_overgrad__admissions
+      - name: stg_overgrad__custom_fields
+        meta:
+          dagster:
+            group: overgrad
+            asset_key:
+              - kippcamden
+              - overgrad
+              - stg_overgrad__custom_fields
+      - name: stg_overgrad__followings
+        meta:
+          dagster:
+            group: overgrad
+            asset_key:
+              - kippcamden
+              - overgrad
+              - stg_overgrad__followings
+      - name: stg_overgrad__schools
+        meta:
+          dagster:
+            group: overgrad
+            asset_key:
+              - kippcamden
+              - overgrad
+              - stg_overgrad__schools
+      - name: stg_overgrad__students
+        meta:
+          dagster:
+            group: overgrad
+            asset_key:
+              - kippcamden
+              - overgrad
+              - stg_overgrad__students
+      - name: stg_overgrad__admissions__custom_field_values
+        meta:
+          dagster:
+            group: overgrad
+            asset_key:
+              - kippcamden
+              - overgrad
+              - stg_overgrad__admissions__custom_field_values
+      - name: stg_overgrad__custom_fields__custom_field_options
+        meta:
+          dagster:
+            group: overgrad
+            asset_key:
+              - kippcamden
+              - overgrad
+              - stg_overgrad__custom_fields__custom_field_options
+      - name: stg_overgrad__students__custom_field_values
+        meta:
+          dagster:
+            group: overgrad
+            asset_key:
+              - kippcamden
+              - overgrad
+              - stg_overgrad__students__custom_field_values
+      - name: int_overgrad__custom_fields_pivot
+        meta:
+          dagster:
+            group: overgrad
+            asset_key:
+              - kippcamden
+              - overgrad
+              - int_overgrad__custom_fields_pivot
