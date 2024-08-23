@@ -14,6 +14,7 @@ on:
       - src/dbt/edplan/**
       - src/dbt/iready/**
       - src/dbt/kippnewark/**
+      - src/dbt/overgrad/**
       - src/dbt/pearson/**
       - src/dbt/powerschool/**
       - src/dbt/renlearn/**
@@ -27,6 +28,7 @@ on:
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**
       - src/teamster/libraries/iready/**
+      - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
       - src/teamster/libraries/renlearn/**
@@ -42,6 +44,7 @@ on:
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**
       - src/teamster/libraries/iready/**
+      - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
       - src/teamster/libraries/renlearn/**

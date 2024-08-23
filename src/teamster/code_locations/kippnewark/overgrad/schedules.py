@@ -1,7 +1,7 @@
 from dagster import ScheduleDefinition
 
-from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.overgrad.assets import (
+from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kippnewark.overgrad.assets import (
     admissions,
     custom_fields,
     followings,
