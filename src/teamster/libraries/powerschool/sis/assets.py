@@ -119,6 +119,7 @@ def build_powerschool_table_asset(
 
         try:
             ssh_tunnel.start()
+            ssh_tunnel._check_is_started()
 
             file_path = _check.inst(
                 obj=db_powerschool.execute_query(

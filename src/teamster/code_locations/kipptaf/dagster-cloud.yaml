@@ -687,5 +687,5 @@ locations:
               - name: OVERGRAD_API_KEY
                 valueFrom:
                   secretKeyRef:
-                    name: op-overgrad-api
+                    name: op-overgrad-api-kippnewark
                     key: credential

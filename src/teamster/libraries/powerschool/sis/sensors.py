@@ -83,6 +83,7 @@ def build_powerschool_asset_sensor(
 
         try:
             ssh_tunnel.start()
+            ssh_tunnel._check_is_started()
         except HandlerSSHTunnelForwarderError as e:
             if "An error occurred while opening tunnels." in e.args:
                 return SkipReason(str(e))
