@@ -141,7 +141,6 @@ models:
         +materialized: table
     overgrad:
       +schema: overgrad
-      +materialized: table
     pearson:
       +schema: pearson
     people:

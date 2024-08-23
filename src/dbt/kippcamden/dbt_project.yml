@@ -42,6 +42,8 @@ models:
     +schema: deanslist
   edplan:
     +schema: edplan
+  overgrad:
+    +schema: overgrad
   pearson:
     +schema: pearson
   powerschool:

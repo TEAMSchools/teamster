@@ -48,6 +48,8 @@ models:
     +schema: iready
     staging:
       +materialized: table
+  overgrad:
+    +schema: overgrad
   pearson:
     +schema: pearson
   powerschool:
