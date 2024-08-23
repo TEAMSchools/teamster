@@ -24,11 +24,9 @@ from teamster.libraries.ssh.resources import SSHResource
 
 def get_query_text(table: str, column: str, value: str | None):
     if value is None:
-        # trunk-ignore(bandit/B608)
         query = f"SELECT COUNT(*) FROM {table}"
     else:
         query = (
-            # trunk-ignore(bandit/B608)
             f"SELECT COUNT(*) FROM {table} WHERE "
             f"{column} >= TO_TIMESTAMP('{value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
         )
@@ -153,7 +151,7 @@ def build_powerschool_asset_sensor(
 
             record_count = asset_materialization.metadata["records"].value
 
-            if asset.partitions_def is not None:
+            if partition_column is not None:
                 timestamp = _check.inst(
                     obj=asset_materialization.metadata[
                         "latest_materialization_timestamp"
