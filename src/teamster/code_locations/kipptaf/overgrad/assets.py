@@ -9,7 +9,9 @@ universities = build_overgrad_asset(
     name="universities",
     schema=UNIVERSITY_SCHEMA,
     partitions_def=DynamicPartitionsDefinition(name="overgrad__universities__id"),
-    automation_condition=AutomationCondition.missing(),
+    automation_condition=(
+        AutomationCondition.missing() & ~AutomationCondition.in_progress()
+    ),
 )
 
 assets = [
