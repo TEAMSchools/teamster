@@ -1,5 +1,5 @@
-from teamster.code_locations.kipptaf.overgrad.assets import assets
-from teamster.code_locations.kipptaf.overgrad.schedules import schedules
+from teamster.code_locations.kippnewark.overgrad.assets import assets
+from teamster.code_locations.kippnewark.overgrad.schedules import schedules
 
 __all__ = [
     "assets",
