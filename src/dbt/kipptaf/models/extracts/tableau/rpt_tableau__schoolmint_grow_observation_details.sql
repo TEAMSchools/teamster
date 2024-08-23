@@ -50,7 +50,6 @@ select
     od.term_name,
     od.row_score,
     od.measurement_name,
-    od.strand_name,
     od.text_box,
     od.overall_tier,
 
@@ -164,7 +163,6 @@ select
     od.term_name,
     od.row_score,
     od.measurement_name,
-    od.strand_name,
     od.text_box,
     od.overall_tier,
 

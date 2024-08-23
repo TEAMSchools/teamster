@@ -31,6 +31,7 @@ with
             o.observation_type_abbreviation,
             o.observation_course as observation_subject,
             o.observation_grade,
+            o.observation_notes,
 
             od.row_score,
             od.measurement_name,
@@ -60,6 +61,7 @@ with
             td.observation_type,
             td.observation_type_abbreviation,
             td.observation_subject,
+            null as observation_notes,
 
             null as observation_grade,
 
@@ -85,6 +87,7 @@ select
     td.observation_type_abbreviation,
     td.observation_subject,
     td.observation_grade,
+    td.observation_notes,
     td.row_score,
     td.measurement_name,
     td.strand_name,
