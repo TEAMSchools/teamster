@@ -1,7 +1,8 @@
 with
-    students as (
+    data as (
         select
             s._dbt_source_relation,
+            s.academic_year,
             s.region,
             s.schoolid as school_id,
             s.school_name as school,
@@ -11,7 +12,6 @@ with
             s.lastfirst as student_name,
             s.first_name as student_first_name,
             s.last_name as student_last_name,
-            s.academic_year,
 
             c.mclass_period,
             c.mclass_measure_level as composite_level,
@@ -30,13 +30,13 @@ with
             ) as grade_level,
 
             case
-                when mclass_measure_level = 'Above Benchmark'
+                when c.mclass_measure_level = 'Above Benchmark'
                 then 'Exceeded'
-                when mclass_measure_level = 'At Benchmark'
+                when c.mclass_measure_level = 'At Benchmark'
                 then 'Met'
-                when mclass_measure_level = 'Below Benchmark'
+                when c.mclass_measure_level = 'Below Benchmark'
                 then 'Not Met'
-                when mclass_measure_level = 'Well Below Benchmark'
+                when c.mclass_measure_level = 'Well Below Benchmark'
                 then 'Not Met'
             end as composite_expectations,
 
@@ -44,12 +44,12 @@ with
         left join
             {{ ref("int_amplify__all_assessments") }} as c
             on s.student_number = c.mclass_student_number
-            and s.grade_level = c.mclass_assessment_grade
+            and s.grade_level = c.mclass_assessment_grade_int
             and c.mclass_measure = 'Composite'
         left join
             {{ ref("int_amplify__all_assessments") }} as nc
-            on c.academic_year = nc.academic_year
-            and c.student_number = nc.mclass_student_number
+            on c.mclass_academic_year = nc.mclass_academic_year
+            and c.mclass_student_number = nc.mclass_student_number
             and c.mclass_assessment_grade = nc.mclass_assessment_grade
             and c.mclass_period = nc.mclass_period
             and nc.mclass_measure != 'Composite'
@@ -64,105 +64,70 @@ with
             and s.enroll_status = 0
             and s.grade_level <= 4
     )
-/*
-    q1 as (
-        select
-            academic_year,
-            student_number,
-            mclass_period,
-            composite_level,
-            composite_expectations,
-            literacy_key_concept,
-            `description`,
-            performance_level,
 
-            'Not applicable' as growth_level,
-            'Q1' as `quarter`,
-        from composite_and_non_composite
-        where mclass_period = 'BOY'
-    ),
-
-    q2 as (
-        select
-            academic_year,
-            student_number,
-            mclass_period,
-            composite_level,
-            composite_expectations,
-            literacy_key_concept,
-            `description`,
-            performance_level,
-            measure_semester_growth as growth_level,
-
-            'Q2' as `quarter`,
-        from composite_and_non_composite
-        where mclass_period = 'MOY'
-    ),
-
-    q3 as (
-        select
-            academic_year,
-            student_number,
-            mclass_period,
-            composite_level,
-            composite_expectations,
-            literacy_key_concept,
-            `description`,
-            performance_level,
-            measure_semester_growth as growth_level,
-
-            'Q3' as `quarter`,
-        from composite_and_non_composite
-        where mclass_period = 'MOY'
-    ),
-
-    q4 as (
-        select
-            academic_year,
-            student_number,
-            mclass_period,
-            composite_level,
-            composite_expectations,
-            literacy_key_concept,
-            `description`,
-            performance_level,
-            measure_year_growth as growth_level,
-
-            'Q4' as `quarter`,
-        from composite_and_non_composite
-        where mclass_period = 'EOY'
-    )*/
 select
     academic_year,
     student_number,
     mclass_period,
     composite_level,
     composite_expectations,
+    literacy_key_concept,
+    `description`,
+    performance_level,
 
     'Not applicable' as growth_level,
     'Q1' as `quarter`,
-from students
-where
-    mclass_period = 'BOY'
-
-    /*
-select *,
-from
-    q1
+from data
+where mclass_period = 'BOY'
 
 union all
 
-select *,
-from q2
+select
+    academic_year,
+    student_number,
+    mclass_period,
+    composite_level,
+    composite_expectations,
+    literacy_key_concept,
+    `description`,
+    performance_level,
+    mclass_measure_semester_growth as growth_level,
+
+    'Q2' as `quarter`,
+from data
+where mclass_period = 'MOY'
 
 union all
 
-select *,
-from q3
+select
+
+    academic_year,
+    student_number,
+    mclass_period,
+    composite_level,
+    composite_expectations,
+    literacy_key_concept,
+    `description`,
+    performance_level,
+    mclass_measure_semester_growth as growth_level,
+
+    'Q3' as `quarter`,
+from data
+where mclass_period = 'MOY'
 
 union all
 
-select *,
-from q4
-*/
-    
+select
+    academic_year,
+    student_number,
+    mclass_period,
+    composite_level,
+    composite_expectations,
+    literacy_key_concept,
+    `description`,
+    performance_level,
+    mclass_measure_year_growth as growth_level,
+
+    'Q4' as `quarter`,
+from data
+where mclass_period = 'EOY'
