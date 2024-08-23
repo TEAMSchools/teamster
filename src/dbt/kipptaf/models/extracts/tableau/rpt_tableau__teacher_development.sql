@@ -1,4 +1,4 @@
-with
+ with
     smg_glows_grows as (
         select
             o.observation_id,
@@ -40,6 +40,8 @@ with
 
             gg.growth_area,
             gg.glow_area,
+            null as growth_notes,
+            null as glow_notes,
         from {{ ref("int_performance_management__observations") }} as o
         left join
             {{ ref("int_performance_management__observation_details") }} as od
@@ -61,16 +63,17 @@ with
             td.observation_type,
             td.observation_type_abbreviation,
             td.observation_subject,
-            null as observation_notes,
-
+            /*grades not noted in archive data*/
             null as observation_grade,
-
+            td.observation_notes,
             td.row_score,
             td.measurement_name,
             td.strand_name,
             td.text_box,
             td.growth_area,
             td.glow_area,
+            td.growth_notes,
+            td.glow_notes,
         from {{ ref("int_performance_management__teacher_development") }} as td
     )
 
@@ -94,6 +97,8 @@ select
     td.text_box,
     td.growth_area,
     td.glow_area,
+    td.growth_notes,
+    td.glow_notes,
 
     srh.preferred_name_lastfirst as teammate,
     srh.business_unit_home_name as entity,
