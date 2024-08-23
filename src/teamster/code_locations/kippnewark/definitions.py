@@ -9,6 +9,7 @@ from teamster.code_locations.kippnewark import (
     deanslist,
     edplan,
     iready,
+    overgrad,
     pearson,
     powerschool,
     renlearn,
@@ -40,6 +41,7 @@ defs = Definitions(
             deanslist,
             edplan,
             iready,
+            overgrad,
             pearson,
             powerschool,
             renlearn,
@@ -50,6 +52,7 @@ defs = Definitions(
         *_dbt.schedules,
         *datagun.schedules,
         *deanslist.schedules,
+        *overgrad.schedules,
         *powerschool.schedules,
     ],
     sensors=[
