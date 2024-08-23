@@ -27,11 +27,12 @@ vars:
   current_fiscal_year: 2025
   deanslist_schema: kippnewark_deanslist
   edplan_schema: kippnewark_edplan
+  iready_schema: kippnj_iready
   pearson_schema: kippnewark_pearson
   powerschool_schema: kippnewark_powerschool
-  titan_schema: kippnewark_titan
-  iready_schema: kippnj_iready
+  overgrad_schema: kippnewark_overgrad
   renlearn_schema: kippnj_renlearn
+  titan_schema: kippnewark_titan
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -48,6 +49,8 @@ models:
     +schema: iready
     staging:
       +materialized: table
+  overgrad:
+    +schema: overgrad
   pearson:
     +schema: pearson
   powerschool:

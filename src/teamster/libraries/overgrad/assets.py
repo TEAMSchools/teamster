@@ -26,7 +26,7 @@ def build_overgrad_asset(
         check_specs=[build_check_spec_avro_schema_valid(key)],
         deps=deps,
         compute_kind="python",
-        op_tags={"dagster/concurrency_key": "overgrad_api_limit"},
+        op_tags={"dagster/concurrency_key": f"overgrad_api_limit_{code_location}"},
     )
     def _asset(context: AssetExecutionContext, overgrad: OvergradResource):
         if context.assets_def.partitions_def is not None:

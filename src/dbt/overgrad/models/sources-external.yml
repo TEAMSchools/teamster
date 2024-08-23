@@ -1,0 +1,68 @@
+version: 2
+
+sources:
+  - name: overgrad
+    schema: "{{ var('overgrad_schema', 'overgrad') }}"
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_overgrad__admissions
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/overgrad/admissions/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - overgrad
+              - admissions
+      - name: src_overgrad__custom_fields
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/overgrad/custom_fields/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - overgrad
+              - custom_fields
+      - name: src_overgrad__followings
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/overgrad/followings/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - overgrad
+              - followings
+      - name: src_overgrad__schools
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/overgrad/schools/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - overgrad
+              - schools
+      - name: src_overgrad__students
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/overgrad/students/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - overgrad
+              - students

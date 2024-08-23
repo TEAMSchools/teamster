@@ -330,7 +330,15 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-overgrad-api
+  name: op-overgrad-api-kippnewark
   namespace: dagster-cloud
 spec:
-  itemPath: vaults/Data Team/items/Overgrad API
+  itemPath: vaults/Data Team/items/Overgrad API - Newark
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-overgrad-api-kippcamden
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Overgrad API - Camden
