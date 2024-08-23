@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: overgrad
-    schema: kipptaf_overgrad
+    schema: "{{ var('overgrad_schema', 'overgrad') }}"
     tags:
       - stage_external_sources
     tables:
