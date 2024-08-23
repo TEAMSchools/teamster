@@ -7,6 +7,8 @@ with
             if(co.is_504, '504', null) as is_504,
             if(co.lep_status, 'LEP', null) as is_lep,
 
+            if(gpa.gpa_term >= 2.0, 'Quarter GPA 2.0+', null) as is_quarter_gpa_2plus,
+            if(gpa.gpa_term >= 2.5, 'Quarter GPA 2.5+', null) as is_quarter_gpa_25plus,
             if(gpa.gpa_term >= 3.0, 'Quarter GPA 3.0+', null) as is_quarter_gpa_3plus,
             if(gpa.gpa_term >= 3.5, 'Quarter GPA 3.5+', null) as is_quarter_gpa_35plus,
 
@@ -54,6 +56,8 @@ from
             is_chronic_absentee,
             is_iep,
             is_lep,
+            is_quarter_gpa_2plus,
+            is_quarter_gpa_25plus,
             is_quarter_gpa_35plus,
             is_quarter_gpa_3plus
         )
