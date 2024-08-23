@@ -8,6 +8,7 @@ from teamster.code_locations.kippcamden import (
     datagun,
     deanslist,
     edplan,
+    overgrad,
     pearson,
     powerschool,
     titan,
@@ -35,6 +36,7 @@ defs = Definitions(
             datagun,
             deanslist,
             edplan,
+            overgrad,
             pearson,
             powerschool,
             titan,
@@ -44,6 +46,7 @@ defs = Definitions(
         *_dbt.schedules,
         *datagun.schedules,
         *deanslist.schedules,
+        *overgrad.schedules,
         *powerschool.schedules,
     ],
     sensors=[

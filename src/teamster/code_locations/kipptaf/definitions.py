@@ -66,7 +66,6 @@ defs = Definitions(
         *datagun.schedules,
         *fivetran.schedules,
         *ldap.schedules,
-        *overgrad.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
         *tableau.schedules,
