@@ -62,7 +62,4 @@ select
         partition by schoolid, yearid order by week_start_date asc
     ) as school_week_start_date_lead,
 from week_rollup as w
-left join
-    schools as s
-    on w.schoolid = s.school_number
-    and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
+left join schools as s on w.schoolid = s.school_number
