@@ -3,11 +3,11 @@ with
         select
             employee_number,
             academic_year,
-            if(count(notes_boy) > 4, 1, 0) as boy_complete,
-            if(count(rating_moy) > 4, 1, 0) as moy_self_complete,
-            if(count(manager_rating_moy) > 4, 1, 0) as moy_manager_complete,
-            if(count(rating_eoy) > 4, 1, 0) as eoy_self_complete,
-            if(count(manager_rating_eoy) > 4, 1, 0) as eoy_manager_complete,
+            if(count(notes_boy) >= 4, 1, 0) as boy_complete,
+            if(count(rating_moy) >= 4, 1, 0) as moy_self_complete,
+            if(count(manager_rating_moy) >= 4, 1, 0) as moy_manager_complete,
+            if(count(rating_eoy) >= 4, 1, 0) as eoy_self_complete,
+            if(count(manager_rating_eoy) >= 4, 1, 0) as eoy_manager_complete,
         from {{ ref("stg_leadership_development_output") }}
         group by employee_number, academic_year
     ),
@@ -64,4 +64,4 @@ left join
     and o.academic_year = c.academic_year
 left join
     {{ ref("base_people__staff_roster") }} as r on o.employee_number = r.employee_number
-where o.active_assignment
+where o.active_assignment and sr.assignment_status = 'Active'
