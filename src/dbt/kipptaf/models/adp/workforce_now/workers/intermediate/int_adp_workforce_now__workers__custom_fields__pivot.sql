@@ -14,25 +14,28 @@ with
 select
     associate_oid,
 
+    date_value_wfmgrloareturndate as wf_mgr_loa_return_date,
+
+    indicator_value_receivedsignonbonus as received_sign_on_bonus,
+    indicator_value_wfmgrloa as wf_mgr_loa,
+
     string_value_employeenumber as employee_number,
-    code_value_lifeexperienceincommunitiesweserve
-    as life_experience_in_communities_we_serve,
     string_value_miamiacesnumber as miami_aces_number,
     string_value_njpensionnumber as nj_pension_number,
+    string_value_wfmgrbadgenumber as wf_mgr_badge_number,
+    string_value_wfmgrtrigger as wf_mgr_trigger,
+
     code_value_preferredraceethnicity as preferred_race_ethnicity,
-    code_value_professionalexperienceincommunitiesweserve
-    as professional_experience_in_communities_we_serve,
-    indicator_value_receivedsignonbonus as received_sign_on_bonus,
     code_value_remoteworkstatus as remote_work_status,
     code_value_teacherprepprogram as teacher_prep_program,
     code_value_wfmgraccrualprofile as wf_mgr_accrual_profile,
-    string_value_wfmgrbadgenumber as wf_mgr_badge_number,
     code_value_wfmgreetype as wf_mgr_ee_type,
     code_value_wfmgrhomehyperfind as wf_mgr_home_hyperfind,
-    indicator_value_wfmgrloa as wf_mgr_loa,
-    date_value_wfmgrloareturndate as wf_mgr_loa_return_date,
     code_value_wfmgrpayrule as wf_mgr_pay_rule,
-    string_value_wfmgrtrigger as wf_mgr_trigger,
+    code_value_lifeexperienceincommunitiesweserve
+    as life_experience_in_communities_we_serve,
+    code_value_professionalexperienceincommunitiesweserve
+    as professional_experience_in_communities_we_serve,
 from
     from_item pivot (
         max(date_value) as date_value,
