@@ -13,7 +13,7 @@ def build_overgrad_asset(
     schema,
     partitions_def=None,
     automation_condition=None,
-    deps=None,
+    deps: list | None = None,
 ):
     key = [code_location, "overgrad", name]
 

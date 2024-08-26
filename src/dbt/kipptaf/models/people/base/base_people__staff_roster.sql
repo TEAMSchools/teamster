@@ -1,8 +1,9 @@
-{%- set ref_staff_history = ref("base_people__staff_roster_history") -%}
-
 with
-    staff_roster_active as (  -- noqa: ST03
-        select *, from {{ ref_staff_history }} where work_assignment__fivetran_active
+    -- trunk-ignore(sqlfluff/ST03)
+    staff_roster_active as (
+        select *,
+        from {{ ref("base_people__staff_roster_history") }}
+        where work_assignment__fivetran_active
     ),
 
     deduplicate as (
@@ -15,15 +16,6 @@ with
         }}
     )
 
-select
-    {{
-        dbt_utils.star(
-            from=ref_staff_history,
-            except=[
-                "work_assignment_start_date",
-                "work_assignment_end_date",
-                "work_assignment__fivetran_active",
-            ],
-        )
-    }}
+-- trunk-ignore(sqlfluff/AM04)
+select *,
 from deduplicate
