@@ -29,7 +29,8 @@ select
 
     mg.measurement_group_name as strand_name,
 
-    /* os.value_text is dropdown selections, text box values are comments for individual */
+    /* os.value_text is dropdown selections, 
+    text box values are comments for individual rows */
     os.value_text as measurement_dropdown_selection,
 
     tb.value_clean as measurement_comments,
