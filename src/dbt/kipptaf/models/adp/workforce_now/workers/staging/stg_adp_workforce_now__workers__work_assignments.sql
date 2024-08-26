@@ -165,17 +165,18 @@ select
     wa.additionalremunerations as additional_remunerations,
     wa.assignedorganizationalunits as assigned_organizational_units,
     wa.assignedworklocations as assigned_work_locations,
-    wa.homeorganizationalunits as home_organizational_units,
-    wa.occupationalclassifications as occupational_classifications,
-    wa.reportsto as reports_to,
-    wa.workergroups as worker_groups,
     wa.customfieldgroup.codefields as custom_field_group__code_fields,
     wa.customfieldgroup.datefields as custom_field_group__date_fields,
     wa.customfieldgroup.indicatorfields as custom_field_group__indicator_fields,
     wa.customfieldgroup.multicodefields as custom_field_group__multi_code_fields,
     wa.customfieldgroup.numberfields as custom_field_group__number_fields,
     wa.customfieldgroup.stringfields as custom_field_group__string_fields,
+    wa.homeorganizationalunits as home_organizational_units,
+    wa.occupationalclassifications as occupational_classifications,
+    wa.reportsto as reports_to,
+    wa.workergroups as worker_groups,
 
+    /* transformations */
     cast(
         wa.baseremuneration.annualrateamount.amountvalue as numeric
     ) as base_remuneration__annual_rate_amount__amount_value,
