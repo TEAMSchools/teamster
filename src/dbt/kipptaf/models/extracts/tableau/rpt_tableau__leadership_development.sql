@@ -64,4 +64,4 @@ left join
     and o.academic_year = c.academic_year
 left join
     {{ ref("base_people__staff_roster") }} as r on o.employee_number = r.employee_number
-where o.active_assignment and sr.assignment_status = 'Active'
+where o.active_assignment and r.assignment_status = 'Active'
