@@ -33,7 +33,6 @@ class SSHResource(DagsterSSHResource):
                 )
             )
             # Default is RejectPolicy
-            # trunk-ignore(bandit/B507)
             client.set_missing_host_key_policy(AutoAddPolicy())
 
         if self.password and self.password.strip():

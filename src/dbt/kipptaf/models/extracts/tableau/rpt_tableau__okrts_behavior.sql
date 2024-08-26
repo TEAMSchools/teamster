@@ -134,10 +134,11 @@ select
     co.is_retained_year,
     co.rn_year,
 
-    b.term,
-    b.week_start_monday,
-    b.week_end_sunday,
-    b.days_in_session,
+    cw.quarter as term,
+    cw.week_start_monday,
+    cw.week_end_sunday,
+    cw.date_count as days_in_session,
+
     b.category_type,
     b.behavior,
     b.entry_staff,
