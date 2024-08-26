@@ -13,11 +13,13 @@ with
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
-            if(
-                regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami',
-                regexp_extract(behavior_category, r'([\w\s]+) \('),
-                regexp_replace(behavior, r'\([^)]*\)', '')
-            ) as behavior,
+            case
+                when regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami'
+                then regexp_extract(behavior_category, r'([\w\s]+) \(')
+                when behavior like '%(%)'
+                then regexp_extract(behavior, r'([\w\s]+) \(')
+                else behavior
+            end as behavior,
         from {{ ref("stg_deanslist__behavior") }}
         where
             behavior_category in (
