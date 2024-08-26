@@ -16,7 +16,7 @@ with
             if(
                 regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami',
                 regexp_extract(behavior_category, r'([\w\s]+) \('),
-                behavior
+                regexp_replace(behavior, r'\([^)]*\)', '')
             ) as behavior,
         from {{ ref("stg_deanslist__behavior") }}
         where
