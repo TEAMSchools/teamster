@@ -150,6 +150,6 @@ from {{ ref("int_adp_workforce_now__worker") }} as w
 inner join
     {{ ref("int_adp_workforce_now__person") }} as p
     on w.work_assignment_worker_id = p.person_worker_id
-inner join
+left join
     {{ ref("int_adp_workforce_now__person") }} as rt
     on w.reports_to_worker_id__id_value = rt.person_worker_id
