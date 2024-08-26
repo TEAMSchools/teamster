@@ -238,14 +238,20 @@ with
             custom_field_group.stringfields as custom_field_group__string_fields,
 
             person.disabilitytypecodes as person__disability_type_codes,
+
             person.militaryclassificationcodes as person__military_classification_codes,
+
             person.otherpersonaladdresses as person__other_personal_addresses,
+
             person.socialinsuranceprograms as person__social_insurance_programs,
+
             person.birthname.preferredsalutations
             as person__birth_name__preferred_salutations,
+
             person.communication.emails as person__communication__emails,
             person.communication.landlines as person__communication__landlines,
             person.communication.mobiles as person__communication__mobiles,
+
             person.customfieldgroup.codefields
             as person__custom_field_group__code_fields,
             person.customfieldgroup.datefields
@@ -258,8 +264,10 @@ with
             as person__custom_field_group__number_fields,
             person.customfieldgroup.stringfields
             as person__custom_field_group__string_fields,
+
             person.legalname.preferredsalutations
             as person__legal_name__preferred_salutations,
+
             person.preferredname.preferredsalutations
             as person__preferred_name__preferred_salutations,
 

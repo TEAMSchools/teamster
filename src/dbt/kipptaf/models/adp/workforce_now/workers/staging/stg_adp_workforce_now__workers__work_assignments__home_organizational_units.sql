@@ -2,7 +2,9 @@ select
     wa.associate_oid,
     wa.item_id,
     wa.effective_date_start,
+    wa.effective_date_end,
     wa.effective_date_timestamp,
+    wa.is_current_record,
 
     hou.typecode.codevalue as type_code__code_value,
     hou.typecode.longname as type_code__long_name,
