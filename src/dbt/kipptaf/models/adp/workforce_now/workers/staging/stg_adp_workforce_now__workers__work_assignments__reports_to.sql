@@ -39,6 +39,7 @@ select
     rt.reportstoworkername.preferredsalutations
     as reports_to_worker_name__preferred_salutations,
 
+    /* transformations */
     date(
         rt.workerid.schemecode.effectivedate
     ) as reports_to_worker_id__scheme_code__effective_date,

@@ -73,14 +73,12 @@ with
             person.birthname.middlename as person__birth_name__middle_name,
             person.birthname.familyname1 as person__birth_name__family_name_1,
             person.birthname.nickname as person__birth_name__nick_name,
-
             person.birthname.generationaffixcode.codevalue
             as person__birth_name__generation_affix_code__code_value,
             person.birthname.generationaffixcode.longname
             as person__birth_name__generation_affix_code__long_name,
             person.birthname.generationaffixcode.shortname
             as person__birth_name__generation_affix_code__short_name,
-
             person.birthname.qualificationaffixcode.codevalue
             as person__birth_name__qualification_affix_code__code_value,
             person.birthname.qualificationaffixcode.longname
@@ -93,14 +91,12 @@ with
             person.legalname.givenname as person__legal_name__given_name,
             person.legalname.middlename as person__legal_name__middle_name,
             person.legalname.nickname as person__legal_name__nick_name,
-
             person.legalname.generationaffixcode.codevalue
             as person__legal_name__generation_affix_code__code_value,
             person.legalname.generationaffixcode.longname
             as person__legal_name__generation_affix_code__long_name,
             person.legalname.generationaffixcode.shortname
             as person__legal_name__generation_affix_code__short_name,
-
             person.legalname.qualificationaffixcode.codevalue
             as person__legal_name__qualification_affix_code__code_value,
             person.legalname.qualificationaffixcode.longname
@@ -114,14 +110,12 @@ with
             person.preferredname.middlename as person__preferred_name__middle_name,
             person.preferredname.familyname1 as person__preferred_name__family_name_1,
             person.preferredname.nickname as person__preferred_name__nick_name,
-
             person.preferredname.generationaffixcode.codevalue
             as person__preferred_name__generation_affix_code__code_value,
             person.preferredname.generationaffixcode.longname
             as person__preferred_name__generation_affix_code__long_name,
             person.preferredname.generationaffixcode.shortname
             as person__preferred_name__generation_affix_code__short_name,
-
             person.preferredname.qualificationaffixcode.codevalue
             as person__preferred_name__qualification_affix_code__code_value,
             person.preferredname.qualificationaffixcode.longname
@@ -158,7 +152,6 @@ with
             person.legaladdress.cityname as person__legal_address__city_name,
             person.legaladdress.postalcode as person__legal_address__postal_code,
             person.legaladdress.countrycode as person__legal_address__country_code,
-
             person.legaladdress.countrysubdivisionlevel1.subdivisiontype
             as person__legal_address__country_subdivision_level_1__subdivision_type,
             person.legaladdress.countrysubdivisionlevel1.codevalue
@@ -167,7 +160,6 @@ with
             as person__legal_address__country_subdivision_level_1__long_name,
             person.legaladdress.countrysubdivisionlevel1.shortname
             as person__legal_address__country_subdivision_level_1__short_name,
-
             person.legaladdress.countrysubdivisionlevel2.subdivisiontype
             as person__legal_address__country_subdivision_level_2__subdivision_type,
             person.legaladdress.countrysubdivisionlevel2.codevalue
@@ -176,14 +168,12 @@ with
             as person__legal_address__country_subdivision_level_2__long_name,
             person.legaladdress.countrysubdivisionlevel2.shortname
             as person__legal_address__country_subdivision_level_2__short_name,
-
             person.legaladdress.namecode.codevalue
             as person__legal_address__name_code__code_value,
             person.legaladdress.namecode.longname
             as person__legal_address__name_code__long_name,
             person.legaladdress.namecode.shortname
             as person__legal_address__name_code__short_name,
-
             person.legaladdress.typecode.codevalue
             as person__legal_address__type_code__code_value,
             person.legaladdress.typecode.longname
@@ -214,7 +204,6 @@ with
             person.racecode.codevalue as person__race_code__code_value,
             person.racecode.longname as person__race_code__long_name,
             person.racecode.shortname as person__race_code__short_name,
-
             person.racecode.identificationmethodcode.codevalue
             as person__race_code__identification_method_code__code_value,
             person.racecode.identificationmethodcode.longname
