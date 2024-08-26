@@ -22,13 +22,13 @@ with
             se.zip as powerschool_zip,
             se.is_504 as powerschool_is_504,
 
-            os.id as og_students_id,
+            os.id as overgrad_students_id,
 
             concat(
                 os.assigned_counselor__last_name,
                 ', ',
                 os.assigned_counselor__first_name
-            ) as og_students_assigned_counselor_lastfirst,
+            ) as overgrad_students_assigned_counselor_lastfirst,
 
             se.street
             || ' '
