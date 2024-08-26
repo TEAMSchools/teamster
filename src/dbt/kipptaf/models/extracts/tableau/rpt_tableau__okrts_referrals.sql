@@ -131,11 +131,11 @@ select
         then 'Non-Behavioral'
         when left(dli.category, 2) = 'TB'
         then 'Bus Referral (Miami)'
-        when left(dli.category, 2) = 'T1'
+        when left(dli.category, 2) = 'T1' or left(dli.category, 6) = 'Tier 1'
         then 'Low'
-        when left(dli.category, 2) = 'T2'
+        when left(dli.category, 2) = 'T2' or left(dli.category, 6) = 'Tier 2'
         then 'Middle'
-        when left(dli.category, 2) = 'T3'
+        when left(dli.category, 2) = 'T3' or left(dli.category, 6) = 'Tier 3'
         then 'High'
         when dli.category is null
         then null
