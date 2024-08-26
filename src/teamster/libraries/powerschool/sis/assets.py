@@ -14,6 +14,7 @@ from dagster import (
 )
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
+from sshtunnel import HandlerSSHTunnelForwarderError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
@@ -119,7 +120,10 @@ def build_powerschool_table_asset(
 
         try:
             ssh_tunnel.start()
-            ssh_tunnel._check_is_started()
+
+            context.log.debug(msg=ssh_tunnel.tunnel_is_up)
+            if not ssh_tunnel.tunnel_is_up:
+                raise HandlerSSHTunnelForwarderError
 
             file_path = _check.inst(
                 obj=db_powerschool.execute_query(
