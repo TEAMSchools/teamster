@@ -66,32 +66,33 @@ with
         left join smg_glows_grows as gg on o.observation_id = gg.observation_id
         where o.observation_type_abbreviation = 'TDT' and od.row_score is not null
 
-    -- union all
-    -- select
-    -- td.employee_number,
-    -- td.observer_employee_number,
-    -- td.observer_name,
-    -- td.observation_id,
-    -- td.rubric_name,
-    -- td.observation_score,
-    -- td.observed_at,
-    -- td.academic_year,
-    -- td.observation_type,
-    -- td.observation_type_abbreviation,
-    -- td.observation_subject,
-    -- /* grades not noted in archive data*/
-    -- null as observation_grade,
-    -- td.observation_notes,
-    -- td.row_score,
-    -- td.measurement_name,
-    -- td.strand_name,
-    -- null as measurement_dropdown_selection,
-    -- td.text_box,
-    -- td.glow_area,
-    -- td.growth_area,
-    -- td.glow_notes,
-    -- td.growth_notes,
-    -- from {{ ref("int_performance_management__teacher_development") }} as td
+    union all
+    
+    select
+    td.employee_number,
+    td.observer_employee_number,
+    td.observer_name,
+    td.observation_id,
+    td.rubric_name,
+    td.observation_score,
+    td.observed_at,
+    td.academic_year,
+    td.observation_type,
+    td.observation_type_abbreviation,
+    td.observation_subject,
+    /* grades not noted in archive data*/
+    null as observation_grade,
+    td.observation_notes,
+    td.row_score,
+    td.measurement_name,
+    td.strand_name,
+    td.text_box as measurement_dropdown_selection,
+    td.text_box as measurement_comments,
+    td.glow_area,
+    td.growth_area,
+    td.glow_notes,
+    td.growth_notes,
+    from {{ ref("int_performance_management__teacher_development") }} as td
     )
 
 select

@@ -38,7 +38,6 @@ select
     od.observation_id,
     od.rubric_name,
     od.observation_score,
-    od.strand_score,
     od.glows,
     od.grows,
     od.locked,
@@ -50,7 +49,6 @@ select
     od.term_name,
     od.row_score,
     od.measurement_name,
-    od.text_box,
     od.overall_tier,
     od.observation_notes,
     od.measurement_dropdown_selection,
@@ -142,7 +140,6 @@ select
     od.observation_id,
     od.rubric_name,
     od.observation_score,
-    od.strand_score,
     od.glows,
     od.grows,
     od.locked,
@@ -154,7 +151,6 @@ select
     od.term_name,
     od.row_score,
     od.measurement_name,
-    od.text_box,
     od.overall_tier,
     od.observation_notes,
     od.measurement_dropdown_selection,
@@ -168,10 +164,6 @@ select
     od.so_score,
 
     if(od.observation_id is not null, 1, 0) as is_observed,
-
-    if(
-        od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0
-    ) as met_goal_miami,
 
     null as boy_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
