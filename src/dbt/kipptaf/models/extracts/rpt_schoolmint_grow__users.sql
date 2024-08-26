@@ -61,7 +61,7 @@ with
                 when (sr.job_title like '%Teacher%' or sr.job_title like '%Learning%')
                 then 'Teacher'
             end as role_name,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_adp_workforce_now__workers") }} as sr
         left join
             {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
             on sr.powerschool_teacher_number = tgl.teachernumber

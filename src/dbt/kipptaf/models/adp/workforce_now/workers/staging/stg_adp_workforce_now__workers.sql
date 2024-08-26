@@ -353,6 +353,10 @@ with
                 interval 1 millisecond
             ) as effective_date_timestamp,
 
+            lag(worker_status.statuscode.codevalue, 1) over (
+                partition by associate_oid order by effective_date_start asc
+            ) as worker_status__status_code__code_value_lag
+
             coalesce(
                 date_sub(
                     lead(effective_date_start, 1) over (
@@ -367,6 +371,19 @@ with
 
 select
     *,
+
+    coalesce(
+        person__preferred_name__given_name, person__legal_name__given_name
+    ) as given_name,
+    coalesce(
+        person__preferred_name__family_name_1, person__legal_name__family_name_1
+    ) as family_name_1,
+
+    if(
+        worker_status__status_code__code_value = 'Active'
+        worker_status__status_code__code_value_lag = 'Terminated'
+        effective_date_start > current_date('{{ var("local_timezone") }}')
+    ) as is_prestart,
 
     if(
         current_date('{{ var("local_timezone") }}')
