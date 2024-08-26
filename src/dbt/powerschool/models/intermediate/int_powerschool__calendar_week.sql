@@ -1,4 +1,15 @@
 with
+    schools as (
+        select
+            _dbt_source_relation,
+            school_number,
+
+            case
+                high_grade when 12 then 'HS' when 8 then 'MS' when 4 then 'ES'
+            end as school_level,
+        from `kipptaf_powerschool.stg_powerschool__schools`
+    ),
+
     week_rollup as (
         select
             cd.schoolid,
@@ -50,4 +61,8 @@ select
     lead(school_week_start_date) over (
         partition by schoolid, yearid order by week_start_date asc
     ) as school_week_start_date_lead,
-from week_rollup
+from week_rollup as w
+left join
+    schools as s
+    on w.schoolid = s.school_number
+    and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}

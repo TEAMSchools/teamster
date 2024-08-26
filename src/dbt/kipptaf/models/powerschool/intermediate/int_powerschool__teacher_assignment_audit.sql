@@ -97,24 +97,20 @@ with
                     c.week_number_quarter,
                     ge.assignment_category_code
             ) as total_expected_scored_teacher_school_quarter_week_category,
-        from {{ ref("base_powerschool__sections") }} as sec
-        inner join
-            schools as sch
-            on sec.sections_schoolid = sch.school_number
-            and {{ union_dataset_join_clause(left_alias="sec", right_alias="sch") }}
-        inner join
-            {{ ref("int_powerschool__calendar_week") }} as c
-            on sec.sections_schoolid = c.schoolid
-            and sec.terms_yearid = c.yearid
-            and c.week_end_date between sec.terms_firstday and sec.terms_lastday
-            and {{ union_dataset_join_clause(left_alias="sec", right_alias="c") }}
+        from {{ ref("int_powerschool__calendar_week") }} as c
         inner join
             {{ ref("stg_reporting__gradebook_expectations") }} as ge
             on c.academic_year = ge.academic_year
             and c.region = ge.region
             and c.quarter = ge.quarter
             and c.week_number_quarter = ge.week_number
-            and sch.school_level = ge.school_level
+            and c.school_level = ge.school_level
+        left join
+            {{ ref("base_powerschool__sections") }} as sec
+            on c.schoolid = sec.sections_schoolid
+            and c.yearid = sec.terms_yearid
+            and c.week_end_date between sec.terms_firstday and sec.terms_lastday
+            and {{ union_dataset_join_clause(left_alias="c", right_alias="sec") }}
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on sec.sections_dcid = a.sectionsdcid
