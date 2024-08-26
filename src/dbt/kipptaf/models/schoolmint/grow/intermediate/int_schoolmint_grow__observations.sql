@@ -11,7 +11,7 @@ select
     o.academic_year,
     o.is_published,
 
-    oon.notes_text as observation_notes, 
+    oon.notes_text as observation_notes,
 
     s.name as school_name,
 
