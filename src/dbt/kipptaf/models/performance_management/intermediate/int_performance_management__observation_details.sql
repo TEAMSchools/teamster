@@ -24,14 +24,11 @@ select
     null as so_tier,
 
     os.value_score as row_score,
+    os.value_text as measurement_dropdown_selection,
 
     m.name as measurement_name,
 
     mg.measurement_group_name as strand_name,
-
-    /* os.value_text is dropdown selections, 
-    text box values are comments for individual rows */
-    os.value_text as measurement_dropdown_selection,
 
     tb.value_clean as measurement_comments,
 from {{ ref("int_performance_management__observations") }} as o
@@ -80,8 +77,8 @@ select
     so_score,
     so_tier,
     value_score as row_score,
+    null as dropdown_selection,
     measurement_name,
     measurement_group_name as strand_name,
-    null as dropdown_selection,
     text_box as measurement_comments,
 from {{ ref("stg_performance_management__observation_details_archive") }}
