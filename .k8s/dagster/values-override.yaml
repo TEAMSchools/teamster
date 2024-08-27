@@ -11,10 +11,6 @@ dagsterCloud:
   # organization.
   branchDeployments: true
 
-  # Optionally specify the timeout in seconds to use when making requests to Dagster
-  # Cloud servers.
-  timeout: 180
-
   # Optionally customize the socket_options that are passed in to the underlying HTTP
   # connection pool used to send HTTP requests to Dagster Cloud.
   # See https://urllib3.readthedocs.io/en/stable/reference/urllib3.connection.html for
