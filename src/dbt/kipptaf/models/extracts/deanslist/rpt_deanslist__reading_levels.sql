@@ -1,226 +1,134 @@
 with
-    student_k_2 as (
+    data as (
         select
-            _dbt_source_relation,
-            region,
-            schoolid as school_id,
-            school_name as school,
-            school_abbreviation,
-            studentid as student_id,
-            student_number,
-            lastfirst as student_name,
-            first_name as student_first_name,
-            last_name as student_last_name,
-            academic_year,
+            s._dbt_source_relation,
+            s.academic_year,
+            s.region,
+            s.schoolid as school_id,
+            s.school_name as school,
+            s.school_abbreviation,
+            s.studentid as student_id,
+            s.student_number,
+            s.lastfirst as student_name,
+            s.first_name as student_first_name,
+            s.last_name as student_last_name,
+
+            c.mclass_period,
+            c.mclass_measure_level as composite_level,
+            c.mclass_measure_semester_growth,
+            c.mclass_measure_year_growth,
+
+            nc.mclass_measure as literacy_key_concept,
+            nc.mclass_measure_level as performance_level,
+
+            m.description,
 
             'KIPP NJ/MIAMI' as district,
 
-            if(grade_level = 0, 'K', safe_cast(grade_level as string)) as grade_level,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where
-            academic_year = {{ var("current_academic_year") }}
-            and rn_year = 1
-            and enroll_status = 0
-            and grade_level <= 2
-    ),
+            if(
+                s.grade_level = 0, 'K', safe_cast(s.grade_level as string)
+            ) as grade_level,
 
-    assessments_scores as (
-        select
-            bss.student_primary_id as mclass_student_number,
-            bss.benchmark_period as mclass_period,
-            bss.academic_year as mclass_academic_year,
-
-            u.measure as mclass_measure,
-            u.level as mclass_measure_level,
-            u.national_norm_percentile as measure_percentile,
-            u.semester_growth as measure_semester_growth,
-            u.year_growth as measure_year_growth,
             case
-                u.level
-                when 'Above Benchmark'
-                then 4
-                when 'At Benchmark'
-                then 3
-                when 'Below Benchmark'
-                then 2
-                when 'Well Below Benchmark'
-                then 1
-            end as mclass_measure_level_int,
-        from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
-        inner join
-            {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
-            on bss.surrogate_key = u.surrogate_key
-        where bss.academic_year = {{ var("current_academic_year") }}
-    ),
-
-    roster_and_scores as (
-        select
-            s.academic_year,
-            s.district,
-            s.region,
-            s.school_id,
-            s.school,
-            s.school_abbreviation,
-            s.student_number,
-            s.student_name,
-            s.student_last_name,
-            s.student_first_name,
-            s.grade_level,
-
-            m.mclass_period,
-            m.mclass_measure,
-            m.mclass_measure_level,
-            m.measure_semester_growth,
-            m.measure_year_growth,
-        from student_k_2 as s
-        left join
-            assessments_scores as m
-            on s.academic_year = m.mclass_academic_year
-            and s.student_number = m.mclass_student_number
-        where m.mclass_measure is not null
-    ),
-
-    non_composite_levels as (
-        select
-            r.academic_year,
-            r.student_number,
-            r.mclass_period,
-            r.mclass_measure,
-            r.mclass_measure_level,
-            r.measure_semester_growth,
-            r.measure_year_growth,
-
-            v.description,
-        from roster_and_scores as r
-        inner join
-            {{ ref("stg_assessments__mclass_dibels_measures") }} as v
-            on r.grade_level = v.grade_level
-            and r.mclass_measure = v.name
-    ),
-
-    composite_levels as (
-        select
-            academic_year,
-            student_number,
-            mclass_period,
-            mclass_measure_level as composite_level,
-            case
-                when mclass_measure_level = 'Above Benchmark'
+                when c.mclass_measure_level = 'Above Benchmark'
                 then 'Exceeded'
-                when mclass_measure_level = 'At Benchmark'
+                when c.mclass_measure_level = 'At Benchmark'
                 then 'Met'
-                when mclass_measure_level = 'Below Benchmark'
+                when c.mclass_measure_level = 'Below Benchmark'
                 then 'Not Met'
-                when mclass_measure_level = 'Well Below Benchmark'
+                when c.mclass_measure_level = 'Well Below Benchmark'
                 then 'Not Met'
             end as composite_expectations,
-        from roster_and_scores
-        where mclass_measure = 'Composite'
-    ),
 
-    composite_and_non_composite as (
-        select
-            c.academic_year,
-            c.student_number,
-            c.mclass_period,
-            c.composite_level,
-            c.composite_expectations,
-
-            n.mclass_measure as literacy_key_concept,
-            n.description,
-            n.mclass_measure_level as performance_level,
-            n.measure_semester_growth,
-            n.measure_year_growth,
-        from composite_levels as c
+        from {{ ref("base_powerschool__student_enrollments") }} as s
+        left join
+            {{ ref("int_amplify__all_assessments") }} as c
+            on s.academic_year = c.mclass_academic_year
+            and s.student_number = c.mclass_student_number
+            and s.grade_level = c.mclass_assessment_grade_int
+            and c.mclass_measure = 'Composite'
+        left join
+            {{ ref("int_amplify__all_assessments") }} as nc
+            on c.mclass_academic_year = nc.mclass_academic_year
+            and c.mclass_student_number = nc.mclass_student_number
+            and c.mclass_assessment_grade = nc.mclass_assessment_grade
+            and c.mclass_period = nc.mclass_period
+            and nc.mclass_measure != 'Composite'
+            and nc.assessment_type = 'Benchmark'
         inner join
-            non_composite_levels as n
-            on c.academic_year = n.academic_year
-            and c.student_number = n.student_number
-            and c.mclass_period = n.mclass_period
-    ),
-
-    q1 as (
-        select
-            academic_year,
-            student_number,
-            mclass_period,
-            composite_level,
-            composite_expectations,
-            literacy_key_concept,
-            `description`,
-            performance_level,
-
-            'Not applicable' as growth_level,
-            'Q1' as `quarter`,
-        from composite_and_non_composite
-        where mclass_period = 'BOY'
-    ),
-
-    q2 as (
-        select
-            academic_year,
-            student_number,
-            mclass_period,
-            composite_level,
-            composite_expectations,
-            literacy_key_concept,
-            `description`,
-            performance_level,
-            measure_semester_growth as growth_level,
-
-            'Q2' as `quarter`,
-        from composite_and_non_composite
-        where mclass_period = 'MOY'
-    ),
-
-    q3 as (
-        select
-            academic_year,
-            student_number,
-            mclass_period,
-            composite_level,
-            composite_expectations,
-            literacy_key_concept,
-            `description`,
-            performance_level,
-            measure_semester_growth as growth_level,
-
-            'Q3' as `quarter`,
-        from composite_and_non_composite
-        where mclass_period = 'MOY'
-    ),
-
-    q4 as (
-        select
-            academic_year,
-            student_number,
-            mclass_period,
-            composite_level,
-            composite_expectations,
-            literacy_key_concept,
-            `description`,
-            performance_level,
-            measure_year_growth as growth_level,
-
-            'Q4' as `quarter`,
-        from composite_and_non_composite
-        where mclass_period = 'EOY'
+            {{ ref("stg_assessments__mclass_dibels_measures") }} as m
+            on nc.mclass_assessment_grade = m.grade_level
+            and nc.mclass_measure = m.name
+        where
+            s.academic_year = {{ var("current_academic_year") }}
+            and s.rn_year = 1
+            and s.enroll_status = 0
+            and s.grade_level <= 4
     )
 
-select *,
-from q1
+select
+    academic_year,
+    student_number,
+    mclass_period,
+    composite_level,
+    composite_expectations,
+    literacy_key_concept,
+    `description`,
+    performance_level,
+
+    'Not applicable' as growth_level,
+    'Q1' as `quarter`,
+from data
+where mclass_period = 'BOY'
 
 union all
 
-select *,
-from q2
+select
+    academic_year,
+    student_number,
+    mclass_period,
+    composite_level,
+    composite_expectations,
+    literacy_key_concept,
+    `description`,
+    performance_level,
+    mclass_measure_semester_growth as growth_level,
+
+    'Q2' as `quarter`,
+from data
+where mclass_period = 'MOY'
 
 union all
 
-select *,
-from q3
+select
+
+    academic_year,
+    student_number,
+    mclass_period,
+    composite_level,
+    composite_expectations,
+    literacy_key_concept,
+    `description`,
+    performance_level,
+    mclass_measure_semester_growth as growth_level,
+
+    'Q3' as `quarter`,
+from data
+where mclass_period = 'MOY'
 
 union all
 
-select *,
-from q4
+select
+    academic_year,
+    student_number,
+    mclass_period,
+    composite_level,
+    composite_expectations,
+    literacy_key_concept,
+    `description`,
+    performance_level,
+    mclass_measure_year_growth as growth_level,
+
+    'Q4' as `quarter`,
+from data
+where mclass_period = 'EOY'

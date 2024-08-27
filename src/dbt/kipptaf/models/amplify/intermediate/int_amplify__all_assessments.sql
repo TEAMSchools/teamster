@@ -21,6 +21,10 @@ with
             null as mclass_total_number_of_probes,
             null as mclass_score_change,
 
+            if(
+                bss.assessment_grade = 'K', 0, safe_cast(bss.assessment_grade as int)
+            ) as mclass_assessment_grade_int,
+
             row_number() over (
                 partition by u.surrogate_key, u.measure order by u.level_int desc
             ) as rn_highest,
@@ -61,6 +65,10 @@ with
             probe_number as mclass_probe_number,
             total_number_of_probes as mclass_total_number_of_probes,
             score_change as mclass_score_change,
+
+            if(
+                assessment_grade = 'K', 0, safe_cast(assessment_grade as int)
+            ) as mclass_assessment_grade_int,
 
             row_number() over (
                 partition by surrogate_key, measure order by score desc
@@ -128,6 +136,7 @@ select
     s.mclass_student_number,
     s.assessment_type,
     s.mclass_assessment_grade,
+    s.mclass_assessment_grade_int,
     s.mclass_period,
     s.mclass_client_date,
     s.mclass_sync_date,
