@@ -6,7 +6,7 @@ powerschool_asset_sensor = build_powerschool_asset_sensor(
     code_location=CODE_LOCATION,
     asset_selection=assets,
     execution_timezone=LOCAL_TIMEZONE,
-    minimum_interval_seconds=(60 * 10),
+    minimum_interval_seconds=(60 * 15),
 )
 
 sensors = [
