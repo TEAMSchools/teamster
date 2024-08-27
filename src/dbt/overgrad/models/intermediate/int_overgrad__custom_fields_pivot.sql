@@ -67,6 +67,7 @@ select
     personal_statment_essay_edit_status,
     supplemental_essay_status,
     teacher_lor_status,
+    common_app_linked,
 
     cast(student_aid_index as numeric) as student_aid_index,
 
@@ -115,6 +116,7 @@ from
             'Supplemental Essay Status' as `supplemental_essay_status`,
             'Teacher LOR Status' as `teacher_lor_status`,
             'Wishlist Goal' as `wishlist_goal`,
-            'Wishlist Signed Off by Counselor' as `wishlist_signed_off_by_counselor`
+            'Wishlist Signed Off by Counselor' as `wishlist_signed_off_by_counselor`,
+            'Common App Linked' as `common_app_linked`
         )
     )
