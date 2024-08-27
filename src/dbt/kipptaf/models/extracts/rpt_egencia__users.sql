@@ -22,7 +22,7 @@ select
         'General Traveler Group'
     ) as `Traveler Group`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("int_adp_workforce_now__workers") }} as sr
+from {{ ref("int_people__staff_roster") }} as sr
 left join
     {{ source("egencia", "src_egencia__traveler_groups") }} as tg
     on sr.home_work_location_name = tg.adp_home_work_location_name

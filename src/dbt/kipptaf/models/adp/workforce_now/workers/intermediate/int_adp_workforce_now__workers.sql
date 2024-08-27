@@ -11,8 +11,12 @@ select
     w.person__birth_date,
     w.person__legal_name__given_name,
     w.person__legal_name__family_name_1,
+    w.person__race_code__long_name,
+    w.person__ethnicity_code__long_name,
+    w.person__gender_code__long_name,
     w.given_name,
     w.family_name_1,
+    w.race_ethnicity_reporting,
     w.is_prestart,
 
     wa.position_id,

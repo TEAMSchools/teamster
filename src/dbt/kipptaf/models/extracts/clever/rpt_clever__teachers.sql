@@ -13,7 +13,7 @@ select
     sam_account_name as username,
 
     null as `password`,
-from {{ ref("base_people__staff_roster") }}
+from {{ ref("int_people__staff_roster") }}
 where
     uac_account_disable = 0
     and not is_prestart

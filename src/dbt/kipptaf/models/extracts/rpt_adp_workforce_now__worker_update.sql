@@ -74,7 +74,7 @@ select
     wfm.surrogate_key_new as wfmgr_trigger,
 
     lower(sr.mail) as mail,
-from {{ ref("base_people__staff_roster") }} as sr
+from {{ ref("int_people__staff_roster") }} as sr
 left join field_history as wfm on sr.worker_id = wfm.worker_id and wfm.rn = 1
 where
     sr.associate_oid is not null

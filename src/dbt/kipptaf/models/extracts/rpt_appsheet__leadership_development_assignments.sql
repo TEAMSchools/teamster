@@ -22,7 +22,7 @@ with
                 sr.job_title,
                 'CMO and Other Leaders'
             ) as `route`,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         left join
             {{ ref("stg_leadership_development_active_users") }} as au
             on sr.employee_number = au.employee_number

@@ -44,4 +44,4 @@ select
     null as `30 Phone1`,
     null as `31 Phone2`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("base_people__staff_roster") }}
+from {{ ref("int_people__staff_roster") }}

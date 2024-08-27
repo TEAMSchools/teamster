@@ -89,7 +89,7 @@ select
         /* see nothing */
         else 1
     end as permission_level,
-from {{ ref("base_people__staff_roster") }} as sr
+from {{ ref("int_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_people__location_crosswalk") }} as lc
     on sr.home_work_location_name = lc.name
