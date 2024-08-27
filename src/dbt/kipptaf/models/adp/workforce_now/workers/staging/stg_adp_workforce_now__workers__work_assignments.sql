@@ -45,7 +45,6 @@ with
 
             wa.baseremuneration.annualrateamount.currencycode
             as base_remuneration__annual_rate_amount__currency_code,
-
             wa.baseremuneration.annualrateamount.namecode.codevalue
             as base_remuneration__annual_rate_amount__name_code__code_value,
             wa.baseremuneration.annualrateamount.namecode.longname
@@ -55,7 +54,6 @@ with
 
             wa.baseremuneration.payperiodrateamount.currencycode
             as base_remuneration__pay_period_rate_amount__currency_code,
-
             wa.baseremuneration.payperiodrateamount.namecode.codevalue
             as base_remuneration__pay_period_rate_amount__name_code__code_value,
             wa.baseremuneration.payperiodrateamount.namecode.longname
@@ -65,7 +63,6 @@ with
 
             wa.baseremuneration.hourlyrateamount.currencycode
             as base_remuneration__hourly_rate_amount__currency_code,
-
             wa.baseremuneration.hourlyrateamount.namecode.codevalue
             as base_remuneration__hourly_rate_amount__name_code__code_value,
             wa.baseremuneration.hourlyrateamount.namecode.longname
@@ -75,13 +72,19 @@ with
 
             wa.baseremuneration.dailyrateamount.currencycode
             as base_remuneration__daily_rate_amount__currency_code,
-
             wa.baseremuneration.dailyrateamount.namecode.codevalue
             as base_remuneration__daily_rate_amount__name_code__code_value,
             wa.baseremuneration.dailyrateamount.namecode.longname
             as base_remuneration__daily_rate_amount__name_code__long_name,
             wa.baseremuneration.dailyrateamount.namecode.shortname
             as base_remuneration__daily_rate_amount__name_code__short_name,
+
+            wa.homeworklocation.namecode.codevalue
+            as home_work_location__name_code__code_value,
+            wa.homeworklocation.namecode.longname
+            as home_work_location__name_code__long_name,
+            wa.homeworklocation.namecode.shortname
+            as home_work_location__name_code__short_name,
 
             wa.homeworklocation.address.itemid as home_work_location__address__item_id,
             wa.homeworklocation.address.lineone
@@ -96,7 +99,6 @@ with
             as home_work_location__address__postal_code,
             wa.homeworklocation.address.countrycode
             as home_work_location__address__country_code,
-
             wa.homeworklocation.address.countrysubdivisionlevel1.subdivisiontype as
             home_work_location__address__country_subdivision_level_1__subdivision_type,
             wa.homeworklocation.address.countrysubdivisionlevel1.codevalue
@@ -105,7 +107,6 @@ with
             as home_work_location__address__country_subdivision_level_1__long_name,
             wa.homeworklocation.address.countrysubdivisionlevel1.shortname
             as home_work_location__address__country_subdivision_level_1__short_name,
-
             wa.homeworklocation.address.countrysubdivisionlevel2.subdivisiontype as
             home_work_location__address__country_subdivision_level_2__subdivision_type,
             wa.homeworklocation.address.countrysubdivisionlevel2.codevalue
@@ -114,27 +115,18 @@ with
             as home_work_location__address__country_subdivision_level_2__long_name,
             wa.homeworklocation.address.countrysubdivisionlevel2.shortname
             as home_work_location__address__country_subdivision_level_2__short_name,
-
             wa.homeworklocation.address.namecode.codevalue
             as home_work_location__address__name_code__code_value,
             wa.homeworklocation.address.namecode.longname
             as home_work_location__address__name_code__long_name,
             wa.homeworklocation.address.namecode.shortname
             as home_work_location__address__name_code__short_name,
-
             wa.homeworklocation.address.typecode.codevalue
             as home_work_location__address__type_code__code_value,
             wa.homeworklocation.address.typecode.longname
             as home_work_location__address__type_code__long_name,
             wa.homeworklocation.address.typecode.shortname
             as home_work_location__address__type_code__short_name,
-
-            wa.homeworklocation.namecode.codevalue
-            as home_work_location__name_code__code_value,
-            wa.homeworklocation.namecode.longname
-            as home_work_location__name_code__long_name,
-            wa.homeworklocation.namecode.shortname
-            as home_work_location__name_code__short_name,
 
             wa.jobcode.codevalue as job_code__code_value,
             wa.jobcode.longname as job_code__long_name,
@@ -144,10 +136,10 @@ with
             wa.paycyclecode.longname as pay_cycle_code__long_name,
             wa.paycyclecode.shortname as pay_cycle_code__short_name,
 
-            wa.standardhours.hoursquantity as standard_hours__hours_quantity,
-
             wa.standardpayperiodhours.hoursquantity
             as standard_pay_period_hours__hours_quantity,
+
+            wa.standardhours.hoursquantity as standard_hours__hours_quantity,
 
             wa.standardhours.unitcode.codevalue
             as standard_hours__unit_code__code_value,
@@ -279,9 +271,20 @@ select
     coalesce(
         home_work_location__name_code__long_name,
         home_work_location__name_code__short_name
-    ) as home_work_location_name,
-
+    ) as home_work_location__name_code__name,
     coalesce(
         worker_type_code__long_name, worker_type_code__short_name
-    ) as worker_type_code_name,
+    ) as worker_type_code__name,
+    coalesce(
+        assignment_status__status_code__long_name,
+        assignment_status__status_code__short_name
+    ) as assignment_status__status_code__name,
+    coalesce(
+        wage_law_coverage__coverage_code__long_name,
+        wage_law_coverage__coverage_code__short_name
+    ) as wage_law_coverage__coverage_code__name,
+    coalesce(
+        wage_law_coverage__wage_law_name_code__long_name,
+        wage_law_coverage__wage_law_name_code__short_name
+    ) as wage_law_coverage__wage_law_name_code__name,
 from work_assignments_parsed
