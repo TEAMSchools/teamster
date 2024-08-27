@@ -280,4 +280,8 @@ select
         home_work_location__name_code__long_name,
         home_work_location__name_code__short_name
     ) as home_work_location_name,
+
+    coalesce(
+        worker_type_code__long_name, worker_type_code__short_name
+    ) as worker_type_code_name,
 from work_assignments_parsed

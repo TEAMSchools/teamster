@@ -2,8 +2,8 @@
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     powerschool_teacher_number as `01 User ID`,
-    preferred_name_family_name as `02 User Last Name`,
-    preferred_name_given_name as `03 User First Name`,
+    family_name_1 as `02 User Last Name`,
+    given_name as `03 User First Name`,
 
     null as `04 User Middle Name`,
     null as `05 Birth Date`,
@@ -24,7 +24,7 @@ select
     null as `16 User Is Hispanic`,
     null as `17 Address`,
 
-    business_unit_home_name as `18 City`,
+    organizational_unit__home__business_unit__name as `18 City`,
 
     null as `19 State`,
     null as `20 Zip`,

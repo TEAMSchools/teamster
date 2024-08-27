@@ -9,22 +9,19 @@ select
     w.home_work_location_name as `Location Description`,
     w.organizational_unit__assigned__department__name as `Business Unit Description`,
     w.organizational_unit__assigned__department__name as `Home Department Description`,
-
-    en.employee_number as `Position ID`,
+    w.employee_number as `Position ID`,
 
     null as `Preferred Name`,
+
+    cast(w.report_to_employee_number as string) as `Business Unit Code`,
 
     format_date('%m/%d/%Y', w.worker_dates__rehire_date) as `Rehire Date`,
     format_date('%m/%d/%Y', w.worker_dates__termination_date) as `Termination Date`,
     format_date('%m/%d/%Y', w.person__birth_date) as `Birth Date`,
-
-    safe_cast(enm.employee_number as string) as `Business Unit Code`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__staff_roster") }} as w
 where
-    w.is_current_record
-    and w.primary_indicator
-    and w.organizational_unit__assigned__business_unit__name is not null
+    w.organizational_unit__assigned__business_unit__name is not null
     and w.organizational_unit__assigned__department__name is not null
     and date_diff(
         coalesce(w.worker_dates__rehire_date, w.worker_dates__original_hire_date),
