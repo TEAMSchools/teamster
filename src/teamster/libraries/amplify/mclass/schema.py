@@ -20,7 +20,9 @@ class DYDModel(BaseModel):
     enrollment_date: str | None = None
     external_program: str | None = None
     gender: str | None = None
+    hispanic_or_latino_ethnicity: str | None = None
     home_language: str | None = None
+    iep_status: str | None = None
     internal_program: str | None = None
     meal_status: str | None = None
     migrant: str | None = None
@@ -70,8 +72,6 @@ class BenchmarkStudentSummary(DYDModel):
     decoding_nwf_wrc_year_growth: str | None = None
     dibels_composite_score_lexile: str | None = None
     error_rate_orf_score: float | None = None
-    hispanic_or_latino_ethnicity: str | None = None
-    iep_status: str | None = None
     incorrect_responses_maze_score: float | None = None
     letter_names_lnf_level: str | None = None
     letter_names_lnf_score: float | None = None

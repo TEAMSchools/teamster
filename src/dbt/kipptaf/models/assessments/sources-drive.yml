@@ -43,22 +43,6 @@ sources:
               - kipptaf
               - assessments
               - course_subject_crosswalk
-      - name: src_assessments__internal_assessment_scopes
-        tags:
-          - retired
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
-            sheet_range: src_assessments__internal_assessment_scopes
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - assessments
-              - internal_assessment_scopes
       - name: src_assessments__iready_crosswalk
         external:
           options:
@@ -169,22 +153,6 @@ sources:
               - kipptaf
               - assessments
               - state_test_comparison
-      - name: src_assessments__college_readiness_expected_tests
-        tags:
-          - retired
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
-            sheet_range: src_assessments__college_readiness_expected_tests
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - assessments
-              - college_readiness_expected_tests
       - name: src_assessments__assessment_expectations
         external:
           options:
@@ -199,3 +167,35 @@ sources:
               - kipptaf
               - assessments
               - assessment_expectations
+      - name: src_assessments__college_readiness_expected_tests
+        config:
+          enabled: false
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__college_readiness_expected_tests
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - college_readiness_expected_tests
+      - name: src_assessments__internal_assessment_scopes
+        config:
+          enabled: false
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__internal_assessment_scopes
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - assessments
+              - internal_assessment_scopes
