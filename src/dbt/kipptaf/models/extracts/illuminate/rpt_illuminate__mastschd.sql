@@ -1,5 +1,4 @@
-select  -- noqa: disable=ST06
-    -- noqa: disable=RF05
+select
     concat(
         regexp_extract(sec._dbt_source_relation, r'(kipp\w+)_'), sec.id
     ) as `01 Section ID`,

@@ -20,15 +20,7 @@ select
 
     safe_cast(enm.employee_number as string) as `Business Unit Code`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("int_adp_workforce_now__workers") }} as w
-inner join
-    {{ ref("stg_people__employee_numbers") }} as en
-    on w.worker_id__id_value = en.adp_associate_id
-    and en.is_active
-left join
-    {{ ref("stg_people__employee_numbers") }} as enm
-    on rt.reports_to_worker_id__id_value = enm.adp_associate_id
-    and enm.is_active
+from {{ ref("int_people__staff_roster") }} as w
 where
     w.is_current_record
     and w.primary_indicator

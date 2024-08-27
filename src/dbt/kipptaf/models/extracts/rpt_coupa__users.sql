@@ -54,7 +54,7 @@ with
             case
                 cu.purchasing_user when true then 'Yes' when false then 'No'
             end as purchasing_user,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ source("coupa", "user") }} as cu
             on sr.employee_number = safe_cast(cu.employee_number as int)
@@ -98,7 +98,7 @@ with
             lower(sr.mail) as mail,
 
             'No' as purchasing_user,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         left join
             {{ source("coupa", "user") }} as cu
             on sr.employee_number = safe_cast(cu.employee_number as int)

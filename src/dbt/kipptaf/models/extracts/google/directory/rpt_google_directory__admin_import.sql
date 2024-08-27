@@ -57,7 +57,7 @@ with
                 when 30200804
                 then 'Royalty Academy'
             end as org_unit_path,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_google_directory__users") }} as u
             on sr.google_email = u.primary_email

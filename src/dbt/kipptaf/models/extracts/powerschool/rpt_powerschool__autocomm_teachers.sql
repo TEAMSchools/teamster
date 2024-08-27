@@ -14,7 +14,7 @@ with
             sr.mail,
             sr.assignment_status,
             sr.home_work_location_dagster_code_location,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_powerschool__users") }} as u
             on sr.powerschool_teacher_number = u.teachernumber
@@ -50,7 +50,7 @@ with
             sr.mail,
             sr.assignment_status,
             sr.home_work_location_dagster_code_location,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         left join
             {{ ref("stg_powerschool__users") }} as u
             on sr.powerschool_teacher_number = u.teachernumber

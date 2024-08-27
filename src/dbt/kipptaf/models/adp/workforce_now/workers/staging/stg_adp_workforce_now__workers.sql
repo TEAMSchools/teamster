@@ -355,7 +355,7 @@ with
 
             lag(worker_status.statuscode.codevalue, 1) over (
                 partition by associate_oid order by effective_date_start asc
-            ) as worker_status__status_code__code_value_lag
+            ) as worker_status__status_code__code_value_lag,
 
             coalesce(
                 date_sub(
@@ -379,10 +379,26 @@ select
         person__preferred_name__family_name_1, person__legal_name__family_name_1
     ) as family_name_1,
 
+    case
+        person__race_code__long_name
+        when 'Black or African American'
+        then 'Black/African American'
+        when 'Hispanic or Latino'
+        then 'Latinx/Hispanic/Chicana(o)'
+        when 'Two or more races (Not Hispanic or Latino)'
+        then 'Bi/Multiracial'
+        else person__race_code__long_name
+    end as race_ethnicity_reporting,
+
     if(
         worker_status__status_code__code_value = 'Active'
-        worker_status__status_code__code_value_lag = 'Terminated'
-        effective_date_start > current_date('{{ var("local_timezone") }}')
+        and effective_date_start > current_date('{{ var("local_timezone") }}')
+        and (
+            worker_status__status_code__code_value_lag = 'Terminated'
+            or worker_status__status_code__code_value_lag is null
+        ),
+        true,
+        false
     ) as is_prestart,
 
     if(

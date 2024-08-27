@@ -12,7 +12,7 @@ select
     ) as `04 Academic Year`,
 
     1 as `05 Session Type ID`,
-from {{ ref("base_people__staff_roster") }} as sr
+from {{ ref("int_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on sch.state_excludefromreporting = 0
 where
@@ -35,7 +35,7 @@ select
     ) as `04 Academic Year`,
 
     1 as `05 Session Type ID`,
-from {{ ref("base_people__staff_roster") }} as sr
+from {{ ref("int_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.name
@@ -59,7 +59,7 @@ select
     ) as `04 Academic Year`,
 
     1 as `05 Session Type ID`,
-from {{ ref("base_people__staff_roster") }}
+from {{ ref("int_people__staff_roster") }}
 where
     assignment_status != 'Terminated'
     and department_home_name not in ('Teaching and Learning', 'Data', 'Executive')

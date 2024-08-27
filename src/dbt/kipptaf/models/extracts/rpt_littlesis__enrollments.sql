@@ -37,7 +37,7 @@ inner join
     on sec.sections_schoolid = sch.school_number
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="sch") }}
 inner join
-    {{ ref("base_people__staff_roster") }} as scw
+    {{ ref("int_people__staff_roster") }} as scw
     on sec.teachernumber = scw.powerschool_teacher_number
 where
     sec.cc_academic_year = {{ var("current_academic_year") }}

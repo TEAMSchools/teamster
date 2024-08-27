@@ -18,7 +18,7 @@ with
                     sr.home_work_location_powerschool_school_id
                 ) as string
             ) as school_id,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         left join
             {{ ref("stg_people__campus_crosswalk") }} as ccw
             on sr.home_work_location_name = ccw.name
@@ -44,7 +44,7 @@ with
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on (sch.state_excludefromreporting = 0)
@@ -69,7 +69,7 @@ with
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on sr.home_work_location_dagster_code_location
@@ -98,7 +98,7 @@ with
             {{ ref("stg_ldap__user_person") }} as up
             on group_member_distinguished_name = up.distinguished_name
         inner join
-            {{ ref("base_people__staff_roster") }} as sr
+            {{ ref("int_people__staff_roster") }} as sr
             on up.employee_number = sr.employee_number
             and sr.assignment_status not in ('Terminated', 'Deceased')
             and not sr.is_prestart
