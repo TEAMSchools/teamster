@@ -5,9 +5,10 @@ sources:
     schema: kipptaf_alchemer
     tags:
       - stage_external_sources
-      - retired
     tables:
       - name: src_alchemer__response_id_override
+        config:
+          enabled: false
         external:
           options:
             format: GOOGLE_SHEETS

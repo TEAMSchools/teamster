@@ -76,7 +76,8 @@ select
     if(ias.scope is not null, true, false) as is_internal_assessment,
 from {{ ref("int_illuminate__assessments") }} as a
 left join
-    {{ ref("stg_assessments__internal_assessment_scopes") }} as ias
+    /* hardcode disabled model */
+    kipptaf_assessments.stg_assessments__internal_assessment_scopes as ias
     on a.scope = ias.scope
     and a.academic_year_clean = ias.academic_year
 where a.academic_year < 2025 or a.academic_year is null

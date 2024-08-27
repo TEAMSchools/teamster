@@ -9,7 +9,7 @@ specs = [
         group_name="google_appsheet",
     )
     for source in manifest["sources"].values()
-    if source["source_name"] == "google_appsheet" and "retired" not in source["tags"]
+    if source["source_name"] == "google_appsheet"
 ]
 
 google_appsheet_assets = external_assets_from_specs(specs=specs)
