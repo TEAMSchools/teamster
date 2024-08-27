@@ -734,6 +734,9 @@ select
         true,
         false
     ) as has_ecc_enrollment,
+    if(
+        ei.ecc_pursuing_degree_type = "Bachelor's (4-year)", true, false
+    ) as has_4yr_ecc_enrollment,
     coalesce(bg.bgp, 'No BGP') as bgp,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
