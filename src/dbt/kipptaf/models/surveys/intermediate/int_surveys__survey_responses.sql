@@ -56,12 +56,15 @@ select
     ) as survey_response_link,
 
     if(safe_cast(sr.response_value as int) is null, 1, 0) as is_open_ended,
-from {{ ref("base_alchemer__survey_results") }} as sr
+from
+    /* hardcode disabled model */
+    kipptaf_alchemer.base_alchemer__survey_results as sr
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = sr.survey_title
     and sr.response_date_submitted_date between rt.start_date and rt.end_date
 left join
-    {{ ref("int_surveys__response_identifiers") }} as ri
+    /* hardcode disabled model */
+    kipptaf_surveys.int_surveys__response_identifiers as ri
     on sr.survey_id = ri.survey_id
     and sr.response_id = ri.response_id
