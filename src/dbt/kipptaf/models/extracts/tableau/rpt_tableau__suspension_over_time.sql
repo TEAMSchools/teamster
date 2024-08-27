@@ -1,4 +1,28 @@
 with
+    date_range as (
+        select date_trunc(date('2022-07-01') + interval n month, month) as month_start
+        from
+            unnest(
+                generate_array(
+                    0, (({{ var("current_academic_year") + 1 }} - 2022) * 12)
+                )
+            ) as n
+    ),
+
+    months as (
+        select
+            {{
+                teamster_utils.date_to_fiscal_year(
+                    date_field="month_start", start_month=7, year_source="start"
+                )
+            }} as academic_year,
+            extract(month from month_start) as month,
+            format_date('%B', month_start) as month_name,
+            date(month_start) as start_date,
+            last_day(month_start) as end_date
+        from date_range
+    ),
+
     suspension_type as (
         select penalty_name, 'ISS' as suspension_type,
         from
@@ -85,7 +109,9 @@ select
     co.is_out_of_district,
     co.is_self_contained,
 
-    date_day,
+    m.start_date,
+    m.end_date,
+    m.month_name,
 
     s.first_suspension_date,
     s.first_suspension_date_iss,
@@ -93,31 +119,38 @@ select
 
     if(co.spedlep like 'SPED%', 'IEP', 'No IEP') as iep_status,
 
-    if(date_day >= s.first_suspension_date, 1, 0) as is_susp_running,
-    if(date_day >= s.first_suspension_date_iss, 1, 0) as is_iss_running,
-    if(date_day >= s.first_suspension_date_oss, 1, 0) as is_oss_running,
+    if(m.start_date >= s.first_suspension_date, 1, 0) as is_susp_running,
+    if(m.start_date >= s.first_suspension_date_iss, 1, 0) as is_iss_running,
+    if(m.start_date >= s.first_suspension_date_oss, 1, 0) as is_oss_running,
 
     sum(sd.num_days) over (
-        partition by co.student_number, co.academic_year order by date_day asc
+        partition by co.student_number, co.academic_year order by m.month asc
     ) as total_suspended_days_running,
     sum(if(sd.suspension_type = 'OSS', sd.num_days, null)) over (
-        partition by co.student_number, co.academic_year order by date_day asc
+        partition by co.student_number, co.academic_year order by m.month asc
     ) as oss_suspended_days_running,
     sum(if(sd.suspension_type = 'ISS', sd.num_days, null)) over (
-        partition by co.student_number, co.academic_year order by date_day asc
+        partition by co.student_number, co.academic_year order by m.month asc
     ) as iss_suspended_days_running,
     count(sd.incident_penalty_id) over (
-        partition by co.student_number, co.academic_year order by date_day asc
+        partition by co.student_number, co.academic_year order by m.month asc
     ) as total_suspension_incidents_running,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
-    unnest(
-        generate_date_array(
-            date({{ var("current_academic_year") - 1 }}, 8, 1),
-            current_date('{{ var("local_timezone") }}')
-        )
-    ) as date_day
-    on date_day between co.entrydate and date(co.academic_year + 1, 6, 30)
+    months as m
+    on co.academic_year = m.academic_year
+    and (
+        m.start_date between co.entrydate and co.exitdate
+        or m.end_date between co.entrydate and co.exitdate
+    )
+-- inner join
+-- unnest(
+-- generate_date_array(
+-- date({{ var("current_academic_year") - 1 }}, 8, 1),
+-- current_date('{{ var("local_timezone") }}')
+-- )
+-- ) as date_day
+-- on date_day between co.entrydate and date(co.academic_year + 1, 6, 30)
 left join
     suspension_dates as s
     on co.student_number = s.student_number
@@ -127,8 +160,10 @@ left join
     susp_days as sd
     on co.student_number = sd.student_number
     and co.academic_year = sd.academic_year
-    and date_day = sd.end_date
+    and sd.end_date between m.start_date and m.end_date
+-- and date_day = sd.end_date
 where
     co.rn_year = 1
     and co.academic_year >= {{ var("current_academic_year") - 1 }}
     and co.grade_level != 99
+    and co.student_number = 201020
