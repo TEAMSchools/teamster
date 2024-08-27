@@ -23,15 +23,16 @@ select
     wa.primary_indicator,
     wa.job_title,
     wa.assignment_status__status_code__long_name,
-    wa.home_work_location_name,
     wa.management_position_indicator,
     wa.base_remuneration__annual_rate_amount__amount_value,
-    wa.worker_type_code__code_value,
     wa.wage_law_coverage__coverage_code__short_name,
     wa.wage_law_coverage__wage_law_name_code__short_name,
+    wa.home_work_location_name,
+    wa.worker_type_code_name,
 
     ou.organizational_unit__assigned__business_unit__name,
     ou.organizational_unit__assigned__department__name,
+    ou.organizational_unit__home__business_unit__name,
     ou.organizational_unit__home__department__name,
 
     rt.reports_to_worker_id__id_value,
@@ -40,6 +41,8 @@ select
     cf.wf_mgr_badge_number,
     cf.wf_mgr_ee_type,
     cf.wf_mgr_pay_rule,
+
+    w.family_name_1 || ', ' || w.given_name as formatted_name,
 from {{ ref("stg_adp_workforce_now__workers") }} as w
 inner join
     {{ ref("stg_adp_workforce_now__workers__work_assignments") }} as wa

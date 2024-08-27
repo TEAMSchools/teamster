@@ -7,9 +7,9 @@ with
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
-            sr.preferred_name_given_name,
-            sr.preferred_name_family_name,
-            sr.department_home_name,
+            sr.given_name,
+            sr.family_name_1,
+            sr.organizational_unit__home__department__name,
             sr.sam_account_name,
 
             cast(
@@ -24,9 +24,11 @@ with
             on sr.home_work_location_name = ccw.name
             and not ccw.is_pathways
         where
-            sr.assignment_status not in ('Terminated', 'Deceased')
-            and not sr.is_prestart
-            and sr.department_home_name not in ('Data', 'Teaching and Learning')
+            not sr.is_prestart
+            and sr.assignment_status__status_code__long_name
+            not in ('Terminated', 'Deceased')
+            and sr.organizational_unit__home__department__name
+            not in ('Data', 'Teaching and Learning')
             and coalesce(
                 ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
             )
@@ -38,9 +40,9 @@ with
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
-            sr.preferred_name_given_name,
-            sr.preferred_name_family_name,
-            sr.department_home_name,
+            sr.given_name,
+            sr.family_name_1,
+            sr.organizational_unit__home__department__name,
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
@@ -49,11 +51,14 @@ with
             {{ ref("stg_powerschool__schools") }} as sch
             on (sch.state_excludefromreporting = 0)
         where
-            sr.assignment_status not in ('Terminated', 'Deceased')
-            and not sr.is_prestart
-            and sr.business_unit_home_name = 'KIPP TEAM and Family Schools Inc.'
+            not sr.is_prestart
+            and sr.assignment_status__status_code__long_name
+            not in ('Terminated', 'Deceased')
+            and sr.organizational_unit__home__business_unit__name
+            = 'KIPP TEAM and Family Schools Inc.'
             and (
-                sr.department_home_name in ('Data', 'Teaching and Learning')
+                sr.organizational_unit__home__department__name
+                in ('Data', 'Teaching and Learning')
                 or sr.job_title in ('Executive Director', 'Managing Director')
             )
 
@@ -63,9 +68,9 @@ with
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
-            sr.preferred_name_given_name,
-            sr.preferred_name_family_name,
-            sr.department_home_name,
+            sr.given_name,
+            sr.family_name_1,
+            sr.organizational_unit__home__department__name,
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
@@ -76,8 +81,9 @@ with
             = regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')
             and sch.state_excludefromreporting = 0
         where
-            sr.assignment_status not in ('Terminated', 'Deceased')
-            and not sr.is_prestart
+            not sr.is_prestart
+            and sr.assignment_status__status_code__long_name
+            not in ('Terminated', 'Deceased')
             and sr.home_work_location_powerschool_school_id = 0
 
         union all
@@ -86,9 +92,9 @@ with
         select
             sr.powerschool_teacher_number,
             sr.user_principal_name,
-            sr.preferred_name_given_name,
-            sr.preferred_name_family_name,
-            sr.department_home_name,
+            sr.given_name,
+            sr.family_name_1,
+            sr.organizational_unit__home__department__name,
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
@@ -100,8 +106,9 @@ with
         inner join
             {{ ref("int_people__staff_roster") }} as sr
             on up.employee_number = sr.employee_number
-            and sr.assignment_status not in ('Terminated', 'Deceased')
             and not sr.is_prestart
+            and sr.assignment_status__status_code__long_name
+            not in ('Terminated', 'Deceased')
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on sch.schoolstate = 'NJ'
@@ -113,9 +120,9 @@ select
     school_id,
     powerschool_teacher_number as staff_id,
     user_principal_name as staff_email,
-    preferred_name_given_name as first_name,
-    preferred_name_family_name as last_name,
-    department_home_name as department,
+    given_name as first_name,
+    family_name_1 as last_name,
+    organizational_unit__home__department__name as department,
 
     'School Admin' as title,
 
@@ -123,5 +130,9 @@ select
 
     null as `password`,
 
-    if(department_home_name = 'Operations', 'School Tech Lead', null) as `role`,
+    if(
+        organizational_unit__home__department__name = 'Operations',
+        'School Tech Lead',
+        null
+    ) as `role`,
 from staff_union

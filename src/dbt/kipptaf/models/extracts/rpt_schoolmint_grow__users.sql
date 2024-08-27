@@ -2,16 +2,18 @@ with
     people as (
         select
             sr.employee_number as user_internal_id,
-            sr.report_to_employee_number as manager_internal_id,
+            sr.formatted_name as user_name,
             sr.google_email as user_email,
-            sr.department_home_name as course_name,
+            sr.report_to_employee_number as manager_internal_id,
             sr.home_work_location_name as school_name,
+            sr.organizational_unit__home__department__name as course_name,
 
-            sr.preferred_name_given_name
-            || ' '
-            || sr.preferred_name_family_name as user_name,
-
-            if(sr.assignment_status in ('Terminated', 'Deceased'), 1, 0) as inactive,
+            if(
+                sr.assignment_status__status_code__long_name
+                in ('Terminated', 'Deceased'),
+                1,
+                0
+            ) as inactive,
 
             if(
                 tgl.grade_level = 0, 'K', cast(tgl.grade_level as string)
@@ -19,12 +21,12 @@ with
 
             case
                 /* network admins */
-                when sr.department_home_name = 'Executive'
+                when sr.organizational_unit__home__department__name = 'Executive'
                 then 'Sub Admin'
                 when sr.job_title = 'Head of Schools'
                 then 'Regional Admin'
                 when
-                    sr.department_home_name in (
+                    sr.organizational_unit__home__department__name in (
                         'Teaching and Learning',
                         'School Support',
                         'New Teacher Development'
@@ -36,16 +38,16 @@ with
                     )
                 then 'Sub Admin'
                 when
-                    sr.department_home_name = 'Special Education'
+                    sr.organizational_unit__home__department__name = 'Special Education'
                     and contains_substr(sr.job_title, 'Director')
                 then 'Sub Admin'
-                when sr.department_home_name = 'Human Resources'
+                when sr.organizational_unit__home__department__name = 'Human Resources'
                 then 'Sub Admin'
                 /* school admins */
                 when sr.job_title = 'School Leader'
                 then 'School Admin'
                 when
-                    sr.department_home_name = 'School Leadership'
+                    sr.organizational_unit__home__department__name = 'School Leadership'
                     and (
                         contains_substr(sr.job_title, 'Assistant School Leader')
                         or contains_substr(sr.job_title, 'Dean')
@@ -69,9 +71,10 @@ with
             and tgl.grade_level_rank = 1
         where
             sr.user_principal_name is not null
-            and sr.department_home_name != 'Data'
+            and sr.organizational_unit__home__department__name != 'Data'
             and coalesce(
-                sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
+                sr.worker_dates__termination_date,
+                current_date('{{ var("local_timezone") }}')
             )
             >= date({{ var("current_academic_year") - 1 }}, 7, 1)
     ),

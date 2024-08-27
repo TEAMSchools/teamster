@@ -16,10 +16,7 @@ select
     lc.is_campus as home_work_location_is_campus,
     lc.is_pathways as home_work_location_is_pathways,
 
-    ldap.mail,
     ldap.distinguished_name,
-    ldap.user_principal_name,
-    ldap.sam_account_name,
     ldap.physical_delivery_office_name,
     ldap.uac_account_disable,
     ldap.google_email,
@@ -39,10 +36,15 @@ select
     sis.years_teaching_in_njfl,
     sis.years_teaching_outside_njfl,
 
-    rtldap.user_principal_name as report_to_user_principal_name,
-    rtldap.mail as report_to_mail,
-    rtldap.sam_account_name as report_to_sam_account_name,
     rtldap.google_email as report_to_google_email,
+
+    lower(ldap.sam_account_name) as sam_account_name,
+    lower(ldap.user_principal_name) as user_principal_name,
+    lower(ldap.mail) as mail,
+
+    lower(rtldap.sam_account_name) as report_to_sam_account_name,
+    lower(rtldap.user_principal_name) as report_to_user_principal_name,
+    lower(rtldap.mail) as report_to_mail,
 
     coalesce(
         idps.powerschool_teacher_number, cast(en.employee_number as string)

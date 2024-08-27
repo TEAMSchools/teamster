@@ -4,11 +4,11 @@ select
     powerschool_teacher_number as teacher_number,
     employee_number as state_teacher_id,
     user_principal_name as teacher_email,
-    preferred_name_given_name as first_name,
+    given_name as first_name,
 
     null as middle_name,
 
-    preferred_name_family_name as last_name,
+    family_name_1 as last_name,
     job_title as title,
     sam_account_name as username,
 
