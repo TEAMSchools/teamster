@@ -1,9 +1,47 @@
 select
-    w.* except (race_ethnicity_reporting),
+    w.associate_oid,
+    w.effective_date_start,
+    w.effective_date_end,
+    w.effective_date_timestamp,
+    w.is_current_record,
+    w.worker_id__id_value as worker_id,
+    w.worker_dates__original_hire_date as worker_original_hire_date,
+    w.worker_dates__rehire_date as worker_rehire_date,
+    w.worker_dates__termination_date as worker_termination_date,
+    w.person__formatted_name as formatted_name,
+    w.person__family_name_1 as family_name_1,
+    w.person__given_name as given_name,
+    w.person__legal_name__family_name_1 as legal_name__family_name_1,
+    w.person__legal_name__given_name as legal_name__given_name,
+    w.person__birth_date as birth_date,
+    w.person__race_code_name as race_code,
+    w.person__ethnicity_code_name as ethnicity_code,
+    w.person__gender_code_name as gender_code,
+    w.is_prestart,
+    w.position_id,
+    w.job_title,
+    w.primary_indicator,
+    w.management_position_indicator,
+    w.assignment_status__status_code__name as assignment_status,
+    w.home_work_location__name_code__name as home_work_location_name,
+    w.worker_type_code__name as worker_type_code,
+    w.wage_law_coverage__wage_law_name_code__name as wage_law_name,
+    w.wage_law_coverage__coverage_code__name as wage_law_coverage,
+    w.base_remuneration__annual_rate_amount__amount_value
+    as base_remuneration_annual_rate_amount,
+    w.organizational_unit__assigned__business_unit__name as assigned_business_unit,
+    w.organizational_unit__assigned__department__name as assigned_department,
+    w.organizational_unit__home__business_unit__name as home_business_unit,
+    w.organizational_unit__home__department__name as home_department,
+    w.reports_to_worker_id__id_value as reports_to_worker_id,
+    w.wf_mgr_accrual_profile,
+    w.wf_mgr_badge_number,
+    w.wf_mgr_ee_type,
+    w.wf_mgr_pay_rule,
 
     en.employee_number,
 
-    rten.employee_number as report_to_employee_number,
+    rten.employee_number as reports_to_employee_number,
 
     lc.region as home_work_location_region,
     lc.dagster_code_location as home_work_location_dagster_code_location,
@@ -36,15 +74,15 @@ select
     sis.years_teaching_in_njfl,
     sis.years_teaching_outside_njfl,
 
-    rtldap.google_email as report_to_google_email,
+    rtldap.google_email as reports_to_google_email,
 
     lower(ldap.sam_account_name) as sam_account_name,
     lower(ldap.user_principal_name) as user_principal_name,
     lower(ldap.mail) as mail,
 
-    lower(rtldap.sam_account_name) as report_to_sam_account_name,
-    lower(rtldap.user_principal_name) as report_to_user_principal_name,
-    lower(rtldap.mail) as report_to_mail,
+    lower(rtldap.sam_account_name) as reports_to_sam_account_name,
+    lower(rtldap.user_principal_name) as reports_to_user_principal_name,
+    lower(rtldap.mail) as reports_to_mail,
 
     coalesce(
         idps.powerschool_teacher_number, cast(en.employee_number as string)
@@ -55,17 +93,17 @@ select
     ) as race_ethnicity_reporting,
 
     case
-        when coalesce(sis.gender_identity, w.person__gender_code__long_name) = 'Female'
+        when coalesce(sis.gender_identity, w.person__gender_code_name) = 'Female'
         then 'Cis Woman'
-        when coalesce(sis.gender_identity, w.person__gender_code__long_name) = 'Male'
+        when coalesce(sis.gender_identity, w.person__gender_code_name) = 'Male'
         then 'Cis Man'
-        else coalesce(sis.gender_identity, w.person__gender_code__long_name)
+        else coalesce(sis.gender_identity, w.person__gender_code_name)
     end as gender_identity,
 
     case
         when contains_substr(sis.race_ethnicity, 'Latinx/Hispanic/Chicana(o)')
         then true
-        when w.person__ethnicity_code__long_name = 'Hispanic or Latino'
+        when w.person__ethnicity_code_name = 'Hispanic or Latino'
         then true
         else false
     end as is_hispanic,
@@ -80,7 +118,7 @@ left join
     and rten.is_active
 left join
     {{ ref("stg_people__location_crosswalk") }} as lc
-    on w.home_work_location_name = lc.name
+    on w.home_work_location__name_code__name = lc.name
 left join
     {{ ref("stg_ldap__user_person") }} as ldap
     on en.employee_number = ldap.employee_number

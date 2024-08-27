@@ -374,10 +374,19 @@ select
 
     coalesce(
         person__preferred_name__given_name, person__legal_name__given_name
-    ) as given_name,
+    ) as person__given_name,
     coalesce(
         person__preferred_name__family_name_1, person__legal_name__family_name_1
-    ) as family_name_1,
+    ) as person__family_name_1,
+    coalesce(
+        person__race_code__long_name, person__race_code__short_name
+    ) as person__race_code_name,
+    coalesce(
+        person__ethnicity_code__long_name, person__ethnicity_code__short_name
+    ) as person__ethnicity_code_name,
+    coalesce(
+        person__gender_code__long_name, person__gender_code__short_name
+    ) as person__gender_code_name,
 
     case
         person__race_code__long_name
