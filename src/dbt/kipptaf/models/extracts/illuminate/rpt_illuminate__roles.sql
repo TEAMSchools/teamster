@@ -17,7 +17,7 @@ inner join
     {{ ref("stg_powerschool__schools") }} as sch on sch.state_excludefromreporting = 0
 where
     sr.assignment_status != 'Terminated'
-    and sr.home_department in ('Teaching and Learning', 'Data', 'Executive')
+    and sr.home_department_name in ('Teaching and Learning', 'Data', 'Executive')
     and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
 
 union all
@@ -42,7 +42,7 @@ inner join
     and not cc.is_pathways
 where
     sr.assignment_status != 'Terminated'
-    and sr.home_department not in ('Teaching and Learning', 'Data', 'Executive')
+    and sr.home_department_name not in ('Teaching and Learning', 'Data', 'Executive')
     and sr.home_work_location_is_campus
 
 union all
@@ -62,5 +62,5 @@ select
 from {{ ref("int_people__staff_roster") }}
 where
     assignment_status != 'Terminated'
-    and home_department not in ('Teaching and Learning', 'Data', 'Executive')
+    and home_department_name not in ('Teaching and Learning', 'Data', 'Executive')
     and not home_work_location_is_campus

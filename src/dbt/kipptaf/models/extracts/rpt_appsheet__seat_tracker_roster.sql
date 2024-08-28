@@ -21,7 +21,9 @@ select
     null as last_performance_management_score,
     null as smart_recruiter_id,
 
-    coalesce(cast(tgl.grade_level as string), sr.home_department) as grade_department,
+    coalesce(
+        cast(tgl.grade_level as string), sr.home_department_name
+    ) as grade_department,
 
     coalesce(lc.region, sr.home_business_unit_name) as location_entity,
 
@@ -41,20 +43,20 @@ select
 
     case
         /* see everything, edit everything*/
-        when sr.home_department in ('Data')
+        when sr.home_department_name in ('Data')
         then 7
         when
-            sr.home_department = 'Recruitment'
+            sr.home_department_name = 'Recruitment'
             and contains_substr(sr.job_title, 'Director')
         then 7
         /* see your state/region, edit everything */
         when
             contains_substr(sr.job_title, 'Director')
-            and sr.home_department = 'School Support'
+            and sr.home_department_name = 'School Support'
         then 6
         /* see everything, edit teammate and seat status fields (recruiters)*/
         when
-            sr.home_department = 'Recruitment'
+            sr.home_department_name = 'Recruitment'
             and contains_substr(sr.job_title, 'Recruiter')
         then 5
         /* see school, edit teammate fields (name in position, gutcheck, nonrenewal)*/
@@ -73,14 +75,14 @@ select
         then 3
         when
             contains_substr(sr.job_title, 'Director')
-            and sr.home_department = 'Special Education'
+            and sr.home_department_name = 'Special Education'
         then 3
-        when sr.home_department in ('Leadership Development', 'Human Resources')
+        when sr.home_department_name in ('Leadership Development', 'Human Resources')
         then 3
         /* see your state/region, edit nothing */
         when
             contains_substr(sr.job_title, 'Managing Director')
-            and sr.home_department in ('Operations', 'School Support')
+            and sr.home_department_name in ('Operations', 'School Support')
         then 2
         when contains_substr(sr.job_title, 'Head of Schools')
         then 2

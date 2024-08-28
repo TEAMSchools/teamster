@@ -32,8 +32,8 @@ with
             sr.legal_name__given_name,
             sr.legal_name__family_name_1,
             sr.assignment_status,
-            sr.home_business_unit_name,
-            sr.home_department,
+            sr.home_business_unit_code,
+            sr.home_department_name,
             sr.job_title,
             sr.home_work_location_name,
             sr.worker_type_code,
@@ -76,8 +76,8 @@ with
             sr.legal_name__given_name,
             sr.legal_name__family_name_1,
             sr.assignment_status,
-            sr.home_business_unit_name,
-            sr.home_department,
+            sr.home_business_unit_code,
+            sr.home_department_name,
             sr.job_title,
             sr.home_work_location_name,
             sr.worker_type_code,
@@ -114,9 +114,9 @@ with
             au.active,
             au.purchasing_user,
             au.content_groups,
-            au.home_business_unit_name,
+            au.home_business_unit_code,
             au.home_work_location_name,
-            au.home_department,
+            au.home_department_name,
             au.job_title,
             au.worker_type_code,
             au.wf_mgr_pay_rule,
@@ -164,13 +164,13 @@ with
         from all_users as au
         left join
             {{ source("coupa", "src_coupa__school_name_lookup") }} as sn
-            on au.home_business_unit_name = sn.adp_business_unit_home_code
-            and au.home_department = sn.adp_department_home_name
+            on au.home_business_unit_code = sn.adp_business_unit_home_code
+            and au.home_department_name = sn.adp_department_home_name
             and au.job_title = sn.adp_job_title
         left join
             {{ source("coupa", "src_coupa__school_name_lookup") }} as sn2
-            on au.home_business_unit_name = sn2.adp_business_unit_home_code
-            and au.home_department = sn2.adp_department_home_name
+            on au.home_business_unit_code = sn2.adp_business_unit_home_code
+            and au.home_department_name = sn2.adp_department_home_name
             and sn2.adp_job_title = 'Default'
         left join
             {{ source("coupa", "src_coupa__user_exceptions") }} as x
@@ -235,12 +235,12 @@ select
     coalesce(
         sub.content_groups,
         case
-            sub.home_business_unit_name
+            sub.home_business_unit_code
             when 'KIPP_TAF'
             then 'KTAF'
             when 'KIPP_MIAMI'
             then 'MIA'
-            else sub.home_business_unit_name
+            else sub.home_business_unit_code
         end
     ) as `Content Groups`,
 
@@ -295,37 +295,37 @@ left join
     on sub.coupa_school_name = sna.ldap_physical_delivery_office_name
 left join
     {{ source("coupa", "src_coupa__intacct_fund_lookup") }} as ifl
-    on sub.home_business_unit_name = ifl.adp_business_unit_home_code
+    on sub.home_business_unit_code = ifl.adp_business_unit_home_code
 left join
     {{ source("coupa", "src_coupa__intacct_program_lookup") }} as ipl1
-    on sub.home_business_unit_name = ipl1.adp_business_unit_home_code
+    on sub.home_business_unit_code = ipl1.adp_business_unit_home_code
     and sub.home_work_location_name = ipl1.adp_home_work_location_name
 left join
     {{ source("coupa", "src_coupa__intacct_program_lookup") }} as ipl2
-    on sub.home_business_unit_name = ipl2.adp_business_unit_home_code
+    on sub.home_business_unit_code = ipl2.adp_business_unit_home_code
     and ipl2.adp_home_work_location_name = 'Default'
 left join
     {{ source("coupa", "src_coupa__intacct_department_lookup") }} as idl1
-    on sub.home_business_unit_name = idl1.adp_business_unit_home_code
-    and sub.home_department = idl1.adp_department_home_name
+    on sub.home_business_unit_code = idl1.adp_business_unit_home_code
+    and sub.home_department_name = idl1.adp_department_home_name
     and sub.job_title = idl1.adp_job_title
 left join
     {{ source("coupa", "src_coupa__intacct_department_lookup") }} as idl2
-    on sub.home_business_unit_name = idl2.adp_business_unit_home_code
-    and sub.home_department = idl2.adp_department_home_name
+    on sub.home_business_unit_code = idl2.adp_business_unit_home_code
+    and sub.home_department_name = idl2.adp_department_home_name
     and idl2.adp_job_title = 'Default'
 left join
     {{ source("coupa", "src_coupa__intacct_location_lookup") }} as ill1
-    on sub.home_business_unit_name = ill1.adp_business_unit_home_code
-    and sub.home_department = ill1.adp_department_home_name
+    on sub.home_business_unit_code = ill1.adp_business_unit_home_code
+    and sub.home_department_name = ill1.adp_department_home_name
     and sub.job_title = ill1.adp_job_title
 left join
     {{ source("coupa", "src_coupa__intacct_location_lookup") }} as ill2
-    on sub.home_business_unit_name = ill2.adp_business_unit_home_code
-    and sub.home_department = ill2.adp_department_home_name
+    on sub.home_business_unit_code = ill2.adp_business_unit_home_code
+    and sub.home_department_name = ill2.adp_department_home_name
     and ill2.adp_job_title = 'Default'
 left join
     {{ source("coupa", "src_coupa__intacct_location_lookup") }} as ill3
-    on sub.home_business_unit_name = ill3.adp_business_unit_home_code
+    on sub.home_business_unit_code = ill3.adp_business_unit_home_code
     and ill3.adp_department_home_name = 'Default'
     and ill3.adp_job_title = 'Default'
