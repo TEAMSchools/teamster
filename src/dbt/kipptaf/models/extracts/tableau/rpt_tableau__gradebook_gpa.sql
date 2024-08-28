@@ -168,8 +168,7 @@ with
             and gtq.yearid = gty.yearid
             and gtq.schoolid = gty.schoolid
             and {{ union_dataset_join_clause(left_alias="gtq", right_alias="gty") }}
-            and gtq.term_name = gty.term_name
-            and gtq.is_current
+            and gty.is_current
         where
             enr.academic_year = {{ var("current_academic_year") }}
             and enr.rn_year = 1
