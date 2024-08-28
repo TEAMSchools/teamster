@@ -98,12 +98,12 @@ with
             gc.cumulative_y1_gpa_projected_s1_unweighted,
             gc.core_cumulative_y1_gpa,
 
-            gt.gpa_term,
-            gt.gpa_semester,
-            gt.gpa_y1,
-            gt.gpa_y1_unweighted,
-            gt.total_credit_hours,
-            gt.n_failing_y1,
+            if(term.storecode = 'Y1', gty.gpa_term, gtq.gpa_y1) as gpa_term,
+            gtq.gpa_semester,
+            gtq.gpa_y1,
+            gtq.gpa_y1_unweighted,
+            gtq.total_credit_hours,
+            gtq.n_failing_y1,
 
             concat(enr.region, enr.school_level) as region_school_level,
 
@@ -156,12 +156,20 @@ with
             and enr.schoolid = gc.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gc") }}
         left join
-            {{ ref("int_powerschool__gpa_term") }} as gt
-            on enr.studentid = gt.studentid
-            and enr.yearid = gt.yearid
-            and enr.schoolid = gt.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gt") }}
-            and term.storecode = gt.term_name
+            {{ ref("int_powerschool__gpa_term") }} as gtq
+            on enr.studentid = gtq.studentid
+            and enr.yearid = gtq.yearid
+            and enr.schoolid = gtq.schoolid
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gtq") }}
+            and term.storecode = gtq.term_name
+        left join
+            {{ ref("int_powerschool__gpa_term") }} as gty
+            on enr.studentid = gty.studentid
+            and enr.yearid = gty.yearid
+            and enr.schoolid = gty.schoolid
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
+            and term.storecode = gty.term_name
+            and gty.is_current
         where
             enr.academic_year = {{ var("current_academic_year") }}
             and enr.rn_year = 1
