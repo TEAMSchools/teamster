@@ -66,8 +66,15 @@ with
                 then 'Corrective'
                 when
                     code_location = 'kippmiami'
-                    and behavior_category
-                    in ('Be Kind', 'Effort', 'Accountability', 'Teamwork')
+                    and behavior_category in (
+                        'Be Kind (Love)',
+                        'Be Kind (Revolutionary Love)',
+                        'Effort (Perseverance)',
+                        'Effort (Pride)',
+                        'Accountability (Purpose, Courage)',
+                        'Accountability (Empowerment)',
+                        'Teamwork (Community)'
+                    )
                 then 'BEAT'
             end as category_type,
         from behaviors
