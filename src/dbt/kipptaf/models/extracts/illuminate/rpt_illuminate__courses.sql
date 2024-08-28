@@ -1,5 +1,5 @@
 select distinct
-    -- noqa: disable=RF05
+    -- trunk-ignore-begin(sqlfluff/RF05)
     course_number as `01 Course ID`,
     course_name as `02 Full Name`,
     course_name as `03 Short Name`,
@@ -24,4 +24,5 @@ select distinct
     null as `22 Program Funding Source`,
     null as `23 Cte Funding Provider`,
     null as `24 Tech Prep`,
+-- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("stg_powerschool__courses") }}

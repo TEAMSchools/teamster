@@ -6,7 +6,7 @@ with
             coalesce(
                 ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
             ) as school_id,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         left join
             {{ ref("stg_people__campus_crosswalk") }} as ccw
             on sr.home_work_location_name = ccw.name
