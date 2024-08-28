@@ -7,7 +7,7 @@ with
             sr.family_name_1,
             sr.home_work_location_name,
             sr.home_work_location_powerschool_school_id,
-            sr.home_department,
+            sr.home_department_name,
             sr.birth_date,
             sr.worker_termination_date,
             sr.sam_account_name,
@@ -31,7 +31,7 @@ with
                 day
             )
             <= 14
-            and (sr.home_department != 'Data' or sr.home_department is null)
+            and (sr.home_department_name != 'Data' or sr.home_department_name is null)
 
         union all
 
@@ -42,7 +42,7 @@ with
             sr.family_name_1,
             sr.home_work_location_name,
             sr.home_work_location_powerschool_school_id,
-            sr.home_department,
+            sr.home_department_name,
             sr.birth_date,
             sr.worker_termination_date,
             sr.sam_account_name,
@@ -65,7 +65,7 @@ with
                 day
             )
             <= 14
-            and (sr.home_department != 'Data' or sr.home_department is null)
+            and (sr.home_department_name != 'Data' or sr.home_department_name is null)
             and u.dcid is null
     ),
 

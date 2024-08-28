@@ -43,8 +43,7 @@ select
     w.organizational_unit__assigned__department__name as assigned_department_name,
     w.organizational_unit__home__business_unit__code_value as home_business_unit_code,
     w.organizational_unit__home__business_unit__name as home_business_unit_name,
-
-    w.organizational_unit__home__department__name as home_department,
+    w.organizational_unit__home__department__name as home_department_name,
     w.reports_to_worker_id__id_value as reports_to_worker_id,
 
     en.employee_number,

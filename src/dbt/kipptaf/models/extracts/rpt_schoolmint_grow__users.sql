@@ -5,7 +5,7 @@ with
             sr.google_email as user_email,
             sr.reports_to_employee_number as manager_internal_id,
             sr.home_work_location_name as school_name,
-            sr.home_department as course_name,
+            sr.home_department_name as course_name,
 
             sr.given_name || ' ' || sr.family_name_1 as user_name,
 
@@ -17,12 +17,12 @@ with
 
             case
                 /* network admins */
-                when sr.home_department = 'Executive'
+                when sr.home_department_name = 'Executive'
                 then 'Sub Admin'
                 when sr.job_title = 'Head of Schools'
                 then 'Regional Admin'
                 when
-                    sr.home_department in (
+                    sr.home_department_name in (
                         'Teaching and Learning',
                         'School Support',
                         'New Teacher Development'
@@ -34,16 +34,16 @@ with
                     )
                 then 'Sub Admin'
                 when
-                    sr.home_department = 'Special Education'
+                    sr.home_department_name = 'Special Education'
                     and contains_substr(sr.job_title, 'Director')
                 then 'Sub Admin'
-                when sr.home_department = 'Human Resources'
+                when sr.home_department_name = 'Human Resources'
                 then 'Sub Admin'
                 /* school admins */
                 when sr.job_title = 'School Leader'
                 then 'School Admin'
                 when
-                    sr.home_department = 'School Leadership'
+                    sr.home_department_name = 'School Leadership'
                     and (
                         contains_substr(sr.job_title, 'Assistant School Leader')
                         or contains_substr(sr.job_title, 'Dean')
@@ -67,7 +67,7 @@ with
             and tgl.grade_level_rank = 1
         where
             sr.user_principal_name is not null
-            and sr.home_department != 'Data'
+            and sr.home_department_name != 'Data'
             and coalesce(
                 sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
             )

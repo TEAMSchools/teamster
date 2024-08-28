@@ -9,7 +9,7 @@ with
             sr.user_principal_name,
             sr.given_name,
             sr.family_name_1,
-            sr.home_department,
+            sr.home_department_name,
             sr.sam_account_name,
 
             cast(
@@ -26,7 +26,7 @@ with
         where
             not sr.is_prestart
             and sr.assignment_status not in ('Terminated', 'Deceased')
-            and sr.home_department not in ('Data', 'Teaching and Learning')
+            and sr.home_department_name not in ('Data', 'Teaching and Learning')
             and coalesce(
                 ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
             )
@@ -40,7 +40,7 @@ with
             sr.user_principal_name,
             sr.given_name,
             sr.family_name_1,
-            sr.home_department,
+            sr.home_department_name,
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
@@ -53,7 +53,7 @@ with
             and sr.assignment_status not in ('Terminated', 'Deceased')
             and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
             and (
-                sr.home_department in ('Data', 'Teaching and Learning')
+                sr.home_department_name in ('Data', 'Teaching and Learning')
                 or sr.job_title in ('Executive Director', 'Managing Director')
             )
 
@@ -65,7 +65,7 @@ with
             sr.user_principal_name,
             sr.given_name,
             sr.family_name_1,
-            sr.home_department,
+            sr.home_department_name,
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
@@ -88,7 +88,7 @@ with
             sr.user_principal_name,
             sr.given_name,
             sr.family_name_1,
-            sr.home_department,
+            sr.home_department_name,
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
@@ -115,7 +115,7 @@ select
     user_principal_name as staff_email,
     given_name as first_name,
     family_name_1 as last_name,
-    home_department as department,
+    home_department_name as department,
 
     'School Admin' as title,
 
@@ -123,5 +123,5 @@ select
 
     null as `password`,
 
-    if(home_department = 'Operations', 'School Tech Lead', null) as `role`,
+    if(home_department_name = 'Operations', 'School Tech Lead', null) as `role`,
 from staff_union

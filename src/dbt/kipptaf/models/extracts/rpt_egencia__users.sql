@@ -26,12 +26,12 @@ from {{ ref("int_people__staff_roster") }} as sr
 left join
     {{ source("egencia", "src_egencia__traveler_groups") }} as tg
     on sr.home_work_location_name = tg.adp_home_work_location_name
-    and sr.home_department = tg.adp_department_home_name
+    and sr.home_department_name = tg.adp_department_home_name
     and sr.job_title = tg.adp_job_title
 left join
     {{ source("egencia", "src_egencia__traveler_groups") }} as tg2
     on sr.home_work_location_name = tg2.adp_home_work_location_name
-    and sr.home_department = tg2.adp_department_home_name
+    and sr.home_department_name = tg2.adp_department_home_name
     and tg2.adp_job_title = 'Default'
 left join
     {{ source("egencia", "src_egencia__traveler_groups") }} as tg3
