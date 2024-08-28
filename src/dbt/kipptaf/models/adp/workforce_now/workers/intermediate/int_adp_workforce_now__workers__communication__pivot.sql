@@ -1,3 +1,21 @@
+with
+    from_item as (
+        select
+            associate_oid,
+            item_id,
+            email_uri,
+            notification_indicator,
+            formatted_number,
+            country_dialing,
+            area_dialing,
+            dial_number,
+            `extension`,
+            `access`,
+
+            regexp_replace(name_code__code_value, r'\W', '') as pivot_column,
+        from {{ ref("int_adp_workforce_now__workers__communication") }}
+    )
+
 select
     associate_oid,
 
@@ -43,7 +61,7 @@ select
     extension_workphone as communication__work_phone__extension,
     access_workphone as communication__work_phone__access,
 from
-    {{ ref("int_adp_workforce_now__workers__communication") }} pivot (
+    from_item pivot (
         max(item_id) as item_id,
         max(email_uri) as email_uri,
         max(notification_indicator) as notification_indicator,
@@ -53,7 +71,7 @@ from
         max(dial_number) as dial_number,
         max(`extension`) as `extension`,
         max(`access`) as `access`
-        for regexp_replace(name_code__code_value, r'\W', '') in (
+        for pivot_column in (
             'HomePhone',
             'PersonalCell',
             'PersonalEmail',
