@@ -55,7 +55,7 @@ with
                     and (
                         sr.job_title like '%Teacher%'
                         or sr.job_title like '%Learning%'
-                        or sr.department_home_name
+                        or sr.home_department_name
                         in ('School Support', 'Student Support', 'KIPP Forward')
                     )
                 then 'Coach'
