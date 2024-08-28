@@ -120,8 +120,8 @@ assets:
       id: b529ca04-3560-4cff-8898-fd0a65f3e994
       cron_schedule:
         - 0 6 * * *
-        - 0 12 * * *
         - 30 14 * * *
+        - 15 16 * * *
   - name: Attendance Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__attendance_chronic_absenteeism_log]
