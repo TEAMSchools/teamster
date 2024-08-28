@@ -7,12 +7,12 @@ with
             sr.family_name_1,
             sr.home_work_location_name,
             sr.home_work_location_powerschool_school_id,
-            sr.organizational_unit__home__department__name,
-            sr.person__birth_date,
-            sr.worker_dates__termination_date,
+            sr.home_department,
+            sr.birth_date,
+            sr.worker_termination_date,
             sr.sam_account_name,
             sr.mail,
-            sr.assignment_status__status_code__long_name,
+            sr.assignment_status,
             sr.home_work_location_dagster_code_location,
         from {{ ref("int_people__staff_roster") }} as sr
         inner join
@@ -25,16 +25,13 @@ with
             date_diff(
                 current_date('{{ var("local_timezone") }}'),
                 coalesce(
-                    sr.worker_dates__termination_date,
+                    sr.worker_termination_date,
                     current_date('{{ var("local_timezone") }}')
                 ),
                 day
             )
             <= 14
-            and (
-                sr.organizational_unit__home__department__name != 'Data'
-                or sr.organizational_unit__home__department__name is null
-            )
+            and (sr.home_department != 'Data' or sr.home_department is null)
 
         union all
 
@@ -45,12 +42,12 @@ with
             sr.family_name_1,
             sr.home_work_location_name,
             sr.home_work_location_powerschool_school_id,
-            sr.organizational_unit__home__department__name,
-            sr.person__birth_date,
-            sr.worker_dates__termination_date,
+            sr.home_department,
+            sr.birth_date,
+            sr.worker_termination_date,
             sr.sam_account_name,
             sr.mail,
-            sr.assignment_status__status_code__long_name,
+            sr.assignment_status,
             sr.home_work_location_dagster_code_location,
         from {{ ref("int_people__staff_roster") }} as sr
         left join
@@ -62,16 +59,13 @@ with
             date_diff(
                 current_date('{{ var("local_timezone") }}'),
                 coalesce(
-                    sr.worker_dates__termination_date,
+                    sr.worker_termination_date,
                     current_date('{{ var("local_timezone") }}')
                 ),
                 day
             )
             <= 14
-            and (
-                sr.organizational_unit__home__department__name != 'Data'
-                or sr.organizational_unit__home__department__name is null
-            )
+            and (sr.home_department != 'Data' or sr.home_department is null)
             and u.dcid is null
     ),
 
@@ -80,7 +74,7 @@ with
             powerschool_teacher_number,
             given_name,
             family_name_1,
-            person__birth_date,
+            birth_date,
             home_work_location_powerschool_school_id,
             home_work_location_dagster_code_location,
             sam_account_name,
@@ -91,19 +85,17 @@ with
                     date_diff(
                         current_date('{{ var("local_timezone") }}'),
                         coalesce(
-                            worker_dates__termination_date,
+                            worker_termination_date,
                             current_date('{{ var("local_timezone") }}')
                         ),
                         day
                     )
                     <= 7
                 then 1
-                when
-                    assignment_status__status_code__long_name
-                    not in ('Terminated', 'Deceased')
+                when assignment_status not in ('Terminated', 'Deceased')
                 then 1
                 when
-                    worker_dates__termination_date
+                    worker_termination_date
                     >= current_date('{{ var("local_timezone") }}')
                 then 1
                 else 2
@@ -131,7 +123,7 @@ select
     if(`status` = 1, 1, 0) as adminldapenabled,
     if(`status` = 1, 1, 0) as ptaccess,
 
-    format_date('%m/%d/%Y', person__birth_date) as dob,
+    format_date('%m/%d/%Y', birth_date) as dob,
 
     home_work_location_dagster_code_location,
 

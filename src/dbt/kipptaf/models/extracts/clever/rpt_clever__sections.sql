@@ -12,7 +12,7 @@ with
             on sr.home_work_location_name = ccw.name
             and not ccw.is_pathways
         where
-            sr.assignment_status__status_code__long_name != 'Terminated'
+            sr.assignment_status != 'Terminated'
             and sr.job_title in (
                 'Director of Campus Operations',
                 'Director Campus Operations',
