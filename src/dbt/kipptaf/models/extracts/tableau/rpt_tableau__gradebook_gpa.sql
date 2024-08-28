@@ -164,12 +164,12 @@ with
             and term.storecode = gtq.term_name
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty
-            on enr.studentid = gty.studentid
-            and enr.yearid = gty.yearid
-            and enr.schoolid = gty.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
-            and term.storecode = gty.term_name
-            and gty.is_current
+            on gtq.studentid = gty.studentid
+            and gtq.yearid = gty.yearid
+            and gtq.schoolid = gty.schoolid
+            and {{ union_dataset_join_clause(left_alias="gtq", right_alias="gty") }}
+            and gtq.term_name = gty.term_name
+            and gtq.is_current
         where
             enr.academic_year = {{ var("current_academic_year") }}
             and enr.rn_year = 1
