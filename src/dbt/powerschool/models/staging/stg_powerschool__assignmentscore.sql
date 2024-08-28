@@ -1,36 +1,62 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="assignmentscoreid.int_value",
-        transform_cols=[
-            {"name": "assignmentscoreid", "extract": "int_value"},
-            {"name": "yearid", "extract": "int_value"},
-            {"name": "assignmentsectionid", "extract": "int_value"},
-            {"name": "studentsdcid", "extract": "int_value"},
-            {"name": "islate", "extract": "int_value"},
-            {"name": "iscollected", "extract": "int_value"},
-            {"name": "isexempt", "extract": "int_value"},
-            {"name": "ismissing", "extract": "int_value"},
-            {"name": "isabsent", "extract": "int_value"},
-            {"name": "isincomplete", "extract": "int_value"},
-            {"name": "actualscoregradescaledcid", "extract": "int_value"},
-            {"name": "scorepercent", "extract": "bytes_decimal_value"},
-            {"name": "scorepoints", "extract": "bytes_decimal_value"},
-            {"name": "scorenumericgrade", "extract": "bytes_decimal_value"},
-            {"name": "scoregradescaledcid", "extract": "int_value"},
-            {"name": "altnumericgrade", "extract": "bytes_decimal_value"},
-            {"name": "altscoregradescaledcid", "extract": "int_value"},
-            {"name": "hasretake", "extract": "int_value"},
-            {"name": "authoredbyuc", "extract": "int_value"},
-            {"name": "whomodifiedid", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("powerschool", "src_powerschool__assignmentscore"),
+                partition_by="assignmentscoreid.int_value",
+                order_by="_file_name desc",
+            )
+        }}
     )
-}}
 
-select *
-from staging
+-- trunk-ignore(sqlfluff/AM04)
+select
+    * except (
+        actualscoregradescaledcid,
+        altnumericgrade,
+        altscoregradescaledcid,
+        assignmentscoreid,
+        assignmentsectionid,
+        authoredbyuc,
+        hasretake,
+        isabsent,
+        iscollected,
+        isexempt,
+        isincomplete,
+        islate,
+        ismissing,
+        scoregradescaledcid,
+        scorenumericgrade,
+        scorepercent,
+        scorepoints,
+        studentsdcid,
+        whomodifiedid,
+        yearid
+    ),
+
+    /* column transformations */
+    actualscoregradescaledcid.int_value as actualscoregradescaledcid,
+    altscoregradescaledcid.int_value as altscoregradescaledcid,
+    assignmentscoreid.int_value as assignmentscoreid,
+    assignmentsectionid.int_value as assignmentsectionid,
+    authoredbyuc.int_value as authoredbyuc,
+    hasretake.int_value as hasretake,
+    isabsent.int_value as isabsent,
+    iscollected.int_value as iscollected,
+    isexempt.int_value as isexempt,
+    isincomplete.int_value as isincomplete,
+    islate.int_value as islate,
+    ismissing.int_value as ismissing,
+    scoregradescaledcid.int_value as scoregradescaledcid,
+    studentsdcid.int_value as studentsdcid,
+    whomodifiedid.int_value as whomodifiedid,
+    yearid.int_value as yearid,
+
+    altnumericgrade.bytes_decimal_value as altnumericgrade,
+    scorenumericgrade.bytes_decimal_value as scorenumericgrade,
+    scorepercent.bytes_decimal_value as scorepercent,
+
+    coalesce(
+        scorepoints.bytes_decimal_value, scorepoints.int_value, scorepoints.double_value
+    ) as scorepoints,
+from deduplicate
