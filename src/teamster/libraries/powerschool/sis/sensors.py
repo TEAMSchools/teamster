@@ -4,6 +4,7 @@ from operator import itemgetter
 
 import pendulum
 from dagster import (
+    MAX_RUNTIME_SECONDS_TAG,
     AssetKey,
     AssetsDefinition,
     RunRequest,
@@ -237,6 +238,7 @@ def build_powerschool_asset_sensor(
                     job_name=job_name,
                     partition_key=parition_key,
                     asset_selection=[g["asset_key"] for g in group],
+                    tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60)},
                 )
             )
 
