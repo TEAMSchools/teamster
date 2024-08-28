@@ -55,7 +55,10 @@ with
                 when
                     sr.management_position_indicator
                     and (
-                        sr.job_title like '%Teacher%' or sr.job_title like '%Learning%'
+                        sr.job_title like '%Teacher%'
+                        or sr.job_title like '%Learning%'
+                        or sr.department_home_name
+                        in ('School Support', 'Student Support', 'KIPP Forward')
                     )
                 then 'Coach'
                 when (sr.job_title like '%Teacher%' or sr.job_title like '%Learning%')
