@@ -98,7 +98,7 @@ with
             gc.cumulative_y1_gpa_projected_s1_unweighted,
             gc.core_cumulative_y1_gpa,
 
-            if(term.storecode = 'Y1', gty.gpa_term, gtq.gpa_y1) as gpa_term,
+            if(term.storecode = 'Y1', gty.gpa_term, gtq.gpa_term) as gpa_term,
             gtq.gpa_semester,
             if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
             gtq.gpa_y1_unweighted,
