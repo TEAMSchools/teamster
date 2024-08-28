@@ -13,7 +13,7 @@ select
 
     null as `Preferred Name`,
 
-    cast(w.report_to_employee_number as string) as `Business Unit Code`,
+    cast(w.reports_to_employee_number as string) as `Business Unit Code`,
 
     format_date('%m/%d/%Y', w.worker_rehire_date) as `Rehire Date`,
     format_date('%m/%d/%Y', w.worker_termination_date) as `Termination Date`,
