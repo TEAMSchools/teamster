@@ -61,7 +61,6 @@ select
     lc.is_campus as home_work_location_is_campus,
     lc.is_pathways as home_work_location_is_pathways,
 
-    ldap.distinguished_name,
     ldap.physical_delivery_office_name,
     ldap.uac_account_disable,
     ldap.google_email,
