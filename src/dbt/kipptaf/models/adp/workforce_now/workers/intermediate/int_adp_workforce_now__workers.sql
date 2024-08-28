@@ -30,6 +30,15 @@ select
     wa.wage_law_coverage__coverage_code__name,
     wa.base_remuneration__annual_rate_amount__amount_value,
 
+    com.communication__work_email__email_uri,
+
+    cf.employee_number as custom_field__employee_number,
+    cf.wf_mgr_accrual_profile,
+    cf.wf_mgr_badge_number,
+    cf.wf_mgr_ee_type,
+    cf.wf_mgr_pay_rule,
+    cf.wf_mgr_trigger,
+
     ou.organizational_unit__assigned__business_unit__name,
     ou.organizational_unit__assigned__department__name,
     ou.organizational_unit__home__business_unit__name,
@@ -37,17 +46,18 @@ select
 
     rt.reports_to_worker_id__id_value,
 
-    cf.wf_mgr_accrual_profile,
-    cf.wf_mgr_badge_number,
-    cf.wf_mgr_ee_type,
-    cf.wf_mgr_pay_rule,
-
     w.person__family_name_1 || ', ' || w.person__given_name as person__formatted_name,
 from {{ ref("stg_adp_workforce_now__workers") }} as w
 inner join
     {{ ref("stg_adp_workforce_now__workers__work_assignments") }} as wa
     on w.associate_oid = wa.associate_oid
     and wa.effective_date_start between w.effective_date_start and w.effective_date_end
+left join
+    {{ ref("int_adp_workforce_now__workers__communication__pivot") }} as com
+    on w.associate_oid = com.associate_oid
+left join
+    {{ ref("int_adp_workforce_now__workers__custom_fields__pivot") }} as cf
+    on w.associate_oid = cf.associate_oid
 left join
     {{
         ref(
@@ -65,6 +75,3 @@ left join
     and wa.item_id = rt.item_id
     and rt.effective_date_start
     between wa.effective_date_start and wa.effective_date_end
-left join
-    {{ ref("int_adp_workforce_now__workers__custom_fields__pivot") }} as cf
-    on w.associate_oid = cf.associate_oid
