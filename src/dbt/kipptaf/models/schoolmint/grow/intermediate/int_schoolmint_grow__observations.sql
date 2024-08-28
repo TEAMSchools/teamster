@@ -11,7 +11,7 @@ select
     o.academic_year,
     o.is_published,
 
-    oon.notes_text as observation_notes,
+    mn.text as observation_notes,
 
     s.name as school_name,
 
@@ -26,8 +26,8 @@ select
     safe_cast(uo.internal_id as int) as observer_internal_id,
 from {{ ref("stg_schoolmint_grow__observations") }} as o
 left join
-    {{ ref("stg_schoolmint_grow__observations__observation_notes") }} as oon
-    on o.observation_id = oon.observation_id
+    {{ ref("stg_schoolmint_grow__observations__magic_notes") }} as mn
+    on o.observation_id = mn.observation_id
 left join {{ ref("stg_schoolmint_grow__users") }} as ut on o.teacher_id = ut.user_id
 left join {{ ref("stg_schoolmint_grow__users") }} as uo on o.observer_id = uo.user_id
 left join
