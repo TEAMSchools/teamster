@@ -49,10 +49,6 @@ with
 
             lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
-            {# retired fields kept for tableau compatibility #}
-            null as power_standard_goal,
-            null as is_power_standard,
-            null as standard_domain,
             if(
                 co.grade_level >= 9, enr.courses_credittype, asr.subject_area
             ) as filter_join,
@@ -130,9 +126,11 @@ select
     d.section_number,
     d.is_foundations,
     d.head_of_school,
-    d.power_standard_goal,
-    d.is_power_standard,
-    d.standard_domain,
+
+    /* retired fields kept for tableau compatibility */
+    null as power_standard_goal,
+    null as is_power_standard,
+    null as standard_domain,
 
     sf.nj_student_tier,
     sf.tutoring_nj,
