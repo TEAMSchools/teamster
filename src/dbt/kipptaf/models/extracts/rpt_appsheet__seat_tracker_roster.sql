@@ -7,13 +7,13 @@ select
     sr.job_title,
     sr.mail,
     sr.google_email,
-    sr.report_to_mail,
-    sr.report_to_google_email,
+    sr.reports_to_mail as report_to_mail,
+    sr.reports_to_google_email as report_to_google_email,
     sr.worker_original_hire_date,
     sr.home_business_unit as business_unit_home_name,
     sr.worker_termination_date,
     sr.sam_account_name as tableau_username,
-    sr.report_to_sam_account_name as tableau_manager_username,
+    sr.reports_to_sam_account_name as tableau_manager_username,
 
     /* future feeds from other data sources*/
     null as itr_response,
