@@ -100,7 +100,7 @@ with
 
             if(term.storecode = 'Y1', gty.gpa_term, gtq.gpa_y1) as gpa_term,
             gtq.gpa_semester,
-            gtq.gpa_y1,
+            if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
             gtq.gpa_y1_unweighted,
             gtq.total_credit_hours,
             gtq.n_failing_y1,
