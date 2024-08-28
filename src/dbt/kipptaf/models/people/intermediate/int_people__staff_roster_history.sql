@@ -29,15 +29,18 @@ select
     w.wage_law_coverage__coverage_code__name as wage_law_coverage,
     w.base_remuneration__annual_rate_amount__amount_value
     as base_remuneration_annual_rate_amount,
+    w.communication__work_email__email_uri as work_email,
+    w.custom_field__employee_number,
+    w.wf_mgr_accrual_profile,
+    w.wf_mgr_badge_number,
+    w.wf_mgr_ee_type,
+    w.wf_mgr_pay_rule,
+    w.wf_mgr_trigger,
     w.organizational_unit__assigned__business_unit__name as assigned_business_unit,
     w.organizational_unit__assigned__department__name as assigned_department,
     w.organizational_unit__home__business_unit__name as home_business_unit,
     w.organizational_unit__home__department__name as home_department,
     w.reports_to_worker_id__id_value as reports_to_worker_id,
-    w.wf_mgr_accrual_profile,
-    w.wf_mgr_badge_number,
-    w.wf_mgr_ee_type,
-    w.wf_mgr_pay_rule,
 
     en.employee_number,
 
@@ -76,6 +79,10 @@ select
 
     rtldap.google_email as reports_to_google_email,
 
+    coalesce(
+        w.worker_dates__rehire_date, w.worker_dates__original_hire_date
+    ) as worker_hire_date_recent,
+
     lower(ldap.sam_account_name) as sam_account_name,
     lower(ldap.user_principal_name) as user_principal_name,
     lower(ldap.mail) as mail,
@@ -107,6 +114,25 @@ select
         then true
         else false
     end as is_hispanic,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            field_list=[
+                "w.assignment_status__status_code__name",
+                "w.base_remuneration__annual_rate_amount__amount_value",
+                "w.home_work_location__name_code__name",
+                "w.job_title",
+                "w.organizational_unit__assigned__business_unit__name",
+                "w.organizational_unit__assigned__department__name",
+                "w.reports_to_worker_id__id_value",
+                "w.wage_law_coverage__coverage_code__name",
+                "w.wf_mgr_accrual_profile",
+                "w.wf_mgr_badge_number",
+                "w.wf_mgr_ee_type",
+                "w.wf_mgr_pay_rule",
+            ]
+        )
+    }} as surrogate_key,
 from {{ ref("int_adp_workforce_now__workers") }} as w
 inner join
     {{ ref("stg_people__employee_numbers") }} as en
