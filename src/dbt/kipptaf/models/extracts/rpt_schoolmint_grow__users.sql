@@ -2,11 +2,12 @@ with
     people as (
         select
             sr.employee_number as user_internal_id,
-            sr.formatted_name as user_name,
             sr.google_email as user_email,
             sr.reports_to_employee_number as manager_internal_id,
             sr.home_work_location_name as school_name,
             sr.home_department as course_name,
+
+            sr.given_name || ' ' || sr.family_name_1 as user_name,
 
             if(sr.assignment_status in ('Terminated', 'Deceased'), 1, 0) as inactive,
 
