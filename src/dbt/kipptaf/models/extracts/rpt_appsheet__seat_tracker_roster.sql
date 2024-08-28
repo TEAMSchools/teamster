@@ -10,7 +10,7 @@ select
     sr.reports_to_mail as report_to_mail,
     sr.reports_to_google_email as report_to_google_email,
     sr.worker_original_hire_date,
-    sr.home_business_unit as business_unit_home_name,
+    sr.home_business_unit_name as business_unit_home_name,
     sr.worker_termination_date,
     sr.sam_account_name as tableau_username,
     sr.reports_to_sam_account_name as tableau_manager_username,
@@ -23,7 +23,7 @@ select
 
     coalesce(cast(tgl.grade_level as string), sr.home_department) as grade_department,
 
-    coalesce(lc.region, sr.home_business_unit) as location_entity,
+    coalesce(lc.region, sr.home_business_unit_name) as location_entity,
 
     coalesce(lc.abbreviation, sr.home_work_location_name) as location_shortname,
 
@@ -31,10 +31,10 @@ select
 
     case
         when
-            sr.home_business_unit
+            sr.home_business_unit_name
             in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
         then 'New Jersey'
-        when sr.home_business_unit = 'KIPP Miami'
+        when sr.home_business_unit_name = 'KIPP Miami'
         then 'Miami'
         else 'CMO'
     end as region_state,

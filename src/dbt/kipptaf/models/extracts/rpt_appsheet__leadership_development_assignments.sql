@@ -2,7 +2,7 @@ with
     assignment_group as (
         select
             sr.employee_number,
-            sr.home_business_unit,
+            sr.home_business_unit_name,
 
             if(
                 sr.job_title in (
@@ -40,7 +40,7 @@ from assignment_group as ag
 inner join
     {{ ref("stg_performance_management__leadership_development_metrics") }} as ldm
     on ag.route = ldm.role
-    and ag.home_business_unit = ldm.region
+    and ag.home_business_unit_name = ldm.region
 
 union all
 

@@ -5,10 +5,10 @@ select
     w.family_name_1 as `Last Name`,
     w.job_title as `Job Title Description`,
     w.assignment_status as `Position Status`,
-    w.assigned_business_unit as `Company Code`,
+    w.assigned_business_unit_name as `Company Code`,
     w.home_work_location_name as `Location Description`,
-    w.assigned_department as `Business Unit Description`,
-    w.assigned_department as `Home Department Description`,
+    w.assigned_department_name as `Business Unit Description`,
+    w.assigned_department_name as `Home Department Description`,
     w.employee_number as `Position ID`,
 
     null as `Preferred Name`,
@@ -21,8 +21,8 @@ select
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__staff_roster") }} as w
 where
-    w.assigned_business_unit is not null
-    and w.assigned_department is not null
+    w.assigned_business_unit_name is not null
+    and w.assigned_department_name is not null
     and date_diff(
         coalesce(w.worker_rehire_date, w.worker_original_hire_date),
         current_date('{{ var("local_timezone") }}'),
