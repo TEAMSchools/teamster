@@ -144,9 +144,6 @@ select
     total_credit_hours,
     grade_avg_term,
     grade_avg_y1,
-    avg(if(is_current, gpa_y1, null)) over (
-        partition by _dbt_source_relation, yearid, studentid
-    ) as y1_gpa_term,
     round(weighted_gpa_points_term, 2) as weighted_gpa_points_term,
     round(weighted_gpa_points_y1, 2) as weighted_gpa_points_y1,
     round(weighted_gpa_points_y1_unweighted, 2) as weighted_gpa_points_y1_unweighted,
