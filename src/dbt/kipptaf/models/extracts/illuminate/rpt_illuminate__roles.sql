@@ -12,13 +12,13 @@ select
     ) as `04 Academic Year`,
 
     1 as `05 Session Type ID`,
-from {{ ref("base_people__staff_roster") }} as sr
+from {{ ref("int_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on sch.state_excludefromreporting = 0
 where
     sr.assignment_status != 'Terminated'
-    and sr.department_home_name in ('Teaching and Learning', 'Data', 'Executive')
-    and sr.business_unit_home_name = 'KIPP TEAM and Family Schools Inc.'
+    and sr.home_department_name in ('Teaching and Learning', 'Data', 'Executive')
+    and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
 
 union all
 
@@ -35,14 +35,14 @@ select
     ) as `04 Academic Year`,
 
     1 as `05 Session Type ID`,
-from {{ ref("base_people__staff_roster") }} as sr
+from {{ ref("int_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.name
     and not cc.is_pathways
 where
     sr.assignment_status != 'Terminated'
-    and sr.department_home_name not in ('Teaching and Learning', 'Data', 'Executive')
+    and sr.home_department_name not in ('Teaching and Learning', 'Data', 'Executive')
     and sr.home_work_location_is_campus
 
 union all
@@ -59,8 +59,8 @@ select
     ) as `04 Academic Year`,
 
     1 as `05 Session Type ID`,
-from {{ ref("base_people__staff_roster") }}
+from {{ ref("int_people__staff_roster") }}
 where
     assignment_status != 'Terminated'
-    and department_home_name not in ('Teaching and Learning', 'Data', 'Executive')
+    and home_department_name not in ('Teaching and Learning', 'Data', 'Executive')
     and not home_work_location_is_campus
