@@ -18,7 +18,7 @@ inner join
 where
     sr.assignment_status != 'Terminated'
     and sr.home_department in ('Teaching and Learning', 'Data', 'Executive')
-    and sr.home_business_unit = 'KIPP TEAM and Family Schools Inc.'
+    and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
 
 union all
 

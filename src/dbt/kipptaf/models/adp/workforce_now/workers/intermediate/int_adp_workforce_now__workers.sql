@@ -40,8 +40,10 @@ select
     cf.wf_mgr_pay_rule,
     cf.wf_mgr_trigger,
 
+    ou.organizational_unit__assigned__business_unit__code_value,
     ou.organizational_unit__assigned__business_unit__name,
     ou.organizational_unit__assigned__department__name,
+    ou.organizational_unit__home__business_unit__code_value,
     ou.organizational_unit__home__business_unit__name,
     ou.organizational_unit__home__department__name,
 

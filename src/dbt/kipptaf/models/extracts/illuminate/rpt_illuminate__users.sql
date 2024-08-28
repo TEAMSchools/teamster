@@ -24,7 +24,7 @@ select
     null as `16 User Is Hispanic`,
     null as `17 Address`,
 
-    home_business_unit as `18 City`,
+    home_business_unit_name as `18 City`,
 
     null as `19 State`,
     null as `20 Zip`,

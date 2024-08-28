@@ -51,7 +51,7 @@ with
         where
             not sr.is_prestart
             and sr.assignment_status not in ('Terminated', 'Deceased')
-            and sr.home_business_unit = 'KIPP TEAM and Family Schools Inc.'
+            and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
             and (
                 sr.home_department in ('Data', 'Teaching and Learning')
                 or sr.job_title in ('Executive Director', 'Managing Director')
