@@ -1,6 +1,6 @@
 select
     sr.employee_number,
-    sr.assignment_status__status_code__long_name as assignment_status,
+    sr.assignment_status,
     sr.formatted_name as preferred_name_lastfirst,
     sr.home_work_location_name,
     sr.home_work_location_grade_band,
@@ -9,9 +9,9 @@ select
     sr.google_email,
     sr.report_to_mail,
     sr.report_to_google_email,
-    sr.worker_dates__original_hire_date as worker_original_hire_date,
-    sr.organizational_unit__home__business_unit__name as business_unit_home_name,
-    sr.worker_dates__termination_date as worker_termination_date,
+    sr.worker_original_hire_date,
+    sr.home_business_unit as business_unit_home_name,
+    sr.worker_termination_date,
     sr.sam_account_name as tableau_username,
     sr.report_to_sam_account_name as tableau_manager_username,
 
@@ -21,13 +21,9 @@ select
     null as last_performance_management_score,
     null as smart_recruiter_id,
 
-    coalesce(
-        cast(tgl.grade_level as string), sr.organizational_unit__home__department__name
-    ) as grade_department,
+    coalesce(cast(tgl.grade_level as string), sr.home_department) as grade_department,
 
-    coalesce(
-        lc.region, sr.organizational_unit__home__business_unit__name
-    ) as location_entity,
+    coalesce(lc.region, sr.home_business_unit) as location_entity,
 
     coalesce(lc.abbreviation, sr.home_work_location_name) as location_shortname,
 
@@ -35,30 +31,30 @@ select
 
     case
         when
-            sr.organizational_unit__home__business_unit__name
+            sr.home_business_unit
             in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
         then 'New Jersey'
-        when sr.organizational_unit__home__business_unit__name = 'KIPP Miami'
+        when sr.home_business_unit = 'KIPP Miami'
         then 'Miami'
         else 'CMO'
     end as region_state,
 
     case
         /* see everything, edit everything*/
-        when sr.organizational_unit__home__department__name in ('Data')
+        when sr.home_department in ('Data')
         then 7
         when
-            sr.organizational_unit__home__department__name = 'Recruitment'
+            sr.home_department = 'Recruitment'
             and contains_substr(sr.job_title, 'Director')
         then 7
         /* see your state/region, edit everything */
         when
             contains_substr(sr.job_title, 'Director')
-            and sr.organizational_unit__home__department__name = 'School Support'
+            and sr.home_department = 'School Support'
         then 6
         /* see everything, edit teammate and seat status fields (recruiters)*/
         when
-            sr.organizational_unit__home__department__name = 'Recruitment'
+            sr.home_department = 'Recruitment'
             and contains_substr(sr.job_title, 'Recruiter')
         then 5
         /* see school, edit teammate fields (name in position, gutcheck, nonrenewal)*/
@@ -77,17 +73,14 @@ select
         then 3
         when
             contains_substr(sr.job_title, 'Director')
-            and sr.organizational_unit__home__department__name = 'Special Education'
+            and sr.home_department = 'Special Education'
         then 3
-        when
-            sr.organizational_unit__home__department__name
-            in ('Leadership Development', 'Human Resources')
+        when sr.home_department in ('Leadership Development', 'Human Resources')
         then 3
         /* see your state/region, edit nothing */
         when
             contains_substr(sr.job_title, 'Managing Director')
-            and sr.organizational_unit__home__department__name
-            in ('Operations', 'School Support')
+            and sr.home_department in ('Operations', 'School Support')
         then 2
         when contains_substr(sr.job_title, 'Head of Schools')
         then 2

@@ -16,11 +16,9 @@ from {{ ref("int_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on sch.state_excludefromreporting = 0
 where
-    sr.assignment_status__status_code__long_name != 'Terminated'
-    and sr.organizational_unit__home__department__name
-    in ('Teaching and Learning', 'Data', 'Executive')
-    and sr.organizational_unit__home__business_unit__name
-    = 'KIPP TEAM and Family Schools Inc.'
+    sr.assignment_status != 'Terminated'
+    and sr.home_department in ('Teaching and Learning', 'Data', 'Executive')
+    and sr.home_business_unit = 'KIPP TEAM and Family Schools Inc.'
 
 union all
 
@@ -43,9 +41,8 @@ inner join
     on sr.home_work_location_name = cc.name
     and not cc.is_pathways
 where
-    sr.assignment_status__status_code__long_name != 'Terminated'
-    and sr.organizational_unit__home__department__name
-    not in ('Teaching and Learning', 'Data', 'Executive')
+    sr.assignment_status != 'Terminated'
+    and sr.home_department not in ('Teaching and Learning', 'Data', 'Executive')
     and sr.home_work_location_is_campus
 
 union all
@@ -64,7 +61,6 @@ select
     1 as `05 Session Type ID`,
 from {{ ref("int_people__staff_roster") }}
 where
-    assignment_status__status_code__long_name != 'Terminated'
-    and organizational_unit__home__department__name
-    not in ('Teaching and Learning', 'Data', 'Executive')
+    assignment_status != 'Terminated'
+    and home_department not in ('Teaching and Learning', 'Data', 'Executive')
     and not home_work_location_is_campus

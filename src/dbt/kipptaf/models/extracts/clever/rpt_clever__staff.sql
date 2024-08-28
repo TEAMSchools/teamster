@@ -9,7 +9,7 @@ with
             sr.user_principal_name,
             sr.given_name,
             sr.family_name_1,
-            sr.organizational_unit__home__department__name,
+            sr.home_department,
             sr.sam_account_name,
 
             cast(
@@ -25,10 +25,8 @@ with
             and not ccw.is_pathways
         where
             not sr.is_prestart
-            and sr.assignment_status__status_code__long_name
-            not in ('Terminated', 'Deceased')
-            and sr.organizational_unit__home__department__name
-            not in ('Data', 'Teaching and Learning')
+            and sr.assignment_status not in ('Terminated', 'Deceased')
+            and sr.home_department not in ('Data', 'Teaching and Learning')
             and coalesce(
                 ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
             )
@@ -42,7 +40,7 @@ with
             sr.user_principal_name,
             sr.given_name,
             sr.family_name_1,
-            sr.organizational_unit__home__department__name,
+            sr.home_department,
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
@@ -52,13 +50,10 @@ with
             on (sch.state_excludefromreporting = 0)
         where
             not sr.is_prestart
-            and sr.assignment_status__status_code__long_name
-            not in ('Terminated', 'Deceased')
-            and sr.organizational_unit__home__business_unit__name
-            = 'KIPP TEAM and Family Schools Inc.'
+            and sr.assignment_status not in ('Terminated', 'Deceased')
+            and sr.home_business_unit = 'KIPP TEAM and Family Schools Inc.'
             and (
-                sr.organizational_unit__home__department__name
-                in ('Data', 'Teaching and Learning')
+                sr.home_department in ('Data', 'Teaching and Learning')
                 or sr.job_title in ('Executive Director', 'Managing Director')
             )
 
@@ -70,7 +65,7 @@ with
             sr.user_principal_name,
             sr.given_name,
             sr.family_name_1,
-            sr.organizational_unit__home__department__name,
+            sr.home_department,
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
@@ -82,8 +77,7 @@ with
             and sch.state_excludefromreporting = 0
         where
             not sr.is_prestart
-            and sr.assignment_status__status_code__long_name
-            not in ('Terminated', 'Deceased')
+            and sr.assignment_status not in ('Terminated', 'Deceased')
             and sr.home_work_location_powerschool_school_id = 0
 
         union all
@@ -94,7 +88,7 @@ with
             sr.user_principal_name,
             sr.given_name,
             sr.family_name_1,
-            sr.organizational_unit__home__department__name,
+            sr.home_department,
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
@@ -107,8 +101,7 @@ with
             {{ ref("int_people__staff_roster") }} as sr
             on up.employee_number = sr.employee_number
             and not sr.is_prestart
-            and sr.assignment_status__status_code__long_name
-            not in ('Terminated', 'Deceased')
+            and sr.assignment_status not in ('Terminated', 'Deceased')
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on sch.schoolstate = 'NJ'
@@ -122,7 +115,7 @@ select
     user_principal_name as staff_email,
     given_name as first_name,
     family_name_1 as last_name,
-    organizational_unit__home__department__name as department,
+    home_department as department,
 
     'School Admin' as title,
 
@@ -130,9 +123,5 @@ select
 
     null as `password`,
 
-    if(
-        organizational_unit__home__department__name = 'Operations',
-        'School Tech Lead',
-        null
-    ) as `role`,
+    if(home_department = 'Operations', 'School Tech Lead', null) as `role`,
 from staff_union
