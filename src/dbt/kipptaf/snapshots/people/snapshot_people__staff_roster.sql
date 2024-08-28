@@ -10,6 +10,6 @@
     }}
 
     select *
-    from {{ ref("int_people__staff_roster") }}
+    from {{ ref("base_people__staff_roster") }}
 
 {% endsnapshot %}
