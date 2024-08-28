@@ -30,6 +30,7 @@ select
     w.base_remuneration__annual_rate_amount__amount_value
     as base_remuneration_annual_rate_amount,
     w.communication__work_email__email_uri as work_email,
+    w.communication__personal_email__email_uri as personal_email,
     w.custom_field__employee_number,
     w.wf_mgr_accrual_profile,
     w.wf_mgr_badge_number,
