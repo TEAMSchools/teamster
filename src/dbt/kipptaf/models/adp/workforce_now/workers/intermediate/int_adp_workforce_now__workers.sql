@@ -31,6 +31,7 @@ select
     wa.base_remuneration__annual_rate_amount__amount_value,
 
     com.communication__work_email__email_uri,
+    com.communication__personal_email__email_uri,
 
     cf.employee_number as custom_field__employee_number,
     cf.wf_mgr_accrual_profile,
