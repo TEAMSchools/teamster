@@ -312,21 +312,13 @@ with
         group by student_number
     ),
 
-    bgp as (
+    test_attempts as (
         select
             contact,
-            subject as bgp,
-            row_number() over (partition by contact order by date desc) as rn_bgp,
-        from {{ ref("stg_kippadb__contact_note") }}
-        where
-            subject in (
-                'BGP: 2-year',
-                'BGP: 4-year',
-                'BGP: CTE',
-                'BGP: Workforce',
-                'BGP: Unknown',
-                'BGP: Military'
-            )
+            sum(if(score_type = 'act_composite', 1, 0)) as n_act_attempts,
+            sum(if(score_type = 'sat_total_score', 1, 0)) as n_sat_attempts,
+        from {{ ref("int_kippadb__standardized_test_unpivot") }}
+        group by contact
     )
 
 select
@@ -541,6 +533,19 @@ select
 
     m.matriculation_type,
 
+    ocf.best_guess_pathway as bgp,
+    ocf.desired_pathway,
+    ocf.is_ed_ea,
+    ocf.personal_statement_status,
+    ocf.supplemental_essay_status,
+    ocf.recommendation_1_status,
+    ocf.recommendation_2_status,
+    ocf.created_fsa_id_student,
+    ocf.created_fsa_id_parent,
+    ocf.common_app_linked,
+    ocf.wishlist_signed_off_by_counselor,
+    ocf.wishlist_notes,
+
     case
         when c.contact_college_match_display_gpa >= 3.50
         then '3.50+'
@@ -737,7 +742,6 @@ select
     if(
         ei.ecc_pursuing_degree_type = "Bachelor's (4-year)", true, false
     ) as has_4yr_ecc_enrollment,
-    coalesce(bg.bgp, 'No BGP') as bgp,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -784,7 +788,13 @@ left join
 left join persist_pivot as p on c.contact_id = p.sf_contact_id
 left join matriculation_type as m on apps.account_type = m.application_account_type
 left join es_grad as e on e.student_number = c.student_number
-left join bgp as bg on c.contact_id = bg.contact and bg.rn_bgp = 1
+left join
+    {{ ref("stg_overgrad__students") }} as os on c.contact_id = os.external_student_id
+left join
+    {{ ref("int_overgrad__custom_fields_pivot") }} as ocf
+    on os.id = ocf.id
+    and ocf._dbt_source_model = 'stg_overgrad__students'
+left join test_attempts as ta on c.contact_id = ta.contact
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
