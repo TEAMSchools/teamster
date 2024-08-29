@@ -67,6 +67,9 @@ models:
         +enabled: false
   titan:
     +schema: titan
+    staging:
+      stg_titan__income_form_data:
+        +enabled: false
 
 sources:
   renlearn:
@@ -76,4 +79,8 @@ sources:
       src_renlearn__star_dashboard_standards:
         +enabled: false
       src_renlearn__fast_star:
+        +enabled: false
+  titan:
+    titan:
+      src_titan__income_form_data:
         +enabled: false
