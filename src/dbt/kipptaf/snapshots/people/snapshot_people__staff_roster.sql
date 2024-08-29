@@ -1,7 +1,7 @@
-{% snapshot snapshot_people__staff_roster %}
-
+{%- snapshot snapshot_people__staff_roster -%}
     {{
         config(
+            enabled=false,
             target_schema="kipptaf_people",
             unique_key="work_assignment_id",
             strategy="check",
@@ -9,7 +9,6 @@
         )
     }}
 
-    select *
+    select *,
     from {{ ref("base_people__staff_roster") }}
-
-{% endsnapshot %}
+{%- endsnapshot -%}
