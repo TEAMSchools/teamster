@@ -46,13 +46,6 @@ select
         else 'Comments'
     end as measurement_group_name,
     case
-        when score_measurement_type = 'etr'
-        then etr_score
-        when score_measurement_type = 's&o'
-        then so_score
-    end as score_averaged_by_strand,
-
-    case
         form_term
         when 'PM1'
         then date(academic_year, 10, 1)
