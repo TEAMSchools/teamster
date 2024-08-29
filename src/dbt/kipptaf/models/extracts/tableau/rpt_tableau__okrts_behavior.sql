@@ -13,11 +13,13 @@ with
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
-            if(
-                regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami',
-                regexp_extract(behavior_category, r'([\w\s]+) \('),
-                behavior
-            ) as behavior,
+            case
+                when regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami'
+                then regexp_extract(behavior_category, r'([\w\s]+) \(')
+                when behavior like '%(%)'
+                then regexp_extract(behavior, r'([\w\s]+) \(')
+                else behavior
+            end as behavior,
         from {{ ref("stg_deanslist__behavior") }}
         where
             behavior_category in (
@@ -64,8 +66,15 @@ with
                 then 'Corrective'
                 when
                     code_location = 'kippmiami'
-                    and behavior_category
-                    in ('Be Kind', 'Effort', 'Accountability', 'Teamwork')
+                    and behavior_category in (
+                        'Be Kind (Love)',
+                        'Be Kind (Revolutionary Love)',
+                        'Effort (Perseverance)',
+                        'Effort (Pride)',
+                        'Accountability (Purpose, Courage)',
+                        'Accountability (Empowerment)',
+                        'Teamwork (Community)'
+                    )
                 then 'BEAT'
             end as category_type,
         from behaviors
@@ -132,11 +141,13 @@ select
     co.ethnicity,
     co.lunch_status,
     co.is_retained_year,
+    co.rn_year,
 
-    b.term,
-    b.week_start_monday,
-    b.week_end_sunday,
-    b.days_in_session,
+    cw.quarter as term,
+    cw.week_start_monday,
+    cw.week_end_sunday,
+    cw.date_count as days_in_session,
+
     b.category_type,
     b.behavior,
     b.entry_staff,
@@ -154,13 +165,20 @@ select
     ) as self_contained_status,
 
     count(distinct co.student_number) over (
-        partition by co.schoolid, b.week_start_monday
+        partition by co.schoolid, cw.week_start_monday
     ) as school_enrollment_by_week,
 from {{ ref("base_powerschool__student_enrollments") }} as co
+inner join
+    {{ ref("int_powerschool__calendar_week") }} as cw
+    on co.schoolid = cw.schoolid
+    and co.academic_year = cw.academic_year
+    and cw.week_start_monday between co.entrydate and co.exitdate
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="cw") }}
 left join
     behavior_aggregation as b
     on co.student_number = b.student_school_id
     and co.academic_year = b.academic_year
+    and cw.week_start_monday = b.week_start_monday
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as hr
@@ -172,6 +190,4 @@ left join
     and hr.rn_course_number_year = 1
     and not hr.is_dropped_section
 where
-    co.rn_year = 1
-    and co.academic_year >= {{ var("current_academic_year") - 1 }}
-    and co.grade_level != 99
+    co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99

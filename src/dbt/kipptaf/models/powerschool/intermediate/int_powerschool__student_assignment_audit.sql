@@ -23,8 +23,8 @@ with
             c.semester,
             c.week_number_quarter,
             c.week_number_academic_year,
-            c.week_start_date,
-            c.week_end_date,
+            c.week_start_monday,
+            c.week_end_sunday,
             c.school_week_start_date_lead,
 
             ge.assignment_category_code,
@@ -97,6 +97,10 @@ with
                 'LOG9',
                 'SEM22106G1',
                 'SEM22106S1'
+                'SEM72005G1',
+                'SEM72005G2',
+                'SEM72005G3',
+                'SEM72005G4'
             )
     )
 
@@ -109,8 +113,8 @@ select
     semester,
     week_number_academic_year,
     week_number_quarter,
-    week_start_date,
-    week_end_date,
+    week_start_monday,
+    week_end_sunday,
     school_week_start_date_lead,
 
     school_level,

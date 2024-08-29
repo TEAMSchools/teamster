@@ -82,14 +82,29 @@ assets:
       - rides_staff
   - asset_name: cc
     partition_column: transaction_date
+    select_columns:
+      - dcid
+      - id
+      - studentid
+      - sectionid
+      - section_number
+      - schoolid
+      - studyear
+      - termid
+      - dateenrolled
+      - dateleft
+      - course_number
+      - teacherid
+      - currentabsences
+      - currenttardies
     op_tags:
       dagster-k8s/config:
         container_config:
           resources:
             requests:
-              cpu: 1250m
+              cpu: 750m
             limits:
-              cpu: 1250m
+              cpu: 750m
   - asset_name: person
     partition_column: whenmodified
     op_tags:

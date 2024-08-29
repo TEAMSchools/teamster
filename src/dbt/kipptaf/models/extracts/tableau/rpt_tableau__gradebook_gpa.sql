@@ -163,7 +163,7 @@ with
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gt") }}
             and term.storecode = gt.term_name
         where
-            enr.academic_year >= {{ var("current_academic_year") - 1 }}
+            enr.academic_year = {{ var("current_academic_year") }}
             and enr.rn_year = 1
             and not enr.is_out_of_district
             and enr.grade_level != 99
@@ -211,7 +211,11 @@ with
                 'LOG300',
                 'LOG9',
                 'SEM22106G1',
-                'SEM22106S1'
+                'SEM22106S1',
+                'SEM72005G1',
+                'SEM72005G2',
+                'SEM72005G3',
+                'SEM72005G4'
             )
     ),
 
@@ -328,9 +332,9 @@ with
             null as sg_letter_grade,
             null as sg_grade_points,
 
-            term_percent_grade_adjusted,
-            term_letter_grade_adjusted,
-            term_grade_points,
+            y1_percent_grade_adjusted as term_percent_grade_adjusted,
+            y1_letter_grade_adjusted as term_letter_grade_adjusted,
+            y1_grade_points as term_grade_points,
 
             y1_percent_grade,
             y1_percent_grade_adjusted,
@@ -547,6 +551,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
     and ce.sectionid = c.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="c") }}
+where s.term_start_date <= current_date('{{ var("local_timezone") }}')
 
 union all
 

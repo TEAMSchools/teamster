@@ -36,7 +36,7 @@ select
     a.subject_area,
     a.tags,
     a.module_type,
-    a.module_number,
+    a.module_code as module_number,
     a.is_internal_assessment as is_normed_scope,
 
     f.field_id,
@@ -54,7 +54,7 @@ select
     sg.standard_codes as question_standard_codes,
 
     a.creator_first_name || ' ' || a.creator_last_name as created_by,
-from {{ ref("base_assessments__assessments") }} as a
+from {{ ref("int_assessments__assessments") }} as a
 inner join
     {{ ref("stg_illuminate__assessment_fields") }} as f
     on a.assessment_id = f.assessment_id

@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 with
     identifier_responses as (
         select
@@ -199,7 +201,7 @@ left join
     {{ ref("base_people__staff_roster_history") }} as reh
     on resp.worker_id = reh.worker_id
     and rc.campaign_link_close_date
-    between reh.work_assignment_start_date and reh.work_assignment_end_date
+    between reh.work_assignment_start_timestamp and reh.work_assignment_end_timestamp
     and reh.primary_indicator
 left join
     {{ ref("base_people__staff_roster") }} as subj
@@ -208,5 +210,5 @@ left join
     {{ ref("base_people__staff_roster_history") }} as seh
     on subj.worker_id = seh.worker_id
     and rc.campaign_link_close_date
-    between seh.work_assignment_start_date and seh.work_assignment_end_date
+    between seh.work_assignment_start_timestamp and seh.work_assignment_end_timestamp
     and seh.primary_indicator

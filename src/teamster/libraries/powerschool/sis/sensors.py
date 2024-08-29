@@ -4,6 +4,7 @@ from operator import itemgetter
 
 import pendulum
 from dagster import (
+    MAX_RUNTIME_SECONDS_TAG,
     AssetKey,
     AssetsDefinition,
     RunRequest,
@@ -24,11 +25,9 @@ from teamster.libraries.ssh.resources import SSHResource
 
 def get_query_text(table: str, column: str, value: str | None):
     if value is None:
-        # trunk-ignore(bandit/B608)
         query = f"SELECT COUNT(*) FROM {table}"
     else:
         query = (
-            # trunk-ignore(bandit/B608)
             f"SELECT COUNT(*) FROM {table} WHERE "
             f"{column} >= TO_TIMESTAMP('{value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
         )
@@ -85,6 +84,10 @@ def build_powerschool_asset_sensor(
 
         try:
             ssh_tunnel.start()
+
+            context.log.debug(msg=ssh_tunnel.tunnel_is_up)
+            if not ssh_tunnel.tunnel_is_up:
+                raise HandlerSSHTunnelForwarderError
         except HandlerSSHTunnelForwarderError as e:
             if "An error occurred while opening tunnels." in e.args:
                 return SkipReason(str(e))
@@ -153,7 +156,7 @@ def build_powerschool_asset_sensor(
 
             record_count = asset_materialization.metadata["records"].value
 
-            if asset.partitions_def is not None:
+            if partition_column is not None:
                 timestamp = _check.inst(
                     obj=asset_materialization.metadata[
                         "latest_materialization_timestamp"
@@ -235,6 +238,7 @@ def build_powerschool_asset_sensor(
                     job_name=job_name,
                     partition_key=parition_key,
                     asset_selection=[g["asset_key"] for g in group],
+                    tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60)},
                 )
             )
 

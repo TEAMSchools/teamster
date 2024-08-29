@@ -155,7 +155,7 @@ where
         (
             sr.business_unit_home_name != 'KIPP Miami'
             and td.transaction_apply_date
-            >= date({{ var("current_academic_year") }}, 8, 15)
+            >= date({{ var("current_academic_year") }}, 8, 12)
         )
         or (
             sr.business_unit_home_name = 'KIPP Miami'

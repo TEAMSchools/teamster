@@ -78,6 +78,7 @@ select
     co.ethnicity,
     co.lunch_status,
     co.is_retained_year,
+    co.rn_year,
 
     hr.sections_section_number as homeroom_section,
     hr.teacher_lastfirst as homeroom_teacher_name,
@@ -130,11 +131,11 @@ select
         then 'Non-Behavioral'
         when left(dli.category, 2) = 'TB'
         then 'Bus Referral (Miami)'
-        when left(dli.category, 2) = 'T1'
+        when left(dli.category, 2) = 'T1' or left(dli.category, 6) = 'Tier 1'
         then 'Low'
-        when left(dli.category, 2) = 'T2'
+        when left(dli.category, 2) = 'T2' or left(dli.category, 6) = 'Tier 2'
         then 'Middle'
-        when left(dli.category, 2) = 'T3'
+        when left(dli.category, 2) = 'T3' or left(dli.category, 6) = 'Tier 3'
         then 'High'
         when dli.category is null
         then null
@@ -231,6 +232,4 @@ left join
     and co.schoolid = sr.schoolid
     and sr.rn_incident = 1
 where
-    co.rn_year = 1
-    and co.academic_year >= {{ var("current_academic_year") }} - 1
-    and co.grade_level != 99
+    co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99

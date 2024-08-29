@@ -22,6 +22,14 @@ with
             se.zip as powerschool_zip,
             se.is_504 as powerschool_is_504,
 
+            os.id as overgrad_students_id,
+
+            concat(
+                os.assigned_counselor__last_name,
+                ', ',
+                os.assigned_counselor__first_name
+            ) as overgrad_students_assigned_counselor_lastfirst,
+
             se.street
             || ' '
             || se.city
@@ -92,6 +100,9 @@ with
         from {{ ref("base_powerschool__student_enrollments") }} as se
         left join
             {{ ref_contact }} as c on se.student_number = c.contact_school_specific_id
+        left join
+            {{ ref("stg_overgrad__students") }} as os
+            on c.contact_id = os.external_student_id
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

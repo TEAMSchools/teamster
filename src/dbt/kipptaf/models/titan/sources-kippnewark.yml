@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: kippnewark_titan
+    tables:
+      - name: stg_titan__person_data
+        meta:
+          dagster:
+            group: titan
+            asset_key:
+              - kippnewark
+              - titan
+              - stg_titan__person_data
+      - name: stg_titan__income_form_data
+        config:
+          enabled: false
+        meta:
+          dagster:
+            group: titan
+            asset_key:
+              - kippnewark
+              - titan
+              - stg_titan__income_form_data

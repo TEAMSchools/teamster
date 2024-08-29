@@ -5,6 +5,7 @@ from dagster_gcp import BigQueryResource, GCSResource
 from teamster import GCS_PROJECT_NAME
 from teamster.core.io_managers.gcs import GCSIOManager
 from teamster.libraries.deanslist.resources import DeansListResource
+from teamster.libraries.overgrad.resources import OvergradResource
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -24,6 +25,8 @@ DEANSLIST_RESOURCE = DeansListResource(
     subdomain=EnvVar("DEANSLIST_SUBDOMAIN"),
     api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
 )
+
+OVERGRAD_RESOURCE = OvergradResource(api_key=EnvVar("OVERGRAD_API_KEY"), page_limit=100)
 
 SSH_COUCHDROP = SSHResource(
     remote_host=EnvVar("COUCHDROP_SFTP_HOST"),

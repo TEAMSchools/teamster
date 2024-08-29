@@ -1,5 +1,6 @@
-select  -- noqa: disable=ST06
-    -- noqa: disable=RF05
+-- trunk-ignore(sqlfluff/ST06)
+select
+    -- trunk-ignore-begin(sqlfluff/RF05)
     s.student_number as `01 Student ID`,
 
     null as `02 SSID`,
@@ -26,9 +27,11 @@ select  -- noqa: disable=ST06
         then 14
         else s.grade_level + 1
     end as `13 Grade Level ID`,
+
     concat(s.academic_year, '-', (s.academic_year + 1)) as `14 Academic Year`,
 
     null as `15 Session Type ID`,
+-- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("base_powerschool__student_enrollments") }} as s
 inner join
     {{ ref("base_powerschool__course_enrollments") }} as enr

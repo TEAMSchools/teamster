@@ -8,19 +8,13 @@ from dagster import (
 )
 from dagster._core.events import StepMaterializationData
 
-from teamster.code_locations.kipptaf.overgrad.assets import (
-    admissions,
-    custom_fields,
-    followings,
-    schools,
-    students,
-    universities,
-)
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.libraries.overgrad.resources import OvergradResource
 
 
-def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
+def _test_asset(
+    asset: AssetsDefinition, code_location: str, partition_key=None, instance=None
+):
     result = materialize(
         assets=[asset],
         partition_key=partition_key,
@@ -30,7 +24,7 @@ def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
                 code_location="test", test=True
             ),
             "overgrad": OvergradResource(
-                api_key=EnvVar("OVERGRAD_API_KEY"), page_limit=100
+                api_key=EnvVar(f"OVERGRAD_API_KEY_{code_location}"), page_limit=100
             ),
         },
     )
@@ -57,27 +51,69 @@ def _test_asset(asset: AssetsDefinition, partition_key=None, instance=None):
     assert extras.text == ""
 
 
-def test_schools():
-    _test_asset(asset=schools)
+def test_schools_kippcamden():
+    from teamster.code_locations.kippcamden.overgrad.assets import schools
+
+    _test_asset(asset=schools, code_location="KIPPCAMDEN")
 
 
-def test_admissions():
-    _test_asset(asset=admissions)
+def test_admissions_kippcamden():
+    from teamster.code_locations.kippcamden.overgrad.assets import admissions
+
+    _test_asset(asset=admissions, code_location="KIPPCAMDEN")
 
 
-def test_custom_fields():
-    _test_asset(asset=custom_fields)
+def test_custom_fields_kippcamden():
+    from teamster.code_locations.kippcamden.overgrad.assets import custom_fields
+
+    _test_asset(asset=custom_fields, code_location="KIPPCAMDEN")
 
 
-def test_followings():
-    _test_asset(asset=followings)
+def test_followings_kippcamden():
+    from teamster.code_locations.kippcamden.overgrad.assets import followings
+
+    _test_asset(asset=followings, code_location="KIPPCAMDEN")
 
 
-def test_students():
-    _test_asset(asset=students)
+def test_students_kippcamden():
+    from teamster.code_locations.kippcamden.overgrad.assets import students
+
+    _test_asset(asset=students, code_location="KIPPCAMDEN")
 
 
-def test_universities():
+def test_schools_kippnewark():
+    from teamster.code_locations.kippnewark.overgrad.assets import schools
+
+    _test_asset(asset=schools, code_location="KIPPNEWARK")
+
+
+def test_admissions_kippnewark():
+    from teamster.code_locations.kippnewark.overgrad.assets import admissions
+
+    _test_asset(asset=admissions, code_location="KIPPNEWARK")
+
+
+def test_custom_fields_kippnewark():
+    from teamster.code_locations.kippnewark.overgrad.assets import custom_fields
+
+    _test_asset(asset=custom_fields, code_location="KIPPNEWARK")
+
+
+def test_followings_kippnewark():
+    from teamster.code_locations.kippnewark.overgrad.assets import followings
+
+    _test_asset(asset=followings, code_location="KIPPNEWARK")
+
+
+def test_students_kippnewark():
+    from teamster.code_locations.kippnewark.overgrad.assets import students
+
+    _test_asset(asset=students, code_location="KIPPNEWARK")
+
+
+def test_universities_kipptaf():
+    from teamster.code_locations.kipptaf.overgrad.assets import universities
+
     partition_key = "4372"
     partitions_def = _check.inst(
         obj=universities.partitions_def, ttype=DynamicPartitionsDefinition
@@ -89,4 +125,9 @@ def test_universities():
             partition_keys=[partition_key],
         )
 
-        _test_asset(asset=universities, partition_key=partition_key, instance=instance)
+        _test_asset(
+            asset=universities,
+            code_location="KIPPNEWARK",
+            partition_key=partition_key,
+            instance=instance,
+        )

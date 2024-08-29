@@ -40,7 +40,7 @@ def build_tableau_workbook_stats_schedule(
 
         for workbook_id in workbook_id_partition_keys:
             partition_key = MultiPartitionKey(
-                {"workbook_id_partition": workbook_id, "date": last_date_partition_key}
+                {"workbook_id": workbook_id, "date": last_date_partition_key}
             )
 
             yield RunRequest(

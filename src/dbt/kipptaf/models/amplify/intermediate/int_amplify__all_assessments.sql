@@ -21,9 +21,18 @@ with
             null as mclass_total_number_of_probes,
             null as mclass_score_change,
 
+            if(
+                bss.assessment_grade = 'K', 0, safe_cast(bss.assessment_grade as int)
+            ) as mclass_assessment_grade_int,
+
             row_number() over (
                 partition by u.surrogate_key, u.measure order by u.level_int desc
             ) as rn_highest,
+
+            row_number() over (
+                partition by bss.academic_year, bss.student_primary_id
+                order by bss.client_date
+            ) as rn_distinct,
         from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
         inner join
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
@@ -57,9 +66,17 @@ with
             total_number_of_probes as mclass_total_number_of_probes,
             score_change as mclass_score_change,
 
+            if(
+                assessment_grade = 'K', 0, safe_cast(assessment_grade as int)
+            ) as mclass_assessment_grade_int,
+
             row_number() over (
                 partition by surrogate_key, measure order by score desc
             ) as rn_highest,
+
+            row_number() over (
+                partition by academic_year, student_primary_id order by client_date
+            ) as rn_distinct,
         from {{ ref("stg_amplify__pm_student_summary") }}
         where
             academic_year >= {{ var("current_academic_year") - 1 }}
@@ -111,6 +128,7 @@ with
             overall_composite_by_window as c
             on s.mclass_academic_year = c.mclass_academic_year
             and s.mclass_student_number = c.mclass_student_number
+        where s.rn_distinct = 1 and s.assessment_type = 'Benchmark'
     )
 
 select
@@ -118,6 +136,7 @@ select
     s.mclass_student_number,
     s.assessment_type,
     s.mclass_assessment_grade,
+    s.mclass_assessment_grade_int,
     s.mclass_period,
     s.mclass_client_date,
     s.mclass_sync_date,

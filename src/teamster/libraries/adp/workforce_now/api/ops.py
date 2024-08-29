@@ -38,9 +38,9 @@ def adp_wfn_update_workers_op(
         associate_oid = worker["associate_oid"]
         employee_number = worker["employee_number"]
 
-        # update work email if new
+        # update work email if missing or different
         mail = worker["mail"]
-        mail_adp = worker["communication_business_email"]
+        mail_adp = worker["adp__work_email"]
 
         if mail != mail_adp or mail_adp is None:
             context.log.info(f"{employee_number}\twork_email\t{mail_adp} => {mail}")
@@ -60,11 +60,11 @@ def adp_wfn_update_workers_op(
             )
 
         # update employee number if missing
-        employee_number_adp = worker["custom_employee_number"]
+        employee_number_adp = worker["adp__custom_field__employee_number"]
 
         if employee_number_adp is None:
             context.log.info(
-                f"{employee_number}\tcustom_employee_number\t{employee_number_adp}"
+                f"{employee_number}\temployee_number\t{employee_number_adp}"
                 f" => {employee_number}"
             )
 
@@ -84,11 +84,11 @@ def adp_wfn_update_workers_op(
             )
 
         # update wfm badge number, if missing
-        wfmgr_badge_number_adp = worker["custom_wfmgr_badge_number"]
+        wfmgr_badge_number_adp = worker["adp__wf_mgr_badge_number"]
 
         if wfmgr_badge_number_adp is None:
             context.log.info(
-                f"{employee_number}\twfmgr_badge_number\t{wfmgr_badge_number_adp}"
+                f"{employee_number}\twf_mgr_badge_number\t{wfmgr_badge_number_adp}"
                 f" => {employee_number}"
             )
 
@@ -107,13 +107,13 @@ def adp_wfn_update_workers_op(
                 },
             )
 
-        # update wfm trigger if not null
-        wfmgr_trigger = worker["wfmgr_trigger"]
-        wfmgr_trigger_adp = worker["custom_wfmgr_trigger"]
+        # update wfm trigger if missing or different
+        wfmgr_trigger = worker["wf_mgr_trigger"]
+        wfmgr_trigger_adp = worker["adp__wf_mgr_trigger"]
 
-        if wfmgr_trigger is not None:
+        if wfmgr_trigger != wfmgr_trigger_adp or wfmgr_trigger_adp is None:
             context.log.info(
-                f"{employee_number}\twfm_trigger\t{wfmgr_trigger_adp}"
+                f"{employee_number}\twf_mgr_trigger\t{wfmgr_trigger_adp}"
                 f" => {wfmgr_trigger}"
             )
 
