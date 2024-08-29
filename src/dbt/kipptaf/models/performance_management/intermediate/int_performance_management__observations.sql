@@ -17,7 +17,7 @@ select
     o.observation_type_abbreviation,
     o.observation_course,
     o.observation_grade,
-    o.observation_notes,
+    o.magic_notes_text as observation_notes,
 
     t.code as term_code,
     t.name as term_name,
@@ -68,7 +68,7 @@ select
     o.is_published,
     o.teacher_internal_id as employee_number,
     o.observer_internal_id as observer_employee_number,
-    o.observation_notes,
+    o.magic_notes_text as observation_notes,
 
     'Walkthrough' as observation_type,
     'WT' as observation_type_abbreviation,
