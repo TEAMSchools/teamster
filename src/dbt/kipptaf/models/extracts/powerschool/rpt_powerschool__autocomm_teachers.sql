@@ -3,24 +3,23 @@ with
         /* existing users: ADP-derived schoolid matches PS homeschoolid */
         select
             sr.powerschool_teacher_number,
-            sr.preferred_name_given_name,
-            sr.preferred_name_family_name,
+            sr.given_name,
+            sr.family_name_1,
             sr.home_work_location_name,
             sr.home_work_location_powerschool_school_id,
-            sr.department_home_name,
+            sr.home_department_name,
             sr.birth_date,
             sr.worker_termination_date,
             sr.sam_account_name,
             sr.mail,
             sr.assignment_status,
             sr.home_work_location_dagster_code_location,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_powerschool__users") }} as u
             on sr.powerschool_teacher_number = u.teachernumber
             and sr.home_work_location_powerschool_school_id = u.homeschoolid
-            and sr.home_work_location_dagster_code_location
-            = regexp_extract(u._dbt_source_relation, r'(kipp\w+)_')
+            and sr.home_work_location_dagster_code_location = u.dagster_code_location
         where
             /* import terminated staff up to a week after termination date */
             date_diff(
@@ -32,30 +31,29 @@ with
                 day
             )
             <= 14
-            and (sr.department_home_name != 'Data' or sr.department_home_name is null)
+            and (sr.home_department_name != 'Data' or sr.home_department_name is null)
 
         union all
 
         /* new users: teachernumber does not exist in PS */
         select
             sr.powerschool_teacher_number,
-            sr.preferred_name_given_name,
-            sr.preferred_name_family_name,
+            sr.given_name,
+            sr.family_name_1,
             sr.home_work_location_name,
             sr.home_work_location_powerschool_school_id,
-            sr.department_home_name,
+            sr.home_department_name,
             sr.birth_date,
             sr.worker_termination_date,
             sr.sam_account_name,
             sr.mail,
             sr.assignment_status,
             sr.home_work_location_dagster_code_location,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         left join
             {{ ref("stg_powerschool__users") }} as u
             on sr.powerschool_teacher_number = u.teachernumber
-            and sr.home_work_location_dagster_code_location
-            = regexp_extract(u._dbt_source_relation, r'(kipp\w+)_')
+            and sr.home_work_location_dagster_code_location = u.dagster_code_location
         where
             /* import terminated staff up to a week after termination date */
             date_diff(
@@ -67,21 +65,20 @@ with
                 day
             )
             <= 14
-            and (sr.department_home_name != 'Data' or sr.department_home_name is null)
+            and (sr.home_department_name != 'Data' or sr.home_department_name is null)
             and u.dcid is null
     ),
 
     user_status as (
         select
             powerschool_teacher_number,
-            preferred_name_given_name,
-            preferred_name_family_name,
+            given_name,
+            family_name_1,
             birth_date,
             home_work_location_powerschool_school_id,
             home_work_location_dagster_code_location,
-
-            lower(sam_account_name) as sam_account_name,
-            lower(mail) as mail,
+            sam_account_name,
+            mail,
 
             case
                 when
@@ -109,8 +106,8 @@ with
 -- trunk-ignore(sqlfluff/ST06)
 select
     powerschool_teacher_number as teachernumber,
-    preferred_name_given_name as first_name,
-    preferred_name_family_name as last_name,
+    given_name as first_name,
+    family_name_1 as last_name,
 
     if(`status` = 1, sam_account_name, null) as loginid,
     if(`status` = 1, sam_account_name, null) as teacherloginid,

@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 with
     survey_reconciliation as (
         select

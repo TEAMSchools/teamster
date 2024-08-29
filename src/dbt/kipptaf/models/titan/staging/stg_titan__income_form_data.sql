@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 {{
     dbt_utils.union_relations(
         relations=[
