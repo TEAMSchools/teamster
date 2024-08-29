@@ -175,7 +175,7 @@ def build_powerschool_asset_sensor(
                         context.log.info(
                             msg=(
                                 f"{asset_key_identifier}\n"
-                                f"modified count ({modified_count}) > 0"
+                                f"modified count: {modified_count}"
                             )
                         )
                         run_request_kwargs.append(
@@ -201,7 +201,8 @@ def build_powerschool_asset_sensor(
                     context.log.info(
                         msg=(
                             f"{asset_key_identifier}\n"
-                            f"table count ({table_count}) != {materialization_count}"
+                            f"PS count ({table_count}) != "
+                            f"DB count ({materialization_count})"
                         )
                     )
                     run_request_kwargs.append(
@@ -281,7 +282,7 @@ def build_powerschool_asset_sensor(
                             context.log.info(
                                 msg=(
                                     f"{asset_key_identifier}\n{partition_key}\n"
-                                    f"modified count ({modified_count}) > 0"
+                                    f"modified count: {modified_count}"
                                 )
                             )
                             run_request_kwargs.append(
@@ -328,8 +329,8 @@ def build_powerschool_asset_sensor(
                         context.log.info(
                             msg=(
                                 f"{asset_key_identifier}\n{partition_key}\n"
-                                f"partition count ({partition_count}) "
-                                f"!= {materialization_count}"
+                                f"PS count ({partition_count}) "
+                                f"!= DB count ({materialization_count})"
                             )
                         )
                         run_request_kwargs.append(

@@ -1,4 +1,20 @@
 assets:
   - asset_name: attendance
   - asset_name: pgfinalgrades
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              cpu: 750m
+            limits:
+              cpu: 750m
   - asset_name: storedgrades
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              cpu: 750m
+            limits:
+              cpu: 750m
