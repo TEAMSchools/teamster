@@ -215,6 +215,7 @@ def build_powerschool_asset_sensor(
                     continue
             # partitioned assets
             else:
+                first_partition_key = asset.partitions_def.get_first_partition_key()
                 last_partition_key = asset.partitions_def.get_last_partition_key()
                 partition_keys = asset.partitions_def.get_partition_keys()
 
@@ -253,6 +254,11 @@ def build_powerschool_asset_sensor(
                     metadata = _check.not_none(
                         value=event_record[0].asset_materialization
                     ).metadata
+
+                    # skip first partition
+                    # TODO: handle checking for null values in partition key
+                    if partition_key == first_partition_key:
+                        continue
 
                     # request run if last partition modified count > 0
                     if partition_key == last_partition_key:
