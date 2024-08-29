@@ -21,7 +21,7 @@ from teamster.code_locations.kipptaf.schoolmint.grow.jobs import (
 )
 
 schoolmint_grow_user_update_job_schedule = ScheduleDefinition(
-    cron_schedule="0 6 * * *",
+    cron_schedule="0 3 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
     job=schoolmint_grow_user_update_job,
 )
