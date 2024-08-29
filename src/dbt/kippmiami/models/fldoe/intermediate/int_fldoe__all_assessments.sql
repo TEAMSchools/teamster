@@ -40,5 +40,7 @@ with
 select
     * except (assessment_name),
 
-    case assessment_name when 'SCIENCE' then 'Science' end as assessment_name,
+    case
+        assessment_name when 'science' then 'Science' else upper(assessment_name)
+    end as assessment_name,
 from transformed

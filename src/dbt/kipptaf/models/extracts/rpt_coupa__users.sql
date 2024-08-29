@@ -29,30 +29,31 @@ with
         /* existing users */
         select
             sr.employee_number,
-            sr.legal_name_given_name,
-            sr.legal_name_family_name,
+            sr.legal_name__given_name,
+            sr.legal_name__family_name_1,
             sr.assignment_status,
-            sr.business_unit_home_code,
-            sr.department_home_name,
+            sr.home_business_unit_code,
+            sr.home_department_name,
             sr.job_title,
             sr.home_work_location_name,
-            sr.worker_type,
-            sr.custom_wfmgr_pay_rule,
+            sr.worker_type_code,
+            sr.wf_mgr_pay_rule,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
-            lower(sr.sam_account_name) as sam_account_name,
-            lower(sr.user_principal_name) as user_principal_name,
-            lower(sr.mail) as mail,
+            sr.sam_account_name,
+            sr.user_principal_name,
+            sr.mail,
 
             cu.active,
-            case
-                when cu.purchasing_user then 'Yes' when not cu.purchasing_user then 'No'
-            end as purchasing_user,
 
             r.roles,
 
             bg.business_group_names as content_groups,
-        from {{ ref("base_people__staff_roster") }} as sr
+
+            case
+                cu.purchasing_user when true then 'Yes' when false then 'No'
+            end as purchasing_user,
+        from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ source("coupa", "user") }} as cu
             on sr.employee_number = safe_cast(cu.employee_number as int)
@@ -64,78 +65,64 @@ with
                 sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
             )
             >= date({{ var("current_fiscal_year") }} - 2, 7, 1)
-            and not regexp_contains(sr.worker_type, r'Part Time|Intern')
-            and (
-                sr.custom_wfmgr_pay_rule != 'PT Hourly'
-                or sr.custom_wfmgr_pay_rule is null
-            )
+            and not regexp_contains(sr.worker_type_code, r'Part Time|Intern')
+            and (sr.wf_mgr_pay_rule != 'PT Hourly' or sr.wf_mgr_pay_rule is null)
 
         union all
 
         /* new users */
         select
             sr.employee_number,
-            sr.legal_name_given_name,
-            sr.legal_name_family_name,
+            sr.legal_name__given_name,
+            sr.legal_name__family_name_1,
             sr.assignment_status,
-            sr.business_unit_home_code,
-            sr.department_home_name,
+            sr.home_business_unit_code,
+            sr.home_department_name,
             sr.job_title,
             sr.home_work_location_name,
-            sr.worker_type,
-            sr.custom_wfmgr_pay_rule,
+            sr.worker_type_code,
+            sr.wf_mgr_pay_rule,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
-            lower(sr.sam_account_name) as sam_account_name,
-            lower(sr.user_principal_name) as user_principal_name,
-            lower(sr.mail) as mail,
+            sr.sam_account_name,
+            sr.user_principal_name,
+            sr.mail,
 
             true as active,
-            'No' as purchasing_user,
             'Expense User' as roles,
             null as content_groups,
-        from {{ ref("base_people__staff_roster") }} as sr
+            'No' as purchasing_user,
+        from {{ ref("int_people__staff_roster") }} as sr
         left join
             {{ source("coupa", "user") }} as cu
             on sr.employee_number = safe_cast(cu.employee_number as int)
         where
             not sr.is_prestart
             and sr.assignment_status not in ('Terminated', 'Deceased')
-            and not regexp_contains(sr.worker_type, r'Part Time|Intern')
-            and (
-                sr.custom_wfmgr_pay_rule != 'PT Hourly'
-                or sr.custom_wfmgr_pay_rule is null
-            )
+            and not regexp_contains(sr.worker_type_code, r'Part Time|Intern')
+            and (sr.wf_mgr_pay_rule != 'PT Hourly' or sr.wf_mgr_pay_rule is null)
             and cu.employee_number is null
     ),
 
     sub as (
         select
             au.employee_number,
-            au.legal_name_given_name,
-            au.legal_name_family_name,
+            au.legal_name__given_name,
+            au.legal_name__family_name_1,
             au.roles,
             au.assignment_status,
             au.active,
             au.purchasing_user,
             au.content_groups,
-            au.business_unit_home_code,
+            au.home_business_unit_code,
             au.home_work_location_name,
-            au.department_home_name,
+            au.home_department_name,
             au.job_title,
-            au.worker_type,
-            au.custom_wfmgr_pay_rule,
+            au.worker_type_code,
+            au.wf_mgr_pay_rule,
             au.sam_account_name,
             au.user_principal_name,
             au.mail,
-            case
-                /* no interns */
-                when au.worker_type like 'Intern%'
-                then 'inactive'
-                when au.uac_account_disable = 0
-                then 'active'
-                else 'inactive'
-            end as coupa_status,
 
             a.location_code,
             a.street_1,
@@ -143,8 +130,18 @@ with
             a.state,
             a.postal_code,
             a.name as address_name,
+
             nullif(a.street_2, '') as street_2,
             nullif(a.attention, '') as attention,
+
+            case
+                /* no interns */
+                when au.worker_type_code like 'Intern%'
+                then 'inactive'
+                when au.uac_account_disable = 0
+                then 'active'
+                else 'inactive'
+            end as coupa_status,
 
             {#
             > override
@@ -167,13 +164,13 @@ with
         from all_users as au
         left join
             {{ source("coupa", "src_coupa__school_name_lookup") }} as sn
-            on au.business_unit_home_code = sn.adp_business_unit_home_code
-            and au.department_home_name = sn.adp_department_home_name
+            on au.home_business_unit_code = sn.adp_business_unit_home_code
+            and au.home_department_name = sn.adp_department_home_name
             and au.job_title = sn.adp_job_title
         left join
             {{ source("coupa", "src_coupa__school_name_lookup") }} as sn2
-            on au.business_unit_home_code = sn2.adp_business_unit_home_code
-            and au.department_home_name = sn2.adp_department_home_name
+            on au.home_business_unit_code = sn2.adp_business_unit_home_code
+            and au.home_department_name = sn2.adp_department_home_name
             and sn2.adp_job_title = 'Default'
         left join
             {{ source("coupa", "src_coupa__user_exceptions") }} as x
@@ -187,13 +184,13 @@ with
             and a.active
     )
 
-select  -- noqa: disable=ST06
-    -- noqa: disable=RF05
+select
+    -- trunk-ignore-begin(sqlfluff/RF05)
     sub.sam_account_name as `Login`,
     sub.user_principal_name as `Sso Identifier`,
     sub.mail as `Email`,
-    sub.legal_name_given_name as `First Name`,
-    sub.legal_name_family_name as `Last Name`,
+    sub.legal_name__given_name as `First Name`,
+    sub.legal_name__family_name_1 as `Last Name`,
     sub.employee_number as `Employee Number`,
     sub.roles as `User Role Names`,
     sub.location_code as `Default Address Location Code`,
@@ -215,16 +212,15 @@ select  -- noqa: disable=ST06
     'CoupaPay' as `Employee Payment Channel`,
 
     case
-        when regexp_contains(sub.worker_type, r'Part Time|Intern')
+        when regexp_contains(sub.worker_type_code, r'Part Time|Intern')
         then 'No'
-        when sub.custom_wfmgr_pay_rule = 'PT Hourly'
+        when sub.wf_mgr_pay_rule = 'PT Hourly'
         then 'No'
         when sub.coupa_status = 'inactive'
         then 'No'
         else 'Yes'
     end as `Expense User`,
 
-    /* preserve Coupa, otherwise No */
     case
         when sub.coupa_status = 'inactive'
         then 'No'
@@ -239,19 +235,20 @@ select  -- noqa: disable=ST06
     coalesce(
         sub.content_groups,
         case
-            sub.business_unit_home_code
+            sub.home_business_unit_code
             when 'KIPP_TAF'
             then 'KTAF'
             when 'KIPP_MIAMI'
             then 'MIA'
-            else sub.business_unit_home_code
+            else sub.home_business_unit_code
         end
     ) as `Content Groups`,
+
     concat(
         if(sub.assignment_status = 'Terminated', 'X', ''),
         coalesce(
             regexp_replace(
-                concat(sub.legal_name_given_name, sub.legal_name_family_name),
+                concat(sub.legal_name__given_name, sub.legal_name__family_name_1),
                 r'[^A-Za-z0-9]',
                 ''
             ),
@@ -291,43 +288,44 @@ select  -- noqa: disable=ST06
             safe_cast(ill3.sage_intacct_location as int)
         )
     ) as `Sage Intacct Location`,
+-- trunk-ignore-end(sqlfluff/RF05)
 from sub
 left join
     {{ source("coupa", "src_coupa__school_name_crosswalk") }} as sna
     on sub.coupa_school_name = sna.ldap_physical_delivery_office_name
 left join
     {{ source("coupa", "src_coupa__intacct_fund_lookup") }} as ifl
-    on sub.business_unit_home_code = ifl.adp_business_unit_home_code
+    on sub.home_business_unit_code = ifl.adp_business_unit_home_code
 left join
     {{ source("coupa", "src_coupa__intacct_program_lookup") }} as ipl1
-    on sub.business_unit_home_code = ipl1.adp_business_unit_home_code
+    on sub.home_business_unit_code = ipl1.adp_business_unit_home_code
     and sub.home_work_location_name = ipl1.adp_home_work_location_name
 left join
     {{ source("coupa", "src_coupa__intacct_program_lookup") }} as ipl2
-    on sub.business_unit_home_code = ipl2.adp_business_unit_home_code
+    on sub.home_business_unit_code = ipl2.adp_business_unit_home_code
     and ipl2.adp_home_work_location_name = 'Default'
 left join
     {{ source("coupa", "src_coupa__intacct_department_lookup") }} as idl1
-    on sub.business_unit_home_code = idl1.adp_business_unit_home_code
-    and sub.department_home_name = idl1.adp_department_home_name
+    on sub.home_business_unit_code = idl1.adp_business_unit_home_code
+    and sub.home_department_name = idl1.adp_department_home_name
     and sub.job_title = idl1.adp_job_title
 left join
     {{ source("coupa", "src_coupa__intacct_department_lookup") }} as idl2
-    on sub.business_unit_home_code = idl2.adp_business_unit_home_code
-    and sub.department_home_name = idl2.adp_department_home_name
+    on sub.home_business_unit_code = idl2.adp_business_unit_home_code
+    and sub.home_department_name = idl2.adp_department_home_name
     and idl2.adp_job_title = 'Default'
 left join
     {{ source("coupa", "src_coupa__intacct_location_lookup") }} as ill1
-    on sub.business_unit_home_code = ill1.adp_business_unit_home_code
-    and sub.department_home_name = ill1.adp_department_home_name
+    on sub.home_business_unit_code = ill1.adp_business_unit_home_code
+    and sub.home_department_name = ill1.adp_department_home_name
     and sub.job_title = ill1.adp_job_title
 left join
     {{ source("coupa", "src_coupa__intacct_location_lookup") }} as ill2
-    on sub.business_unit_home_code = ill2.adp_business_unit_home_code
-    and sub.department_home_name = ill2.adp_department_home_name
+    on sub.home_business_unit_code = ill2.adp_business_unit_home_code
+    and sub.home_department_name = ill2.adp_department_home_name
     and ill2.adp_job_title = 'Default'
 left join
     {{ source("coupa", "src_coupa__intacct_location_lookup") }} as ill3
-    on sub.business_unit_home_code = ill3.adp_business_unit_home_code
+    on sub.home_business_unit_code = ill3.adp_business_unit_home_code
     and ill3.adp_department_home_name = 'Default'
     and ill3.adp_job_title = 'Default'

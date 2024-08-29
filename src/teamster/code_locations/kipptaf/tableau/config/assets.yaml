@@ -110,7 +110,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__okrts_referrals]
       - [kipptaf, tableau, rpt_tableau__suspension_over_time]
     metadata:
-      id: b3365fc1-7f74-48e6-9d1c-37a5cb67c12d
+      id: 08d133d6-6e48-4218-ae6d-015f7a0abe13
       cron_schedule: 0 4 * * *
   - name: SchoolMint Grow Dashboard
     deps:
@@ -121,6 +121,44 @@ assets:
       cron_schedule:
         - 0 6 * * *
         - 30 14 * * *
+        - 15 16 * * *
+  - name: Attendance Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__attendance_chronic_absenteeism_log]
+      - [kipptaf, tableau, rpt_tableau__attendance_comm_log]
+      - [kipptaf, tableau, rpt_tableau__attendance_dashboard]
+    metadata:
+      id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+      cron_schedule: 0 15 * * *
+  - name: Early Literacy Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__dibels_dashboard]
+      - [kipptaf, tableau, rpt_tableau__sight_words_dashboard]
+    metadata:
+      id: bef17623-af5e-4a18-9e05-7a8f4e6951bf
+      cron_schedule: 0 5 * * *
+  - name: Teacher Development Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__teacher_development]
+    metadata:
+      id: 8977a813-36c8-48df-8a61-479f374ae78a
+      cron_schedule:
+        - 0 6 * * *
+        - 30 14 * * *
+  - name: Gradebook and GPA Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__gradebook_audit]
+      - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
+    metadata:
+      id: 5046a976-ed0e-4c77-93fe-78b732cb5548
+      cron_schedule: 0 4 * * *
+  - name: Gradebook Audit - Teacher Report
+    deps:
+      - [kipptaf, tableau, rpt_tableau__gradebook_audit]
+      - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
+    metadata:
+      id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
+      cron_schedule: 0 8 * * 2
   # - name: Academic Priorities [NJ]
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__power_standards]
@@ -137,31 +175,11 @@ assets:
   #     - [kipptaf, tableau, rpt_tableau__assessment_dashboard]
   #   metadata:
   #     id: 30fe4f82-8022-4dbc-9a29-5d805e64319f
-  # - name: Attendance Dashboard
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__attendance_dashboard]
-  #     - [kipptaf, tableau, rpt_tableau__attendance_chronic_absenteeism_log]
-  #     - [kipptaf, tableau, rpt_tableau__attendance_comm_log]
-  #   metadata:
-  #     id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
   # - name: Coaching Conversation Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
   #   metadata:
   #     id: db88d328-0d54-4dac-8003-6197841e1432
-  # - name: Early Literacy Dashboard
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__dibels_dashboard]
-  #     - [kipptaf, tableau, rpt_tableau__sight_words_dashboard]
-  #   metadata:
-  #     id: bef17623-af5e-4a18-9e05-7a8f4e6951bf
-  # - name: Gradebook Dashboard
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__gpa_analysis]
-  #     - [kipptaf, tableau, rpt_tableau__gradebook_assignments]
-  #     - [kipptaf, tableau, rpt_tableau__gradebook_dashboard]
-  #   metadata:
-  #     id: 452a4eaf-082b-4f83-aa8e-1a7a9c31a7a9
   # - name: KIPP Miami FAST & i-Ready Analysis
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__miami_fast]

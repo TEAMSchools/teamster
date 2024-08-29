@@ -28,13 +28,6 @@ locations:
                         path: deanslist_api_key_map_yaml
         server_k8s_config:
           container_config:
-            # resources:
-            #   requests:
-            #     cpu: 750m
-            #     memory: 2.0Gi
-            #   limits:
-            #     cpu: 750m
-            #     memory: 2.0Gi
             env:
               - name: COUCHDROP_SFTP_PASSWORD
                 valueFrom:
@@ -166,6 +159,11 @@ locations:
                   secretKeyRef:
                     name: op-deanslist-api
                     key: subdomain
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api-kippnewark
+                    key: credential
         run_k8s_config:
           container_config:
             env:
@@ -299,3 +297,8 @@ locations:
                   secretKeyRef:
                     name: op-deanslist-api
                     key: subdomain
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api-kippnewark
+                    key: credential

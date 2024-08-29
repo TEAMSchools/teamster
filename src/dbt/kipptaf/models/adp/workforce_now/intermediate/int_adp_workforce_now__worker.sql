@@ -1,26 +1,24 @@
-{%- set src_work_assignment_history = source(
-    "adp_workforce_now", "work_assignment_history"
+{%- set ref_work_assignment_history = ref(
+    "stg_adp_workforce_now__work_assignment_history"
 ) -%}
-{%- set src_worker = source("adp_workforce_now", "worker") -%}
-{%- set src_worker_group = source("adp_workforce_now", "worker_group") -%}
-{%- set src_groups = source("adp_workforce_now", "groups") -%}
-{%- set src_worker_additional_remuneration = source(
-    "adp_workforce_now",
-    "worker_additional_remuneration",
+{%- set ref_worker = ref("stg_adp_workforce_now__worker") -%}
+{%- set ref_worker_group = ref("stg_adp_workforce_now__worker_group") -%}
+{%- set ref_groups = ref("stg_adp_workforce_now__groups") -%}
+{%- set ref_worker_additional_remuneration = ref(
+    "stg_adp_workforce_now__worker_additional_remuneration"
 ) -%}
-{%- set src_worker_assigned_location = source(
-    "adp_workforce_now", "worker_assigned_location"
+{%- set ref_worker_assigned_location = ref(
+    "stg_adp_workforce_now__worker_assigned_location"
 ) -%}
-{%- set src_location = source("adp_workforce_now", "location") -%}
-
-{%- set ref_worker_organizational_unit = ref(
-    "stg_adp_workforce_now__worker_organizational_unit_pivot"
-) -%}
+{%- set ref_location = ref("stg_adp_workforce_now__location") -%}
 {%- set ref_work_assignments = ref(
     "stg_adp_workforce_now__workers__work_assignments"
 ) -%}
 {%- set ref_reports_to = ref(
     "stg_adp_workforce_now__workers__work_assignments__reports_to"
+) -%}
+{%- set ref_worker_organizational_unit = ref(
+    "int_adp_workforce_now__worker_organizational_unit_pivot"
 ) -%}
 
 with
@@ -28,8 +26,7 @@ with
         select
             {{
                 dbt_utils.star(
-                    from=src_work_assignment_history,
-                    except=["_fivetran_synced"],
+                    from=ref_work_assignment_history,
                     relation_alias="wah",
                     prefix="work_assignment_",
                 )
@@ -37,7 +34,7 @@ with
 
             {{
                 dbt_utils.star(
-                    from=src_worker,
+                    from=ref_worker,
                     except=["_fivetran_synced", "worker_id"],
                     relation_alias="w",
                     prefix="worker_",
@@ -46,16 +43,16 @@ with
 
             {{
                 dbt_utils.star(
-                    from=src_groups,
+                    from=ref_groups,
                     except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
                     relation_alias="grp",
-                    prefix="group_",
+                    prefix="worker_group_",
                 )
             }},
 
             {{
                 dbt_utils.star(
-                    from=src_worker_additional_remuneration,
+                    from=ref_worker_additional_remuneration,
                     except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
                     relation_alias="war",
                     prefix="additional_remuneration_",
@@ -64,14 +61,14 @@ with
 
             {{
                 dbt_utils.star(
-                    from=src_location,
+                    from=ref_location,
                     except=["_fivetran_synced", "worker_assignment_id", "worker_id"],
                     relation_alias="loc",
                     prefix="location_",
                 )
             }},
 
-            {{-
+            {{
                 dbt_utils.star(
                     from=ref_worker_organizational_unit,
                     except=["_fivetran_synced", "worker_assignment_id"],
@@ -79,26 +76,19 @@ with
                     prefix="organizational_unit_",
                 )
             }},
-
-            lag(wah.assignment_status_long_name) over (
-                partition by wah.worker_id
-                order by wah.assignment_status_effective_date asc
-            ) as work_assignment_assignment_status_long_name_prev,
-        from {{ src_work_assignment_history }} as wah
-        inner join {{ src_worker }} as w on wah.worker_id = w.id
-        left join {{ src_worker_group }} as wg on wah.id = wg.worker_assignment_id
-        left join {{ src_groups }} as grp on wg.id = grp.id
+        from {{ ref_work_assignment_history }} as wah
+        inner join {{ ref_worker }} as w on wah.worker_id = w.id
+        left join {{ ref_worker_group }} as wg on wah.id = wg.worker_assignment_id
+        left join {{ ref_groups }} as grp on wg.id = grp.id
         left join
-            {{ src_worker_additional_remuneration }} as war
+            {{ ref_worker_additional_remuneration }} as war
             on wah.id = war.worker_assignment_id
             and war.effective_date
-            between extract(date from wah._fivetran_start) and extract(
-                date from wah._fivetran_end
-            )
+            between wah._fivetran_start_date and wah._fivetran_end_date
         left join
-            {{ src_worker_assigned_location }} as wal
+            {{ ref_worker_assigned_location }} as wal
             on wah.id = wal.worker_assignment_id
-        left join {{ src_location }} as loc on wal.id = loc.id
+        left join {{ ref_location }} as loc on wal.id = loc.id
         left join
             {{ ref_worker_organizational_unit }} as wou
             on wah.id = wou.worker_assignment_id
@@ -109,6 +99,13 @@ with
         select
             s.*,
 
+            rt.reports_to_associate_oid,
+            rt.reports_to_position_id,
+            rt.reports_to_worker_name__formatted_name,
+            rt.reports_to_worker_id__id_value,
+            rt.reports_to_worker_id__scheme_code__code_value,
+            rt.reports_to_worker_id__scheme_code__short_name,
+
             {{
                 dbt_utils.star(
                     from=ref_work_assignments,
@@ -118,12 +115,12 @@ with
                 )
             }},
 
-            rt.reports_to_associate_oid,
-            rt.reports_to_position_id,
-            rt.reports_to_worker_name__formatted_name,
-            rt.reports_to_worker_id__id_value,
-            rt.reports_to_worker_id__scheme_code__code_value,
-            rt.reports_to_worker_id__scheme_code__short_name,
+            coalesce(
+                timestamp_trunc(
+                    wa.effective_date_timestamp, day, '{{ var("local_timezone") }}'
+                ),
+                s.work_assignment__fivetran_start
+            ) as work_assignment_start_timestamp,
         from source as s
         left join
             {{ ref_work_assignments }} as wa
@@ -142,80 +139,36 @@ with
             dbt_utils.deduplicate(
                 relation="with_work_assignments",
                 partition_by="work_assignment_id, work_assignment__fivetran_start, work_assignment__fivetran_end, work_assignment__surrogate_key",
-                order_by="work_assignment__effective_date_timestamp desc",
+                order_by="work_assignment__effective_date_timestamp asc",
             )
         }}
     ),
 
-    with_effective_date_timestamp_lag as (
+    with_work_assignment_end as (
         -- trunk-ignore(sqlfluff/AM04)
         select
             *,
 
-            lag(work_assignment__effective_date_timestamp, 1) over (
-                partition by work_assignment_id
-                order by work_assignment__effective_date_timestamp asc
-            ) as work_assignment__effective_date_timestamp_lag,
-        from deduplicate_work_assignments
-    ),
-
-    with_start_end_dates as (
-        select
-            *,
-
             coalesce(
-                timestamp_add(
-                    work_assignment__effective_date_timestamp_lag,
+                timestamp_sub(
+                    lead(work_assignment_start_timestamp, 1) over (
+                        partition by work_assignment_id
+                        order by work_assignment_start_timestamp asc
+                    ),
                     interval 1 millisecond
                 ),
-                work_assignment__fivetran_start
-            ) as work_assignment_start_date,
-
-            (
-                select min(col),
-                from
-                    unnest(
-                        [
-                            work_assignment__fivetran_end,
-                            work_assignment__effective_date_timestamp
-                        ]
-                    ) as col
-            ) as work_assignment_end_date,
-        from with_effective_date_timestamp_lag
-    ),
-
-    with_start_date_lead as (
-        select
-            *,
-            lead(work_assignment_start_date, 1) over (
-                partition by work_assignment_id order by work_assignment_start_date asc
-            ) as work_assignment_start_date_lead,
-            max(work_assignment__effective_date_timestamp) over (
-                partition by work_assignment_id
-            ) as work_assignment__effective_date_timestamp_max,
-        from with_start_end_dates
-        where work_assignment_start_date <= work_assignment_end_date
+                timestamp('9999-12-31 23:59:59.999999')
+            ) as work_assignment_end_timestamp,
+        from deduplicate_work_assignments
     )
 
 select
-    * except (
-        work_assignment__surrogate_key,
-        work_assignment__fivetran_start,
-        work_assignment__fivetran_end,
-        work_assignment__effective_date_timestamp,
-        work_assignment__effective_date_timestamp_lag,
-        work_assignment__effective_date_timestamp_max,
-        work_assignment_start_date_lead,
-        work_assignment_end_date
-    ),
+    *,
 
-    case
-        when
-            work_assignment_start_date_lead
-            > work_assignment__effective_date_timestamp_max
-        then timestamp_sub(work_assignment_start_date_lead, interval 1 millisecond)
-        when work_assignment_end_date = work_assignment__effective_date_timestamp_max
-        then timestamp('9999-12-31 23:59:59.999')
-        else work_assignment_end_date
-    end as work_assignment_end_date,
-from with_start_date_lead
+    date(
+        work_assignment_start_timestamp, '{{ var("local_timezone") }}'
+    ) as work_assignment_start_date,
+    date(
+        work_assignment_end_timestamp, '{{ var("local_timezone") }}'
+    ) as work_assignment_end_date,
+from with_work_assignment_end

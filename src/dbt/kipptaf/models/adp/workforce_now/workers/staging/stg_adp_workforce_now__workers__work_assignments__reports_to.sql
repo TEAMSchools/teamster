@@ -18,7 +18,7 @@ select
     rt.reportstoworkername.formattedname as reports_to_worker_name__formatted_name,
     rt.reportstoworkername.givenname as reports_to_worker_name__given_name,
     rt.reportstoworkername.middlename as reports_to_worker_name__middle_name,
-    rt.reportstoworkername.familyname1 as reports_to_worker_name__family_name1,
+    rt.reportstoworkername.familyname1 as reports_to_worker_name__family_name_1,
     rt.reportstoworkername.nickname as reports_to_worker_name__nick_name,
 
     rt.reportstoworkername.generationaffixcode.codevalue
@@ -39,6 +39,7 @@ select
     rt.reportstoworkername.preferredsalutations
     as reports_to_worker_name__preferred_salutations,
 
+    /* transformations */
     date(
         rt.workerid.schemecode.effectivedate
     ) as reports_to_worker_id__scheme_code__effective_date,

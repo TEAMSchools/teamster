@@ -50,7 +50,7 @@ def build_sftp_file_asset(
     ssh_resource_key: str,
     avro_schema,
     partitions_def=None,
-    auto_materialize_policy=None,
+    automation_condition=None,
     slugify_cols=True,
     slugify_replacements=(),
     tags: dict[str, str] | None = None,
@@ -76,7 +76,7 @@ def build_sftp_file_asset(
         tags=tags,
         op_tags=op_tags,
         group_name=group_name,
-        auto_materialize_policy=auto_materialize_policy,
+        automation_condition=automation_condition,
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
         compute_kind="python",
     )

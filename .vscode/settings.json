@@ -1,4 +1,7 @@
 {
+  "dbt.enableNewLineagePanel": true,
+  "diffEditor.experimental.showMoves": true,
+  "diffEditor.ignoreTrimWhitespace": false,
   "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
@@ -6,6 +9,8 @@
   "editor.renderWhitespace": "all",
   "editor.wordWrap": "bounded",
   "editor.wordWrapColumn": 88,
+  "git.confirmSync": false,
+  "git.ignoreRebaseWarning": true,
   "githubPullRequests.ignoredPullRequestBranches": ["main"],
   "python.createEnvironment.trigger": "off",
   "python.defaultInterpreterPath": ".venv/bin/python",
@@ -15,6 +20,7 @@
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
   "testing.showAllMessages": true,
+  "trunk.showPreexistingIssues": true,
   "files.associations": {
     "*.env": "shellscript",
     "*.sql": "jinja-sql",
@@ -38,9 +44,10 @@
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "dbt.enableNewLineagePanel": true,
-  "[python]": {
-    "editor.defaultFormatter": "trunk.io"
-  },
-  "python.analysis.diagnosticMode": "workspace"
+  "dbt.perspectiveTheme": "Vintage",
+  "dbt.deferConfigPerProject": {
+    "src/dbt/kipptaf": {
+      "deferToProduction": false
+    }
+  }
 }

@@ -27,6 +27,7 @@ vars:
   current_fiscal_year: 2025
   deanslist_schema: kippcamden_deanslist
   edplan_schema: kippcamden_edplan
+  overgrad_schema: kippcamden_overgrad
   pearson_schema: kippcamden_pearson
   powerschool_schema: kippcamden_powerschool
   titan_schema: kippcamden_titan
@@ -42,6 +43,8 @@ models:
     +schema: deanslist
   edplan:
     +schema: edplan
+  overgrad:
+    +schema: overgrad
   pearson:
     +schema: pearson
   powerschool:

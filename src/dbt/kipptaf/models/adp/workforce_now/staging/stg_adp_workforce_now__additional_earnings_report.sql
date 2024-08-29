@@ -18,6 +18,7 @@ with
             }},
 
             safe_cast(employee_number as int) as employee_number,
+
             concat(payroll_company_code, file_number_pay_statements) as position_id,
 
             parse_date('%m/%d/%Y', pay_date) as pay_date,
@@ -36,6 +37,7 @@ with
 
 select
     *,
+
     {{
         teamster_utils.date_to_fiscal_year(
             date_field="pay_date", start_month=7, year_source="start"
