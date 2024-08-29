@@ -217,6 +217,7 @@ with
                     as string
                 )
             ) as phonemic_awareness_psf_national_norm_percentile,
+
         from {{ src_bss }}
     )
 
@@ -412,4 +413,12 @@ select
             ]
         )
     }} as surrogate_key,
+
+    if(
+        assessment_grade = 'K', 0, safe_cast(assessment_grade as int)
+    ) as assessment_grade_int,
+
+    if(
+        enrollment_grade = 'K', 0, safe_cast(enrollment_grade as int)
+    ) as enrollment_grade_int,
 from benchmark_student_summary
