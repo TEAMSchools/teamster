@@ -196,9 +196,9 @@ dbt-bigquery==1.8.2 \
 dbt-common==1.7.0 \
     --hash=sha256:ade7cf908492e83f890fd2c2bbb286f685dfe55a28ee1076f5485041b9acb93e \
     --hash=sha256:bf085abd6c2d871ec802f0b78a13467ca1d8be1603b165bb80caa9309d6b292d
-dbt-core==1.8.5 \
-    --hash=sha256:194f0bd5d5b83b3324f9ab50d6b675b8ddfe9bf2e5d7b6c8e677fa0df92a8470 \
-    --hash=sha256:f22a9212a9b7d223a0ba36af0dc138ed844227462c2ca1a42f2aabf6ec412c91
+dbt-core==1.8.6 \
+    --hash=sha256:a0d7187ff69615613f091b48909b3ab719def643e7ccb74670f76dd482b4933c \
+    --hash=sha256:a155573745b62c892950b20fb8c4947844fa32ccced89d1cea4f5c81e11438b9
 dbt-extractor==0.5.1 \
     --hash=sha256:100453ba06e169cbdb118234ab3f06f6722a2e0e316089b81c88dea701212abc \
     --hash=sha256:1b25fa7a276ab26aa2d70ff6e0cf4cfb1490d7831fb57ee1337c24d2b0333b84 \
