@@ -38,7 +38,6 @@ select
     od.observation_id,
     od.rubric_name,
     od.observation_score,
-    od.strand_score,
     od.glows,
     od.grows,
     od.locked,
@@ -49,10 +48,12 @@ select
     od.term_code,
     od.term_name,
     od.row_score,
-    od.measurement_name,
     od.strand_name,
-    od.text_box,
+    od.measurement_name,
     od.overall_tier,
+    od.observation_notes,
+    od.measurement_dropdown_selection,
+    od.measurement_comments,
 
     sro.preferred_name_lastfirst as observer_name,
 
@@ -63,18 +64,6 @@ select
 
     if(od.observation_id is not null, 1, 0) as is_observed,
 
-    case
-        when
-            srh.business_unit_home_name = 'KIPP Miami'
-            and od.observation_score >= .87
-            and od.observation_type_abbreviation = 'WT'
-        then 1
-        when
-            srh.business_unit_home_name = 'KIPP Miami'
-            and od.observation_score < .87
-            and od.observation_type_abbreviation = 'WT'
-        then 0
-    end as met_goal_miami,
     case
         when srh.business_unit_home_name = 'KIPP Miami'
         then true
@@ -152,7 +141,6 @@ select
     od.observation_id,
     od.rubric_name,
     od.observation_score,
-    od.strand_score,
     od.glows,
     od.grows,
     od.locked,
@@ -163,10 +151,12 @@ select
     od.term_code,
     od.term_name,
     od.row_score,
-    od.measurement_name,
     od.strand_name,
-    od.text_box,
+    od.measurement_name,
     od.overall_tier,
+    od.observation_notes,
+    od.measurement_dropdown_selection,
+    od.measurement_comments,
 
     sro.preferred_name_lastfirst as observer_name,
 
@@ -176,10 +166,6 @@ select
     od.so_score,
 
     if(od.observation_id is not null, 1, 0) as is_observed,
-
-    if(
-        od.observation_score = 1 and od.observation_type_abbreviation = 'WT', 1, 0
-    ) as met_goal_miami,
 
     null as boy_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
