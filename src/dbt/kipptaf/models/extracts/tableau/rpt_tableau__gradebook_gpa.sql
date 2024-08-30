@@ -102,7 +102,7 @@ with
             gt.gpa_semester,
             gt.gpa_y1,
             gt.gpa_y1_unweighted,
-            gt.total_credit_hours_y1 as total_credit_hours,
+            gt.total_credit_hours_y1,
             gt.n_failing_y1,
 
             concat(enr.region, enr.school_level) as region_school_level,
