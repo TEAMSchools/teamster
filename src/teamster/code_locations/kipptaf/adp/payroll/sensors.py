@@ -10,10 +10,12 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     _check,
     define_asset_job,
     sensor,
 )
+from paramiko.ssh_exception import SSHException
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.adp.payroll.assets import general_ledger_file
@@ -56,9 +58,15 @@ def adp_payroll_sftp_sensor(
 
     tick_cursor = float(context.cursor or "0.0")
 
-    files = ssh_couchdrop.listdir_attr_r(
-        remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll"
-    )
+    try:
+        files = ssh_couchdrop.listdir_attr_r(
+            remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll"
+        )
+    except SSHException as e:
+        if "No existing session" in e.args:
+            return SkipReason(str(e))
+        else:
+            raise e
 
     add_dynamic_partition_keys = set()
 
