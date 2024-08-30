@@ -368,6 +368,7 @@ class NJSLA(BaseModel):
     home_language: str | None = None
     homelanguage: str | None = None
     homeless: str | None = None
+    homelessprimarynighttimeresidence: float | None = None
     humanreaderorhumansigner: float | None = None
     humansignerfortestdirections: str | None = None
     iepexemptfrompassing: str | None = None
@@ -381,10 +382,15 @@ class NJSLA(BaseModel):
     mathematicsscienceaccommodatedresponse: float | None = None
     middlename: str | None = None
     migrantstatus: str | None = None
+    mlaccommodation: str | None = None
+    mlexemptfromtakingela: str | None = None
     monitortestresponse: str | None = None
+    multilinguallearneraccommodatedresponses: float | None = None
+    multilinguallearnerml: str | None = None
     multipletestregistration: str | None = None
     nativehawaiianorotherpacificislander: str | None = None
     njelstatus: str | None = None
+    njmlstatus: str | None = None
     njnotattemptflag: str | None = None
     nottestedcode: str | None = None
     nottestedreason: float | None = None
@@ -402,7 +408,6 @@ class NJSLA(BaseModel):
     papersection3totaltestitems: float | None = None
     papersection4numberofattempteditems: float | None = None
     papersection4totaltestitems: float | None = None
-    percentofitemsattempted: int | None = None
     period: str | None = None
     physicalscienceperformancelevel: str | None = None
     primarydisabilitytype: str | None = None
@@ -499,6 +504,8 @@ class NJSLA(BaseModel):
     wordprediction: str | None = None
     wordtoworddictionaryenglishnativelanguage: str | None = None
 
+    percentofitemsattempted: int | float | None = None
+
     filler_1: str | None = None
     filler_10: str | None = None
     filler_11: str | None = None
@@ -583,6 +590,7 @@ class NJSLA(BaseModel):
     filler_83: str | None = None
     filler_84: str | None = None
     filler_85: str | None = None
+    filler_86: str | None = None
     filler_9: str | None = None
     filler: str | None = None
     filler1: str | None = None
