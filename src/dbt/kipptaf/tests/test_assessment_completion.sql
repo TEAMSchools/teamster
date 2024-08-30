@@ -1,4 +1,4 @@
-{{- config(severity="warn") -}}
+{{- config(severity="warn", store_failures=true, store_failures_as="view") -}}
 
 with
     week_assessment_scaffold as (
