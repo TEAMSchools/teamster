@@ -8,7 +8,7 @@ from teamster.core.utils.classes import FiscalYear
 
 
 def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):
-    for group in re.findall(r"\(\?P<\w+>[\w\+\-\.\[\]\{\}\/\\]*\)", pattern):
+    for group in re.findall(r"\(\?P<\w+>[\w\+\-\.\[\]\{\}\/\\\|]*\)", pattern):
         match = _check.not_none(
             value=re.search(pattern=r"(?<=<)(\w+)(?=>)", string=group)
         )
