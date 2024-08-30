@@ -58,7 +58,7 @@ njsla = build_sftp_file_asset(
     remote_file_regex=r"pcspr(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+\.csv",
     avro_schema=NJSLA_SCHEMA,
     ssh_resource_key=ssh_resource_key,
-    partitions_def=StaticPartitionsDefinition(["19", "22", "23"]),
+    partitions_def=StaticPartitionsDefinition(["19", "22", "23", "24"]),
 )
 
 njsla_science = build_sftp_file_asset(
@@ -67,7 +67,7 @@ njsla_science = build_sftp_file_asset(
     remote_file_regex=r"njs(?P<fiscal_year>\d+)_NJ-\d+_\w+\.csv",
     avro_schema=NJSLA_SCIENCE_SCHEMA,
     ssh_resource_key=ssh_resource_key,
-    partitions_def=StaticPartitionsDefinition(["22", "23"]),
+    partitions_def=StaticPartitionsDefinition(["22", "23", "24"]),
 )
 
 parcc = build_sftp_file_asset(
