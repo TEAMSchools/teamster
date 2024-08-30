@@ -104,7 +104,6 @@ with
             gtq.gpa_y1_unweighted,
             gtq.total_credit_hours,
             gtq.n_failing_y1,
-
             concat(enr.region, enr.school_level) as region_school_level,
 
             if(enr.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
@@ -452,7 +451,7 @@ select
     s.gpa_semester,
     s.gpa_y1,
     s.gpa_y1_unweighted,
-    s.total_credit_hours as gpa_total_credit_hours,
+    s.total_credit_hours_y1 as gpa_total_credit_hours,
     s.n_failing_y1 as gpa_n_failing_y1,
 
     s.cumulative_y1_gpa as gpa_cumulative_y1_gpa,
@@ -612,7 +611,7 @@ select
     e1.gpa_semester,
     e1.gpa_y1,
     e1.gpa_y1_unweighted,
-    e1.total_credit_hours as gpa_total_credit_hours,
+    e1.total_credit_hours_y1 as gpa_total_credit_hours,
     e1.n_failing_y1 as gpa_n_failing_y1,
 
     e1.cumulative_y1_gpa as gpa_cumulative_y1_gpa,
