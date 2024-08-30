@@ -100,7 +100,7 @@ with
 
             gtq.gpa_semester,
             gtq.gpa_y1_unweighted,
-            gtq.total_credit_hours,
+            gtq.total_credit_hours_y1,
             gtq.n_failing_y1,
 
             concat(enr.region, enr.school_level) as region_school_level,
@@ -163,6 +163,7 @@ with
             and enr.schoolid = gtq.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gtq") }}
             and term.storecode = gtq.term_name
+            and {{ union_dataset_join_clause(left_alias="term", right_alias="gtq") }}
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty
             on gtq.studentid = gty.studentid
