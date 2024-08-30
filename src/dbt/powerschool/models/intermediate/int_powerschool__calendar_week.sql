@@ -1,15 +1,4 @@
 with
-    schools as (
-        select
-            _dbt_source_relation,
-            school_number,
-
-            case
-                high_grade when 12 then 'HS' when 8 then 'MS' when 4 then 'ES'
-            end as school_level,
-        from `kipptaf_powerschool.stg_powerschool__schools`
-    ),
-
     week_rollup as (
         select
             cd.schoolid,
@@ -53,13 +42,12 @@ with
     )
 
 select
-    w.*,
+    *,
 
-    date_add(w.week_start_date, interval 1 day) as week_start_monday,
-    date_add(w.week_end_date, interval 1 day) as week_end_sunday,
+    date_add(week_start_date, interval 1 day) as week_start_monday,
+    date_add(week_end_date, interval 1 day) as week_end_sunday,
 
-    lead(w.school_week_start_date) over (
-        partition by w.schoolid, w.yearid order by w.week_start_date asc
+    lead(school_week_start_date) over (
+        partition by schoolid, yearid order by week_start_date asc
     ) as school_week_start_date_lead,
-from week_rollup as w
-left join schools as s on w.schoolid = s.school_number
+from week_rollup
