@@ -149,13 +149,14 @@ def build_sftp_file_asset(
             raise FileNotFoundError
 
         if len(file_matches) > 1:
-            context.log.warning(
+            context.log.error(
                 msg=(
                     "Found multiple files matching: "
                     f"{remote_dir_regex_composed}/{remote_file_regex_composed}\n"
                     f"{file_matches}"
                 )
             )
+            raise Exception
 
         file_match = file_matches[0]
 
