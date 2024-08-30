@@ -89,16 +89,12 @@ def build_sftp_file_asset(
             partition_key = None
 
         if group_name == "iready":
-            current_partition_key = _check.inst(
-                obj=partition_key, ttype=MultiPartitionKey
-            )
+            partition_key = _check.inst(obj=partition_key, ttype=MultiPartitionKey)
+
+            academic_year_key, subject_key = partition_key.keys_by_dimension.values()
 
             multi_partitions_def = _check.inst(
                 obj=context.assets_def.partitions_def, ttype=MultiPartitionsDefinition
-            )
-
-            academic_year_key, subject_key = (
-                current_partition_key.keys_by_dimension.values()
             )
 
             academic_year_last_partition_key = (
@@ -114,7 +110,10 @@ def build_sftp_file_asset(
                 )
             else:
                 remote_dir_regex_composed = compose_regex(
-                    regexp=remote_dir_regex, partition_key=partition_key
+                    regexp=remote_dir_regex,
+                    partition_key=MultiPartitionKey(
+                        {"academic_year": academic_year_key, "subject": subject_key}
+                    ),
                 )
         else:
             remote_dir_regex_composed = compose_regex(
