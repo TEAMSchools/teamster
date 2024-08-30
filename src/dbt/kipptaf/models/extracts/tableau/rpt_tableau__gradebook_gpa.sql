@@ -39,7 +39,9 @@ with
             _dbt_source_relation,
             schoolid,
             yearid,
+
             'Y1' as storecode,
+
             firstday as term_start_date,
             lastday as term_end_date,
 
@@ -59,7 +61,6 @@ with
             enr.cohort,
             enr.gender,
             enr.ethnicity,
-
             enr.academic_year,
             enr.yearid,
             enr.region,
@@ -68,7 +69,6 @@ with
             enr.school_abbreviation,
             enr.grade_level,
             enr.advisor_lastfirst,
-
             enr.year_in_school,
             enr.year_in_network,
             enr.rn_undergrad,
@@ -98,14 +98,14 @@ with
             gc.cumulative_y1_gpa_projected_s1_unweighted,
             gc.core_cumulative_y1_gpa,
 
-            if(term.storecode = 'Y1', gty.gpa_term, gtq.gpa_term) as gpa_term,
             gtq.gpa_semester,
-            if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
             gtq.gpa_y1_unweighted,
             gtq.total_credit_hours,
             gtq.n_failing_y1,
-<
+
             concat(enr.region, enr.school_level) as region_school_level,
+
+            round(ada.ada, 3) as ada,
 
             if(enr.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
             if(
@@ -114,11 +114,12 @@ with
                 enr.advisor_lastfirst
             ) as advisory,
 
+            if(term.storecode = 'Y1', gty.gpa_term, gtq.gpa_term) as gpa_term,
+            if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
+
             if(sp.studentid is not null, 1, null) as is_counseling_services,
 
             if(sa.studentid is not null, 1, null) as is_student_athlete,
-
-            round(ada.ada, 3) as ada,
         from {{ ref("base_powerschool__student_enrollments") }} as enr
         inner join
             term
@@ -281,33 +282,27 @@ with
             sectionid,
             termid,
             storecode,
-
             fg_percent,
             fg_letter_grade,
             fg_grade_points,
             fg_percent_adjusted,
             fg_letter_grade_adjusted,
-
             sg_percent,
             sg_letter_grade,
             sg_grade_points,
-
             term_percent_grade_adjusted,
             term_letter_grade_adjusted,
             term_grade_points,
-
             y1_percent_grade,
             y1_percent_grade_adjusted,
             y1_letter_grade,
             y1_letter_grade_adjusted,
             y1_grade_points,
             y1_grade_points_unweighted,
-
             need_60,
             need_70,
             need_80,
             need_90,
-
             citizenship,
             comment_value,
         from {{ ref("base_powerschool__final_grades") }}
@@ -328,13 +323,11 @@ with
             termid,
 
             'Y1' as term,
-
             null as fg_percent,
             null as fg_letter_grade,
             null as fg_grade_points,
             null as fg_percent_adjusted,
             null as fg_letter_grade_adjusted,
-
             null as sg_percent,
             null as sg_letter_grade,
             null as sg_grade_points,
@@ -342,14 +335,12 @@ with
             y1_percent_grade_adjusted as term_percent_grade_adjusted,
             y1_letter_grade_adjusted as term_letter_grade_adjusted,
             y1_grade_points as term_grade_points,
-
             y1_percent_grade,
             y1_percent_grade_adjusted,
             y1_letter_grade,
             y1_letter_grade_adjusted,
             y1_grade_points,
             y1_grade_points_unweighted,
-
             need_60,
             need_70,
             need_80,
@@ -413,7 +404,6 @@ select
     s.ktc_cohort,
     s.gender,
     s.ethnicity,
-
     s.academic_year,
     s.region,
     s.school_level,
@@ -424,7 +414,6 @@ select
     s.advisor_lastfirst as advisor_name,
     s.head_of_school as hos,
     s.region_school_level,
-
     s.year_in_school,
     s.year_in_network,
     s.rn_undergrad,
@@ -438,23 +427,19 @@ select
     s.is_504,
     s.is_counseling_services,
     s.is_student_athlete,
-
     s.ada,
-
     s.term as `quarter`,
     s.semester,
     s.term_start_date as quarter_start_date,
     s.term_end_date as quarter_end_date,
     s.term_end_date as cal_quarter_end_date,
     s.is_current_term as is_current_quarter,
-
     s.gpa_term as gpa_for_quarter,
     s.gpa_semester,
     s.gpa_y1,
     s.gpa_y1_unweighted,
     s.total_credit_hours_y1 as gpa_total_credit_hours,
     s.n_failing_y1 as gpa_n_failing_y1,
-
     s.cumulative_y1_gpa as gpa_cumulative_y1_gpa,
     s.cumulative_y1_gpa_unweighted as gpa_cumulative_y1_gpa_unweighted,
     s.cumulative_y1_gpa_projected as gpa_cumulative_y1_gpa_projected,
@@ -573,7 +558,6 @@ select
     e1.ktc_cohort,
     e1.gender,
     e1.ethnicity,
-
     e1.academic_year,
     e1.region,
     e1.school_level,
@@ -584,7 +568,6 @@ select
     e1.advisor_lastfirst as advisor_name,
     e1.head_of_school as hos,
     e1.region_school_level,
-
     e1.year_in_school,
     e1.year_in_network,
     e1.rn_undergrad,
@@ -598,23 +581,19 @@ select
     e1.is_504,
     e1.is_counseling_services,
     e1.is_student_athlete,
-
     e1.ada,
-
     e1.term as `quarter`,
     e1.semester,
     e1.term_start_date as quarter_start_date,
     e1.term_end_date as quarter_end_date,
     e1.term_end_date as cal_quarter_end_date,
     e1.is_current_term as is_current_quarter,
-
     e1.gpa_term as gpa_for_quarter,
     e1.gpa_semester,
     e1.gpa_y1,
     e1.gpa_y1_unweighted,
     e1.total_credit_hours_y1 as gpa_total_credit_hours,
     e1.n_failing_y1 as gpa_n_failing_y1,
-
     e1.cumulative_y1_gpa as gpa_cumulative_y1_gpa,
     e1.cumulative_y1_gpa_unweighted as gpa_cumulative_y1_gpa_unweighted,
     e1.cumulative_y1_gpa_projected as gpa_cumulative_y1_gpa_projected,
@@ -678,9 +657,7 @@ select
     null as category_y1_percent_grade_running,
     null as category_y1_percent_grade_current,
     null as category_quarter_average_all_courses,
-
     'Transfer' as roster_type,
-
     null as ada_above_or_at_80,
     null as section_or_period,
 from y1_historical as y1h
