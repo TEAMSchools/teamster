@@ -104,6 +104,7 @@ with
             gtq.gpa_y1_unweighted,
             gtq.total_credit_hours,
             gtq.n_failing_y1,
+<
             concat(enr.region, enr.school_level) as region_school_level,
 
             if(enr.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
