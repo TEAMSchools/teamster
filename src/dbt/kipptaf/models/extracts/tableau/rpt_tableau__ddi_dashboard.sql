@@ -1,36 +1,54 @@
 with
-    iready_usage as (
-        select
-            student_id,
-            academic_year_int,
-            last_week_start_date,
-            last_week_end_date,
-            last_week_lessons_passed,
-
-            lower(`subject`) as `subject`,
-        from {{ ref("snapshot_iready__instructional_usage_data") }}
-    ),
-
     iready_weekly as (
         select
-            student_id as student_number,
-            academic_year_int as academic_year,
-            last_week_start_date,
-            last_week_end_date,
+            il.academic_year_int,
+            il.student_id,
+            lower(il.subject) as subject,
 
-            coalesce(n_lessons_passed_reading, 0) as n_lessons_passed_reading,
-            coalesce(n_lessons_passed_math, 0) as n_lessons_passed_math,
+            cw.powerschool_school_id,
 
-            row_number() over (
-                partition by student_id, last_week_start_date
-                order by last_week_start_date asc
-            ) as rn_iready_week,
+            pw.week_start_monday,
+
+            if(
+                sum(il.passed_or_not_passed_numeric) >= 2, 1, 0
+            ) as is_pass_2_lessons_int,
+            if(
+                sum(il.passed_or_not_passed_numeric) >= 4, 1, 0
+            ) as is_pass_4_lessons_int,
+        from {{ ref("stg_iready__personalized_instruction_by_lesson") }} as il
+        inner join
+            {{ ref("stg_people__location_crosswalk") }} as cw on il.school = cw.name
+        inner join
+            {{ ref("int_powerschool__calendar_week") }} as pw
+            on il.academic_year_int = pw.academic_year
+            and cw.powerschool_school_id = pw.schoolid
+            and il.completion_date between pw.week_start_monday and pw.week_end_sunday
+        group by
+            il.academic_year_int,
+            il.student_id,
+            il.subject,
+            cw.powerschool_school_id,
+            pw.week_start_monday
+    ),
+
+    iready_pivot as (
+        select
+            academic_year_int,
+            student_id,
+            powerschool_school_id,
+            week_start_monday,
+            is_pass_2_lessons_int_reading,
+            is_pass_4_lessons_int_reading,
+            is_pass_2_lessons_int_math,
+            is_pass_4_lessons_int_math,
         from
-            iready_usage pivot (
-                max(last_week_lessons_passed) as n_lessons_passed for `subject`
+            iready_weekly pivot (
+                max(is_pass_2_lessons_int) as is_pass_2_lessons_int,
+                max(is_pass_4_lessons_int) as is_pass_4_lessons_int for subject
                 in ('reading', 'math')
             )
     ),
+
     identifiers as (
         select
             co.student_number,
@@ -51,13 +69,13 @@ with
             w.date_count as days_in_session,
             w.quarter as term,
 
-            r.title,
-            r.scope,
-            r.subject_area,
-            r.administered_at,
+            sc.title,
+            sc.subject_area,
+            sc.administered_at,
+            sc.module_type,
+            sc.module_code,
+
             r.date_taken,
-            r.module_type,
-            r.module_number,
             r.response_type,
             r.response_type_code,
             r.response_type_description,
@@ -92,46 +110,7 @@ with
 
             safe_cast(r.assessment_id as string) as assessment_id,
             if(r.is_mastery, 1, 0) as is_mastery_int,
-
-            concat(
-                'https://kippteamschools.illuminateed.com/live/',
-                '?assessment_id=' || r.assessment_id,
-                '&page=Assessments_Overview_Controller'
-            ) as illuminate_overview_link,
-
-            concat(
-                'https://kippteamschools.illuminateed.com/live/',
-                '?page=PrebuiltReport_AssessmentResponseDistributionController',
-                '&assessment_id=' || r.assessment_id,
-                '&site_id=' || co.schoolid,
-                '&code_prebuilt_id=370',
-                '&action=showReport',
-                '&create_student_group=t',
-                '&fw_form_form_test=1',
-                '&date=logged_in_date',
-                '&group_by=overall',
-                '&response_count_format=number',
-                '&guid=21fa0ddf-1f3b-4918-80d9-f2088bcc7f48',
-                '&reference_id=PR',
-                '&state_id=31'
-            ) as illuminate_response_frequency,
-
-            concat(
-                'https://kippteamschools.illuminateed.com/live/',
-                '?page=PrebuiltReport_CodeBasedJasperController',
-                '&_referrer_assessment_id=' || r.assessment_id,
-                '&site_id=' || co.schoolid,
-                '&debug=',
-                '&jasper_prebuilt_id=308',
-                '&fw_form_form_test=1',
-                '&date=logged_in_date',
-                '&matrix_position=2',
-                '&matrix_order=1',
-                '&matrix_group_by=1',
-                '&gradebook_color_coding=1',
-                '&matrix_stretch=1',
-                '#report'
-            ) as illuminate_matrix,
+            if(r.date_taken is not null, 1, 0) as is_complete,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("int_powerschool__calendar_week") }} as w
@@ -139,11 +118,15 @@ with
             and co.schoolid = w.schoolid
             and w.week_end_sunday between co.entrydate and co.exitdate
         left join
+            {{ ref("int_assessments__scaffold") }} as sc
+            on co.student_number = sc.powerschool_student_number
+            and co.academic_year = sc.academic_year
+            and co.region = sc.region
+            and sc.administered_at between w.week_start_monday and w.week_end_sunday
+        left join
             {{ ref("int_assessments__response_rollup") }} as r
-            on co.student_number = r.powerschool_student_number
-            and co.academic_year = r.academic_year
-            and r.administered_at between w.week_start_monday and w.week_end_sunday
-            and r.module_type is not null
+            on sc.powerschool_student_number = r.powerschool_student_number
+            and sc.assessment_id = r.assessment_id
         left join
             {{ ref("stg_assessments__standard_domains") }} as sd
             on r.response_type_code = sd.standard_code
@@ -168,8 +151,7 @@ with
             {{ ref("int_people__leadership_crosswalk") }} as lc
             on co.schoolid = lc.home_work_location_powerschool_school_id
         where
-            co.rn_year = 1
-            and co.enroll_status = 0
+            co.enroll_status = 0
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
@@ -215,17 +197,15 @@ select
     g.region_goal,
     g.organization_goal,
 
-    iw.n_lessons_passed_reading,
-    iw.n_lessons_passed_math,
-
     sf.nj_student_tier,
+    sf.dibels_most_recent_composite,
 
     if(qbl.qbl is not null, true, false) as is_qbl,
 
-    if(iw.n_lessons_passed_reading >= 2, 1, 0) as is_passed_iready_2plus_reading_int,
-    if(iw.n_lessons_passed_reading >= 4, 1, 0) as is_passed_iready_4plus_reading_int,
-    if(iw.n_lessons_passed_math >= 2, 1, 0) as is_passed_iready_2plus_math_int,
-    if(iw.n_lessons_passed_math >= 4, 1, 0) as is_passed_iready_4plus_math_int,
+    coalesce(ip.is_pass_2_lessons_int_reading, 0) as is_passed_iready_2plus_reading_int,
+    coalesce(ip.is_pass_4_lessons_int_reading, 0) as is_passed_iready_4plus_reading_int,
+    coalesce(ip.is_pass_2_lessons_int_math, 0) as is_passed_iready_2plus_math_int,
+    coalesce(ip.is_pass_4_lessons_int_math, 0) as is_passed_iready_4plus_math_int,
 from identifiers as co
 left join
     {{ ref("int_reporting__student_filters") }} as sf
@@ -248,12 +228,10 @@ left join
     and co.academic_year = g.academic_year
     and co.subject_area = g.illuminate_subject_area
 left join
-    iready_weekly as iw
-    on co.student_number = iw.student_number
-    and co.academic_year = iw.academic_year
-    and co.week_start_monday = iw.last_week_start_date
-    and co.week_end_sunday = iw.last_week_end_date
-    and iw.rn_iready_week = 1
+    iready_pivot as ip
+    on co.student_number = ip.student_id
+    and co.academic_year = ip.academic_year_int
+    and co.week_start_monday = ip.week_start_monday
 where co.grade_level between 0 and 8
 
 union all
@@ -269,10 +247,8 @@ select
     g.region_goal,
     g.organization_goal,
 
-    null as n_lessons_passed_reading,
-    null as n_lessons_passed_math,
-
     sf.nj_student_tier,
+    null as dibels_most_recent_composite,
 
     if(qbl.qbl is not null, true, false) as is_qbl,
 
@@ -310,7 +286,7 @@ select
 
     r.home_work_location_powerschool_school_id as schoolid,
     r.home_work_location_abbreviation as school,
-    
+
     case
         when r.home_work_location_region = 'TEAM Academy Charter School'
         then 'Newark'
@@ -336,27 +312,22 @@ select
     w.quarter as term,
 
     o.rubric_name as title,
-
-    m.microgoals as scope,
-    null as subject_area,
-
+    m.microgoals as subject_area,
     o.observed_at as administered_at,
+    null as module_type,
+    null as module_code,
 
     null as date_taken,
-    null as module_type,
-    null as module_number,
     'walkthrough' as response_type,
     null as response_type_code,
-
     o.measurement_name as response_type_description,
     o.strand_name as response_type_root_description,
     o.observation_score as percent_correct,
-
     if(o.row_score = 1, true, false) as is_mastery,
-
     null as performance_band_label_number,
     null as performance_band_label,
     null as is_replacement,
+
     null as standard_domain,
     null as course_section,
     null as course_name,
@@ -368,7 +339,7 @@ select
 
     null as homeroom_section,
     null as homeroom_teachernumber,
-    null as homeroom_teacher_name,
+    r.report_to_user_principal_name as homeroom_teacher_name,
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
@@ -379,20 +350,16 @@ select
 
     o.observation_id as assessment_id,
     o.row_score as is_mastery_int,
-
-    null as illuminate_overview_link,
-    null as illuminate_response_frequency,
-    null as illuminate_matrix,
+    null as is_complete,
 
     null as qbl,
     null as grade_goal,
     null as school_goal,
     null as region_goal,
     null as organization_goal,
-    null as n_lessons_passed_reading,
-    null as n_lessons_passed_math,
 
     null as nj_student_tier,
+    null as dibels_most_recent_composite,
 
     null as is_qbl,
 
