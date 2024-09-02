@@ -510,9 +510,9 @@ psutil==6.0.0; platform_system == "Windows" \
     --hash=sha256:c588a7e9b1173b6e866756dde596fd4cad94f9399daf99ad8c3258b3cb2b47a0 \
     --hash=sha256:e2e8d0054fc88153ca0544f5c4d554d42e33df2e009c4ff42284ac9ebdef4132 \
     --hash=sha256:ffe7fc9b6b36beadc8c322f84e1caff51e8703b88eee1da46d1e3a6ae11b4fd0
-py-avro-schema==3.7.3 \
-    --hash=sha256:5757fb6daf0554d7c4b0518feee816635ed052369ca96d5ca70f13cce038c394 \
-    --hash=sha256:aedafe3a67551cb9f46daad337bc7749d904e4052432f0609774a146cd60562e
+py-avro-schema==3.8.1 \
+    --hash=sha256:97cff9d64c5809e2b3df7335fb57d3f1253ce81c4b49974a5714a4bca2380372 \
+    --hash=sha256:eb66e9836383c60f0668c38e932cfee3b6c60839c60e3a85a6262204a8547698
 pyarrow==17.0.0 \
     --hash=sha256:0071ce35788c6f9077ff9ecba4858108eebe2ea5a3f7cf2cf55ebc1dbc6ee24a \
     --hash=sha256:392bc9feabc647338e6c89267635e111d71edad5fcffba204425a7c8d13610d7 \
