@@ -1,4 +1,17 @@
 with
+    date_spine as (
+        select date_day,
+        from
+            unnest(
+                generate_date_array(
+                    /* first date of the attrition snapshot*/
+                    '2002-07-01',
+                    current_date('{{ var("local_timezone") }}'),
+                    interval 1 year
+                )
+            ) as date_day
+    ),
+
     dates as (
         select
             extract(year from date_day) as academic_year,
@@ -11,7 +24,7 @@ with
             date((extract(year from date_day) + 1), 8, 31) as attrition_date,
 
             date((extract(year from date_day) + 1), 4, 30) as effective_date,
-        from {{ ref("utils__date_spine") }}
+        from date_spine
         where extract(month from date_day) = 7 and extract(day from date_day) = 1
     ),
 
