@@ -129,6 +129,22 @@ with
             {{ ref("stg_deanslist__roster_assignments") }} as a
             on r.roster_id = a.dl_roster_id
         where r.school_id = 472 and r.roster_type = 'House' and r.active = 'Y'
+    ),
+
+    dibels as (
+        select
+            mclass_student_number,
+            mclass_academic_year,
+            db.boy_composite,
+            db.moy_composite,
+            db.eoy_composite,
+            'Reading' as iready_subject,
+            row_number() over (
+                partition by mclass_student_number, mclass_academic_year
+                order by mclass_client_date desc
+            ) as rn_year,
+        from {{ ref("int_amplify__all_assessments") }} as db
+        where mclass_measure = 'Composite'
     )
 
 select
@@ -240,9 +256,9 @@ left join
     and a.value_type = 'Graduation Pathway'
     and a.values_column = 'M'
 left join
-    {{ ref("int_amplify__all_assessments") }} as db
+    dibels as db
     on co.academic_year = db.mclass_academic_year
     and co.student_number = db.mclass_student_number
-    and db.mclass_measure = 'Composite'
-    and sj.iready_subject = 'Reading'
+    and sj.iready_subject = db.iready_subject
+    and db.rn_year = 1
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}
