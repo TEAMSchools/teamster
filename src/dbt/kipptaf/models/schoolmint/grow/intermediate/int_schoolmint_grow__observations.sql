@@ -3,7 +3,6 @@ select
     o.rubric_id,
     o.rubric_name,
     o.score,
-    o.score_averaged_by_strand,
     o.glows,
     o.grows,
     o.locked,
@@ -11,6 +10,8 @@ select
     o.observed_at_date_local,
     o.academic_year,
     o.is_published,
+
+    mn.text as magic_notes_text,
 
     s.name as school_name,
 
@@ -24,6 +25,9 @@ select
 
     safe_cast(uo.internal_id as int) as observer_internal_id,
 from {{ ref("stg_schoolmint_grow__observations") }} as o
+left join
+    {{ ref("stg_schoolmint_grow__observations__magic_notes") }} as mn
+    on o.observation_id = mn.observation_id
 left join {{ ref("stg_schoolmint_grow__users") }} as ut on o.teacher_id = ut.user_id
 left join {{ ref("stg_schoolmint_grow__users") }} as uo on o.observer_id = uo.user_id
 left join
