@@ -55,6 +55,8 @@ with
 select
     w.*,
 
+    s.school_level,
+    
     date_add(w.week_start_date, interval 1 day) as week_start_monday,
     date_add(w.week_end_date, interval 1 day) as week_end_sunday,
 
