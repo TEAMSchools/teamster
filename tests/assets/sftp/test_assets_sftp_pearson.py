@@ -51,25 +51,25 @@ def test_pearson_njgpa_kippnewark():
 def test_pearson_njsla_kippnewark():
     from teamster.code_locations.kippnewark.pearson.assets import njsla
 
-    _test_asset(asset=njsla)
+    _test_asset(asset=njsla, partition_key="24")
 
 
 def test_pearson_njsla_kippcamden():
     from teamster.code_locations.kippcamden.pearson.assets import njsla
 
-    _test_asset(asset=njsla)
+    _test_asset(asset=njsla, partition_key="24")
 
 
 def test_pearson_njsla_science_kippnewark():
     from teamster.code_locations.kippnewark.pearson.assets import njsla_science
 
-    _test_asset(asset=njsla_science)
+    _test_asset(asset=njsla_science, partition_key="24")
 
 
 def test_pearson_njsla_science_kippcamden():
     from teamster.code_locations.kippcamden.pearson.assets import njsla_science
 
-    _test_asset(asset=njsla_science)
+    _test_asset(asset=njsla_science, partition_key="24")
 
 
 def test_pearson_parcc_kippnewark():

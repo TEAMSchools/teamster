@@ -21,6 +21,9 @@ select
     o.observer_team,
     o.observer_name,
     o.observation_type_abbreviation,
+    o.observation_notes,
+    o.growth_notes,
+    o.glow_notes,
 
     od.row_score,
     od.measurement_name,
