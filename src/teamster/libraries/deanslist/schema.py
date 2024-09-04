@@ -502,3 +502,8 @@ class ReconcileSuspensions(BaseModel):
     submittedfn: str | None = None
     submittedln: str | None = None
     unnamed_13: str | None = None
+
+
+class DFFStats(BaseModel):
+    StudentCount: int | None = None
+    StudentWithGuardianCount: int | None = None
