@@ -125,7 +125,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-amplify-dds-service-account
-                    key: password
+                    key: password_confirm
               - name: AMPLIFY_DDS_USERNAME
                 valueFrom:
                   secretKeyRef:
@@ -458,7 +458,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-amplify-dds-service-account
-                    key: password
+                    key: password_confirm
               - name: AMPLIFY_DDS_USERNAME
                 valueFrom:
                   secretKeyRef:
