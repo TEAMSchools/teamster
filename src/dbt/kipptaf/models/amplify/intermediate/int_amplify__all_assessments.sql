@@ -4,6 +4,7 @@ with
             bss.academic_year as mclass_academic_year,
             bss.student_primary_id as mclass_student_number,
             bss.assessment_grade as mclass_assessment_grade,
+            bss.assessment_grade_int as mclass_assessment_grade_int,
             bss.benchmark_period as mclass_period,
             bss.client_date as mclass_client_date,
             bss.sync_date as mclass_sync_date,
@@ -20,10 +21,6 @@ with
             null as mclass_probe_number,
             null as mclass_total_number_of_probes,
             null as mclass_score_change,
-
-            if(
-                bss.assessment_grade = 'K', 0, safe_cast(bss.assessment_grade as int)
-            ) as mclass_assessment_grade_int,
 
             row_number() over (
                 partition by u.surrogate_key, u.measure order by u.level_int desc
@@ -47,6 +44,7 @@ with
             academic_year as mclass_academic_year,
             student_primary_id as mclass_student_number,
             assessment_grade as mclass_assessment_grade,
+            assessment_grade_int as mclass_assessment_grade_int,
             pm_period as mclass_period,
             client_date as mclass_client_date,
             sync_date as mclass_sync_date,
@@ -65,10 +63,6 @@ with
             probe_number as mclass_probe_number,
             total_number_of_probes as mclass_total_number_of_probes,
             score_change as mclass_score_change,
-
-            if(
-                assessment_grade = 'K', 0, safe_cast(assessment_grade as int)
-            ) as mclass_assessment_grade_int,
 
             row_number() over (
                 partition by surrogate_key, measure order by score desc
