@@ -34,3 +34,18 @@ sources:
               - kipptaf
               - amplify
               - pm_student_summary
+      - name: src_amplify__dibels_data_farming
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/amplify/dibels/data_farming/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/amplify/dibels/data_farming/"
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - amplify
+              - dibels
+              - data_farming
