@@ -28,14 +28,6 @@ sources:
               - google
               - appsheet
               - src_leadership_development_output
-      - name: src_leadership_development_ratings
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - appsheet
-              - src_leadership_development_ratings
       - name: src_seat_tracker__log_archive
         meta:
           dagster:

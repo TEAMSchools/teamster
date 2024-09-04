@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
     person_data as (
         select
             person_identifier,
@@ -11,16 +12,30 @@ with
             total_positive_balance.double_value as total_positive_balance,
             total_negative_balance.double_value as total_negative_balance,
             _dagster_partition_key as academic_year,
+
             parse_date('%m/%d/%Y', eligibility_start_date) as eligibility_start_date,
             parse_date('%m/%d/%Y', eligibility_end_date) as eligibility_end_date,
+
             coalesce(
                 eligibility.string_value, safe_cast(eligibility.long_value as string)
             ) as eligibility,
         from {{ source("titan", "src_titan__person_data") }}
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="person_data",
+                partition_by="person_identifier, academic_year",
+                order_by="eligibility_end_date desc",
+            )
+        }}
     )
 
+-- trunk-ignore(sqlfluff/AM04)
 select
     *,
+
     case
         eligibility
         when '1'
@@ -31,4 +46,4 @@ select
         then 'P'
         else left(eligibility, 1)
     end as eligibility_name,
-from person_data
+from deduplicate
