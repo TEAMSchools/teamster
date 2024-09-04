@@ -7,7 +7,7 @@ with
             case
                 high_grade when 12 then 'HS' when 8 then 'MS' when 4 then 'ES'
             end as school_level,
-        from `kipptaf_powerschool.stg_powerschool__schools`
+        from {{ ref("stg_powerschool__schools") }}
     ),
 
     week_rollup as (
@@ -56,7 +56,7 @@ select
     w.*,
 
     s.school_level,
-    
+
     date_add(w.week_start_date, interval 1 day) as week_start_monday,
     date_add(w.week_end_date, interval 1 day) as week_end_sunday,
 
