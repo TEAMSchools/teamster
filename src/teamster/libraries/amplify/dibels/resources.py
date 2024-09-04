@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup, Tag
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from pydantic import PrivateAttr
-from requests import Response, Session, exceptions
+from requests import Session, exceptions
 
 
 class DibelsDataSystemResource(ConfigurableResource):
@@ -29,11 +29,9 @@ class DibelsDataSystemResource(ConfigurableResource):
             return f"{self._base_url}/{path}"
 
     def _request(self, method, url, **kwargs):
-        response = Response()
+        response = self._session.request(method=method, url=url, **kwargs)
 
         try:
-            response = self._session.request(method=method, url=url, **kwargs)
-
             response.raise_for_status()
             return response
         except exceptions.HTTPError as e:
@@ -58,7 +56,7 @@ class DibelsDataSystemResource(ConfigurableResource):
         assessment_period,
         student_filter,
         delimiter,
-        growth_measure,
+        growth_measure: int | None = None,
         fields: list[int] | None = None,
     ):
         if fields is None:
@@ -76,9 +74,9 @@ class DibelsDataSystemResource(ConfigurableResource):
                 "Assessment": assessment,
                 "AssessmentPeriod": assessment_period,
                 "StudentFilter": student_filter,
-                "GrowthMeasure": growth_measure,
                 "Delimiter": delimiter,
-                "Fields": fields,
+                "Fields[]": fields,
+                "GrowthMeasure": growth_measure,
             },
         )
 
