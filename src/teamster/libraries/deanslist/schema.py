@@ -96,6 +96,7 @@ class CommLog(BaseModel):
     ThirdPartyName: str | None = None
     Topic: str | None = None
     UserID: int | None = None
+    is_deleted: bool | None = None
 
     Student: CommLogStudent | None = None
 
@@ -242,6 +243,7 @@ class Incident(BaseModel):
     UpdateMiddle: str | None = None
     UpdateStaffSchoolID: str | None = None
     UpdateTitle: str | None = None
+    is_deleted: bool | None = None
 
     CloseTS: Date | None = None
     CreateTS: Date | None = None
