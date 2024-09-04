@@ -42,4 +42,3 @@ select
     safe_cast(nullif(student.studentid, '') as int) as student_id,
     safe_cast(nullif(student.studentschoolid, '') as int) as student_school_id,
 from deduplicate
-where not is_deleted or is_deleted is null

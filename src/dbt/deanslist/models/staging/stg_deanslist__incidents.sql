@@ -95,7 +95,7 @@ with
                 nullif(dl_lastupdate.date, '') as datetime
             ) as dl_last_update_date,
         from deduplicate
-        where not is_deleted or is_deleted is null
+        where isactive
     )
 
 select
