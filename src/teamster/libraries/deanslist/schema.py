@@ -494,6 +494,7 @@ class ReconcileSuspensions(BaseModel):
     consequence: str | None = None
     constart: str | None = None
     dlincidentid: int | None = None
+    dlpenaltyid: int | None = None
     schoolname: str | None = None
     studentfirst: str | None = None
     studentid: int | None = None
@@ -502,3 +503,9 @@ class ReconcileSuspensions(BaseModel):
     submittedfn: str | None = None
     submittedln: str | None = None
     unnamed_13: str | None = None
+    unnamed_14: str | None = None
+
+
+class DFFStats(BaseModel):
+    StudentCount: int | None = None
+    StudentWithGuardianCount: int | None = None

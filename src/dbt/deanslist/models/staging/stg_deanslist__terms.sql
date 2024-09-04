@@ -1,4 +1,11 @@
 select
+    storedgrades as stored_grades,
+
+    /* records */
+    startdate.timezone_type as start_date_timezone_type,
+    enddate.timezone_type as end_date_timezone_type,
+
+    /* transformations */
     cast(termid as int) as term_id,
     cast(academicyearid as int) as academic_year_id,
     cast(integrationid as int) as integration_id,
@@ -13,13 +20,9 @@ select
     nullif(termname, '') as term_name,
     nullif(termtype, '') as term_type,
 
-    storedgrades as stored_grades,
-
-    {# records #}
-    startdate.timezone_type as start_date_timezone_type,
     nullif(startdate.timezone, '') as start_date_timezone,
-    safe_cast(nullif(startdate.date, '') as datetime) as start_date_date,
-    enddate.timezone_type as end_date_timezone_type,
     nullif(enddate.timezone, '') as end_date_timezone,
+
+    safe_cast(nullif(startdate.date, '') as datetime) as start_date_date,
     safe_cast(nullif(enddate.date, '') as datetime) as end_date_date,
 from {{ source("deanslist", "src_deanslist__terms") }}
