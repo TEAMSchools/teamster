@@ -1,4 +1,5 @@
 import pathlib
+import re
 
 from dagster import (
     MonthlyPartitionsDefinition,
@@ -44,7 +45,11 @@ config_dir = pathlib.Path(__file__).parent / "config"
 
 static_partitions_assets = [
     build_deanslist_static_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        asset_key=[
+            CODE_LOCATION,
+            "deanslist",
+            re.sub(pattern=r"\W", repl="_", string=e["endpoint"]),
+        ],
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_STATIC_PARTITIONS_DEF,
         **e,
@@ -56,7 +61,11 @@ static_partitions_assets = [
 
 monthly_multi_partitions_assets = [
     build_deanslist_multi_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        asset_key=[
+            CODE_LOCATION,
+            "deanslist",
+            re.sub(pattern=r"\W", repl="_", string=e["endpoint"]),
+        ],
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF,
         **e,
@@ -68,7 +77,11 @@ monthly_multi_partitions_assets = [
 
 fiscal_multi_partitions_assets = [
     build_deanslist_multi_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        asset_key=[
+            CODE_LOCATION,
+            "deanslist",
+            re.sub(pattern=r"\W", repl="_", string=e["endpoint"]),
+        ],
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
         **e,

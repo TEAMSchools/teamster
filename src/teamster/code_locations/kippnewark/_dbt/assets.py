@@ -22,7 +22,7 @@ dbt_assets = build_dbt_assets(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"requests": {"cpu": "1500m"}, "limits": {"cpu": "1500m"}}
+                "resources": {"requests": {"cpu": "1750m"}, "limits": {"cpu": "1750m"}}
             }
         }
     },

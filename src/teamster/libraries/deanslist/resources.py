@@ -64,6 +64,11 @@ class DeansListResource(ConfigurableResource):
 
         data = response_json.get("data", [])
         deleted_data = response_json.get("deleted_data", [])
+
+        if isinstance(data, dict):
+            data = [data]
+            total_row_count = 1
+
         for d in deleted_data:
             d["is_deleted"] = True
 
