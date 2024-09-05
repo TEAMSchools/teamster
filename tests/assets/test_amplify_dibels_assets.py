@@ -3,7 +3,10 @@ import random
 from dagster import AssetsDefinition, TextMetadataValue, _check, materialize
 from dagster._core.events import StepMaterializationData
 
-from teamster.code_locations.kipptaf.amplify.dibels.assets import data_farming
+from teamster.code_locations.kipptaf.amplify.dibels.assets import (
+    data_farming,
+    progress_export,
+)
 from teamster.code_locations.kipptaf.resources import DIBELS_DATA_SYSTEM_RESOURCE
 from teamster.core.resources import get_io_manager_gcs_avro
 
@@ -50,3 +53,7 @@ def _test_asset(asset: AssetsDefinition, partition_key=None):
 
 def test_data_farming():
     _test_asset(data_farming)
+
+
+def test_progress_export():
+    _test_asset(progress_export)

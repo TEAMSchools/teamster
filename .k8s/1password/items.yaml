@@ -53,7 +53,7 @@ metadata:
   name: op-amplify-dds-service-account
   namespace: dagster-cloud
 spec:
-  itemPath: vaults/Data Team/DIBELS Data System
+  itemPath: vaults/Data Team/items/DIBELS Data System
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
