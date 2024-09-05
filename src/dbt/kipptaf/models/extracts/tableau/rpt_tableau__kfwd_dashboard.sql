@@ -137,6 +137,22 @@ with
                 ),
                 0
             ) as ecc_matriculated_min,
+            count(
+                if(
+                    adjusted_6_year_minority_graduation_rate >= 68
+                    and application_submission_status = 'Wishlist',
+                    id,
+                    null
+                )
+            ) as n_68plus_ecc_wishlist,
+            count(
+                if(
+                    account_billing_state = 'NJ'
+                    and application_submission_status = 'Wishlist',
+                    id,
+                    null
+                )
+            ) as n_nj_wishlist,
         from {{ ref("base_kippadb__application") }}
         group by applicant
     ),
