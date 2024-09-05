@@ -1,15 +1,4 @@
 with
-    schools as (
-        select
-            _dbt_source_relation,
-            school_number,
-
-            case
-                high_grade when 12 then 'HS' when 8 then 'MS' when 4 then 'ES'
-            end as school_level,
-        from {{ ref("stg_powerschool__schools") }}
-    ),
-
     students_assignments as (
         select
             ce._dbt_source_relation,
@@ -51,7 +40,7 @@ with
             ) as score_converted,
         from {{ ref("base_powerschool__course_enrollments") }} as ce
         inner join
-            schools as sch
+            {{ ref("stg_powerschool__schools") }} as sch
             on ce.cc_schoolid = sch.school_number
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="sch") }}
         inner join
@@ -108,7 +97,6 @@ select
     _dbt_source_relation,
     studentid,
     sectionid,
-
     `quarter`,
     semester,
     week_number_academic_year,
@@ -116,12 +104,10 @@ select
     week_start_monday,
     week_end_sunday,
     school_week_start_date_lead,
-
     school_level,
     assignment_category_code,
     category_name,
     assignment_category_term,
-
     assignmentid,
     assignment_name,
     duedate,
@@ -129,11 +115,12 @@ select
     totalpointvalue,
     scorepoints,
     score_converted,
+
+    safe_divide(score_converted, totalpointvalue) * 100 as assign_final_score_percent,
+
     if(isexempt, 1, 0) as isexempt,
     if(islate, 1, 0) as islate,
     if(ismissing, 1, 0) as ismissing,
-
-    safe_divide(score_converted, totalpointvalue) * 100 as assign_final_score_percent,
 
     if(score_converted > totalpointvalue, true, false) as assign_score_above_max,
 
@@ -186,5 +173,4 @@ select
         true,
         false
     ) as assign_s_score_less_50p,
-
 from students_assignments
