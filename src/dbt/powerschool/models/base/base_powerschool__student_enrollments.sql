@@ -447,16 +447,7 @@ select
 
     if(ood.dcid is not null, ood.specprog_name, sch.name) as reporting_school_name,
 
-    case
-        when ood.dcid is not null
-        then 'OD'
-        when sch.high_grade = 12
-        then 'HS'
-        when sch.high_grade = 8
-        then 'MS'
-        when sch.high_grade = 4
-        then 'ES'
-    end as school_level,
+    if(ood.dcid is not null, 'OD', sch.school_level) as school_level,
 from with_boy_status_window as enr
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on enr.schoolid = sch.school_number
