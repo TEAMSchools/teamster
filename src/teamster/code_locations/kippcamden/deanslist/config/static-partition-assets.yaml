@@ -1,18 +1,20 @@
 endpoints:
-  - endpoint: users
-    api_version: v1
-    params:
-      IncludeInactive: Y
   - endpoint: lists
     api_version: v1
   - endpoint: terms
     api_version: v1
+  - endpoint: roster-assignments
+    api_version: beta
+  - endpoint: dff/stats
+    api_version: v1
+  - endpoint: users
+    api_version: v1
+    params:
+      IncludeInactive: Y
   - endpoint: rosters
     api_version: v1
     params:
       show_inactive: Y
-  - endpoint: roster-assignments
-    api_version: beta
   - endpoint: students
     api_version: v1
     params:
