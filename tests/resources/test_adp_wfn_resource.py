@@ -29,36 +29,36 @@ def test_event_notification():
 
 
 def test_get_worker():
-    aoid = "G3JKC4AMRSBBFGY4"
+    aoid = "G3R8E9HV8QXWE5TE"
     params = {
-        "asOfDate": "02/29/2024",
-        "$select": ",".join(
-            [
-                "workers/associateOID",
-                "workers/workerID",
-                "workers/workerDates",
-                "workers/workerStatus",
-                "workers/businessCommunication",
-                "workers/workAssignments",
-                "workers/customFieldGroup",
-                "workers/languageCode",
-                "workers/person/birthDate",
-                "workers/person/communication",
-                "workers/person/customFieldGroup",
-                "workers/person/disabledIndicator",
-                "workers/person/ethnicityCode",
-                "workers/person/genderCode",
-                "workers/person/genderSelfIdentityCode",
-                "workers/person/highestEducationLevelCode",
-                "workers/person/legalAddress",
-                "workers/person/legalName",
-                "workers/person/militaryClassificationCodes",
-                "workers/person/militaryStatusCode",
-                "workers/person/preferredName",
-                "workers/person/raceCode",
-                # "workers/person/governmentIDs",
-            ]
-        ),
+        "asOfDate": "09/05/2024",
+        # "$select": ",".join(
+        #     [
+        #         "workers/associateOID",
+        #         "workers/workerID",
+        #         "workers/workerDates",
+        #         "workers/workerStatus",
+        #         "workers/businessCommunication",
+        #         "workers/workAssignments",
+        #         "workers/customFieldGroup",
+        #         "workers/languageCode",
+        #         "workers/person/birthDate",
+        #         "workers/person/communication",
+        #         "workers/person/customFieldGroup",
+        #         "workers/person/disabledIndicator",
+        #         "workers/person/ethnicityCode",
+        #         "workers/person/genderCode",
+        #         "workers/person/genderSelfIdentityCode",
+        #         "workers/person/highestEducationLevelCode",
+        #         "workers/person/legalAddress",
+        #         "workers/person/legalName",
+        #         "workers/person/militaryClassificationCodes",
+        #         "workers/person/militaryStatusCode",
+        #         "workers/person/preferredName",
+        #         "workers/person/raceCode",
+        #         # "workers/person/governmentIDs",
+        #     ]
+        # ),
     }
 
     record = ADP_WFN.get(endpoint=f"hr/v2/workers/{aoid}", params=params)

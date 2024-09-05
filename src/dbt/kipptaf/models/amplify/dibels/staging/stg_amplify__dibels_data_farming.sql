@@ -6,6 +6,7 @@ select
     coalesce(form_maze_7th_beginning, form_maze_8th_beginning) as form_maze_beginning,
     coalesce(form_maze_7th_middle, form_maze_8th_middle) as form_maze_middle,
     coalesce(form_maze_7th_end, form_maze_8th_end) as form_maze_end,
+
     coalesce(form_orf_7th_beginning, form_orf_8th_beginning) as form_orf_beginning,
     coalesce(form_orf_7th_middle, form_orf_8th_middle) as form_orf_middle,
     coalesce(form_orf_7th_end, form_orf_8th_end) as form_orf_end,
