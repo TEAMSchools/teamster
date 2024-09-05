@@ -86,6 +86,7 @@ defs = Definitions(
         "airbyte": resources.AIRBYTE_CLOUD_RESOURCE,
         "db_bigquery": BIGQUERY_RESOURCE,
         "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
+        "dds": resources.DIBELS_DATA_SYSTEM_RESOURCE,
         "fivetran": resources.FIVETRAN_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,
