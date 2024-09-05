@@ -31,7 +31,7 @@ def test_event_notification():
 def test_get_worker():
     aoid = "G3R8E9HV8QXWE5TE"
     params = {
-        "asOfDate": "09/05/2024",
+        "asOfDate": "01/01/2021",
         # "$select": ",".join(
         #     [
         #         "workers/associateOID",
