@@ -21,3 +21,18 @@ sources:
               - amplify
               - dibels
               - data_farming
+      - name: src_amplify__dibels_progress_export
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/amplify/dibels/progress_export/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/amplify/dibels/progress_export/"
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - amplify
+              - dibels
+              - progress_export
