@@ -24,6 +24,7 @@ select
     o.employee_number,
     o.academic_year,
     o.assignment_id,
+    o.active_assignment,
     o.notes_boy,
     o.rating_moy,
     o.rating_eoy,
@@ -33,6 +34,8 @@ select
     o.manager_rating_eoy,
     o.manager_notes_moy,
     o.manager_notes_eoy,
+
+    a.active_title,
 
     m.metric_id,
     m.region,
@@ -55,8 +58,12 @@ select
     r.department_home_name as department,
     r.report_to_preferred_name_lastfirst as manager,
     r.report_to_sam_account_name,
+    r.assignment_status,
 
 from {{ ref("stg_leadership_development_output") }} as o
+left join
+    {{ ref("stg_leadership_development_active_users") }} as a
+    on o.employee_number = a.employee_number
 left join metrics_lookup as m on o.metric_id = m.metric_id
 left join
     round_completion as c
@@ -64,4 +71,3 @@ left join
     and o.academic_year = c.academic_year
 left join
     {{ ref("base_people__staff_roster") }} as r on o.employee_number = r.employee_number
-where r.assignment_status = 'Active'
