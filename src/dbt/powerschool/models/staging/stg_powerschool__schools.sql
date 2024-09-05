@@ -1,34 +1,64 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="dcid.int_value",
-        transform_cols=[
-            {"name": "dcid", "extract": "int_value"},
-            {"name": "id", "extract": "int_value"},
-            {"name": "district_number", "extract": "int_value"},
-            {"name": "school_number", "extract": "int_value"},
-            {"name": "low_grade", "extract": "int_value"},
-            {"name": "high_grade", "extract": "int_value"},
-            {"name": "sortorder", "extract": "int_value"},
-            {"name": "schoolgroup", "extract": "int_value"},
-            {"name": "hist_low_grade", "extract": "int_value"},
-            {"name": "hist_high_grade", "extract": "int_value"},
-            {"name": "dfltnextschool", "extract": "int_value"},
-            {"name": "view_in_portal", "extract": "int_value"},
-            {"name": "state_excludefromreporting", "extract": "int_value"},
-            {"name": "alternate_school_number", "extract": "int_value"},
-            {"name": "fee_exemption_status", "extract": "int_value"},
-            {"name": "issummerschool", "extract": "int_value"},
-            {"name": "schoolcategorycodesetid", "extract": "int_value"},
-            {"name": "whomodifiedid", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
-    )
-}}
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("powerschool", "src_powerschool__schools"),
+                partition_by="dcid.int_value",
+                order_by="_file_name desc",
+            )
+        }}
+    ),
 
-select *
-from staging
+    transformations as (
+        -- trunk-ignore(sqlfluff/AM04)
+        select
+            * except (
+                dcid,
+                id,
+                district_number,
+                school_number,
+                low_grade,
+                high_grade,
+                sortorder,
+                schoolgroup,
+                hist_low_grade,
+                hist_high_grade,
+                dfltnextschool,
+                view_in_portal,
+                state_excludefromreporting,
+                alternate_school_number,
+                fee_exemption_status,
+                issummerschool,
+                schoolcategorycodesetid,
+                whomodifiedid
+            ),
+
+            /* column transformations */
+            dcid.int_value as dcid,
+            id.int_value as id,
+            district_number.int_value as district_number,
+            school_number.int_value as school_number,
+            low_grade.int_value as low_grade,
+            high_grade.int_value as high_grade,
+            sortorder.int_value as sortorder,
+            schoolgroup.int_value as schoolgroup,
+            hist_low_grade.int_value as hist_low_grade,
+            hist_high_grade.int_value as hist_high_grade,
+            dfltnextschool.int_value as dfltnextschool,
+            view_in_portal.int_value as view_in_portal,
+            state_excludefromreporting.int_value as state_excludefromreporting,
+            alternate_school_number.int_value as alternate_school_number,
+            fee_exemption_status.int_value as fee_exemption_status,
+            issummerschool.int_value as issummerschool,
+            schoolcategorycodesetid.int_value as schoolcategorycodesetid,
+            whomodifiedid.int_value as whomodifiedid,
+        from deduplicate
+    )
+
+select
+    *,
+
+    case
+        high_grade when 12 then 'HS' when 8 then 'MS' when 4 then 'ES'
+    end as school_level,
+from transformations
