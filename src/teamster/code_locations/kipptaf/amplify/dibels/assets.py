@@ -1,7 +1,10 @@
 from dagster import MultiPartitionsDefinition, StaticPartitionsDefinition
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.amplify.dibels.schema import DATA_FARMING_SCHEMA
+from teamster.code_locations.kipptaf.amplify.dibels.schema import (
+    DATA_FARMING_SCHEMA,
+    PROGRESS_EXPORT_SCHEMA,
+)
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.amplify.dibels.assets import build_amplify_dds_report_asset
 
@@ -55,7 +58,7 @@ progress_export = build_amplify_dds_report_asset(
             "grade": StaticPartitionsDefinition(["107", "108"]),
         }
     ),
-    schema=...,
+    schema=PROGRESS_EXPORT_SCHEMA,
     report="ProgressExport",
     report_kwargs={
         "Compatibility": "Data Farming (Standard)",
