@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: amplify
+    schema: kipptaf_amplify
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_amplify__dibels_pm_expectations
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_pm_expectations
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - amplify
+              - dibels_pm_expectations

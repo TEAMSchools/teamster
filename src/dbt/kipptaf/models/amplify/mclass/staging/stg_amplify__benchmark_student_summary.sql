@@ -1,68 +1,58 @@
-{%- set src_bss = source("amplify", "src_amplify__benchmark_student_summary") -%}
-
 with
     benchmark_student_summary as (
         select
-            {{
-                dbt_utils.star(
-                    from=src_bss,
-                    except=[
-                        "assessment_grade",
-                        "client_date",
-                        "composite_level",
-                        "composite_national_norm_percentile",
-                        "composite_score",
-                        "composite_semester_growth",
-                        "composite_year_growth",
-                        "decoding_nwf_wrc_level",
-                        "decoding_nwf_wrc_national_norm_percentile",
-                        "decoding_nwf_wrc_score",
-                        "decoding_nwf_wrc_semester_growth",
-                        "decoding_nwf_wrc_year_growth",
-                        "enrollment_grade",
-                        "letter_names_lnf_level",
-                        "letter_names_lnf_national_norm_percentile",
-                        "letter_names_lnf_score",
-                        "letter_names_lnf_semester_growth",
-                        "letter_names_lnf_year_growth",
-                        "letter_sounds_nwf_cls_level",
-                        "letter_sounds_nwf_cls_national_norm_percentile",
-                        "letter_sounds_nwf_cls_score",
-                        "letter_sounds_nwf_cls_semester_growth",
-                        "letter_sounds_nwf_cls_year_growth",
-                        "official_teacher_staff_id",
-                        "phonemic_awareness_psf_level",
-                        "phonemic_awareness_psf_national_norm_percentile",
-                        "phonemic_awareness_psf_score",
-                        "phonemic_awareness_psf_semester_growth",
-                        "phonemic_awareness_psf_year_growth",
-                        "reading_accuracy_orf_accu_level",
-                        "reading_accuracy_orf_accu_national_norm_percentile",
-                        "reading_accuracy_orf_accu_score",
-                        "reading_accuracy_orf_accu_semester_growth",
-                        "reading_accuracy_orf_accu_year_growth",
-                        "reading_comprehension_maze_level",
-                        "reading_comprehension_maze_national_norm_percentile",
-                        "reading_comprehension_maze_score",
-                        "reading_comprehension_maze_semester_growth",
-                        "reading_comprehension_maze_year_growth",
-                        "reading_fluency_orf_level",
-                        "reading_fluency_orf_national_norm_percentile",
-                        "reading_fluency_orf_score",
-                        "reading_fluency_orf_semester_growth",
-                        "reading_fluency_orf_year_growth",
-                        "sync_date",
-                        "word_reading_wrf_level",
-                        "word_reading_wrf_national_norm_percentile",
-                        "word_reading_wrf_score",
-                        "word_reading_wrf_semester_growth",
-                        "word_reading_wrf_year_growth",
-                    ],
-                )
-            }},
-
-            date(client_date) as client_date,
-            date(sync_date) as sync_date,
+            * except (
+                assessment_grade,
+                client_date,
+                composite_level,
+                composite_national_norm_percentile,
+                composite_score,
+                composite_semester_growth,
+                composite_year_growth,
+                decoding_nwf_wrc_level,
+                decoding_nwf_wrc_national_norm_percentile,
+                decoding_nwf_wrc_score,
+                decoding_nwf_wrc_semester_growth,
+                decoding_nwf_wrc_year_growth,
+                enrollment_grade,
+                letter_names_lnf_level,
+                letter_names_lnf_national_norm_percentile,
+                letter_names_lnf_score,
+                letter_names_lnf_semester_growth,
+                letter_names_lnf_year_growth,
+                letter_sounds_nwf_cls_level,
+                letter_sounds_nwf_cls_national_norm_percentile,
+                letter_sounds_nwf_cls_score,
+                letter_sounds_nwf_cls_semester_growth,
+                letter_sounds_nwf_cls_year_growth,
+                official_teacher_staff_id,
+                phonemic_awareness_psf_level,
+                phonemic_awareness_psf_national_norm_percentile,
+                phonemic_awareness_psf_score,
+                phonemic_awareness_psf_semester_growth,
+                phonemic_awareness_psf_year_growth,
+                reading_accuracy_orf_accu_level,
+                reading_accuracy_orf_accu_national_norm_percentile,
+                reading_accuracy_orf_accu_score,
+                reading_accuracy_orf_accu_semester_growth,
+                reading_accuracy_orf_accu_year_growth,
+                reading_comprehension_maze_level,
+                reading_comprehension_maze_national_norm_percentile,
+                reading_comprehension_maze_score,
+                reading_comprehension_maze_semester_growth,
+                reading_comprehension_maze_year_growth,
+                reading_fluency_orf_level,
+                reading_fluency_orf_national_norm_percentile,
+                reading_fluency_orf_score,
+                reading_fluency_orf_semester_growth,
+                reading_fluency_orf_year_growth,
+                sync_date,
+                word_reading_wrf_level,
+                word_reading_wrf_national_norm_percentile,
+                word_reading_wrf_score,
+                word_reading_wrf_semester_growth,
+                word_reading_wrf_year_growth
+            ),
 
             cast(left(school_year, 4) as int) as academic_year,
 
@@ -170,6 +160,9 @@ with
                 word_reading_wrf_national_norm_percentile as string
             ) as word_reading_wrf_national_norm_percentile,
 
+            date(client_date) as client_date,
+            date(sync_date) as sync_date,
+
             coalesce(
                 assessment_grade.string_value,
                 cast(assessment_grade.long_value as string)
@@ -217,8 +210,7 @@ with
                     as string
                 )
             ) as phonemic_awareness_psf_national_norm_percentile,
-
-        from {{ src_bss }}
+        from {{ source("amplify", "src_amplify__benchmark_student_summary") }}
     )
 
 select
@@ -403,6 +395,14 @@ select
         word_reading_wrf_national_norm_percentile = 'Discontinued', true, false
     ) as word_reading_wrf_discontinued,
 
+    if(
+        assessment_grade = 'K', 0, safe_cast(assessment_grade as int)
+    ) as assessment_grade_int,
+
+    if(
+        enrollment_grade = 'K', 0, safe_cast(enrollment_grade as int)
+    ) as enrollment_grade_int,
+
     {{
         dbt_utils.generate_surrogate_key(
             [
@@ -413,12 +413,4 @@ select
             ]
         )
     }} as surrogate_key,
-
-    if(
-        assessment_grade = 'K', 0, safe_cast(assessment_grade as int)
-    ) as assessment_grade_int,
-
-    if(
-        enrollment_grade = 'K', 0, safe_cast(enrollment_grade as int)
-    ) as enrollment_grade_int,
 from benchmark_student_summary
