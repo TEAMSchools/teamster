@@ -1,7 +1,6 @@
 with
     schools as (
         select
-            _dbt_source_relation,
             school_number,
 
             case
