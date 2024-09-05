@@ -6,6 +6,7 @@ assets = [
 ]
 
 schedules = [
+    *dibels.schedules,
     *mclass.schedules,
 ]
 
