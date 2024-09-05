@@ -155,3 +155,16 @@ sources:
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/students/"
             format: AVRO
             enable_logical_types: true
+      - name: src_deanslist__dff_stats
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - deanslist
+              - dff_stats
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/dff_stats/*"
+          options:
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/dff_stats/"
+            format: AVRO
+            enable_logical_types: true

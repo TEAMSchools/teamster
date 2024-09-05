@@ -1,3 +1,4 @@
+from datetime import datetime
 from io import StringIO
 
 from dagster import AssetExecutionContext, Output, asset
@@ -5,12 +6,13 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.amplify.dibels.schema import DATA_FARMING_SCHEMA
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.amplify.dibels.resources import DibelsDataSystemResource
 
 
@@ -24,44 +26,48 @@ from teamster.libraries.amplify.dibels.resources import DibelsDataSystemResource
             [CODE_LOCATION, "amplify", "dibels", "data_farming"]
         )
     ],
-    # partitions_def=partitions_def,
+    partitions_def=FiscalYearPartitionsDefinition(
+        start_date="2024-07-01", start_month=7, timezone=LOCAL_TIMEZONE.name
+    ),
 )
 def data_farming(context: AssetExecutionContext, dds: DibelsDataSystemResource):
+    partition_key_datetime = datetime.strptime(context.partition_key, "%Y-%m-%d")
+
     response = dds.report(
         report="DataFarming",
         scope="District",
         grade="_ALL_",
-        start_year=2023,
-        end_year=2023,
+        start_year=partition_key_datetime.year,
+        end_year=partition_key_datetime.year,
         assessment_period="_ALL_",
         student_filter="any",
-        district=109,  # Example District
+        district=18095,  # KIPP Team and Family
         assessment=15030,  # DIBELS 8th Edition
-        growth_measure=16240,  # Composite
         delimiter=0,  # Comma separated
+        # growth_measure=16240,  # Composite
         fields=[
-            1,  # Student Name
+            # 1,  # Student Name
             2,  # Student ID
-            3,  # Secondary ID
-            4,  # Date of Birth
-            5,  # Demographics
-            21,  # Schools
-            22,  # Class Names
-            23,  # Secondary Class Names
-            25,  # Teacher Names
-            26,  # District IDs
-            27,  # School IDs
+            # 3,  # Secondary ID
+            # 4,  # Date of Birth
+            # 5,  # Demographics
+            # 21,  # Schools
+            # 22,  # Class Names
+            # 23,  # Secondary Class Names
+            # 25,  # Teacher Names
+            # 26,  # District IDs
+            # 27,  # School IDs
             41,  # Benchmark Statuses
             43,  # School Percentiles
             44,  # District Percentiles
             45,  # National DDS Percentiles
             47,  # Outcome Measures
             48,  # Assessment Dates
-            49,  # Assessment Forms
-            51,  # Remote Testing Status
-            50,  # Zones of Growth (must select all periods)
-            61,  # Move Out Dates
-            62,  # Data System Internal IDs
+            # 49,  # Assessment Forms
+            # 51,  # Remote Testing Status
+            # 50,  # Zones of Growth (must select all periods)
+            # 61,  # Move Out Dates
+            # 62,  # Data System Internal IDs
         ],
     )
 

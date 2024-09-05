@@ -24,6 +24,10 @@ with
             case
                 e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
             end as race_ethnicity,
+
+            max(e.grade_level) over (
+                partition by e.student_number
+            ) as most_recent_grade_level,
         from {{ ref("int_tableau__student_enrollments") }} as e
         where
             e.academic_year >= {{ var("current_academic_year") - 7 }}
@@ -108,6 +112,7 @@ with
             s.state_studentnumber,
             s.student_name,
             s.grade_level,
+            s.most_recent_grade_level,
             s.cohort,
             s.enroll_status,
             s.gender,
@@ -143,17 +148,19 @@ with
 
     schedules_current as (
         select
-            _dbt_source_relation,
-            cc_academic_year,
-            students_student_number,
-            courses_credittype,
-            teachernumber,
-            teacher_lastfirst as teacher_name,
-            courses_course_name as course_name,
-            cc_course_number as course_number,
+            c._dbt_source_relation,
+            c.cc_academic_year,
+            c.students_student_number,
+            c.courses_credittype,
+            c.teachernumber,
+            c.teacher_lastfirst as teacher_name,
+            c.courses_course_name as course_name,
+            c.cc_course_number as course_number,
+
+            s.abbreviation as school,
 
             case
-                courses_credittype
+                c.courses_credittype
                 when 'ENG'
                 then 'ELA'
                 when 'MATH'
@@ -163,12 +170,15 @@ with
                 when 'SOC'
                 then 'Civics'
             end as discipline,
-        from {{ ref("base_powerschool__course_enrollments") }}
+        from {{ ref("base_powerschool__course_enrollments") }} as c
+        left join
+            {{ ref("stg_powerschool__schools") }} as s
+            on c.cc_schoolid = s.school_number
         where
-            cc_academic_year = {{ var("current_academic_year") }}
-            and rn_credittype_year = 1
-            and not is_dropped_section
-            and courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
+            c.cc_academic_year = {{ var("current_academic_year") }}
+            and c.rn_credittype_year = 1
+            and not c.is_dropped_section
+            and c.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
     ),
 
     schedules as (
@@ -181,6 +191,7 @@ with
             e.courses_course_name as course_name,
             e.cc_course_number as course_number,
 
+            c.school as school_current,
             c.teachernumber as teachernumber_current,
             c.teacher_name as teacher_name_current,
 
@@ -237,6 +248,7 @@ select
     s.state_studentnumber,
     s.student_name,
     s.grade_level,
+    s.most_recent_grade_level,
     s.cohort,
     s.enroll_status,
     s.gender,
@@ -277,6 +289,7 @@ select
     m.teacher_name,
     m.course_number,
     m.course_name,
+    m.school_current,
     m.teachernumber_current,
     m.teacher_name_current,
 
@@ -310,7 +323,7 @@ left join
     on s.academic_year = sf2.academic_year - 1
     and s.discipline = sf2.discipline
     and s.student_number = sf2.student_number
-
+    /*
 union all
 
 select
@@ -363,3 +376,5 @@ select
     teacher_name_current,
     results_type,
 from {{ ref("rpt_tableau__state_assessments_dashboard_nj_prelim") }}
+*/
+    

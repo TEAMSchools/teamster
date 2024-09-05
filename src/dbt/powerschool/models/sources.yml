@@ -788,18 +788,6 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__storedgrades_dcid
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - "{{ project_name }}"
-              - powerschool
-              - storedgrades_dcid
-        external:
-          location: "{{ var('cloud_storage_uri_base') }}/powerschool/storedgrades_dcid/*"
-          options:
-            format: AVRO
-            enable_logical_types: true
       - name: src_powerschool__sced_code_mapping
         meta:
           dagster:

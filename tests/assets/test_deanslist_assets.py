@@ -308,3 +308,27 @@ def test_asset_deanslist_followups_kippmiami():
     )
 
     _test_asset(assets=fiscal_multi_partitions_assets, asset_name="followups")
+
+
+def test_asset_deanslist_dff_stats_kippcamden():
+    from teamster.code_locations.kippcamden.deanslist.assets import (
+        static_partitions_assets,
+    )
+
+    _test_asset(assets=static_partitions_assets, asset_name="dff_stats")
+
+
+def test_asset_deanslist_dff_stats_kippnewark():
+    from teamster.code_locations.kippnewark.deanslist.assets import (
+        static_partitions_assets,
+    )
+
+    _test_asset(assets=static_partitions_assets, asset_name="dff_stats")
+
+
+def test_asset_deanslist_dff_stats_kippmiami():
+    from teamster.code_locations.kippmiami.deanslist.assets import (
+        static_partitions_assets,
+    )
+
+    _test_asset(assets=static_partitions_assets, asset_name="dff_stats")
