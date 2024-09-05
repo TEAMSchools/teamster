@@ -5,6 +5,8 @@ with
             cd.week_start_date,
             cd.week_end_date,
 
+            sch.school_level,
+
             t.yearid,
             t.abbreviation as `quarter`,
 
@@ -26,19 +28,27 @@ with
             ) as week_number_quarter,
         from {{ ref("stg_powerschool__calendar_day") }} as cd
         inner join
+            {{ ref("stg_powerschool__schools") }} as sch
+            on cd.schoolid = sch.school_number
+        inner join
+            {{ ref("stg_powerschool__cycle_day") }} as cy on cd.cycle_day_id = cy.id
+        inner join
             {{ ref("stg_powerschool__terms") }} as t
             on cd.schoolid = t.schoolid
             and cd.date_value between t.firstday and t.lastday
             and t.portion = 4  /* quarters */
-        inner join
-            {{ ref("stg_powerschool__cycle_day") }} as cy on cd.cycle_day_id = cy.id
         inner join
             {{ ref("stg_powerschool__bell_schedule") }} as bs
             on cd.schoolid = bs.schoolid
             and cd.bell_schedule_id = bs.id
         where cd.insession = 1 and cd.membershipvalue > 0
         group by
-            cd.schoolid, cd.week_start_date, cd.week_end_date, t.yearid, t.abbreviation
+            cd.schoolid,
+            cd.week_start_date,
+            cd.week_end_date,
+            sch.school_level,
+            t.yearid,
+            t.abbreviation
     )
 
 select
