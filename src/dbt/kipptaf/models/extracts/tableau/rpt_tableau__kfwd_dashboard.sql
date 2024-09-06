@@ -912,7 +912,7 @@ select
             and ar.n_aa_cte_wishlist >= 3
         then 1
         else 0
-    end as dfgdfgf,
+    end as is_wishlist_quality_bar_int,
 
     if(
         ei.ecc_pursuing_degree_type in ("Bachelor's (4-year)", "Associate's (2 year)"),
