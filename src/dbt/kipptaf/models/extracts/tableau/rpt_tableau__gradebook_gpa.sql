@@ -114,7 +114,7 @@ with
                 enr.advisor_lastfirst
             ) as advisory,
 
-            if(term.storecode = 'Y1', gty.gpa_term, gtq.gpa_term) as gpa_term,
+            if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_term,
             if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
             if(sp.studentid is not null, 1, null) as is_counseling_services,
@@ -166,10 +166,10 @@ with
             and {{ union_dataset_join_clause(left_alias="term", right_alias="gtq") }}
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty
-            on gtq.studentid = gty.studentid
-            and gtq.yearid = gty.yearid
-            and gtq.schoolid = gty.schoolid
-            and {{ union_dataset_join_clause(left_alias="gtq", right_alias="gty") }}
+            on enr.studentid = gty.studentid
+            and enr.yearid = gty.yearid
+            and enr.schoolid = gty.schoolid
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
             and gty.is_current
         where
             enr.academic_year = {{ var("current_academic_year") }}
