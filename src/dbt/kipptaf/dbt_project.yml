@@ -67,12 +67,7 @@ models:
         +materialized: table
     amplify:
       +schema: amplify
-      dibels:
-        staging:
-          +materialized: table
-      mclass:
-        staging:
-          +materialized: table
+      +materialized: table
     assessments:
       +schema: assessments
       staging:
