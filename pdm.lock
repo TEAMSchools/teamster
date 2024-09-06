@@ -246,7 +246,7 @@ files = [
 
 [[package]]
 name = "cffi"
-version = "1.17.0"
+version = "1.17.1"
 requires_python = ">=3.8"
 summary = "Foreign Function Interface for Python calling C code."
 groups = ["default"]
@@ -254,18 +254,18 @@ dependencies = [
     "pycparser",
 ]
 files = [
-    {file = "cffi-1.17.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:aec510255ce690d240f7cb23d7114f6b351c733a74c279a84def763660a2c3bc"},
-    {file = "cffi-1.17.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:2770bb0d5e3cc0e31e7318db06efcbcdb7b31bcb1a70086d3177692a02256f59"},
-    {file = "cffi-1.17.0-cp312-cp312-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:db9a30ec064129d605d0f1aedc93e00894b9334ec74ba9c6bdd08147434b33eb"},
-    {file = "cffi-1.17.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a47eef975d2b8b721775a0fa286f50eab535b9d56c70a6e62842134cf7841195"},
-    {file = "cffi-1.17.0-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:f3e0992f23bbb0be00a921eae5363329253c3b86287db27092461c887b791e5e"},
-    {file = "cffi-1.17.0-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:6107e445faf057c118d5050560695e46d272e5301feffda3c41849641222a828"},
-    {file = "cffi-1.17.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eb862356ee9391dc5a0b3cbc00f416b48c1b9a52d252d898e5b7696a5f9fe150"},
-    {file = "cffi-1.17.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:c1c13185b90bbd3f8b5963cd8ce7ad4ff441924c31e23c975cb150e27c2bf67a"},
-    {file = "cffi-1.17.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:17c6d6d3260c7f2d94f657e6872591fe8733872a86ed1345bda872cfc8c74885"},
-    {file = "cffi-1.17.0-cp312-cp312-win32.whl", hash = "sha256:c3b8bd3133cd50f6b637bb4322822c94c5ce4bf0d724ed5ae70afce62187c492"},
-    {file = "cffi-1.17.0-cp312-cp312-win_amd64.whl", hash = "sha256:dca802c8db0720ce1c49cce1149ff7b06e91ba15fa84b1d59144fef1a1bc7ac2"},
-    {file = "cffi-1.17.0.tar.gz", hash = "sha256:f3157624b7558b914cb039fd1af735e5e8049a87c817cc215109ad1c8779df76"},
+    {file = "cffi-1.17.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:805b4371bf7197c329fcb3ead37e710d1bca9da5d583f5073b799d5c5bd1eee4"},
+    {file = "cffi-1.17.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:733e99bc2df47476e3848417c5a4540522f234dfd4ef3ab7fafdf555b082ec0c"},
+    {file = "cffi-1.17.1-cp312-cp312-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1257bdabf294dceb59f5e70c64a3e2f462c30c7ad68092d01bbbfb1c16b1ba36"},
+    {file = "cffi-1.17.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:da95af8214998d77a98cc14e3a3bd00aa191526343078b530ceb0bd710fb48a5"},
+    {file = "cffi-1.17.1-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:d63afe322132c194cf832bfec0dc69a99fb9bb6bbd550f161a49e9e855cc78ff"},
+    {file = "cffi-1.17.1-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:f79fc4fc25f1c8698ff97788206bb3c2598949bfe0fef03d299eb1b5356ada99"},
+    {file = "cffi-1.17.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b62ce867176a75d03a665bad002af8e6d54644fad99a3c70905c543130e39d93"},
+    {file = "cffi-1.17.1-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:386c8bf53c502fff58903061338ce4f4950cbdcb23e2902d86c0f722b786bbe3"},
+    {file = "cffi-1.17.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:4ceb10419a9adf4460ea14cfd6bc43d08701f0835e979bf821052f1805850fe8"},
+    {file = "cffi-1.17.1-cp312-cp312-win32.whl", hash = "sha256:a08d7e755f8ed21095a310a693525137cfe756ce62d066e53f502a83dc550f65"},
+    {file = "cffi-1.17.1-cp312-cp312-win_amd64.whl", hash = "sha256:51392eae71afec0d0c8fb1a53b204dbb3bcabcb3c9b807eedf3e1e6ccf2de903"},
+    {file = "cffi-1.17.1.tar.gz", hash = "sha256:1c39c6016c32bc48dd54561950ebd6836e1670f2ae46128f67cf49e789c52824"},
 ]
 
 [[package]]
@@ -444,7 +444,7 @@ files = [
 
 [[package]]
 name = "dagster"
-version = "1.8.4"
+version = "1.8.5"
 requires_python = "<3.13,>=3.8"
 summary = "Dagster is an orchestration platform for the development, production, and observation of data assets."
 groups = ["default", "dev"]
@@ -455,7 +455,7 @@ dependencies = [
     "click>=5.0",
     "coloredlogs<=14.0,>=6.1",
     "croniter>=0.3.34",
-    "dagster-pipes==1.8.4",
+    "dagster-pipes==1.8.5",
     "docstring-parser",
     "filelock",
     "grpcio-health-checking>=1.44.0",
@@ -464,7 +464,7 @@ dependencies = [
     "protobuf<5,>=3.20.0; python_version < \"3.11\"",
     "protobuf<5,>=4; python_version >= \"3.11\"",
     "psutil>=1.0; platform_system == \"Windows\"",
-    "pydantic!=1.10.7,<3,>1.10.0",
+    "pydantic!=1.10.7,<2.9.0,>1.10.0",
     "python-dotenv",
     "pytz",
     "pywin32!=226; platform_system == \"Windows\"",
@@ -481,54 +481,54 @@ dependencies = [
     "tzdata; platform_system == \"Windows\"",
     "universal-pathlib; python_version < \"3.12\"",
     "universal-pathlib>=0.2.0; python_version >= \"3.12\"",
-    "watchdog>=0.8.3",
+    "watchdog<6,>=0.8.3",
 ]
 files = [
-    {file = "dagster-1.8.4-py3-none-any.whl", hash = "sha256:18ccddb33128fe2f8b0cda8633c4081f4a9739dcbcd97f47f5410333d19bf696"},
-    {file = "dagster-1.8.4.tar.gz", hash = "sha256:98f29e228b9826e57c96eaae27612ca0be744b08b38eaa4d592bb3f3c2ec0af5"},
+    {file = "dagster-1.8.5-py3-none-any.whl", hash = "sha256:1d95b8d1cf36567a10c2950379f88522fc4d51363895ae935ea2e651c92c03bb"},
+    {file = "dagster-1.8.5.tar.gz", hash = "sha256:d1c6be09c7702220ed81ecdfabba65fa36985019b6ffa452c2bd137f9a5dca64"},
 ]
 
 [[package]]
 name = "dagster-airbyte"
-version = "0.24.4"
+version = "0.24.5"
 requires_python = "<3.13,>=3.8"
 summary = "Package for integrating Airbyte with Dagster."
 groups = ["default"]
 dependencies = [
-    "dagster==1.8.4",
+    "dagster==1.8.5",
     "requests",
 ]
 files = [
-    {file = "dagster-airbyte-0.24.4.tar.gz", hash = "sha256:a11158d51ac7a474528454f52883d2a18d2faf835ef0843cb4482e721171247b"},
-    {file = "dagster_airbyte-0.24.4-py3-none-any.whl", hash = "sha256:e12086f0bf36caaf03adfb8cffe115e904d6cddfa17cbc0db8d07a1dfc1f8b12"},
+    {file = "dagster-airbyte-0.24.5.tar.gz", hash = "sha256:839f78ae7cb7bedf3be7daf59d3b6e2a11d3ad4ec664889a7d297e1bf952aef2"},
+    {file = "dagster_airbyte-0.24.5-py3-none-any.whl", hash = "sha256:b2f732ee271f391c9ebc5ed719c565bd03d5b82cbd7f51585c349c3f342c33b7"},
 ]
 
 [[package]]
 name = "dagster-cloud"
-version = "1.8.4"
+version = "1.8.5"
 summary = ""
 groups = ["default"]
 dependencies = [
-    "dagster-cloud-cli==1.8.4",
-    "dagster==1.8.4",
+    "dagster-cloud-cli==1.8.5",
+    "dagster==1.8.5",
     "pex<3,>=2.1.132",
     "questionary",
     "requests",
     "typer",
 ]
 files = [
-    {file = "dagster-cloud-1.8.4.tar.gz", hash = "sha256:ce646bc923322db14ce494e5eb5e9d2263bbcb7b258396a6afae82f641662d4b"},
-    {file = "dagster_cloud-1.8.4-py3-none-any.whl", hash = "sha256:85704cf58090f8913b9a76c0ea205f4f98f6a42c85daf7b22dd5c6c184993483"},
+    {file = "dagster-cloud-1.8.5.tar.gz", hash = "sha256:94873dd75b4db74ca4f49f13f360bcd92e8abe95714dc31c2b61f06273c7ad0a"},
+    {file = "dagster_cloud-1.8.5-py3-none-any.whl", hash = "sha256:f23e964469b1c7ccd4f597f14cc28d11776bd3be3d3d9e0610ece67595736905"},
 ]
 
 [[package]]
 name = "dagster-cloud-cli"
-version = "1.8.4"
+version = "1.8.5"
 summary = ""
 groups = ["default"]
 dependencies = [
     "PyYAML>=5.1",
-    "dagster==1.8.4",
+    "dagster==1.8.5",
     "github3-py",
     "packaging>=20.9",
     "questionary",
@@ -536,19 +536,19 @@ dependencies = [
     "typer>=0.4.1",
 ]
 files = [
-    {file = "dagster-cloud-cli-1.8.4.tar.gz", hash = "sha256:6b853cc83fd67f499b2d959b3e06e3ca530dc71667f49fe896f0da223ee6bd13"},
-    {file = "dagster_cloud_cli-1.8.4-py3-none-any.whl", hash = "sha256:23b5b79444c1d8a65700aef3d7a812c0ef35db28fe92680e6195f81a6943dff2"},
+    {file = "dagster-cloud-cli-1.8.5.tar.gz", hash = "sha256:1f5798c943eb190856e87b298a655460f9df00f5de56e57ddaee8b5973a384e9"},
+    {file = "dagster_cloud_cli-1.8.5-py3-none-any.whl", hash = "sha256:2fd5f9c56d2f399b6155a7fb5f01047ce6626b425a4aeba3955fc7c1dec5722f"},
 ]
 
 [[package]]
 name = "dagster-dbt"
-version = "0.24.4"
+version = "0.24.5"
 requires_python = "<3.13,>=3.8"
 summary = "A Dagster integration for dbt"
 groups = ["default"]
 dependencies = [
     "Jinja2",
-    "dagster==1.8.4",
+    "dagster==1.8.5",
     "dbt-core<1.9,>=1.7",
     "networkx",
     "orjson",
@@ -559,33 +559,33 @@ dependencies = [
     "typer>=0.9.0",
 ]
 files = [
-    {file = "dagster-dbt-0.24.4.tar.gz", hash = "sha256:954b36ce06bf1630269b28ce4cd63921aa595527bf4a9b1a51686ed235523d06"},
-    {file = "dagster_dbt-0.24.4-py3-none-any.whl", hash = "sha256:60a4863c676f55a1270212b6a03ae1a109492395940be1742f24c397e98fd872"},
+    {file = "dagster-dbt-0.24.5.tar.gz", hash = "sha256:b7f3c0ff3f256909a898dd6d074667b3d1a4c35fd3f1690df15331f4cf7f58e0"},
+    {file = "dagster_dbt-0.24.5-py3-none-any.whl", hash = "sha256:7c4c09f1e2441eec1c8385b9d34188a265e0ec7c10a52ca1cff521b23558eafa"},
 ]
 
 [[package]]
 name = "dagster-fivetran"
-version = "0.24.4"
+version = "0.24.5"
 requires_python = "<3.13,>=3.8"
 summary = "Package for integrating Fivetran with Dagster."
 groups = ["default"]
 dependencies = [
-    "dagster==1.8.4",
+    "dagster==1.8.5",
 ]
 files = [
-    {file = "dagster-fivetran-0.24.4.tar.gz", hash = "sha256:336f3bb8a76c0c2ec6c8307e94a81d916d879cd0a20b7f93def1240d7c94f603"},
-    {file = "dagster_fivetran-0.24.4-py3-none-any.whl", hash = "sha256:4e56bdd70402fb33393782bd89bdbd1e1941c98f76ea7d0a1e5cbd2a2ffdf0c4"},
+    {file = "dagster-fivetran-0.24.5.tar.gz", hash = "sha256:3b8c6c5e31cf7a3361307893ec8d8f742c7ca055dbbf51e92a6054f93a45432b"},
+    {file = "dagster_fivetran-0.24.5-py3-none-any.whl", hash = "sha256:6018c4a75e2cc0ece49e0a3b778f3cb460ac6d541810e871efc2d7120b70cb83"},
 ]
 
 [[package]]
 name = "dagster-gcp"
-version = "0.24.4"
+version = "0.24.5"
 requires_python = "<3.13,>=3.8"
 summary = "Package for GCP-specific Dagster framework op and resource components."
 groups = ["default"]
 dependencies = [
-    "dagster-pandas==0.24.4",
-    "dagster==1.8.4",
+    "dagster-pandas==0.24.5",
+    "dagster==1.8.5",
     "db-dtypes",
     "google-api-python-client",
     "google-cloud-bigquery",
@@ -593,102 +593,102 @@ dependencies = [
     "oauth2client",
 ]
 files = [
-    {file = "dagster-gcp-0.24.4.tar.gz", hash = "sha256:ccd4f6011b60bd25572eae6cf33823167bea7245508e082814ce5eb95824ebfc"},
-    {file = "dagster_gcp-0.24.4-py3-none-any.whl", hash = "sha256:8847c521dd2ac181d3b4019dd4530c70197c686d4c08f309bfd34754ff2af53f"},
+    {file = "dagster-gcp-0.24.5.tar.gz", hash = "sha256:ac3f4fac30bdc38cc654e44df734e144a7b2e9e574e480a2f424c253fb2e8b89"},
+    {file = "dagster_gcp-0.24.5-py3-none-any.whl", hash = "sha256:1f39ae5139718f77cecaf202d757bad52acce1cb3a26abe923655689c2f93ea9"},
 ]
 
 [[package]]
 name = "dagster-graphql"
-version = "1.8.4"
+version = "1.8.5"
 requires_python = "<3.13,>=3.8"
 summary = "The GraphQL frontend to python dagster."
 groups = ["dev"]
 dependencies = [
-    "dagster==1.8.4",
+    "dagster==1.8.5",
     "gql[requests]<4,>=3",
     "graphene<4,>=3",
     "requests",
     "starlette",
 ]
 files = [
-    {file = "dagster-graphql-1.8.4.tar.gz", hash = "sha256:ff81fcfb11a1f13f628246c7581d8b0a8dc9862112e1acd014b83a849b68bb1a"},
-    {file = "dagster_graphql-1.8.4-py3-none-any.whl", hash = "sha256:94f449591a3cd1433e3665e58012ccc3e3b368a474db78d3f43ada8c0309e229"},
+    {file = "dagster-graphql-1.8.5.tar.gz", hash = "sha256:b436d27c5f4c197b677833b4193d4ec635b7543e7e0f9d42b57533203238ab62"},
+    {file = "dagster_graphql-1.8.5-py3-none-any.whl", hash = "sha256:5e27da62de2212a75474c0b18b6040a4465b5bad5cdf96c7aa096b86b34f1bdb"},
 ]
 
 [[package]]
 name = "dagster-k8s"
-version = "0.24.4"
+version = "0.24.5"
 requires_python = "<3.13,>=3.8"
 summary = "A Dagster integration for k8s"
 groups = ["default"]
 dependencies = [
-    "dagster==1.8.4",
+    "dagster==1.8.5",
     "google-auth!=2.23.1",
     "kubernetes",
 ]
 files = [
-    {file = "dagster-k8s-0.24.4.tar.gz", hash = "sha256:ffdc91244f8da68a1820aa364ea2ac2eb22764d32845cf2f22aaced107f6d123"},
-    {file = "dagster_k8s-0.24.4-py3-none-any.whl", hash = "sha256:5ababf3a541a5f65ababaca9ac319e2affc2aec3c32ce4735d9514d7cee24c78"},
+    {file = "dagster-k8s-0.24.5.tar.gz", hash = "sha256:8e642eff633ce095d43196483df3c650759d279475015a43a08d4f36f4881c5d"},
+    {file = "dagster_k8s-0.24.5-py3-none-any.whl", hash = "sha256:7e92d4d3758bf0c369e43f2c26bb294c99a94932f3cbe23423007c11240e3955"},
 ]
 
 [[package]]
 name = "dagster-pandas"
-version = "0.24.4"
+version = "0.24.5"
 requires_python = "<3.13,>=3.8"
 summary = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
 groups = ["default"]
 dependencies = [
-    "dagster==1.8.4",
+    "dagster==1.8.5",
     "pandas",
 ]
 files = [
-    {file = "dagster-pandas-0.24.4.tar.gz", hash = "sha256:68e5a3eb3d99985bcb97a3a1211c3cdd335d518660d0b5094ed1175fedc2f0a1"},
-    {file = "dagster_pandas-0.24.4-py3-none-any.whl", hash = "sha256:bf9bfaf457f6a5c6ff26e96a2996bf644ff1292733694db11a828ac2159df0e6"},
+    {file = "dagster-pandas-0.24.5.tar.gz", hash = "sha256:c22c6c64ccbaa179cf4fe63dc360d863c58196193c50359c15d6867abb23b278"},
+    {file = "dagster_pandas-0.24.5-py3-none-any.whl", hash = "sha256:066c609d6d8b5bbc69bf3c5d3d174fb6a623903b779f429ce8cdc78aff40c935"},
 ]
 
 [[package]]
 name = "dagster-pipes"
-version = "1.8.4"
+version = "1.8.5"
 requires_python = "<3.13,>=3.8"
 summary = "Toolkit for Dagster integrations with transform logic outside of Dagster"
 groups = ["default", "dev"]
 files = [
-    {file = "dagster-pipes-1.8.4.tar.gz", hash = "sha256:7591ae6d8c2a110991dda1ef50ae65db938ab5e3a77bf40da55a53f1342d6118"},
-    {file = "dagster_pipes-1.8.4-py3-none-any.whl", hash = "sha256:db5496edd0b790075712866ce9757b063059656446bb36396836bb5e60e36b1e"},
+    {file = "dagster-pipes-1.8.5.tar.gz", hash = "sha256:1ea4c682d3fe2cc6b09da30ca821fb53fd07b042e1f6b90b001746dbc8922423"},
+    {file = "dagster_pipes-1.8.5-py3-none-any.whl", hash = "sha256:5efaaeb102a30d5c71a63231939f358cd9d07585e167c375227a0a97526150e5"},
 ]
 
 [[package]]
 name = "dagster-ssh"
-version = "0.24.4"
+version = "0.24.5"
 requires_python = "<3.13,>=3.8"
 summary = "Package for ssh Dagster framework components."
 groups = ["default"]
 dependencies = [
-    "dagster==1.8.4",
+    "dagster==1.8.5",
     "paramiko",
     "sshtunnel",
 ]
 files = [
-    {file = "dagster-ssh-0.24.4.tar.gz", hash = "sha256:c1bbda21d7bdfb53f7d6fc0dd8be2ae550b3938955b164d87ae9dd7266e9f5a5"},
-    {file = "dagster_ssh-0.24.4-py3-none-any.whl", hash = "sha256:e5b22387607b61abd64281aa82334be69572de5822267fa00fcb316811db1a3f"},
+    {file = "dagster-ssh-0.24.5.tar.gz", hash = "sha256:d81ab82f2b6a8371300a998326bd8bb2be3ae26721ef044ea626fe9a5315dd2b"},
+    {file = "dagster_ssh-0.24.5-py3-none-any.whl", hash = "sha256:5accfcc35b4186aeef56a426a0dfaaf7a83aa6b2cb014cccf8f872daefdbdee3"},
 ]
 
 [[package]]
 name = "dagster-webserver"
-version = "1.8.4"
+version = "1.8.5"
 requires_python = "<3.13,>=3.8"
 summary = "Web UI for dagster."
 groups = ["dev"]
 dependencies = [
     "click<9.0,>=7.0",
-    "dagster-graphql==1.8.4",
-    "dagster==1.8.4",
+    "dagster-graphql==1.8.5",
+    "dagster==1.8.5",
     "starlette!=0.36.0",
     "uvicorn[standard]",
 ]
 files = [
-    {file = "dagster-webserver-1.8.4.tar.gz", hash = "sha256:542b1fb0c13170b2e4f5fe0da43e4ace8fc4ae554ae132023a6aa92f938c24eb"},
-    {file = "dagster_webserver-1.8.4-py3-none-any.whl", hash = "sha256:eb4ed7e77fb98d75dbd8d05d5fa144b2d1df9f5944e87351d46b0647aad2ccd8"},
+    {file = "dagster-webserver-1.8.5.tar.gz", hash = "sha256:e9b35f5ccf50d40e82d36ecd03fc38741ff221554d666744e6118ba03287697a"},
+    {file = "dagster_webserver-1.8.5-py3-none-any.whl", hash = "sha256:8caf91caaac63fa5e01291967a371980319322c2bd9e90adfb6555b03e4a9c9d"},
 ]
 
 [[package]]
@@ -944,18 +944,18 @@ files = [
 
 [[package]]
 name = "fastavro"
-version = "1.9.5"
+version = "1.9.7"
 requires_python = ">=3.8"
 summary = "Fast read/write of AVRO files"
 groups = ["default"]
 files = [
-    {file = "fastavro-1.9.5-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:b133456c8975ec7d2a99e16a7e68e896e45c821b852675eac4ee25364b999c14"},
-    {file = "fastavro-1.9.5-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bf586373c3d1748cac849395aad70c198ee39295f92e7c22c75757b5c0300fbe"},
-    {file = "fastavro-1.9.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:724ef192bc9c55d5b4c7df007f56a46a21809463499856349d4580a55e2b914c"},
-    {file = "fastavro-1.9.5-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:bfd11fe355a8f9c0416803afac298960eb4c603a23b1c74ff9c1d3e673ea7185"},
-    {file = "fastavro-1.9.5-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:9827d1654d7bcb118ef5efd3e5b2c9ab2a48d44dac5e8c6a2327bc3ac3caa828"},
-    {file = "fastavro-1.9.5-cp312-cp312-win_amd64.whl", hash = "sha256:d84b69dca296667e6137ae7c9a96d060123adbc0c00532cc47012b64d38b47e9"},
-    {file = "fastavro-1.9.5.tar.gz", hash = "sha256:6419ebf45f88132a9945c51fe555d4f10bb97c236288ed01894f957c6f914553"},
+    {file = "fastavro-1.9.7-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:4e1289b731214a7315884c74b2ec058b6e84380ce9b18b8af5d387e64b18fc44"},
+    {file = "fastavro-1.9.7-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:eac69666270a76a3a1d0444f39752061195e79e146271a568777048ffbd91a27"},
+    {file = "fastavro-1.9.7-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9be089be8c00f68e343bbc64ca6d9a13e5e5b0ba8aa52bcb231a762484fb270e"},
+    {file = "fastavro-1.9.7-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:d576eccfd60a18ffa028259500df67d338b93562c6700e10ef68bbd88e499731"},
+    {file = "fastavro-1.9.7-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:ee9bf23c157bd7dcc91ea2c700fa3bd924d9ec198bb428ff0b47fa37fe160659"},
+    {file = "fastavro-1.9.7-cp312-cp312-win_amd64.whl", hash = "sha256:b6b2ccdc78f6afc18c52e403ee68c00478da12142815c1bd8a00973138a166d0"},
+    {file = "fastavro-1.9.7.tar.gz", hash = "sha256:13e11c6cb28626da85290933027cd419ce3f9ab8e45410ef24ce6b89d20a1f6c"},
 ]
 
 [[package]]
@@ -971,14 +971,14 @@ files = [
 
 [[package]]
 name = "fsspec"
-version = "2024.6.1"
+version = "2024.9.0"
 requires_python = ">=3.8"
 summary = "File-system specification"
 groups = ["default", "dev"]
 marker = "python_version >= \"3.12\""
 files = [
-    {file = "fsspec-2024.6.1-py3-none-any.whl", hash = "sha256:3cb443f8bcd2efb31295a5b9fdb02aee81d8452c80d28f97a6d0959e6cee101e"},
-    {file = "fsspec-2024.6.1.tar.gz", hash = "sha256:fad7d7e209dd4c1208e3bbfda706620e0da5142bebbd9c384afb95b07e798e49"},
+    {file = "fsspec-2024.9.0-py3-none-any.whl", hash = "sha256:a0947d552d8a6efa72cc2c730b12c41d043509156966cca4fb157b0f2a0c574b"},
+    {file = "fsspec-2024.9.0.tar.gz", hash = "sha256:4b0afb90c2f21832df142f292649035d80b421f60a9e1c027802e5a0da2b04e8"},
 ]
 
 [[package]]
@@ -1047,7 +1047,7 @@ files = [
 
 [[package]]
 name = "google-api-python-client"
-version = "2.143.0"
+version = "2.144.0"
 requires_python = ">=3.7"
 summary = "Google API Client Library for Python"
 groups = ["default"]
@@ -1059,8 +1059,8 @@ dependencies = [
     "uritemplate<5,>=3.0.1",
 ]
 files = [
-    {file = "google_api_python_client-2.143.0-py2.py3-none-any.whl", hash = "sha256:d5654134522b9b574b82234e96f7e0aeeabcbf33643fbabcd449ef0068e3a476"},
-    {file = "google_api_python_client-2.143.0.tar.gz", hash = "sha256:6a75441f9078e6e2fcdf4946a153fda1e2cc81b5e9c8d6e8c0750c85c7f8a566"},
+    {file = "google_api_python_client-2.144.0-py2.py3-none-any.whl", hash = "sha256:f9c333ac4454a012adca90c297f9a22611a8953f3aae5481f90b3a56b9bdd413"},
+    {file = "google_api_python_client-2.144.0.tar.gz", hash = "sha256:fe00851b257157bca600e1692ed8a54762c4a5c7d9eb7f6d4822059424b0d0a9"},
 ]
 
 [[package]]
@@ -1311,16 +1311,16 @@ files = [
 
 [[package]]
 name = "graphql-core"
-version = "3.2.3"
-requires_python = ">=3.6,<4"
+version = "3.2.4"
+requires_python = "<4,>=3.6"
 summary = "GraphQL implementation for Python, a port of GraphQL.js, the JavaScript reference implementation for GraphQL."
 groups = ["dev"]
 dependencies = [
     "typing-extensions<5,>=4.2; python_version < \"3.8\"",
 ]
 files = [
-    {file = "graphql-core-3.2.3.tar.gz", hash = "sha256:06d2aad0ac723e35b1cb47885d3e5c45e956a53bc1b209a9fc5369007fe46676"},
-    {file = "graphql_core-3.2.3-py3-none-any.whl", hash = "sha256:5766780452bd5ec8ba133f8bf287dc92713e3868ddd83aee4faab9fc3e303dc3"},
+    {file = "graphql-core-3.2.4.tar.gz", hash = "sha256:acbe2e800980d0e39b4685dd058c2f4042660b89ebca38af83020fd872ff1264"},
+    {file = "graphql_core-3.2.4-py3-none-any.whl", hash = "sha256:1604f2042edc5f3114f49cac9d77e25863be51b23a54a61a23245cf32f6476f0"},
 ]
 
 [[package]]
@@ -1801,13 +1801,13 @@ files = [
 
 [[package]]
 name = "more-itertools"
-version = "10.4.0"
+version = "10.5.0"
 requires_python = ">=3.8"
 summary = "More routines for operating on iterables, beyond itertools"
 groups = ["default"]
 files = [
-    {file = "more-itertools-10.4.0.tar.gz", hash = "sha256:fe0e63c4ab068eac62410ab05cccca2dc71ec44ba8ef29916a0090df061cf923"},
-    {file = "more_itertools-10.4.0-py3-none-any.whl", hash = "sha256:0f7d9f83a0a8dcfa8a2694a770590d98a67ea943e3d9f5298309a484758c4e27"},
+    {file = "more-itertools-10.5.0.tar.gz", hash = "sha256:5482bfef7849c25dc3c6dd53a6173ae4795da2a41a80faea6700d9f5846c5da6"},
+    {file = "more_itertools-10.5.0-py3-none-any.whl", hash = "sha256:037b0d3203ce90cca8ab1defbbdac29d5f993fc20131f3664dc8d6acfa872aef"},
 ]
 
 [[package]]
@@ -2688,13 +2688,13 @@ files = [
 
 [[package]]
 name = "setuptools"
-version = "74.1.1"
+version = "74.1.2"
 requires_python = ">=3.8"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
 groups = ["default", "dev"]
 files = [
-    {file = "setuptools-74.1.1-py3-none-any.whl", hash = "sha256:fc91b5f89e392ef5b77fe143b17e32f65d3024744fba66dc3afe07201684d766"},
-    {file = "setuptools-74.1.1.tar.gz", hash = "sha256:2353af060c06388be1cecbf5953dcdb1f38362f87a2356c480b6b4d5fcfc8847"},
+    {file = "setuptools-74.1.2-py3-none-any.whl", hash = "sha256:5f4c08aa4d3ebcb57a50c33b1b07e94315d7fc7230f7115e47fc99776c8ce308"},
+    {file = "setuptools-74.1.2.tar.gz", hash = "sha256:95b40ed940a1c67eb70fc099094bd6e99c6ee7c23aa2306f4d2697ba7916f9c6"},
 ]
 
 [[package]]
@@ -2743,7 +2743,7 @@ files = [
 
 [[package]]
 name = "sqlalchemy"
-version = "2.0.33"
+version = "2.0.34"
 requires_python = ">=3.7"
 summary = "Database Abstraction Library"
 groups = ["default", "dev"]
@@ -2753,63 +2753,63 @@ dependencies = [
     "typing-extensions>=4.6.0",
 ]
 files = [
-    {file = "SQLAlchemy-2.0.33-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:1d81e3aeab456fe24c3f0dcfd4f952a3a5ee45e9c14fc66d34c1d7a60cf7b698"},
-    {file = "SQLAlchemy-2.0.33-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:ca8788dc1baee100f09110f33a01d928cf9df4483d2bfb25a37be31a659d46bb"},
-    {file = "SQLAlchemy-2.0.33-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:60c54b677d4f0a0b2df3b79e89e84d601fb931c720176641742efd66b50601f9"},
-    {file = "SQLAlchemy-2.0.33-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:684aee5fd811091b2f48006fb3fe6c7f2de4a716ef8d294a2aab762099753133"},
-    {file = "SQLAlchemy-2.0.33-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:ee2b82b170591ccd19d463c9798a9caeea0cad967a8d2f3264de459f582696d5"},
-    {file = "SQLAlchemy-2.0.33-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:1109cc6dc5c9d1223c42186391e6a5509e6d4ab2c30fa629573c10184f742f2e"},
-    {file = "SQLAlchemy-2.0.33-cp312-cp312-win32.whl", hash = "sha256:c633e2d2f8a7b88c06e276bbe16cb7e62fed815fcbeb69cd9752cea166ecb8e8"},
-    {file = "SQLAlchemy-2.0.33-cp312-cp312-win_amd64.whl", hash = "sha256:77eaf8fdf305266b806a91ae4633edbf86ad37e13bd92ac85e305e7f654c19a5"},
-    {file = "SQLAlchemy-2.0.33-py3-none-any.whl", hash = "sha256:ae294808afde1b14a1a69aa86a69cadfe391848bbb233a5332a8065e4081cabc"},
-    {file = "sqlalchemy-2.0.33.tar.gz", hash = "sha256:91c93333c2b37ff721dc83b37e28c29de4c502b5612f2d093468037b86aa2be0"},
+    {file = "SQLAlchemy-2.0.34-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:53e68b091492c8ed2bd0141e00ad3089bcc6bf0e6ec4142ad6505b4afe64163e"},
+    {file = "SQLAlchemy-2.0.34-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:bcd18441a49499bf5528deaa9dee1f5c01ca491fc2791b13604e8f972877f812"},
+    {file = "SQLAlchemy-2.0.34-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:165bbe0b376541092bf49542bd9827b048357f4623486096fc9aaa6d4e7c59a2"},
+    {file = "SQLAlchemy-2.0.34-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c3330415cd387d2b88600e8e26b510d0370db9b7eaf984354a43e19c40df2e2b"},
+    {file = "SQLAlchemy-2.0.34-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:97b850f73f8abbffb66ccbab6e55a195a0eb655e5dc74624d15cff4bfb35bd74"},
+    {file = "SQLAlchemy-2.0.34-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:7cee4c6917857fd6121ed84f56d1dc78eb1d0e87f845ab5a568aba73e78adf83"},
+    {file = "SQLAlchemy-2.0.34-cp312-cp312-win32.whl", hash = "sha256:fbb034f565ecbe6c530dff948239377ba859420d146d5f62f0271407ffb8c580"},
+    {file = "SQLAlchemy-2.0.34-cp312-cp312-win_amd64.whl", hash = "sha256:707c8f44931a4facd4149b52b75b80544a8d824162602b8cd2fe788207307f9a"},
+    {file = "SQLAlchemy-2.0.34-py3-none-any.whl", hash = "sha256:7286c353ee6475613d8beff83167374006c6b3e3f0e6491bfe8ca610eb1dec0f"},
+    {file = "sqlalchemy-2.0.34.tar.gz", hash = "sha256:10d8f36990dd929690666679b0f42235c159a7051534adb135728ee52828dd22"},
 ]
 
 [[package]]
 name = "sqlglot"
-version = "25.19.0"
+version = "25.20.1"
 requires_python = ">=3.7"
 summary = "An easily customizable SQL parser and transpiler"
 groups = ["default"]
 files = [
-    {file = "sqlglot-25.19.0-py3-none-any.whl", hash = "sha256:07f3f7c90b909cc324e2f659e6d551adf52293afd317141db8a4a7cfe01468a2"},
-    {file = "sqlglot-25.19.0.tar.gz", hash = "sha256:1cf4c4bf5a52a0e943fb182df9f6ae386470806b5ec5d57f59a07d4a6c639322"},
+    {file = "sqlglot-25.20.1-py3-none-any.whl", hash = "sha256:ea8c957ed22cc825d7714c46e165b66da33921492124f4d6b7cc742a1a960ec4"},
+    {file = "sqlglot-25.20.1.tar.gz", hash = "sha256:495afc1aa26dabedfe2faf9c655779eaf6e2401686a20920b742786d26a26cb0"},
 ]
 
 [[package]]
 name = "sqlglot"
-version = "25.19.0"
+version = "25.20.1"
 extras = ["rs"]
 requires_python = ">=3.7"
 summary = "An easily customizable SQL parser and transpiler"
 groups = ["default"]
 dependencies = [
-    "sqlglot==25.19.0",
-    "sqlglotrs==0.2.10",
+    "sqlglot==25.20.1",
+    "sqlglotrs==0.2.12",
 ]
 files = [
-    {file = "sqlglot-25.19.0-py3-none-any.whl", hash = "sha256:07f3f7c90b909cc324e2f659e6d551adf52293afd317141db8a4a7cfe01468a2"},
-    {file = "sqlglot-25.19.0.tar.gz", hash = "sha256:1cf4c4bf5a52a0e943fb182df9f6ae386470806b5ec5d57f59a07d4a6c639322"},
+    {file = "sqlglot-25.20.1-py3-none-any.whl", hash = "sha256:ea8c957ed22cc825d7714c46e165b66da33921492124f4d6b7cc742a1a960ec4"},
+    {file = "sqlglot-25.20.1.tar.gz", hash = "sha256:495afc1aa26dabedfe2faf9c655779eaf6e2401686a20920b742786d26a26cb0"},
 ]
 
 [[package]]
 name = "sqlglotrs"
-version = "0.2.10"
+version = "0.2.12"
 requires_python = ">=3.7"
-summary = ""
+summary = "An easily customizable SQL parser and transpiler"
 groups = ["default"]
 files = [
-    {file = "sqlglotrs-0.2.10-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:7636896441b4092121eeebf0343e609d6f16067b147a2a901337ccbc69f1dd95"},
-    {file = "sqlglotrs-0.2.10-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:744b187d1271680cb27e602cb7f456a4acadd8c2b367601361107a62c3149dd3"},
-    {file = "sqlglotrs-0.2.10-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:82956436512e7d8cd84ef88adfedd67ab59eb6f2b5901ba52d248a38aa02b6f9"},
-    {file = "sqlglotrs-0.2.10-cp312-cp312-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:30cbd4d2917ffb1b7f4feb557f88db365601e04210b5f3596d3609be5c6a3460"},
-    {file = "sqlglotrs-0.2.10-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:c6b421bc1a7dd0e1cfdd511a9918e0fa434665dd09c2a95cbbd262ac696d64ca"},
-    {file = "sqlglotrs-0.2.10-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:f490531b59db1dbc83e4cf779c9fb82eb5d0a72ac14cbaef80e3f1702787955c"},
-    {file = "sqlglotrs-0.2.10-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8b81f300e718f4975952429ee64d5365116501b6196bfe9b61091d4fd3fec8d1"},
-    {file = "sqlglotrs-0.2.10-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:3487735ff4d16bcdb41d89ab90ec01b21c3d517b87c5c9d27d73c43d4a673dce"},
-    {file = "sqlglotrs-0.2.10-cp312-none-win32.whl", hash = "sha256:b863be733d8c7480ae8250c216444aacf42197483d1034202c19438d9dff1c6c"},
-    {file = "sqlglotrs-0.2.10-cp312-none-win_amd64.whl", hash = "sha256:bc952d5085b0d74fe5539ee55ca756fb90aec8d8043fc21155a4b8c48bbcba74"},
-    {file = "sqlglotrs-0.2.10.tar.gz", hash = "sha256:1758b66fc2dc34f89cd8ec851fe25460dc03dba60eb838c9961fa23c6d93b827"},
+    {file = "sqlglotrs-0.2.12-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:9d5b9a9d6259b72258f6764f88a89faa3c648438bd1b2c3a9598b725d42bf6f2"},
+    {file = "sqlglotrs-0.2.12-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:acc25d651eb663332157c2e5d2736516cddf4cd0effe67a887723934de5051d1"},
+    {file = "sqlglotrs-0.2.12-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1fc98b7649445e726a492841b8b8b39a4e5724ec2787cd1436404ebccf42519a"},
+    {file = "sqlglotrs-0.2.12-cp312-cp312-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:b10bf6b71961b31951bf4dff937d8d5d399ea1b3bd47fb5c5810386710fe7dfb"},
+    {file = "sqlglotrs-0.2.12-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:c8bf7ae29c0fc66e9c998d7f8e6f6fc26309c6eb5a4728e1443cb628218bc307"},
+    {file = "sqlglotrs-0.2.12-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:08e8be22da77c964be76ab4438da2c77096f5871088466ca950ee1b4712a97d4"},
+    {file = "sqlglotrs-0.2.12-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:147cda8412f45af290ad190d9a98b5829a5f46a575ce768279ccebf9b7b53785"},
+    {file = "sqlglotrs-0.2.12-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:954ccd912391ab5922adb23159ebcc0c5dccb468381e2a1ce92117cb4b0f0ed3"},
+    {file = "sqlglotrs-0.2.12-cp312-none-win32.whl", hash = "sha256:5be231acf95920bed473524dd1cac93e4cb320ed7e6ae937531b232c54cfc232"},
+    {file = "sqlglotrs-0.2.12-cp312-none-win_amd64.whl", hash = "sha256:4c07d3dba9c3ae8b56a0e45a9e47aa2a2c6ed95870c5bcc67dacaadb873843ff"},
+    {file = "sqlglotrs-0.2.12.tar.gz", hash = "sha256:f104a98182761d4613f920eda7ec5fc921afb3608f7db648206ce06dd10a6be5"},
 ]
 
 [[package]]
@@ -3227,7 +3227,7 @@ files = [
 
 [[package]]
 name = "yarl"
-version = "1.9.8"
+version = "1.9.11"
 requires_python = ">=3.8"
 summary = "Yet another URL library"
 groups = ["dev"]
@@ -3236,23 +3236,23 @@ dependencies = [
     "multidict>=4.0",
 ]
 files = [
-    {file = "yarl-1.9.8-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:b3d373373908e687aa4c8b0666870b0cf65605254ba0819ed8d5af2fc0780496"},
-    {file = "yarl-1.9.8-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:e3d1be58e28825a14fb9561733de62fbe95c892febe7d7a9ebcde916c531d603"},
-    {file = "yarl-1.9.8-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:7318736a8ee9de8217d590866dd716fa3c0895e684e2ec6152d945a4ab758043"},
-    {file = "yarl-1.9.8-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:db3dd602cbf6613dc1e4a6fbde7a1bee86948e5940086090bb505c2ab959bbdf"},
-    {file = "yarl-1.9.8-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:c5950226b128a1610f57c1f756fc611fdbdcb1e6b4497ccb05fce76a38915b07"},
-    {file = "yarl-1.9.8-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:b341a995673180ed81a1040228a59e0b47ee687e367b1a03d829fa3c0eb4607e"},
-    {file = "yarl-1.9.8-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9f912153a34698994f32cf683d966014b0dd99c73481302d6159bcb3a8303e84"},
-    {file = "yarl-1.9.8-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9ceab2b16043ae1953863ec240eb918ba1ac40d2aad55225141aac288c606442"},
-    {file = "yarl-1.9.8-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:7c0d2bc2646ae2380bb91b9ddc2eb1e1fa6baef128499e817134d1d50c8b6c56"},
-    {file = "yarl-1.9.8-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:ebd98e16ff9948e4d31514c937275017a122b765cb89961dd5d44ecd2cc18140"},
-    {file = "yarl-1.9.8-cp312-cp312-musllinux_1_2_ppc64le.whl", hash = "sha256:83273ca458c85d7b026c770a86df6e36349e85100bd2cefe6d0ad7167a8f12a6"},
-    {file = "yarl-1.9.8-cp312-cp312-musllinux_1_2_s390x.whl", hash = "sha256:4511dd73b6aeda0cc39111839923f1545726d621813c9d13355824fba328dbcf"},
-    {file = "yarl-1.9.8-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:0ffb9f1cad56c547aa127e2c315e666ee9838156c8a3b14f37ba545b0167aa5e"},
-    {file = "yarl-1.9.8-cp312-cp312-win32.whl", hash = "sha256:5796358c3d6c72b108b570e20ab951463237ec473b6d204da21050feaaaf7dca"},
-    {file = "yarl-1.9.8-cp312-cp312-win_amd64.whl", hash = "sha256:c2dc6e941bf53160b44858d1b24767a056cd83166b69fbdd3b2e401856d8932e"},
-    {file = "yarl-1.9.8-py3-none-any.whl", hash = "sha256:d1612ce50f23b94897b9ef5eb65b72398a9a83ea990b42825272590f3484dae3"},
-    {file = "yarl-1.9.8.tar.gz", hash = "sha256:3089553548d9ab23152cecb5a71131caaa9e9b16d7fc8196057c374fdc53cc4b"},
+    {file = "yarl-1.9.11-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:614fa50fd0db41b79f426939a413d216cdc7bab8d8c8a25844798d286a999c5a"},
+    {file = "yarl-1.9.11-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:ff64f575d71eacb5a4d6f0696bfe991993d979423ea2241f23ab19ff63f0f9d1"},
+    {file = "yarl-1.9.11-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5c23f6dc3d7126b4c64b80aa186ac2bb65ab104a8372c4454e462fb074197bc6"},
+    {file = "yarl-1.9.11-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b8f847cc092c2b85d22e527f91ea83a6cf51533e727e2461557a47a859f96734"},
+    {file = "yarl-1.9.11-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:63a5dc2866791236779d99d7a422611d22bb3a3d50935bafa4e017ea13e51469"},
+    {file = "yarl-1.9.11-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:c335342d482e66254ae94b1231b1532790afb754f89e2e0c646f7f19d09740aa"},
+    {file = "yarl-1.9.11-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e4a8c3dedd081cca134a21179aebe58b6e426e8d1e0202da9d1cafa56e01af3c"},
+    {file = "yarl-1.9.11-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:504d19320c92532cabc3495fb7ed6bb599f3c2bfb45fed432049bf4693dbd6d0"},
+    {file = "yarl-1.9.11-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:0b2a8e5eb18181060197e3d5db7e78f818432725c0759bc1e5a9d603d9246389"},
+    {file = "yarl-1.9.11-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:f568d70b7187f4002b6b500c0996c37674a25ce44b20716faebe5fdb8bd356e7"},
+    {file = "yarl-1.9.11-cp312-cp312-musllinux_1_2_ppc64le.whl", hash = "sha256:735b285ea46ca7e86ad261a462a071d0968aade44e1a3ea2b7d4f3d63b5aab12"},
+    {file = "yarl-1.9.11-cp312-cp312-musllinux_1_2_s390x.whl", hash = "sha256:2d1c81c3b92bef0c1c180048e43a5a85754a61b4f69d6f84df8e4bd615bef25d"},
+    {file = "yarl-1.9.11-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:8d6e1c1562b53bd26efd38e886fc13863b8d904d559426777990171020c478a9"},
+    {file = "yarl-1.9.11-cp312-cp312-win32.whl", hash = "sha256:aeba4aaa59cb709edb824fa88a27cbbff4e0095aaf77212b652989276c493c00"},
+    {file = "yarl-1.9.11-cp312-cp312-win_amd64.whl", hash = "sha256:569309a3efb8369ff5d32edb2a0520ebaf810c3059f11d34477418c90aa878fd"},
+    {file = "yarl-1.9.11-py3-none-any.whl", hash = "sha256:c6f6c87665a9e18a635f0545ea541d9640617832af2317d4f5ad389686b4ed3d"},
+    {file = "yarl-1.9.11.tar.gz", hash = "sha256:c7548a90cb72b67652e2cd6ae80e2683ee08fde663104528ac7df12d8ef271d2"},
 ]
 
 [[package]]
