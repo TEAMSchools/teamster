@@ -48,9 +48,9 @@ with
             u.mclass_period,
             `date` as mclass_client_date,
             `date` as mclass_sync_date,
-            u.mclass_measure,
+            u.measure as mclass_measure,
             u.score as mclass_measure_score,
-            u.benchmark_status as mclass_measure_level,
+            u.mclass_measure_level,
             u.mclass_measure_level_int,
             u.national_dds_percentile as mclass_measure_percentile,
             '' as mclass_measure_semester_growth,
@@ -61,7 +61,7 @@ with
             null as mclass_score_change,
 
             row_number() over (
-                partition by u.surrogate_key, u.mclass_measure
+                partition by u.surrogate_key, u.measure
                 order by u.mclass_measure_level_int desc
             ) as rn_highest,
 
