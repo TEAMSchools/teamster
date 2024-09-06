@@ -265,6 +265,18 @@ with
 
 select
     *,
+    case
+        measure
+        when 'Core^ Support'
+        then 'Above Benchmark'
+        when 'Core Support'
+        then 'At Benchmark'
+        when 'Strategic Support'
+        then 'Below Benchmark'
+        when 'Intensive Support'
+        then 'Well Below Benchmark'
+    end as mclass_measure,
+
     {{
         dbt_utils.generate_surrogate_key(
             [
