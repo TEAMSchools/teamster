@@ -159,6 +159,15 @@ assets:
     metadata:
       id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
       cron_schedule: 0 8 * * 2
+  - name: DDI Suite
+    deps:
+      - [kipptaf, tableau, rpt_tableau__assessment_dashboard]
+      - [kipptaf, tableau, rpt_tableau__ddi_dashboard]
+    metadata:
+      id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
+      cron_schedule:
+        - 0 1 * * *
+        - 0 18 * * *
   # - name: Academic Priorities [NJ]
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__power_standards]
