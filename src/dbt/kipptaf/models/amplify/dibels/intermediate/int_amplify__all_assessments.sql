@@ -44,8 +44,7 @@ with
             academic_year as mclass_academic_year,
             student_id as mclass_student_number,
 
-            '' as mclass_assessment_grade,
-
+            cast(null as string) as mclass_assessment_grade,
             null as mclass_assessment_grade_int,
 
             mclass_period,
@@ -57,8 +56,8 @@ with
             mclass_measure_level_int,
             national_dds_percentile as mclass_measure_percentile,
 
-            '' as mclass_measure_semester_growth,
-            '' as mclass_measure_year_growth,
+            cast(null as string) as mclass_measure_semester_growth,
+            cast(null as string) as mclass_measure_year_growth,
             'Benchmark' as assessment_type,
             null as mclass_probe_number,
             null as mclass_total_number_of_probes,
