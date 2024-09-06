@@ -33,7 +33,6 @@ on:
       - src/teamster/libraries/tableau/**
   pull_request:
     paths:
-      - requirements.txt
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**
       - src/teamster/libraries/adp/**
