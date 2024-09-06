@@ -43,16 +43,20 @@ with
         select
             u.academic_year as mclass_academic_year,
             u.student_id as mclass_student_number,
+
             safe_cast(e.grade_level as string) as mclass_assessment_grade,
+
             e.grade_level as mclass_assessment_grade_int,
+
             u.mclass_period,
-            `date` as mclass_client_date,
-            `date` as mclass_sync_date,
+            u.date as mclass_client_date,
+            u.date as mclass_sync_date,
             u.measure as mclass_measure,
             u.score as mclass_measure_score,
             u.mclass_measure_level,
             u.mclass_measure_level_int,
             u.national_dds_percentile as mclass_measure_percentile,
+
             '' as mclass_measure_semester_growth,
             '' as mclass_measure_year_growth,
             'Benchmark' as assessment_type,
@@ -66,7 +70,7 @@ with
             ) as rn_highest,
 
             row_number() over (
-                partition by u.academic_year, u.student_id order by u.`date`
+                partition by u.academic_year, u.student_id order by u.date
             ) as rn_distinct,
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as u
         inner join

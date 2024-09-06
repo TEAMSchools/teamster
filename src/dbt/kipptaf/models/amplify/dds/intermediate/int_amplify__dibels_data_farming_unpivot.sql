@@ -1,5 +1,5 @@
 with
-    data_farming as (
+    df_unpivot as (
         select
             student_id,
             academic_year,
@@ -15,40 +15,6 @@ with
 
             split(name_column, '|')[0] as measure,
             split(name_column, '|')[1] as assessment_period,
-
-            case
-                split(name_column, '|')[1]
-                when 'Beginning'
-                then 'BOY'
-                when 'Middle'
-                then 'MOY'
-                when 'End'
-                then 'EOY'
-            end as mclass_period,
-
-            case
-                benchmark_status
-                when 'Core^ Support'
-                then 'Above Benchmark'
-                when 'Core Support'
-                then 'At Benchmark'
-                when 'Strategic Support'
-                then 'Below Benchmark'
-                when 'Intensive Support'
-                then 'Well Below Benchmark'
-            end as mclass_measure_level,
-
-            case
-                benchmark_status
-                when 'Core^ Support'
-                then 4
-                when 'Core Support'
-                then 3
-                when 'Strategic Support'
-                then 2
-                when 'Intensive Support'
-                then 1
-            end as mclass_measure_level_int,
         from
             {{ ref("stg_amplify__dibels_data_farming") }} unpivot (
                 (
@@ -278,13 +244,43 @@ with
 select
     *,
 
+    case
+        assessment_period
+        when 'Beginning'
+        then 'BOY'
+        when 'Middle'
+        then 'MOY'
+        when 'End'
+        then 'EOY'
+    end as mclass_period,
+
+    case
+        benchmark_status
+        when 'Core^ Support'
+        then 'Above Benchmark'
+        when 'Core Support'
+        then 'At Benchmark'
+        when 'Strategic Support'
+        then 'Below Benchmark'
+        when 'Intensive Support'
+        then 'Well Below Benchmark'
+    end as mclass_measure_level,
+
+    case
+        benchmark_status
+        when 'Core^ Support'
+        then 4
+        when 'Core Support'
+        then 3
+        when 'Strategic Support'
+        then 2
+        when 'Intensive Support'
+        then 1
+    end as mclass_measure_level_int,
+
     {{
         dbt_utils.generate_surrogate_key(
-            [
-                "student_id",
-                "academic_year",
-                "mclass_period",
-            ]
+            ["student_id", "academic_year", "assessment_period"]
         )
     }} as surrogate_key,
-from data_farming
+from df_unpivot
