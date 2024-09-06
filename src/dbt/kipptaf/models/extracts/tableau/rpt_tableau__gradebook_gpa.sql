@@ -166,10 +166,10 @@ with
             and {{ union_dataset_join_clause(left_alias="term", right_alias="gtq") }}
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty
-            on gtq.studentid = gty.studentid
-            and gtq.yearid = gty.yearid
-            and gtq.schoolid = gty.schoolid
-            and {{ union_dataset_join_clause(left_alias="gtq", right_alias="gty") }}
+            on enr.studentid = gty.studentid
+            and enr.yearid = gty.yearid
+            and enr.schoolid = gty.schoolid
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
             and gty.is_current
         where
             enr.academic_year = {{ var("current_academic_year") }}
