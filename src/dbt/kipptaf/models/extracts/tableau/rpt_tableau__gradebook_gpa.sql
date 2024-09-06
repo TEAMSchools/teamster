@@ -113,7 +113,7 @@ with
                 enr.advisory_name,
                 enr.advisor_lastfirst
             ) as advisory,
-            
+
             if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_term,
             if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
