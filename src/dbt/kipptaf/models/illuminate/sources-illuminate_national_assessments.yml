@@ -22,3 +22,48 @@ sources:
               - illuminate
               - national_assessments
               - psat_2024
+      - name: aptest_2019
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2019
+      - name: aptest_2020
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2020
+      - name: aptest_2021
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2021
+      - name: aptest_2022
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2022
+      - name: aptest_2023
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2023
