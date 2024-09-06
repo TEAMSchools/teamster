@@ -41,6 +41,46 @@ with
         union all
 
         select
+            u.academic_year as mclass_academic_year,
+            u.student_id as mclass_student_number,
+            safe_cast(e.grade_level as string) as mclass_assessment_grade,
+            e.grade_level as mclass_assessment_grade_int,
+            u.mclass_period,
+            `date` as mclass_client_date,
+            `date` as mclass_sync_date,
+            u.measure as mclass_measure,
+            u.score as mclass_measure_score,
+            u.benchmark_status as mclass_measure_level,
+            u.mclass_measure_level_int,
+            u.national_dds_percentile as mclass_measure_percentile,
+            '' as mclass_measure_semester_growth,
+            '' as mclass_measure_year_growth,
+            'Benchmark' as assessment_type,
+            null as mclass_probe_number,
+            null as mclass_total_number_of_probes,
+            null as mclass_score_change,
+
+            row_number() over (
+                partition by u.surrogate_key, u.measure
+                order by u.mclass_measure_level_int desc
+            ) as rn_highest,
+
+            row_number() over (
+                partition by u.academic_year, u.student_id order by u.`date`
+            ) as rn_distinct,
+        from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as u
+        inner join
+            {{ ref("int_tableau__student_enrollments") }} as e
+            on u.academic_year = e.academic_year
+            and u.student_id = e.student_number
+            and not e.is_self_contained
+        where
+            u.measure
+            in ('Reading Fluency (ORF)', 'Reading Comprehension (Maze)', 'Composite')
+
+        union all
+
+        select
             academic_year as mclass_academic_year,
             student_primary_id as mclass_student_number,
             assessment_grade as mclass_assessment_grade,
