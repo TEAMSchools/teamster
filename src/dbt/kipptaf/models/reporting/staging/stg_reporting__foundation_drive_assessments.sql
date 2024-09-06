@@ -14,7 +14,7 @@ select
     a.testscalescore as scale_score,
     a.testperformancelevel as profiency_level_code,
     a.testperformancelevel_text as proficiency_level_name,
-    1 as included_in_school_accountabilty
+    1 as included_in_school_accountabilty,
 from {{ ref("int_pearson__all_assessments") }} as a
 inner join
     {{ ref("int_tableau__student_enrollments") }} as e
@@ -37,10 +37,10 @@ select
     a.assessment_subject as test_subject_name,
     safe_cast(a.assessment_grade as int) as test_grade_level,
     a.season as test_period,
-    a.scale_score as scale_score,
+    a.scale_score,
     a.performance_level as profiency_level_code,
     a.achievement_level as proficiency_level_name,
-    1 as included_in_school_accountabilty
+    1 as included_in_school_accountabilty,
 from {{ ref("int_fldoe__all_assessments") }} as a
 inner join
     {{ ref("int_tableau__student_enrollments") }} as e
