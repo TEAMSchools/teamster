@@ -14,25 +14,9 @@ assets:
     partition_column: transaction_date
   - asset_name: codeset
     partition_column: whenmodified
-  - asset_name: districtteachercategory
-    partition_column: whenmodified
   - asset_name: emailaddress
     partition_column: whenmodified
-  - asset_name: gradecalcformulaweight
-    partition_column: whenmodified
-  - asset_name: gradecalcschoolassoc
-    partition_column: whenmodified
-  - asset_name: gradecalculationtype
-    partition_column: whenmodified
-  - asset_name: gradeformulaset
-    partition_column: whenmodified
   - asset_name: gradescaleitem
-    partition_column: whenmodified
-  - asset_name: gradeschoolconfig
-    partition_column: whenmodified
-  - asset_name: gradeschoolformulaassoc
-    partition_column: whenmodified
-  - asset_name: gradesectionconfig
     partition_column: whenmodified
   - asset_name: originalcontactmap
     partition_column: whenmodified
@@ -69,8 +53,6 @@ assets:
   - asset_name: studentcorefields
     partition_column: whenmodified
   - asset_name: studentrace
-    partition_column: whenmodified
-  - asset_name: teachercategory
     partition_column: whenmodified
   - asset_name: users
     partition_column: whenmodified

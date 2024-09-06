@@ -14,25 +14,9 @@ assets:
     partition_column: transaction_date
   - asset_name: codeset
     partition_column: whenmodified
-  - asset_name: districtteachercategory
-    partition_column: whenmodified
   - asset_name: emailaddress
     partition_column: whenmodified
-  - asset_name: gradecalcformulaweight
-    partition_column: whenmodified
-  - asset_name: gradecalcschoolassoc
-    partition_column: whenmodified
-  - asset_name: gradecalculationtype
-    partition_column: whenmodified
-  - asset_name: gradeformulaset
-    partition_column: whenmodified
   - asset_name: gradescaleitem
-    partition_column: whenmodified
-  - asset_name: gradeschoolconfig
-    partition_column: whenmodified
-  - asset_name: gradeschoolformulaassoc
-    partition_column: whenmodified
-  - asset_name: gradesectionconfig
     partition_column: whenmodified
   - asset_name: originalcontactmap
     partition_column: whenmodified
@@ -62,8 +46,6 @@ assets:
     partition_column: whenmodified
   - asset_name: studentrace
     partition_column: whenmodified
-  - asset_name: teachercategory
-    partition_column: whenmodified
   - asset_name: users
     partition_column: whenmodified
   - asset_name: u_clg_et_stu
@@ -80,31 +62,6 @@ assets:
       - infosnap_opt_in
       - media_release
       - rides_staff
-  - asset_name: cc
-    partition_column: transaction_date
-    select_columns:
-      - dcid
-      - id
-      - studentid
-      - sectionid
-      - section_number
-      - schoolid
-      - studyear
-      - termid
-      - dateenrolled
-      - dateleft
-      - course_number
-      - teacherid
-      - currentabsences
-      - currenttardies
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              cpu: 750m
-            limits:
-              cpu: 750m
   - asset_name: person
     partition_column: whenmodified
     op_tags:
@@ -145,3 +102,28 @@ assets:
               memory: 2.5Gi
             limits:
               memory: 2.5Gi
+  - asset_name: cc
+    partition_column: transaction_date
+    select_columns:
+      - dcid
+      - id
+      - studentid
+      - sectionid
+      - section_number
+      - schoolid
+      - studyear
+      - termid
+      - dateenrolled
+      - dateleft
+      - course_number
+      - teacherid
+      - currentabsences
+      - currenttardies
+    op_tags:
+      dagster-k8s/config:
+        container_config:
+          resources:
+            requests:
+              cpu: 750m
+            limits:
+              cpu: 750m

@@ -1,22 +1,17 @@
-from collections import defaultdict
 from itertools import groupby
 from operator import itemgetter
 
 import pendulum
 from dagster import (
     MAX_RUNTIME_SECONDS_TAG,
-    AssetKey,
     AssetsDefinition,
     DagsterEventType,
     EventRecordsFilter,
     MonthlyPartitionsDefinition,
     RunRequest,
-    SensorEvaluationContext,
-    SensorResult,
-    SkipReason,
+    ScheduleEvaluationContext,
     _check,
-    define_asset_job,
-    sensor,
+    schedule,
 )
 from sqlalchemy import text
 from sshtunnel import HandlerSSHTunnelForwarderError
@@ -51,45 +46,25 @@ def get_query_text(
     return text(query)
 
 
-def build_powerschool_asset_sensor(
+def build_powerschool_sis_asset_schedule(
     code_location,
     asset_selection: list[AssetsDefinition],
+    cron_schedule,
     execution_timezone,
-    minimum_interval_seconds=None,
 ):
-    jobs = []
-    keys_by_partitions_def = defaultdict(set[AssetKey])
-
-    base_job_name = f"{code_location}_powerschool_sis_asset_job"
-
     asset_keys = [a.key for a in asset_selection]
 
-    for assets_def in asset_selection:
-        keys_by_partitions_def[assets_def.partitions_def].add(assets_def.key)
-
-    for partitions_def, keys in keys_by_partitions_def.items():
-        if partitions_def is None:
-            job_name = f"{base_job_name}_None"
-        else:
-            job_name = (
-                f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
-            )
-
-        jobs.append(define_asset_job(name=job_name, selection=list(keys)))
-
-    @sensor(
-        name=f"{base_job_name}_sensor",
-        jobs=jobs,
-        minimum_interval_seconds=minimum_interval_seconds,
+    @schedule(
+        name=f"{code_location}__powerschool__sis__asset_job_schedule",
+        cron_schedule=cron_schedule,
+        execution_timezone=execution_timezone,
+        target=asset_selection,
     )
-    def _sensor(
-        context: SensorEvaluationContext,
+    def _schedule(
+        context: ScheduleEvaluationContext,
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
-    ) -> SensorResult | SkipReason:
-        now_timestamp = pendulum.now().timestamp()
-
-        run_requests = []
+    ):
         run_request_kwargs = []
 
         latest_materialization_events = (
@@ -102,11 +77,7 @@ def build_powerschool_asset_sensor(
             ssh_tunnel.start()
         except HandlerSSHTunnelForwarderError as e:
             ssh_tunnel.stop()
-
-            if "An error occurred while opening tunnels." in e.args:
-                return SkipReason(str(e))
-            else:
-                raise e
+            raise e
 
         for asset in asset_selection:
             asset_key_identifier = asset.key.to_python_identifier()
@@ -114,14 +85,6 @@ def build_powerschool_asset_sensor(
 
             table_name = metadata["table_name"]
             partition_column = metadata["partition_column"]
-
-            if asset.partitions_def is not None:
-                job_name = (
-                    f"{base_job_name}_"
-                    f"{asset.partitions_def.get_serializable_unique_identifier()}"
-                )
-            else:
-                job_name = f"{base_job_name}_None"
 
             # non-partitioned assets
             if asset.partitions_def is None:
@@ -134,8 +97,8 @@ def build_powerschool_asset_sensor(
                     context.log.info(msg=f"{asset_key_identifier} never materialized")
                     run_request_kwargs.append(
                         {
-                            "asset_key": asset.key,
-                            "job_name": job_name,
+                            "key": asset.key,
+                            "partitions_def": None,
                             "partition_key": None,
                         }
                     )
@@ -180,8 +143,8 @@ def build_powerschool_asset_sensor(
                         )
                         run_request_kwargs.append(
                             {
-                                "asset_key": asset.key,
-                                "job_name": job_name,
+                                "key": asset.key,
+                                "partitions_def": None,
                                 "partition_key": None,
                             }
                         )
@@ -207,8 +170,8 @@ def build_powerschool_asset_sensor(
                     )
                     run_request_kwargs.append(
                         {
-                            "asset_key": asset.key,
-                            "job_name": job_name,
+                            "key": asset.key,
+                            "partitions_def": None,
                             "partition_key": None,
                         }
                     )
@@ -223,7 +186,7 @@ def build_powerschool_asset_sensor(
                     date_add_kwargs = {"years": 1}
                 elif isinstance(asset.partitions_def, MonthlyPartitionsDefinition):
                     date_add_kwargs = {"months": 1}
-                    partition_keys = partition_keys[-4:]  # limit to 4 months
+                    partition_keys = partition_keys[-12:]  # limit to 12 months
                 else:
                     date_add_kwargs = {}
 
@@ -244,8 +207,8 @@ def build_powerschool_asset_sensor(
                         )
                         run_request_kwargs.append(
                             {
-                                "asset_key": asset.key,
-                                "job_name": job_name,
+                                "key": asset.key,
+                                "partitions_def": asset.partitions_def,
                                 "partition_key": partition_key,
                             }
                         )
@@ -293,8 +256,8 @@ def build_powerschool_asset_sensor(
                             )
                             run_request_kwargs.append(
                                 {
-                                    "asset_key": asset.key,
-                                    "job_name": job_name,
+                                    "key": asset.key,
+                                    "partitions_def": asset.partitions_def,
                                     "partition_key": partition_key,
                                 }
                             )
@@ -341,8 +304,8 @@ def build_powerschool_asset_sensor(
                         )
                         run_request_kwargs.append(
                             {
-                                "asset_key": asset.key,
-                                "job_name": job_name,
+                                "key": asset.key,
+                                "partitions_def": asset.partitions_def,
                                 "partition_key": partition_key,
                             }
                         )
@@ -350,21 +313,19 @@ def build_powerschool_asset_sensor(
 
         ssh_tunnel.stop()
 
-        item_getter = itemgetter("job_name", "partition_key")
+        item_getter = itemgetter("partitions_def", "partition_key")
 
-        for (job_name, parition_key), group in groupby(
+        for (partitions_def, partition_key), group in groupby(
             iterable=sorted(run_request_kwargs, key=item_getter), key=item_getter
         ):
-            run_requests.append(
-                RunRequest(
-                    run_key=f"{job_name}_{parition_key}_{now_timestamp}",
-                    job_name=job_name,
-                    partition_key=parition_key,
-                    asset_selection=[g["asset_key"] for g in group],
-                    tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60)},
-                )
+            yield RunRequest(
+                run_key=(
+                    f"{partitions_def.get_serializable_unique_identifier()}_"
+                    f"{partition_key}"
+                ),
+                asset_selection=[g["key"] for g in group],
+                partition_key=partition_key,
+                tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60)},
             )
 
-        return SensorResult(run_requests=run_requests)
-
-    return _sensor
+    return _schedule

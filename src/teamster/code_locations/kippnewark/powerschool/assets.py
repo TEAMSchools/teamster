@@ -46,7 +46,18 @@ powerschool_table_assets_transaction_date = [
     for a in config_from_files([f"{config_dir}/assets-transactiondate.yaml"])["assets"]
 ]
 
-powerschool_table_assets_whenmodified = [
+powerschool_table_assets_gradebook_full = [
+    build_powerschool_table_asset(
+        code_location=CODE_LOCATION,
+        table_name=a["asset_name"],
+        partition_column="whenmodified",
+        select_columns=a.get("select_columns"),
+        op_tags=a.get("op_tags"),
+    )
+    for a in config_from_files([(f"{config_dir}/assets-gradebook-full.yaml")])["assets"]
+]
+
+powerschool_table_assets_gradebook_monthly = [
     build_powerschool_table_asset(
         code_location=CODE_LOCATION,
         table_name=a["asset_name"],
@@ -59,12 +70,15 @@ powerschool_table_assets_whenmodified = [
         partition_column="whenmodified",
         op_tags=a.get("op_tags"),
     )
-    for a in config_from_files([f"{config_dir}/assets-whenmodified.yaml"])["assets"]
+    for a in (
+        config_from_files([f"{config_dir}/assets-gradebook-monthly.yaml"])["assets"]
+    )
 ]
 
 assets = [
     *powerschool_table_assets_full,
     *powerschool_table_assets_no_partition,
     *powerschool_table_assets_transaction_date,
-    *powerschool_table_assets_whenmodified,
+    *powerschool_table_assets_gradebook_full,
+    *powerschool_table_assets_gradebook_monthly,
 ]
