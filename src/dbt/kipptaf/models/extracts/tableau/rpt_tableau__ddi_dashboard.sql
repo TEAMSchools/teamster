@@ -116,7 +116,9 @@ with
             ) as is_current_week,
 
             safe_cast(r.assessment_id as string) as assessment_id,
-            if(r.is_mastery, 1, 0) as is_mastery_int,
+            case
+                when r.is_mastery then 1 when not r.is_mastery then 0
+            end as is_mastery_int,
             if(r.date_taken is not null, 1, 0) as is_complete,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
