@@ -36,7 +36,7 @@ with
                 then 'Below Benchmark'
                 when 'Intensive Support'
                 then 'Well Below Benchmark'
-            end as mclass_measure,
+            end as mclass_measure_level,
 
             case
                 benchmark_status
