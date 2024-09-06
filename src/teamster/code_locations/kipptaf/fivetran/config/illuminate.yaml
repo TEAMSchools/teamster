@@ -37,6 +37,11 @@ schemas:
       - tags
   - name: national_assessments
     destination_tables:
+      - aptest_2019
+      - aptest_2020
+      - aptest_2021
+      - aptest_2022
+      - aptest_2023
       - psat_2023
       - psat_2024
   - name: dna_repositories
