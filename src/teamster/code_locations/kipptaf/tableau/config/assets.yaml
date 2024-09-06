@@ -168,22 +168,11 @@ assets:
       cron_schedule:
         - 0 1 * * *
         - 0 18 * * *
-  # - name: Academic Priorities [NJ]
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__power_standards]
-  #     - [kipptaf, tableau, rpt_tableau__qbl]
-  #   metadata:
-  #     id: 0e0e4f6a-7401-4c12-a542-393f6f6edb1b
   # - name: APM Dashboard
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__iready_apm]
   #   metadata:
   #     id: eb91563d-760b-4f2d-b9f8-65437fe22242
-  # - name: Assessment Dashboard
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__assessment_dashboard]
-  #   metadata:
-  #     id: 30fe4f82-8022-4dbc-9a29-5d805e64319f
   # - name: Coaching Conversation Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
@@ -212,11 +201,6 @@ assets:
   #     - [kipptaf, tableau, rpt_tableau__promo_status]
   #   metadata:
   #     id: 5698ccc2-b952-4123-878b-48166b686b16
-  # - name: School Culture Dashboard [NJ]
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__school_culture_dashboard_nj]
-  #   metadata:
-  #     id: af792f71-03f3-4a10-9f5e-ab946b1f35ae
   # - name: State Testing Accommodations Tracker
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__state_testing_accomodations]
