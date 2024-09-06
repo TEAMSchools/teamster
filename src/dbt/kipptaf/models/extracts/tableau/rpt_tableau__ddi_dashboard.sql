@@ -108,8 +108,17 @@ with
             ) as self_contained_status,
             if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
+            if(
+                current_date('America/New_York')
+                between w.week_start_monday and w.week_end_sunday,
+                true,
+                false
+            ) as is_current_week,
+
             safe_cast(r.assessment_id as string) as assessment_id,
-            if(r.is_mastery, 1, 0) as is_mastery_int,
+            case
+                when r.is_mastery then 1 when not r.is_mastery then 0
+            end as is_mastery_int,
             if(r.date_taken is not null, 1, 0) as is_complete,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
@@ -347,6 +356,13 @@ select
     null as status_504,
     null as self_contained_status,
     null as iep_status,
+
+    if(
+        current_date('America/New_York')
+        between w.week_start_monday and w.week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
 
     o.observation_id as assessment_id,
     o.row_score as is_mastery_int,
