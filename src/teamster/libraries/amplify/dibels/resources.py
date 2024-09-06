@@ -44,24 +44,7 @@ class DibelsDataSystemResource(ConfigurableResource):
 
         return self._request(method="GET", url=url, **kwargs)
 
-    def report(
-        self,
-        report,
-        scope,
-        district,
-        grade,
-        start_year,
-        end_year,
-        assessment,
-        assessment_period,
-        student_filter,
-        delimiter,
-        growth_measure: int | None = None,
-        fields: list[int] | None = None,
-    ):
-        if fields is None:
-            fields = []
-
+    def report(self, report, scope, district, grade, assessment, delimiter, **kwargs):
         response = self.get(
             path="reports/report.php",
             params={
@@ -69,14 +52,9 @@ class DibelsDataSystemResource(ConfigurableResource):
                 "Scope": scope,
                 "district": district,
                 "Grade": grade,
-                "StartYear": start_year,
-                "EndYear": end_year,
                 "Assessment": assessment,
-                "AssessmentPeriod": assessment_period,
-                "StudentFilter": student_filter,
                 "Delimiter": delimiter,
-                "Fields[]": fields,
-                "GrowthMeasure": growth_measure,
+                **kwargs,
             },
         )
 

@@ -42,6 +42,44 @@ with
 
         select
             academic_year as mclass_academic_year,
+            student_id as mclass_student_number,
+
+            cast(null as string) as mclass_assessment_grade,
+            null as mclass_assessment_grade_int,
+
+            mclass_period,
+            `date` as mclass_client_date,
+            `date` as mclass_sync_date,
+            measure as mclass_measure,
+            score as mclass_measure_score,
+            mclass_measure_level,
+            mclass_measure_level_int,
+            national_dds_percentile as mclass_measure_percentile,
+
+            cast(null as string) as mclass_measure_semester_growth,
+            cast(null as string) as mclass_measure_year_growth,
+            'Benchmark' as assessment_type,
+            null as mclass_probe_number,
+            null as mclass_total_number_of_probes,
+            null as mclass_score_change,
+
+            row_number() over (
+                partition by surrogate_key, measure
+                order by mclass_measure_level_int desc
+            ) as rn_highest,
+
+            row_number() over (
+                partition by academic_year, student_id order by `date`
+            ) as rn_distinct,
+        from {{ ref("int_amplify__dibels_data_farming_unpivot") }}
+        where
+            measure
+            in ('Reading Fluency (ORF)', 'Reading Comprehension (Maze)', 'Composite')
+
+        union all
+
+        select
+            academic_year as mclass_academic_year,
             student_primary_id as mclass_student_number,
             assessment_grade as mclass_assessment_grade,
             assessment_grade_int as mclass_assessment_grade_int,

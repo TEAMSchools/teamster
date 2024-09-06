@@ -67,8 +67,7 @@ models:
         +materialized: table
     amplify:
       +schema: amplify
-      staging:
-        +materialized: table
+      +materialized: table
     assessments:
       +schema: assessments
       staging:

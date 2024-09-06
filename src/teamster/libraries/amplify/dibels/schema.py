@@ -1,6 +1,40 @@
 from pydantic import BaseModel
 
 
+class ProgressExport(BaseModel):
+    additional_codes: str | None = None
+    assessment_dates: str | None = None
+    assessment_forms: str | None = None
+    assessment: str | None = None
+    birth_date: str | None = None
+    class_7th: str | None = None
+    dibels_approved_accommodations: str | None = None
+    disability_status_spec_ed_category_services_provided: str | None = None
+    district_uid: int | None = None
+    first: str | None = None
+    free_reduced_lunch: str | None = None
+    gender: str | None = None
+    grade_level: int | None = None
+    last: str | None = None
+    measure: str | None = None
+    month: int | None = None
+    phase_line: int | None = None
+    phase_note: str | None = None
+    race_ethnicity: str | None = None
+    school_7th: str | None = None
+    school_institutional_id_7th: int | None = None
+    school_uid_7: int | None = None
+    score: float | None = None
+    secondary_class_7th: str | None = None
+    secondary_id: int | None = None
+    special_education: str | None = None
+    student_id: int | None = None
+    teacher_7th: str | None = None
+    uid: int | None = None
+    week: int | None = None
+    year_7th: int | None = None
+
+
 class DataFarming(BaseModel):
     additional_codes: str | None = None
     benchmark_status_composite_1st_beginning: str | None = None
