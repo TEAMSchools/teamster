@@ -21,6 +21,8 @@ with
             sum(if(is_submitted, 1, 0)) as n_submitted,
             sum(if(is_accepted, 1, 0)) as n_accepted,
 
+            sum(if(application_submission_status = 'Wishlist', 1, 0)) as n_wishlist,
+
             max(
                 case
                     when is_early_action_decision and is_submitted and is_accepted
@@ -137,6 +139,103 @@ with
                 ),
                 0
             ) as ecc_matriculated_min,
+            sum(
+                if(
+                    account_type in ('Public 4 yr', 'Private 4 yr')
+                    and application_submission_status = 'Wishlist',
+                    1,
+                    0
+                )
+            ) as n_4_year_wishlist,
+            count(
+                if(
+                    adjusted_6_year_minority_graduation_rate >= 55
+                    and application_submission_status = 'Wishlist',
+                    id,
+                    null
+                )
+            ) as n_55plus_ecc_wishlist,
+            count(
+                if(
+                    adjusted_6_year_minority_graduation_rate >= 60
+                    and application_submission_status = 'Wishlist',
+                    id,
+                    null
+                )
+            ) as n_60plus_ecc_wishlist,
+            count(
+                if(
+                    adjusted_6_year_minority_graduation_rate >= 68
+                    and application_submission_status = 'Wishlist',
+                    id,
+                    null
+                )
+            ) as n_68plus_ecc_wishlist,
+            count(
+                if(
+                    account_billing_state = 'NJ'
+                    and application_submission_status = 'Wishlist',
+                    id,
+                    null
+                )
+            ) as n_nj_wishlist,
+            count(
+                if(
+                    meets_full_need and application_submission_status = 'Wishlist',
+                    id,
+                    null
+                )
+            ) as n_meets_full_need_wishlist,
+            count(
+                if(
+                    is_strong_oos_option and application_submission_status = 'Wishlist',
+                    id,
+                    null
+                )
+            ) as n_strong_oos_wishlist,
+            count(
+                if(
+                    account_type in (
+                        'Non-profit',
+                        'NonProfit',
+                        'Private',
+                        'Private 2 yr',
+                        'Public 2 yr'
+                    )
+                    and application_submission_status = 'Wishlist',
+                    id,
+                    null
+                )
+            ) as n_aa_cte_wishlist,
+            count(
+                if(
+                    adjusted_6_year_minority_graduation_rate >= 68
+                    and application_submission_status = 'Wishlist'
+                    and is_early_action_decision,
+                    id,
+                    null
+                )
+            ) as n_68plus_ecc_ea_ed_wishlist,
+            count(
+                if(
+                    meets_full_need
+                    and application_submission_status = 'Wishlist'
+                    and is_early_action_decision,
+                    id,
+                    null
+                )
+            ) as n_meets_full_need_ea_ed_wishlist,
+            count(
+                if(
+                    meets_full_need
+                    and application_submission_status = 'Wishlist'
+                    and is_early_action_decision
+                    and adjusted_6_year_minority_graduation_rate >= 85,
+                    id,
+                    null
+                )
+            ) as n_meets_full_need_ea_ed_85ecc_wishlist,
+            sum(if(application_status is not null, 1, 0)) as n_app_outcomes,
         from {{ ref("base_kippadb__application") }}
         group by applicant
     ),
@@ -319,6 +418,16 @@ with
             sum(if(score_type = 'sat_total_score', 1, 0)) as n_sat_attempts,
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         group by contact
+    ),
+
+    award_letter_rollup as (
+        select
+            student__id as og_student_id,
+            sum(
+                if(award_letter__status != 'not_received', 1, 0)
+            ) as n_award_letters_received,
+        from {{ ref("stg_overgrad__admissions") }}
+        group by all
     )
 
 select
@@ -416,6 +525,7 @@ select
     ar.is_accepted_early,
     ar.is_accepted_early_ecc_60_plus,
     ar.is_accepted_early_ecc_90_plus,
+    ar.n_app_outcomes,
 
     cnr.as1,
     cnr.as2,
@@ -545,6 +655,8 @@ select
     ocf.common_app_linked,
     ocf.wishlist_signed_off_by_counselor,
     ocf.wishlist_notes,
+
+    al.n_award_letters_received,
 
     case
         when c.contact_college_match_display_gpa >= 3.50
@@ -734,6 +846,74 @@ select
     coalesce(ar.is_eof_applicant, false) as is_eof_applicant,
     coalesce(ar.is_matriculated, false) as is_matriculated,
     coalesce(e.is_es_grad, false) as is_es_grad,
+
+    case
+        when
+            ocf.best_guess_pathway = '4-year'
+            and round(c.contact_college_match_display_gpa, 2) >= 3.50
+            and ar.n_wishlist >= 9
+            and ar.n_68plus_ecc_wishlist >= 7
+            and ar.n_nj_wishlist >= 4
+            and ar.n_meets_full_need_wishlist >= 2
+            and ar.n_meets_full_need_ea_ed_85ecc_wishlist >= 1
+            and ar.n_68plus_ecc_ea_ed_wishlist >= 2
+        then 1
+        when
+            ocf.is_ed_ea != 'Yes'
+            and ocf.best_guess_pathway = '4-year'
+            and round(c.contact_college_match_display_gpa, 2) >= 3.00
+            and ar.n_wishlist >= 9
+            and ar.n_60plus_ecc_wishlist >= 7
+            and ar.n_nj_wishlist >= 6
+            and ar.n_strong_oos_wishlist >= 2
+        then 1
+        when
+            ocf.is_ed_ea = 'Yes'
+            and ocf.best_guess_pathway = '4-year'
+            and round(c.contact_college_match_display_gpa, 2) >= 3.00
+            and ar.n_wishlist >= 9
+            and ar.n_60plus_ecc_wishlist >= 7
+            and ar.n_nj_wishlist >= 6
+            and ar.n_strong_oos_wishlist >= 2
+            and ar.n_68plus_ecc_ea_ed_wishlist >= 2
+            and ar.n_meets_full_need_ea_ed_wishlist >= 1
+        then 1
+        when
+            ocf.best_guess_pathway = '4-year'
+            and round(c.contact_college_match_display_gpa, 2) >= 2.50
+            and ar.n_wishlist >= 6
+            and ar.n_nj_wishlist >= 6
+            and ar.n_55plus_ecc_wishlist >= 4
+        then 1
+        when
+            ocf.best_guess_pathway = '4-year'
+            and round(c.contact_college_match_display_gpa, 2) >= 2.00
+            and ar.n_wishlist >= 6
+            and ar.n_nj_wishlist >= 6
+        then 1
+        when
+            ocf.best_guess_pathway = '4-year'
+            and round(c.contact_college_match_display_gpa, 2) < 2.00
+            and ar.n_wishlist >= 3
+            and ar.n_nj_wishlist >= 3
+            and ar.n_aa_cte_wishlist >= 1
+        then 1
+        when
+            ocf.best_guess_pathway = '2-year'
+            and ar.n_wishlist >= 3
+            and (
+                ar.n_aa_cte_wishlist >= 3
+                or (ar.n_aa_cte_wishlist >= 2 and ar.n_4_year_wishlist >= 1)
+            )
+        then 1
+        when
+            ocf.best_guess_pathway in ('CTE', 'Workforce')
+            and ar.n_wishlist >= 3
+            and ar.n_aa_cte_wishlist >= 3
+        then 1
+        else 0
+    end as is_wishlist_quality_bar_int,
+
     if(
         ei.ecc_pursuing_degree_type in ("Bachelor's (4-year)", "Associate's (2 year)"),
         true,
@@ -794,6 +974,7 @@ left join
     {{ ref("int_overgrad__custom_fields_pivot") }} as ocf
     on os.id = ocf.id
     and ocf._dbt_source_model = 'stg_overgrad__students'
+left join award_letter_rollup as al on os.id = al.og_student_id
 left join test_attempts as ta on c.contact_id = ta.contact
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
