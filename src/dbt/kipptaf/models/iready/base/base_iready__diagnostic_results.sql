@@ -106,15 +106,23 @@ select
 
     cwo.sublevel_name as projected_sublevel,
     cwo.sublevel_number as projected_sublevel_number,
+    cwo.is_proficient as projected_is_proficient,
+    cwo.level as projected_level_number,
 
     cwr.sublevel_name as projected_sublevel_recent,
     cwr.sublevel_number as projected_sublevel_number_recent,
+    cwr.is_proficient as projected_is_proficient_recent,
+    cwr.level as projected_level_number_recent,
 
     cwt.sublevel_name as projected_sublevel_typical,
     cwt.sublevel_number as projected_sublevel_number_typical,
+    cwt.is_proficient as projected_is_proficient_typical,
+    cwt.level as projected_level_number_typical,
 
     cws.sublevel_name as projected_sublevel_stretch,
     cws.sublevel_number as projected_sublevel_number_stretch,
+    cws.is_proficient as projected_is_proficient_stretch,
+    cws.level as projected_level_number_stretch,
 
     cwp.scale_low as proficent_scale_score,
 
