@@ -223,7 +223,6 @@ def build_powerschool_asset_sensor(
                     date_add_kwargs = {"years": 1}
                 elif isinstance(asset.partitions_def, MonthlyPartitionsDefinition):
                     date_add_kwargs = {"months": 1}
-                    partition_keys = partition_keys[-4:]  # limit to 4 months
                 else:
                     date_add_kwargs = {}
 
