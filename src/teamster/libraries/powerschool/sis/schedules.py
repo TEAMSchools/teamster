@@ -14,7 +14,6 @@ from dagster import (
     schedule,
 )
 from sqlalchemy import text
-from sshtunnel import HandlerSSHTunnelForwarderError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
@@ -75,7 +74,7 @@ def build_powerschool_sis_asset_schedule(
 
         try:
             ssh_tunnel.start()
-        except HandlerSSHTunnelForwarderError as e:
+        except Exception as e:
             ssh_tunnel.stop()
             raise e
 
