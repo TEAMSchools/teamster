@@ -90,6 +90,9 @@ with
                     app.applicant, app.matriculation_decision, app.transfer_application
                 order by enr.start_date asc
             ) as rn_app_enr,
+
+            coalesce(n.meets_full_need, false) as meets_full_need,
+            coalesce(n.is_strong_oos_option, false) as is_strong_oos_option,
         from {{ ref_application }} as app
         inner join {{ ref("stg_kippadb__account") }} as acc on app.school = acc.id
         inner join
@@ -100,6 +103,10 @@ with
             and app.school = enr.school
             and c.contact_kipp_hs_class = enr.start_date_year
             and enr.rn_stu_school_start = 1
+        left join
+            {{ ref("stg_kippadb__nsc_crosswalk") }} as n
+            on acc.id = n.account_id
+            and n.rn_account = 1
     )
 
 select
