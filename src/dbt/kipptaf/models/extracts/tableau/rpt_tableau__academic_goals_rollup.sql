@@ -68,8 +68,8 @@ with
             academic_year_int as academic_year,
             student_id as student_number,
             subject,
-            overall_scale_score + annual_typical_growth_measure as scale_score,
             projected_level_number_typical as level,
+            overall_scale_score + annual_typical_growth_measure as scale_score,
             if(projected_is_proficient_typical, 1, 0) as is_proficient_int,
             case
                 when region = 'KIPP Miami' and projected_level_number_typical = 2
@@ -246,7 +246,6 @@ select
                 null
             )
         then 'Bucket 2'
-        else null
     end as student_tier,
 from roster as r
 left join
