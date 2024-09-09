@@ -1,12 +1,32 @@
 from pydantic import BaseModel
 
 
-class DiagnosticInstruction(BaseModel):
+class IReadyBaseModel(BaseModel):
     academic_year: str | None = None
-    annual_stretch_growth_measure: float | None = None
-    annual_typical_growth_measure: float | None = None
     class_es: str | None = None
     class_teacher_s: str | None = None
+    economically_disadvantaged: str | None = None
+    english_language_learner: str | None = None
+    enrolled: str | None = None
+    first_name: str | None = None
+    hispanic_or_latino: str | None = None
+    last_name: str | None = None
+    migrant: str | None = None
+    race: str | None = None
+    report_group_s: str | None = None
+    school: str | None = None
+    sex: str | None = None
+    special_education: str | None = None
+    student_id: int | None = None
+    subject: str | None = None
+    user_name: str | None = None
+
+    student_grade: str | int | None = None
+
+
+class DiagnosticInstruction(IReadyBaseModel):
+    annual_stretch_growth_measure: float | None = None
+    annual_typical_growth_measure: float | None = None
     diagnostic_completion_date_1: str | None = None
     diagnostic_completion_date_2: str | None = None
     diagnostic_completion_date_3: str | None = None
@@ -73,41 +93,22 @@ class DiagnosticInstruction(BaseModel):
     diagnostic_time_on_task_min_4: float | None = None
     diagnostic_time_on_task_min_5: float | None = None
     diagnostic_time_on_task_min_most_recent: float | None = None
-    economically_disadvantaged: str | None = None
-    english_language_learner: str | None = None
-    enrolled: str | None = None
-    first_name: str | None = None
-    hispanic_or_latino: str | None = None
     instruction_overall_lessons_completed: float | None = None
     instruction_overall_lessons_not_passed: float | None = None
     instruction_overall_lessons_passed: float | None = None
     instruction_overall_pass_rate_percent: float | None = None
     instruction_overall_pass_rate: float | None = None
     instruction_overall_time_on_task_min: float | None = None
-    last_name: str | None = None
-    migrant: str | None = None
     number_of_completed_diagnostics_during_the_time_frame: int | None = None
-    race: str | None = None
-    report_group_s: str | None = None
-    school: str | None = None
-    sex: str | None = None
-    special_education: str | None = None
-    student_grade: str | None = None
-    student_id: int | None = None
-    subject: str | None = None
-    user_name: str | None = None
 
 
-class DiagnosticResults(BaseModel):
-    academic_year: str | None = None
+class DiagnosticResults(IReadyBaseModel):
     algebra_and_algebraic_thinking_placement: str | None = None
     algebra_and_algebraic_thinking_relative_placement: str | None = None
     algebra_and_algebraic_thinking_scale_score: int | None = None
     annual_stretch_growth_measure: int | None = None
     annual_typical_growth_measure: int | None = None
     baseline_diagnostic_y_n: str | None = None
-    class_es: str | None = None
-    class_teacher_s: str | None = None
     completion_date: str | None = None
     comprehension_informational_text_placement: str | None = None
     comprehension_informational_text_relative_placement: str | None = None
@@ -121,10 +122,6 @@ class DiagnosticResults(BaseModel):
     diagnostic_gain: float | None = None
     diagnostic_language: str | None = None
     duration_min: int | None = None
-    economically_disadvantaged: str | None = None
-    english_language_learner: str | None = None
-    enrolled: str | None = None
-    first_name: str | None = None
     geometry_placement: str | None = None
     geometry_relative_placement: str | None = None
     geometry_scale_score: int | None = None
@@ -132,15 +129,12 @@ class DiagnosticResults(BaseModel):
     high_frequency_words_placement: str | None = None
     high_frequency_words_relative_placement: str | None = None
     high_frequency_words_scale_score: float | None = None
-    hispanic_or_latino: str | None = None
-    last_name: str | None = None
     lexile_measure: str | None = None
     lexile_range: str | None = None
     measurement_and_data_placement: str | None = None
     measurement_and_data_relative_placement: str | None = None
     measurement_and_data_scale_score: int | None = None
     mid_on_grade_level_scale_score: int | None = None
-    migrant: str | None = None
     most_recent_diagnostic_y_n: str | None = None
     most_recent_diagnostic_ytd_y_n: str | None = None
     number_and_operations_placement: str | None = None
@@ -160,7 +154,6 @@ class DiagnosticResults(BaseModel):
     phonological_awareness_scale_score: float | None = None
     quantile_measure: str | None = None
     quantile_range: str | None = None
-    race: str | None = None
     read_aloud: str | None = None
     reading_comprehension_informational_text_placement: str | None = None
     reading_comprehension_informational_text_relative_placement: str | None = None
@@ -172,25 +165,14 @@ class DiagnosticResults(BaseModel):
     reading_comprehension_overall_relative_placement: str | None = None
     reading_comprehension_overall_scale_score: float | None = None
     reading_difficulty_indicator_y_n: str | None = None
-    report_group_s: str | None = None
     rush_flag: str | None = None
-    school: str | None = None
-    sex: str | None = None
-    special_education: str | None = None
     start_date: str | None = None
-    student_id: int | None = None
-    user_name: str | None = None
     vocabulary_placement: str | None = None
     vocabulary_relative_placement: str | None = None
     vocabulary_scale_score: int | None = None
-    # percent_progress_to_annual_stretch_growth: float | None = None
-    # percent_progress_to_annual_typical_growth: float | None = None
-
-    student_grade: str | int | None = None
 
 
-class InstructionalUsage(BaseModel):
-    academic_year: str | None = None
+class InstructionalUsage(IReadyBaseModel):
     april_lessons_completed: int | None = None
     april_lessons_passed: float | None = None
     april_percent_lessons_passed: float | None = None
@@ -201,24 +183,17 @@ class InstructionalUsage(BaseModel):
     august_percent_lessons_passed: float | None = None
     august_total_time_on_task_min: int | None = None
     august_weekly_average_time_on_task_min: int | None = None
-    class_es: str | None = None
-    class_teacher_s: str | None = None
     december_lessons_completed: int | None = None
     december_lessons_passed: float | None = None
     december_percent_lessons_passed: float | None = None
     december_total_time_on_task_min: int | None = None
     december_weekly_average_time_on_task_min: int | None = None
-    economically_disadvantaged: str | None = None
-    english_language_learner: str | None = None
-    enrolled: str | None = None
     february_lessons_completed: int | None = None
     february_lessons_passed: float | None = None
     february_percent_lessons_passed: float | None = None
     february_total_time_on_task_min: int | None = None
     february_weekly_average_time_on_task_min: int | None = None
     first_lesson_completion_date: str | None = None
-    first_name: str | None = None
-    hispanic_or_latino: str | None = None
     january_lessons_completed: int | None = None
     january_lessons_passed: float | None = None
     january_percent_lessons_passed: float | None = None
@@ -234,7 +209,6 @@ class InstructionalUsage(BaseModel):
     june_percent_lessons_passed: float | None = None
     june_total_time_on_task_min: int | None = None
     june_weekly_average_time_on_task_min: int | None = None
-    last_name: str | None = None
     last_week_end_date: str | None = None
     last_week_lessons_completed: int | None = None
     last_week_lessons_passed: float | None = None
@@ -251,7 +225,6 @@ class InstructionalUsage(BaseModel):
     may_percent_lessons_passed: float | None = None
     may_total_time_on_task_min: int | None = None
     may_weekly_average_time_on_task_min: int | None = None
-    migrant: str | None = None
     most_recent_lesson_completion_date: str | None = None
     november_lessons_completed: int | None = None
     november_lessons_passed: float | None = None
@@ -263,20 +236,11 @@ class InstructionalUsage(BaseModel):
     october_percent_lessons_passed: float | None = None
     october_total_time_on_task_min: int | None = None
     october_weekly_average_time_on_task_min: int | None = None
-    race: str | None = None
-    report_group_s: str | None = None
-    school: str | None = None
     september_lessons_completed: int | None = None
     september_lessons_passed: float | None = None
     september_percent_lessons_passed: float | None = None
     september_total_time_on_task_min: int | None = None
     september_weekly_average_time_on_task_min: int | None = None
-    sex: str | None = None
-    special_education: str | None = None
-    student_grade: str | None = None
-    student_id: int | None = None
-    subject: str | None = None
-    user_name: str | None = None
     year_to_date_algebra_and_algebraic_thinking_lessons_completed: int | None = None
     year_to_date_algebra_and_algebraic_thinking_lessons_passed: float | None = None
     year_to_date_algebra_and_algebraic_thinking_percent_lessons_passed: float | None = (
@@ -325,35 +289,17 @@ class InstructionalUsage(BaseModel):
     year_to_date_vocabulary_time_on_task_min: int | None = None
 
 
-class PersonalizedInstruction(BaseModel):
-    academic_year: str | None = None
-    class_es: str | None = None
-    class_teacher_s: str | None = None
+class PersonalizedInstruction(IReadyBaseModel):
     completion_date: str | None = None
     domain: str | None = None
-    economically_disadvantaged: str | None = None
-    english_language_learner: str | None = None
-    first_name: str | None = None
-    hispanic_or_latino: str | None = None
-    last_name: str | None = None
     lesson_grade: str | None = None
     lesson_id: str | None = None
     lesson_language: str | None = None
     lesson_level: str | None = None
     lesson_name: str | None = None
     lesson_objective: str | None = None
-    migrant: str | None = None
     passed_or_not_passed: str | None = None
-    race: str | None = None
-    report_group_s: str | None = None
-    school: str | None = None
-    sex: str | None = None
-    special_education: str | None = None
-    student_grade: str | None = None
-    student_id: int | None = None
-    subject: str | None = None
     teacher_assigned_lesson: str | None = None
-    user_name: str | None = None
 
     score: int | float | None = None
     total_time_on_lesson_min: int | float | None = None
