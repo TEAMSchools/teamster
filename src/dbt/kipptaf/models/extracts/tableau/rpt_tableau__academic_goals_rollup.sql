@@ -30,12 +30,9 @@ with
             end as subject,
             testscalescore as scale_score,
             testperformancelevel as level,
-            if
-            (testperformancelevel >= 4, 1, 0) as is_proficient_int,
-            if
-            (testperformancelevel = 3, 1, 0) as is_approaching_int,
-            if
-            (testperformancelevel < 3, 1, 0) as is_below_int,
+            if(testperformancelevel >= 4, 1, 0) as is_proficient_int,
+            if(testperformancelevel = 3, 1, 0) as is_approaching_int,
+            if(testperformancelevel < 3, 1, 0) as is_below_int,
         from {{ ref("stg_pearson__njsla") }}
         union all
         select
@@ -50,12 +47,9 @@ with
             end as subject,
             f.scale_score,
             f.achievement_level_int as level,
-            if
-            (f.achievement_level_int >= 3, 1, 0) as is_proficient_int,
-            if
-            (f.achievement_level_int = 2, 1, 0) as is_approaching_int,
-            if
-            (f.achievement_level_int < 2, 1, 0) as is_below_int,
+            if(f.achievement_level_int >= 3, 1, 0) as is_proficient_int,
+            if(f.achievement_level_int = 2, 1, 0) as is_approaching_int,
+            if(f.achievement_level_int < 2, 1, 0) as is_below_int,
         from {{ ref("stg_fldoe__fast") }} as f
         left join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
@@ -119,8 +113,7 @@ with
                 st.is_approaching_int, ir.is_approaching_int
             ) as is_approaching_int,
             coalesce(st.is_below_int, ir.is_below_int) as is_below_int,
-            if
-            (
+            if(
                 st.scale_score is not null or ir.scale_score is not null, 1, 0
             ) as is_tested_int,
             case
