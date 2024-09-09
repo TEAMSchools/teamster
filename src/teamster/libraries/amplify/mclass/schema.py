@@ -52,9 +52,9 @@ class DYDModel(BaseModel):
     enrollment_grade: str | int | None = None
     assessing_teacher_staff_id: str | float | None = None
     assessment_grade: str | int | None = None
-    official_teacher_staff_id: int | str | None = None
     primary_id_student_id_district_id: int | float | None = None
     primary_school_id: str | int | None = None
+    official_teacher_staff_id: int | str | float | None = None
 
 
 class BenchmarkStudentSummary(DYDModel):
