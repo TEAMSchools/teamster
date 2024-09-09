@@ -6,11 +6,20 @@ select
     {{
         dbt_utils.star(
             from=src_model,
-            except=["completion_date", "score", "total_time_on_lesson_min"],
+            except=[
+                "completion_date",
+                "score",
+                "student_grade",
+                "total_time_on_lesson_min",
+            ],
         )
     }},
 
     cast(left(academic_year, 4) as int) as academic_year_int,
+
+    coalesce(
+        student_grade.string_value, cast(student_grade.long_value as string)
+    ) as student_grade,
 
     coalesce(safe_cast(score.double_value as int), score.long_value) as score,
     coalesce(
