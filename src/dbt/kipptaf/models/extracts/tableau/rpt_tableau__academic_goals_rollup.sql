@@ -219,7 +219,19 @@ with
 
 select
     r.*,
-    g.*,
+
+    g.n_proficient,
+    g.pct_proficient,
+    g.n_approaching,
+    g.pct_approaching,
+    g.n_below,
+    g.pct_below,
+    g.n_tested,
+    g.pct_tested,
+    g.n_bubble_to_move,
+    g.pct_to_grow,
+    g.percent_with_growth_met,
+
     if(
         r.is_bucket2_eligible,
         rank() over (
