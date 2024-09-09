@@ -107,6 +107,9 @@ def build_powerschool_asset_sensor(
                 return SkipReason(str(e))
             else:
                 raise e
+        except Exception as e:
+            ssh_tunnel.stop()
+            raise e
 
         for asset in asset_selection:
             asset_key_identifier = asset.key.to_python_identifier()
