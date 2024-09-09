@@ -175,7 +175,8 @@ with
 
             coalesce(
                 official_teacher_staff_id.string_value,
-                cast(official_teacher_staff_id.long_value as string)
+                cast(official_teacher_staff_id.long_value as string),
+                cast(official_teacher_staff_id.double_value as string)
             ) as official_teacher_staff_id,
 
             coalesce(
