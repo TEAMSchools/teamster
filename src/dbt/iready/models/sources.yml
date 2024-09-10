@@ -65,3 +65,17 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/iready/personalized_instruction_by_lesson/"
             format: AVRO
             enable_logical_types: true
+      - name: src_iready__instruction_by_lesson
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - iready
+              - instruction_by_lesson
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/iready/instruction_by_lesson/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/iready/instruction_by_lesson/"
+            format: AVRO
+            enable_logical_types: true
