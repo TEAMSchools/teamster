@@ -164,6 +164,7 @@ with
             coalesce(st.level, ir.level) as performance_level,
             coalesce(st.scale_score, ir.scale_score) as scale_score,
             coalesce(st.is_proficient_int, ir.is_proficient_int) as is_proficient_int,
+            st.is_proficient_int as is_proficient_int_state,
             coalesce(
                 st.is_approaching_int, ir.is_approaching_int
             ) as is_approaching_int,
@@ -226,6 +227,7 @@ with
             ir.level as performance_level,
             ir.scale_score,
             ir.is_proficient_int,
+            null as is_proficient_int_state,
             ir.is_approaching_int,
             ir.is_below_int,
             if(ir.scale_score is not null, 1, 0) as is_tested_int,
@@ -282,6 +284,7 @@ with
             p.grade_band_goal,
             sum(r.is_proficient_int) as n_proficient,
             round(avg(r.is_proficient_int), 3) as pct_proficient,
+            round(avg(r.is_proficient_int_state), 3) as pct_proficient_state,
             sum(r.is_approaching_int) as n_approaching,
             round(avg(r.is_approaching_int), 3) as pct_approaching,
             sum(r.is_below_int) as n_below,
@@ -324,6 +327,7 @@ select
     g.grade_band_goal,
     g.n_proficient,
     g.pct_proficient,
+    g.pct_proficient_state,
     g.n_approaching,
     g.pct_approaching,
     g.n_below,
