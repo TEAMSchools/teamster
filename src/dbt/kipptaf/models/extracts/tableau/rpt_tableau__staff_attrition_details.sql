@@ -47,7 +47,7 @@ with
                 between d.denominator_start_date and d.effective_date
             )
         where
-            srh.primary_indicator = true
+            srh.primary_indicator
             and srh.assignment_status not in ('Terminated', 'Deceased')
             and srh.job_title != 'Intern'
             and coalesce(srh.assignment_status_reason, 'Missing/no Reason')
