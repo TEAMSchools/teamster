@@ -1,19 +1,8 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="dcid.int_value",
-        transform_cols=[
-            {"name": "dcid", "extract": "int_value"},
-            {"name": "id", "extract": "int_value"},
-            {"name": "test_type", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
-    )
-}}
+select
+    * except (dcid, id, test_type),
 
-select *
-from staging
+    /* column transformations */
+    dcid.int_value as dcid,
+    id.int_value as id,
+    test_type.int_value as test_type,
+from {{ source("powerschool", "src_powerschool__test") }}

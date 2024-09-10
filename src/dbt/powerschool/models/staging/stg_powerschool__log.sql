@@ -1,14 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__log"),
-                partition_by="dcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
 select
     studentid.int_value as studentid,
     logtypeid.int_value as logtypeid,
@@ -20,4 +9,4 @@ select
             date_field="entry_date", start_month=7, year_source="start"
         )
     }} as academic_year,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__log") }}
