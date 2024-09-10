@@ -142,7 +142,7 @@ select
 
     safe_cast(sda.answer_value as numeric) as answer_value,
 
-    case when sda.answer_value is null then 1 else 0 end as is_open_ended,
+    if(sda.answer_value is null, 1, 0) as is_open_ended,
 
     reh.preferred_name_lastfirst as respondent_preferred_name,
     reh.race_ethnicity_reporting as respondent_race_ethnicity_reporting,

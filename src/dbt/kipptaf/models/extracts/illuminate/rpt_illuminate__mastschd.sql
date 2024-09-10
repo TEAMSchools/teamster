@@ -10,9 +10,7 @@ select
 
     t.teachernumber as `05 User ID`,
 
-    case
-        when tr.schoolid = 73253 then sec.expression else sec.section_number
-    end as `06 Period`,
+    if(tr.schoolid = 73253, sec.expression, sec.section_number) as `06 Period`,
 
     concat((tr.yearid + 1990), '-', (tr.yearid + 1991)) as `07 Academic Year`,
 
