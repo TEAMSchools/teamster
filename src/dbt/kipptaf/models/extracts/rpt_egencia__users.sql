@@ -1,6 +1,4 @@
--- trunk-ignore(sqlfluff/ST06)
 select
-    -- trunk-ignore-begin(sqlfluff/RF05)
     concat(sr.employee_number, '@kippnj.org') as `Username`,
 
     sr.mail as `Email`,
@@ -21,7 +19,6 @@ select
         tg3.egencia_traveler_group,
         'General Traveler Group'
     ) as `Traveler Group`,
--- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__staff_roster") }} as sr
 left join
     {{ source("egencia", "src_egencia__traveler_groups") }} as tg
@@ -46,4 +43,4 @@ where
     and coalesce(
         sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
     )
-    >= date({{ var("current_fiscal_year") }} - 1, 7, 1)
+    >= '{{ var("current_fiscal_year") - 1 }}-07-01'

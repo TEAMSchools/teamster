@@ -74,7 +74,7 @@ with
             and coalesce(
                 sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
             )
-            >= date({{ var("current_academic_year") - 1 }}, 7, 1)
+            >= '{{ var("current_academic_year") - 1 }}-07-01'
     ),
 
     roster as (

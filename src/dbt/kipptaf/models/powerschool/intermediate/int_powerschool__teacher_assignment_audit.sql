@@ -128,7 +128,7 @@ with
                 'SEM72005G3',
                 'SEM72005G4'
             )
-            and sec.terms_firstday >= date({{ var("current_academic_year") }}, 7, 1)
+            and sec.terms_firstday >= '{{ var("current_academic_year") }}-07-01'
     )
 
 select
