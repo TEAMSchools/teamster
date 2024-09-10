@@ -131,10 +131,10 @@ select
 
     cwp.scale_low as proficent_scale_score,
 
-    cwi.sublevel_name as sublevel_with_stretch,
-    cwi.sublevel_number as sublevel_number_with_stretch,
-    cwi.is_proficient as is_proficient_with_stretch,
-    cwi.level as level_number_with_stretch,
+    cwi.sublevel_name as sublevel_with_typical,
+    cwi.sublevel_number as sublevel_number_with_typical,
+    cwi.is_proficient as is_proficient_with_typical,
+    cwi.level as level_number_with_typical,
 
     round(
         dr.most_recent_diagnostic_gain / dr.annual_typical_growth_measure, 2
