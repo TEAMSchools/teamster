@@ -659,6 +659,9 @@ select
 
     al.n_award_letters_received,
 
+    ta.n_act_attempts,
+    ta.n_sat_attempts,
+
     case
         when c.contact_college_match_display_gpa >= 3.50
         then '3.50+'
