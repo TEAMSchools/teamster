@@ -731,3 +731,11 @@ sources:
               - kippmiami
               - powerschool
               - int_powerschool__calendar_week
+      - name: stg_powerschool__userscorefields
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippmiami
+              - powerschool
+              - stg_powerschool__userscorefields

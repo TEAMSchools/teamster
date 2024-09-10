@@ -1,22 +1,11 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="dcid.int_value",
-        transform_cols=[
-            {"name": "dcid", "extract": "int_value"},
-            {"name": "id", "extract": "int_value"},
-            {"name": "schoolid", "extract": "int_value"},
-            {"name": "year_id", "extract": "int_value"},
-            {"name": "day_number", "extract": "int_value"},
-            {"name": "sortorder", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
-    )
-}}
+select
+    * except (dcid, id, schoolid, year_id, day_number, sortorder),
 
-select *
-from staging
+    /* column transformations */
+    dcid.int_value as dcid,
+    id.int_value as id,
+    schoolid.int_value as schoolid,
+    year_id.int_value as year_id,
+    day_number.int_value as day_number,
+    sortorder.int_value as sortorder,
+from {{ source("powerschool", "src_powerschool__cycle_day") }}

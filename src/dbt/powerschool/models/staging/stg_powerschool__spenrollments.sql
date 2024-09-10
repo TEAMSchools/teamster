@@ -1,15 +1,4 @@
 with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__spenrollments"),
-                partition_by="dcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    ),
-
-    -- trunk-ignore(sqlfluff/ST03)
     transformations as (
         select
             * except (dcid, id, programid, schoolid, gradelevel, studentid),
@@ -27,19 +16,13 @@ with
                     date_field="enter_date", start_month=7, year_source="start"
                 )
             }} as academic_year,
-        from deduplicate
-    ),
-
-    deduplicate_ay as (
-        {{
-            dbt_utils.deduplicate(
-                relation="transformations",
-                partition_by="studentid, programid, academic_year",
-                order_by="enter_date desc",
-            )
-        }}
+        from {{ source("powerschool", "src_powerschool__spenrollments") }}
     )
 
--- trunk-ignore(sqlfluff/AM04)
-select *,
-from deduplicate_ay
+    {{
+        dbt_utils.deduplicate(
+            relation="transformations",
+            partition_by="studentid, programid, academic_year",
+            order_by="enter_date desc",
+        )
+    }}

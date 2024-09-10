@@ -151,3 +151,87 @@ def test_log_kippnewark():
         ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
         db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
     )
+
+
+def test_gpnode_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpnode",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_gpprogresssubject_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpprogresssubject",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_gpprogresssubjectwaived_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpprogresssubjectwaived",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_gpstudentwaiver_kippnewark():  # whenmodified
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpstudentwaiver",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_gpversion_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpversion",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_gradplan_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gradplan",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
+
+
+def test_userscorefields_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="userscorefields",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )

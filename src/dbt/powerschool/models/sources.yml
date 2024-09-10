@@ -800,3 +800,87 @@ sources:
           options:
             format: AVRO
             enable_logical_types: true
+      - name: src_powerschool__gpnode
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gpnode
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gpnode/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpprogresssubject
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gpprogresssubject
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gpprogresssubject/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpprogresssubjectwaived
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gpprogresssubjectwaived
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gpprogresssubjectwaived/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpstudentwaiver
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gpstudentwaiver
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gpstudentwaiver/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpversion
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gpversion
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gpversion/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gradplan
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - gradplan
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradplan/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__userscorefields
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - powerschool
+              - userscorefields
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/userscorefields/*"
+          options:
+            format: AVRO
+            enable_logical_types: true

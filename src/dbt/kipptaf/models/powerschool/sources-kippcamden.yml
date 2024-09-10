@@ -763,3 +763,59 @@ sources:
               - kippcamden
               - powerschool
               - int_powerschool__calendar_week
+      - name: stg_powerschool__gpnode
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpnode
+      - name: stg_powerschool__gradplan
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gradplan
+      - name: stg_powerschool__gpprogresssubject
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpprogresssubject
+      - name: stg_powerschool__gpprogresssubjectwaived
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpprogresssubjectwaived
+      - name: stg_powerschool__gpstudentwaiver
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpstudentwaiver
+      - name: stg_powerschool__gpversion
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpversion
+      - name: stg_powerschool__userscorefields
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__userscorefields
