@@ -363,7 +363,7 @@ def build_powerschool_asset_sensor(
                     job_name=job_name,
                     partition_key=parition_key,
                     asset_selection=[g["asset_key"] for g in group],
-                    tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60)},
+                    tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60), "dagster/max_retries": 0},
                 )
             )
 

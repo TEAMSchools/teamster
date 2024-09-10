@@ -324,7 +324,7 @@ def build_powerschool_sis_asset_schedule(
                 run_key=f"{partitions_def}_{partition_key}",
                 asset_selection=[g["key"] for g in group],
                 partition_key=partition_key,
-                tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60)},
+                tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60), "dagster/max_retries": 0},
             )
 
     return _schedule
