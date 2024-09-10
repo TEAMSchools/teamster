@@ -3,7 +3,7 @@ with
         select
             employee_number,
             academic_year,
-            if(count(notes_boy) >= 4, 1, 0) as boy_complete,
+            if(count(notes_boy) >= 2, 1, 0) as boy_complete,
             if(count(rating_moy) >= 4, 1, 0) as moy_self_complete,
             if(count(manager_rating_moy) >= 4, 1, 0) as moy_manager_complete,
             if(count(rating_eoy) >= 4, 1, 0) as eoy_self_complete,
