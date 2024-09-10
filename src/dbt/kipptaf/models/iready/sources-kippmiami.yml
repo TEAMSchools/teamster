@@ -27,3 +27,11 @@ sources:
               - kippmiami
               - iready
               - stg_iready__personalized_instruction_by_lesson
+      - name: stg_iready__instruction_by_lesson
+        meta:
+          dagster:
+            group: iready
+            asset_key:
+              - kippmiami
+              - iready
+              - stg_iready__instruction_by_lesson

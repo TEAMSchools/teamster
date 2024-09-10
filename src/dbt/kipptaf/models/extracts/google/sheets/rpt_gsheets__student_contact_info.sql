@@ -1,4 +1,5 @@
-select  -- noqa: disable=ST06
+-- trunk-ignore(sqlfluff/ST06)
+select
     student_number,
 
     if(region = 'Miami', fleid, newark_enrollment_number) as newark_enrollment_number,

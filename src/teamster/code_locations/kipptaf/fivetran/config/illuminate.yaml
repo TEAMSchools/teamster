@@ -42,6 +42,7 @@ schemas:
       - aptest_2021
       - aptest_2022
       - aptest_2023
+      - aptest_2024
       - psat_2023
       - psat_2024
   - name: dna_repositories

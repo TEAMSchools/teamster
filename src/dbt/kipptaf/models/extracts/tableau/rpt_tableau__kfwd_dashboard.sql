@@ -526,6 +526,7 @@ select
     ar.is_accepted_early_ecc_60_plus,
     ar.is_accepted_early_ecc_90_plus,
     ar.n_app_outcomes,
+    ar.n_wishlist,
 
     cnr.as1,
     cnr.as2,
@@ -657,6 +658,9 @@ select
     ocf.wishlist_notes,
 
     al.n_award_letters_received,
+
+    ta.n_act_attempts,
+    ta.n_sat_attempts,
 
     case
         when c.contact_college_match_display_gpa >= 3.50

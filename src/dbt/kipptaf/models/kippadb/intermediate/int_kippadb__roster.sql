@@ -57,12 +57,15 @@ with
                 {{ var("current_fiscal_year") }}
                 - extract(year from c.contact_actual_hs_graduation_date)
             ) as years_out_of_hs,
+
             coalesce(
                 c.contact_current_kipp_student, 'Missing from Salesforce'
             ) as contact_current_kipp_student,
+
             coalesce(c.contact_kipp_hs_class, se.cohort) as ktc_cohort,
             coalesce(c.contact_first_name, se.first_name) as first_name,
             coalesce(c.contact_last_name, se.last_name) as last_name,
+
             coalesce(
                 c.contact_last_name || ', ' || c.contact_first_name, se.lastfirst
             ) as lastfirst,

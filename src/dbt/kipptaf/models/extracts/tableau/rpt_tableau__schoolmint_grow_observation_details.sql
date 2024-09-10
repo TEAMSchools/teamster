@@ -4,7 +4,7 @@ with
         from {{ ref("base_people__staff_roster_history") }} as srh
         where
             srh.work_assignment_start_date
-            >= date({{ var("current_academic_year") }} - 1, 07, 01)
+            >= '{{ var("current_academic_year") - 1 }}-07-01'
             and srh.assignment_status = 'Active'
             and srh.job_title = 'Teacher in Residence'
         group by employee_number
@@ -69,9 +69,7 @@ select
         then true
         when srh.job_title = 'Teacher in Residence'
         then true
-        when
-            srh.worker_original_hire_date
-            >= date({{ var("current_academic_year") }}, 4, 1)
+        when srh.worker_original_hire_date >= '{{ var("current_academic_year") }}-04-01'
         then true
         when tir.prior_year_tir is true
         then true

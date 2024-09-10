@@ -19,9 +19,7 @@ select
         sec.courses_course_name,
         ' (' || sec.sections_course_number || ') - ',
         sec.sections_section_number || ' - ',
-        {{ var("current_academic_year") }},
-        '-',
-        ({{ var("current_academic_year") + 1 }})
+        '{{ var("current_academic_year") }}-{{ var("current_fiscal_year") }}'
     ) as class_name,
 from {{ ref("base_powerschool__course_enrollments") }} as sec
 inner join

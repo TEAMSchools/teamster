@@ -303,3 +303,18 @@ class PersonalizedInstruction(IReadyBaseModel):
 
     score: int | float | None = None
     total_time_on_lesson_min: int | float | None = None
+
+
+class InstructionByLesson(IReadyBaseModel):
+    completion_date: str | None = None
+    lesson_language: str | None = None
+    lesson_result: str | None = None
+    lesson_status: str | None = None
+    lesson_time_on_task_min: int | None = None
+    lesson: str | None = None
+    level: str | None = None
+    skills_completed: int | None = None
+    skills_successful: int | None = None
+    topic: str | None = None
+
+    percent_skills_successful: int | float | None = None
