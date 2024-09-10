@@ -33,7 +33,8 @@ with
         where subject like 'REM Handoff'
     )
 
-select  -- noqa: ST06
+-- trunk-ignore(sqlfluff/ST06)
+select
     r.lastfirst as student_name,
     r.contact_id,
     r.ktc_cohort,

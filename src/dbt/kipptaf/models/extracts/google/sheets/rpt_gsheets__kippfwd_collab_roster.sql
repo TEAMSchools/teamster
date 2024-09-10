@@ -3,9 +3,9 @@ with
         select
             applicant,
             id as application_id,
-            name as application_name,
+            `name` as application_name,
             matriculation_decision,
-            type as application_type,
+            `type` as application_type,
             intended_degree_type,
             account_name as application_account_name,
             adjusted_6_year_minority_graduation_rate,
@@ -36,8 +36,9 @@ with
         from {{ ref("stg_kippadb__subsequent_financial_aid_award") }}
     )
 
-select  -- noqa: disable=ST06
-    -- noqa: disable=RF05
+-- trunk-ignore(sqlfluff/ST06)
+select
+    -- trunk-ignore-begin(sqlfluff/RF05)
     ktc.contact_id as `Salesforce ID`,
     ktc.contact_school_specific_id as `SIS ID`,
     ktc.contact_owner_name as `College Counselor`,
@@ -46,30 +47,39 @@ select  -- noqa: disable=ST06
     ktc.contact_currently_enrolled_school as `Current Enrolled High School`,
     ktc.contact_mobile_phone as `Student Cell Phone`,
     ktc.email as `Personal Email Address`,
+
     if(
         ktc.ktc_status like 'TAF%', null, ktc.powerschool_contact_1_name
     ) as `Primary Parent Name`,
+
     if(
         ktc.ktc_status like 'TAF%',
         ktc.contact_home_phone,
         ktc.powerschool_contact_1_phone_mobile
     ) as `Primary Parent Cell Phone`,
+
     if(
         ktc.ktc_status like 'TAF%',
         ktc.contact_secondary_email,
         ktc.powerschool_contact_1_email_current
     ) as `Primary Parent Email`,
+
     if(
         ktc.ktc_status like 'TAF%',
         ktc.contact_mailing_address,
         ktc.powerschool_mailing_address
     ) as `Mailing Address`,
+
     if(ktc.contact_most_recent_iep_date is not null, true, false) as `IEP`,
+
     ktc.powerschool_is_504 as `504 Plan`,
+
     if(ktc.contact_latest_fafsa_date >= '2023-11-01', 'Yes', 'No') as `FAFSA Complete`,
+
     if(
         ktc.contact_latest_state_financial_aid_app_date is not null, 'Yes', 'No'
     ) as `HESAA Complete`,
+
     ktc.contact_efc_from_fafsa as `EFC Actual`,
     ktc.contact_expected_hs_graduation as expected_hs_grad_date,
     ktc.contact_college_match_display_gpa as college_match_display_gpa,
@@ -106,6 +116,7 @@ select  -- noqa: disable=ST06
         when ktc.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
+
     case
         when
             ktc.contact_college_match_display_gpa >= 3.50
@@ -126,7 +137,9 @@ select  -- noqa: disable=ST06
         then null
         else false
     end as is_undermatch,
+
     fa.state_grant,
+-- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_kippadb__roster") }} as ktc
 left join
     matriculated_application as app

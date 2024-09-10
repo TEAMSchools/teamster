@@ -1,18 +1,24 @@
--- noqa: disable=ST06
+-- trunk-ignore(sqlfluff/ST06)
 select
-    safe_cast(sr.schoolid as string) as school_id,
-    safe_cast(sr.student_number as string) as student_id,
-    safe_cast(sr.student_number as string) as student_number,
+    cast(sr.schoolid as string) as school_id,
+    cast(sr.student_number as string) as student_id,
+    cast(sr.student_number as string) as student_number,
+
     if(sr.region = 'Miami', sr.fleid, sr.state_studentnumber) as state_id,
+
     sr.last_name,
     sr.middle_name,
     sr.first_name,
+
     if(
         sr.grade_level = 0, 'Kindergarten', safe_cast(sr.grade_level as string)
     ) as grade,
+
     sr.gender,
     sr.cohort as graduation_year,
+
     format_date('%m/%d/%Y', sr.dob) as dob,
+
     sr.ethnicity as race,
 
     null as hispanic_latino,
@@ -32,13 +38,17 @@ select
     sr.student_email_google as student_email,
 
     sc.relationship_type as contact_relationship,
+
     if(
         sc.person_type in ('mother', 'father', 'contact1', 'contact2'),
         'primary',
         sc.person_type
     ) as contact_type,
+
     coalesce(sc.contact_name, sc.person_type) as contact_name,
+
     left(regexp_replace(sc.contact, r'\W', ''), 10) as contact_phone,
+
     case
         when sc.contact_type = 'home'
         then 'Home'
