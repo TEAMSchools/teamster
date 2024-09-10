@@ -102,26 +102,22 @@ with
             'Enroll' as courses_course_name,
 
             concat(
-                right(cast({{ var("current_academic_year") }} as string), 2),
+                right('{{ var("current_academic_year") }}', 2),
                 '-',
-                right(cast(({{ var("current_academic_year") + 1 }}) as string), 2)
+                right('{{ var("current_fiscal_year") }}', 2)
             ) as terms_abbreviation,
 
             1 as sortorder,
 
             dsos.powerschool_teacher_number as teachernumber,
 
-            case
-                when grade_level = 0
-                then 'Kindergarten'
-                else cast(grade_level as string)
-            end as grade,
+            if(grade_level = 0, 'Kindergarten', cast(grade_level as string)) as grade,
 
             format_date(
-                '%m/%d/%Y', date({{ var("current_academic_year") }}, 7, 1)
+                '%m/%d/%Y', '{{ var("current_academic_year") }}-07-01'
             ) as terms_firstday,
             format_date(
-                '%m/%d/%Y', date({{ var("current_academic_year") + 1 }}, 6, 30)
+                '%m/%d/%Y', '{{ var("current_fiscal_year") }}-06-30'
             ) as terms_lastday,
 
             concat(

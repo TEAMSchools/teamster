@@ -7,9 +7,8 @@ select
 
     'School Leadership' as `03 Role Name`,
 
-    concat(
-        {{ var("current_academic_year") }}, '-', {{ var("current_fiscal_year") }}
-    ) as `04 Academic Year`,
+    '{{ var("current_academic_year") }}-{{ var("current_fiscal_year") }}'
+    as `04 Academic Year`,
 
     1 as `05 Session Type ID`,
 from {{ ref("int_people__staff_roster") }} as sr
@@ -30,9 +29,8 @@ select
 
     'School Leadership' as `03 Role Name`,
 
-    concat(
-        {{ var("current_academic_year") }}, '-', {{ var("current_fiscal_year") }}
-    ) as `04 Academic Year`,
+    '{{ var("current_academic_year") }}-{{ var("current_fiscal_year") }}'
+    as `04 Academic Year`,
 
     1 as `05 Session Type ID`,
 from {{ ref("int_people__staff_roster") }} as sr
@@ -54,9 +52,8 @@ select
 
     'School Leadership' as `03 Role Name`,
 
-    concat(
-        {{ var("current_academic_year") }}, '-', {{ var("current_fiscal_year") }}
-    ) as `04 Academic Year`,
+    '{{ var("current_academic_year") }}-{{ var("current_fiscal_year") }}'
+    as `04 Academic Year`,
 
     1 as `05 Session Type ID`,
 from {{ ref("int_people__staff_roster") }}

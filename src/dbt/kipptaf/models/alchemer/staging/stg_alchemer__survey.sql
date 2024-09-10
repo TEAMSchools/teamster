@@ -1,7 +1,8 @@
 {%- set source_model_ref = source("alchemer", model.name | replace("stg", "src")) -%}
 
 with
-    parse_partition_key as (  -- noqa: ST03
+    -- trunk-ignore(sqlfluff/ST03)
+    parse_partition_key as (
         select
             *,
 

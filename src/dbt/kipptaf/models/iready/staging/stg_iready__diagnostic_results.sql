@@ -3,15 +3,16 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippnj_iready", "stg_iready__diagnostic_results"),
-                    source("kippmiami_iready", "stg_iready__diagnostic_results"),
+                    source("kippnj_iready", model.name),
+                    source("kippmiami_iready", model.name),
                 ]
             )
         }}
     ),
 
     with_code_location as (
-        select *, regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,  -- noqa: AM04, LT05
+        -- trunk-ignore(sqlfluff/AM04)
+        select *, regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
         from union_relations
     )
 

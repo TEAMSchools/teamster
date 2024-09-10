@@ -64,7 +64,7 @@ with
             and coalesce(
                 sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
             )
-            >= date({{ var("current_fiscal_year") }} - 2, 7, 1)
+            >= '{{ var("current_academic_year") - 1 }}-07-01'
             and not regexp_contains(sr.worker_type_code, r'Part Time|Intern')
             and (sr.wf_mgr_pay_rule != 'PT Hourly' or sr.wf_mgr_pay_rule is null)
 
@@ -185,7 +185,6 @@ with
     )
 
 select
-    -- trunk-ignore-begin(sqlfluff/RF05)
     sub.sam_account_name as `Login`,
     sub.user_principal_name as `Sso Identifier`,
     sub.mail as `Email`,
@@ -288,7 +287,6 @@ select
             safe_cast(ill3.sage_intacct_location as int)
         )
     ) as `Sage Intacct Location`,
--- trunk-ignore-end(sqlfluff/RF05)
 from sub
 left join
     {{ source("coupa", "src_coupa__school_name_crosswalk") }} as sna

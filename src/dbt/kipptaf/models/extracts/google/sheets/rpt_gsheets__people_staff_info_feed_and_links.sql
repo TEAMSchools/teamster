@@ -1,4 +1,5 @@
-select  -- noqa: disable=ST06
+-- trunk-ignore(sqlfluff/ST06)
+select
     employee_number,
     status_value,
     business_unit_assigned_name as business_unit,
@@ -45,6 +46,7 @@ select  -- noqa: disable=ST06
             '1FAIpQLSdxkHheRKAQQL5WjhbWwwGiC34weMX1LKcIDAt94cR78csfXw',
             '/viewform',
             '?usp=pp_url',
+            /* Name + ID */
             '&entry.1744062351=',
             coalesce(preferred_name_given_name, legal_name_given_name),
             ' ',
@@ -52,50 +54,50 @@ select  -- noqa: disable=ST06
             ' - ',
             coalesce(home_work_location_name, ''),
             ' (',
-            ltrim(cast(employee_number as string format '999999')),  -- Name + ID
+            ltrim(cast(employee_number as string format '999999')),
             ')',
-            -- Race/Ethnicity
+            /* Race/Ethnicity */
             '&entry.1688914034=',
             replace(coalesce(race_ethnicity, ''), ', ', '&entry.1688914034='),
-            -- gender identity
+            /* gender identity */
             '&entry.600247632=',
             coalesce(gender_identity, ''),
-            -- Community Grew Up
+            /* Community Grew Up */
             '&entry.2102492257=',
             replace(coalesce(community_grew_up, ''), ', ', '&entry.2102492257='),
-            -- Community Work Exp
+            /* Community Work Exp */
             '&entry.1197736651=',
             replace(
                 coalesce(community_professional_exp, ''), ', ', '&entry.1197736651='
             ),
-            -- languages spoken
+            /* languages spoken */
             '&entry.1551531542=',
             replace(coalesce(languages_spoken, ''), ',', '&entry.1551531542='),
-            -- additional languages
+            /* additional languages */
             '&entry.53823493=',
             coalesce(additional_languages, ''),
-            -- level of education
+            /* level of education */
             '&entry.928329961=',
             coalesce(level_of_education, ''),
-            -- undergraduate school
+            /* undergraduate school */
             '&entry.844913390=',
             coalesce(undergraduate_school, ''),
-            -- years outside of kipp
+            /* years outside of kipp */
             '&entry.2136123484=',
             coalesce(cast(years_exp_outside_kipp as string), ''),
-            -- years teaching njfl
+            /* years teaching njfl */
             '&entry.2038589601=',
             coalesce(cast(years_teaching_in_njfl as string), ''),
-            -- years outside njfl
+            /* years outside njfl */
             '&entry.1922494504=',
             coalesce(cast(years_teaching_outside_njfl as string), ''),
-            -- alumni status
+            /* alumni status */
             '&entry.1216415935=',
             coalesce(alumni_status, ''),
-            -- relay status
+            /* relay status */
             '&entry.553510009=',
             coalesce(relay_status, ''),
-            -- path to education'
+            /* path to education' */
             '&entry.1130804124=',
             replace(coalesce(path_to_education, ''), ',', '&entry.1130804124='),
             if(

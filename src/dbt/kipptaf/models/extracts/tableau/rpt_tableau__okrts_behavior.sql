@@ -34,7 +34,7 @@ with
                 'Accountability (Empowerment)',
                 'Teamwork (Community)'
             )
-            and behavior_date >= date({{ var("current_academic_year") - 1 }}, 7, 1)
+            and behavior_date >= '{{ var("current_academic_year") - 1 }}-07-01'
     ),
 
     behavior_category_type as (

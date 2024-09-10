@@ -2,7 +2,9 @@ from pydantic import BaseModel
 
 
 class RenLearningCore(BaseModel):
+    AmericanIndianOrAlaskaNative: str | None = None
     Asian: str | None = None
+    BirthDate: str | None = None
     BlackOrAfricanAmerican: str | None = None
     ClassCode: str | None = None
     ClassRenaissanceID: str | None = None
@@ -21,13 +23,15 @@ class RenLearningCore(BaseModel):
     GroupOrClassName: str | None = None
     HispanicOrLatino: str | None = None
     MultiRace: str | None = None
+    NativeHawaiianOrOtherPacificIslander: str | None = None
     RenaissanceClientID: int | None = None
     SchoolIdentifier: int | None = None
     SchoolName: str | None = None
     SchoolRenaissanceID: str | None = None
     SchoolSourcedID: str | None = None
     SchoolYear: str | None = None
-    StudentEmail: str | float | None = None
+    SchoolYearEndDate: str | None = None
+    SchoolYearStartDate: str | None = None
     StudentFirstName: str | None = None
     StudentLastName: str | None = None
     StudentMiddleName: str | None = None
@@ -41,15 +45,11 @@ class RenLearningCore(BaseModel):
     TeacherSourcedID: str | None = None
     TeacherUserID: str | None = None
     White: str | None = None
-    AmericanIndianOrAlaskaNative: str | None = None
-    NativeHawaiianOrOtherPacificIslander: str | None = None
-    SchoolYearStartDate: str | None = None
-    SchoolYearEndDate: str | None = None
-    BirthDate: str | None = None
 
     CurrentGrade: int | str | None = None
     DistrictStateID: float | int | None = None
     SchoolStateID: float | int | None = None
+    StudentEmail: str | float | None = None
     StudentIdentifier: int | float | None = None
     StudentSourcedID: int | float | None = None
     StudentStateID: float | str | None = None
@@ -58,27 +58,27 @@ class RenLearningCore(BaseModel):
 
 
 class AcceleratedReader(RenLearningCore):
-    QuizNumber: float | None = None
+    Author: str | None = None
+    BookLevel: float | None = None
+    BookRating: float | None = None
     ContentLanguage: str | None = None
     ContentTitle: str | None = None
-    Author: str | None = None
-    FictionNonFiction: str | None = None
-    InterestLevel: str | None = None
-    BookLevel: float | None = None
-    QuestionsPresented: float | None = None
-    QuestionsCorrect: float | None = None
-    PercentCorrect: float | None = None
-    PointsPossible: float | None = None
-    PointsEarned: float | None = None
-    Passed: bool | None = None
-    TWI: str | None = None
-    BookRating: float | None = None
-    QuizDeleted: int | None = None
-    WordCount: float | None = None
-    QuizType: str | None = None
-    LexileLevel: float | None = None
     DateQuizCompleted: str | None = None
     DateQuizCompletedLocal: str | None = None
+    FictionNonFiction: str | None = None
+    InterestLevel: str | None = None
+    LexileLevel: float | None = None
+    Passed: bool | None = None
+    PercentCorrect: float | None = None
+    PointsEarned: float | None = None
+    PointsPossible: float | None = None
+    QuestionsCorrect: float | None = None
+    QuestionsPresented: float | None = None
+    QuizDeleted: int | None = None
+    QuizNumber: float | None = None
+    QuizType: str | None = None
+    TWI: str | None = None
+    WordCount: float | None = None
 
     AudioUsed: float | str | None = None
     LexileMeasure: str | int | None = None
@@ -90,22 +90,54 @@ class Star(RenLearningCore):
     AssessmentNumber: int | None = None
     AssessmentStatus: str | None = None
     AssessmentType: str | None = None
+    CompletedDate: str | None = None
+    CompletedDateLocal: str | None = None
     CurrentSGP: float | None = None
     DeactivationReason: float | None = None
+    DistrictBenchmarkCategoryLevel: int | None = None
+    DistrictBenchmarkCategoryName: str | None = None
+    DistrictBenchmarkMaxPercentileRank: int | None = None
+    DistrictBenchmarkMinPercentileRank: int | None = None
+    DistrictBenchmarkNumberOfCategoryLevels: int | None = None
+    DistrictBenchmarkProficient: str | None = None
     ExtraTime: str | None = None
     GradePlacement: float | None = None
+    LaunchDate: str | None = None
     NormalCurveEquivalent: float | None = None
     OpenGrowthScore: float | None = None
+    PartnershipForAssessmentOfReadinessForCollegeAndCareers: float | None = None
     PercentileRank: int | None = None
     RaschScore: float | None = None
+    RenaissanceBenchmarkCategoryLevel: float | None = None
+    RenaissanceBenchmarkCategoryMaxPercentileRank: float | None = None
+    RenaissanceBenchmarkCategoryMinPercentileRank: float | None = None
+    RenaissanceBenchmarkCategoryName: str | None = None
     SATBenchmarkCategory: float | None = None
     ScaledScore: int | None = None
     SchoolBenchmarkCategoryLevel: int | None = None
+    SchoolBenchmarkCategoryName: str | None = None
+    SchoolBenchmarkMaxPercentileRank: int | None = None
+    SchoolBenchmarkMinPercentileRank: int | None = None
+    SchoolBenchmarkNumberOfCategoryLevels: int | None = None
     SchoolBenchmarkProficient: str | None = None
     ScreeningPeriodWindowName: str | None = None
+    ScreeningWindowEndDate: str | None = None
+    ScreeningWindowStartDate: str | None = None
+    SmarterBalancedAssessmentConsortium: float | None = None
     StandardErrorOfMeasurement: float | None = None
+    StateBenchmarkAssessmentName: str | None = None
+    StateBenchmarkCategoryLevel: float | None = None
     StateBenchmarkCategoryName: str | None = None
+    StateBenchmarkMaxScaledScore: float | None = None
+    StateBenchmarkMinScaledScore: float | None = None
+    StateBenchmarkNumberOfCategoryLevels: float | None = None
     StateBenchmarkProficient: str | None = None
+    StudentGrowthPercentileFallFall: float | None = None
+    StudentGrowthPercentileFallSpring: float | None = None
+    StudentGrowthPercentileFallWinter: float | None = None
+    StudentGrowthPercentileSpringFall: float | None = None
+    StudentGrowthPercentileSpringSpring: float | None = None
+    StudentGrowthPercentileWinterSpring: float | None = None
     TakenAt: str | None = None
     TakenAtByIPAddress: float | None = None
     TeacherDisplayID: str | None = None
@@ -113,38 +145,6 @@ class Star(RenLearningCore):
     TotalPossible: float | None = None
     TotalTimeInSeconds: int | None = None
     UnifiedScore: int | None = None
-    LaunchDate: str | None = None
-    CompletedDate: str | None = None
-    CompletedDateLocal: str | None = None
-    PartnershipForAssessmentOfReadinessForCollegeAndCareers: float | None = None
-    ScreeningWindowStartDate: str | None = None
-    ScreeningWindowEndDate: str | None = None
-    StateBenchmarkCategoryLevel: float | None = None
-    StateBenchmarkMinScaledScore: float | None = None
-    StateBenchmarkMaxScaledScore: float | None = None
-    SmarterBalancedAssessmentConsortium: float | None = None
-    StudentGrowthPercentileFallFall: float | None = None
-    StudentGrowthPercentileFallSpring: float | None = None
-    StudentGrowthPercentileFallWinter: float | None = None
-    StudentGrowthPercentileSpringFall: float | None = None
-    StudentGrowthPercentileSpringSpring: float | None = None
-    StudentGrowthPercentileWinterSpring: float | None = None
-    RenaissanceBenchmarkCategoryName: str | None = None
-    RenaissanceBenchmarkCategoryLevel: float | None = None
-    RenaissanceBenchmarkCategoryMinPercentileRank: float | None = None
-    RenaissanceBenchmarkCategoryMaxPercentileRank: float | None = None
-    StateBenchmarkAssessmentName: str | None = None
-    StateBenchmarkNumberOfCategoryLevels: float | None = None
-    DistrictBenchmarkCategoryName: str | None = None
-    DistrictBenchmarkProficient: str | None = None
-    DistrictBenchmarkCategoryLevel: int | None = None
-    DistrictBenchmarkNumberOfCategoryLevels: int | None = None
-    DistrictBenchmarkMinPercentileRank: int | None = None
-    DistrictBenchmarkMaxPercentileRank: int | None = None
-    SchoolBenchmarkCategoryName: str | None = None
-    SchoolBenchmarkNumberOfCategoryLevels: int | None = None
-    SchoolBenchmarkMinPercentileRank: int | None = None
-    SchoolBenchmarkMaxPercentileRank: int | None = None
     # Math
     Quantile: str | None = None
     # Reading
@@ -214,16 +214,9 @@ class StarSkillArea(BaseModel):
 
 class FastStarCore(BaseModel):
     AchievementLevel: str | None = None
-    AssessmentName: str | None = None
-    FAST_Equivalent_Score: int | None = None
-    FAST_ES_Max: float | None = None
-    FAST_ES_Min: float | None = None
-    FAST_NOL: float | None = None
-    FileDate: str | None = None
-    Level3_or_Above: str | None = None
-    SchoolType: str | None = None
     Assess_Num: int | None = None
     Assess_Status: str | None = None
+    AssessmentName: str | None = None
     CBTFlag: str | None = None
     CID: str | None = None
     ClassCode: str | None = None
@@ -251,6 +244,8 @@ class FastStarCore(BaseModel):
     Exempted_NonEngSpeaker: str | None = None
     Exempted_WrongTest: str | None = None
     ExtraTime: str | None = None
+    FAST_Equivalent_Score: int | None = None
+    FileDate: str | None = None
     FirstName_T: str | None = None
     FirstName: str | None = None
     FLEID: str | None = None
@@ -258,11 +253,11 @@ class FastStarCore(BaseModel):
     GID_RID: str | None = None
     Gname: str | None = None
     Grade_P: float | None = None
-    Grade_T: str | None = None
     GUID: str | None = None
     LastName_T: str | None = None
     LastName: str | None = None
     LaunchDate: str | None = None
+    Level3_or_Above: str | None = None
     MI_T: str | None = None
     MI: str | None = None
     MultiRace: str | None = None
@@ -306,6 +301,7 @@ class FastStarCore(BaseModel):
     SchBMC: str | None = None
     SchBMP: str | None = None
     SchName: str | None = None
+    SchoolType: str | None = None
     SchoolYear_ED: str | None = None
     SchoolYear_SD: str | None = None
     SchoolYear: str | None = None
@@ -330,7 +326,11 @@ class FastStarCore(BaseModel):
     TotalTime: int | None = None
     UnifiedScore: int | None = None
 
+    FAST_ES_Max: float | int | None = None
+    FAST_ES_Min: float | int | None = None
+    FAST_NOL: float | int | None = None
     Grade_E: float | str | None = None
+    Grade_T: str | int | None = None
     Sgrade: str | int | None = None
 
 
