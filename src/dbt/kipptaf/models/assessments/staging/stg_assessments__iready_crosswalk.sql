@@ -5,7 +5,9 @@ select
     case
         when destination_system = 'FL' and sublevel_number >= 6
         then true
-        when destination_system = 'NJSLA' and sublevel_number >= 4
+        when
+            (destination_system = 'NJSLA' or destination_system = 'i-Ready')
+            and sublevel_number >= 4
         then true
         else false
     end as is_proficient,
