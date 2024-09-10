@@ -7,12 +7,12 @@ with
             sr.payroll_file_number as file_number,
             sr.position_id,
             sr.job_title,
-            sr.home_work_location_name as location,
+            sr.home_work_location_name as `location`,
             sr.department_home_name as department,
             sr.preferred_name_lastfirst as preferred_name,
             sr.user_principal_name as email,
             sr.google_email,
-            sr.assignment_status as status,
+            sr.assignment_status as `status`,
             sr.business_unit_home_name as region,
             sr.worker_termination_date,
             sr.report_to_employee_number as manager_employee_number,
@@ -48,7 +48,7 @@ with
                     and sr.business_unit_home_name like '%Family%'
                 then 'CMO'
                 else 'Special'
-            end as route,
+            end as `route`,
             case
                 when
                     sr.job_title like '%Director%'
@@ -84,54 +84,53 @@ with
             on sr.home_work_location_name = lc.home_work_location_name
         where
             sr.worker_termination_date is null
-            or sr.worker_termination_date
-            >= date({{ var("current_academic_year") }}, 7, 1)
+            or sr.worker_termination_date >= '{{ var("current_academic_year") }}-07-01'
     )
 
 select
-    r.employee_number,
-    r.payroll_group_code,
-    r.worker_id,
-    r.file_number,
-    r.position_id,
-    r.job_title,
-    r.location,
-    r.department,
-    r.preferred_name,
-    r.email,
-    r.google_email,
-    r.status,
-    r.region,
-    r.worker_termination_date,
-    r.location_abbr,
-    r.route,
-    r.campus,
-    r.manager_employee_number,
-    r.grandmanager_employee_number,
-    r.role_type,
+    employee_number,
+    payroll_group_code,
+    worker_id,
+    file_number,
+    position_id,
+    job_title,
+    `location`,
+    department,
+    preferred_name,
+    email,
+    google_email,
+    `status`,
+    region,
+    worker_termination_date,
+    location_abbr,
+    `route`,
+    campus,
+    manager_employee_number,
+    grandmanager_employee_number,
+    role_type,
 
     case
-        when r.employee_number in (r.sl_employee_number, r.dso_employee_number)
-        then r.manager_employee_number
-        when r.route = 'Instructional'
-        then r.sl_employee_number
-        when r.route = 'Operations'
-        then r.dso_employee_number
-        when r.route = 'CMO'
+        when employee_number in (sl_employee_number, dso_employee_number)
+        then manager_employee_number
+        when `route` = 'Instructional'
+        then sl_employee_number
+        when `route` = 'Operations'
+        then dso_employee_number
+        when `route` = 'CMO'
         then null
-        when r.route = 'Regional'
+        when `route` = 'Regional'
         then null
     end as first_approver_employee_number,
     case
-        when r.employee_number in (r.sl_employee_number, r.dso_employee_number)
-        then r.grandmanager_employee_number
-        when r.route = 'Instructional'
-        then r.head_of_school_employee_number
-        when r.route = 'Operations'
-        then r.mdso_employee_number
-        when r.route = 'CMO'
+        when employee_number in (sl_employee_number, dso_employee_number)
+        then grandmanager_employee_number
+        when `route` = 'Instructional'
+        then head_of_school_employee_number
+        when `route` = 'Operations'
+        then mdso_employee_number
+        when `route` = 'CMO'
         then null
-        when r.route = 'Regional'
+        when `route` = 'Regional'
         then null
     end as second_approver_employee_number,
-from roster as r
+from roster
