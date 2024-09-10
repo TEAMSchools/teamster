@@ -38,7 +38,7 @@ with
         where ais.scope = 'ACT Prep'
     ),
 
-    scaled as (  -- noqa: ST03
+    scaled as (
         select
             ld.student_number,
             ld.illuminate_student_id,
@@ -68,16 +68,7 @@ with
     ),
 
     overall_scores as (
-        {{
-            dbt_utils.deduplicate(
-                relation="scaled",
-                partition_by="student_number, academic_year, subject_area, term_code",
-                order_by="overall_number_correct desc",
-            )
-        }}
-
-        union all
-
+        -- trunk-ignore(sqlfluff/ST06)
         select
             student_number,
             illuminate_student_id,
@@ -97,10 +88,13 @@ with
 
             sum(number_of_questions) as number_of_questions,
             sum(overall_number_correct) as overall_number_correct,
+
             round(
                 (sum(overall_number_correct) / sum(number_of_questions)) * 100, 0
             ) as overall_percent_correct,
+
             null as overall_performance_band,
+
             if(count(scale_score) = 4, round(avg(scale_score), 0), null) as scale_score,
         from scaled
         group by
@@ -110,6 +104,16 @@ with
             grade_level,
             administration_round,
             term_code
+
+        union all
+
+        {{
+            dbt_utils.deduplicate(
+                relation="scaled",
+                partition_by="student_number, academic_year, subject_area, term_code",
+                order_by="overall_number_correct desc",
+            )
+        }}
     ),
 
     sub as (

@@ -1,5 +1,6 @@
 with
-    parsed_dates as (  -- noqa: ST03
+    -- trunk-ignore(sqlfluff/ST03)
+    parsed_dates as (
         select
             employee_reference_code,
             manager_employee_number,

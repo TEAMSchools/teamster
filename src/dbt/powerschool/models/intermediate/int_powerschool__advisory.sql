@@ -1,5 +1,6 @@
 with
-    hr_enrollments as (  -- noqa: ST03
+    -- trunk-ignore(sqlfluff/ST03)
+    hr_enrollments as (
         select
             cc_studentid as studentid,
             cc_yearid as yearid,

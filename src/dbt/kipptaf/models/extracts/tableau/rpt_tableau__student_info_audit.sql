@@ -1,3 +1,4 @@
+-- trunk-ignore-all(sqlfluff/CV10)
 with
     studentrace_agg as (
         select studentid, _dbt_source_relation, string_agg(racecd) as racecd,
@@ -51,7 +52,6 @@ with
             safe_cast(cec.sectionid_count as string) as sectionid_count,
             if(cec.sectionid_count < 3, true, false) as underenrollment_flag,
 
-            -- noqa: disable=CV10
             case
                 when se.fteid != fte.id
                 then concat(se.fteid, ' != ', fte.id)

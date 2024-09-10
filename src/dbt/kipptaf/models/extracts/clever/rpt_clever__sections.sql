@@ -111,11 +111,7 @@ with
 
             dsos.powerschool_teacher_number as teachernumber,
 
-            case
-                when grade_level = 0
-                then 'Kindergarten'
-                else cast(grade_level as string)
-            end as grade,
+            if(grade_level = 0, 'Kindergarten', cast(grade_level as string)) as grade,
 
             format_date(
                 '%m/%d/%Y', '{{ var("current_academic_year") }}-07-01'

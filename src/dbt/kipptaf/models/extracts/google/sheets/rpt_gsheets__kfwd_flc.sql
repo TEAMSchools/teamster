@@ -43,7 +43,8 @@ with
             )
     )
 
-select  -- noqa: ST06
+-- trunk-ignore(sqlfluff/ST06)
+select
     co.student_number,
     co.lastfirst as student_name,
     co.school_abbreviation as school,
