@@ -95,3 +95,15 @@ def test_iready_diagnostic_and_instruction_kippnj():
     )
 
     _test_asset(asset=diagnostic_and_instruction, partition_key="2021|math")
+
+
+def test_iready_instruction_by_lesson_kippnj():
+    from teamster.code_locations.kippnewark.iready.assets import instruction_by_lesson
+
+    _test_asset(asset=instruction_by_lesson)
+
+
+def test_iready_instruction_by_lesson_kippmiami():
+    from teamster.code_locations.kippmiami.iready.assets import instruction_by_lesson
+
+    _test_asset(asset=instruction_by_lesson, partition_key="2024|ela")
