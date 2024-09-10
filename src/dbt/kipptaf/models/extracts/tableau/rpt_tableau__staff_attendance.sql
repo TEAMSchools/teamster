@@ -23,6 +23,7 @@ with
         select
             schoolid,
             date_value,
+
             regexp_extract(
                 _dbt_source_relation, r'(kipp\w+)_'
             ) as dagster_code_location,
@@ -78,10 +79,12 @@ select
         td.transaction_in_exceptions,
         if(mp.missed_in_punch, 'Missed In Punch (Corrected)', null)
     ) as transaction_in_exceptions,
+
     coalesce(
         td.transaction_out_exceptions,
         if(mp.missed_out_punch, 'Missed Out Punch (Corrected)', null)
     ) as transaction_out_exceptions,
+
     if(
         td.missed_in_punch
         or mp.missed_in_punch
@@ -154,12 +157,10 @@ where
     and (
         (
             sr.business_unit_home_name != 'KIPP Miami'
-            and td.transaction_apply_date
-            >= date({{ var("current_academic_year") }}, 8, 12)
+            and td.transaction_apply_date >= '{{ var("current_academic_year") }}-08-12'
         )
         or (
             sr.business_unit_home_name = 'KIPP Miami'
-            and td.transaction_apply_date
-            >= date({{ var("current_academic_year") }}, 10, 31)
+            and td.transaction_apply_date >= '{{ var("current_academic_year") }}-10-31'
         )
     )

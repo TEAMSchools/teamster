@@ -4,16 +4,22 @@ with
             e.id as enrollment_id,
             e.student,
             e.start_date,
+
+            0 as is_employment,
+
             coalesce(
-                e.actual_end_date, date({{ var("current_fiscal_year") }}, 6, 30)
+                e.actual_end_date, '{{ var("current_fiscal_year") }}-06-30'
             ) as actual_end_date,
+
             if(e.status = 'Graduated', 1, 0) as is_graduated,
+
             if(
                 e.pursuing_degree_type
                 in ("Bachelor's (4-year)", "Associate's (2 year)", 'Certificate'),
                 1,
                 null
             ) as is_ecc_degree_type,
+
             case
                 when e.pursuing_degree_type = "Bachelor's (4-year)"
                 then 'BA'
@@ -41,13 +47,11 @@ with
                     10,
                     31
                 ) between e.start_date and coalesce(
-                    e.actual_end_date, date({{ var("current_fiscal_year") }}, 6, 30)
+                    e.actual_end_date, '{{ var("current_fiscal_year") }}-06-30'
                 ),
                 1,
                 0
             ) as is_ecc_dated,
-
-            0 as is_employment,
         from {{ ref("stg_kippadb__enrollment") }} as e
         inner join {{ ref("base_kippadb__contact") }} as c on e.student = c.contact_id
         where e.status != 'Did Not Enroll'
@@ -57,18 +61,22 @@ with
         select
             id as enrollment_id,
             contact,
+
             coalesce(
                 `start_date`, enlist_date, bmt_start_date, meps_start_date
             ) as `start_date`,
+
+            1 as is_employment,
+
             coalesce(
                 coalesce(end_date, discharge_date, bmt_end_date, meps_end_date),
-                date({{ var("current_fiscal_year") }}, 6, 30)
+                '{{ var("current_fiscal_year") }}-06-30'
             ) as actual_end_date,
+
             null as is_graduated,
             null as is_ecc_degree_type,
             'Employment' as pursuing_degree_level,
             null as is_ecc_dated,
-            1 as is_employment,
         from {{ ref("stg_kippadb__employment") }}
     ),
 
