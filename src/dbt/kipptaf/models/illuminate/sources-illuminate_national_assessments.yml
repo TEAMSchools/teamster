@@ -67,3 +67,12 @@ sources:
               - illuminate
               - national_assessments
               - aptest_2023
+      - name: aptest_2024
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2024
