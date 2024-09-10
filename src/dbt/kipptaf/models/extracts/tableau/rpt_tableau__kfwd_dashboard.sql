@@ -526,6 +526,7 @@ select
     ar.is_accepted_early_ecc_60_plus,
     ar.is_accepted_early_ecc_90_plus,
     ar.n_app_outcomes,
+    ar.n_wishlist,
 
     cnr.as1,
     cnr.as2,
