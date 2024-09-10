@@ -203,7 +203,7 @@ with
             on co.academic_year = sf.academic_year
             and co.student_number = sf.student_number
             and subject = sf.iready_subject
-            and not is_exempt_state_testing
+            and not sf.is_exempt_state_testing
         where co.rn_year = 1 and co.grade_level between 3 and 8 and co.enroll_status = 0
 
         union all
@@ -243,7 +243,7 @@ with
             on co.academic_year = sf.academic_year
             and co.student_number = sf.student_number
             and subject = sf.iready_subject
-            and not is_exempt_state_testing
+            and not sf.is_exempt_state_testing
         where co.rn_year = 1 and co.grade_level between 0 and 2 and co.enroll_status = 0
     ),
 
