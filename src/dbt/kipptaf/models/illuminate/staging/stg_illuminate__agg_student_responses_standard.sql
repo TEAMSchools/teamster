@@ -1,7 +1,8 @@
 {% set source_table = source("illuminate", "agg_student_responses_standard") %}
 
 with
-    source as (  -- noqa: ST03
+    -- trunk-ignore(sqlfluff/ST03)
+    source as (
         select *,
         from {{ source_table }}
         where

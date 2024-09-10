@@ -1,5 +1,6 @@
 with
-    enr as (  -- noqa: ST03
+    -- trunk-ignore(sqlfluff/ST03)
+    enr as (
         select
             enr._dbt_source_relation,
             enr.cc_studentid,

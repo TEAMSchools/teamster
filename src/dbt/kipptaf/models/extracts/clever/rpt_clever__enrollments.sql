@@ -1,5 +1,6 @@
 select
     cc.schoolid as school_id,
+
     concat(
         regexp_extract(cc._dbt_source_relation, r'(kipp\w+)_'), cc.sectionid
     ) as section_id,
@@ -17,11 +18,13 @@ union all
 /* ENR sections */
 select
     schoolid as school_id,
+
     concat(
         {{ var("current_academic_year") - 1990 }},
         schoolid,
         right(concat(0, grade_level), 2)
     ) as section_id,
+
     student_number as student_id,
 from {{ ref("stg_powerschool__students") }}
 where enroll_status in (0, -1)
