@@ -12,6 +12,7 @@ with
                         "most_recent_diagnostic_ytd_y_n",
                         "start_date",
                         "student_grade",
+                        "subject",
                     ],
                 )
             }},
