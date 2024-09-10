@@ -675,117 +675,104 @@ select
         then '<2.00'
     end as hs_gpa_bands,
 
-    case
-        when
-            ei.ba_status = 'Graduated'
-            and ei.ba_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
-        then 1
-        else 0
-    end as is_4yr_ba_grad_int,
+    if(
+        ei.ba_status = 'Graduated'
+        and ei.ba_actual_end_date <= date((c.ktc_cohort + 4), 08, 31),
+        1,
+        0
+    ) as is_4yr_ba_grad_int,
 
-    case
-        when
-            ei.ba_status = 'Graduated'
-            and ei.ba_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
-        then 1
-        else 0
-    end as is_6yr_ba_grad_int,
+    if(
+        ei.ba_status = 'Graduated'
+        and ei.ba_actual_end_date <= date((c.ktc_cohort + 6), 08, 31),
+        1,
+        0
+    ) as is_6yr_ba_grad_int,
 
-    case
-        when
-            ei.aa_status = 'Graduated'
-            and ei.aa_actual_end_date <= date((c.ktc_cohort + 2), 08, 31)
-        then 1
-        else 0
-    end as is_2yr_aa_grad_int,
+    if(
+        ei.aa_status = 'Graduated'
+        and ei.aa_actual_end_date <= date((c.ktc_cohort + 2), 08, 31),
+        1,
+        0
+    ) as is_2yr_aa_grad_int,
 
-    case
-        when
-            ei.aa_status = 'Graduated'
-            and ei.aa_actual_end_date <= date((c.ktc_cohort + 3), 08, 31)
-        then 1
-        else 0
-    end as is_3yr_aa_grad_int,
+    if(
+        ei.aa_status = 'Graduated'
+        and ei.aa_actual_end_date <= date((c.ktc_cohort + 3), 08, 31),
+        1,
+        0
+        end
+    ) as is_3yr_aa_grad_int,
 
-    case
-        when
-            ei.aa_status = 'Graduated'
-            and ei.aa_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
-        then 1
-        else 0
-    end as is_4yr_aa_grad_int,
+    if(
+        ei.aa_status = 'Graduated'
+        and ei.aa_actual_end_date <= date((c.ktc_cohort + 4), 08, 31),
+        1,
+        0
+    ) as is_4yr_aa_grad_int,
 
-    case
-        when
-            ei.aa_status = 'Graduated'
-            and ei.aa_actual_end_date <= date((c.ktc_cohort + 5), 08, 31)
-        then 1
-        else 0
-    end as is_5yr_aa_grad_int,
+    if(
+        ei.aa_status = 'Graduated'
+        and ei.aa_actual_end_date <= date((c.ktc_cohort + 5), 08, 31),
+        1,
+        0
+    ) as is_5yr_aa_grad_int,
 
-    case
-        when
-            ei.aa_status = 'Graduated'
-            and ei.aa_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
-        then 1
-        else 0
-    end as is_6yr_aa_grad_int,
+    if(
+        ei.aa_status = 'Graduated'
+        and ei.aa_actual_end_date <= date((c.ktc_cohort + 6), 08, 31),
+        1,
+        0
+    ) as is_6yr_aa_grad_int,
 
-    case
-        when
-            ei.cte_status = 'Graduated'
-            and ei.cte_actual_end_date <= date((c.ktc_cohort + 1), 08, 31)
-        then 1
-        else 0
-    end as is_1yr_cte_grad_int,
+    if(
+        ei.cte_status = 'Graduated'
+        and ei.cte_actual_end_date <= date((c.ktc_cohort + 1), 08, 31),
+        1,
+        0
+    ) as is_1yr_cte_grad_int,
 
-    case
-        when
-            ei.cte_status = 'Graduated'
-            and ei.cte_actual_end_date <= date((c.ktc_cohort + 2), 08, 31)
-        then 1
-        else 0
-    end as is_2yr_cte_grad_int,
+    if(
+        ei.cte_status = 'Graduated'
+        and ei.cte_actual_end_date <= date((c.ktc_cohort + 2), 08, 31),
+        1,
+        0
+    ) as is_2yr_cte_grad_int,
 
-    case
-        when
-            ei.cte_status = 'Graduated'
-            and ei.cte_actual_end_date <= date((c.ktc_cohort + 3), 08, 31)
-        then 1
-        else 0
-    end as is_3yr_cte_grad_int,
+    if(
+        ei.cte_status = 'Graduated'
+        and ei.cte_actual_end_date <= date((c.ktc_cohort + 3), 08, 31),
+        1,
+        0
+    ) as is_3yr_cte_grad_int,
 
-    case
-        when
-            ei.cte_status = 'Graduated'
-            and ei.cte_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
-        then 1
-        else 0
-    end as is_4yr_cte_grad_int,
+    if(
+        ei.cte_status = 'Graduated'
+        and ei.cte_actual_end_date <= date((c.ktc_cohort + 4), 08, 31),
+        1,
+        0
+    ) as is_4yr_cte_grad_int,
 
-    case
-        when
-            ei.cte_status = 'Graduated'
-            and ei.cte_actual_end_date <= date((c.ktc_cohort + 5), 08, 31)
-        then 1
-        else 0
-    end as is_5yr_cte_grad_int,
+    if(
+        ei.cte_status = 'Graduated'
+        and ei.cte_actual_end_date <= date((c.ktc_cohort + 5), 08, 31),
+        1,
+        0
+    ) as is_5yr_cte_grad_int,
 
-    case
-        when
-            ei.cte_status = 'Graduated'
-            and ei.cte_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
-        then 1
-        else 0
-    end as is_6yr_cte_grad_int,
+    if(
+        ei.cte_status = 'Graduated'
+        and ei.cte_actual_end_date <= date((c.ktc_cohort + 6), 08, 31),
+        1,
+        0
+    ) as is_6yr_cte_grad_int,
 
-    case
-        when
-            ei.ugrad_status = 'Graduated'
-            and ei.ugrad_actual_end_date <= current_date('America/New_York')
-        then 1
-        else 0
-    end as is_grad_ever,
+    if(
+        ei.ugrad_status = 'Graduated'
+        and ei.ugrad_actual_end_date <= current_date('America/New_York'),
+        1,
+        0
+    ) as is_grad_ever,
 
     case
         when
@@ -841,6 +828,7 @@ select
             partition by c.contact_id order by ay.academic_year asc
         )
     ) as spr_cumulative_credits_earned,
+
     coalesce(ar.is_submitted_aa, false) as is_submitted_aa,
     coalesce(ar.is_submitted_ba, false) as is_submitted_ba,
     coalesce(ar.is_submitted_certificate, false) as is_submitted_cert,

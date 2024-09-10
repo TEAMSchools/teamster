@@ -3,6 +3,7 @@ with
         select
             contact as contact_id,
             `date` as contact_date,
+
             case
                 when `subject` = 'Summer AAS'
                 then 'AS'
@@ -30,13 +31,15 @@ with
                 then regexp_extract(`subject`, r'Q\d\s?(SM\d)')
                 when `subject` like '%HV'
                 then 'HV'
-                else subject
+                else `subject`
             end as contact_subject,
-            case
-                when regexp_contains(`subject`, r'Q\d')
-                then regexp_extract(`subject`, r'Q\d')
-                else ''
-            end as contact_term,
+
+            if(
+                regexp_contains(`subject`, r'Q\d'),
+                regexp_extract(`subject`, r'Q\d'),
+                ''
+            ) as contact_term,
+
             {{
                 teamster_utils.date_to_fiscal_year(
                     date_field="date", start_month=7, year_source="start"
@@ -49,8 +52,10 @@ with
         select
             contact,
             benchmark_date as contact_date,
+
             'BM' as contact_subject,
             '' as contact_term,
+
             {{
                 teamster_utils.date_to_fiscal_year(
                     date_field="benchmark_date", start_month=7, year_source="start"
@@ -65,6 +70,7 @@ with
             contact_id,
             academic_year,
             contact_date,
+
             contact_subject || contact_term as input_column,
         from note_union
         where contact_subject is not null

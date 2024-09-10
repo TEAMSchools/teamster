@@ -208,11 +208,11 @@ left join
     on asr.subject_area = ps.illuminate_subject_area
     and asr.academic_year = ps.academic_year
     and asr.term_administered = ps.term_name
-    and case
-        when ps.parent_standard is not null
-        then asr.response_type_id = ps.parent_standard
-        else asr.response_type_code = ps.standard_code
-    end
+    and if(
+        ps.parent_standard is not null,
+        asr.response_type_id = ps.parent_standard,
+        asr.response_type_code = ps.standard_code
+    )
 left join
     {{ ref("stg_assessments__academic_goals") }} as ag
     on asr.academic_year = ag.academic_year

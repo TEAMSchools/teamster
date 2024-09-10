@@ -20,20 +20,21 @@ with
             intended_degree_type,
             account_type,
             matriculation_decision,
+
             row_number() over (partition by applicant order by id asc) as rn_applicant,
         from {{ ref("base_kippadb__application") }}
         where matriculation_decision = 'Matriculated (Intent to Enroll)'
-
     ),
 
     bgp as (
         select
             contact,
-            subject as bgp,
-            row_number() over (partition by contact order by date desc) as rn_bgp,
+            `subject` as bgp,
+
+            row_number() over (partition by contact order by `date` desc) as rn_bgp,
         from {{ ref("stg_kippadb__contact_note") }}
         where
-            subject in (
+            `subject` in (
                 'BGP: 2-year',
                 'BGP: 4-year',
                 'BGP: CTE',
@@ -60,16 +61,22 @@ select  -- noqa: ST06
     kt.contact_highest_act_score,
 
     coalesce(kt.contact_id, 'not in salesforce') as sf_id,
-    case when co.spedlep like 'SPED%' then 'Has IEP' else 'No IEP' end as iep_status,
+
+    if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
     case
         when co.enroll_status = 0
         then 'currently enrolled'
         when co.enroll_status = 2
         then 'transferred out'
     end as enroll_status,
+
     concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
+
     act.act_count,
+
     co.lep_status,
+
     case
         when kt.contact_college_match_display_gpa >= 3.50
         then '3.50+'
@@ -82,21 +89,30 @@ select  -- noqa: ST06
         when kt.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
+
     coalesce(e.is_ea_ed, false) as is_ea_ed,
+
     m.matriculated_ecc,
     m.matriculation_decision,
     m.intended_degree_type,
     m.account_type,
+
     co.grade_level,
+
     coalesce(bg.bgp, 'No BGP') as bgp,
+
     kt.contact_expected_hs_graduation,
+
     coalesce(cn.ccdm, 0) as ccdm_complete,
+
     kt.ktc_status,
-    case
-        when kt.ktc_status not like 'TAF%' and co.enroll_status = 0
-        then 'KIPP Enrolled'
-        else kt.ktc_status
-    end as taf_enroll_status,
+
+    if(
+        kt.ktc_status not like 'TAF%' and co.enroll_status = 0,
+        'KIPP Enrolled',
+        kt.ktc_status
+    ) as taf_enroll_status,
+
     gpa.cumulative_y1_gpa_unweighted,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
