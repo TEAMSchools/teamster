@@ -180,6 +180,9 @@ def build_powerschool_sis_asset_schedule(
                 first_partition_key = asset.partitions_def.get_first_partition_key()
                 last_partition_key = asset.partitions_def.get_last_partition_key()
                 partition_keys = asset.partitions_def.get_partition_keys()
+                partitions_def_identifier = (
+                    asset.partitions_def.get_serializable_unique_identifier()
+                )
 
                 if isinstance(asset.partitions_def, FiscalYearPartitionsDefinition):
                     date_add_kwargs = {"years": 1}
@@ -207,7 +210,7 @@ def build_powerschool_sis_asset_schedule(
                         run_request_kwargs.append(
                             {
                                 "key": asset.key,
-                                "partitions_def": asset.partitions_def,
+                                "partitions_def": partitions_def_identifier,
                                 "partition_key": partition_key,
                             }
                         )
@@ -256,7 +259,7 @@ def build_powerschool_sis_asset_schedule(
                             run_request_kwargs.append(
                                 {
                                     "key": asset.key,
-                                    "partitions_def": asset.partitions_def,
+                                    "partitions_def": partitions_def_identifier,
                                     "partition_key": partition_key,
                                 }
                             )
@@ -304,7 +307,7 @@ def build_powerschool_sis_asset_schedule(
                         run_request_kwargs.append(
                             {
                                 "key": asset.key,
-                                "partitions_def": asset.partitions_def,
+                                "partitions_def": partitions_def_identifier,
                                 "partition_key": partition_key,
                             }
                         )
@@ -318,10 +321,7 @@ def build_powerschool_sis_asset_schedule(
             iterable=sorted(run_request_kwargs, key=item_getter), key=item_getter
         ):
             yield RunRequest(
-                run_key=(
-                    f"{partitions_def.get_serializable_unique_identifier()}_"
-                    f"{partition_key}"
-                ),
+                run_key=f"{partitions_def}_{partition_key}",
                 asset_selection=[g["key"] for g in group],
                 partition_key=partition_key,
                 tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60)},
