@@ -7,7 +7,7 @@ with
             unnest(
                 generate_date_array(
                     '2003-04-30',
-                    date({{ var("current_academic_year") + 1 }}, 4, 30),
+                    '{{ var("current_fiscal_year") }}-04-30',
                     interval 1 year
                 )
             ) as effective_date
