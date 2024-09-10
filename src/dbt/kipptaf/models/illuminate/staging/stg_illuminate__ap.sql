@@ -3,6 +3,7 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
+                    source("illuminate", "aptest_2024"),
                     source("illuminate", "aptest_2023"),
                     source("illuminate", "aptest_2022"),
                     source("illuminate", "aptest_2021"),
