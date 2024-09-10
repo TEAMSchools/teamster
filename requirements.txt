@@ -157,9 +157,9 @@ dagster==1.8.5 \
 dagster-airbyte==0.24.5 \
     --hash=sha256:839f78ae7cb7bedf3be7daf59d3b6e2a11d3ad4ec664889a7d297e1bf952aef2 \
     --hash=sha256:b2f732ee271f391c9ebc5ed719c565bd03d5b82cbd7f51585c349c3f342c33b7
-dagster-cloud==1.8.5 \
-    --hash=sha256:94873dd75b4db74ca4f49f13f360bcd92e8abe95714dc31c2b61f06273c7ad0a \
-    --hash=sha256:f23e964469b1c7ccd4f597f14cc28d11776bd3be3d3d9e0610ece67595736905
+dagster-cloud==1.8.6 \
+    --hash=sha256:68b1c9ccdefa9c04886307dcae9cc80b372a6e5cd4055c9bae7b645315b86ca8 \
+    --hash=sha256:b65dacbd833d9fae6157eeafa8fb90d6c90ac3047d4a95d8839eadbfab043fbf
 dagster-cloud-cli==1.8.5 \
     --hash=sha256:1f5798c943eb190856e87b298a655460f9df00f5de56e57ddaee8b5973a384e9 \
     --hash=sha256:2fd5f9c56d2f399b6155a7fb5f01047ce6626b425a4aeba3955fc7c1dec5722f
