@@ -62,20 +62,21 @@ with
             srh.job_title,
             srh.assignment_status,
 
-            case
-                when srh.assignment_status in ('Terminated', 'Deceased')
-                then coalesce(srh.assignment_status_reason, 'Missing/no Reason')
-            end as termination_reason,
+            if(
+                srh.assignment_status in ('Terminated', 'Deceased'),
+                coalesce(srh.assignment_status_reason, 'Missing/no Reason'),
+                null
+            ) as termination_reason,
 
-            case
-                when srh.assignment_status in ('Terminated', 'Deceased') then 1 else 0
-            end as is_attrition,
+            if(
+                srh.assignment_status in ('Terminated', 'Deceased'), 1, 0
+            ) as is_attrition,
         from denom as dc
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            on dc.attrition_date
+            on dc.employee_number = srh.employee_number
+            and dc.attrition_date
             between srh.work_assignment_start_date and srh.work_assignment_end_date
-            and dc.employee_number = srh.employee_number
             and srh.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
     ),
 
@@ -96,6 +97,7 @@ with
             dc.academic_year,
             dc.effective_date,
             dc.employee_number,
+
             srh.job_title,
             srh.assignment_status,
 
@@ -104,15 +106,15 @@ with
                 then coalesce(srh.assignment_status_reason, 'Missing/no Reason')
             end as termination_reason,
 
-            case
-                when srh.assignment_status in ('Terminated', 'Deceased') then 1 else 0
-            end as is_attrition,
+            if(
+                srh.assignment_status in ('Terminated', 'Deceased'), 1, 0
+            ) as is_attrition,
         from denom as dc
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            on dc.attrition_date
+            on dc.employee_number = srh.employee_number
+            and dc.attrition_date
             between srh.work_assignment_start_date and srh.work_assignment_end_date
-            and dc.employee_number = srh.employee_number
             and srh.assignment_status in ('Terminated', 'Deceased')
         left join
             active_next_year as an
@@ -135,21 +137,20 @@ with
             ) as year_at_kipp,  /* Counting year as the year a person is in*/
 
             sum(
-                case
-                    when
-                        job_title in (
-                            'Teacher',
-                            'Teacher in Residence',
-                            'Learning Specialist',
-                            'Teacher ESL',
-                            'Teacher,ESL',
-                            'Teacher in Residence ESL',
-                            'Co-Teacher',
-                            'Co-Teacher_historical'
-                        )
-                    then 1
-                    else 0
-                end
+                if(
+                    job_title in (
+                        'Teacher',
+                        'Teacher in Residence',
+                        'Learning Specialist',
+                        'Teacher ESL',
+                        'Teacher,ESL',
+                        'Teacher in Residence ESL',
+                        'Co-Teacher',
+                        'Co-Teacher_historical'
+                    ),
+                    1,
+                    0
+                )
             ) over (partition by employee_number order by academic_year)
             as years_teaching_at_kipp,  /* Counting year as the year a person is in*/
         from combined_statuses
@@ -315,17 +316,16 @@ with
             original_hire_date,
             total_years_teaching,
 
-            case
-                when
-                    count(employee_number) over (
-                        partition by employee_number, academic_year
-                    )
-                    > 1
-                    and termination_reason
-                    in ('Import Created Action', 'Upgrade Created Action')
-                then 'dupe'
-                else 'not dupe'
-            end as dupe_check,
+            if(
+                count(employee_number) over (
+                    partition by employee_number, academic_year
+                )
+                > 1
+                and termination_reason
+                in ('Import Created Action', 'Upgrade Created Action'),
+                'dupe',
+                'not dupe'
+            ) as dupe_check,
         from ly_combined
     )
 

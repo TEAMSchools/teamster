@@ -35,7 +35,7 @@ select
         order by
             h.primary_indicator desc,
             h.work_assignment_start_date desc,
-            case when h.assignment_status = 'Terminated' then 0 else 1 end desc,
+            if(h.assignment_status = 'Terminated', 0, 1) desc,
             h.work_assignment_start_date desc
     ) as rn_position,
 
