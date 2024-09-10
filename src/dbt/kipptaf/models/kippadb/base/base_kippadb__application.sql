@@ -58,7 +58,7 @@ with
 
             if(
                 app.matriculation_decision = 'Matriculated (Intent to Enroll)'
-                and app.transfer_application = false,
+                and not app.transfer_application,
                 true,
                 false
             ) as is_matriculated,

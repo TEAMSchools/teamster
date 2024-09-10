@@ -65,77 +65,83 @@ with
             ) as is_accepted_early_ecc_90_plus,
             round(
                 avg(
-                    case
-                        when application_submission_status = 'Wishlist'
-                        then adjusted_6_year_minority_graduation_rate
-                    end
+                    if(
+                        application_submission_status = 'Wishlist',
+                        adjusted_6_year_minority_graduation_rate,
+                        null
+                    )
                 ),
                 0
             ) as ecc_wishlist_avg,
             round(
                 min(
-                    case
-                        when application_submission_status = 'Wishlist'
-                        then adjusted_6_year_minority_graduation_rate
-                    end
+                    if(
+                        application_submission_status = 'Wishlist',
+                        adjusted_6_year_minority_graduation_rate,
+                        null
+                    )
                 ),
                 0
             ) as ecc_wishlist_min,
             round(
                 avg(
-                    case
-                        when application_submission_status = 'Submitted'
-                        then adjusted_6_year_minority_graduation_rate
-                    end
+                    if(
+                        application_submission_status = 'Submitted',
+                        adjusted_6_year_minority_graduation_rate,
+                        null
+                    )
                 ),
                 0
             ) as ecc_submitted_avg,
             round(
                 min(
-                    case
-                        when application_submission_status = 'Submitted'
-                        then adjusted_6_year_minority_graduation_rate
-                    end
+                    if(
+                        application_submission_status = 'Submitted',
+                        adjusted_6_year_minority_graduation_rate,
+                        null
+                    )
                 ),
                 0
             ) as ecc_submitted_min,
             round(
                 avg(
-                    case
-                        when application_status = 'Accepted'
-                        then adjusted_6_year_minority_graduation_rate
-                    end
+                    if(
+                        application_status = 'Accepted',
+                        adjusted_6_year_minority_graduation_rate,
+                        null
+                    )
                 ),
                 0
             ) as ecc_accepted_avg,
             round(
                 min(
-                    case
-                        when application_status = 'Accepted'
-                        then adjusted_6_year_minority_graduation_rate
-                    end
+                    if(
+                        application_status = 'Accepted',
+                        adjusted_6_year_minority_graduation_rate,
+                        null
+                    )
                 ),
                 0
             ) as ecc_accepted_min,
             round(
                 avg(
-                    case
-                        when
-                            matriculation_decision = 'Matriculated (Intent to Enroll)'
-                            and transfer_application = false
-                        then adjusted_6_year_minority_graduation_rate
-                    end
+                    if(
+                        matriculation_decision = 'Matriculated (Intent to Enroll)'
+                        and not transfer_application,
+                        adjusted_6_year_minority_graduation_rate,
+                        null
+                    )
                 ),
                 0
             ) as ecc_matriculated_avg,
             round(
                 min(
-                    case
-                        when
-                            matriculation_decision = 'Matriculated (Intent to Enroll)'
-                            and transfer_application = false
-                        then adjusted_6_year_minority_graduation_rate
-                    end
+                    if(
+                        matriculation_decision = 'Matriculated (Intent to Enroll)'
+                        and not transfer_application,
+                        adjusted_6_year_minority_graduation_rate,
+                        null
+                    )
                 ),
                 0
             ) as ecc_matriculated_min,
@@ -701,7 +707,6 @@ select
         and ei.aa_actual_end_date <= date((c.ktc_cohort + 3), 08, 31),
         1,
         0
-        end
     ) as is_3yr_aa_grad_int,
 
     if(
@@ -911,6 +916,7 @@ select
         true,
         false
     ) as has_ecc_enrollment,
+
     if(
         ei.ecc_pursuing_degree_type = "Bachelor's (4-year)", true, false
     ) as has_4yr_ecc_enrollment,

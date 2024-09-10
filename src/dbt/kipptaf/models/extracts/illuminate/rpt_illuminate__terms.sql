@@ -8,7 +8,7 @@ select
     t.lastday as `05 End Date`,
     t.portion as `06 Term Type`,
 
-    if(t.name like '%Summer%', 2, 1 end) as `07 Session Type ID`,
+    if(t.name like '%Summer%', 2, 1) as `07 Session Type ID`,
 
     concat((t.yearid + 1990), '-', (t.yearid + 1991)) as `08 Academic Year`,
 
