@@ -1,18 +1,30 @@
 with
+    grade_bands as (
+        select 'K-2' as band, grade_level,
+        from unnest([0, 1, 2]) as grade_level
+        union all
+        select '3-8' as band, grade_level,
+        from unnest([3, 4, 5, 6, 7, 8]) as grade_level
+    ),
+
     goals as (
         select
-            academic_year,
-            region,
+            g.academic_year,
+            g.region,
+
+            gb.band,
+
             case
-                when illuminate_subject_area = 'Text Study'
+                when g.illuminate_subject_area = 'Text Study'
                 then 'Reading'
-                when illuminate_subject_area = 'Mathematics'
+                when g.illuminate_subject_area = 'Mathematics'
                 then 'Math'
-                else illuminate_subject_area
+                else g.illuminate_subject_area
             end as subject,
 
-            max(grade_band_goal) as grade_band_goal,
-        from {{ ref("stg_assessments__academic_goals") }}
+            max(g.grade_band_goal) as grade_band_goal,
+        from {{ ref("stg_assessments__academic_goals") }} as g
+        inner join grade_bands as gb on g.grade_level = gb.grade_level
         group by all
     ),
 
@@ -90,6 +102,27 @@ with
             test_round = 'BOY'
             and rn_subj_round = 1
             and projected_sublevel_number_typical is not null
+            and student_grade_int between 3 and 8
+
+        union all
+
+        select
+            'i-Ready BOY' as assessment_type,
+            academic_year_int as academic_year,
+            student_id as student_number,
+            subject,
+            level_number_with_typical as level,
+
+            overall_scale_score + annual_typical_growth_measure as scale_score,
+            if(level_number_with_typical >= 4, 1, 0) as is_proficient_int,
+            if(level_number_with_typical = 3, 1, 0) as is_approaching_int,
+            if(level_number_with_typical < 3, 1, 0) as is_below_int,
+        from {{ ref("base_iready__diagnostic_results") }}
+        where
+            test_round = 'BOY'
+            and rn_subj_round = 1
+            and sublevel_number_with_typical is not null
+            and student_grade_int between 0 and 2
     ),
 
     roster as (
@@ -102,7 +135,11 @@ with
             co.grade_level_prev,
             co.year_in_network,
             co.school_abbreviation as school,
+
+            gb.band,
+
             subject,
+
             coalesce(
                 st.assessment_type, ir.assessment_type, 'Untested'
             ) as benchmark_assessment_type,
@@ -132,6 +169,7 @@ with
             end as is_bucket2_eligible,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         cross join unnest(['Reading', 'Math']) as subject
+        inner join grade_bands as gb on co.grade_level = gb.grade_level
         left join
             state_test_union as st
             on co.student_number = st.student_number
@@ -143,6 +181,40 @@ with
             and co.academic_year = ir.academic_year
             and subject = ir.subject
         where co.rn_year = 1 and co.grade_level between 3 and 8 and co.enroll_status = 0
+
+        union all
+
+        select
+            co.academic_year,
+            co.student_number,
+            co.lastfirst as student_name,
+            co.region,
+            co.grade_level,
+            co.grade_level_prev,
+            co.year_in_network,
+            co.school_abbreviation as school,
+
+            gb.band,
+
+            subject,
+
+            coalesce(ir.assessment_type, 'Untested') as benchmark_assessment_type,
+            ir.level as performance_level,
+            ir.scale_score,
+            ir.is_proficient_int,
+            ir.is_approaching_int,
+            ir.is_below_int,
+            if(ir.scale_score is not null, 1, 0) as is_tested_int,
+            null as is_bucket2_eligible,
+        from {{ ref("base_powerschool__student_enrollments") }} as co
+        cross join unnest(['Reading', 'Math']) as subject
+        inner join grade_bands as gb on co.grade_level = gb.grade_level
+        left join
+            iready as ir
+            on co.student_number = ir.student_number
+            and co.academic_year = ir.academic_year
+            and subject = ir.subject
+        where co.rn_year = 1 and co.grade_level between 0 and 2 and co.enroll_status = 0
     ),
 
     parameter_set as (
@@ -150,7 +222,10 @@ with
             r.academic_year,
             r.region,
             r.subject,
+            r.band,
+
             g.grade_band_goal,
+
             round(
                 ((sum(r.is_tested_int) * g.grade_band_goal) - sum(r.is_proficient_int))
                 / sum(r.is_approaching_int),
@@ -162,6 +237,7 @@ with
             on r.region = g.region
             and r.subject = g.subject
             and r.academic_year = g.academic_year
+            and r.band = g.band
         group by all
     ),
 
@@ -173,6 +249,7 @@ with
             r.grade_level,
             r.subject,
             p.bubble_parameter,
+            p.grade_band_goal,
             sum(r.is_proficient_int) as n_proficient,
             round(avg(r.is_proficient_int), 3) as pct_proficient,
             sum(r.is_approaching_int) as n_approaching,
@@ -207,12 +284,14 @@ with
             on r.academic_year = p.academic_year
             and r.region = p.region
             and r.subject = p.subject
+            and r.band = p.band
         group by all
     )
 
 select
     r.*,
 
+    g.grade_band_goal,
     g.n_proficient,
     g.pct_proficient,
     g.n_approaching,
