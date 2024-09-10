@@ -3,8 +3,8 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippnj_iready", "stg_iready__diagnostic_results"),
-                    source("kippmiami_iready", "stg_iready__diagnostic_results"),
+                    source("kippnj_iready", model.name),
+                    source("kippmiami_iready", model.name),
                 ]
             )
         }}
