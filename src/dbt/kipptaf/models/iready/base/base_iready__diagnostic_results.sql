@@ -29,6 +29,10 @@ with
             annual_stretch_growth_measure,
             overall_placement,
 
+            cast(
+                if(student_grade = 'K', '0', student_grade) as numeric
+            ) as student_grade_int,
+
             max(
                 if(most_recent_diagnostic_ytd_y_n = 'Y', overall_scale_score, null)
             ) over (
@@ -82,6 +86,7 @@ select
     dr.overall_scale_score,
     dr.percentile,
     dr.overall_placement,
+    dr.student_grade_int,
     dr.overall_relative_placement,
     dr.overall_relative_placement_int,
     dr.placement_3_level,
@@ -125,6 +130,11 @@ select
     cws.level as projected_level_number_stretch,
 
     cwp.scale_low as proficent_scale_score,
+
+    cwi.sublevel_name as sublevel_with_stretch,
+    cwi.sublevel_number as sublevel_number_with_stretch,
+    cwi.is_proficient as is_proficient_with_stretch,
+    cwi.level as level_number_with_stretch,
 
     round(
         dr.most_recent_diagnostic_gain / dr.annual_typical_growth_measure, 2
@@ -195,3 +205,10 @@ left join
     and dr.state_assessment_type = cwp.destination_system
     and cwp.source_system = 'i-Ready'
     and cwp.sublevel_name = 'Level 3'
+left join
+    {{ ref("stg_assessments__iready_crosswalk") }} as cwi
+    on dr.overall_scale_score_plus_typical_growth
+    between cwi.scale_low and cwi.scale_high
+    and dr.student_grade_int = cwi.grade_level
+    and dr.subject = cwi.test_name
+    and cwi.destination_system = 'i-Ready'
