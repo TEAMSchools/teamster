@@ -1,7 +1,9 @@
 with
     grade_bands as (
-        select 'K-2' as band, grade_level,
-        from unnest([0, 1, 2]) as grade_level
+        select 'K' as band, 0 as grade_level
+        union all
+        select '1-2' as band, grade_level,
+        from unnest([1, 2]) as grade_level
         union all
         select '3-8' as band, grade_level,
         from unnest([3, 4, 5, 6, 7, 8]) as grade_level
@@ -163,6 +165,7 @@ with
             ) as benchmark_assessment_type,
             coalesce(st.level, ir.level) as performance_level,
             coalesce(st.scale_score, ir.scale_score) as scale_score,
+            st.scale_score as scale_score_state,
             coalesce(st.is_proficient_int, ir.is_proficient_int) as is_proficient_int,
             st.is_proficient_int as is_proficient_int_state,
             coalesce(
@@ -177,12 +180,12 @@ with
                     coalesce(st.assessment_type, ir.assessment_type)
                     in ('NJSLA', 'FAST')
                     and co.grade_level > 3
-                    and coalesce(st.is_approaching_int, ir.is_approaching_int) = 1
+                    and st.is_approaching_int = 1
                 then true
                 when
                     coalesce(st.assessment_type, ir.assessment_type) = 'i-Ready'
                     and co.grade_level = 3
-                    and coalesce(st.is_approaching_int, ir.is_approaching_int) = 1
+                    and ir.is_approaching_int = 1
                 then true
                 else false
             end as is_bucket2_eligible,
@@ -226,6 +229,7 @@ with
             coalesce(ir.assessment_type, 'Untested') as benchmark_assessment_type,
             ir.level as performance_level,
             ir.scale_score,
+            null as scale_score_state,
             ir.is_proficient_int,
             null as is_proficient_int_state,
             ir.is_approaching_int,
@@ -342,7 +346,7 @@ select
         r.is_bucket2_eligible,
         rank() over (
             partition by r.school, r.grade_level, r.subject
-            order by if(r.is_bucket2_eligible, r.scale_score, null) desc
+            order by if(r.is_bucket2_eligible, r.scale_score_state, null) desc
         ),
         null
     ) as scale_score_rank,
@@ -350,11 +354,12 @@ select
         when r.is_proficient_int = 1
         then 'Bucket 1'
         when
-            g.n_bubble_to_move >= if(
+            r.grade_level >= 4
+            and g.n_bubble_to_move >= if(
                 r.is_bucket2_eligible,
                 rank() over (
                     partition by r.school, r.grade_level, r.subject
-                    order by if(r.is_bucket2_eligible, r.scale_score, null) desc
+                    order by if(r.is_bucket2_eligible, r.scale_score_state, null) desc
                 ),
                 null
             )
