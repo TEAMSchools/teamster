@@ -251,9 +251,9 @@ google-api-core==2.19.2 \
 google-api-core[grpc]==2.19.2 \
     --hash=sha256:53ec0258f2837dd53bbd3d3df50f5359281b3cc13f800c941dd15a9b5a415af4 \
     --hash=sha256:ca07de7e8aa1c98a8bfca9321890ad2340ef7f2eb136e558cee68f24b94b0a8f
-google-api-python-client==2.144.0 \
-    --hash=sha256:f9c333ac4454a012adca90c297f9a22611a8953f3aae5481f90b3a56b9bdd413 \
-    --hash=sha256:fe00851b257157bca600e1692ed8a54762c4a5c7d9eb7f6d4822059424b0d0a9
+google-api-python-client==2.145.0 \
+    --hash=sha256:8b84dde11aaccadc127e4846f5cd932331d804ea324e353131595e3f25376e97 \
+    --hash=sha256:d74da1358f3f2d63daf3c6f26bd96d89652051183bc87cf10a56ceb2a70beb50
 google-auth==2.34.0 \
     --hash=sha256:72fd4733b80b6d777dcde515628a9eb4a577339437012874ea286bca7261ee65 \
     --hash=sha256:8eb87396435c19b20d32abd2f984e31c191a15284af72eb922f10e5bde9c04cc
