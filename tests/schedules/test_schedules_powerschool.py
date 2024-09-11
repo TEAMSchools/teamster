@@ -22,7 +22,7 @@ def _test(schedule, ssh_powerschool, db_powerschool):
         context.log.info(o)
 
 
-def test_schoolmint_grow_observations_asset_job_schedule():
+def test_powerschool_sis_asset_gradebook_schedule():
     from teamster.code_locations.kippnewark import CODE_LOCATION
     from teamster.code_locations.kippnewark.powerschool.schedules import (
         powerschool_sis_asset_gradebook_schedule,
