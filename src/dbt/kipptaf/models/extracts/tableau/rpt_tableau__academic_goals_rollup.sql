@@ -116,27 +116,30 @@ with
             level_number_with_typical as level,
 
             overall_scale_score + annual_typical_growth_measure as scale_score,
-            case
-                when student_grade_int = 0 and level_number_with_typical = 5
-                then 1
-                when student_grade_int != 0 and level_number_with_typical >= 4
-                then 1
-                else 0
-            end as is_proficient_int,
-            case
-                when student_grade_int = 0 and level_number_with_typical = 4
-                then 1
-                when student_grade_int != 0 and level_number_with_typical = 3
-                then 1
-                else 0
-            end as is_approaching_int,
-            case
-                when student_grade_int = 0 and level_number_with_typical = 3
-                then 1
-                when student_grade_int != 0 and level_number_with_typical < 3
-                then 1
-                else 0
-            end as is_below_int,
+            -- case
+            -- when student_grade_int = 0 and level_number_with_typical = 5
+            -- then 1
+            -- when student_grade_int != 0 and level_number_with_typical >= 4
+            -- then 1
+            -- else 0
+            -- end as is_proficient_int,
+            -- case
+            -- when student_grade_int = 0 and level_number_with_typical = 4
+            -- then 1
+            -- when student_grade_int != 0 and level_number_with_typical = 3
+            -- then 1
+            -- else 0
+            -- end as is_approaching_int,
+            -- case
+            -- when student_grade_int = 0 and level_number_with_typical = 3
+            -- then 1
+            -- when student_grade_int != 0 and level_number_with_typical < 3
+            -- then 1
+            -- else 0
+            -- end as is_below_int,
+            if(level_number_with_typical >= 4, 1, 0) as is_proficient_int,
+            if(level_number_with_typical = 3, 1, 0) as is_approaching_int,
+            if(level_number_with_typical < 3, 1, 0) as is_below_int,
         from {{ ref("base_iready__diagnostic_results") }}
         where
             test_round = 'BOY'
