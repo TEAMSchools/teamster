@@ -15,10 +15,10 @@ from teamster.code_locations.kipptaf._google.sheets.assets import google_sheets_
 from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 
 ASSET_KEYS_BY_SHEET_ID = {
-    a.metadata_by_key[a.key]["sheet_id"]: [
+    a.metadata["sheet_id"]: [
         b.key
         for b in google_sheets_assets
-        if b.metadata_by_key[b.key]["sheet_id"] == a.metadata_by_key[a.key]["sheet_id"]
+        if b.metadata["sheet_id"] == a.metadata["sheet_id"]
     ]
     for a in google_sheets_assets
 }.items()
