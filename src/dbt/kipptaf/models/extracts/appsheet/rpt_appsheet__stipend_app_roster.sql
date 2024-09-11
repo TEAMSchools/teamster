@@ -1,16 +1,17 @@
 with
     mdo as (
         select
+            
+            lc.region,
             max(
-                if(job_title = 'Managing Director of Operations', employee_number, null)
+                if(sr.job_title = 'Managing Director of Operations', sr.employee_number, null)
             ) as mdo_employee_number,
-            region,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
             {{ ref("stg_people__location_crosswalk") }} as lc
             on sr.home_work_location_name = lc.name
-        where assignment_status = 'Active'
-        group by region
+        where sr.assignment_status = 'Active'
+        group by lc.region
     ),
 
     roster as (
