@@ -1,10 +1,13 @@
 with
     mdo as (
         select
-            
             lc.region,
             max(
-                if(sr.job_title = 'Managing Director of Operations', sr.employee_number, null)
+                if(
+                    sr.job_title = 'Managing Director of Operations',
+                    sr.employee_number,
+                    null
+                )
             ) as mdo_employee_number,
         from {{ ref("base_people__staff_roster") }} as sr
         left join
@@ -49,8 +52,7 @@ with
             case
 
                 /* KTAF teammate with KTAF manager*/
-                when
-                    sr.business_unit_home_code = 'KIPP_TAF'
+                when sr.business_unit_home_code = 'KIPP_TAF'
                 then 'KTAF'
                 /* Non-KTAF teammate with KTAF manager*/
                 when
@@ -114,7 +116,7 @@ select
         /* KTAF teammate (assigned according to submitter in app)*/
         when route = 'KTAF'
         then null
-        /*Outliers (assigned according to submitter in app)*/
+        /* Outliers (assigned according to submitter in app)*/
         when route = 'No Route'
         then null
     end as first_approver_employee_number,
@@ -134,7 +136,7 @@ select
         /* KTAF teammate (assigned according to submitter in app)*/
         when route = 'KTAF'
         then null
-        /*Outliers (assigned according to submitter in app)*/
+        /* Outliers (assigned according to submitter in app)*/
         when route = 'No Route'
         then null
     end as second_approver,
