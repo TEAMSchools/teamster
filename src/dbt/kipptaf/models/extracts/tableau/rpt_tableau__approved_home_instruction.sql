@@ -14,11 +14,9 @@ select
     sp.exit_date,
     sp.sp_comment,
 
-    case
-        when sp.exit_date < current_date('{{ var("local_timezone") }}')
-        then 'Expired'
-        else 'Current'
-    end as hi_status,
+    if(
+        sp.exit_date < current_date('{{ var("local_timezone") }}'), 'Expired', 'Current'
+    ) as hi_status,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__spenrollments") }} as sp
