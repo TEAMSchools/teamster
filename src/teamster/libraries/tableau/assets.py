@@ -1,7 +1,6 @@
 from dagster import (
     AssetExecutionContext,
-    AutoMaterializePolicy,
-    AutoMaterializeRule,
+    AutomationCondition,
     DailyPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -10,6 +9,7 @@ from dagster import (
     _check,
     asset,
 )
+from dagster._core.definitions.declarative_automation import OrAutomationCondition
 from slugify import slugify
 
 from teamster.core.asset_checks import (
@@ -28,25 +28,19 @@ def build_tableau_workbook_refresh_asset(
     timezone: str | None = None,
 ):
     if cron_schedule is None:
-        auto_materialize_policy = None
+        automation_condition = None
     elif isinstance(cron_schedule, str):
-        auto_materialize_policy = AutoMaterializePolicy(
-            rules={
-                AutoMaterializeRule.materialize_on_cron(
-                    cron_schedule=cron_schedule,
-                    timezone=_check.not_none(value=timezone),
-                )
-            }
+        automation_condition = AutomationCondition.on_cron(
+            cron_schedule=cron_schedule, cron_timezone=_check.not_none(value=timezone)
         )
     else:
-        auto_materialize_policy = AutoMaterializePolicy(
-            rules={
-                AutoMaterializeRule.materialize_on_cron(
-                    cron_schedule=cs,
-                    timezone=_check.not_none(value=timezone),
+        automation_condition = OrAutomationCondition(
+            operands=[
+                AutomationCondition.on_cron(
+                    cron_schedule=cs, cron_timezone=_check.not_none(value=timezone)
                 )
                 for cs in cron_schedule
-            }
+            ]
         )
 
     @asset(
@@ -58,7 +52,7 @@ def build_tableau_workbook_refresh_asset(
         description=name,
         deps=deps,
         metadata=metadata,
-        auto_materialize_policy=auto_materialize_policy,
+        automation_condition=automation_condition,
         compute_kind="tableau",
         group_name="tableau",
         output_required=False,

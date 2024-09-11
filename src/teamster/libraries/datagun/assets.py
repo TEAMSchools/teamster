@@ -137,7 +137,6 @@ def build_bigquery_query_sftp_asset(
     destination_config,
     op_tags: dict[str, str] | None = None,
     partitions_def=None,
-    auto_materialize_policy=None,
 ):
     query_type = query_config["type"]
     query_value = query_config["value"]
@@ -159,7 +158,6 @@ def build_bigquery_query_sftp_asset(
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         partitions_def=partitions_def,
         op_tags=op_tags,
-        auto_materialize_policy=auto_materialize_policy,
         group_name="datagun",
         compute_kind="python",
     )
