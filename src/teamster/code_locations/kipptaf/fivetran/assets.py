@@ -1,7 +1,7 @@
 import pathlib
 
 import yaml
-from dagster import AssetKey, AssetSpec, external_assets_from_specs
+from dagster import AssetKey, AssetSpec
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 
@@ -40,7 +40,7 @@ def fivetran_external_assets_from_specs(config_file: pathlib.Path, code_location
                 )
             )
 
-    return external_assets_from_specs(specs=specs)
+    return specs
 
 
 adp_workforce_now_assets = fivetran_external_assets_from_specs(
