@@ -1,1 +1,21 @@
-select *, from {{ source("powerschool", "src_powerschool__gpprogresssubject") }}
+select
+    isgroupsatisfied,
+    istestgroupwaived,
+    mingpamet,
+    nodegpa,
+    testnodepassed,
+
+    appliedwaivedcredits.double_value as appliedwaivedcredits,
+    earnedcredits.double_value as earnedcredits,
+    enrolledcredits.double_value as enrolledcredits,
+    gpnodeid.int_value as gpnodeid,
+    id.int_value as id,
+    isadvancedplan.int_value as isadvancedplan,
+    issinglesitting.int_value as issinglesitting,
+    issummation.int_value as issummation,
+    nodetype.int_value as nodetype,
+    requestedcredits.double_value as requestedcredits,
+    requiredcredits.double_value as requiredcredits,
+    studentsdcid.int_value as studentsdcid,
+    waivedcredits.double_value as waivedcredits,
+from {{ source("powerschool", "src_powerschool__gpprogresssubject") }}
