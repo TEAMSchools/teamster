@@ -1,24 +1,22 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="dcid.int_value",
-        transform_cols=[
-            {"name": "dcid", "extract": "int_value"},
-            {"name": "id", "extract": "int_value"},
-            {"name": "attendance_conversion_id", "extract": "int_value"},
-            {"name": "input_value", "extract": "int_value"},
-            {"name": "attendance_value", "extract": "double_value"},
-            {"name": "fteid", "extract": "int_value"},
-            {"name": "unused", "extract": "int_value"},
-            {"name": "daypartid", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
-    )
-}}
+select
+    * except (
+        dcid,
+        id,
+        attendance_conversion_id,
+        input_value,
+        attendance_value,
+        fteid,
+        unused,
+        daypartid
+    ),
 
-select *
-from staging
+    /* column transformations */
+    dcid.int_value as dcid,
+    id.int_value as id,
+    attendance_conversion_id.int_value as attendance_conversion_id,
+    input_value.int_value as input_value,
+    attendance_value.double_value as attendance_value,
+    fteid.int_value as fteid,
+    unused.int_value as unused,
+    daypartid.int_value as daypartid,
+from {{ source("powerschool", "src_powerschool__attendance_conversion_items") }}

@@ -19,8 +19,7 @@ select
     if(s.status_detail in ('New Hire', 'Transfer In'), 1, 0) as new_hire,
     if(s.staffing_status = 'Staffed', 1, 0) as staffed,
     if(s.plan_status = 'Active', 1, 0) as active,
-    if(s.mid_year_hire = true, 1, 0) as mid_year_hire,
-
+    if(s.mid_year_hire, 1, 0) as mid_year_hire,
 from {{ ref("stg_people__seats") }} as s
 /* recruiters */
 left join

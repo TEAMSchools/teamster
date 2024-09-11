@@ -7,6 +7,11 @@ assets:
   - asset_name: cycle_day
   - asset_name: fte
   - asset_name: gen
+  - asset_name: gpnode
+  - asset_name: gpprogresssubject
+  - asset_name: gpprogresssubjectwaived
+  - asset_name: gpversion
+  - asset_name: gradplan
   - asset_name: reenrollments
   - asset_name: spenrollments
   - asset_name: studenttest

@@ -35,9 +35,8 @@ with
             discipline,
 
             safe_cast(e.state_studentnumber as int) as state_studentnumber,
-            case
-                when e.spedlep like '%SPED%' then 'Has IEP' else 'No IEP'
-            end as iep_status,
+
+            if(e.spedlep like '%SPED%', 'Has IEP', 'No IEP') as iep_status,
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -72,6 +71,7 @@ with
             t.alphascore as testperformancelevel,
 
             r.name as testcode,
+
             case
                 r.name when 'ELAGP' then 'ELA' when 'MATGP' then 'Math'
             end as discipline,
@@ -125,6 +125,7 @@ with
             `subject`,
             testcode,
             testscalescore,
+
             case
                 when testcode = 'ELAGP' then 'ELA' when testcode = 'MATGP' then 'Math'
             end as discipline,
@@ -150,6 +151,7 @@ with
             testcode,
             `subject`,
             discipline,
+
             max(testscalescore) as testscalescore,
         from njgpa
         group by
@@ -165,12 +167,14 @@ with
             contact,
             test_type,
             score,
+
             case
                 when score_type in ('act_reading', 'sat_reading_test_score', 'sat_ebrw')
                 then 'ELA'
                 when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
                 then 'Math'
             end as discipline,
+
             case
                 when score_type in ('act_reading', 'sat_reading_test_score')
                 then 'Reading'
@@ -181,6 +185,7 @@ with
                 when score_type = 'sat_ebrw'
                 then 'EBRW'
             end as `subject`,
+
             case
                 when score_type in ('act_reading', 'act_math') and score >= 17
                 then true
@@ -215,15 +220,13 @@ with
 
             score,
 
-            case
-                when
-                    score_type in (
-                        'psat10_eb_read_write_section_score',
-                        'psat10_reading_test_score'
-                    )
-                then 'ELA'
-                else 'Math'
-            end as discipline,
+            if(
+                score_type
+                in ('psat10_eb_read_write_section_score', 'psat10_reading_test_score'),
+                'ELA',
+                'Math'
+            ) as discipline,
+
             case
                 when score_type = 'psat10_reading_test_score'
                 then 'Reading'
@@ -234,6 +237,7 @@ with
                 when score_type = 'psat10_eb_read_write_section_score'
                 then 'EBRW'
             end as `subject`,
+
             case
                 when
                     score_type
@@ -270,7 +274,7 @@ with
 
             'State Assessment' as pathway_option,
 
-            safe_cast(a.testscalescore as string) as `value`,
+            cast(a.testscalescore as string) as `value`,
 
             if(a.testscalescore >= 725, true, false) as met_pathway_requirement,
         from roster as r
@@ -287,7 +291,7 @@ with
 
             'ACT/SAT' as pathway_option,
 
-            safe_cast(a.score as string) as `value`,
+            cast(a.score as string) as `value`,
 
             a.met_pathway_requirement,
         from roster as r
@@ -305,7 +309,7 @@ with
 
             'PSAT10' as pathway_option,
 
-            safe_cast(a.score as string) as `value`,
+            cast(a.score as string) as `value`,
 
             a.met_pathway_requirement,
         from roster as r

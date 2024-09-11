@@ -62,6 +62,18 @@ models:
         +enabled: false
       stg_powerschool__studentrace:
         +enabled: false
+      stg_powerschool__gpnode:
+        +enabled: false
+      stg_powerschool__gpprogresssubject:
+        +enabled: false
+      stg_powerschool__gpprogresssubjectwaived:
+        +enabled: false
+      stg_powerschool__gpversion:
+        +enabled: false
+      stg_powerschool__gradplan:
+        +enabled: false
+      stg_powerschool__gpstudentwaiver:
+        +enabled: false
   renlearn:
     +schema: renlearn
 
@@ -79,4 +91,16 @@ sources:
       src_powerschool__u_def_ext_students:
         +enabled: false
       src_powerschool__studentrace:
+        +enabled: false
+      src_powerschool__gpnode:
+        +enabled: false
+      src_powerschool__gpprogresssubject:
+        +enabled: false
+      src_powerschool__gpprogresssubjectwaived:
+        +enabled: false
+      src_powerschool__gpversion:
+        +enabled: false
+      src_powerschool__gradplan:
+        +enabled: false
+      src_powerschool__gpstudentwaiver:
         +enabled: false

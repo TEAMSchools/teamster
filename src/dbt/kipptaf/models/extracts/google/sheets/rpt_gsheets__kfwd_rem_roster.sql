@@ -46,7 +46,7 @@ select
     c.contact_last_successful_advisor_contact as last_successful_advisor_contact_date,
     c.contact_latest_fafsa_date as latest_fafsa_date,
 
-    ei.cur_status as status,
+    ei.cur_status as `status`,
     ei.cur_actual_end_date as actual_end_date,
     ei.cur_credits_required_for_graduation as of_credits_required_for_graduation,
     ei.ugrad_pursuing_degree_type as college_degree_type,
@@ -59,23 +59,23 @@ select
 
     (gpa.cumulative_credits_earned / gpa.credits_required_for_graduation)
     * 100 as degree_percentage_completed,
+
     rs.subject as rem_status,
-    case
-        when
-            date_diff(
-                current_date('America/New_York'), c.contact_last_successful_contact, day
-            )
-            > 30
-        then 'Successful Contact > 30 days'
-        else 'Successful Contact within 30'
-    end as successful_contact_status,
-    case
-        when
-            date_diff(current_date('America/New_York'), c.contact_last_outreach, day)
-            > 30
-        then 'Last Outreach > 30 days'
-        else 'Last Outreach within 30'
-    end as last_outreach_status,
+
+    if(
+        date_diff(
+            current_date('America/New_York'), c.contact_last_successful_contact, day
+        )
+        > 30,
+        'Successful Contact > 30 days',
+        'Successful Contact within 30'
+    ) as successful_contact_status,
+
+    if(
+        date_diff(current_date('America/New_York'), c.contact_last_outreach, day) > 30,
+        'Last Outreach > 30 days',
+        'Last Outreach within 30'
+    ) as last_outreach_status,
 
     date_diff(
         rh.rem_handoff_date, c.contact_last_successful_contact, day
@@ -83,8 +83,11 @@ select
 
     r.contact_kipp_hs_graduate as is_kipp_hs_grad,
     r.contact_expected_college_graduation as expected_college_graduation,
+
     if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
+
     rs.date as most_recent_rem_status,
+
     rh.rem_handoff_date,
 
     case
