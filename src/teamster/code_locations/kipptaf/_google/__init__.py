@@ -8,10 +8,13 @@ from teamster.code_locations.kipptaf._google import (
 )
 
 assets = [
-    *appsheet.assets,
     *directory.assets,
     *forms.assets,
-    *sheets.assets,
+]
+
+asset_specs = [
+    *appsheet.asset_specs,
+    *sheets.asset_specs,
 ]
 
 schedules = [
