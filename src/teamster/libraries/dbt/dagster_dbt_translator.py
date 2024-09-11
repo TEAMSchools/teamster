@@ -1,6 +1,6 @@
 from typing import Any, Mapping
 
-from dagster import AssetKey, AutoMaterializePolicy
+from dagster import AssetKey, AutomationCondition
 from dagster_dbt import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 
@@ -24,19 +24,25 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         else:
             return asset_key.with_prefix(self.code_location)
 
-    def get_auto_materialize_policy(
+    def get_automation_condition(
         self, dbt_resource_props: Mapping[str, Any]
-    ) -> AutoMaterializePolicy | None:
+    ) -> AutomationCondition | None:
         dagster_metadata: dict = dbt_resource_props.get("meta", {}).get("dagster", {})
 
-        auto_materialize_policy_config: dict = dagster_metadata.get(
-            "auto_materialize_policy", {}
+        # TODO: rename key to `automation_condition`
+        automation_condition_config: dict = dagster_metadata.get(
+            "automation_condition", {}
         )
 
-        if not auto_materialize_policy_config.get("enabled", True):
+        if not automation_condition_config.get("enabled", True):
             return None
         else:
-            return AutoMaterializePolicy.eager()
+            return (
+                AutomationCondition.eager()
+                | AutomationCondition.code_version_changed().since(
+                    AutomationCondition.newly_requested()
+                )
+            )
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         group = super().get_group_name(dbt_resource_props)
