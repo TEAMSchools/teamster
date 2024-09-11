@@ -243,7 +243,7 @@ def build_dbt_multi_asset_args(
             freshness_policy=dagster_dbt_translator.get_freshness_policy(
                 dbt_resource_props
             ),
-            auto_materialize_policy=dagster_dbt_translator.get_auto_materialize_policy(
+            automation_condition=dagster_dbt_translator.get_automation_condition(
                 dbt_resource_props
             ),
         )
