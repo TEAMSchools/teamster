@@ -1,4 +1,5 @@
 import json
+from itertools import groupby
 
 import pendulum
 from dagster import (
@@ -11,17 +12,12 @@ from dagster import (
 from gspread.exceptions import APIError
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
-from teamster.code_locations.kipptaf._google.sheets.assets import google_sheets_assets
+from teamster.code_locations.kipptaf._google.sheets.assets import asset_specs
 from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 
-ASSET_KEYS_BY_SHEET_ID = {
-    a.metadata["sheet_id"]: [
-        b.key
-        for b in google_sheets_assets
-        if b.metadata["sheet_id"] == a.metadata["sheet_id"]
-    ]
-    for a in google_sheets_assets
-}.items()
+ASSET_KEYS_BY_SHEET_ID = groupby(
+    iterable=asset_specs, key=lambda x: x.metadata["sheet_id"]
+)
 
 
 @sensor(
@@ -34,7 +30,9 @@ def google_sheets_asset_sensor(
     cursor: dict = json.loads(context.cursor or "{}")
     asset_events: list = []
 
-    for sheet_id, asset_keys in ASSET_KEYS_BY_SHEET_ID:
+    for sheet_id, grouper in ASSET_KEYS_BY_SHEET_ID:
+        asset_keys = [g.key for g in grouper]
+
         try:
             spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
         except APIError as e:

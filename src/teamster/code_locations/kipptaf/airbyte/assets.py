@@ -6,7 +6,7 @@ from teamster.code_locations.kipptaf import CODE_LOCATION
 
 config_dir = pathlib.Path(__file__).parent
 
-assets = [
+asset_specs = [
     AssetSpec(
         key=AssetKey([CODE_LOCATION, a["group_name"], table]),
         metadata={

@@ -2,7 +2,7 @@ from dagster import AssetSpec
 
 from teamster.code_locations.kipptaf._dbt.assets import manifest
 
-google_appsheet_assets = [
+asset_specs = [
     AssetSpec(
         key=source["meta"]["dagster"]["asset_key"],
         metadata={"dataset_id": source["schema"], "table_id": source["name"]},
@@ -10,8 +10,4 @@ google_appsheet_assets = [
     )
     for source in manifest["sources"].values()
     if source["source_name"] == "google_appsheet"
-]
-
-assets = [
-    *google_appsheet_assets,
 ]
