@@ -331,6 +331,7 @@ with
 select
     r.*,
 
+    g.bubble_parameter,
     g.grade_band_goal,
     g.n_proficient,
     g.pct_proficient,
