@@ -95,11 +95,7 @@ def build_powerschool_sis_asset_schedule(
                 if latest_materialization_event is None:
                     context.log.info(msg=f"{asset_key_identifier} never materialized")
                     run_request_kwargs.append(
-                        {
-                            "key": asset.key,
-                            "partitions_def": None,
-                            "partition_key": None,
-                        }
+                        {"key": asset.key, "partitions_def": "", "partition_key": ""}
                     )
                     continue
 
@@ -143,8 +139,8 @@ def build_powerschool_sis_asset_schedule(
                         run_request_kwargs.append(
                             {
                                 "key": asset.key,
-                                "partitions_def": None,
-                                "partition_key": None,
+                                "partitions_def": "",
+                                "partition_key": "",
                             }
                         )
                         continue
@@ -168,11 +164,7 @@ def build_powerschool_sis_asset_schedule(
                         )
                     )
                     run_request_kwargs.append(
-                        {
-                            "key": asset.key,
-                            "partitions_def": None,
-                            "partition_key": None,
-                        }
+                        {"key": asset.key, "partitions_def": "", "partition_key": ""}
                     )
                     continue
             # partitioned assets
@@ -324,7 +316,7 @@ def build_powerschool_sis_asset_schedule(
                 run_key=f"{partitions_def}_{partition_key}",
                 asset_selection=[g["key"] for g in group],
                 partition_key=partition_key,
-                tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60), "dagster/max_retries": 0},
+                tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60)},
             )
 
     return _schedule
