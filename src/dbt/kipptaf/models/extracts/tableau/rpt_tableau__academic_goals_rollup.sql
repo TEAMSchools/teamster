@@ -1,6 +1,6 @@
 with
     grade_bands as (
-        select 'K' as band, 0 as grade_level
+        select 'K' as band, 0 as grade_level,
         union all
         select '1-2' as band, grade_level,
         from unnest([1, 2]) as grade_level
