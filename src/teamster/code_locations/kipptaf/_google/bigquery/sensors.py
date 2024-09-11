@@ -1,17 +1,25 @@
 import json
 
-from dagster import AssetMaterialization, SensorEvaluationContext, SensorResult, sensor
+from dagster import (
+    AssetMaterialization,
+    AssetSpec,
+    SensorEvaluationContext,
+    SensorResult,
+    sensor,
+)
 from dagster_gcp import BigQueryResource
 from google.cloud.bigquery import DatasetReference, TableReference
 
 from teamster import GCS_PROJECT_NAME
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf._google.appsheet.assets import (
-    assets as google_appsheet_assets,
+    asset_specs as google_appsheet_asset_specs,
 )
-from teamster.code_locations.kipptaf.airbyte.assets import assets as airbyte_assets
+from teamster.code_locations.kipptaf.airbyte.assets import (
+    asset_specs as airbyte_asset_specs,
+)
 
-asset_selection = [*google_appsheet_assets, *airbyte_assets]
+asset_selection: list[AssetSpec] = [*google_appsheet_asset_specs, *airbyte_asset_specs]
 
 
 @sensor(
@@ -29,15 +37,14 @@ def bigquery_table_modified_sensor(
 
     for assets_def in asset_selection:
         python_identifier = assets_def.key.to_python_identifier()
-        metadata = assets_def.metadata_by_key[assets_def.key]
 
         cursor_modified_timestamp = cursor.get(python_identifier, 0)
 
         table_ref = TableReference(
             dataset_ref=DatasetReference(
-                project=GCS_PROJECT_NAME, dataset_id=metadata["dataset_id"]
+                project=GCS_PROJECT_NAME, dataset_id=assets_def.metadata["dataset_id"]
             ),
-            table_id=metadata["table_id"],
+            table_id=assets_def.metadata["table_id"],
         )
 
         table = bq.get_table(table=table_ref)

@@ -15,7 +15,7 @@ from dagster_airbyte import AirbyteCloudResource
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.airbyte import assets
 
-ASSET_KEYS = [key for a in assets for key in a.keys]
+ASSET_KEYS = [a.key for a in assets]
 
 
 @sensor(name=f"{CODE_LOCATION}_airbyte_asset", minimum_interval_seconds=(60 * 5))

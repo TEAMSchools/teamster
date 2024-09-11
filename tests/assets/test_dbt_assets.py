@@ -38,7 +38,7 @@ def _test_dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
     for a in new_code_version_asset_keys:
         new_code_version_node_names.add(f"model.{a.path[0]}.{a.path[-1]}")
 
-    for output_name in context.selected_output_names:
+    for output_name in context.op_execution_context.selected_output_names:
         node = [
             v for k, v in MANIFEST_NODES.items() if k.replace(".", "_") == output_name
         ][0]
