@@ -444,7 +444,7 @@ files = [
 
 [[package]]
 name = "dagster"
-version = "1.8.6"
+version = "1.8.7"
 requires_python = "<3.13,>=3.8"
 summary = "Dagster is an orchestration platform for the development, production, and observation of data assets."
 groups = ["default", "dev"]
@@ -455,7 +455,7 @@ dependencies = [
     "click>=5.0",
     "coloredlogs<=14.0,>=6.1",
     "croniter>=0.3.34",
-    "dagster-pipes==1.8.6",
+    "dagster-pipes==1.8.7",
     "docstring-parser",
     "filelock",
     "grpcio-health-checking>=1.44.0",
@@ -464,7 +464,7 @@ dependencies = [
     "protobuf<5,>=3.20.0; python_version < \"3.11\"",
     "protobuf<5,>=4; python_version >= \"3.11\"",
     "psutil>=1.0; platform_system == \"Windows\"",
-    "pydantic!=1.10.7,<2.9.0,>1.10.0",
+    "pydantic!=1.10.7,<2.10,>1.10.0",
     "python-dotenv",
     "pytz",
     "pywin32!=226; platform_system == \"Windows\"",
@@ -484,51 +484,51 @@ dependencies = [
     "watchdog<6,>=0.8.3",
 ]
 files = [
-    {file = "dagster-1.8.6-py3-none-any.whl", hash = "sha256:2659945778ecfa83180157b3797f42a10a4da9238e3b502c212b35b3042644a1"},
-    {file = "dagster-1.8.6.tar.gz", hash = "sha256:c8a763662125ae235d3a30b1af88cf4315ccba65351f7886aa4986fdfddfac93"},
+    {file = "dagster-1.8.7-py3-none-any.whl", hash = "sha256:7117eb7ba6486377bdb0fb985b82cc86e8c6debc5f60d92e0bbe5bcc02837fa4"},
+    {file = "dagster-1.8.7.tar.gz", hash = "sha256:b50c43654a1c3685413fa3a73a1d0eb3f9be6b42d7a3f0b648954faa542facf4"},
 ]
 
 [[package]]
 name = "dagster-airbyte"
-version = "0.24.6"
+version = "0.24.7"
 requires_python = "<3.13,>=3.8"
 summary = "Package for integrating Airbyte with Dagster."
 groups = ["default"]
 dependencies = [
-    "dagster==1.8.6",
+    "dagster==1.8.7",
     "requests",
 ]
 files = [
-    {file = "dagster-airbyte-0.24.6.tar.gz", hash = "sha256:d8e37dc2d4f65a576003adde5ad0dc738acaa66a442aa2e09fb035d4ec8c9364"},
-    {file = "dagster_airbyte-0.24.6-py3-none-any.whl", hash = "sha256:963271f98d402828302ebb95f026af4236b468aebb50fdfcba5992ece2f086b7"},
+    {file = "dagster-airbyte-0.24.7.tar.gz", hash = "sha256:36c2feeacd7cb484a936ed45090c42e9405b10edc2e5c844bbf936204f940134"},
+    {file = "dagster_airbyte-0.24.7-py3-none-any.whl", hash = "sha256:e7ef478e4780abce349e6a08785693df53790a1a921b0875bad31371007704b7"},
 ]
 
 [[package]]
 name = "dagster-cloud"
-version = "1.8.6"
+version = "1.8.7"
 summary = ""
 groups = ["default"]
 dependencies = [
-    "dagster-cloud-cli==1.8.6",
-    "dagster==1.8.6",
+    "dagster-cloud-cli==1.8.7",
+    "dagster==1.8.7",
     "pex<3,>=2.1.132",
     "questionary",
     "requests",
     "typer",
 ]
 files = [
-    {file = "dagster-cloud-1.8.6.tar.gz", hash = "sha256:b65dacbd833d9fae6157eeafa8fb90d6c90ac3047d4a95d8839eadbfab043fbf"},
-    {file = "dagster_cloud-1.8.6-py3-none-any.whl", hash = "sha256:68b1c9ccdefa9c04886307dcae9cc80b372a6e5cd4055c9bae7b645315b86ca8"},
+    {file = "dagster-cloud-1.8.7.tar.gz", hash = "sha256:3490b42d449503d0c5f57c675ce579358f82851c2e2aabc0325b18f00c9abb28"},
+    {file = "dagster_cloud-1.8.7-py3-none-any.whl", hash = "sha256:aad2b0f6c5b68dea4d75cbeb2c7d553faf101b1c3d5bd1c4e7bbe8c6110d5040"},
 ]
 
 [[package]]
 name = "dagster-cloud-cli"
-version = "1.8.6"
+version = "1.8.7"
 summary = ""
 groups = ["default"]
 dependencies = [
     "PyYAML>=5.1",
-    "dagster==1.8.6",
+    "dagster==1.8.7",
     "github3-py",
     "packaging>=20.9",
     "questionary",
@@ -536,19 +536,19 @@ dependencies = [
     "typer>=0.4.1",
 ]
 files = [
-    {file = "dagster-cloud-cli-1.8.6.tar.gz", hash = "sha256:02f2f90b9472ee51591a4f62f018e5e47aaf5ba4e5e90daa208a27c2940e7fd8"},
-    {file = "dagster_cloud_cli-1.8.6-py3-none-any.whl", hash = "sha256:da3903c2c221c889438bcc6cb926739028a7c9264f516398d00dcc18fb8e60c5"},
+    {file = "dagster-cloud-cli-1.8.7.tar.gz", hash = "sha256:371aebdae56586caa1a1a6a36ad26fa0b317d22a7eeade88c18753d034349b02"},
+    {file = "dagster_cloud_cli-1.8.7-py3-none-any.whl", hash = "sha256:4711f319bf10079175fa8205be3f7b530ee96bf39050207ecce8f7fc045dd161"},
 ]
 
 [[package]]
 name = "dagster-dbt"
-version = "0.24.6"
+version = "0.24.7"
 requires_python = "<3.13,>=3.8"
 summary = "A Dagster integration for dbt"
 groups = ["default"]
 dependencies = [
     "Jinja2",
-    "dagster==1.8.6",
+    "dagster==1.8.7",
     "dbt-core<1.9,>=1.7",
     "networkx",
     "orjson",
@@ -559,33 +559,33 @@ dependencies = [
     "typer>=0.9.0",
 ]
 files = [
-    {file = "dagster-dbt-0.24.6.tar.gz", hash = "sha256:04383a1a10322aa3393db0bf18608ce215f78704be400f2768091046d03f5bde"},
-    {file = "dagster_dbt-0.24.6-py3-none-any.whl", hash = "sha256:884fcd1939ba13a6b61a178c94a7ffd63dae608ff8eaceaf1094739b670a2de3"},
+    {file = "dagster-dbt-0.24.7.tar.gz", hash = "sha256:8dee70bfc3295c045ed34cc910218d224b9ffefc1d6d876ff999acf51f052a08"},
+    {file = "dagster_dbt-0.24.7-py3-none-any.whl", hash = "sha256:5f2d3a63b32a80dc3ef82901817621c893aec13ed2246a1fa9ead10820669593"},
 ]
 
 [[package]]
 name = "dagster-fivetran"
-version = "0.24.6"
+version = "0.24.7"
 requires_python = "<3.13,>=3.8"
 summary = "Package for integrating Fivetran with Dagster."
 groups = ["default"]
 dependencies = [
-    "dagster==1.8.6",
+    "dagster==1.8.7",
 ]
 files = [
-    {file = "dagster-fivetran-0.24.6.tar.gz", hash = "sha256:09d20af9ff04b2c7dc66aad82dc4797d1284559b67b3a8052231de23ba3db07f"},
-    {file = "dagster_fivetran-0.24.6-py3-none-any.whl", hash = "sha256:54ec3f7e11b94959ed3c789577116591c574136615d42548f8be17631144cf21"},
+    {file = "dagster-fivetran-0.24.7.tar.gz", hash = "sha256:923e731955d10b525bbbd69d2d95e06014a80a7867b43fb2ab26ecbc503217f1"},
+    {file = "dagster_fivetran-0.24.7-py3-none-any.whl", hash = "sha256:4521bc2150aa7650130e6ee3404db32042b2d5d64d15403298e0c238afb7f2f3"},
 ]
 
 [[package]]
 name = "dagster-gcp"
-version = "0.24.6"
+version = "0.24.7"
 requires_python = "<3.13,>=3.8"
 summary = "Package for GCP-specific Dagster framework op and resource components."
 groups = ["default"]
 dependencies = [
-    "dagster-pandas==0.24.6",
-    "dagster==1.8.6",
+    "dagster-pandas==0.24.7",
+    "dagster==1.8.7",
     "db-dtypes",
     "google-api-python-client",
     "google-cloud-bigquery",
@@ -593,102 +593,102 @@ dependencies = [
     "oauth2client",
 ]
 files = [
-    {file = "dagster-gcp-0.24.6.tar.gz", hash = "sha256:045cf8b17450e88c1a05802ab3b521322543e6ee03c6cb3b3aadfd4ff912a9ae"},
-    {file = "dagster_gcp-0.24.6-py3-none-any.whl", hash = "sha256:bf630b54c352b0446fa04d1665e44d0b73ffa9685b048c008e8280ca154fef9f"},
+    {file = "dagster-gcp-0.24.7.tar.gz", hash = "sha256:dd3b3c20dfe3436b3bc7111af983a6d84d942cfea8d6e0593255250966aa359e"},
+    {file = "dagster_gcp-0.24.7-py3-none-any.whl", hash = "sha256:412efb6a9dcfbe381c9eb74df983b7359fee619c614a5c4bcb488e9dec94995b"},
 ]
 
 [[package]]
 name = "dagster-graphql"
-version = "1.8.6"
+version = "1.8.7"
 requires_python = "<3.13,>=3.8"
 summary = "The GraphQL frontend to python dagster."
 groups = ["dev"]
 dependencies = [
-    "dagster==1.8.6",
+    "dagster==1.8.7",
     "gql[requests]<4,>=3",
     "graphene<4,>=3",
     "requests",
     "starlette",
 ]
 files = [
-    {file = "dagster-graphql-1.8.6.tar.gz", hash = "sha256:c824b9a00dce042bce700375aaf488c9ab33ce06fb6bd4c4f1fbfec060a8f4ad"},
-    {file = "dagster_graphql-1.8.6-py3-none-any.whl", hash = "sha256:daa7393dd12a4745443a8ce9f1f5071258b8895baa724c58775d927fdc8605bb"},
+    {file = "dagster-graphql-1.8.7.tar.gz", hash = "sha256:d5726f8c840c7a851ecf2d703e201da9866f4e3755941a9a4af8dd5652d8ee78"},
+    {file = "dagster_graphql-1.8.7-py3-none-any.whl", hash = "sha256:52ac8091c346110145220fedbeaaeb90b68a4ace3f45b61b76918821cb549350"},
 ]
 
 [[package]]
 name = "dagster-k8s"
-version = "0.24.6"
+version = "0.24.7"
 requires_python = "<3.13,>=3.8"
 summary = "A Dagster integration for k8s"
 groups = ["default"]
 dependencies = [
-    "dagster==1.8.6",
+    "dagster==1.8.7",
     "google-auth!=2.23.1",
     "kubernetes",
 ]
 files = [
-    {file = "dagster-k8s-0.24.6.tar.gz", hash = "sha256:e8ea0a666add8945159020b1cf3965a6b0c83ae201241bc928720ca13b6eed20"},
-    {file = "dagster_k8s-0.24.6-py3-none-any.whl", hash = "sha256:d7e4a8f80a71acbabb50480c89d7bcac3d723eb7973270fc5a1a51bb8835a4ba"},
+    {file = "dagster-k8s-0.24.7.tar.gz", hash = "sha256:22ccee333da8910c597fafc55aca492225f436efb53cd3166f369d3b11133d3f"},
+    {file = "dagster_k8s-0.24.7-py3-none-any.whl", hash = "sha256:5012b784eb68e1fa588f26c97f4b262c30a94813a258a666bc01e920504b7b6c"},
 ]
 
 [[package]]
 name = "dagster-pandas"
-version = "0.24.6"
+version = "0.24.7"
 requires_python = "<3.13,>=3.8"
 summary = "Utilities and examples for working with pandas and dagster, an opinionated framework for expressing data pipelines"
 groups = ["default"]
 dependencies = [
-    "dagster==1.8.6",
+    "dagster==1.8.7",
     "pandas",
 ]
 files = [
-    {file = "dagster-pandas-0.24.6.tar.gz", hash = "sha256:984e8581df85ef0096bde38adda2fd88b9eb6492e9b69de7c31dee01b76aacbd"},
-    {file = "dagster_pandas-0.24.6-py3-none-any.whl", hash = "sha256:331031141f59b79148a596f314252d67c0b2792671b5c0ee8634159636958d8d"},
+    {file = "dagster-pandas-0.24.7.tar.gz", hash = "sha256:bb3c3f566054d27ef0f0e6b32a4e4fe80e31435c06b7797de4aa6f9cc053fe71"},
+    {file = "dagster_pandas-0.24.7-py3-none-any.whl", hash = "sha256:72ec5d54b94e882b2467e86363b478b580f29dd8af55307242d5b2edfdb70290"},
 ]
 
 [[package]]
 name = "dagster-pipes"
-version = "1.8.6"
+version = "1.8.7"
 requires_python = "<3.13,>=3.8"
 summary = "Toolkit for Dagster integrations with transform logic outside of Dagster"
 groups = ["default", "dev"]
 files = [
-    {file = "dagster-pipes-1.8.6.tar.gz", hash = "sha256:7af77fc8f49b1693a6d2ba28e7dc3758bce3ca6f431e85883ced7357694f04d6"},
-    {file = "dagster_pipes-1.8.6-py3-none-any.whl", hash = "sha256:bef62a64a2e8103707c6c6f4f93f82923ec9f6ae637202e591706f299db61f5f"},
+    {file = "dagster-pipes-1.8.7.tar.gz", hash = "sha256:9808077299bb9c753311926e83c13abfcb5502d6f444291370d2455f188ef98f"},
+    {file = "dagster_pipes-1.8.7-py3-none-any.whl", hash = "sha256:ff1bae741a26d37cdacbc524a65d206cbe848d2104beafe96cd32aab2e450fb3"},
 ]
 
 [[package]]
 name = "dagster-ssh"
-version = "0.24.6"
+version = "0.24.7"
 requires_python = "<3.13,>=3.8"
 summary = "Package for ssh Dagster framework components."
 groups = ["default"]
 dependencies = [
-    "dagster==1.8.6",
+    "dagster==1.8.7",
     "paramiko",
     "sshtunnel",
 ]
 files = [
-    {file = "dagster-ssh-0.24.6.tar.gz", hash = "sha256:7605a6ce077845f7c14fbbef4cbe3ddca87a7f2f344dcf8953d06789d131df8a"},
-    {file = "dagster_ssh-0.24.6-py3-none-any.whl", hash = "sha256:4397746fe5294dafd011286a2a4df9be245cd5ad381574f957940324983b3e2f"},
+    {file = "dagster-ssh-0.24.7.tar.gz", hash = "sha256:346a790b3cf8ddd34df8b82798015b0cf9ffbc599ff9d3904bcc4eb72e59c590"},
+    {file = "dagster_ssh-0.24.7-py3-none-any.whl", hash = "sha256:e8b2974c9c2922183c812ad4ab646c915bf7ed44080da588018ce4cfffbf91a9"},
 ]
 
 [[package]]
 name = "dagster-webserver"
-version = "1.8.6"
+version = "1.8.7"
 requires_python = "<3.13,>=3.8"
 summary = "Web UI for dagster."
 groups = ["dev"]
 dependencies = [
     "click<9.0,>=7.0",
-    "dagster-graphql==1.8.6",
-    "dagster==1.8.6",
+    "dagster-graphql==1.8.7",
+    "dagster==1.8.7",
     "starlette!=0.36.0",
     "uvicorn[standard]",
 ]
 files = [
-    {file = "dagster-webserver-1.8.6.tar.gz", hash = "sha256:725457515d825a35c5defc6fc1fa897309ea168c90eb146936d2f48c9a4501f9"},
-    {file = "dagster_webserver-1.8.6-py3-none-any.whl", hash = "sha256:cd35de6d0b1f0feb7e72221ff5071c46de1536d6b5cb9c43501284c3e1494f2a"},
+    {file = "dagster-webserver-1.8.7.tar.gz", hash = "sha256:3cac7e246eb97c8c1c2ef04e2658763b5ec30e55db9490ee1cdfd35b48c12bb4"},
+    {file = "dagster_webserver-1.8.7-py3-none-any.whl", hash = "sha256:958a9847fe8b9895cb23d83b7f3fc6b01c4d639c15a04c8c4c9b3a4c11453eae"},
 ]
 
 [[package]]
@@ -736,7 +736,7 @@ files = [
 
 [[package]]
 name = "dbt-adapters"
-version = "1.5.0"
+version = "1.6.0"
 requires_python = ">=3.8.0"
 summary = "The set of adapter protocols and base functionality that supports integration with dbt-core"
 groups = ["default"]
@@ -749,8 +749,8 @@ dependencies = [
     "typing-extensions<5.0,>=4.0",
 ]
 files = [
-    {file = "dbt_adapters-1.5.0-py3-none-any.whl", hash = "sha256:d3fecd5252379bbd232c800493e0c2bb7ceda618f5c96b9d2324d343021e9dc5"},
-    {file = "dbt_adapters-1.5.0.tar.gz", hash = "sha256:a49b235fc757b3e75eb04eebd3d5148abc6e030415b1cb280356a648cc0cdaf5"},
+    {file = "dbt_adapters-1.6.0-py3-none-any.whl", hash = "sha256:fdda113eaae4d4e31c42257c4d68e94d1bd3519476b3326c4d859d3f33278cfc"},
+    {file = "dbt_adapters-1.6.0.tar.gz", hash = "sha256:ac3b73b28691d95a9b56b70dae5a0e2e989bf539d601984cfcd3e868462cf037"},
 ]
 
 [[package]]
@@ -2081,13 +2081,13 @@ files = [
 
 [[package]]
 name = "pex"
-version = "2.17.0"
+version = "2.18.0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,<3.14,>=2.7"
 summary = "The PEX packaging toolchain."
 groups = ["default"]
 files = [
-    {file = "pex-2.17.0-py2.py3-none-any.whl", hash = "sha256:aa7358ed52f53232f4d151afbba00b1a21ea08e149d0043dfe823b663574c0f9"},
-    {file = "pex-2.17.0.tar.gz", hash = "sha256:5d2ae868523fa10b78ef994014dcc01b752e4ea7e568a5680be8ccb0b30b257f"},
+    {file = "pex-2.18.0-py2.py3-none-any.whl", hash = "sha256:159045724c4b8c67015daad5907ca51e01058e511f218079a63bbba0158fa367"},
+    {file = "pex-2.18.0.tar.gz", hash = "sha256:92f2c2f59514561f95870b00aac07b20f2d87b47703f5b226edd3a1464227b8e"},
 ]
 
 [[package]]
@@ -2270,24 +2270,24 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.8.2"
+version = "2.9.1"
 requires_python = ">=3.8"
 summary = "Data validation using Python type hints"
 groups = ["default", "dev"]
 dependencies = [
-    "annotated-types>=0.4.0",
-    "pydantic-core==2.20.1",
+    "annotated-types>=0.6.0",
+    "pydantic-core==2.23.3",
     "typing-extensions>=4.12.2; python_version >= \"3.13\"",
     "typing-extensions>=4.6.1; python_version < \"3.13\"",
 ]
 files = [
-    {file = "pydantic-2.8.2-py3-none-any.whl", hash = "sha256:73ee9fddd406dc318b885c7a2eab8a6472b68b8fb5ba8150949fc3db939f23c8"},
-    {file = "pydantic-2.8.2.tar.gz", hash = "sha256:6f62c13d067b0755ad1c21a34bdd06c0c12625a22b0fc09c6b149816604f7c2a"},
+    {file = "pydantic-2.9.1-py3-none-any.whl", hash = "sha256:7aff4db5fdf3cf573d4b3c30926a510a10e19a0774d38fc4967f78beb6deb612"},
+    {file = "pydantic-2.9.1.tar.gz", hash = "sha256:1363c7d975c7036df0db2b4a61f2e062fbc0aa5ab5f2772e0ffc7191a4f4bce2"},
 ]
 
 [[package]]
 name = "pydantic-core"
-version = "2.20.1"
+version = "2.23.3"
 requires_python = ">=3.8"
 summary = "Core functionality for Pydantic validation and serialization"
 groups = ["default", "dev"]
@@ -2295,24 +2295,24 @@ dependencies = [
     "typing-extensions!=4.7.0,>=4.6.0",
 ]
 files = [
-    {file = "pydantic_core-2.20.1-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:595ba5be69b35777474fa07f80fc260ea71255656191adb22a8c53aba4479231"},
-    {file = "pydantic_core-2.20.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:a4f55095ad087474999ee28d3398bae183a66be4823f753cd7d67dd0153427c9"},
-    {file = "pydantic_core-2.20.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f9aa05d09ecf4c75157197f27cdc9cfaeb7c5f15021c6373932bf3e124af029f"},
-    {file = "pydantic_core-2.20.1-cp312-cp312-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:e97fdf088d4b31ff4ba35db26d9cc472ac7ef4a2ff2badeabf8d727b3377fc52"},
-    {file = "pydantic_core-2.20.1-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:bc633a9fe1eb87e250b5c57d389cf28998e4292336926b0b6cdaee353f89a237"},
-    {file = "pydantic_core-2.20.1-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:d573faf8eb7e6b1cbbcb4f5b247c60ca8be39fe2c674495df0eb4318303137fe"},
-    {file = "pydantic_core-2.20.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:26dc97754b57d2fd00ac2b24dfa341abffc380b823211994c4efac7f13b9e90e"},
-    {file = "pydantic_core-2.20.1-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:33499e85e739a4b60c9dac710c20a08dc73cb3240c9a0e22325e671b27b70d24"},
-    {file = "pydantic_core-2.20.1-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:bebb4d6715c814597f85297c332297c6ce81e29436125ca59d1159b07f423eb1"},
-    {file = "pydantic_core-2.20.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:516d9227919612425c8ef1c9b869bbbee249bc91912c8aaffb66116c0b447ebd"},
-    {file = "pydantic_core-2.20.1-cp312-none-win32.whl", hash = "sha256:469f29f9093c9d834432034d33f5fe45699e664f12a13bf38c04967ce233d688"},
-    {file = "pydantic_core-2.20.1-cp312-none-win_amd64.whl", hash = "sha256:035ede2e16da7281041f0e626459bcae33ed998cca6a0a007a5ebb73414ac72d"},
-    {file = "pydantic_core-2.20.1.tar.gz", hash = "sha256:26ca695eeee5f9f1aeeb211ffc12f10bcb6f71e2989988fda61dabd65db878d4"},
+    {file = "pydantic_core-2.23.3-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:e0ec50663feedf64d21bad0809f5857bac1ce91deded203efc4a84b31b2e4305"},
+    {file = "pydantic_core-2.23.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:db6e6afcb95edbe6b357786684b71008499836e91f2a4a1e55b840955b341dbb"},
+    {file = "pydantic_core-2.23.3-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:98ccd69edcf49f0875d86942f4418a4e83eb3047f20eb897bffa62a5d419c8fa"},
+    {file = "pydantic_core-2.23.3-cp312-cp312-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:a678c1ac5c5ec5685af0133262103defb427114e62eafeda12f1357a12140162"},
+    {file = "pydantic_core-2.23.3-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:01491d8b4d8db9f3391d93b0df60701e644ff0894352947f31fff3e52bd5c801"},
+    {file = "pydantic_core-2.23.3-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:fcf31facf2796a2d3b7fe338fe8640aa0166e4e55b4cb108dbfd1058049bf4cb"},
+    {file = "pydantic_core-2.23.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7200fd561fb3be06827340da066df4311d0b6b8eb0c2116a110be5245dceb326"},
+    {file = "pydantic_core-2.23.3-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:dc1636770a809dee2bd44dd74b89cc80eb41172bcad8af75dd0bc182c2666d4c"},
+    {file = "pydantic_core-2.23.3-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:67a5def279309f2e23014b608c4150b0c2d323bd7bccd27ff07b001c12c2415c"},
+    {file = "pydantic_core-2.23.3-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:748bdf985014c6dd3e1e4cc3db90f1c3ecc7246ff5a3cd4ddab20c768b2f1dab"},
+    {file = "pydantic_core-2.23.3-cp312-none-win32.whl", hash = "sha256:255ec6dcb899c115f1e2a64bc9ebc24cc0e3ab097775755244f77360d1f3c06c"},
+    {file = "pydantic_core-2.23.3-cp312-none-win_amd64.whl", hash = "sha256:40b8441be16c1e940abebed83cd006ddb9e3737a279e339dbd6d31578b802f7b"},
+    {file = "pydantic_core-2.23.3.tar.gz", hash = "sha256:3cb0f65d8b4121c1b015c60104a685feb929a29d7cf204387c7f2688c7974690"},
 ]
 
 [[package]]
 name = "pydantic"
-version = "2.8.2"
+version = "2.9.1"
 extras = ["email"]
 requires_python = ">=3.8"
 summary = "Data validation using Python type hints"
@@ -2320,11 +2320,11 @@ groups = ["dev"]
 marker = "python_version ~= \"3.11\""
 dependencies = [
     "email-validator>=2.0.0",
-    "pydantic==2.8.2",
+    "pydantic==2.9.1",
 ]
 files = [
-    {file = "pydantic-2.8.2-py3-none-any.whl", hash = "sha256:73ee9fddd406dc318b885c7a2eab8a6472b68b8fb5ba8150949fc3db939f23c8"},
-    {file = "pydantic-2.8.2.tar.gz", hash = "sha256:6f62c13d067b0755ad1c21a34bdd06c0c12625a22b0fc09c6b149816604f7c2a"},
+    {file = "pydantic-2.9.1-py3-none-any.whl", hash = "sha256:7aff4db5fdf3cf573d4b3c30926a510a10e19a0774d38fc4967f78beb6deb612"},
+    {file = "pydantic-2.9.1.tar.gz", hash = "sha256:1363c7d975c7036df0db2b4a61f2e062fbc0aa5ab5f2772e0ffc7191a4f4bce2"},
 ]
 
 [[package]]
@@ -2770,29 +2770,29 @@ files = [
 
 [[package]]
 name = "sqlglot"
-version = "25.20.1"
+version = "25.21.0"
 requires_python = ">=3.7"
 summary = "An easily customizable SQL parser and transpiler"
 groups = ["default"]
 files = [
-    {file = "sqlglot-25.20.1-py3-none-any.whl", hash = "sha256:ea8c957ed22cc825d7714c46e165b66da33921492124f4d6b7cc742a1a960ec4"},
-    {file = "sqlglot-25.20.1.tar.gz", hash = "sha256:495afc1aa26dabedfe2faf9c655779eaf6e2401686a20920b742786d26a26cb0"},
+    {file = "sqlglot-25.21.0-py3-none-any.whl", hash = "sha256:609659e30cc94bc7d2cb4b4d8e5ab129ad5df06fbf7ec362be506dc5b383ffaa"},
+    {file = "sqlglot-25.21.0.tar.gz", hash = "sha256:80572e1c79c567ce26b07f98321208820a4c3a575096c7d4949beec6e7d033b8"},
 ]
 
 [[package]]
 name = "sqlglot"
-version = "25.20.1"
+version = "25.21.0"
 extras = ["rs"]
 requires_python = ">=3.7"
 summary = "An easily customizable SQL parser and transpiler"
 groups = ["default"]
 dependencies = [
-    "sqlglot==25.20.1",
+    "sqlglot==25.21.0",
     "sqlglotrs==0.2.12",
 ]
 files = [
-    {file = "sqlglot-25.20.1-py3-none-any.whl", hash = "sha256:ea8c957ed22cc825d7714c46e165b66da33921492124f4d6b7cc742a1a960ec4"},
-    {file = "sqlglot-25.20.1.tar.gz", hash = "sha256:495afc1aa26dabedfe2faf9c655779eaf6e2401686a20920b742786d26a26cb0"},
+    {file = "sqlglot-25.21.0-py3-none-any.whl", hash = "sha256:609659e30cc94bc7d2cb4b4d8e5ab129ad5df06fbf7ec362be506dc5b383ffaa"},
+    {file = "sqlglot-25.21.0.tar.gz", hash = "sha256:80572e1c79c567ce26b07f98321208820a4c3a575096c7d4949beec6e7d033b8"},
 ]
 
 [[package]]
