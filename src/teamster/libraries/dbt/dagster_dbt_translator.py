@@ -29,13 +29,16 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     ) -> AutomationCondition | None:
         dagster_metadata: dict = dbt_resource_props.get("meta", {}).get("dagster", {})
 
-        # TODO: rename key to `automation_condition`
         automation_condition_config: dict = dagster_metadata.get(
             "automation_condition", {}
         )
 
         if not automation_condition_config.get("enabled", True):
             return None
+        elif dbt_resource_props["config"]["materialized"] == "view":
+            return AutomationCondition.code_version_changed().since(
+                AutomationCondition.newly_requested()
+            )
         else:
             return (
                 AutomationCondition.eager()
