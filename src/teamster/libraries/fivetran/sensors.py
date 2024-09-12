@@ -3,7 +3,7 @@ from itertools import groupby
 
 from dagster import (
     AssetMaterialization,
-    AssetsDefinition,
+    AssetSpec,
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
@@ -17,7 +17,7 @@ from google.cloud.bigquery import DatasetReference, TableReference
 def build_fivetran_connector_sync_status_sensor(
     code_location: str,
     minimum_interval_seconds: int,
-    asset_selection: list[AssetsDefinition],
+    asset_selection: list[AssetSpec],
     project: str,
 ):
     @sensor(
@@ -30,15 +30,14 @@ def build_fivetran_connector_sync_status_sensor(
         db_bigquery: BigQueryResource,
     ):
         asset_events = []
-        connector_updated_assets: list[AssetsDefinition] = []
+        connector_updated_assets: list[AssetSpec] = []
 
         cursor: dict[str, dict] = json.loads(
             s=context.cursor or json.dumps(obj={"connectors": {}, "assets": {}})
         )
 
         for connector_id, connector_assets in groupby(
-            iterable=asset_selection,
-            key=lambda a: a.metadata_by_key[a.key]["connector_id"],
+            iterable=asset_selection, key=lambda a: a.metadata["connector_id"]
         ):
             cursor_last_sync_completion_timestamp = cursor["connectors"].get(
                 connector_id, 0
@@ -72,15 +71,14 @@ def build_fivetran_connector_sync_status_sensor(
 
         for assets_def in connector_updated_assets:
             python_identifier = assets_def.key.to_python_identifier()
-            metadata = assets_def.metadata_by_key[assets_def.key]
 
             cursor_table_modified_timestamp = cursor["assets"].get(python_identifier, 0)
 
             table_ref = TableReference(
                 dataset_ref=DatasetReference(
-                    project=project, dataset_id=metadata["dataset_id"]
+                    project=project, dataset_id=assets_def.metadata["dataset_id"]
                 ),
-                table_id=metadata["table_id"],
+                table_id=assets_def.metadata["table_id"],
             )
 
             table = bq.get_table(table=table_ref)
