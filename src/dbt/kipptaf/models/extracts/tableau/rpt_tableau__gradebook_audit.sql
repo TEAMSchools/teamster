@@ -90,6 +90,13 @@ with
             t.scoretype,
             t.totalpointvalue,
 
+            t.n_students,
+            t.n_late,
+            t.n_exempt,
+            t.n_missing,
+            t.n_expected,
+            t.n_expected_scored,
+
             t.teacher_assign_count,
             t.teacher_running_total_assign_by_cat,
             t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
@@ -397,6 +404,13 @@ select
     totalpointvalue as teacher_assign_max_score,
     duedate as teacher_assign_due_date,
     teacher_assign_count,
+    n_students,
+    n_late,
+    n_exempt,
+    n_missing,
+    n_expected,
+    n_expected_scored,
+
     teacher_running_total_assign_by_cat,
     teacher_avg_score_for_assign_per_class_section_and_assign_id,
     total_expected_actual_graded_assignments_by_cat_qt_audit_week_all_courses,
