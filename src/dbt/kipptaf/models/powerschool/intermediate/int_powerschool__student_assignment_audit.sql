@@ -28,10 +28,9 @@ with
             a.category_name,
 
             s.scorepoints,
-
-            if(s.islate is null, false, true) as islate,
-            if(s.isexempt is null, false, true) as isexempt,
-            if(s.ismissing is null, false, true) as ismissing,
+            if(s.islate in (0, null), false, true) as islate,
+            if(s.isexempt in (0, null), false, true) as isexempt,
+            if(s.ismissing in (0, null), false, true) as ismissing,
 
             if(
                 a.scoretype = 'PERCENT',
