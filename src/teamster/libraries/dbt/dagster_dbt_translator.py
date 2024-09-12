@@ -35,7 +35,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
 
         if not automation_condition_config.get("enabled", True):
             return None
-        elif dbt_resource_props["config"]["materialized"] == "view":
+        elif (
+            dbt_resource_props["resource_type"] == "model"
+            and dbt_resource_props["config"]["materialized"] == "view"
+        ):
             return AutomationCondition.code_version_changed().since(
                 AutomationCondition.newly_requested()
             )
