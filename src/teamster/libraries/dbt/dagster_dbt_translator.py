@@ -39,15 +39,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             dbt_resource_props["resource_type"] == "model"
             and dbt_resource_props["config"]["materialized"] == "view"
         ):
-            return AutomationCondition.code_version_changed().since(
-                AutomationCondition.newly_requested()
-            )
+            return AutomationCondition.code_version_changed()
         else:
             return (
-                AutomationCondition.eager()
-                | AutomationCondition.code_version_changed().since(
-                    AutomationCondition.newly_requested()
-                )
+                AutomationCondition.eager() | AutomationCondition.code_version_changed()
             )
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
