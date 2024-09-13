@@ -9,13 +9,13 @@ with
             bss.client_date as mclass_client_date,
             bss.sync_date as mclass_sync_date,
 
-            u.measure as mclass_measure,
-            u.score as mclass_measure_score,
-            u.level as mclass_measure_level,
-            u.level_int as mclass_measure_level_int,
-            u.national_norm_percentile as mclass_measure_percentile,
-            u.semester_growth as mclass_measure_semester_growth,
-            u.year_growth as mclass_measure_year_growth,
+            u.mclass_measure_standard,
+            u.mclass_measure_standard_score,
+            u.mclass_measure_standard_level,
+            u.mclass_measure_standard_level_int,
+            u.mclass_measure_percentile,
+            u.mclass_measure_semester_growth,
+            u.mclass_measure_year_growth,
 
             'Benchmark' as assessment_type,
             null as mclass_probe_number,
@@ -23,7 +23,8 @@ with
             null as mclass_score_change,
 
             row_number() over (
-                partition by u.surrogate_key, u.measure order by u.level_int desc
+                partition by u.surrogate_key, u.mclass_measure_standard
+                order by u.mclass_measure_standard_level_int desc
             ) as rn_highest,
 
             row_number() over (
@@ -50,11 +51,11 @@ with
             mclass_period,
             `date` as mclass_client_date,
             `date` as mclass_sync_date,
-            measure as mclass_measure,
-            score as mclass_measure_score,
-            mclass_measure_level,
-            mclass_measure_level_int,
-            national_dds_percentile as mclass_measure_percentile,
+            mclass_measure_standard,
+            mclass_measure_standard_score,
+            mclass_measure_standard_level,
+            mclass_measure_standard_level_int,
+            mclass_measure_percentile,
 
             cast(null as string) as mclass_measure_semester_growth,
             cast(null as string) as mclass_measure_year_growth,
@@ -64,8 +65,8 @@ with
             null as mclass_score_change,
 
             row_number() over (
-                partition by surrogate_key, measure
-                order by mclass_measure_level_int desc
+                partition by surrogate_key, mclass_measure_standard
+                order by class_measure_standard_level_int desc
             ) as rn_highest,
 
             row_number() over (
@@ -73,7 +74,7 @@ with
             ) as rn_distinct,
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }}
         where
-            measure
+            mclass_measure_standard
             in ('Reading Fluency (ORF)', 'Reading Comprehension (Maze)', 'Composite')
 
         union all
@@ -86,12 +87,12 @@ with
             pm_period as mclass_period,
             client_date as mclass_client_date,
             sync_date as mclass_sync_date,
-            measure as mclass_measure,
-            score as mclass_measure_score,
+            measure as mclass_measure_standard,
+            mclass_measure_standard_score,
 
-            'NA' as mclass_measure_level,
+            'NA' as mclass_measure_standard_level,
 
-            null as mclass_measure_level_int,
+            null as mclass_measure_standard_level_int,
             null as mclass_measure_percentile,
 
             'NA' as mclass_measure_semester_growth,

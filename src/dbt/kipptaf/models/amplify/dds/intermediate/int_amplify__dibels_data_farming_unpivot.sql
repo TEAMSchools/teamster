@@ -7,13 +7,13 @@ with
             `date`,
             form,
             `remote`,
-            score,
+            score as mclass_measure_standard_score,
             benchmark_status,
-            national_dds_percentile,
+            national_dds_percentile as mclass_measure_percentile,
             district_percentile,
             school_percentile,
 
-            split(name_column, '|')[0] as measure,
+            split(name_column, '|')[0] as mclass_measure_standard,
             split(name_column, '|')[1] as assessment_period,
         from
             {{ ref("stg_amplify__dibels_data_farming") }} unpivot (
@@ -264,7 +264,7 @@ select
         then 'Below Benchmark'
         when 'Intensive Support'
         then 'Well Below Benchmark'
-    end as mclass_measure_level,
+    end as mclass_measure_standard_level,
 
     case
         benchmark_status
@@ -276,7 +276,7 @@ select
         then 2
         when 'Intensive Support'
         then 1
-    end as mclass_measure_level_int,
+    end as mclass_measure_standard_level_int,
 
     {{
         dbt_utils.generate_surrogate_key(
