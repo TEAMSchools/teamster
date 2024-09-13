@@ -5,11 +5,11 @@ with
 
             /* unpivot cols */
             measure as mclass_measure_standard,
-            score,
+            score as mclass_measure_standard_score,
             `level` as mclass_measure_standard_level,
-            national_norm_percentile,
-            semester_growth,
-            year_growth,
+            national_norm_percentile as mclass_measure_percentile,
+            semester_growth as mclass_measure_semester_growth,
+            year_growth as mclass_measure_year_growth,
 
             case
                 measure

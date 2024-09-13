@@ -57,12 +57,12 @@ with
 
             coalesce(
                 cast(score.double_value as numeric), cast(score.long_value as numeric)
-            ) as score,
+            ) as mclass_measure_standard_score,
 
             coalesce(
                 cast(score_change.double_value as numeric),
                 cast(score_change.string_value as numeric)
-            ) as score_change,
+            ) as mclass_measure_standard_score_change,
 
             cast(left(school_year, 4) as int) as academic_year,
         from {{ src_pss }}
