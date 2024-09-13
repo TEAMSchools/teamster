@@ -32,7 +32,6 @@ with
         left join
             {{ ref("stg_powerschool__assignmentscore") }} as s
             on a.assignmentsectionid = s.assignmentsectionid
-            and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
     )
 
 select
