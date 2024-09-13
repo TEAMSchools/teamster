@@ -150,6 +150,12 @@ select
     scoretype,
     totalpointvalue,
     duedate,
+    n_students,
+    n_late,
+    n_exempt,
+    n_missing,
+    n_expected,
+    n_expected_scored,
 
     assignment_count_section_quarter_category_running_week
     as teacher_running_total_assign_by_cat,
