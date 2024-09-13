@@ -9,6 +9,8 @@ with
             bss.client_date as mclass_client_date,
             bss.sync_date as mclass_sync_date,
 
+            u.mclass_measure_name,
+            u.mclass_measure_name_code,
             u.mclass_measure_standard,
             u.mclass_measure_standard_score,
             u.mclass_measure_standard_level,
@@ -51,6 +53,9 @@ with
             mclass_period,
             `date` as mclass_client_date,
             `date` as mclass_sync_date,
+
+            mclass_measure_name,
+            mclass_measure_name_code,
             mclass_measure_standard,
             mclass_measure_standard_score,
             mclass_measure_standard_level,
@@ -66,7 +71,7 @@ with
 
             row_number() over (
                 partition by surrogate_key, mclass_measure_standard
-                order by class_measure_standard_level_int desc
+                order by mclass_measure_standard_level_int desc
             ) as rn_highest,
 
             row_number() over (
@@ -87,6 +92,8 @@ with
             pm_period as mclass_period,
             client_date as mclass_client_date,
             sync_date as mclass_sync_date,
+            mclass_measure_name,
+            mclass_measure_name_code,
             measure as mclass_measure_standard,
             mclass_measure_standard_score,
 
@@ -101,10 +108,11 @@ with
 
             probe_number as mclass_probe_number,
             total_number_of_probes as mclass_total_number_of_probes,
-            score_change as mclass_score_change,
+            mclass_measure_standard_score,
 
             row_number() over (
-                partition by surrogate_key, measure order by score desc
+                partition by surrogate_key, measure
+                order by mclass_measure_standard_score desc
             ) as rn_highest,
 
             row_number() over (
@@ -121,9 +129,9 @@ with
             mclass_academic_year,
             mclass_student_number,
             mclass_period,
-            mclass_measure_level,
+            mclass_measure_standard_level,
         from assessments_scores
-        where mclass_measure = 'Composite' and rn_highest = 1
+        where mclass_measure_standard = 'Composite' and rn_highest = 1
     ),
 
     overall_composite_by_window as (
@@ -136,7 +144,8 @@ with
             coalesce(p.eoy, 'No data') as eoy,
         from
             composite_only pivot (
-                max(mclass_measure_level) for mclass_period in ('BOY', 'MOY', 'EOY')
+                max(mclass_measure_standard_level) for mclass_period
+                in ('BOY', 'MOY', 'EOY')
             ) as p
     ),
 
@@ -173,10 +182,12 @@ select
     s.mclass_period,
     s.mclass_client_date,
     s.mclass_sync_date,
-    s.mclass_measure,
-    s.mclass_measure_score,
-    s.mclass_measure_level,
-    s.mclass_measure_level_int,
+    s.mclass_measure_name,
+    s.mclass_measure_name_code,
+    s.mclass_measure_standard,
+    s.mclass_measure_standard_score,
+    s.mclass_measure_standard_level,
+    s.mclass_measure_standard_level_int,
     s.mclass_measure_percentile,
     s.mclass_measure_semester_growth,
     s.mclass_measure_year_growth,
