@@ -22,31 +22,43 @@ with
     ),
 
     intervention_nj as (
+        -- select
+        -- st.local_student_id as student_number,
+        -- g.nj_intervention_subject,
+        -- row_number() over (
+        -- partition by st.local_student_id, g.nj_intervention_subject
+        -- order by s.gsa_id desc
+        -- ) as rn_bucket,
+        -- from {{ ref("stg_illuminate__group_student_aff") }} as s
+        -- inner join
+        -- {{ ref("stg_illuminate__groups") }} as g
+        -- on s.group_id = g.group_id
+        -- and g.nj_intervention_tier = 2
+        -- and g.group_name in (
+        -- 'Bucket 2 - Math - HS',
+        -- 'Bucket 2 - Reading - HS',
+        -- 'Bucket 2 - Reading - Gr5-8',
+        -- 'Bucket 2 - Math - Gr5-8',
+        -- 'Bucket 2 - Reading - GrK-4',
+        -- 'Bucket 2 - Math - GrK-4'
+        -- )
+        -- inner join
+        -- {{ ref("stg_illuminate__students") }} as st on s.student_id = st.student_id
+        -- where
+        -- s.end_date is null
+        -- or s.end_date > current_date('{{ var("local_timezone") }}')
         select
-            st.local_student_id as student_number,
-            g.nj_intervention_subject,
-            row_number() over (
-                partition by st.local_student_id, g.nj_intervention_subject
-                order by s.gsa_id desc
-            ) as rn_bucket,
-        from {{ ref("stg_illuminate__group_student_aff") }} as s
-        inner join
-            {{ ref("stg_illuminate__groups") }} as g
-            on s.group_id = g.group_id
-            and g.nj_intervention_tier = 2
-            and g.group_name in (
-                'Bucket 2 - Math - HS',
-                'Bucket 2 - Reading - HS',
-                'Bucket 2 - Reading - Gr5-8',
-                'Bucket 2 - Math - Gr5-8',
-                'Bucket 2 - Reading - GrK-4',
-                'Bucket 2 - Math - GrK-4'
-            )
-        inner join
-            {{ ref("stg_illuminate__students") }} as st on s.student_id = st.student_id
-        where
-            s.end_date is null
-            or s.end_date > current_date('{{ var("local_timezone") }}')
+            _dbt_source_relation,
+            studentid,
+
+            {{
+                teamster_utils.date_to_fiscal_year(
+                    date_field="enter_date", start_month=7, year_source="start"
+                )
+            }} as academic_year,
+            if(specprog_name = 'Bucket 2 - ELA', 'Reading', 'Math') as iready_subject,
+        from {{ ref("int_powerschool__spenrollments") }}
+        where specprog_name in ('Bucket 2 - ELA', 'Bucket 2 - Math')
     ),
 
     prev_yr_state_test as (
@@ -180,7 +192,7 @@ select
         'No Composite Score Available'
     ) as dibels_most_recent_composite,
 
-    if(nj.nj_intervention_subject is not null, true, false) as bucket_two,
+    if(nj.iready_subject is not null, true, false) as bucket_two,
 
     if(t.iready_subject is not null, true, false) as tutoring_nj,
 
@@ -195,7 +207,7 @@ select
         then 'Bucket 1'
         when co.grade_level >= 4 and py.njsla_proficiency = 'At/Above'
         then 'Bucket 1'
-        when nj.nj_intervention_subject is not null
+        when nj.iready_subject is not null
         then 'Bucket 2'
     end as nj_student_tier,
 
@@ -215,9 +227,10 @@ from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as sj
 left join
     intervention_nj as nj
-    on co.student_number = nj.student_number
-    and sj.iready_subject = nj.nj_intervention_subject
-    and nj.rn_bucket = 1
+    on co.studentid = nj.studentid
+    and co.academic_year = nj.academic_year
+    and sj.iready_subject = nj.iready_subject
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
 left join
     prev_yr_state_test as py
     {# TODO: find records that only match on SID #}
