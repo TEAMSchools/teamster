@@ -55,7 +55,7 @@ with
             f.academic_year + 1 as academic_year_plus,
             s.student_number,
             case
-                when f.assessment_subject = 'English Languate Arts'
+                when f.assessment_subject = 'English Language Arts'
                 then 'Reading'
                 else 'Math'
             end as subject,
