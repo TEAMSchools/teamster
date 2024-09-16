@@ -30,10 +30,11 @@ def build_schoolmint_grow_asset(
     )
     def _asset(context: AssetExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         if isinstance(context.assets_def.partitions_def, MultiPartitionsDefinition):
+            # TODO: lastModified == None for first partition
             partition_key = _check.inst(context.partition_key, MultiPartitionKey)
 
             archived_partition = partition_key.keys_by_dimension["archived"]
-            last_modified_partition = (
+            last_modified_start = (
                 pendulum.from_format(
                     string=partition_key.keys_by_dimension["last_modified"],
                     fmt="YYYY-MM-DD",
@@ -41,11 +42,13 @@ def build_schoolmint_grow_asset(
                 .subtract(days=1)
                 .timestamp()
             )
+
+            last_modified_partition = (
+                f"{last_modified_start},{last_modified_start + 86400}"
+            )
         else:
             archived_partition = context.partition_key
             last_modified_partition = None
-
-        # TODO: lastModified == None for first partition
 
         endpoint_content = schoolmint_grow.get(
             endpoint=endpoint,
