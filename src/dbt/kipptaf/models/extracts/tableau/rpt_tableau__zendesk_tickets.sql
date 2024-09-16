@@ -81,7 +81,7 @@ left join
 left join {{ source("zendesk", "users") }} as s on t.submitter_id = s.id
 left join {{ source("zendesk", "users") }} as a on t.assignee_id = a.id
 left join {{ source("zendesk", "groups") }} as g on t.group_id = g.id
-left join {{ ref("int_zendesk__ticket_metrics_union") }} as tm on t.id = tm.ticket_id
+left join {{ ref("stg_zendesk__ticket_metrics") }} as tm on t.id = tm.ticket_id
 left join group_updated as gu on t.id = gu.ticket_id
 left join
     original_value as og on t.id = og.ticket_id and og.event_field_name = 'group_id'

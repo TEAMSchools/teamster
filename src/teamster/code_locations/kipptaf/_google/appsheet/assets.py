@@ -1,8 +1,8 @@
-from dagster import AssetSpec, external_assets_from_specs
+from dagster import AssetSpec
 
 from teamster.code_locations.kipptaf._dbt.assets import manifest
 
-specs = [
+asset_specs = [
     AssetSpec(
         key=source["meta"]["dagster"]["asset_key"],
         metadata={"dataset_id": source["schema"], "table_id": source["name"]},
@@ -10,10 +10,4 @@ specs = [
     )
     for source in manifest["sources"].values()
     if source["source_name"] == "google_appsheet"
-]
-
-google_appsheet_assets = external_assets_from_specs(specs=specs)
-
-assets = [
-    *google_appsheet_assets,
 ]
