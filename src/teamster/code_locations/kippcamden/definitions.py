@@ -1,4 +1,9 @@
-from dagster import Definitions, load_assets_from_modules
+from dagster import (
+    AssetSelection,
+    AutomationConditionSensorDefinition,
+    Definitions,
+    load_assets_from_modules,
+)
 from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kippcamden import (
@@ -54,6 +59,10 @@ defs = Definitions(
         *edplan.sensors,
         *powerschool.sensors,
         *titan.sensors,
+        AutomationConditionSensorDefinition(
+            name=f"{CODE_LOCATION}_automation_condition_sensor",
+            asset_selection=AssetSelection.all(),
+        ),
     ],
     resources={
         "db_bigquery": BIGQUERY_RESOURCE,
