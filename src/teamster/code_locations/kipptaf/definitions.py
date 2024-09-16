@@ -1,4 +1,6 @@
 from dagster import (
+    AssetSelection,
+    AutomationConditionSensorDefinition,
     Definitions,
     build_sensor_for_freshness_checks,
     load_assets_from_modules,
@@ -80,6 +82,10 @@ defs = Definitions(
         *fivetran.sensors,
         build_sensor_for_freshness_checks(
             freshness_checks=asset_checks.freshness_checks
+        ),
+        AutomationConditionSensorDefinition(
+            name=f"{CODE_LOCATION}_automation_condition_sensor",
+            asset_selection=AssetSelection.all(),
         ),
     ],
     resources={
