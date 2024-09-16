@@ -13,8 +13,8 @@ with
             case
                 when s.isexempt = 1
                 then false
-                when s.ismissing = 0
-                then false
+                when s.ismissing = 1 and s.scorepoints is not null
+                then true
                 when s.scorepoints is not null
                 then true
                 else false

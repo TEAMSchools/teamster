@@ -38,25 +38,28 @@ from teamster.core.resources import (
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=load_assets_from_modules(
-        modules=[
-            _dbt,
-            _google,
-            adp,
-            airbyte,
-            amplify,
-            datagun,
-            deanslist,
-            fivetran,
-            ldap,
-            overgrad,
-            performance_management,
-            powerschool,
-            schoolmint,
-            smartrecruiters,
-            tableau,
-        ]
-    ),
+    assets=[
+        *airbyte.asset_specs,
+        *fivetran.asset_specs,
+        *_google.asset_specs,
+        *load_assets_from_modules(
+            modules=[
+                _dbt,
+                _google,
+                adp,
+                amplify,
+                datagun,
+                deanslist,
+                ldap,
+                overgrad,
+                performance_management,
+                powerschool,
+                schoolmint,
+                smartrecruiters,
+                tableau,
+            ]
+        ),
+    ],
     asset_checks=asset_checks.freshness_checks,
     schedules=[
         *_google.schedules,

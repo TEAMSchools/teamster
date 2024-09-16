@@ -57,7 +57,8 @@ def build_dbt_external_source_assets(
         selection = [
             f"{dbt_resource_props["source_name"]}.{dbt_resource_props["name"]}"
             for dbt_resource_props in sources
-            if dagster_name_fn(dbt_resource_props) in context.selected_output_names
+            if dagster_name_fn(dbt_resource_props)
+            in context.op_execution_context.selected_output_names
         ]
 
         # run dbt stage_external_sources
@@ -77,7 +78,7 @@ def build_dbt_external_source_assets(
         for event in dbt_run_operation.stream_raw_events():
             context.log.info(event)
 
-        for output_name in context.selected_output_names:
+        for output_name in context.op_execution_context.selected_output_names:
             yield Output(value=None, output_name=output_name)
 
     return _assets

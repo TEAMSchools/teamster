@@ -1,14 +1,14 @@
 import pathlib
 
 import yaml
-from dagster import AssetKey, AssetSpec, external_assets_from_specs
+from dagster import AssetKey, AssetSpec
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
 
-def fivetran_external_assets_from_specs(config_file: pathlib.Path, code_location):
+def build_fivetran_asset_specs(config_file: pathlib.Path, code_location):
     specs = []
 
     config = yaml.safe_load(config_file.read_text())
@@ -40,34 +40,34 @@ def fivetran_external_assets_from_specs(config_file: pathlib.Path, code_location
                 )
             )
 
-    return external_assets_from_specs(specs=specs)
+    return specs
 
 
-adp_workforce_now_assets = fivetran_external_assets_from_specs(
+adp_workforce_now_assets = build_fivetran_asset_specs(
     config_file=config_dir / "adp_workforce_now.yaml", code_location=CODE_LOCATION
 )
 
-coupa_assets = fivetran_external_assets_from_specs(
+coupa_assets = build_fivetran_asset_specs(
     config_file=config_dir / "coupa.yaml", code_location=CODE_LOCATION
 )
 
-facebook_pages_assets = fivetran_external_assets_from_specs(
+facebook_pages_assets = build_fivetran_asset_specs(
     config_file=config_dir / "facebook_pages.yaml", code_location=CODE_LOCATION
 )
 
-illuminate_xmin_assets = fivetran_external_assets_from_specs(
+illuminate_xmin_assets = build_fivetran_asset_specs(
     config_file=config_dir / "illuminate_xmin.yaml", code_location=CODE_LOCATION
 )
 
-illuminate_assets = fivetran_external_assets_from_specs(
+illuminate_assets = build_fivetran_asset_specs(
     config_file=config_dir / "illuminate.yaml", code_location=CODE_LOCATION
 )
 
-instagram_business_assets = fivetran_external_assets_from_specs(
+instagram_business_assets = build_fivetran_asset_specs(
     config_file=config_dir / "instagram_business.yaml", code_location=CODE_LOCATION
 )
 
-assets = [
+asset_specs = [
     *adp_workforce_now_assets,
     *coupa_assets,
     *facebook_pages_assets,
