@@ -56,7 +56,7 @@ defs = Definitions(
         *powerschool.sensors,
         *renlearn.sensors,
         AutomationConditionSensorDefinition(
-            name=f"{CODE_LOCATION}_automation_condition_sensor",
+            name=f"{CODE_LOCATION}__automation_condition_sensor",
             asset_selection=AssetSelection.all(),
         ),
     ],

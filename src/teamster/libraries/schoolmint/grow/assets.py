@@ -55,6 +55,11 @@ def build_schoolmint_grow_asset(
                 == last_modified_def.get_first_partition_key()
             ):
                 last_modified_key = f"0,{last_modified_end}"
+            elif (
+                partition_key.keys_by_dimension["last_modified"]
+                == last_modified_def.get_last_partition_key()
+            ):
+                last_modified_key = last_modified_start
             else:
                 last_modified_key = f"{last_modified_start},{last_modified_end}"
         else:

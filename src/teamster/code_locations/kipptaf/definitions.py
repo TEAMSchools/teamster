@@ -84,7 +84,7 @@ defs = Definitions(
             freshness_checks=asset_checks.freshness_checks
         ),
         AutomationConditionSensorDefinition(
-            name=f"{CODE_LOCATION}_automation_condition_sensor",
+            name=f"{CODE_LOCATION}__automation_condition_sensor",
             asset_selection=AssetSelection.all(),
         ),
     ],
