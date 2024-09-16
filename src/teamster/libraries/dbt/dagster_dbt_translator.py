@@ -29,19 +29,20 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     ) -> AutomationCondition | None:
         dagster_metadata: dict = dbt_resource_props.get("meta", {}).get("dagster", {})
 
-        # TODO: rename key to `automation_condition`
         automation_condition_config: dict = dagster_metadata.get(
             "automation_condition", {}
         )
 
         if not automation_condition_config.get("enabled", True):
             return None
+        # elif (
+        #     dbt_resource_props["resource_type"] == "model"
+        #     and dbt_resource_props["config"]["materialized"] == "view"
+        # ):
+        #     return AutomationCondition.code_version_changed()
         else:
             return (
-                AutomationCondition.eager()
-                | AutomationCondition.code_version_changed().since(
-                    AutomationCondition.newly_requested()
-                )
+                AutomationCondition.eager() | AutomationCondition.code_version_changed()
             )
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
