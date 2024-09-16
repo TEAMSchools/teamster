@@ -33,16 +33,14 @@ def build_schoolmint_grow_asset(
             partition_key = _check.inst(context.partition_key, MultiPartitionKey)
 
             archived_key = partition_key.keys_by_dimension["archived"]
-            last_modified_start = (
-                pendulum.from_format(
-                    string=partition_key.keys_by_dimension["last_modified"],
-                    fmt="YYYY-MM-DD",
-                )
-                .subtract(days=1)
-                .timestamp()
+            last_modified_key = partition_key.keys_by_dimension["last_modified"]
+
+            last_modified_datetime = pendulum.from_format(
+                string=last_modified_key, fmt="YYYY-MM-DD"
             )
 
-            last_modified_end = last_modified_start + 86400
+            last_modified_end = last_modified_datetime.end_of("day").timestamp()
+            last_modified_start = last_modified_datetime.subtract(days=1).timestamp()
 
             last_modified_def = (
                 context.assets_def.partitions_def.get_partitions_def_for_dimension(
@@ -50,10 +48,9 @@ def build_schoolmint_grow_asset(
                 )
             )
 
-            if (
-                partition_key.keys_by_dimension["last_modified"]
-                == last_modified_def.get_first_partition_key()
-            ):
+            if last_modified_key == last_modified_def.get_last_partition_key():
+                last_modified_key = last_modified_start
+            elif last_modified_key == last_modified_def.get_first_partition_key():
                 last_modified_key = f"0,{last_modified_end}"
             else:
                 last_modified_key = f"{last_modified_start},{last_modified_end}"
