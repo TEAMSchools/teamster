@@ -1,18 +1,19 @@
 with
-
     ktaf_approvers as (
         select
             sr1.department_home_name,
-            case
-                when sr2.job_title like '%Chief%Officer%'
-                then max(sr1.report_to_employee_number)
-                when sr2.job_title like '%Chief%Strategist%'
-                then max(sr1.report_to_employee_number)
-            end as ktaf_chief_approver,
-            case
-                when sr2.job_title like '%President%'
-                then max(sr1.report_to_employee_number)
-            end as ktaf_president_approver,
+            coalesce(
+                case
+                    when sr2.job_title like '%Chief%Officer%'
+                    then max(sr1.report_to_employee_number)
+                    when sr2.job_title like '%Chief%Strategist%'
+                    then max(sr1.report_to_employee_number)
+                end,
+                case
+                    when sr2.job_title like '%President%'
+                    then max(sr1.report_to_employee_number)
+                end
+            ) as ktaf_approver,
             sr1.report_to_preferred_name_lastfirst,
         from `kipptaf_people.base_people__staff_roster` as sr1
         left join
@@ -23,11 +24,14 @@ with
             and sr2.job_title <> 'Chief Executive Officer'
             and sr1.assignment_status in ('Active', 'Leave')
             and (sr2.job_title like '%Chief%' or sr2.job_title like '%President%')
+            and sr2.job_title <> 'Chief of Staff'
+            and sr1.job_title not like '%Chief%'
+            and sr1.department_home_name <> 'Executive'
         group by
             sr1.department_home_name,
             sr1.report_to_preferred_name_lastfirst,
             sr2.job_title
-
+        order by department_home_name
     ),
 
     mdo as (
@@ -146,7 +150,7 @@ select
         then r.mdo_employee_number
         /* KTAF teammate (assigned according to submitter in app)*/
         when r.route = 'KTAF'
-        then coalesce(k.ktaf_chief_approver, k.ktaf_president_approver)
+        then k.ktaf_approver
         /* Outliers (assigned according to submitter in app)*/
         when r.route = 'No Route'
         then null
@@ -166,11 +170,10 @@ select
         then r.mdo_employee_number
         /* KTAF teammate (assigned according to submitter in app)*/
         when r.route = 'KTAF'
-        then coalesce(k.ktaf_chief_approver, k.ktaf_president_approver)
+        then k.ktaf_approver
         /* Outliers (assigned according to submitter in app)*/
         when r.route = 'No Route'
         then null
     end as second_approver,
 from roster as r
-left join ktaf_approvers as k
-on r.department_home_name = k.department_home_name
+left join ktaf_approvers as k on r.department_home_name = k.department_home_name
