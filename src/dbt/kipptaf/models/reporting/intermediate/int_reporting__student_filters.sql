@@ -22,31 +22,6 @@ with
     ),
 
     intervention_nj as (
-        -- select
-        -- st.local_student_id as student_number,
-        -- g.nj_intervention_subject,
-        -- row_number() over (
-        -- partition by st.local_student_id, g.nj_intervention_subject
-        -- order by s.gsa_id desc
-        -- ) as rn_bucket,
-        -- from {{ ref("stg_illuminate__group_student_aff") }} as s
-        -- inner join
-        -- {{ ref("stg_illuminate__groups") }} as g
-        -- on s.group_id = g.group_id
-        -- and g.nj_intervention_tier = 2
-        -- and g.group_name in (
-        -- 'Bucket 2 - Math - HS',
-        -- 'Bucket 2 - Reading - HS',
-        -- 'Bucket 2 - Reading - Gr5-8',
-        -- 'Bucket 2 - Math - Gr5-8',
-        -- 'Bucket 2 - Reading - GrK-4',
-        -- 'Bucket 2 - Math - GrK-4'
-        -- )
-        -- inner join
-        -- {{ ref("stg_illuminate__students") }} as st on s.student_id = st.student_id
-        -- where
-        -- s.end_date is null
-        -- or s.end_date > current_date('{{ var("local_timezone") }}')
         select
             _dbt_source_relation,
             studentid,
@@ -81,6 +56,7 @@ with
                 when testperformancelevel > 3
                 then 'At/Above'
             end as njsla_proficiency,
+            if(testperformancelevel > 3, true, false) as is_proficient,
         from {{ ref("stg_pearson__njsla") }}
     ),
 
@@ -108,6 +84,35 @@ with
             end as iready_proficiency,
         from {{ ref("base_iready__diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
+    ),
+
+    cur_yr_iready as (
+        select
+            academic_year_int as academic_year,
+            student_id as student_number,
+            subject,
+            projected_is_proficient_typical as is_proficient,
+        from {{ ref("base_iready__diagnostic_results") }}
+        where
+            test_round = 'BOY'
+            and rn_subj_round = 1
+            and projected_sublevel_number_typical is not null
+            and student_grade_int between 3 and 8
+
+        union all
+
+        select
+            academic_year_int as academic_year,
+            student_id as student_number,
+            subject,
+
+            if(level_number_with_typical >= 4, true, false) as is_proficient,
+        from {{ ref("base_iready__diagnostic_results") }}
+        where
+            test_round = 'BOY'
+            and rn_subj_round = 1
+            and sublevel_number_with_typical is not null
+            and student_grade_int between 0 and 2
     ),
 
     iready_exempt as (
@@ -203,9 +208,17 @@ select
     ) as assessment_dashboard_join,
 
     case
-        when co.grade_level < 4 and pr.iready_proficiency = 'At/Above'
+        when
+            co.academic_year = 2023
+            and co.grade_level < 4
+            and pr.iready_proficiency = 'At/Above'
         then 'Bucket 1'
-        when co.grade_level >= 4 and py.njsla_proficiency = 'At/Above'
+        when
+            co.academic_year = 2023
+            and co.grade_level >= 4
+            and py.njsla_proficiency = 'At/Above'
+        then 'Bucket 1'
+        when co.academic_year > 2023 and coalesce(py.is_proficient, ci.is_proficient)
         then 'Bucket 1'
         when nj.iready_subject is not null
         then 'Bucket 2'
@@ -274,4 +287,9 @@ left join
     and co.student_number = db.mclass_student_number
     and sj.iready_subject = db.iready_subject
     and db.rn_year = 1
+left join
+    cur_yr_iready as ci
+    on co.student_number = ci.student_number
+    and co.academic_year = ci.academic_year
+    and sj.iready_subject = ci.subject
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}
