@@ -116,27 +116,6 @@ with
             level_number_with_typical as level,
 
             overall_scale_score + annual_typical_growth_measure as scale_score,
-            -- case
-            -- when student_grade_int = 0 and level_number_with_typical = 5
-            -- then 1
-            -- when student_grade_int != 0 and level_number_with_typical >= 4
-            -- then 1
-            -- else 0
-            -- end as is_proficient_int,
-            -- case
-            -- when student_grade_int = 0 and level_number_with_typical = 4
-            -- then 1
-            -- when student_grade_int != 0 and level_number_with_typical = 3
-            -- then 1
-            -- else 0
-            -- end as is_approaching_int,
-            -- case
-            -- when student_grade_int = 0 and level_number_with_typical = 3
-            -- then 1
-            -- when student_grade_int != 0 and level_number_with_typical < 3
-            -- then 1
-            -- else 0
-            -- end as is_below_int,
             if(level_number_with_typical >= 4, 1, 0) as is_proficient_int,
             if(level_number_with_typical = 3, 1, 0) as is_approaching_int,
             if(level_number_with_typical < 3, 1, 0) as is_below_int,
@@ -169,6 +148,7 @@ with
             coalesce(st.level, ir.level) as performance_level,
             coalesce(st.scale_score, ir.scale_score) as scale_score,
             st.scale_score as scale_score_state,
+            ir.scale_score as scale_score_iready,
             coalesce(st.is_proficient_int, ir.is_proficient_int) as is_proficient_int,
             st.is_proficient_int as is_proficient_int_state,
             coalesce(
@@ -186,8 +166,8 @@ with
                     and st.is_approaching_int = 1
                 then true
                 when
-                    coalesce(st.assessment_type, ir.assessment_type) = 'i-Ready'
-                    and co.grade_level = 3
+                    coalesce(st.assessment_type, ir.assessment_type) = 'i-Ready BOY'
+                    and co.grade_level <= 3
                     and ir.is_approaching_int = 1
                 then true
                 else false
@@ -233,6 +213,7 @@ with
             ir.level as performance_level,
             ir.scale_score,
             null as scale_score_state,
+            null as scale_score_iready,
             ir.is_proficient_int,
             null as is_proficient_int_state,
             ir.is_approaching_int,
@@ -368,7 +349,18 @@ select
                 null
             )
         then 'Bucket 2'
-    end as student_tier,
+        when
+            r.grade_level < 4
+            and g.n_bubble_to_move >= if(
+                r.is_bucket2_eligible,
+                rank() over (
+                    partition by r.school, r.grade_level, r.subject
+                    order by if(r.is_bucket2_eligible, r.scale_score, null) desc
+                ),
+                null
+            )
+        then 'Bucket 2'
+    end as student_tier_calculated,
 from roster as r
 left join
     school_grade_goals as g
@@ -376,3 +368,5 @@ left join
     and r.school = g.school
     and r.subject = g.subject
     and r.grade_level = g.grade_level
+
+where r.academic_year = 2024 and r.school = 'Life' and r.grade_level < 4
