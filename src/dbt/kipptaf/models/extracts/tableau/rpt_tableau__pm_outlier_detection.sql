@@ -53,8 +53,8 @@ with
             {{ ref("stg_reporting__terms") }} as rt
             on od.academic_year = rt.academic_year
             and od.form_term = rt.code
-            and rt.type = 'PM'
-            and rt.name like '%Coach ETR%'
+            and rt.type in ('PM', 'PMS')
+            and rt.name = 'Coach ETR'
     ),
 
     score_aggs as (
@@ -78,7 +78,7 @@ with
             and obs.observed_at_timestamp
             between srh.work_assignment_start_timestamp
             and srh.work_assignment_end_timestamp
-            and obs.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+            and obs.rubric_name = 'Coach ETR'
         group by
             obs.employee_number,
             obs.observer_employee_number,
