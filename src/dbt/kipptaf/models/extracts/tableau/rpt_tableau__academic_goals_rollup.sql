@@ -1,4 +1,13 @@
 with
+    subject as (
+        select
+            subject,
+            if(
+                subject = 'Reading', 'Text Study', 'Mathematics'
+            ) as illuminate_subject_area,
+        from unnest(['Reading', 'Math']) as subject
+    ),
+
     grade_bands as (
         select 'K' as band, 0 as grade_level,
         union all
@@ -140,7 +149,15 @@ with
 
             gb.band,
 
-            subject,
+            s.subject,
+
+            cc.sections_section_number as course_section,
+            cc.teacher_lastfirst as course_teacher_name,
+
+            hr.sections_section_number as homeroom_section,
+            hr.teacher_lastfirst as homeroom_teacher_name,
+
+            if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             coalesce(
                 st.assessment_type, ir.assessment_type, 'Untested'
@@ -173,24 +190,41 @@ with
                 else false
             end as is_bucket2_eligible,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join unnest(['Reading', 'Math']) as subject
+        cross join subject as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
         left join
             state_test_union as st
             on co.student_number = st.student_number
             and co.academic_year = st.academic_year_plus
-            and subject = st.subject
+            and s.subject = st.subject
         left join
             iready as ir
             on co.student_number = ir.student_number
             and co.academic_year = ir.academic_year
-            and subject = ir.subject
+            and s.subject = ir.subject
         inner join
             {{ ref("int_reporting__student_filters") }} as sf
             on co.academic_year = sf.academic_year
             and co.student_number = sf.student_number
-            and subject = sf.iready_subject
+            and s.subject = sf.iready_subject
             and not sf.is_exempt_state_testing
+        left join
+            {{ ref("base_powerschool__course_enrollments") }} as cc
+            on co.studentid = cc.cc_studentid
+            and co.yearid = cc.cc_yearid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
+            and s.illuminate_subject_area = cc.illuminate_subject_area
+            and not cc.is_dropped_section
+            and cc.rn_student_year_illuminate_subject_desc = 1
+        left join
+            {{ ref("base_powerschool__course_enrollments") }} as hr
+            on co.studentid = hr.cc_studentid
+            and co.yearid = hr.cc_yearid
+            and co.schoolid = hr.cc_schoolid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
+            and hr.cc_course_number = 'HR'
+            and not hr.is_dropped_section
+            and hr.rn_course_number_year = 1
         where co.rn_year = 1 and co.grade_level between 3 and 8 and co.enroll_status = 0
 
         union all
@@ -207,7 +241,15 @@ with
 
             gb.band,
 
-            subject,
+            s.subject,
+
+            cc.sections_section_number as course_section,
+            cc.teacher_lastfirst as course_teacher_name,
+
+            hr.sections_section_number as homeroom_section,
+            hr.teacher_lastfirst as homeroom_teacher_name,
+
+            if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             coalesce(ir.assessment_type, 'Untested') as benchmark_assessment_type,
             ir.level as performance_level,
@@ -221,19 +263,36 @@ with
             if(ir.scale_score is not null, 1, 0) as is_tested_int,
             if(ir.is_approaching_int = 1, true, false) as is_bucket2_eligible,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join unnest(['Reading', 'Math']) as subject
+        cross join subject as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
         left join
             iready as ir
             on co.student_number = ir.student_number
             and co.academic_year = ir.academic_year
-            and subject = ir.subject
+            and s.subject = ir.subject
         inner join
             {{ ref("int_reporting__student_filters") }} as sf
             on co.academic_year = sf.academic_year
             and co.student_number = sf.student_number
-            and subject = sf.iready_subject
+            and s.subject = sf.iready_subject
             and not sf.is_exempt_state_testing
+        left join
+            {{ ref("base_powerschool__course_enrollments") }} as cc
+            on co.studentid = cc.cc_studentid
+            and co.yearid = cc.cc_yearid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
+            and s.illuminate_subject_area = cc.illuminate_subject_area
+            and not cc.is_dropped_section
+            and cc.rn_student_year_illuminate_subject_desc = 1
+        left join
+            {{ ref("base_powerschool__course_enrollments") }} as hr
+            on co.studentid = hr.cc_studentid
+            and co.yearid = hr.cc_yearid
+            and co.schoolid = hr.cc_schoolid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
+            and hr.cc_course_number = 'HR'
+            and not hr.is_dropped_section
+            and hr.rn_course_number_year = 1
         where co.rn_year = 1 and co.grade_level between 0 and 2 and co.enroll_status = 0
     ),
 
