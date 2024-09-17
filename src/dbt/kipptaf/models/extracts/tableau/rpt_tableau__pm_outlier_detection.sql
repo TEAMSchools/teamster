@@ -53,7 +53,7 @@ with
             {{ ref("stg_reporting__terms") }} as rt
             on od.academic_year = rt.academic_year
             and od.form_term = rt.code
-            and rt.type IN ('PM','PMS')
+            and rt.type in ('PM', 'PMS')
             and rt.name like '%Coach%'
     ),
 
