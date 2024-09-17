@@ -1,0 +1,29 @@
+name: uv Dependendabot Check
+
+on:
+  workflow_dispatch: null
+  pull_request:
+    paths:
+      - requirements.txt
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  test_requirements:
+    runs-on: ubuntu-latest
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      # https://github.com/astral-sh/setup-uv
+      - name: Python setup uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install Python 3.12
+        run: uv python install 3.12
+
+      - name: Install requirements.txt
+        run: uv pip install -r requirements.txt --override overrides.txt --no-cache-dir
