@@ -42,12 +42,12 @@ assets:
       cron_schedule: 0 6 * * *
   - name: KIPP Forward Data Suite
     deps:
-      - [kipptaf, tableau, rpt_tableau__kfwd_career_launch_survey]
       - [kipptaf, tableau, rpt_tableau__kfwd_contact_notes]
       - [kipptaf, tableau, rpt_tableau__kfwd_dashboard]
       - [kipptaf, tableau, rpt_tableau__kfwd_persistence]
       - [kipptaf, tableau, rpt_tableau__kfwd_spi]
       - [kipptaf, tableau, rpt_tableau__kfwd_verification]
+      # - [kipptaf, tableau, rpt_tableau__kfwd_career_launch_survey]
     metadata:
       id: ad72c094-ad35-48f4-86a0-9d2e5b53f59a
       cron_schedule:
@@ -158,7 +158,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
     metadata:
       id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
-      cron_schedule: 0 8 * * 2
+      cron_schedule: 30 7 * * 2
   - name: DDI Suite
     deps:
       - [kipptaf, tableau, rpt_tableau__assessment_dashboard]
@@ -168,11 +168,12 @@ assets:
       cron_schedule:
         - 0 1 * * *
         - 0 18 * * *
-  # - name: APM Dashboard
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__iready_apm]
-  #   metadata:
-  #     id: eb91563d-760b-4f2d-b9f8-65437fe22242
+  - name: APM Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__iready_apm]
+    metadata:
+      id: eb91563d-760b-4f2d-b9f8-65437fe22242
+      cron_schedule: 0 6 * * *
   # - name: Coaching Conversation Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]

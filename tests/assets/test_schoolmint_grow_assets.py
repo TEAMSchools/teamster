@@ -274,4 +274,4 @@ def test_asset_schoolmint_grow_observations():
 
 
 def test_asset_schoolmint_grow_assignments():
-    _test_asset(asset=assignments, partition_key="f|2023-07-31")
+    _test_asset(asset=assignments, partition_key="f|2024-09-16")

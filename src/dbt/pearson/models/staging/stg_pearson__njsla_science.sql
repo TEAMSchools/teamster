@@ -117,11 +117,11 @@ select
     case
         testperformancelevel
         when 4
-        then 'Met Expectations'
+        then 'Exceeded Expectations'
         when 3
-        then 'Approached Expectations'
+        then 'Met Expectations'
         when 2
-        then 'Partially Met Expectations'
+        then 'Approached Expectations'
         when 1
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
