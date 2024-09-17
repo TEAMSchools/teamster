@@ -219,7 +219,7 @@ with
             ir.is_approaching_int,
             ir.is_below_int,
             if(ir.scale_score is not null, 1, 0) as is_tested_int,
-            null as is_bucket2_eligible,
+            if(ir.is_approaching_int = 1, true, false) as is_bucket2_eligible,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         cross join unnest(['Reading', 'Math']) as subject
         inner join grade_bands as gb on co.grade_level = gb.grade_level
@@ -327,14 +327,24 @@ select
     g.pct_to_grow,
     g.percent_with_growth_met,
 
-    if(
-        r.is_bucket2_eligible,
-        rank() over (
-            partition by r.school, r.grade_level, r.subject
-            order by if(r.is_bucket2_eligible, r.scale_score_state, null) desc
-        ),
-        null
-    ) as scale_score_rank,
+    case
+        when r.is_bucket2_eligible and r.grade_level >= 4
+        then
+            rank() over (
+                partition by r.school, r.grade_level, r.subject
+                order by if(r.is_bucket2_eligible, r.scale_score_state, null) desc
+            )
+        when r.is_bucket2_eligible and r.grade_level < 4
+        then
+            if(
+                r.is_bucket2_eligible,
+                rank() over (
+                    partition by r.school, r.grade_level, r.subject
+                    order by if(r.is_bucket2_eligible, r.scale_score, null) desc
+                ),
+                null
+            )
+    end as scale_score_rank,
     case
         when r.is_proficient_int = 1
         then 'Bucket 1'
