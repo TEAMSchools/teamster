@@ -66,15 +66,11 @@ gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid-1
 # install pdm dependencies
 pdm install --frozen-lockfile
 
-# install dbt deps and generate manifests
-# trunk-ignore(shellcheck/SC2312)
-find ./src/dbt/ -maxdepth 2 -name "dbt_project.yml" -print0 |
-  while IFS= read -r -d "" file; do
-    directory=$(dirname "${file}")
-    project_name=$(basename "${directory}")
-
-    pdm run dbt "${project_name}" deps && pdm run dbt "${project_name}" parse
-  done
-
-# install dbt cloud cli
-# sudo pip install dbt
+pdm run dagster-dbt project prepare-and-package \
+  --file src/teamster/code_locations/kippcamden/__init__.py
+pdm run dagster-dbt project prepare-and-package \
+  --file src/teamster/code_locations/kippmiami/__init__.py
+pdm run dagster-dbt project prepare-and-package \
+  --file src/teamster/code_locations/kippnewark/__init__.py
+pdm run dagster-dbt project prepare-and-package \
+  --file src/teamster/code_locations/kipptaf/__init__.py
