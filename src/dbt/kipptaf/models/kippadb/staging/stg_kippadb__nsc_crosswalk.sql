@@ -1,5 +1,6 @@
 select
     *,
+
     row_number() over (
         partition by account_id order by college_name_nsc desc
     ) as rn_account,
