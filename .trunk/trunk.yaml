@@ -11,7 +11,7 @@ lint:
     - pyright@1.1.380
     - actionlint@1.7.1
     - git-diff-check
-    - gitleaks@8.19.1
+    - gitleaks@8.19.2
     - hadolint@2.12.0
     - isort@5.13.2
     - markdownlint@0.41.0
