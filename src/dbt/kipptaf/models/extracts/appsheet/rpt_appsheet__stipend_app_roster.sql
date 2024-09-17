@@ -1,4 +1,37 @@
 with
+    ktaf_approvers as (
+        select
+            sr1.department_home_name,
+            sr1.report_to_preferred_name_lastfirst,
+            coalesce(
+                case
+                    when sr2.job_title like '%Chief%Officer%'
+                    then max(sr1.report_to_employee_number)
+                    when sr2.job_title like '%Chief%Strategist%'
+                    then max(sr1.report_to_employee_number)
+                end,
+                case
+                    when sr2.job_title like '%President%'
+                    then max(sr1.report_to_employee_number)
+                end
+            ) as ktaf_approver,
+        from {{ ref("base_people__staff_roster") }} as sr1
+        left join
+            {{ ref("base_people__staff_roster") }} as sr2
+            on sr1.report_to_employee_number = sr2.employee_number
+        where
+            sr1.business_unit_home_code = 'KIPP_TAF'
+            and sr2.job_title not in ('Chief Executive Officer', 'Chief of Staff')
+            and sr1.assignment_status in ('Active', 'Leave')
+            and (sr2.job_title like '%Chief%' or sr2.job_title like '%President%')
+            and sr1.job_title not like '%Chief%'
+            and sr1.department_home_name <> 'Executive'
+        group by
+            sr1.department_home_name,
+            sr1.report_to_preferred_name_lastfirst,
+            sr2.job_title
+    ),
+
     mdo as (
         select
             lc.region,
@@ -99,45 +132,46 @@ with
     )
 
 select
-    *,
+    r.*,
     case
         /* School-based non-operations teammate*/
-        when route = 'School' and department_home_name <> 'Operations'
-        then sl_employee_number
+        when r.route = 'School' and r.department_home_name <> 'Operations'
+        then r.sl_employee_number
         /* School-based operations teammate*/
-        when route = 'School' and department_home_name = 'Operations'
-        then dso_employee_number
+        when r.route = 'School' and r.department_home_name = 'Operations'
+        then r.dso_employee_number
         /* Non-KTAF teammate with KTAF manager*/
-        when route = 'MDSO'
-        then mdso_employee_number
+        when r.route = 'MDSO'
+        then r.mdso_employee_number
         /* Non-KTAF teammate with non-school location*/
-        when route = 'MDO'
-        then mdo_employee_number
+        when r.route = 'MDO'
+        then r.mdo_employee_number
         /* KTAF teammate (assigned according to submitter in app)*/
-        when route = 'KTAF'
-        then null
+        when r.route = 'KTAF'
+        then k.ktaf_approver
         /* Outliers (assigned according to submitter in app)*/
-        when route = 'No Route'
+        when r.route = 'No Route'
         then null
     end as first_approver_employee_number,
     case
         /* School-based non-operations teammate*/
-        when route = 'School' and department_home_name <> 'Operations'
-        then head_of_school_employee_number
+        when r.route = 'School' and r.department_home_name <> 'Operations'
+        then r.head_of_school_employee_number
         /* School-based operations teammate*/
-        when route = 'School' and department_home_name = 'Operations'
-        then mdso_employee_number
+        when r.route = 'School' and r.department_home_name = 'Operations'
+        then r.mdso_employee_number
         /* Non-KTAF teammate with KTAF manager*/
-        when route = 'MDSO'
-        then mdso_employee_number
+        when r.route = 'MDSO'
+        then r.mdso_employee_number
         /* Non-KTAF teammate with non-school location*/
-        when route = 'MDO'
-        then mdo_employee_number
+        when r.route = 'MDO'
+        then r.mdo_employee_number
         /* KTAF teammate (assigned according to submitter in app)*/
-        when route = 'KTAF'
-        then null
+        when r.route = 'KTAF'
+        then k.ktaf_approver
         /* Outliers (assigned according to submitter in app)*/
-        when route = 'No Route'
+        when r.route = 'No Route'
         then null
     end as second_approver,
-from roster
+from roster as r
+left join ktaf_approvers as k on r.department_home_name = k.department_home_name
