@@ -8,6 +8,7 @@ from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kippcamden import (
     CODE_LOCATION,
+    DBT_PROJECT,
     _dbt,
     couchdrop,
     datagun,
@@ -67,7 +68,7 @@ defs = Definitions(
     resources={
         "db_bigquery": BIGQUERY_RESOURCE,
         "db_powerschool": DB_POWERSCHOOL,
-        "dbt_cli": get_dbt_cli_resource(_dbt.dbt_project),
+        "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
         "gcs": GCS_RESOURCE,
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),

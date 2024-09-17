@@ -1,6 +1,5 @@
-from teamster.code_locations.kipptaf._dbt.assets import assets, dbt_project
+from teamster.code_locations.kipptaf._dbt.assets import assets
 
 __all__ = [
     "assets",
-    "dbt_project",
 ]
