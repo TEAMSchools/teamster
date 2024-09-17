@@ -2,6 +2,7 @@ with
     ktaf_approvers as (
         select
             sr1.department_home_name,
+            sr1.report_to_preferred_name_lastfirst,
             coalesce(
                 case
                     when sr2.job_title like '%Chief%Officer%'
@@ -14,7 +15,6 @@ with
                     then max(sr1.report_to_employee_number)
                 end
             ) as ktaf_approver,
-            sr1.report_to_preferred_name_lastfirst,
         from `kipptaf_people.base_people__staff_roster` as sr1
         left join
             `kipptaf_people.base_people__staff_roster` as sr2
@@ -31,7 +31,6 @@ with
             sr1.department_home_name,
             sr1.report_to_preferred_name_lastfirst,
             sr2.job_title
-        order by department_home_name
     ),
 
     mdo as (
