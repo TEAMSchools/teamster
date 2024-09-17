@@ -1,1 +1,1 @@
-select id, name, email, phone, from {{ source("kippadb", "user") }}
+select id, `name`, email, phone, from {{ source("kippadb", "user") }}
