@@ -15,16 +15,15 @@ with
                     then max(sr1.report_to_employee_number)
                 end
             ) as ktaf_approver,
-        from {{ ref('base_people__staff_roster') }} as sr1
+        from {{ ref("base_people__staff_roster") }} as sr1
         left join
-            {{ ref('base_people__staff_roster') }} as sr2
+            {{ ref("base_people__staff_roster") }} as sr2
             on sr1.report_to_employee_number = sr2.employee_number
         where
             sr1.business_unit_home_code = 'KIPP_TAF'
-            and sr2.job_title <> 'Chief Executive Officer'
+            and sr2.job_title not in ('Chief Executive Officer', 'Chief of Staff')
             and sr1.assignment_status in ('Active', 'Leave')
             and (sr2.job_title like '%Chief%' or sr2.job_title like '%President%')
-            and sr2.job_title <> 'Chief of Staff'
             and sr1.job_title not like '%Chief%'
             and sr1.department_home_name <> 'Executive'
         group by
