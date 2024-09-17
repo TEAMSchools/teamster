@@ -38,4 +38,4 @@ RUN uv pip install \
 # install dbt project
 COPY src/dbt/ ./src/dbt/
 RUN dagster-dbt project prepare-and-package \
-    --file src/teamster/code_locations/"${CODE_LOCATION}"/_dbt/assets.py
+    --file src/teamster/code_locations/"${CODE_LOCATION}"/__init__.py
