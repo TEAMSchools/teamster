@@ -62,20 +62,26 @@ def test_policy() -> None:
     instance = DagsterInstance.ephemeral()
 
     # all 3 downstream materialize on initial run
-    print("\nINITIAL RUN")
     instance.report_runless_asset_event(
         AssetMaterialization(asset_key=upstream_asset.key)
     )
 
     result = evaluate_automation_conditions(
-        defs=[upstream_asset, table_upstream, view, table_downstream], instance=instance
+        defs=[table_upstream, view, table_downstream], instance=instance
     )
 
-    for automation_result in result.results:
-        print(automation_result.asset_key.to_python_identifier())
-        foo(automation_result, 0)
+    # print("\nINITIAL RUN")
+    # for automation_result in result.results:
+    #     print(automation_result.asset_key.to_python_identifier())
+    #     foo(automation_result, 0)
 
     assert result.total_requested == 3
+
+    # materialize requested asset partitions
+    for rap in result._requested_asset_partitions:
+        instance.report_runless_asset_event(
+            AssetMaterialization(asset_key=rap.asset_key, partition=rap.partition_key)
+        )
 
     # tables materialized but view is skipped on subsequent run
     print("\nSUBSEQUENT RUN")
@@ -84,7 +90,7 @@ def test_policy() -> None:
     )
 
     result = evaluate_automation_conditions(
-        defs=[upstream_asset, table_upstream, view, table_downstream],
+        defs=[table_upstream, view, table_downstream],
         instance=instance,
         cursor=result.cursor,
     )
@@ -93,7 +99,6 @@ def test_policy() -> None:
         print(automation_result.asset_key.to_python_identifier())
         foo(automation_result, 0)
 
-    assert result._requested_partitions_by_asset_key.keys() == [
-        table_upstream.key,
-        table_downstream.key,
-    ]
+    assert result._requested_partitions_by_asset_key.keys() == (
+        [table_upstream.key, table_downstream.key]
+    )
