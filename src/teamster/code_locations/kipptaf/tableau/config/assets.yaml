@@ -42,12 +42,12 @@ assets:
       cron_schedule: 0 6 * * *
   - name: KIPP Forward Data Suite
     deps:
-      - [kipptaf, tableau, rpt_tableau__kfwd_career_launch_survey]
       - [kipptaf, tableau, rpt_tableau__kfwd_contact_notes]
       - [kipptaf, tableau, rpt_tableau__kfwd_dashboard]
       - [kipptaf, tableau, rpt_tableau__kfwd_persistence]
       - [kipptaf, tableau, rpt_tableau__kfwd_spi]
       - [kipptaf, tableau, rpt_tableau__kfwd_verification]
+      # - [kipptaf, tableau, rpt_tableau__kfwd_career_launch_survey]
     metadata:
       id: ad72c094-ad35-48f4-86a0-9d2e5b53f59a
       cron_schedule:

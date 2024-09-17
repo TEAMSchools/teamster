@@ -63,6 +63,7 @@ models:
             +materialized: table
     alchemer:
       +schema: alchemer
+      +enabled: false
       staging:
         +materialized: table
     amplify:

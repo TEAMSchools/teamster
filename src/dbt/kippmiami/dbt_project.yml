@@ -74,6 +74,10 @@ models:
         +enabled: false
       stg_powerschool__gpstudentwaiver:
         +enabled: false
+      stg_powerschool__period:
+        +enabled: false
+      stg_powerschool__sced_code_mapping:
+        +enabled: false
   renlearn:
     +schema: renlearn
 
@@ -103,4 +107,12 @@ sources:
       src_powerschool__gradplan:
         +enabled: false
       src_powerschool__gpstudentwaiver:
+        +enabled: false
+      src_powerschool__period:
+        +enabled: false
+      src_powerschool__sced_code_mapping:
+        +enabled: false
+  iready:
+    iready:
+      src_iready__diagnostic_and_instruction:
         +enabled: false
