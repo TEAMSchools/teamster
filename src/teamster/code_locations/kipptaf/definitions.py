@@ -93,7 +93,7 @@ defs = Definitions(
         "adp_wfn": resources.ADP_WORKFORCE_NOW_RESOURCE,
         "airbyte": resources.AIRBYTE_CLOUD_RESOURCE,
         "db_bigquery": BIGQUERY_RESOURCE,
-        "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
+        "dbt_cli": get_dbt_cli_resource(_dbt.dbt_project),
         "dds": resources.DIBELS_DATA_SYSTEM_RESOURCE,
         "fivetran": resources.FIVETRAN_RESOURCE,
         "gcs": GCS_RESOURCE,

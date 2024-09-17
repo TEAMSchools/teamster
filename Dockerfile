@@ -2,6 +2,8 @@
 ARG PYTHON_VERSION=3.12
 FROM python:"${PYTHON_VERSION}"-slim
 
+ARG CODE_LOCATION
+
 # set shell to bash
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -35,3 +37,5 @@ RUN uv pip install \
 
 # install dbt project
 COPY src/dbt/ ./src/dbt/
+RUN dagster-dbt project prepare-and-package \
+    --file src/teamster/code_locations/"${CODE_LOCATION}"/_dbt/assets.py

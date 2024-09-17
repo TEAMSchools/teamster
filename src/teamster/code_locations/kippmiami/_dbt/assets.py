@@ -1,5 +1,6 @@
 import json
-import pathlib
+
+from dagster_dbt import DbtProject
 
 from teamster.code_locations.kippmiami import CODE_LOCATION
 from teamster.libraries.dbt.assets import (
@@ -8,9 +9,9 @@ from teamster.libraries.dbt.assets import (
 )
 from teamster.libraries.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
-manifest = json.loads(
-    s=pathlib.Path(f"src/dbt/{CODE_LOCATION}/target/manifest.json").read_text()
-)
+dbt_project = DbtProject(project_dir=f"src/dbt/{CODE_LOCATION}")
+
+manifest = json.loads(s=dbt_project.manifest_path.read_text())
 
 dagster_dbt_translator = CustomDagsterDbtTranslator(code_location=CODE_LOCATION)
 
