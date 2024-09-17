@@ -25,5 +25,8 @@ jobs:
       - name: Install Python 3.12
         run: uv python install 3.12
 
+      - name: Setup uv venv
+        run: uv venv
+
       - name: Install requirements.txt
         run: uv pip install -r requirements.txt --override overrides.txt --no-cache-dir
