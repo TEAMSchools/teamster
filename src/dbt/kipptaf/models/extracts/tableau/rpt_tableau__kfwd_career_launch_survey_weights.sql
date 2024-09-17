@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 with
     survey_data as (
         select
