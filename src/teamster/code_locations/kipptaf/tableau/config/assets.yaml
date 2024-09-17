@@ -168,11 +168,12 @@ assets:
       cron_schedule:
         - 0 1 * * *
         - 0 18 * * *
-  # - name: APM Dashboard
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__iready_apm]
-  #   metadata:
-  #     id: eb91563d-760b-4f2d-b9f8-65437fe22242
+  - name: APM Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__iready_apm]
+    metadata:
+      id: eb91563d-760b-4f2d-b9f8-65437fe22242
+      cron_schedule: 0 6 * * *
   # - name: Coaching Conversation Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
