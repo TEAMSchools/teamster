@@ -15,9 +15,9 @@ with
                     then max(sr1.report_to_employee_number)
                 end
             ) as ktaf_approver,
-        from `kipptaf_people.base_people__staff_roster` as sr1
+        from {{ ref('base_people__staff_roster') }} as sr1
         left join
-            `kipptaf_people.base_people__staff_roster` as sr2
+            {{ ref('base_people__staff_roster') }} as sr2
             on sr1.report_to_employee_number = sr2.employee_number
         where
             sr1.business_unit_home_code = 'KIPP_TAF'
