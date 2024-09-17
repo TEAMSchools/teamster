@@ -56,6 +56,13 @@ models:
   powerschool:
     +schema: powerschool
     +materialized: table
+    staging:
+      stg_powerschool__period:
+        +enabled: false
+      stg_powerschool__sced_code_mapping:
+        +enabled: false
+      stg_powerschool__u_def_ext_students:
+        +enabled: false
   renlearn:
     +schema: renlearn
     staging:
@@ -83,4 +90,16 @@ sources:
   titan:
     titan:
       src_titan__income_form_data:
+        +enabled: false
+  powerschool:
+    powerschool:
+      src_powerschool__period:
+        +enabled: false
+      src_powerschool__sced_code_mapping:
+        +enabled: false
+      src_powerschool__u_def_ext_students:
+        +enabled: false
+  iready:
+    iready:
+      src_iready__diagnostic_and_instruction:
         +enabled: false
