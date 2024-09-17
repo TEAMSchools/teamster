@@ -1,62 +1,97 @@
 from dagster import (
+    AssetMaterialization,
     AutomationCondition,
     DagsterInstance,
     asset,
     evaluate_automation_conditions,
-    materialize,
+)
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationResult,
 )
 
 
-def test_policy_blank_slate() -> None:
-    @asset()
-    def upstream_asset() -> None:
-        return
+@asset()
+def upstream_asset() -> None:
+    return
 
-    @asset(
-        deps=[upstream_asset],
-        automation_condition=(
-            AutomationCondition.eager() | AutomationCondition.code_version_changed()
-        ),
+
+@asset(
+    deps=[upstream_asset],
+    automation_condition=(
+        AutomationCondition.eager() | AutomationCondition.code_version_changed()
+    ),
+)
+def table_upstream() -> None:
+    return
+
+
+@asset(
+    deps=[table_upstream],
+    automation_condition=AutomationCondition.newly_missing()
+    | AutomationCondition.code_version_changed(),
+)
+def view() -> None:
+    return
+
+
+@asset(
+    deps=[view],
+    automation_condition=(
+        AutomationCondition.eager() | AutomationCondition.code_version_changed()
+    ),
+)
+def table_downstream() -> None:
+    return
+
+
+def foo(automation_result: AutomationResult, depth: int):
+    depth = depth + 1
+
+    print(
+        ("." * 2 * depth) + automation_result.asset_key.to_python_identifier(),
+        automation_result.condition.name,
+        automation_result.true_subset.value,
     )
-    def table_upstream() -> None:
-        return
 
-    @asset(
-        deps=[table_upstream],
-        automation_condition=AutomationCondition.newly_missing()
-        | AutomationCondition.code_version_changed(),
-    )
-    def view() -> None:
-        return
+    if automation_result.child_results:
+        for result in automation_result.child_results:
+            foo(result, depth)
 
-    @asset(
-        deps=[view],
-        automation_condition=(
-            AutomationCondition.eager() | AutomationCondition.code_version_changed()
-        ),
-    )
-    def table_downstream() -> None:
-        return
 
+def test_policy() -> None:
     instance = DagsterInstance.ephemeral()
 
     # all 3 downstream materialize on initial run
-    materialize(assets=[upstream_asset], instance=instance)
+    print("\nINITIAL RUN")
+    instance.report_runless_asset_event(
+        AssetMaterialization(asset_key=upstream_asset.key)
+    )
 
     result = evaluate_automation_conditions(
-        defs=[table_upstream, view, table_downstream], instance=instance
+        defs=[upstream_asset, table_upstream, view, table_downstream], instance=instance
     )
+
+    for automation_result in result.results:
+        print(automation_result.asset_key.to_python_identifier())
+        foo(automation_result, 0)
 
     assert result.total_requested == 3
 
     # tables materialized but view is skipped on subsequent run
-    materialize(assets=[upstream_asset], instance=instance)
+    print("\nSUBSEQUENT RUN")
+    instance.report_runless_asset_event(
+        AssetMaterialization(asset_key=upstream_asset.key)
+    )
 
     result = evaluate_automation_conditions(
-        defs=[table_upstream, view, table_downstream],
+        defs=[upstream_asset, table_upstream, view, table_downstream],
         instance=instance,
         cursor=result.cursor,
     )
+
+    for automation_result in result.results:
+        print(automation_result.asset_key.to_python_identifier())
+        foo(automation_result, 0)
 
     assert result._requested_partitions_by_asset_key.keys() == [
         table_upstream.key,
