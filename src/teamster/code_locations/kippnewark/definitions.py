@@ -75,7 +75,7 @@ defs = Definitions(
     resources={
         "db_bigquery": BIGQUERY_RESOURCE,
         "db_powerschool": DB_POWERSCHOOL,
-        "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
+        "dbt_cli": get_dbt_cli_resource(_dbt.dbt_project),
         "deanslist": DEANSLIST_RESOURCE,
         "gcs": GCS_RESOURCE,
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
