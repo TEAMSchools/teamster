@@ -390,7 +390,7 @@ select
         when r.is_bucket2_eligible and r.grade_level >= 4
         then
             rank() over (
-                partition by r.school, r.grade_level, r.subject
+                partition by r.academic_year, r.school, r.grade_level, r.subject
                 order by if(r.is_bucket2_eligible, r.scale_score_state, null) desc
             )
         when r.is_bucket2_eligible and r.grade_level < 4
@@ -398,7 +398,7 @@ select
             if(
                 r.is_bucket2_eligible,
                 rank() over (
-                    partition by r.school, r.grade_level, r.subject
+                    partition by r.academic_year, r.school, r.grade_level, r.subject
                     order by if(r.is_bucket2_eligible, r.scale_score, null) desc
                 ),
                 null
@@ -412,7 +412,7 @@ select
             and g.n_bubble_to_move >= if(
                 r.is_bucket2_eligible,
                 rank() over (
-                    partition by r.school, r.grade_level, r.subject
+                    partition by r.academic_year, r.school, r.grade_level, r.subject
                     order by if(r.is_bucket2_eligible, r.scale_score_state, null) desc
                 ),
                 null
@@ -423,7 +423,7 @@ select
             and g.n_bubble_to_move >= if(
                 r.is_bucket2_eligible,
                 rank() over (
-                    partition by r.school, r.grade_level, r.subject
+                    partition by r.academic_year, r.school, r.grade_level, r.subject
                     order by if(r.is_bucket2_eligible, r.scale_score, null) desc
                 ),
                 null
