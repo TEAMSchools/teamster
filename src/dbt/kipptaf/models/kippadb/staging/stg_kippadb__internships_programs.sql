@@ -1,6 +1,6 @@
 select
     id,
-    name as `name`,
+    `name`,
     createdbyid as created_by_id,
     createddate as created_date,
     lastactivitydate as last_activity_date,

@@ -238,3 +238,12 @@ sources:
               - kipptaf
               - kippadb
               - Internships_Programs__c
+      - name: counseling_case
+        identifier: Counseling_Case__c
+        meta:
+          dagster:
+            group: kippadb
+            asset_key:
+              - kipptaf
+              - kippadb
+              - Counseling_Case__c
