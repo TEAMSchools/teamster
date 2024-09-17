@@ -368,5 +368,3 @@ left join
     and r.school = g.school
     and r.subject = g.subject
     and r.grade_level = g.grade_level
-
-where r.academic_year = 2024 and r.school = 'Life' and r.grade_level < 4
