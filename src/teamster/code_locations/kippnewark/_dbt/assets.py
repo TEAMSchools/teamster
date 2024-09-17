@@ -1,17 +1,13 @@
 import json
 
-from dagster_dbt import DbtProject
-
-from teamster.code_locations.kippnewark import CODE_LOCATION
+from teamster.code_locations.kippnewark import CODE_LOCATION, DBT_PROJECT
 from teamster.libraries.dbt.assets import (
     build_dbt_assets,
     build_dbt_external_source_assets,
 )
 from teamster.libraries.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
-dbt_project = DbtProject(project_dir=f"src/dbt/{CODE_LOCATION}")
-
-manifest = json.loads(s=dbt_project.manifest_path.read_text())
+manifest = json.loads(s=DBT_PROJECT.manifest_path.read_text())
 
 dagster_dbt_translator = CustomDagsterDbtTranslator(code_location=CODE_LOCATION)
 
