@@ -24,7 +24,9 @@ with
     intervention_nj as (
         select
             st.local_student_id as student_number,
+
             g.nj_intervention_subject,
+
             row_number() over (
                 partition by st.local_student_id, g.nj_intervention_subject
                 order by s.gsa_id desc
@@ -52,8 +54,11 @@ with
     prev_yr_state_test as (
         select
             localstudentidentifier,
-            safe_cast(statestudentidentifier as string) as statestudentidentifier,
+
+            cast(statestudentidentifier as string) as statestudentidentifier,
+
             academic_year + 1 as academic_year_plus,
+
             case
                 when `subject` like 'English Language Arts%'
                 then 'Text Study'
@@ -61,6 +66,7 @@ with
                 then 'Mathematics'
                 else `subject`
             end as `subject`,
+
             case
                 when testperformancelevel < 3
                 then 'Below/Far Below'
