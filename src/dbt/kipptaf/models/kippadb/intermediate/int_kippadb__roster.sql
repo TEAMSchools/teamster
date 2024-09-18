@@ -11,6 +11,7 @@ with
             se.grade_level as exit_grade_level,
             se.exitdate as exit_date,
             se.exitcode as exit_code,
+            se.enroll_status as powerschool_enroll_status,
             se._dbt_source_relation as exit_db_name,
             se.contact_1_name as powerschool_contact_1_name,
             se.contact_1_email_current as powerschool_contact_1_email_current,
@@ -23,6 +24,7 @@ with
             se.is_504 as powerschool_is_504,
 
             os.id as overgrad_students_id,
+            os.graduation_year as overgrad_students_graduation_year,
 
             concat(
                 os.assigned_counselor__last_name,
