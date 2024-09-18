@@ -135,7 +135,6 @@ with
     ),
 
     /* first and second approver assignments that follow set rules */
-
     rule_assignments as (
         select
             r.employee_number,
@@ -171,16 +170,10 @@ with
                     )
                 /* Non-KTAF teammate with KTAF manager*/
                 when r.route = 'MDSO'
-                then
-                    coalesce(
-                        r.mdso_employee_number, r.mdo_employee_number
-                    )
+                then coalesce(r.mdso_employee_number, r.mdo_employee_number)
                 /* Non-KTAF teammate with non-school location*/
                 when r.route = 'MDO'
-                then
-                    coalesce(
-                        r.mdo_employee_number, r.mdso_employee_number
-                    )
+                then coalesce(r.mdo_employee_number, r.mdso_employee_number)
                 /* KTAF teammate (assigned according to submitter in app)*/
                 when r.route = 'KTAF'
                 then r.ktaf_approver
@@ -197,16 +190,10 @@ with
                     )
                 /* Non-KTAF teammate with KTAF manager*/
                 when r.route = 'MDSO'
-                then
-                    coalesce(
-                        r.mdso_employee_number, r.mdo_employee_number
-                    )
+                then coalesce(r.mdso_employee_number, r.mdo_employee_number)
                 /* Non-KTAF teammate with non-school location*/
                 when r.route = 'MDO'
-                then
-                    coalesce(
-                        r.mdo_employee_number, r.mdso_employee_number
-                    )
+                then coalesce(r.mdo_employee_number, r.mdso_employee_number)
                 /* KTAF teammate (assigned according to submitter in app)*/
                 when r.route = 'KTAF'
                 then r.ktaf_approver
