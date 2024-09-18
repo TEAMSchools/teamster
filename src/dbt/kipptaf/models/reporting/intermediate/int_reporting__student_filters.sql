@@ -25,12 +25,8 @@ with
         select
             _dbt_source_relation,
             studentid,
+            academic_year,
 
-            {{
-                teamster_utils.date_to_fiscal_year(
-                    date_field="enter_date", start_month=7, year_source="start"
-                )
-            }} as academic_year,
             if(specprog_name = 'Bucket 2 - ELA', 'Reading', 'Math') as iready_subject,
         from {{ ref("int_powerschool__spenrollments") }}
         where specprog_name in ('Bucket 2 - ELA', 'Bucket 2 - Math')
@@ -39,8 +35,11 @@ with
     prev_yr_state_test as (
         select
             localstudentidentifier,
-            safe_cast(statestudentidentifier as string) as statestudentidentifier,
+
+            cast(statestudentidentifier as string) as statestudentidentifier,
+
             academic_year + 1 as academic_year_plus,
+
             case
                 when `subject` like 'English Language Arts%'
                 then 'Text Study'
@@ -48,6 +47,7 @@ with
                 then 'Mathematics'
                 else `subject`
             end as `subject`,
+
             case
                 when testperformancelevel < 3
                 then 'Below/Far Below'
