@@ -736,6 +736,113 @@ class SSHTunnelForwarder(object):
     # This option affect only `Transport` thread
     daemon_transport = _DAEMON  #: flag SSH transport thread in daemon mode
 
+    def __init__(
+        self,
+        ssh_address_or_host=None,
+        ssh_config_file=SSH_CONFIG_FILE,
+        ssh_host_key=None,
+        ssh_password=None,
+        ssh_pkey=None,
+        ssh_private_key_password=None,
+        ssh_proxy=None,
+        ssh_proxy_enabled=True,
+        ssh_username=None,
+        local_bind_address=None,
+        local_bind_addresses=None,
+        logger=None,
+        mute_exceptions=False,
+        remote_bind_address=None,
+        remote_bind_addresses=None,
+        set_keepalive=5.0,
+        threaded=True,  # old version False
+        compression=None,
+        allow_agent=True,  # look for keys from an SSH agent
+        host_pkey_directories=None,  # look for keys in ~/.ssh
+        *args,
+        **kwargs,  # for backwards compatibility
+    ):
+        self.logger = logger or create_logger()
+
+        self.ssh_host_key = ssh_host_key
+        self.set_keepalive = set_keepalive
+        self._server_list = []  # reset server list
+        self.tunnel_is_up = {}  # handle tunnel status
+        self._threaded = threaded
+        self.is_alive = False
+
+        # Check if deprecated arguments ssh_address or ssh_host were used
+        for deprecated_argument in ["ssh_address", "ssh_host"]:
+            ssh_address_or_host = self._process_deprecated(
+                ssh_address_or_host, deprecated_argument, kwargs
+            )
+        # other deprecated arguments
+        ssh_pkey = self._process_deprecated(ssh_pkey, "ssh_private_key", kwargs)
+
+        self._raise_fwd_exc = (
+            self._process_deprecated(
+                None, "raise_exception_if_any_forwarder_have_a_problem", kwargs
+            )
+            or not mute_exceptions
+        )
+
+        if isinstance(ssh_address_or_host, tuple):
+            check_address(ssh_address_or_host)
+            (ssh_host, ssh_port) = ssh_address_or_host
+        else:
+            ssh_host = ssh_address_or_host
+            ssh_port = kwargs.pop("ssh_port", None)
+
+        if kwargs:
+            raise ValueError("Unknown arguments: {0}".format(kwargs))
+
+        # remote binds
+        self._remote_binds = self._get_binds(
+            remote_bind_address, remote_bind_addresses, is_remote=True
+        )
+        # local binds
+        self._local_binds = self._get_binds(local_bind_address, local_bind_addresses)
+        self._local_binds = self._consolidate_binds(
+            self._local_binds, self._remote_binds
+        )
+
+        (
+            self.ssh_host,
+            self.ssh_username,
+            ssh_pkey,  # still needs to go through _consolidate_auth
+            self.ssh_port,
+            self.ssh_proxy,
+            self.compression,
+        ) = self._read_ssh_config(
+            ssh_host,
+            ssh_config_file,
+            ssh_username,
+            ssh_pkey,
+            ssh_port,
+            ssh_proxy if ssh_proxy_enabled else None,
+            compression,
+            self.logger,
+        )
+
+        (self.ssh_password, self.ssh_pkeys) = self._consolidate_auth(
+            ssh_password=ssh_password,
+            ssh_pkey=ssh_pkey,
+            ssh_pkey_password=ssh_private_key_password,
+            allow_agent=allow_agent,
+            host_pkey_directories=host_pkey_directories,
+            logger=self.logger,
+        )
+
+        check_host(self.ssh_host)
+        check_port(self.ssh_port)
+
+        self.logger.info(
+            "Connecting to gateway: {0}:{1} as user '{2}'".format(
+                self.ssh_host, self.ssh_port, self.ssh_username
+            )
+        )
+
+        self.logger.debug("Concurrent connections allowed: {0}".format(self._threaded))
+
     def local_is_up(self, target):
         """
         Check if a tunnel is up (remote target's host is reachable on TCP
@@ -870,112 +977,6 @@ class SSHTunnelForwarder(object):
                     address_to_str(local_bind_address), address_to_str(remote_address)
                 ),
             )
-
-    def __init__(
-        self,
-        ssh_address_or_host=None,
-        ssh_config_file=SSH_CONFIG_FILE,
-        ssh_host_key=None,
-        ssh_password=None,
-        ssh_pkey=None,
-        ssh_private_key_password=None,
-        ssh_proxy=None,
-        ssh_proxy_enabled=True,
-        ssh_username=None,
-        local_bind_address=None,
-        local_bind_addresses=None,
-        logger=None,
-        mute_exceptions=False,
-        remote_bind_address=None,
-        remote_bind_addresses=None,
-        set_keepalive=5.0,
-        threaded=True,  # old version False
-        compression=None,
-        allow_agent=True,  # look for keys from an SSH agent
-        host_pkey_directories=None,  # look for keys in ~/.ssh
-        *args,
-        **kwargs,  # for backwards compatibility
-    ):
-        self.logger = logger or create_logger()
-
-        self.ssh_host_key = ssh_host_key
-        self.set_keepalive = set_keepalive
-        self._server_list = []  # reset server list
-        self.tunnel_is_up = {}  # handle tunnel status
-        self._threaded = threaded
-        self.is_alive = False
-        # Check if deprecated arguments ssh_address or ssh_host were used
-        for deprecated_argument in ["ssh_address", "ssh_host"]:
-            ssh_address_or_host = self._process_deprecated(
-                ssh_address_or_host, deprecated_argument, kwargs
-            )
-        # other deprecated arguments
-        ssh_pkey = self._process_deprecated(ssh_pkey, "ssh_private_key", kwargs)
-
-        self._raise_fwd_exc = (
-            self._process_deprecated(
-                None, "raise_exception_if_any_forwarder_have_a_problem", kwargs
-            )
-            or not mute_exceptions
-        )
-
-        if isinstance(ssh_address_or_host, tuple):
-            check_address(ssh_address_or_host)
-            (ssh_host, ssh_port) = ssh_address_or_host
-        else:
-            ssh_host = ssh_address_or_host
-            ssh_port = kwargs.pop("ssh_port", None)
-
-        if kwargs:
-            raise ValueError("Unknown arguments: {0}".format(kwargs))
-
-        # remote binds
-        self._remote_binds = self._get_binds(
-            remote_bind_address, remote_bind_addresses, is_remote=True
-        )
-        # local binds
-        self._local_binds = self._get_binds(local_bind_address, local_bind_addresses)
-        self._local_binds = self._consolidate_binds(
-            self._local_binds, self._remote_binds
-        )
-
-        (
-            self.ssh_host,
-            self.ssh_username,
-            ssh_pkey,  # still needs to go through _consolidate_auth
-            self.ssh_port,
-            self.ssh_proxy,
-            self.compression,
-        ) = self._read_ssh_config(
-            ssh_host,
-            ssh_config_file,
-            ssh_username,
-            ssh_pkey,
-            ssh_port,
-            ssh_proxy if ssh_proxy_enabled else None,
-            compression,
-            self.logger,
-        )
-
-        (self.ssh_password, self.ssh_pkeys) = self._consolidate_auth(
-            ssh_password=ssh_password,
-            ssh_pkey=ssh_pkey,
-            ssh_pkey_password=ssh_private_key_password,
-            allow_agent=allow_agent,
-            host_pkey_directories=host_pkey_directories,
-            logger=self.logger,
-        )
-
-        check_host(self.ssh_host)
-        check_port(self.ssh_port)
-
-        self.logger.info(
-            "Connecting to gateway: {0}:{1} as user '{2}'".format(
-                self.ssh_host, self.ssh_port, self.ssh_username
-            )
-        )
-
-        self.logger.debug("Concurrent connections allowed: {0}".format(self._threaded))
 
     @staticmethod
     def _read_ssh_config(
