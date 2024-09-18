@@ -141,7 +141,7 @@ sqlalchemy==2.0.35
 sqlglot[rs]==25.21.3
 sqlglotrs==0.2.12
 sqlparse==0.5.1
-sshtunnel @ git+https://github.com/pahaz/sshtunnel.git@aa7342e55e49529fea020a09ba8f1eed33eb896f
+sshtunnel==0.4.0
 structlog==24.4.0
 tableauserverclient==0.33
 tabulate==0.9.0
