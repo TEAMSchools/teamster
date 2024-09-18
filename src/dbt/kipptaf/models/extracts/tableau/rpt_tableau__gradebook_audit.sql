@@ -342,7 +342,7 @@ with
                 false
             ) as qt_assign_no_course_assignments,
         from grades_and_assignments
-    ),
+    )
 
 select distinct
     _dbt_source_relation,
