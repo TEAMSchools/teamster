@@ -156,6 +156,12 @@ with
             r.campus,
             r.manager_employee_number,
             r.grandmanager_employee_number,
+            r.dso_employee_number,
+            r.sl_employee_number,
+            r.head_of_school_employee_number,
+            r.mdso_employee_number,
+            r.mdo_employee_number,
+            r.ktaf_approver,
             case
                 /* School-based non-operations teammate*/
                 when r.route = 'School' and r.department_home_name <> 'Operations'
@@ -220,8 +226,17 @@ select
     r.worker_termination_date,
     r.route,
     r.campus,
+    r.dso_employee_number,
+    r.sl_employee_number,
+    r.head_of_school_employee_number,
+    r.mdso_employee_number,
+    r.mdo_employee_number,
+    r.ktaf_approver,
+    r.manager_employee_number,
+    r.grandmanager_employee_number,
     r.first_approver_employee_number,
     r.second_approver_employee_number,
+
 from rule_assignments as r
 where
     r.first_approver_employee_number is not null
@@ -250,6 +265,15 @@ select
     r.worker_termination_date,
     r.route,
     r.campus,
+    r.dso_employee_number,
+    r.sl_employee_number,
+    r.head_of_school_employee_number,
+    r.mdso_employee_number,
+    r.mdo_employee_number,
+    r.ktaf_approver,
+    r.manager_employee_number,
+    r.grandmanager_employee_number,
+
     case
         when
             r.first_approver_employee_number is null
