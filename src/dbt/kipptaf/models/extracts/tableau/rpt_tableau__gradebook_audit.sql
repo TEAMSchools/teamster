@@ -351,24 +351,240 @@ select
     school_level,
     schoolid,
     school,
-    student_number,
-    lastfirst,
-    gender,
-    grade_level,
-    enroll_status,
-    ethnicity,
-    lep_status,
-    is_504,
-    is_pathways,
-    iep_status,
-    is_counseling_services,
-    is_student_athlete,
-    tutoring_nj,
-    nj_student_tier,
-    ada,
-    ada_above_or_at_80,
-    advisory,
-    advisor_name,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else student_number
+    end as student_number,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else lastfirst
+    end as lastfirst,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else gender
+    end as gender,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else grade_level
+    end as grade_level,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else enroll_status
+    end as enroll_status,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else ethnicity
+    end as ethnicity,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else lep_status
+    end as lep_status,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else is_504
+    end as is_504,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else is_pathways
+    end as is_pathways,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else iep_status
+    end as iep_status,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else is_counseling_services
+    end as is_counseling_services,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else is_student_athlete
+    end as is_student_athlete,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else tutoring_nj
+    end as tutoring_nj,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else nj_student_tier
+    end as nj_student_tier,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else ada
+    end as ada,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else ada_above_or_at_80
+    end as ada_above_or_at_80,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else advisory
+    end as advisory,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else advisor_name
+    end as advisor_name,
     hos,
     semester,
     `quarter`,
@@ -385,12 +601,84 @@ select
     teacher_name,
     tableau_username,
     exclude_from_gpa,
-    quarter_course_percent_grade_that_matters,
-    quarter_course_grade_points_that_matters,
-    quarter_citizenship,
-    quarter_comment_value,
-    category_quarter_percent_grade,
-    category_quarter_average_all_courses,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else quarter_course_percent_grade_that_matters
+    end as quarter_course_percent_grade_that_matters,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else quarter_course_grade_points_that_matters
+    end as quarter_course_grade_points_that_matters,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else quarter_citizenship
+    end as quarter_citizenship,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else quarter_comment_value
+    end as quarter_comment_value,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else category_quarter_percent_grade
+    end as category_quarter_percent_grade,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else category_quarter_average_all_courses
+    end as category_quarter_average_all_courses,
     week_number_quarter as audit_qt_week_number,
     week_start_monday as audit_start_date,
     week_end_sunday as audit_end_date,
@@ -398,11 +686,71 @@ select
     assignment_category_code as expected_teacher_assign_category_code,
     assignment_category_name as expected_teacher_assign_category_name,
     expectation as audit_category_exp_audit_week_ytd,
-    assignmentid as teacher_assign_id,
-    assignment_name as teacher_assign_name,
-    scoretype as teacher_assign_score_type,
-    totalpointvalue as teacher_assign_max_score,
-    duedate as teacher_assign_due_date,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else assignmentid
+    end as teacher_assign_id,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else assignment_name
+    end as teacher_assign_name,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else scoretype
+    end as teacher_assign_score_type,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else totalpointvalue
+    end as teacher_assign_max_score,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else duedate
+    end as teacher_assign_due_date,
     teacher_assign_count,
     n_students,
     n_late,
@@ -424,14 +772,110 @@ select
     percent_graded_completion_by_assign_id_qt_audit_week,
     qt_teacher_no_missing_assignments,
     qt_teacher_s_total_less_200,
-    date_enrolled as student_course_entry_date,
-    scorepoints as assign_score_raw,
-    score_converted as assign_score_converted,
-    totalpointvalue as assign_max_score,
-    assign_final_score_percent,
-    isexempt as assign_is_exempt,
-    islate as assign_is_late,
-    ismissing as assign_is_missing,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else date_enrolled
+    end as student_course_entry_date,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else scorepoints
+    end as assign_score_raw,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else score_converted
+    end as assign_score_converted,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else totalpointvalue
+    end as assign_max_score,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else assign_final_score_percent
+    end as assign_final_score_percent,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else isexempt
+    end as assign_is_exempt,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else islate
+    end as assign_is_late,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met'
+            )
+        then null
+        else ismissing
+    end as assign_is_missing,
 
     audit_flag_name,
 
