@@ -20,7 +20,6 @@ with
             on c.user_id = u.dl_user_id
             and regexp_extract(c._dbt_source_relation, r'(kipp\w+)_')
             = regexp_extract(u._dbt_source_relation, r'(kipp\w+)_')
-
     ),
 
     commlog_reason as (
