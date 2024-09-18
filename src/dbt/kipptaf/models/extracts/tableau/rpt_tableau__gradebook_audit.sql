@@ -344,7 +344,7 @@ with
         from grades_and_assignments
     )
 
-select
+select distinct
     _dbt_source_relation,
     academic_year,
     region,
