@@ -202,21 +202,29 @@ from rule_assignments as r
 where
     r.first_approver_employee_number is not null
     and r.second_approver_employee_number is not null
+    and r.first_approver_employee_number <> r.employee_number
+    and r.second_approver_employee_number <> r.employee_number
 
-/*exceptions with no route go to manager and manager's manager */
-
+/* exceptions with no route go to manager and manager's manager */
 union all
 
 select
     r.* except (first_approver_employee_number, second_approver_employee_number),
     case
-        when first_approver_employee_number is null then r.manager_employee_number
+        when
+            first_approver_employee_number is null
+            or first_approver_employee_number = employee_number
+        then r.manager_employee_number
     end as first_approver_employee_number,
     case
-        when second_approver_employee_number is null
+        when
+            second_approver_employee_number is null
+            or first_approver_employee_number = employee_number
         then coalesce(r.grandmanager_employee_number, r.manager_employee_number)
     end as second_approver_employee_number,
 from rule_assignments as r
 where
     r.first_approver_employee_number is null
     or r.second_approver_employee_number is null
+    or r.first_approver_employee_number = r.employee_number
+    or r.second_approver_employee_number = r.employee_number
