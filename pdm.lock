@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:aa47064038fa484701b55e9c2e38f38f06c6db3d24edf4b4ff85612482e64701"
+content_hash = "sha256:6e9918eacbdc2a671a475e04067e90a39719f3dea733072e14d48a3f6417fc20"
 
 [[metadata.targets]]
 requires_python = ">=3.12,<3.13"
@@ -2830,13 +2830,14 @@ files = [
 [[package]]
 name = "sshtunnel"
 version = "0.4.0"
-git = "https://github.com/pahaz/sshtunnel.git"
-ref = "master"
-revision = "aa7342e55e49529fea020a09ba8f1eed33eb896f"
 summary = "Pure python SSH tunnels"
 groups = ["default"]
 dependencies = [
     "paramiko>=2.7.2",
+]
+files = [
+    {file = "sshtunnel-0.4.0-py2.py3-none-any.whl", hash = "sha256:98e54c26f726ab8bd42b47a3a21fca5c3e60f58956f0f70de2fb8ab0046d0606"},
+    {file = "sshtunnel-0.4.0.tar.gz", hash = "sha256:e7cb0ea774db81bf91844db22de72a40aae8f7b0f9bb9ba0f666d474ef6bf9fc"},
 ]
 
 [[package]]

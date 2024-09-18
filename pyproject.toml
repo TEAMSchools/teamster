@@ -29,7 +29,6 @@ dependencies = [
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
   "pendulum>=3.0.0",
-  "sshtunnel @ git+https://github.com/pahaz/sshtunnel.git@master",
 ]
 requires-python = ">=3.12,<3.13"
 license = { text = "GPL-3.0-or-later" }
