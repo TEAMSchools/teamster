@@ -27,7 +27,7 @@ powerschool_sis_asset_no_partition_job_schedule = ScheduleDefinition(
     ),
     cron_schedule="0 0 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
-    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 5)},
+    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 10)},
 )
 
 schedules = [
