@@ -136,7 +136,7 @@ def build_powerschool_table_asset(
                 ttype=pathlib.Path,
             )
         finally:
-            ssh_tunnel.stop()
+            ssh_tunnel.stop(force=True)
 
         with file_path.open(mode="rb") as f:
             num_records = sum(block.num_records for block in block_reader(f))
