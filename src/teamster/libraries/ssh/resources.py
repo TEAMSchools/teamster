@@ -5,7 +5,7 @@ from dagster import _check
 from dagster_ssh import SSHResource as DagsterSSHResource
 from paramiko import AutoAddPolicy, SFTPAttributes, SFTPClient, SSHClient
 
-from teamster.libraries.ssh.sshtunnel import SSHTunnelForwarder
+from teamster.libraries.ssh.sshtunnel.sshtunnel import SSHTunnelForwarder
 
 
 class SSHResource(DagsterSSHResource):
@@ -80,12 +80,14 @@ class SSHResource(DagsterSSHResource):
     def get_tunnel(
         self, remote_port, remote_host="localhost", local_port=None
     ) -> SSHTunnelForwarder:
-        if self.tunnel_remote_host is not None:
-            remote_host = self.tunnel_remote_host
-
-        _check.int_param(obj=remote_port, param_name="remote_port")
         _check.str_param(obj=remote_host, param_name="remote_host")
+        _check.int_param(obj=remote_port, param_name="remote_port")
         _check.opt_int_param(obj=local_port, param_name="local_port")
+
+        if self.tunnel_remote_host is not None:
+            remote_bind_address = (self.tunnel_remote_host, remote_port)
+        else:
+            remote_bind_address = (remote_host, remote_port)
 
         if local_port is not None:
             local_bind_address = ("localhost", local_port)
@@ -103,20 +105,20 @@ class SSHResource(DagsterSSHResource):
 
         if self.password and self.password.strip():
             client = SSHTunnelForwarder(
-                self.remote_host,
-                ssh_port=self.remote_port,
+                ssh_address_or_host=self.remote_host,
+                ssh_port=int(self.remote_port),
                 ssh_username=self.username,
                 ssh_password=self.password,
                 ssh_pkey=pkey,
                 ssh_proxy=self._host_proxy,
                 local_bind_address=local_bind_address,
-                remote_bind_address=(remote_host, remote_port),
+                remote_bind_address=remote_bind_address,
                 logger=self._logger,
             )
         else:
             client = SSHTunnelForwarder(
-                self.remote_host,
-                ssh_port=self.remote_port,
+                ssh_address_or_host=self.remote_host,
+                ssh_port=int(self.remote_port),
                 ssh_username=self.username,
                 ssh_pkey=pkey,
                 ssh_proxy=self._host_proxy,
