@@ -99,7 +99,7 @@ paramiko==3.5.0
 parsedatetime==2.6
 pathspec==0.12.1
 pendulum==3.0.0
-pex==2.19.1
+pex==2.20.0
 prompt-toolkit==3.0.36
 proto-plus==1.24.0
 protobuf==4.25.5
