@@ -62,6 +62,8 @@ select
     c.commlog_notes,
     c.commlog_topic,
     c.commlog_date,
+    c.commlog_status,
+    c.commlog_type,
 
     -- CASE statement used here instead of IF in order to maintain NULLs
     case
