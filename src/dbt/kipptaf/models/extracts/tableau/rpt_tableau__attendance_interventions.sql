@@ -5,6 +5,8 @@ with
             c.reason as commlog_reason,
             c.response as commlog_notes,
             c.topic as commlog_topic,
+            c.call_status as commlog_status,
+            c.call_type as commlog_type,
             c._dbt_source_relation,
 
             {{
@@ -59,6 +61,7 @@ select
     c.commlog_staff_name,
     c.commlog_notes,
     c.commlog_topic,
+    c.commlog_date,
 
     -- CASE statement used here instead of IF in order to maintain NULLs
     case
