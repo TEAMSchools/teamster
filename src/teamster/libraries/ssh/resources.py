@@ -5,7 +5,7 @@ from dagster import _check
 from dagster_ssh import SSHResource as DagsterSSHResource
 from paramiko import AutoAddPolicy, SFTPAttributes, SFTPClient, SSHClient
 
-from teamster.libraries.ssh.sshtunnel.sshtunnel import SSHTunnelForwarder
+from teamster.libraries.ssh.sshtunnel.forwarder import SSHTunnelForwarder
 
 
 class SSHResource(DagsterSSHResource):
