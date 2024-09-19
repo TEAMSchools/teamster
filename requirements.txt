@@ -116,7 +116,7 @@ pygments==2.18.0
 pyjwt[crypto]==2.9.0
 pynacl==1.5.0
 pyparsing==3.1.4; python_version > "3.0"
-pyreadline3==3.5.3; sys_platform == "win32" and python_version >= "3.8"
+pyreadline3==3.5.4; sys_platform == "win32" and python_version >= "3.8"
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-slugify==8.0.4
