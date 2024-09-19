@@ -34,7 +34,7 @@ with
             end as subject,
 
             max(g.grade_band_goal) as grade_band_goal,
-        from {{ ref("stg_assessments__academic_goals") }} as g
+        from {{ ref("int_assessments__academic_goals") }} as g
         inner join grade_bands as gb on g.grade_level = gb.grade_level
         group by all
     ),
