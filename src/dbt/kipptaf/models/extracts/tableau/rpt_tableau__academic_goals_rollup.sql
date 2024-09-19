@@ -1,11 +1,12 @@
 with
-    subject as (
+    subject_croswalk as (
         select
-            subject,
+            `subject`,
+
             if(
-                subject = 'Reading', 'Text Study', 'Mathematics'
+                `subject` = 'Reading', 'Text Study', 'Mathematics'
             ) as illuminate_subject_area,
-        from unnest(['Reading', 'Math']) as subject
+        from unnest(['Reading', 'Math']) as `subject`
     ),
 
     grade_bands as (
@@ -26,12 +27,13 @@ with
             gb.band,
 
             case
-                when g.illuminate_subject_area = 'Text Study'
+                g.illuminate_subject_area
+                when 'Text Study'
                 then 'Reading'
-                when g.illuminate_subject_area = 'Mathematics'
+                when 'Mathematics'
                 then 'Math'
                 else g.illuminate_subject_area
-            end as subject,
+            end as `subject`,
 
             max(g.grade_band_goal) as grade_band_goal,
         from {{ ref("int_assessments__academic_goals") }} as g
@@ -41,38 +43,49 @@ with
 
     state_test_union as (
         select
-            'NJSLA' as assessment_type,
-            academic_year,
-            academic_year + 1 as academic_year_plus,
             localstudentidentifier as student_number,
-            case
-                when subject like 'English%'
-                then 'Reading'
-                when subject like 'Algebra%' or subject in ('Mathematics', 'Geometry')
-                then 'Math'
-            end as subject,
+            academic_year,
             testscalescore as scale_score,
-            testperformancelevel as level,
+            testperformancelevel as `level`,
+
+            'NJSLA' as assessment_type,
+
+            academic_year + 1 as academic_year_plus,
+
             if(testperformancelevel >= 4, 1, 0) as is_proficient_int,
             if(testperformancelevel = 3, 1, 0) as is_approaching_int,
             if(testperformancelevel < 3, 1, 0) as is_below_int,
-        from {{ ref("stg_pearson__njsla") }}
-        union all
-        select
-            'FAST' as assessment_type,
-            f.academic_year,
-            f.academic_year + 1 as academic_year_plus,
-            s.student_number,
+
             case
-                when f.assessment_subject = 'English Language Arts'
+                when `subject` like 'English%'
                 then 'Reading'
-                else 'Math'
-            end as subject,
+                when
+                    `subject` like 'Algebra%'
+                    or `subject` in ('Mathematics', 'Geometry')
+                then 'Math'
+            end as `subject`,
+        from {{ ref("stg_pearson__njsla") }}
+
+        union all
+
+        select
+            s.student_number,
+
+            f.academic_year,
             f.scale_score,
-            f.achievement_level_int as level,
+            f.achievement_level_int as `level`,
+
+            'FAST' as assessment_type,
+
+            f.academic_year + 1 as academic_year_plus,
+
             if(f.achievement_level_int >= 3, 1, 0) as is_proficient_int,
             if(f.achievement_level_int = 2, 1, 0) as is_approaching_int,
             if(f.achievement_level_int < 2, 1, 0) as is_below_int,
+
+            if(
+                f.assessment_subject = 'English Language Arts', 'Reading', 'Math'
+            ) as `subject`,
         from {{ ref("stg_fldoe__fast") }} as f
         left join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
@@ -82,18 +95,22 @@ with
             {{ ref("stg_powerschool__students") }} as s
             on suf.studentsdcid = s.dcid
             and {{ union_dataset_join_clause(left_alias="suf", right_alias="s") }}
-        where f.scale_score is not null and f.administration_window = 'PM3'
+        where f.administration_window = 'PM3' and f.scale_score is not null
     ),
 
     iready as (
         select
-            'i-Ready BOY' as assessment_type,
-            academic_year_int as academic_year,
             student_id as student_number,
-            subject,
-            projected_level_number_typical as level,
+            academic_year_int as academic_year,
+            `subject`,
+            projected_level_number_typical as `level`,
+
+            'i-Ready BOY' as assessment_type,
+
             overall_scale_score + annual_typical_growth_measure as scale_score,
+
             if(projected_is_proficient_typical, 1, 0) as is_proficient_int,
+
             case
                 when region = 'KIPP Miami' and projected_level_number_typical = 2
                 then 1
@@ -101,6 +118,7 @@ with
                 then 1
                 else 0
             end as is_approaching_int,
+
             case
                 when region = 'KIPP Miami' and projected_level_number_typical < 2
                 then 1
@@ -118,13 +136,15 @@ with
         union all
 
         select
-            'i-Ready BOY' as assessment_type,
-            academic_year_int as academic_year,
             student_id as student_number,
-            subject,
-            level_number_with_typical as level,
+            academic_year_int as academic_year,
+            `subject`,
+            level_number_with_typical as `level`,
+
+            'i-Ready BOY' as assessment_type,
 
             overall_scale_score + annual_typical_growth_measure as scale_score,
+
             if(level_number_with_typical >= 4, 1, 0) as is_proficient_int,
             if(level_number_with_typical = 3, 1, 0) as is_approaching_int,
             if(level_number_with_typical < 3, 1, 0) as is_below_int,
@@ -190,8 +210,14 @@ with
                 else false
             end as is_bucket2_eligible,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join subject as s
+        cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
+        inner join
+            {{ ref("int_reporting__student_filters") }} as sf
+            on co.academic_year = sf.academic_year
+            and co.student_number = sf.student_number
+            and s.subject = sf.iready_subject
+            and not sf.is_exempt_state_testing
         left join
             state_test_union as st
             on co.student_number = st.student_number
@@ -202,12 +228,6 @@ with
             on co.student_number = ir.student_number
             and co.academic_year = ir.academic_year
             and s.subject = ir.subject
-        inner join
-            {{ ref("int_reporting__student_filters") }} as sf
-            on co.academic_year = sf.academic_year
-            and co.student_number = sf.student_number
-            and s.subject = sf.iready_subject
-            and not sf.is_exempt_state_testing
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
@@ -225,7 +245,7 @@ with
             and hr.cc_course_number = 'HR'
             and not hr.is_dropped_section
             and hr.rn_course_number_year = 1
-        where co.rn_year = 1 and co.grade_level between 3 and 8 and co.enroll_status = 0
+        where co.rn_year = 1 and co.enroll_status = 0 and co.grade_level between 3 and 8
 
         union all
 
@@ -263,7 +283,7 @@ with
             if(ir.scale_score is not null, 1, 0) as is_tested_int,
             if(ir.is_approaching_int = 1, true, false) as is_bucket2_eligible,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join subject as s
+        cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
         left join
             iready as ir
