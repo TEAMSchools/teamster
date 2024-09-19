@@ -60,6 +60,29 @@ with
         from {{ ref("stg_pearson__njsla") }}
     ),
 
+    psat_bucket1 as (
+        select
+            safe_cast(pt.local_student_id as int) as local_student_id,
+
+            max(pt.score) as score,
+            if
+            (
+                pt.score_type = 'sat10_eb_read_write_section_score', 'ELA', 'Math'
+            ) as discipline,
+            if(max(pt.score) >= 420, 'Bucket 1', null) as bucket_1,
+        from {{ ref("int_illuminate__psat_unpivot") }} as pt
+        inner join
+            {{ ref("base_powerschool__student_enrollments") }} as co
+            on safe_cast(pt.local_student_id as int) = co.student_number
+            and pt.academic_year = co.academic_year
+            and co.rn_year = 1
+            and co.grade_level = 10
+        where
+            pt.score_type
+            in ('psat10_math_section_score', 'psat10_eb_read_write_section_score')
+        group by all
+    ),
+
     tutoring_nj as (
         select _dbt_source_relation, studentid, academic_year, 'Math' as iready_subject,
         from {{ ref("int_powerschool__spenrollments") }}
@@ -218,7 +241,12 @@ select
             and co.grade_level >= 4
             and py.njsla_proficiency = 'At/Above'
         then 'Bucket 1'
-        when co.academic_year > 2023 and coalesce(py.is_proficient, ci.is_proficient)
+        when
+            co.academic_year > 2023
+            and co.grade_level between 0 and 8
+            and coalesce(py.is_proficient, ci.is_proficient)
+        then 'Bucket 1'
+        when co.academic_year > 2023 and co.grade_level = 11 and ps.bucket_1 is not null
         then 'Bucket 1'
         when nj.iready_subject is not null
         then 'Bucket 2'
@@ -292,4 +320,8 @@ left join
     on co.student_number = ci.student_number
     and co.academic_year = ci.academic_year
     and sj.iready_subject = ci.subject
+left join
+    psat_bucket1 as ps
+    on co.student_number = ps.local_student_id
+    and sj.discipline = ps.discipline
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}
