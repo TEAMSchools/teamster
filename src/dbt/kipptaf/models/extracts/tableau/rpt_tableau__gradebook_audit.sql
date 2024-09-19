@@ -697,7 +697,11 @@ select distinct
         then null
         else assignment_category_name
     end as expected_teacher_assign_category_name,
-    expectation as audit_category_exp_audit_week_ytd,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else expectation
+    end as audit_category_exp_audit_week_ytd,
     case
         when
             audit_flag_name in (
