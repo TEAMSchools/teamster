@@ -208,10 +208,10 @@ with
     )
 
 select
-    co.academic_year,
     co._dbt_source_relation,
     co.student_number,
     co.studentid,
+    co.academic_year,
     co.gifted_and_talented,
 
     sj.iready_subject,

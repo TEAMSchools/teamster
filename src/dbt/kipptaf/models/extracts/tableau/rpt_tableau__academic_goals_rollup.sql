@@ -43,6 +43,7 @@ with
 
     state_test_union as (
         select
+            _dbt_source_relation,
             localstudentidentifier as student_number,
             academic_year,
             testscalescore as scale_score,
@@ -69,6 +70,7 @@ with
         union all
 
         select
+            s._dbt_source_relation,
             s.student_number,
 
             f.academic_year,
@@ -100,6 +102,7 @@ with
 
     iready as (
         select
+            _dbt_source_relation,
             student_id as student_number,
             academic_year_int as academic_year,
             `subject`,
@@ -136,6 +139,7 @@ with
         union all
 
         select
+            _dbt_source_relation,
             student_id as student_number,
             academic_year_int as academic_year,
             `subject`,
@@ -177,6 +181,11 @@ with
             hr.sections_section_number as homeroom_section,
             hr.teacher_lastfirst as homeroom_teacher_name,
 
+            st.scale_score as scale_score_state,
+            st.is_proficient_int as is_proficient_int_state,
+
+            ir.scale_score as scale_score_iready,
+
             if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             coalesce(
@@ -184,17 +193,16 @@ with
             ) as benchmark_assessment_type,
             coalesce(st.level, ir.level) as performance_level,
             coalesce(st.scale_score, ir.scale_score) as scale_score,
-            st.scale_score as scale_score_state,
-            ir.scale_score as scale_score_iready,
             coalesce(st.is_proficient_int, ir.is_proficient_int) as is_proficient_int,
-            st.is_proficient_int as is_proficient_int_state,
             coalesce(
                 st.is_approaching_int, ir.is_approaching_int
             ) as is_approaching_int,
             coalesce(st.is_below_int, ir.is_below_int) as is_below_int,
+
             if(
                 st.scale_score is not null or ir.scale_score is not null, 1, 0
             ) as is_tested_int,
+
             case
                 when
                     coalesce(st.assessment_type, ir.assessment_type)
@@ -216,18 +224,9 @@ with
             {{ ref("int_reporting__student_filters") }} as sf
             on co.academic_year = sf.academic_year
             and co.student_number = sf.student_number
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}
             and s.subject = sf.iready_subject
             and not sf.is_exempt_state_testing
-        left join
-            state_test_union as st
-            on co.student_number = st.student_number
-            and co.academic_year = st.academic_year_plus
-            and s.subject = st.subject
-        left join
-            iready as ir
-            on co.student_number = ir.student_number
-            and co.academic_year = ir.academic_year
-            and s.subject = ir.subject
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
@@ -245,6 +244,18 @@ with
             and hr.cc_course_number = 'HR'
             and not hr.is_dropped_section
             and hr.rn_course_number_year = 1
+        left join
+            state_test_union as st
+            on co.student_number = st.student_number
+            and co.academic_year = st.academic_year_plus
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
+            and s.subject = st.subject
+        left join
+            iready as ir
+            on co.student_number = ir.student_number
+            and co.academic_year = ir.academic_year
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="ir") }}
+            and s.subject = ir.subject
         where co.rn_year = 1 and co.enroll_status = 0 and co.grade_level between 3 and 8
 
         union all
@@ -269,31 +280,30 @@ with
             hr.sections_section_number as homeroom_section,
             hr.teacher_lastfirst as homeroom_teacher_name,
 
+            null as scale_score_state,
+            null as is_proficient_int_state,
+            null as scale_score_iready,
+
             if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             coalesce(ir.assessment_type, 'Untested') as benchmark_assessment_type,
+
             ir.level as performance_level,
             ir.scale_score,
-            null as scale_score_state,
-            null as scale_score_iready,
             ir.is_proficient_int,
-            null as is_proficient_int_state,
             ir.is_approaching_int,
             ir.is_below_int,
+
             if(ir.scale_score is not null, 1, 0) as is_tested_int,
             if(ir.is_approaching_int = 1, true, false) as is_bucket2_eligible,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
-        left join
-            iready as ir
-            on co.student_number = ir.student_number
-            and co.academic_year = ir.academic_year
-            and s.subject = ir.subject
         inner join
             {{ ref("int_reporting__student_filters") }} as sf
             on co.academic_year = sf.academic_year
             and co.student_number = sf.student_number
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}
             and s.subject = sf.iready_subject
             and not sf.is_exempt_state_testing
         left join
@@ -313,7 +323,13 @@ with
             and hr.cc_course_number = 'HR'
             and not hr.is_dropped_section
             and hr.rn_course_number_year = 1
-        where co.rn_year = 1 and co.grade_level between 0 and 2 and co.enroll_status = 0
+        left join
+            iready as ir
+            on co.student_number = ir.student_number
+            and co.academic_year = ir.academic_year
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="ir") }}
+            and s.subject = ir.subject
+        where co.rn_year = 1 and co.enroll_status = 0 and co.grade_level between 0 and 2
     ),
 
     parameter_set as (
@@ -347,29 +363,23 @@ with
             r.school,
             r.grade_level,
             r.subject,
+
             p.bubble_parameter,
             p.grade_band_goal,
+
             sum(r.is_proficient_int) as n_proficient,
+            sum(r.is_approaching_int) as n_approaching,
+            sum(r.is_below_int) as n_below,
+            sum(r.is_tested_int) as n_tested,
+
             round(avg(r.is_proficient_int), 3) as pct_proficient,
             round(avg(r.is_proficient_int_state), 3) as pct_proficient_state,
-            sum(r.is_approaching_int) as n_approaching,
             round(avg(r.is_approaching_int), 3) as pct_approaching,
-            sum(r.is_below_int) as n_below,
             round(avg(r.is_below_int), 3) as pct_below,
-            sum(r.is_tested_int) as n_tested,
             round(avg(r.is_tested_int), 3) as pct_tested,
+
             ceiling(sum(r.is_approaching_int) * p.bubble_parameter) as n_bubble_to_move,
-            (
-                round(
-                    (
-                        sum(r.is_proficient_int)
-                        + ceiling(sum(r.is_approaching_int) * p.bubble_parameter)
-                    )
-                    / sum(r.is_tested_int),
-                    3
-                )
-            )
-            - round(avg(r.is_proficient_int), 2) as pct_to_grow,
+
             round(
                 (
                     sum(r.is_proficient_int)
@@ -378,6 +388,16 @@ with
                 / sum(r.is_tested_int),
                 3
             ) as percent_with_growth_met,
+
+            round(
+                (
+                    sum(r.is_proficient_int)
+                    + ceiling(sum(r.is_approaching_int) * p.bubble_parameter)
+                )
+                / sum(r.is_tested_int),
+                3
+            )
+            - round(avg(r.is_proficient_int), 2) as pct_to_grow,
         from roster as r
         inner join
             parameter_set as p
@@ -424,6 +444,7 @@ select
                 null
             )
     end as scale_score_rank,
+
     case
         when r.is_proficient_int = 1
         then 'Bucket 1'
