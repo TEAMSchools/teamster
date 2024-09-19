@@ -1,7 +1,10 @@
 select
     *,
-    safe_cast(grade_level as string) as grade_level_string,
-    safe_cast(right(sublevel_name, 1) as numeric) as level,
+
+    cast(grade_level as string) as grade_level_string,
+
+    safe_cast(right(sublevel_name, 1) as int) as `level`,
+
     case
         when destination_system = 'FL' and sublevel_number >= 6
         then true
