@@ -138,7 +138,7 @@ shellingham==1.5.4
 six==1.16.0
 soupsieve==2.6
 sqlalchemy==2.0.35
-sqlglot[rs]==25.21.3
+sqlglot[rs]==25.22.0
 sqlglotrs==0.2.12
 sqlparse==0.5.1
 sshtunnel==0.4.0
