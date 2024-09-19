@@ -773,13 +773,41 @@ select distinct
         then null
         else duedate
     end as teacher_assign_due_date,
-    teacher_assign_count,
-    n_students,
-    n_late,
-    n_exempt,
-    n_missing,
-    n_expected,
-    n_expected_scored,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else teacher_assign_count
+    end as teacher_assign_count,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_students
+    end as n_students,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_late
+    end as n_late,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_exempt
+    end as n_exempt,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_missing
+    end as n_missing,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_expected
+    end as n_expected,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_expected_scored
+    end as n_expected_scored,
 
     case
         when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
