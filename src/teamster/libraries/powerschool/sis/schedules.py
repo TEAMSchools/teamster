@@ -75,7 +75,7 @@ def build_powerschool_sis_asset_schedule(
         try:
             ssh_tunnel.start()
         except Exception as e:
-            ssh_tunnel.stop()
+            ssh_tunnel.stop(force=True)
             raise e
 
         for asset in asset_selection:
