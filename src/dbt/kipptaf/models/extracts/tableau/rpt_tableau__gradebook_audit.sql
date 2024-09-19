@@ -635,7 +635,8 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2'
             )
         then null
         else quarter_citizenship
@@ -648,7 +649,8 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2'
             )
         then null
         else quarter_comment_value
@@ -661,7 +663,8 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2'
             )
         then null
         else category_quarter_percent_grade
@@ -674,7 +677,8 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2'
             )
         then null
         else category_quarter_average_all_courses
@@ -683,9 +687,21 @@ select distinct
     week_start_monday as audit_start_date,
     week_end_sunday as audit_end_date,
     school_week_start_date_lead as audit_due_date,
-    assignment_category_code as expected_teacher_assign_category_code,
-    assignment_category_name as expected_teacher_assign_category_name,
-    expectation as audit_category_exp_audit_week_ytd,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else assignment_category_code
+    end as expected_teacher_assign_category_code,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else assignment_category_name
+    end as expected_teacher_assign_category_name,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else expectation
+    end as audit_category_exp_audit_week_ytd,
     case
         when
             audit_flag_name in (
@@ -694,7 +710,9 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else assignmentid
@@ -707,7 +725,9 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else assignment_name
@@ -720,7 +740,9 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else scoretype
@@ -733,7 +755,9 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else totalpointvalue
@@ -746,30 +770,105 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else duedate
     end as teacher_assign_due_date,
-    teacher_assign_count,
-    n_students,
-    n_late,
-    n_exempt,
-    n_missing,
-    n_expected,
-    n_expected_scored,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else teacher_assign_count
+    end as teacher_assign_count,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_students
+    end as n_students,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_late
+    end as n_late,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_exempt
+    end as n_exempt,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_missing
+    end as n_missing,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_expected
+    end as n_expected,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else n_expected_scored
+    end as n_expected_scored,
 
-    teacher_running_total_assign_by_cat,
-    teacher_avg_score_for_assign_per_class_section_and_assign_id,
-    total_expected_actual_graded_assignments_by_cat_qt_audit_week_all_courses,
-    total_expected_graded_assignments_by_cat_qt_audit_week_all_courses,
-    total_expected_actual_graded_assignments_by_course_cat_qt_audit_week,
-    total_expected_graded_assignments_by_course_cat_qt_audit_week,
-    total_expected_actual_graded_assignments_by_course_assign_id_qt_audit_week,
-    total_expected_graded_assignments_by_course_assign_id_qt_audit_week,
-    percent_graded_completion_by_cat_qt_audit_week_all_courses,
-    percent_graded_completion_by_cat_qt_audit_week,
-    percent_graded_completion_by_assign_id_qt_audit_week,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else teacher_running_total_assign_by_cat
+    end as teacher_running_total_assign_by_cat,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else teacher_avg_score_for_assign_per_class_section_and_assign_id
+    end as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else total_expected_actual_graded_assignments_by_cat_qt_audit_week_all_courses
+    end as total_expected_actual_graded_assignments_by_cat_qt_audit_week_all_courses,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else total_expected_graded_assignments_by_cat_qt_audit_week_all_courses
+    end as total_expected_graded_assignments_by_cat_qt_audit_week_all_courses,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else total_expected_actual_graded_assignments_by_course_cat_qt_audit_week
+    end as total_expected_actual_graded_assignments_by_course_cat_qt_audit_week,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else total_expected_graded_assignments_by_course_cat_qt_audit_week
+    end as total_expected_graded_assignments_by_course_cat_qt_audit_week,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else total_expected_actual_graded_assignments_by_course_assign_id_qt_audit_week
+    end as total_expected_actual_graded_assignments_by_course_assign_id_qt_audit_week,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else total_expected_graded_assignments_by_course_assign_id_qt_audit_week
+    end as total_expected_graded_assignments_by_course_assign_id_qt_audit_week,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else percent_graded_completion_by_cat_qt_audit_week_all_courses
+    end as percent_graded_completion_by_cat_qt_audit_week_all_courses,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else percent_graded_completion_by_cat_qt_audit_week
+    end as percent_graded_completion_by_cat_qt_audit_week,
+    case
+        when audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2'
+        then null
+        else percent_graded_completion_by_assign_id_qt_audit_week
+    end as percent_graded_completion_by_assign_id_qt_audit_week,
+
     qt_teacher_no_missing_assignments,
     qt_teacher_s_total_less_200,
     case
@@ -780,7 +879,8 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2'
             )
         then null
         else date_enrolled
@@ -793,7 +893,9 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else scorepoints
@@ -806,7 +908,9 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else score_converted
@@ -819,7 +923,9 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else totalpointvalue
@@ -832,7 +938,9 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else assign_final_score_percent
@@ -845,7 +953,9 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else isexempt
@@ -858,7 +968,9 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else islate
@@ -871,7 +983,9 @@ select distinct
                 's_percent_graded_completion_by_qt_audit_week_not_100',
                 'w_expected_assign_count_not_met',
                 'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met'
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
             )
         then null
         else ismissing

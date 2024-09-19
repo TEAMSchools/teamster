@@ -123,6 +123,11 @@ select
         then 'CTE graduate'
         when ei.ugrad_enrollment_id is null and ei.cte_enrollment_id is null
         then 'Never enrolled'
+        when
+            ei.ba_status = 'Attending'
+            or ei.aa_status = 'Attending'
+            or ei.cte_status = 'Attending'
+        then 'Attending'
     end as is_graduated,
 
     r.first_name,
