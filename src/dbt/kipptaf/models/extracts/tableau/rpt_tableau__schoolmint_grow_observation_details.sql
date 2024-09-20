@@ -88,7 +88,7 @@ select
     tr.teacher_moves_track,
     tr.student_habits_track,
     tr.number_of_kids,
-
+    sr.assignment_status as current_assignment_status,
     sro.preferred_name_lastfirst as observer_name,
 
     tgl.grade_level as grade_taught,
@@ -133,6 +133,9 @@ left join
     and t.type = od.observation_type_abbreviation
     and od.observed_at between t.start_date and t.end_date
 left join tracks as tr on od.observation_id = tr.observation_id
+left join
+    {{ ref("base_people__staff_roster") }} as sr
+    on od.employee_number = sr.employee_number
 left join
     {{ ref("base_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
@@ -195,7 +198,7 @@ select
     null as teacher_moves_track,
     null as student_habits_track,
     null as number_of_kids,
-
+    sr.assignment_status as current_assignment_status,
     sro.preferred_name_lastfirst as observer_name,
 
     tgl.grade_level as grade_taught,
@@ -219,6 +222,9 @@ left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on srh.employee_number = os.employee_number
     and od.academic_year = os.academic_year
+left join
+    {{ ref("base_people__staff_roster") }} as sr
+    on od.employee_number = sr.employee_number
 left join
     {{ ref("base_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
