@@ -27,23 +27,23 @@ def build_tableau_workbook_refresh_asset(
     cron_schedule: str | list[str] | None = None,
     cron_timezone: str | None = None,
 ):
+    if isinstance(cron_schedule, str):
+        cron_schedule = [cron_schedule]
+
     if cron_schedule is None:
         automation_condition = None
-    elif isinstance(cron_schedule, str):
-        automation_condition = (
-            AutomationCondition.in_latest_time_window()
-            & AutomationCondition.cron_tick_passed(
-                cron_schedule=cron_schedule,
-                cron_timezone=_check.not_none(value=cron_timezone),
-            ).since_last_handled()
-        )
     else:
+        cron_timezone = _check.not_none(value=cron_timezone)
+
         automation_condition = OrAutomationCondition(
             operands=[
-                AutomationCondition.in_latest_time_window()
-                & AutomationCondition.cron_tick_passed(
-                    cron_schedule=cs, cron_timezone=_check.not_none(value=cron_timezone)
-                ).since_last_handled()
+                AutomationCondition.on_cron(
+                    cron_schedule=cs, cron_timezone=cron_timezone
+                ).without(
+                    AutomationCondition.all_deps_updated_since_cron(
+                        cron_schedule=cs, cron_timezone=cron_timezone
+                    )
+                )
                 for cs in cron_schedule
             ]
         )
