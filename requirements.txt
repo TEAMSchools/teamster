@@ -94,7 +94,7 @@ oracledb==2.4.1
 ordered-set==4.1.0
 orjson==3.10.7
 packaging==24.1
-pandas==2.2.2
+pandas==2.2.3
 paramiko==3.5.0
 parsedatetime==2.6
 pathspec==0.12.1
