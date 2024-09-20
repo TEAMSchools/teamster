@@ -235,7 +235,7 @@ with
             school_goal,
             region_goal,
             organization_goal,
-        from {{ ref("stg_assessments__academic_goals") }}
+        from {{ ref("int_assessments__academic_goals") }}
         where state_assessment_code is not null
     )
 
