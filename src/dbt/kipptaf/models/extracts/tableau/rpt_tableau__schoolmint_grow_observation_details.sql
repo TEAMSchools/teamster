@@ -135,7 +135,7 @@ left join
 left join tracks as tr on od.observation_id = tr.observation_id
 left join
     {{ ref("base_people__staff_roster") }} as sr
-    on od.employee_number = sr.employee_number
+    on srh.employee_number = sr.employee_number
 left join
     {{ ref("base_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
@@ -198,6 +198,7 @@ select
     null as teacher_moves_track,
     null as student_habits_track,
     null as number_of_kids,
+
     sr.assignment_status as current_assignment_status,
     sro.preferred_name_lastfirst as observer_name,
 
@@ -224,7 +225,7 @@ left join
     and od.academic_year = os.academic_year
 left join
     {{ ref("base_people__staff_roster") }} as sr
-    on od.employee_number = sr.employee_number
+    on srh.employee_number = sr.employee_number
 left join
     {{ ref("base_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
