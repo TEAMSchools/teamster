@@ -16,10 +16,23 @@ class DibelsDataSystemResource(ConfigurableResource):
         self._log = _check.not_none(value=context.log)
         self._session.headers["Content-Type"] = "application/x-www-form-urlencoded"
 
+        response = self._request(method="GET", url=f"{self._base_url}/user/login")
+
+        soup = BeautifulSoup(markup=response.text, features="html.parser")
+
+        csrf_token = _check.inst(
+            obj=soup.find(name="meta", attrs={"name": "csrf-token"}), ttype=Tag
+        )
+
         self._request(
             method="POST",
             url=f"{self._base_url}/user/login",
-            data={"name": self.username, "password": self.password, "login": "Login"},
+            data={
+                "_token": csrf_token.get(key="content"),
+                "username": self.username,
+                "password": self.password,
+                "login": "Login",
+            },
         )
 
     def _get_url(self, path, *args):
