@@ -332,6 +332,22 @@ with
         where co.rn_year = 1 and co.enroll_status = 0 and co.grade_level between 0 and 2
     ),
 
+    roster_ranked as (
+        select
+            *,
+
+            rank() over (
+                partition by academic_year, school, grade_level, subject
+                order by if(is_bucket2_eligible, scale_score_state, null) desc
+            ) as rank_scale_score_state,
+
+            rank() over (
+                partition by academic_year, school, grade_level, subject
+                order by if(is_bucket2_eligible, scale_score, null) desc
+            ) as rank_scale_score,
+        from roster
+    ),
+
     parameter_set as (
         select
             r.academic_year,
@@ -372,32 +388,11 @@ with
             sum(r.is_below_int) as n_below,
             sum(r.is_tested_int) as n_tested,
 
-            round(avg(r.is_proficient_int), 3) as pct_proficient,
-            round(avg(r.is_proficient_int_state), 3) as pct_proficient_state,
-            round(avg(r.is_approaching_int), 3) as pct_approaching,
-            round(avg(r.is_below_int), 3) as pct_below,
-            round(avg(r.is_tested_int), 3) as pct_tested,
-
-            ceiling(sum(r.is_approaching_int) * p.bubble_parameter) as n_bubble_to_move,
-
-            round(
-                (
-                    sum(r.is_proficient_int)
-                    + ceiling(sum(r.is_approaching_int) * p.bubble_parameter)
-                )
-                / sum(r.is_tested_int),
-                3
-            ) as percent_with_growth_met,
-
-            round(
-                (
-                    sum(r.is_proficient_int)
-                    + ceiling(sum(r.is_approaching_int) * p.bubble_parameter)
-                )
-                / sum(r.is_tested_int),
-                3
-            )
-            - round(avg(r.is_proficient_int), 2) as pct_to_grow,
+            round(avg(r.is_proficient_int), 2) as pct_proficient,
+            round(avg(r.is_proficient_int_state), 2) as pct_proficient_state,
+            round(avg(r.is_approaching_int), 2) as pct_approaching,
+            round(avg(r.is_below_int), 2) as pct_below,
+            round(avg(r.is_tested_int), 2) as pct_tested,
         from roster as r
         inner join
             parameter_set as p
@@ -406,6 +401,21 @@ with
             and r.subject = p.subject
             and r.band = p.band
         group by all
+    ),
+
+    foo as (
+        select *, ceiling(n_approaching * bubble_parameter) as n_bubble_to_move,
+        from school_grade_goals
+    ),
+
+    bar as (
+        select
+            *,
+
+            round(
+                (n_proficient + n_bubble_to_move) / n_tested, 2
+            ) as percent_with_growth_met,
+        from foo
     )
 
 select
@@ -423,26 +433,15 @@ select
     g.n_tested,
     g.pct_tested,
     g.n_bubble_to_move,
-    g.pct_to_grow,
     g.percent_with_growth_met,
+
+    g.percent_with_growth_met - g.pct_proficient as pct_to_grow,
 
     case
         when r.is_bucket2_eligible and r.grade_level >= 4
-        then
-            rank() over (
-                partition by r.academic_year, r.school, r.grade_level, r.subject
-                order by if(r.is_bucket2_eligible, r.scale_score_state, null) desc
-            )
+        then r.rank_scale_score_state
         when r.is_bucket2_eligible and r.grade_level < 4
-        then
-            if(
-                r.is_bucket2_eligible,
-                rank() over (
-                    partition by r.academic_year, r.school, r.grade_level, r.subject
-                    order by if(r.is_bucket2_eligible, r.scale_score, null) desc
-                ),
-                null
-            )
+        then r.rank_scale_score
     end as scale_score_rank,
 
     case
@@ -450,31 +449,19 @@ select
         then 'Bucket 1'
         when
             r.grade_level >= 4
-            and g.n_bubble_to_move >= if(
-                r.is_bucket2_eligible,
-                rank() over (
-                    partition by r.academic_year, r.school, r.grade_level, r.subject
-                    order by if(r.is_bucket2_eligible, r.scale_score_state, null) desc
-                ),
-                null
-            )
+            and r.is_bucket2_eligible
+            and g.n_bubble_to_move >= r.rank_scale_score_state
         then 'Bucket 2'
         when
             r.grade_level < 4
-            and g.n_bubble_to_move >= if(
-                r.is_bucket2_eligible,
-                rank() over (
-                    partition by r.academic_year, r.school, r.grade_level, r.subject
-                    order by if(r.is_bucket2_eligible, r.scale_score, null) desc
-                ),
-                null
-            )
+            and r.is_bucket2_eligible
+            and g.n_bubble_to_move >= r.rank_scale_score
         then 'Bucket 2'
     end as student_tier_calculated,
-from roster as r
+from roster_ranked as r
 left join
-    school_grade_goals as g
+    bar as g
     on r.academic_year = g.academic_year
     and r.school = g.school
-    and r.subject = g.subject
     and r.grade_level = g.grade_level
+    and r.subject = g.subject
