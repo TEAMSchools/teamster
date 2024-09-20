@@ -221,7 +221,7 @@ left join
     and a.assessment_name = c.test_name
     and a.test_code = c.test_code
 left join
-    {{ ref("stg_assessments__academic_goals") }} as g
+    {{ ref("int_assessments__academic_goals") }} as g
     on s.academic_year = g.academic_year
     and s.schoolid = g.school_id
     and a.test_code = g.state_assessment_code
