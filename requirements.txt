@@ -46,7 +46,7 @@ fastavro==1.9.7
 filelock==3.16.1
 fsspec==2024.9.0; python_version >= "3.12"
 github3-py==4.0.1
-google-api-core[grpc]==2.19.2
+google-api-core[grpc]==2.20.0
 google-api-python-client==2.146.0
 google-auth==2.34.0
 google-auth-httplib2==0.2.0
