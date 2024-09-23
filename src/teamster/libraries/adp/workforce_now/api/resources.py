@@ -29,7 +29,6 @@ class AdpWorkforceNowResource(ConfigurableResource):
         self._session.cert = (self.cert_filepath, self.key_filepath)
 
         # authorize client
-        # trunk-ignore(bandit/B106)
         token_dict = self._session.fetch_token(
             token_url="https://accounts.adp.com/auth/oauth/v2/token",
             auth=HTTPBasicAuth(username=self.client_id, password=self.client_secret),
@@ -45,12 +44,10 @@ class AdpWorkforceNowResource(ConfigurableResource):
     @retry(
         stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
     )
-    def _request(self, method, url, **kwargs):
-        response = Response()
+    def _request(self, method, url, **kwargs) -> Response:
+        response = self._session.request(method=method, url=url, **kwargs)
 
         try:
-            response = self._session.request(method=method, url=url, **kwargs)
-
             response.raise_for_status()
             return response
         except HTTPError as e:
