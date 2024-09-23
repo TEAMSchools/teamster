@@ -69,6 +69,7 @@ select
     co.academic_year,
     co.schoolid,
     co.school_abbreviation as school,
+    co.school_name,
     co.region,
     co.grade_level,
     co.enroll_status,

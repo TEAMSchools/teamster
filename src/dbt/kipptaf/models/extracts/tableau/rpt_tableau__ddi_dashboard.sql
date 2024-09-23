@@ -231,7 +231,7 @@ left join
     and co.subject_area = qbl.illuminate_subject_area
     and qbl.qbl is not null
 left join
-    {{ ref("stg_assessments__academic_goals") }} as g
+    {{ ref("int_assessments__academic_goals") }} as g
     on co.schoolid = g.school_id
     and co.grade_level = g.grade_level
     and co.academic_year = g.academic_year
@@ -279,7 +279,7 @@ left join
     and co.response_type_code = qbl.standard_code
     and co.subject_area = qbl.illuminate_subject_area
 left join
-    {{ ref("stg_assessments__academic_goals") }} as g
+    {{ ref("int_assessments__academic_goals") }} as g
     on co.schoolid = g.school_id
     and co.academic_year = g.academic_year
     and co.subject_area = g.illuminate_subject_area
