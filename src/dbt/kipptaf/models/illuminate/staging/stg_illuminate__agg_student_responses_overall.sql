@@ -1,15 +1,13 @@
-{% set source_table = source("illuminate", "agg_student_responses") %}
-
 with
     -- trunk-ignore(sqlfluff/ST03)
     source as (
-        select *,
-        from {{ source_table }}
+        select * except (_fivetran_id, _fivetran_deleted, _fivetran_synced),
+        from {{ source("illuminate", "agg_student_responses") }}
         where
             points_possible > 0
             and student_assessment_id not in (
-                select student_assessment_id,
-                from {{ source("illuminate", "students_assessments_archive") }}
+                select saa.student_assessment_id,
+                from {{ source("illuminate", "students_assessments_archive") }} as saa
             )
     ),
 
@@ -23,11 +21,6 @@ with
         }}
     )
 
-select
-    {{
-        dbt_utils.star(
-            from=source_table,
-            except=["_fivetran_id", "_fivetran_deleted", "_fivetran_synced"],
-        )
-    }},
+-- trunk-ignore(sqlfluff/AM04)
+select *,
 from deduplicate
