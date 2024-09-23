@@ -1,7 +1,7 @@
 with
     -- trunk-ignore(sqlfluff/ST03)
     source as (
-        select * except (_fivetran_id, _fivetran_deleted, _fivetran_synced),
+        select * except (_fivetran_id, _fivetran_deleted),
         from {{ source("illuminate", "agg_student_responses") }}
         where
             points_possible > 0
