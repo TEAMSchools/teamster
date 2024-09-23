@@ -2,6 +2,8 @@
 ARG PYTHON_VERSION=3.12
 FROM python:"${PYTHON_VERSION}"-slim
 
+ARG CODE_LOCATION
+
 # set shell to bash
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -15,7 +17,7 @@ WORKDIR /app
 
 # install uv & create venv
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install "uv==0.4.9" --no-cache-dir \
+    pip install "uv==0.4.13" --no-cache-dir \
     && uv venv
 
 # install dependencies
@@ -35,3 +37,5 @@ RUN uv pip install \
 
 # install dbt project
 COPY src/dbt/ ./src/dbt/
+RUN dagster-dbt project prepare-and-package \
+    --file src/teamster/code_locations/"${CODE_LOCATION}"/__init__.py

@@ -8,8 +8,39 @@ with
             and srh.assignment_status = 'Active'
             and srh.job_title = 'Teacher in Residence'
         group by employee_number
-    )
+    ),
 
+    tracks as (
+        select
+            o.observation_id,
+            max(
+                if(
+                    od.measurement_name like '%Teacher Moves Track%',
+                    od.measurement_dropdown_selection,
+                    null
+                )
+            ) as teacher_moves_track,
+            max(
+                if(
+                    od.measurement_name like '%Student Habits Track%',
+                    od.measurement_dropdown_selection,
+                    null
+                )
+            ) as student_habits_track,
+            max(
+                if(
+                    od.measurement_name like '%Number%',
+                    od.measurement_dropdown_selection,
+                    null
+                )
+            ) as number_of_kids,
+        from {{ ref("int_performance_management__observations") }} as o
+        inner join
+            {{ ref("int_performance_management__observation_details") }} as od
+            on o.observation_id = od.observation_id
+        where o.observation_type_abbreviation = 'WT'
+        group by o.observation_id
+    )
 /* tracking for current year */
 select
     srh.employee_number,
@@ -53,8 +84,11 @@ select
     od.overall_tier,
     od.observation_notes,
     od.measurement_dropdown_selection,
-    od.measurement_comments,
 
+    tr.teacher_moves_track,
+    tr.student_habits_track,
+    tr.number_of_kids,
+    sr.assignment_status as current_assignment_status,
     sro.preferred_name_lastfirst as observer_name,
 
     tgl.grade_level as grade_taught,
@@ -63,6 +97,8 @@ select
     null as so_score,
 
     if(od.observation_id is not null, 1, 0) as is_observed,
+
+    regexp_replace(od.measurement_comments, r'<[^>]+>', '') as measurement_comments,
 
     case
         when srh.business_unit_home_name = 'KIPP Miami'
@@ -96,6 +132,10 @@ left join
     on srh.employee_number = od.employee_number
     and t.type = od.observation_type_abbreviation
     and od.observed_at between t.start_date and t.end_date
+left join tracks as tr on od.observation_id = tr.observation_id
+left join
+    {{ ref("base_people__staff_roster") }} as sr
+    on srh.employee_number = sr.employee_number
 left join
     {{ ref("base_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
@@ -154,8 +194,12 @@ select
     od.overall_tier,
     od.observation_notes,
     od.measurement_dropdown_selection,
-    od.measurement_comments,
 
+    null as teacher_moves_track,
+    null as student_habits_track,
+    null as number_of_kids,
+
+    sr.assignment_status as current_assignment_status,
     sro.preferred_name_lastfirst as observer_name,
 
     tgl.grade_level as grade_taught,
@@ -164,6 +208,8 @@ select
     od.so_score,
 
     if(od.observation_id is not null, 1, 0) as is_observed,
+
+    regexp_replace(od.measurement_comments, r'<[^>]+>', '') as measurement_comments,
 
     null as boy_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
@@ -177,6 +223,9 @@ left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on srh.employee_number = os.employee_number
     and od.academic_year = os.academic_year
+left join
+    {{ ref("base_people__staff_roster") }} as sr
+    on srh.employee_number = sr.employee_number
 left join
     {{ ref("base_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number

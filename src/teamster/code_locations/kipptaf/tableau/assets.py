@@ -23,7 +23,7 @@ workbook_stats = build_tableau_workbook_stats_asset(
 workbook_refresh_assets = [
     build_tableau_workbook_refresh_asset(
         code_location=CODE_LOCATION,
-        timezone=LOCAL_TIMEZONE.name,
+        cron_timezone=LOCAL_TIMEZONE.name,
         cron_schedule=a["metadata"].get("cron_schedule"),
         **a,
     )

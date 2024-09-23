@@ -7,6 +7,7 @@ dbt_modules/
 dbt_packages/
 logs/
 .user.yml
+package-lock.concurrent-update-lock
 
 ### Linux ###
 *~

@@ -23,12 +23,12 @@ dependencies = [
   "gspread>=5.12.0",
   "ldap3>=2.9.1",
   "oracledb>=1.4.2",
+  "pendulum>=3.0.0",
   "py-avro-schema>=3.4.1",
   "pycryptodome>=3.19.0",
   "scikit-learn>=1.4.0",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
-  "pendulum>=3.0.0",
 ]
 requires-python = ">=3.12,<3.13"
 license = { text = "GPL-3.0-or-later" }
@@ -42,13 +42,13 @@ dev = ["pytest>=7.4.3", "datamodel-code-generator>=0.25.4", "dagster-webserver"]
 
 [tool.pdm.scripts]
 _.env_file = "env/.env"
+post_install = { shell = "pdm export --prod -o requirements.txt --no-hashes" }
 clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, coverage, and Python artifacts" }
 install-dagster = { shell = "bash .pdm/scripts/install-dagster.sh", help = "Install Dagster Cloud via Helm" }
 install-1password = { shell = "bash .pdm/scripts/install-1password.sh", help = "Install 1Password Connect via Helm" }
 dagster-dev = { shell = "bash .pdm/scripts/dagster-dev.sh", help = "Validate Dagster imports and configs" }
 dbt = { shell = "bash .pdm/scripts/dbt.sh" }
 dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
-post_install = { shell = "pdm export --prod -o requirements.txt" }
 json2py = { shell = "bash .pdm/scripts/json2py.sh" }
 op-inject = { shell = "op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env" }
 op-items = { shell = "kubectl apply -f .k8s/1password/items.yaml" }

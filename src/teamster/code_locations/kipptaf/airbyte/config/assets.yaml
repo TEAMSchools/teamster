@@ -23,6 +23,7 @@ assets:
       - Contact
       - Contact_Note__c
       - ContentDocument
+      - Counseling_Case__c
       - Employment__c
       - Enrollment__c
       - Enrollment__History

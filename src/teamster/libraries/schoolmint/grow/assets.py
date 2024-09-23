@@ -32,25 +32,36 @@ def build_schoolmint_grow_asset(
         if isinstance(context.assets_def.partitions_def, MultiPartitionsDefinition):
             partition_key = _check.inst(context.partition_key, MultiPartitionKey)
 
-            archived_partition = partition_key.keys_by_dimension["archived"]
-            last_modified_partition = (
-                pendulum.from_format(
-                    string=partition_key.keys_by_dimension["last_modified"],
-                    fmt="YYYY-MM-DD",
-                )
-                .subtract(days=1)
-                .timestamp()
-            )
-        else:
-            archived_partition = context.partition_key
-            last_modified_partition = None
+            archived_key = partition_key.keys_by_dimension["archived"]
+            last_modified_key = partition_key.keys_by_dimension["last_modified"]
 
-        # TODO: lastModified == None for first partition
+            last_modified_datetime = pendulum.from_format(
+                string=last_modified_key, fmt="YYYY-MM-DD"
+            )
+
+            last_modified_end = last_modified_datetime.end_of("day").timestamp()
+            last_modified_start = last_modified_datetime.subtract(days=1).timestamp()
+
+            last_modified_def = (
+                context.assets_def.partitions_def.get_partitions_def_for_dimension(
+                    "last_modified"
+                )
+            )
+
+            if last_modified_key == last_modified_def.get_last_partition_key():
+                last_modified_key = last_modified_start
+            elif last_modified_key == last_modified_def.get_first_partition_key():
+                last_modified_key = f"0,{last_modified_end}"
+            else:
+                last_modified_key = f"{last_modified_start},{last_modified_end}"
+        else:
+            archived_key = context.partition_key
+            last_modified_key = None
 
         endpoint_content = schoolmint_grow.get(
             endpoint=endpoint,
-            archived=(archived_partition == "t"),
-            lastModified=last_modified_partition,
+            archived=(archived_key == "t"),
+            lastModified=last_modified_key,
         )
 
         records = endpoint_content["data"]
