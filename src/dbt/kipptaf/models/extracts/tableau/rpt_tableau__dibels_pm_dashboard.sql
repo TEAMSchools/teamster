@@ -84,7 +84,7 @@ with
     expanded_terms as (
         select
             2024 as academic_year,
-            `period` as name,
+            `period` as `name`,
             region,
             grade_level,
             start_date,
