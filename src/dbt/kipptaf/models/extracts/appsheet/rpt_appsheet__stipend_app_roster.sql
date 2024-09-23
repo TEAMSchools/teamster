@@ -93,7 +93,7 @@ with
                 when
                     sr.business_unit_home_code <> 'KIPP_TAF'
                     and sr2.business_unit_home_code = 'KIPP_TAF'
-                then 'MDO'
+                then 'MDSO'
                 /* Non-KTAF teammate with non-school location*/
                 when
                     (
@@ -176,10 +176,10 @@ with
                     )
                 /* Non-KTAF teammate with KTAF manager*/
                 when r.route = 'MDSO'
-                then coalesce(r.mdso_employee_number, r.mdo_employee_number)
+                then r.mdso_employee_number
                 /* Non-KTAF teammate with non-school location*/
                 when r.route = 'MDO'
-                then coalesce(r.mdo_employee_number, r.mdso_employee_number)
+                then r.mdo_employee_number
                 /* KTAF teammate (assigned according to submitter in app)*/
                 when r.route = 'KTAF'
                 then r.ktaf_approver
@@ -190,105 +190,108 @@ with
                 then r.head_of_school_employee_number
                 /* School-based operations teammate*/
                 when r.route = 'School' and r.department_home_name = 'Operations'
-                then
-                    coalesce(
-                        r.mdso_employee_number, r.mdo_employee_number, r.ktaf_approver
-                    )
+                then coalesce(r.mdso_employee_number, r.mdo_employee_number)
                 /* Non-KTAF teammate with KTAF manager*/
                 when r.route = 'MDSO'
-                then coalesce(r.mdso_employee_number, r.mdo_employee_number)
+                then r.mdso_employee_number
                 /* Non-KTAF teammate with non-school location*/
                 when r.route = 'MDO'
-                then coalesce(r.mdo_employee_number, r.mdso_employee_number)
+                then r.mdo_employee_number
                 /* KTAF teammate (assigned according to submitter in app)*/
                 when r.route = 'KTAF'
                 then r.ktaf_approver
             end as second_approver_employee_number,
         from roster as r
 
+    ),
+
+    whole_roster as (
+        select
+            r.employee_number,
+            r.payroll_group_code,
+            r.worker_id,
+            r.payroll_file_number,
+            r.position_id,
+            r.job_title,
+            r.home_work_location_name,
+            r.department_home_name,
+            r.preferred_name_lastfirst,
+            r.user_principal_name,
+            r.google_email,
+            r.assignment_status,
+            r.business_unit_home_name,
+            r.business_unit_home_code,
+            r.worker_termination_date,
+            r.route,
+            r.campus,
+            r.dso_employee_number,
+            r.sl_employee_number,
+            r.head_of_school_employee_number,
+            r.mdso_employee_number,
+            r.mdo_employee_number,
+            r.ktaf_approver,
+            r.manager_employee_number,
+            r.grandmanager_employee_number,
+            r.first_approver_employee_number,
+            r.second_approver_employee_number,
+        from rule_assignments as r
+        where
+            r.first_approver_employee_number <> r.employee_number
+            and r.second_approver_employee_number <> r.employee_number
+
+        /* exceptions with no route or self approvals go to manager and manager's manager */
+        union all
+
+        select
+            r.employee_number,
+            r.payroll_group_code,
+            r.worker_id,
+            r.payroll_file_number,
+            r.position_id,
+            r.job_title,
+            r.home_work_location_name,
+            r.department_home_name,
+            r.preferred_name_lastfirst,
+            r.user_principal_name,
+            r.google_email,
+            r.assignment_status,
+            r.business_unit_home_name,
+            r.business_unit_home_code,
+            r.worker_termination_date,
+            r.route,
+            r.campus,
+            r.dso_employee_number,
+            r.sl_employee_number,
+            r.head_of_school_employee_number,
+            r.mdso_employee_number,
+            r.mdo_employee_number,
+            r.ktaf_approver,
+            r.manager_employee_number,
+            r.grandmanager_employee_number,
+
+            case
+                when
+                    r.first_approver_employee_number is null
+                    or r.first_approver_employee_number = r.employee_number
+                then r.manager_employee_number
+            end as first_approver_employee_number,
+            case
+                when
+                    r.second_approver_employee_number is null
+                    or r.second_approver_employee_number = r.employee_number
+                then coalesce(r.grandmanager_employee_number, r.manager_employee_number)
+            end as second_approver_employee_number,
+        from rule_assignments as r
+        where
+            r.first_approver_employee_number = r.employee_number
+            or r.second_approver_employee_number = r.employee_number
     )
 
-select
-    r.employee_number,
-    r.payroll_group_code,
-    r.worker_id,
-    r.payroll_file_number,
-    r.position_id,
-    r.job_title,
-    r.home_work_location_name,
-    r.department_home_name,
-    r.preferred_name_lastfirst,
-    r.user_principal_name,
-    r.google_email,
-    r.assignment_status,
-    r.business_unit_home_name,
-    r.business_unit_home_code,
-    r.worker_termination_date,
-    r.route,
-    r.campus,
-    r.dso_employee_number,
-    r.sl_employee_number,
-    r.head_of_school_employee_number,
-    r.mdso_employee_number,
-    r.mdo_employee_number,
-    r.ktaf_approver,
-    r.manager_employee_number,
-    r.grandmanager_employee_number,
-    r.first_approver_employee_number,
-    r.second_approver_employee_number,
-
-from rule_assignments as r
-where
-    r.first_approver_employee_number is not null
-    and r.second_approver_employee_number is not null
-    and r.first_approver_employee_number <> r.employee_number
-    and r.second_approver_employee_number <> r.employee_number
-
-/* exceptions with no route or self approvals go to manager and manager's manager */
-union all
-
-select
-    r.employee_number,
-    r.payroll_group_code,
-    r.worker_id,
-    r.payroll_file_number,
-    r.position_id,
-    r.job_title,
-    r.home_work_location_name,
-    r.department_home_name,
-    r.preferred_name_lastfirst,
-    r.user_principal_name,
-    r.google_email,
-    r.assignment_status,
-    r.business_unit_home_name,
-    r.business_unit_home_code,
-    r.worker_termination_date,
-    r.route,
-    r.campus,
-    r.dso_employee_number,
-    r.sl_employee_number,
-    r.head_of_school_employee_number,
-    r.mdso_employee_number,
-    r.mdo_employee_number,
-    r.ktaf_approver,
-    r.manager_employee_number,
-    r.grandmanager_employee_number,
-
-    case
-        when
-            r.first_approver_employee_number is null
-            or r.first_approver_employee_number = r.employee_number
-        then r.manager_employee_number
-    end as first_approver_employee_number,
-    case
-        when
-            r.second_approver_employee_number is null
-            or r.second_approver_employee_number = r.employee_number
-        then coalesce(r.grandmanager_employee_number, r.manager_employee_number)
-    end as second_approver_employee_number,
-from rule_assignments as r
-where
-    r.first_approver_employee_number is null
-    or r.second_approver_employee_number is null
-    or r.first_approver_employee_number = r.employee_number
-    or r.second_approver_employee_number = r.employee_number
+select r.*,sr1.preferred_name_lastfirst as first_approver_name, sr2.preferred_name_lastfirst as second_approver_name,
+from whole_roster as r 
+left join
+    {{ ref("base_people__staff_roster") }} as sr1
+    on r.first_approver_employee_number = sr1.employee_number
+left join
+    {{ ref("base_people__staff_roster") }} as sr2
+    on r.second_approver_employee_number = sr2.employee_number
