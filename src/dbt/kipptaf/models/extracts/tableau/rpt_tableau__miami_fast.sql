@@ -2,7 +2,7 @@ with
     subjects as (
         select
             'Reading' as iready_subject,
-            'ELAReading' as fast_subject,
+            'English Language Arts' as fast_subject,
             'ENG' as ps_credittype,
             'Text Study' as illuminate_subject,
 
