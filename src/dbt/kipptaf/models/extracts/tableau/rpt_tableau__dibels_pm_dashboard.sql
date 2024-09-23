@@ -88,7 +88,7 @@ with
             grade_level,
             start_date,
             end_date,
-        from {{ ref("kipptaf_amplify.stg_amplify__dibels_pm_expectations") }}
+        from {{ ref("stg_amplify__dibels_pm_expectations") }}
     )
 
 select

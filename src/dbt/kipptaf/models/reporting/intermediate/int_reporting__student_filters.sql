@@ -204,7 +204,7 @@ with
                 order by mclass_client_date desc
             ) as rn_year,
         from {{ ref("int_amplify__all_assessments") }}
-        where mclass_measure = 'Composite'
+        where mclass_measure_standard = 'Composite'
     )
 
 select
