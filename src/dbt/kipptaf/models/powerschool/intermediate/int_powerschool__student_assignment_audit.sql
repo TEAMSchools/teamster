@@ -58,6 +58,7 @@ with
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on ce.sections_dcid = a.sectionsdcid
+            and ce.cc_dateenrolled <= a.duedate
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="a") }}
             and a.duedate between c.week_start_date and c.week_end_date
             and {{ union_dataset_join_clause(left_alias="c", right_alias="a") }}

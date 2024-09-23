@@ -105,7 +105,7 @@ with
             on sec.sections_dcid = a.sectionsdcid
             and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
             and ge.assignment_category_name = a.category_name
-            and a.duedate between c.week_start_date and c.week_end_date
+            and a.duedate between c.week_start_monday and c.week_end_sunday
         left join
             {{ ref("int_powerschool__assignment_score_rollup") }} as asg
             on a.assignmentsectionid = asg.assignmentsectionid
@@ -150,6 +150,12 @@ select
     scoretype,
     totalpointvalue,
     duedate,
+    n_students,
+    n_late,
+    n_exempt,
+    n_missing,
+    n_expected,
+    n_expected_scored,
 
     assignment_count_section_quarter_category_running_week
     as teacher_running_total_assign_by_cat,

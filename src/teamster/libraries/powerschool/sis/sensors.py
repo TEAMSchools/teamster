@@ -101,14 +101,14 @@ def build_powerschool_asset_sensor(
         try:
             ssh_tunnel.start()
         except HandlerSSHTunnelForwarderError as e:
-            ssh_tunnel.stop()
+            ssh_tunnel.stop(force=True)
 
             if "An error occurred while opening tunnels." in e.args:
                 return SkipReason(str(e))
             else:
                 raise e
         except Exception as e:
-            ssh_tunnel.stop()
+            ssh_tunnel.stop(force=True)
             raise e
 
         for asset in asset_selection:
@@ -363,7 +363,7 @@ def build_powerschool_asset_sensor(
                     job_name=job_name,
                     partition_key=parition_key,
                     asset_selection=[g["asset_key"] for g in group],
-                    tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60), "dagster/max_retries": 0},
+                    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
                 )
             )
 

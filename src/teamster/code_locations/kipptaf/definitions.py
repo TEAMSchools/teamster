@@ -1,4 +1,6 @@
 from dagster import (
+    AssetSelection,
+    AutomationConditionSensorDefinition,
     Definitions,
     build_sensor_for_freshness_checks,
     load_assets_from_modules,
@@ -7,6 +9,7 @@ from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kipptaf import (
     CODE_LOCATION,
+    DBT_PROJECT,
     _dbt,
     _google,
     adp,
@@ -39,9 +42,9 @@ from teamster.core.resources import (
 defs = Definitions(
     executor=k8s_job_executor,
     assets=[
+        *_google.asset_specs,
         *airbyte.asset_specs,
         *fivetran.asset_specs,
-        *_google.asset_specs,
         *load_assets_from_modules(
             modules=[
                 _dbt,
@@ -81,13 +84,17 @@ defs = Definitions(
         build_sensor_for_freshness_checks(
             freshness_checks=asset_checks.freshness_checks
         ),
+        AutomationConditionSensorDefinition(
+            name=f"{CODE_LOCATION}__automation_condition_sensor",
+            asset_selection=AssetSelection.all(),
+        ),
     ],
     resources={
         "adp_wfm": resources.ADP_WORKFORCE_MANAGER_RESOURCE,
         "adp_wfn": resources.ADP_WORKFORCE_NOW_RESOURCE,
         "airbyte": resources.AIRBYTE_CLOUD_RESOURCE,
         "db_bigquery": BIGQUERY_RESOURCE,
-        "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
+        "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "dds": resources.DIBELS_DATA_SYSTEM_RESOURCE,
         "fivetran": resources.FIVETRAN_RESOURCE,
         "gcs": GCS_RESOURCE,

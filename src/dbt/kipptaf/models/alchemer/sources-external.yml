@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: alchemer
     schema: kipptaf_alchemer
+    config:
+      enabled: false
     tags:
       - stage_external_sources
     tables:

@@ -1,8 +1,14 @@
-from dagster import Definitions, load_assets_from_modules
+from dagster import (
+    AssetSelection,
+    AutomationConditionSensorDefinition,
+    Definitions,
+    load_assets_from_modules,
+)
 from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kippnewark import (
     CODE_LOCATION,
+    DBT_PROJECT,
     _dbt,
     couchdrop,
     datagun,
@@ -62,11 +68,15 @@ defs = Definitions(
         *powerschool.sensors,
         *renlearn.sensors,
         *titan.sensors,
+        AutomationConditionSensorDefinition(
+            name=f"{CODE_LOCATION}__automation_condition_sensor",
+            asset_selection=AssetSelection.all(),
+        ),
     ],
     resources={
         "db_bigquery": BIGQUERY_RESOURCE,
         "db_powerschool": DB_POWERSCHOOL,
-        "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
+        "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
         "gcs": GCS_RESOURCE,
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),

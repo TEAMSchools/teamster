@@ -99,7 +99,7 @@ left join
     and asr.response_type_code = ps.standard_code
     and asr.term_administered = ps.term_name
 left join
-    {{ ref("stg_assessments__academic_goals") }} as ag
+    {{ ref("int_assessments__academic_goals") }} as ag
     on asr.academic_year = ag.academic_year
     and co.schoolid = ag.school_id
     and co.grade_level = ag.grade_level
@@ -214,7 +214,7 @@ left join
         asr.response_type_code = ps.standard_code
     )
 left join
-    {{ ref("stg_assessments__academic_goals") }} as ag
+    {{ ref("int_assessments__academic_goals") }} as ag
     on asr.academic_year = ag.academic_year
     and co.schoolid = ag.school_id
     and asr.subject_area = ag.illuminate_subject_area

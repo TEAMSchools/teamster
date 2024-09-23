@@ -75,7 +75,7 @@ def build_powerschool_sis_asset_schedule(
         try:
             ssh_tunnel.start()
         except Exception as e:
-            ssh_tunnel.stop()
+            ssh_tunnel.stop(force=True)
             raise e
 
         for asset in asset_selection:
@@ -316,7 +316,7 @@ def build_powerschool_sis_asset_schedule(
                 run_key=f"{partitions_def}_{partition_key}",
                 asset_selection=[g["key"] for g in group],
                 partition_key=partition_key,
-                tags={MAX_RUNTIME_SECONDS_TAG: (10 * 60)},
+                tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
             )
 
     return _schedule
