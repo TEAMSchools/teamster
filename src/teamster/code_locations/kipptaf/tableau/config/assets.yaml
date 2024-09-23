@@ -144,7 +144,7 @@ assets:
       id: 8977a813-36c8-48df-8a61-479f374ae78a
       cron_schedule:
         - 0 6 * * *
-        - 30 14 * * *
+        - 30 16 * * *
   - name: Gradebook and GPA Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__gradebook_audit]
