@@ -104,7 +104,6 @@ with
             t.total_expected_graded_assignments_by_cat_qt_audit_week_all_courses,
             t.total_expected_actual_graded_assignments_by_course_cat_qt_audit_week,
             t.total_expected_graded_assignments_by_course_cat_qt_audit_week,
-            -- trunk-ignore(sqlfluff/LT05)
             t.total_expected_actual_graded_assignments_by_course_assign_id_qt_audit_week,
             t.total_expected_graded_assignments_by_course_assign_id_qt_audit_week,
             t.percent_graded_completion_by_cat_qt_audit_week_all_courses,
