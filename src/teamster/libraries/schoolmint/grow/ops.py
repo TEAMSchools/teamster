@@ -18,21 +18,20 @@ def schoolmint_grow_user_update_op(
         if u["surrogate_key_source"] == u["surrogate_key_destination"]:
             continue
 
+        request_args = ["users"]
+
         user_id = u["user_id"]
         inactive = u["inactive"]
         user_email = u["user_email"]
 
         exception_str = [user_email]
-        request_args = ["users"]
 
         # restore
         if inactive == 0 and u["archived_at"] is not None:
-            request_args.extend([user_id, "restore"])
-            exception_str.append(request_args)
-
             try:
                 context.log.info(f"RESTORING\t{user_email}")
-                exception_str.append("PUT")
+                request_args.extend([user_id, "restore"])
+                exception_str.extend([*request_args, "PUT"])
 
                 schoolmint_grow.put(
                     *request_args, params={"district": schoolmint_grow.district_id}
@@ -92,7 +91,10 @@ def schoolmint_grow_user_update_op(
 
             continue
 
-    slack_client.chat_postMessage(channel="#dagster-alerts", text="\n".join(exceptions))
+    if exceptions:
+        slack_client.chat_postMessage(
+            channel="#dagster-alerts", text="\n".join(exceptions)
+        )
 
     return users
 
