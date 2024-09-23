@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:6e9918eacbdc2a671a475e04067e90a39719f3dea733072e14d48a3f6417fc20"
+content_hash = "sha256:e3a301e57839cb16ccd2349a4f841422678862463e4effbdcf8e0c370045fbb5"
 
 [[metadata.targets]]
 requires_python = ">=3.12,<3.13"
@@ -31,7 +31,7 @@ files = [
 
 [[package]]
 name = "alembic"
-version = "1.13.2"
+version = "1.13.3"
 requires_python = ">=3.8"
 summary = "A database migration tool for SQLAlchemy."
 groups = ["default", "dev"]
@@ -43,8 +43,8 @@ dependencies = [
     "typing-extensions>=4",
 ]
 files = [
-    {file = "alembic-1.13.2-py3-none-any.whl", hash = "sha256:6b8733129a6224a9a711e17c99b08462dbf7cc9670ba8f2e2ae9af860ceb1953"},
-    {file = "alembic-1.13.2.tar.gz", hash = "sha256:1ff0ae32975f4fd96028c39ed9bb3c867fe3af956bd7bb37343b54c9fe7445ef"},
+    {file = "alembic-1.13.3-py3-none-any.whl", hash = "sha256:908e905976d15235fae59c9ac42c4c5b75cfcefe3d27c0fbf7ae15a37715d80e"},
+    {file = "alembic-1.13.3.tar.gz", hash = "sha256:203503117415561e203aa14541740643a611f641517f0209fcae63e9fa09f1a2"},
 ]
 
 [[package]]
@@ -655,6 +655,21 @@ groups = ["default", "dev"]
 files = [
     {file = "dagster-pipes-1.8.8.tar.gz", hash = "sha256:a33f3736e55c3782cd5d8a33da4a8b1b9e7d1ed02424f2b83a3cbc6c5d37cede"},
     {file = "dagster_pipes-1.8.8-py3-none-any.whl", hash = "sha256:1880f8df5ff8ca5c2b39c1aabf8f4c5c280ff99add7639c61f075c7c0bf56d70"},
+]
+
+[[package]]
+name = "dagster-slack"
+version = "0.24.8"
+requires_python = "<3.13,>=3.8"
+summary = "A Slack client resource for posting to Slack"
+groups = ["default"]
+dependencies = [
+    "dagster==1.8.8",
+    "slack-sdk",
+]
+files = [
+    {file = "dagster-slack-0.24.8.tar.gz", hash = "sha256:89a69dc6e9b4ea13142a43cb2a756c6db7c8520a78af4814320f17b1db040c1f"},
+    {file = "dagster_slack-0.24.8-py3-none-any.whl", hash = "sha256:0240631140733134f6ae3544fe210784f7e143b5c67fb3f96ed0c943eb0a3fc9"},
 ]
 
 [[package]]
@@ -1364,6 +1379,7 @@ files = [
     {file = "greenlet-3.1.1-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:b7cede291382a78f7bb5f04a529cb18e068dd29e0fb27376074b6d0317bf4dd0"},
     {file = "greenlet-3.1.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:23f20bb60ae298d7d8656c6ec6db134bca379ecefadb0b19ce6f19d1f232a942"},
     {file = "greenlet-3.1.1-cp312-cp312-win_amd64.whl", hash = "sha256:7124e16b4c55d417577c2077be379514321916d5790fa287c9ed6f23bd2ffd01"},
+    {file = "greenlet-3.1.1.tar.gz", hash = "sha256:4ce3ac6cdb6adf7946475d7ef31777c26d94bccc377e070a7986bd2d5c515467"},
 ]
 
 [[package]]
@@ -2728,6 +2744,17 @@ groups = ["default", "dev"]
 files = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
+]
+
+[[package]]
+name = "slack-sdk"
+version = "3.33.1"
+requires_python = ">=3.6"
+summary = "The Slack API Platform SDK for Python"
+groups = ["default"]
+files = [
+    {file = "slack_sdk-3.33.1-py2.py3-none-any.whl", hash = "sha256:ef93beec3ce9c8f64da02fd487598a05ec4bc9c92ceed58f122dbe632691cbe2"},
+    {file = "slack_sdk-3.33.1.tar.gz", hash = "sha256:e328bb661d95db5f66b993b1d64288ac7c72201a745b4c7cf8848dafb7b74e40"},
 ]
 
 [[package]]
