@@ -159,13 +159,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         def callback(request_id, response, exception):
             if exception is not None:
                 self._log.error(exception)
-                if exception.status_code == 403:
-                    raise exception
-                elif exception.status_code == 409 and exception.reason not in [
-                    "Entity already exists.",
-                    "Invalid Given/Family Name: GivenName",
-                ]:
-                    raise exception
+                raise exception
             else:
                 self._log.info(
                     msg=(
@@ -200,8 +194,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         def callback(request_id, response, exception):
             if exception is not None:
                 self._log.error(exception)
-                if exception.status_code in [403, 409]:
-                    raise exception
+                raise exception
             else:
                 self._log.info(
                     msg=(
@@ -238,13 +231,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         def callback(request_id, response, exception):
             if exception is not None:
                 self._log.error(exception)
-                if exception.status_code == 403:
-                    raise exception
-                elif (
-                    exception.status_code == 409
-                    and exception.reason != "Member already exists."
-                ):
-                    raise exception
+                raise exception
 
         # Queries per minute per user == 2400 (40/sec)
         batches = self._batch_list(list=members, size=40)
@@ -272,14 +259,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         def callback(request_id, response, exception):
             if exception is not None:
                 self._log.error(exception)
-                if exception.status_code == 403:
-                    raise exception
-                elif (
-                    exception.status_code == 409
-                    and exception.reason
-                    != "Role assignment already exists for the role"
-                ):
-                    raise exception
+                raise exception
 
         batches = self._batch_list(list=role_assignments, size=10)
 
