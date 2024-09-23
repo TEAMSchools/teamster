@@ -11,6 +11,7 @@ with
             e.studentid,
             e.student_number,
             e.student_name,
+            e.grade_level as grade_level_int,
             e.is_out_of_district,
             e.gender,
             e.ethnicity,
@@ -138,8 +139,8 @@ select
     a.mclass_period,
     a.mclass_client_date,
     a.mclass_sync_date,
-    a.mclass_measure,
-    a.mclass_measure_code,
+    a.mclass_measure_name,
+    a.mclass_measure_name_code,
     a.mclass_measure_standard,
     a.mclass_measure_standard_score,
     a.mclass_measure_standard_level,
@@ -182,12 +183,11 @@ left join
     expanded_terms as t
     on s.academic_year = t.academic_year
     and s.expected_test = t.name
-    and s.grade = t.grade_level
+    and s.grade_level_int = t.grade_level
     and s.region = t.region
 left join
     {{ ref("int_reporting__student_filters") }} as f
     on s.academic_year = f.academic_year
     and s.student_number = f.student_number
-    and regexp_extract(s._dbt_source_relation, r'(kipp\w+)_')
-    = regexp_extract(f._dbt_source_relation, r'(kipp\w+)_')
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'

@@ -108,7 +108,7 @@ with
 
             probe_number as mclass_probe_number,
             total_number_of_probes as mclass_total_number_of_probes,
-            mclass_measure_standard_score,
+            mclass_measure_standard_score_change,
 
             row_number() over (
                 partition by surrogate_key, measure
