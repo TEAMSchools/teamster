@@ -33,7 +33,7 @@ with
 
             format_datetime("%B", a.start_date) as month_round,
 
-            if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
+            if(e.grade_level = 0, "K", cast(e.grade_level as string)) as grade_level,
         from {{ ref("int_tableau__student_enrollments") }} as e
         inner join
             {{ ref("stg_amplify__dibels_pm_expectations") }} as a
@@ -69,7 +69,7 @@ with
             m.rn_course_number_year = 1
             and not m.is_dropped_section
             and m.cc_academic_year >= 2024
-            and m.cc_section_number not like '%SC%'
+            and m.cc_section_number not like "%SC%"
             and m.courses_course_name in (
                 'ELA GrK', 'ELA K', 'ELA Gr1', 'ELA Gr2'
             -- 'ELA Gr3',
