@@ -51,19 +51,17 @@ class SchoolMintGrowResource(ConfigurableResource):
             "/" + "/".join(args) if args else ""
         )
 
-    def _request(self, method, url, **kwargs):
-        response = Response()
+    def _request(self, method, url, **kwargs) -> Response:
+        response = self._session.request(method=method, url=url, **kwargs)
 
         try:
-            response = self._session.request(method=method, url=url, **kwargs)
-
             response.raise_for_status()
             return response
         except HTTPError as e:
             self._log.error(response.text)
             raise HTTPError() from e
 
-    def get(self, endpoint, *args, **kwargs):
+    def get(self, endpoint, *args, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
         params = copy.deepcopy(self._default_params)
 
@@ -120,13 +118,13 @@ class SchoolMintGrowResource(ConfigurableResource):
 
             return all_data
 
-    def post(self, endpoint, *args, **kwargs):
+    def post(self, endpoint, *args, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
 
         self._log.debug(f"POST: {url}")
         return self._request(method="POST", url=url, **kwargs).json()
 
-    def put(self, endpoint, *args, **kwargs):
+    def put(self, endpoint, *args, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
 
         self._log.debug(f"PUT: {url}")
