@@ -11,7 +11,7 @@ from teamster.code_locations.kipptaf._google.directory.jobs import (
 
 google_directory_nonpartitioned_asset_schedule = ScheduleDefinition(
     job=define_asset_job(
-        name=f"{CODE_LOCATION}_google_directory_nonpartitioned_asset_job",
+        name=f"{CODE_LOCATION}__google__directory__nonpartitioned_asset_job",
         selection=[a.key for a in google_directory_nonpartitioned_assets],
     ),
     cron_schedule="0 1 * * *",

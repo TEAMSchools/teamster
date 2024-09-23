@@ -14,7 +14,7 @@ from teamster.libraries.google.directory.ops import (
 
 
 @job(
-    name=f"{CODE_LOCATION}_google_directory_user_sync_job",
+    name=f"{CODE_LOCATION}__google__directory__user_sync_job",
     config=RunConfig(
         ops={
             "bigquery_get_table_op": BigQueryGetTableOpConfig(
@@ -35,7 +35,7 @@ def google_directory_user_sync_job():
 
 
 @job(
-    name=f"{CODE_LOCATION}_google_directory_role_assignments_sync_job",
+    name=f"{CODE_LOCATION}__google__directory__role_assignments_sync_job",
     config=RunConfig(
         ops={
             "bigquery_get_table_op": BigQueryGetTableOpConfig(
