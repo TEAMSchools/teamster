@@ -25,7 +25,17 @@ fast = build_sftp_folder_asset(
     partitions_def=MultiPartitionsDefinition(
         {
             "school_year_term": StaticPartitionsDefinition(
-                ["SY23/PM1", "SY23/PM2", "SY23/PM3", "SY24/PM1", "SY24/PM2", "SY24/PM3"]
+                [
+                    "SY23/PM1",
+                    "SY23/PM2",
+                    "SY23/PM3",
+                    "SY24/PM1",
+                    "SY24/PM2",
+                    "SY24/PM3",
+                    "SY25/PM1",
+                    "SY25/PM2",
+                    "SY25/PM3",
+                ]
             ),
             "grade_level_subject": StaticPartitionsDefinition(
                 [
@@ -57,7 +67,7 @@ eoc = build_sftp_file_asset(
     avro_schema=EOC_SCHEMA,
     partitions_def=MultiPartitionsDefinition(
         {
-            "school_year_term": StaticPartitionsDefinition(["2023"]),
+            "school_year_term": StaticPartitionsDefinition(["2023", "2024"]),
             "grade_level_subject": StaticPartitionsDefinition(
                 ["Civics", "B.E.S.T.Algebra1"]
             ),
@@ -75,7 +85,7 @@ science = build_sftp_file_asset(
     avro_schema=SCIENCE_SCHEMA,
     partitions_def=MultiPartitionsDefinition(
         {
-            "school_year_term": StaticPartitionsDefinition(["2023"]),
+            "school_year_term": StaticPartitionsDefinition(["2023", "2024"]),
             "grade_level_subject": StaticPartitionsDefinition(["5", "8"]),
         }
     ),
