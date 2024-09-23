@@ -2,7 +2,7 @@ select
     co.student_number,
     co.academic_year,
 
-    rt.name as term,
+    term,
 
     cum.cumulative_y1_gpa as gpa_cum,
     cum.cumulative_y1_gpa_projected as gpa_cum_projected,
@@ -29,7 +29,7 @@ select
     coalesce(p.iready_reading_recent, '(No Data)') as iready_reading_recent,
     coalesce(p.iready_math_recent, '(No Data)') as iready_math_recent,
 from {{ ref("base_powerschool__student_enrollments") }} as co
-cross join (select *, from unnest(['Q1', 'Q2', 'Q3', 'Q4']) as `name`) as rt
+cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
 left join
     {{ ref("int_powerschool__gpa_cumulative") }} as cum
     on co.studentid = cum.studentid
@@ -39,11 +39,11 @@ left join
     {{ ref("int_powerschool__gpa_term") }} as gpa
     on co.studentid = gpa.studentid
     and co.yearid = gpa.yearid
-    and rt.name = gpa.term_name
+    and term = gpa.term_name
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
 left join
     {{ ref("int_reporting__promotional_status") }} as p
     on co.student_number = p.student_number
     and co.academic_year = p.academic_year
-    and rt.name = p.term_name
+    and term = p.term_name
 where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1

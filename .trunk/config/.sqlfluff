@@ -10,3 +10,6 @@ apply_dbt_builtins = True
 
 [sqlfluff:rules:convention.select_trailing_comma]
 select_clause_trailing_comma = require
+
+[sqlfluff:rules:convention.quoted_literals]
+preferred_quoted_literal_style = single_quotes

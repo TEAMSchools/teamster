@@ -26,8 +26,8 @@ with
         from with_surrogate_key
         where
             surrogate_key not in (
-                select surrogate_key,
-                from {{ ref("stg_alchemer__survey_response_disqualified") }}
+                select srd.surrogate_key,
+                from {{ ref("stg_alchemer__survey_response_disqualified") }} as srd
             )
     ),
 

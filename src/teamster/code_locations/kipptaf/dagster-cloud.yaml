@@ -709,3 +709,8 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api-kippnewark
                     key: credential
+              - name: SLACK_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-slack-api
+                    key: credential
