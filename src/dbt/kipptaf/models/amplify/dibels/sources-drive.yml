@@ -6,34 +6,36 @@ sources:
     tags:
       - stage_external_sources
     tables:
-      - name: src_amplify__mclass_dibels_goals_wide
+      - name: src_amplify__dibels_goals_wide
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
-              - https://docs.google.com/spreadsheets/d/1hsYwXwi0iMMyurG6aklhaY_X0T-Mk3250ERDrF_bhjU
-            sheet_range: src_amplify__mclass_dibels_goals_wide
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_goals_wide
             skip_leading_rows: 1
         meta:
           dagster:
             parent_asset_key_path:
               - kipptaf
               - amplify
-              - mclass_dibels_goals_wide
-      - name: src_amplify__mclass_dibels_goals_long
+              - dibels
+              - goals_wide
+      - name: src_amplify__dibels_goals_long
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
-              - https://docs.google.com/spreadsheets/d/1hsYwXwi0iMMyurG6aklhaY_X0T-Mk3250ERDrF_bhjU
-            sheet_range: src_amplify__mclass_dibels_goals_long
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_goals_long
             skip_leading_rows: 1
         meta:
           dagster:
             parent_asset_key_path:
               - kipptaf
               - amplify
-              - mclass_dibels_goals_long
+              - dibels
+              - goals_long
       - name: src_amplify__dibels_pm_expectations
         external:
           options:
@@ -47,4 +49,20 @@ sources:
             parent_asset_key_path:
               - kipptaf
               - amplify
-              - dibels_pm_expectations
+              - dibels
+              - pm_expectations
+      - name: src_amplify__dibels_measures
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_measures
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - amplify
+              - dibels
+              - measures
