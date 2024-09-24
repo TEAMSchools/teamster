@@ -23,6 +23,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
     _resource: discovery.Resource = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
+    _exceptions: list = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._log = _check.not_none(value=context.log)
@@ -156,10 +157,14 @@ class GoogleDirectoryResource(ConfigurableResource):
             i = i * 2
 
     def batch_insert_users(self, users):
-        def callback(request_id, response, exception):
+        self._exceptions = []
+
+        def callback(id, response, exception):
             if exception is not None:
-                self._log.error(exception)
-                raise exception
+                exception_str = "\t".join([id, str(response), str(exception)])
+
+                self._log.error(msg=exception_str)
+                self._exceptions.append(exception_str)
             else:
                 self._log.info(
                     msg=(
@@ -173,7 +178,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
         # You cannot create more than 10 users per domain per second using the
         # Directory API
-        # https://developers.google.com/admin-sdk/directory/v1/limits#api-limits-and-quotas
+        # developers.google.com/admin-sdk/directory/v1/limits#api-limits-and-quotas
         batches = self._batch_list(list=users, size=10)
 
         for i, batch in enumerate(batches):
@@ -191,10 +196,14 @@ class GoogleDirectoryResource(ConfigurableResource):
             time.sleep(1)
 
     def batch_update_users(self, users):
-        def callback(request_id, response, exception):
+        self._exceptions = []
+
+        def callback(id, response, exception):
             if exception is not None:
-                self._log.error(exception)
-                raise exception
+                exception_str = "\t".join([id, str(response), str(exception)])
+
+                self._log.error(msg=exception_str)
+                self._exceptions.append(exception_str)
             else:
                 self._log.info(
                     msg=(
@@ -228,10 +237,14 @@ class GoogleDirectoryResource(ConfigurableResource):
             time.sleep(1)
 
     def batch_insert_members(self, members):
-        def callback(request_id, response, exception):
+        self._exceptions = []
+
+        def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._log.error(exception)
-                raise exception
+                exception_str = "\t".join([id, str(response), str(exception)])
+
+                self._log.error(msg=exception_str)
+                self._exceptions.append(exception_str)
 
         # Queries per minute per user == 2400 (40/sec)
         batches = self._batch_list(list=members, size=40)
@@ -256,10 +269,14 @@ class GoogleDirectoryResource(ConfigurableResource):
             time.sleep(1)
 
     def batch_insert_role_assignments(self, role_assignments, customer=None):
-        def callback(request_id, response, exception):
+        self._exceptions = []
+
+        def callback(id, response, exception):
             if exception is not None:
-                self._log.error(exception)
-                raise exception
+                exception_str = "\t".join([id, str(response), str(exception)])
+
+                self._log.error(msg=exception_str)
+                self._exceptions.append(exception_str)
 
         batches = self._batch_list(list=role_assignments, size=10)
 
