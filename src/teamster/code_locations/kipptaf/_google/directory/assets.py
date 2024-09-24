@@ -144,10 +144,6 @@ google_directory_partitioned_assets = [
 ]
 
 assets = [
-    groups,
-    members,
-    orgunits,
-    role_assignments,
-    roles,
-    users,
+    *google_directory_nonpartitioned_assets,
+    *google_directory_partitioned_assets,
 ]

@@ -29,7 +29,7 @@ dagsterCloud:
 ########################################################################################
 dagsterCloudAgent:
   nodeSelector:
-    cloud.google.com/gke-placement-group: servers
+    # cloud.google.com/gke-placement-group: servers
     cloud.google.com/compute-class: Balanced
     cloud.google.com/gke-spot: "true"
 
@@ -57,7 +57,7 @@ workspace:
       nodeSelector:
         cloud.google.com/gke-spot: "true"
         cloud.google.com/compute-class: Balanced
-        cloud.google.com/gke-placement-group: servers
+        # cloud.google.com/gke-placement-group: servers
       terminationGracePeriodSeconds: 25
 
   # Specify TTL for user code servers.
