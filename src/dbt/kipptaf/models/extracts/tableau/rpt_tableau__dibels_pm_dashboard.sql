@@ -184,12 +184,12 @@ select distinct
     a.mclass_measure_semester_growth,
     a.mclass_measure_year_growth,
     a.mclass_score_change,
+    a.mclass_probe_number,
+    a.mclass_total_number_of_probes,
 
     f.nj_student_tier,
     f.tutoring_nj,
 
-    coalesce(a.mclass_probe_number, 0) as mclass_probe_number,
-    coalesce(a.mclass_total_number_of_probes, 0) as mclass_total_number_of_probes,
 from students as s
 left join
     schedules as m
