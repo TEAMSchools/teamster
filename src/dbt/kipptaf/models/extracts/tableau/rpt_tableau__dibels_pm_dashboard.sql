@@ -45,7 +45,7 @@ with
             e.cohort,
 
             a.period as expected_test,
-            a.pm_round as expected_round,
+            cast(a.pm_round as int) as expected_round,
             a.start_date,
             a.end_date,
             a.grade_level as expected_grade_level,
