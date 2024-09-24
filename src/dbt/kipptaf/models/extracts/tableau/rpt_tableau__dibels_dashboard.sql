@@ -35,7 +35,6 @@ with
             and e.region = a.region
             and e.grade_level = a.grade
             and a.scope = 'DIBELS'
-            and a.admin_season not like '%->%'
         where
             not e.is_self_contained
             and e.academic_year >= {{ var("current_academic_year") - 1 }}
