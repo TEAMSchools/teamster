@@ -3,8 +3,13 @@ from dagster_slack import SlackResource
 
 
 def test_slack_resource():
-    slack = SlackResource(token=EnvVar("SLACK_TOKEN"))
+    # trunk-ignore(pyright/reportArgumentType)
+    slack = SlackResource(token=EnvVar("SLACK_TOKEN").get_value())
 
     slack_client = slack.get_client()
 
-    slack_client.chat_postMessage(channel="#dagster-alerts", text="Hello, Slack!")
+    exceptions = ["*`foo` errors:*", "bar", "baz", "spam", "eggs"]
+
+    slack_client.chat_postMessage(
+        channel="#dagster-alerts", text="\n- ".join(exceptions)
+    )
