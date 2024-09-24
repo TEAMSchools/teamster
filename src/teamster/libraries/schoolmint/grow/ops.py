@@ -1,32 +1,47 @@
 from dagster import OpExecutionContext, op
+from dagster_slack import SlackResource
 
 from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 
 
 @op
 def schoolmint_grow_user_update_op(
-    context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource, users
+    context: OpExecutionContext,
+    schoolmint_grow: SchoolMintGrowResource,
+    slack: SlackResource,
+    users,
 ):
+    exceptions = []
+    slack_client = slack.get_client()
+
     for u in users:
         if u["surrogate_key_source"] == u["surrogate_key_destination"]:
             continue
+
+        request_args = ["users"]
 
         user_id = u["user_id"]
         inactive = u["inactive"]
         user_email = u["user_email"]
 
+        exception_str = [user_email]
+
         # restore
         if inactive == 0 and u["archived_at"] is not None:
             try:
                 context.log.info(f"RESTORING\t{user_email}")
+                request_args.extend([user_id, "restore"])
+                exception_str.extend([*request_args, "PUT"])
+
                 schoolmint_grow.put(
-                    "users",
-                    user_id,
-                    "restore",
-                    params={"district": schoolmint_grow.district_id},
+                    *request_args, params={"district": schoolmint_grow.district_id}
                 )
             except Exception as e:
                 context.log.exception(e)
+                exception_str.append(str(e))
+
+                exceptions.append("\t".join(exception_str))
+
                 continue
 
         # build user payload
@@ -49,20 +64,37 @@ def schoolmint_grow_user_update_op(
             # create
             if inactive == 0 and user_id is None:
                 context.log.info(f"CREATING\t{user_email}")
-                create_response = schoolmint_grow.post("users", json=payload)
+                exception_str.extend([*request_args, "POST"])
+
+                create_response = schoolmint_grow.post(*request_args, json=payload)
 
                 u["user_id"] = create_response["_id"]
             # update
             elif inactive == 0 and user_id is not None:
                 context.log.info(f"UPDATING\t{user_email}")
-                schoolmint_grow.put("users", user_id, json=payload)
+                request_args.append(user_id)
+                exception_str.extend([*request_args, "PUT"])
+
+                schoolmint_grow.put(*request_args, json=payload)
             # archive
             elif inactive == 1 and user_id is not None and u["archived_at"] is None:
                 context.log.info(f"ARCHIVING\t{user_email}")
-                schoolmint_grow.delete("users", user_id)
+                request_args.append(user_id)
+                exception_str.extend([*request_args, "DELETE"])
+
+                schoolmint_grow.delete(*request_args, "users", user_id)
         except Exception as e:
             context.log.exception(e)
+            exception_str.append(str(e))
+
+            exceptions.append("\t".join(exception_str))
+
             continue
+
+    if exceptions:
+        slack_client.chat_postMessage(
+            channel="#dagster-alerts", text="\n".join(exceptions)
+        )
 
     return users
 

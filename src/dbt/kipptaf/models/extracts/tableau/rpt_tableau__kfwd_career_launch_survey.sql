@@ -10,18 +10,13 @@ with
                 partition by survey_response_id order by date_submitted desc
             ) as rn_response_id,
         from
-            (
-                select date_submitted, answer, question_title,
-                from {{ ref("int_surveys__survey_responses") }}
-                where
-                    survey_title
-                    = 'Career Launch Survey invalid response reconciliation'
-            ) pivot (
+            {{ ref("int_surveys__survey_responses") }} pivot (
                 max(answer) for question_title in (
                     'Survey response ID' as survey_response_id,
                     'Salesforce contact ID' as sf_contact_id
                 )
             )
+        where survey_title = 'Career Launch Survey invalid response reconciliation'
     ),
 
     alumni_data as (

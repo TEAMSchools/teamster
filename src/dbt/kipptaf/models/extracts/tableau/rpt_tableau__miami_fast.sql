@@ -201,7 +201,7 @@ select
     if(
         not co.is_retained_year
         and co.grade_level = 3
-        and subj.fast_subject = 'ELAReading'
+        and subj.fast_subject = 'English Language Arts'
         and ft.achievement_level_int = 1,
         1,
         0

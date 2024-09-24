@@ -32,7 +32,8 @@
         updates as (
             select worker_id__id_value,
             from workers
-            where worker_id__id_value in (select adp_associate_id, from {{ this }})
+            where
+                worker_id__id_value in (select t.adp_associate_id, from {{ this }} as t)
         ),
 
         inserts as (
@@ -41,7 +42,9 @@
 
                 row_number() over (order by worker_id__id_value) as rn,
             from workers
-            where worker_id__id_value not in (select worker_id__id_value, from updates)
+            where
+                worker_id__id_value
+                not in (select u.worker_id__id_value, from updates as u)
         ),
 
         men as (select max(employee_number) as max_employee_number, from {{ this }})

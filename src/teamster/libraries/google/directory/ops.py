@@ -1,11 +1,15 @@
 from dagster import OpExecutionContext, op
+from dagster_slack import SlackResource
 
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 
 
 @op
 def google_directory_user_create_op(
-    context: OpExecutionContext, google_directory: GoogleDirectoryResource, users
+    context: OpExecutionContext,
+    google_directory: GoogleDirectoryResource,
+    slack: SlackResource,
+    users,
 ):
     # create users
     create_users = [u for u in users if u["is_create"]]
@@ -23,34 +27,69 @@ def google_directory_user_create_op(
         for u in create_users
     ]
 
+    if google_directory._exceptions:
+        slack_client = slack.get_client()
+
+        slack_client.chat_postMessage(
+            channel="#dagster-alerts", text="\n".join(google_directory._exceptions)
+        )
+
     return members
 
 
 @op
 def google_directory_member_create_op(
-    context: OpExecutionContext, google_directory: GoogleDirectoryResource, members
+    context: OpExecutionContext,
+    google_directory: GoogleDirectoryResource,
+    slack: SlackResource,
+    members,
 ):
     context.log.info(f"Adding {len(members)} members to groups")
 
     google_directory.batch_insert_members(members)
 
+    if google_directory._exceptions:
+        slack_client = slack.get_client()
+
+        slack_client.chat_postMessage(
+            channel="#dagster-alerts", text="\n".join(google_directory._exceptions)
+        )
+
 
 @op
 def google_directory_user_update_op(
-    context: OpExecutionContext, google_directory: GoogleDirectoryResource, users
+    context: OpExecutionContext,
+    google_directory: GoogleDirectoryResource,
+    slack: SlackResource,
+    users,
 ):
     update_users = [u for u in users if u["is_update"]]
     context.log.info(f"Updating {len(update_users)} users")
 
     google_directory.batch_update_users(update_users)
 
+    if google_directory._exceptions:
+        slack_client = slack.get_client()
+
+        slack_client.chat_postMessage(
+            channel="#dagster-alerts", text="\n".join(google_directory._exceptions)
+        )
+
 
 @op
 def google_directory_role_assignment_create_op(
     context: OpExecutionContext,
     google_directory: GoogleDirectoryResource,
+    slack: SlackResource,
     role_assignments,
 ):
     context.log.info(f"Adding {len(role_assignments)} role assignments")
 
     google_directory.batch_insert_role_assignments(role_assignments)
+
+    if google_directory._exceptions:
+        slack_client = slack.get_client()
+
+        slack_client.chat_postMessage(
+            channel="#dagster-alerts", text="\n".join(google_directory._exceptions)
+        )
