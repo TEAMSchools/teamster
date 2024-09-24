@@ -97,7 +97,7 @@ with
         select
             academic_year,
             `name`,
-            cast(`start_date` as date) as start_date,
+            `start_date`,
             region,
 
             coalesce(
@@ -170,6 +170,8 @@ select
     a.mclass_measure_semester_growth,
     a.mclass_measure_year_growth,
     a.mclass_score_change,
+    null as mclass_probe_number,
+    null as mclass_total_number_of_probes,
 
     t.start_date,
     t.end_date,
@@ -177,8 +179,6 @@ select
     f.nj_student_tier,
     f.tutoring_nj,
 
-    null as mclass_probe_number,
-    null as mclass_total_number_of_probes,
 from students as s
 left join
     schedules as m
@@ -202,3 +202,74 @@ left join
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
+
+union all
+
+select
+    _dbt_source_relation,
+    academic_year,
+    district,
+    region,
+    state,
+    schoolid,
+    school,
+    studentid,
+    student_number,
+    student_name,
+    grade_level,
+    is_out_of_district,
+    gender,
+    ethnicity,
+    enroll_status,
+    is_homeless,
+    is_504,
+    iep_status,
+    lep_status,
+    lunch_status,
+    gifted_and_talented,
+    advisory,
+    cohort,
+    expected_test,
+    expected_round,
+    month_round,
+    expected_grade_level,
+    expected_mclass_measure_name_code,
+    expected_mclass_measure_name,
+    expected_mclass_measure_standard,
+    goal,
+
+    schedule_student_number,
+    schedule_student_grade_level,
+    teacherid,
+    teacher_name,
+    course_name,
+    course_number,
+    section_number,
+    scheduled,
+    hos,
+
+    mclass_student_number,
+    assessment_type,
+    mclass_assessment_grade,
+    mclass_period,
+    mclass_client_date,
+    mclass_sync_date,
+    mclass_measure_name,
+    mclass_measure_name_code,
+    mclass_measure_standard,
+    mclass_measure_standard_score,
+    mclass_measure_standard_level,
+    mclass_measure_standard_level_int,
+    mclass_measure_percentile,
+    mclass_measure_semester_growth,
+    mclass_measure_year_growth,
+    mclass_score_change,
+    mclass_probe_number,
+    mclass_total_number_of_probes,
+
+    start_date,
+    end_date,
+
+    nj_student_tier,
+    tutoring_nj,
+from {{ ref("rpt_tableau__dibels_pm_dashboard") }}
