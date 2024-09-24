@@ -159,7 +159,7 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_insert_users(self, users):
         def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._exceptions.append((int(id), exception))
+                self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(
                     msg="CREATED " + " ".join([f"{k}={v}" for k, v in response.items()])
@@ -193,7 +193,7 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_update_users(self, users):
         def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._exceptions.append((int(id), exception))
+                self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(
                     msg="UPDATED " + " ".join([f"{k}={v}" for k, v in response.items()])
@@ -229,7 +229,7 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_insert_members(self, members):
         def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._exceptions.append((int(id), exception))
+                self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(
                     msg="ADDING " + " ".join([f"{k}={v}" for k, v in response.items()])
@@ -265,7 +265,7 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_insert_role_assignments(self, role_assignments, customer=None):
         def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._exceptions.append((int(id), exception))
+                self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(msg=" ".join([f"{k}={v}" for k, v in response.items()]))
 
