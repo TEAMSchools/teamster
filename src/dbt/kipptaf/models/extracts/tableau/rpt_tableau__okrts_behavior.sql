@@ -14,7 +14,9 @@ with
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
             case
-                when regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami'
+                when
+                    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami'
+                    and behavior_category != 'Earned Incentives'
                 then regexp_extract(behavior_category, r'([\w\s]+) \(')
                 when behavior like '%(%)'
                 then regexp_extract(behavior, r'([\w\s]+) \(')
