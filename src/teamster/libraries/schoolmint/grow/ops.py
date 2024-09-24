@@ -11,7 +11,7 @@ def schoolmint_grow_user_update_op(
     slack: SlackResource,
     users,
 ):
-    exceptions = ["*`schoolmint_grow_user_update_op` errors:*"]
+    exceptions = []
 
     slack_client = slack.get_client()
 
@@ -93,6 +93,11 @@ def schoolmint_grow_user_update_op(
             continue
 
     if exceptions:
+        exceptions.insert(0, "*`schoolmint_grow_user_update_op` errors:*")
+        exceptions.insert(
+            1, f"https://kipptaf.dagster.cloud/prod/runs/{context.run_id}"
+        )
+
         slack_client.chat_postMessage(
             channel="#dagster-alerts", text="\n".join(exceptions)
         )
