@@ -39,13 +39,31 @@ with
 
             a.period as expected_test,
             a.pm_round as expected_round,
-            a.measure_name as expected_mclass_measure_name,
+            a.start_date,
+            a.end_date,
+            a.grade_level as expected_grade_level,
+            a.measure_level_code as expected_mclass_measure_name_code,
             a.measure_standard as expected_mclass_measure_standard,
             a.goal,
 
             format_datetime('%B', a.start_date) as month_round,
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
+
+            case
+                a.measure_level_code
+                when 'LNF'
+                then 'Letter Names'
+                when 'PSF'
+                then 'Phonological Awareness'
+                when 'NWF'
+                then 'Nonsense Word Fluency'
+                when 'WRF'
+                then 'Word Reading Fluency'
+                when 'ORF'
+                then 'Oral Reading Fluency'
+                else a.measure_level_code
+            end as expected_mclass_measure_name,
         from {{ ref("int_tableau__student_enrollments") }} as e
         inner join
             {{ ref("stg_amplify__dibels_pm_expectations") }} as a
@@ -96,17 +114,6 @@ with
             -- 'ELA Gr7',
             -- 'ELA Gr8'
             )
-    ),
-
-    expanded_terms as (
-        select
-            2024 as academic_year,
-            `period` as `name`,
-            region,
-            grade_level,
-            start_date,
-            end_date,
-        from {{ ref("stg_amplify__dibels_pm_expectations") }}
     )
 
 select
@@ -135,10 +142,14 @@ select
     s.cohort,
     s.expected_test,
     s.expected_round,
+    s.start_date,
+    s.end_date,
+    s.month_round,
+    s.expected_grade_level,
+    s.expected_mclass_measure_name_code,
     s.expected_mclass_measure_name,
     s.expected_mclass_measure_standard,
     s.goal,
-    s.month_round,
 
     m.schedule_student_number,
     m.schedule_student_grade_level,
@@ -167,11 +178,6 @@ select
     a.mclass_measure_year_growth,
     a.mclass_score_change,
 
-    t.name,
-    t.grade_level as round_grade_level,
-    t.start_date,
-    t.end_date,
-
     f.nj_student_tier,
     f.tutoring_nj,
 
@@ -196,12 +202,6 @@ left join
     and s.student_number = a.mclass_student_number
     and s.expected_test = a.mclass_period
     and a.assessment_type = 'PM'
-left join
-    expanded_terms as t
-    on s.academic_year = t.academic_year
-    and s.expected_test = t.name
-    and s.grade_level_int = t.grade_level
-    and s.region = t.region
 left join
     {{ ref("int_reporting__student_filters") }} as f
     on s.academic_year = f.academic_year
