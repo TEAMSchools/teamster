@@ -11,7 +11,8 @@ def schoolmint_grow_user_update_op(
     slack: SlackResource,
     users,
 ):
-    exceptions = []
+    exceptions = ["*`schoolmint_grow_user_update_op` errors:*"]
+
     slack_client = slack.get_client()
 
     for u in users:
@@ -82,7 +83,7 @@ def schoolmint_grow_user_update_op(
                 request_args.append(user_id)
                 exception_str.extend([*request_args, "DELETE"])
 
-                schoolmint_grow.delete(*request_args, "users", user_id)
+                schoolmint_grow.delete(*request_args)
         except Exception as e:
             context.log.exception(e)
             exception_str.append(str(e))
@@ -93,7 +94,7 @@ def schoolmint_grow_user_update_op(
 
     if exceptions:
         slack_client.chat_postMessage(
-            channel="#dagster-alerts", text="\n".join(exceptions)
+            channel="#dagster-alerts", text="\n- ".join(exceptions)
         )
 
     return users
