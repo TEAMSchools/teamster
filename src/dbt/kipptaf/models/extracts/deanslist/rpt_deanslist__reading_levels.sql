@@ -1,5 +1,5 @@
 with
-    data as (
+    dibels as (
         select
             s._dbt_source_relation,
             s.academic_year,
@@ -25,40 +25,38 @@ with
 
             'KIPP NJ/MIAMI' as district,
 
-            if(
-                s.grade_level = 0, 'K', safe_cast(s.grade_level as string)
-            ) as grade_level,
+            if(s.grade_level = 0, 'K', cast(s.grade_level as string)) as grade_level,
 
             case
-                when c.mclass_measure_level = 'Above Benchmark'
+                c.mclass_measure_level
+                when 'Above Benchmark'
                 then 'Exceeded'
-                when c.mclass_measure_level = 'At Benchmark'
+                when 'At Benchmark'
                 then 'Met'
-                when c.mclass_measure_level = 'Below Benchmark'
+                when 'Below Benchmark'
                 then 'Not Met'
-                when c.mclass_measure_level = 'Well Below Benchmark'
+                when 'Well Below Benchmark'
                 then 'Not Met'
             end as composite_expectations,
-
         from {{ ref("base_powerschool__student_enrollments") }} as s
-        left join
+        inner join
             {{ ref("int_amplify__all_assessments") }} as c
             on s.academic_year = c.mclass_academic_year
             and s.student_number = c.mclass_student_number
             and s.grade_level = c.mclass_assessment_grade_int
             and c.mclass_measure = 'Composite'
-        left join
+        inner join
             {{ ref("int_amplify__all_assessments") }} as nc
             on c.mclass_academic_year = nc.mclass_academic_year
             and c.mclass_student_number = nc.mclass_student_number
             and c.mclass_assessment_grade = nc.mclass_assessment_grade
             and c.mclass_period = nc.mclass_period
-            and nc.mclass_measure != 'Composite'
             and nc.assessment_type = 'Benchmark'
+            and nc.mclass_measure != 'Composite'
         inner join
             {{ ref("stg_amplify__dibels_measures") }} as m
             on nc.mclass_assessment_grade = m.grade_level
-            and nc.mclass_measure = m.name
+            and nc.mclass_measure = m.measure_standard
         where
             s.academic_year = {{ var("current_academic_year") }}
             and s.rn_year = 1
@@ -78,7 +76,7 @@ select
 
     'Not applicable' as growth_level,
     'Q1' as `quarter`,
-from data
+from dibels
 where mclass_period = 'BOY'
 
 union all
@@ -95,7 +93,7 @@ select
     mclass_measure_semester_growth as growth_level,
 
     'Q2' as `quarter`,
-from data
+from dibels
 where mclass_period = 'MOY'
 
 union all
@@ -113,7 +111,7 @@ select
     mclass_measure_semester_growth as growth_level,
 
     'Q3' as `quarter`,
-from data
+from dibels
 where mclass_period = 'MOY'
 
 union all
@@ -130,5 +128,5 @@ select
     mclass_measure_year_growth as growth_level,
 
     'Q4' as `quarter`,
-from data
+from dibels
 where mclass_period = 'EOY'
