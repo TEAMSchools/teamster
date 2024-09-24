@@ -29,6 +29,9 @@ def google_directory_user_create_op(
 
     if exceptions:
         exceptions.insert(0, "*`google_directory_user_create_op` errors:*")
+        exceptions.insert(
+            1, f"https://kipptaf.dagster.cloud/prod/runs/{context.run_id}"
+        )
 
         slack_client = slack.get_client()
 
@@ -52,6 +55,9 @@ def google_directory_member_create_op(
 
     if exceptions:
         exceptions.insert(0, "*`google_directory_member_create_op` errors:*")
+        exceptions.insert(
+            1, f"https://kipptaf.dagster.cloud/prod/runs/{context.run_id}"
+        )
 
         slack_client = slack.get_client()
 
@@ -74,6 +80,9 @@ def google_directory_user_update_op(
 
     if google_directory._exceptions:
         exceptions.insert(0, "*`google_directory_user_update_op` errors:*")
+        exceptions.insert(
+            1, f"https://kipptaf.dagster.cloud/prod/runs/{context.run_id}"
+        )
 
         slack_client = slack.get_client()
 
@@ -95,6 +104,9 @@ def google_directory_role_assignment_create_op(
 
     if exceptions:
         exceptions.insert(0, "*`google_directory_role_assignment_create_op` errors:*")
+        exceptions.insert(
+            1, f"https://kipptaf.dagster.cloud/prod/runs/{context.run_id}"
+        )
 
         slack_client = slack.get_client()
 
