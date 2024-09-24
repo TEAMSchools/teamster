@@ -56,7 +56,7 @@ with
             and nc.mclass_measure != 'Composite'
             and nc.assessment_type = 'Benchmark'
         inner join
-            {{ ref("stg_assessments__mclass_dibels_measures") }} as m
+            {{ ref("stg_amplify__dibels_measures") }} as m
             on nc.mclass_assessment_grade = m.grade_level
             and nc.mclass_measure = m.name
         where
