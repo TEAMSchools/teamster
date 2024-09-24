@@ -14,6 +14,7 @@ with
             and sr1.department_home_name <> 'Executive'
             and sr1.assignment_status in ('Active', 'Leave')
     ),
+
     /* chiefs/presidents above departments without chiefs*/
     other_chiefs as (
         select
@@ -31,7 +32,7 @@ with
                     end
                 ),
                 null
-            ) as ktaf_approver
+            ) as ktaf_approver,
         from {{ ref("base_people__staff_roster") }} as sr1
         left join
             {{ ref("base_people__staff_roster") }} as sr2
@@ -42,16 +43,17 @@ with
             and (sr2.job_title like '%Chief%' or sr2.job_title like '%President%')
             and sr1.department_home_name <> 'Executive'
             and sr1.department_home_name
-            not in (select department_home_name from department_chiefs)
+            not in (select dc.department_home_name, from department_chiefs as dc)
         group by sr1.department_home_name, sr1.report_to_preferred_name_lastfirst
     ),
 
-    /* combining all departments to one KTAF list of departments and Chief/President approver*/
+    /* combining all departments to one KTAF list of departments
+    and Chief/President approvers*/
     ktaf_approvers as (
-        select d.*
+        select d.*,
         from department_chiefs as d
         union all
-        select o.*
+        select o.*,
         from other_chiefs as o
     ),
 
@@ -226,6 +228,7 @@ with
         from route_assignments as r
 
     )
+    
 /* roster that feeds into Stipend and Bonus AppSheet*/
 select
     r.employee_number,
