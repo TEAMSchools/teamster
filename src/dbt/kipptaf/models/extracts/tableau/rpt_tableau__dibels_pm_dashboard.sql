@@ -188,9 +188,6 @@ select
     f.nj_student_tier,
     f.tutoring_nj,
 
-    coalesce(a.boy_composite, 'No data') as boy_composite,
-    coalesce(a.moy_composite, 'No data') as moy_composite,
-    coalesce(a.eoy_composite, 'No data') as eoy_composite,
     coalesce(a.mclass_probe_number, 0) as mclass_probe_number,
     coalesce(a.mclass_total_number_of_probes, 0) as mclass_total_number_of_probes,
 from students as s
