@@ -226,9 +226,8 @@ with
                 then r.ktaf_approver
             end as second_approver_employee_number,
         from route_assignments as r
-
     )
-    
+
 /* roster that feeds into Stipend and Bonus AppSheet*/
 select
     r.employee_number,
