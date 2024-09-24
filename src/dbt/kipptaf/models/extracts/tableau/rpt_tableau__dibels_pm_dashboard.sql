@@ -1,4 +1,16 @@
 with
+    eligible_students as (
+        select
+            mclass_academic_year, mclass_student_number, mclass_pm_season, pm_eligible
+        from
+            {{ ref("int_amplify__all_assessments") }} unpivot (
+                pm_eligible
+                for mclass_pm_season
+                in (boy_probe_eligible as 'BOY->MOY', moy_probe_eligible as 'MOY->EOY')
+            ) as upvt
+        where assessment_type = 'Benchmark'
+    ),
+
     students as (
         select
             e._dbt_source_relation,
@@ -40,6 +52,11 @@ with
             -- on e.academic_year = a.academic_year
             on e.region = a.region
             and e.grade_level = a.grade_level
+        inner join
+            eligible_students as s
+            on e.student_number = s.mclass_student_number
+            and a.period = mclass_pm_season
+            and s.pm_eligible = 'Yes'
         where not e.is_self_contained and e.academic_year >= 2024 and e.grade_level <= 2
     ),
 
