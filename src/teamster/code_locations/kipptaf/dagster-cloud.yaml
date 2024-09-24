@@ -376,6 +376,11 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api
                     key: credential
+              - name: SLACK_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-slack-api
+                    key: credential
         run_k8s_config:
           container_config:
             resources:
