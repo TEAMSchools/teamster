@@ -15,7 +15,7 @@ def google_directory_user_create_op(
     create_users = [u for u in users if u["is_create"]]
     context.log.info(f"Creating {len(create_users)} users")
 
-    google_directory.batch_insert_users(create_users)
+    exceptions = google_directory.batch_insert_users(create_users)
 
     # add users to group
     members = [
@@ -27,11 +27,13 @@ def google_directory_user_create_op(
         for u in create_users
     ]
 
-    if google_directory._exceptions:
+    if exceptions:
+        exceptions.insert(0, "*`google_directory_user_create_op` errors:*")
+
         slack_client = slack.get_client()
 
         slack_client.chat_postMessage(
-            channel="#dagster-alerts", text="\n".join(google_directory._exceptions)
+            channel="#dagster-alerts", text="\n".join(exceptions)
         )
 
     return members
@@ -46,13 +48,15 @@ def google_directory_member_create_op(
 ):
     context.log.info(f"Adding {len(members)} members to groups")
 
-    google_directory.batch_insert_members(members)
+    exceptions = google_directory.batch_insert_members(members)
 
-    if google_directory._exceptions:
+    if exceptions:
+        exceptions.insert(0, "*`google_directory_member_create_op` errors:*")
+
         slack_client = slack.get_client()
 
         slack_client.chat_postMessage(
-            channel="#dagster-alerts", text="\n".join(google_directory._exceptions)
+            channel="#dagster-alerts", text="\n".join(exceptions)
         )
 
 
@@ -66,13 +70,15 @@ def google_directory_user_update_op(
     update_users = [u for u in users if u["is_update"]]
     context.log.info(f"Updating {len(update_users)} users")
 
-    google_directory.batch_update_users(update_users)
+    exceptions = google_directory.batch_update_users(update_users)
 
     if google_directory._exceptions:
+        exceptions.insert(0, "*`google_directory_user_update_op` errors:*")
+
         slack_client = slack.get_client()
 
         slack_client.chat_postMessage(
-            channel="#dagster-alerts", text="\n".join(google_directory._exceptions)
+            channel="#dagster-alerts", text="\n".join(exceptions)
         )
 
 
@@ -85,11 +91,13 @@ def google_directory_role_assignment_create_op(
 ):
     context.log.info(f"Adding {len(role_assignments)} role assignments")
 
-    google_directory.batch_insert_role_assignments(role_assignments)
+    exceptions = google_directory.batch_insert_role_assignments(role_assignments)
 
-    if google_directory._exceptions:
+    if exceptions:
+        exceptions.insert(0, "*`google_directory_role_assignment_create_op` errors:*")
+
         slack_client = slack.get_client()
 
         slack_client.chat_postMessage(
-            channel="#dagster-alerts", text="\n".join(google_directory._exceptions)
+            channel="#dagster-alerts", text="\n".join(exceptions)
         )
