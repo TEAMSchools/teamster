@@ -99,27 +99,6 @@ sources:
               - kipptaf
               - assessments
               - qbls_power_standards
-      - name: src_assessments__mclass_dibels_measures
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
-            sheet_range: src_assessments__mclass_dibels_measures
-            skip_leading_rows: 1
-        columns:
-          - name: grade_level
-            data_type: STRING
-          - name: name
-            data_type: STRING
-          - name: description
-            data_type: STRING
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - assessments
-              - mclass_dibels_measures
       - name: src_assessments__standard_domains
         external:
           options:
