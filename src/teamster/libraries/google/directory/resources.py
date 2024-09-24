@@ -157,18 +157,12 @@ class GoogleDirectoryResource(ConfigurableResource):
             i = i * 2
 
     def batch_insert_users(self, users):
-        def callback(id, response, exception):
+        def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._exceptions.append((id, exception))
+                self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(
-                    msg=(
-                        f"CREATED {response['primaryEmail']}: "
-                        f"{response['name'].get('givenName')} "
-                        f"{response['name'].get('familyName')} "
-                        f"OU={response['orgUnitPath']} "
-                        f"changepassword={response['changePasswordAtNextLogin']}"
-                    )
+                    msg="CREATED " + " ".join([f"{k}={v}" for k, v in response.items()])
                 )
 
         exceptions = []
@@ -179,7 +173,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         batches = self._batch_list(list=users, size=10)
 
         for i, batch in enumerate(batches):
-            self._log.info(f"Processing batch {i + 1}")
+            self._log.info(msg=f"Processing batch {i + 1}")
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
@@ -197,18 +191,12 @@ class GoogleDirectoryResource(ConfigurableResource):
         return exceptions
 
     def batch_update_users(self, users):
-        def callback(id, response, exception):
+        def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._exceptions.append((id, exception))
+                self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(
-                    msg=(
-                        f"UPDATED {response['primaryEmail']}: "
-                        f"{response['name'].get('givenName')} "
-                        f"{response['name'].get('familyName')} "
-                        f"OU={response['orgUnitPath']} "
-                        f"suspended={response['suspended']}"
-                    )
+                    msg="UPDATED " + " ".join([f"{k}={v}" for k, v in response.items()])
                 )
 
         exceptions = []
@@ -217,7 +205,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         batches = self._batch_list(list=users, size=40)
 
         for i, batch in enumerate(batches):
-            self._log.info(f"Processing batch {i + 1}")
+            self._log.info(msg=f"Processing batch {i + 1}")
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
@@ -241,7 +229,11 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_insert_members(self, members):
         def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._exceptions.append((id, exception))
+                self._exceptions.append((int(id) - 1, exception))
+            else:
+                self._log.info(
+                    msg="ADDING " + " ".join([f"{k}={v}" for k, v in response.items()])
+                )
 
         exceptions = []
 
@@ -249,13 +241,12 @@ class GoogleDirectoryResource(ConfigurableResource):
         batches = self._batch_list(list=members, size=40)
 
         for i, batch in enumerate(batches):
-            self._log.info(f"Processing batch {i + 1}")
+            self._log.info(msg=f"Processing batch {i + 1}")
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
 
             for member in batch:
-                self._log.info(f"ADDING {member['email']} to {member['groupKey']}")
                 batch_request.add(
                     # trunk-ignore(pyright/reportAttributeAccessIssue)
                     self._resource.members().insert(
@@ -272,16 +263,18 @@ class GoogleDirectoryResource(ConfigurableResource):
         return exceptions
 
     def batch_insert_role_assignments(self, role_assignments, customer=None):
-        def callback(id, response, exception):
+        def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._exceptions.append((id, exception))
+                self._exceptions.append((int(id) - 1, exception))
+            else:
+                self._log.info(msg=" ".join([f"{k}={v}" for k, v in response.items()]))
 
         exceptions = []
 
         batches = self._batch_list(list=role_assignments, size=10)
 
         for i, batch in enumerate(batches):
-            self._log.info(f"Processing batch {i + 1}")
+            self._log.info(msg=f"Processing batch {i + 1}")
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
