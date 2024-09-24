@@ -8,16 +8,20 @@ with
             rt.name as term_name,
 
             round(avg(mem.attendancevalue), 2) as ada_term_running,
+
             coalesce(sum(abs(mem.attendancevalue - 1)), 0) as n_absences_y1_running,
+
             coalesce(
                 sum(
-                    case
-                        when ac.att_code not in ('ISS', 'OSS', 'OS', 'OSSP', 'SHI')
-                        then abs(mem.attendancevalue - 1)
-                    end
+                    if(
+                        ac.att_code not in ('ISS', 'OSS', 'OS', 'OSSP', 'SHI'),
+                        abs(mem.attendancevalue - 1),
+                        null
+                    )
                 ),
                 0
             ) as n_absences_y1_running_non_susp,
+
             case
                 regexp_extract(mem._dbt_source_relation, r'(kipp\w+)_')
                 when 'kippnewark'
@@ -41,7 +45,8 @@ with
             {{ ref("stg_reporting__terms") }} as rt
             on mem.schoolid = rt.school_id
             and mem.yearid = rt.powerschool_year_id
-            and mem.calendardate <= rt.end_date  -- join to all terms after calendardate
+            /* join to all terms after calendardate */
+            and mem.calendardate <= rt.end_date
             and rt.type = 'RT'
         left join
             {{ ref("stg_powerschool__attendance") }} as att
@@ -71,6 +76,7 @@ with
             storecode,
 
             sum(potential_credit_hours) as enrolled_credit_hours,
+
             sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) as n_failing,
             sum(
                 if(
@@ -108,7 +114,7 @@ with
         select
             student_id,
             academic_year_int,
-            subject,
+            `subject`,
             most_recent_overall_relative_placement,
         from {{ ref("base_iready__diagnostic_results") }}
     ),
@@ -117,7 +123,7 @@ with
         select student_id, academic_year_int, iready_reading_recent, iready_math_recent,
         from
             iready_dr pivot (
-                max(most_recent_overall_relative_placement) for subject
+                max(most_recent_overall_relative_placement) for `subject`
                 in ('Reading' as iready_reading_recent, 'Math' as iready_math_recent)
             )
     ),
@@ -143,7 +149,7 @@ with
             studentid,
             academic_year,
             entry_date,
-            entry,
+            `entry`,
 
             row_number() over (
                 partition by _dbt_source_relation, studentid, academic_year
@@ -160,7 +166,7 @@ with
             co.is_self_contained,
             co.special_education_code,
 
-            rt.term_name,
+            term_name,
 
             att.ada_term_running,
             att.n_absences_y1_running,
@@ -267,18 +273,18 @@ with
                 else 'On-Track'
             end as academic_status,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join (select *, from unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name) as rt
+        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name
         left join
             attendance as att
             on co.studentid = att.studentid
             and co.yearid = att.yearid
-            and rt.term_name = att.term_name
+            and term_name = att.term_name
             and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
         left join
             credits as c
             on co.studentid = c.studentid
             and co.academic_year = c.academic_year
-            and rt.term_name = c.storecode
+            and term_name = c.storecode
             and {{ union_dataset_join_clause(left_alias="co", right_alias="c") }}
         left join
             iready as ir
@@ -313,6 +319,7 @@ select
     attendance_status_hs_detail,
     academic_status,
     exemption,
+
     case
         when grade_level = 0
         then attendance_status
