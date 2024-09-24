@@ -94,7 +94,7 @@ def schoolmint_grow_user_update_op(
 
     if exceptions:
         slack_client.chat_postMessage(
-            channel="#dagster-alerts", text="\n- ".join(exceptions)
+            channel="#dagster-alerts", text="\n".join(exceptions)
         )
 
     return users
