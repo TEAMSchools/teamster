@@ -123,7 +123,7 @@ with
             )
     )
 
-select
+select distinct
     s._dbt_source_relation,
     s.academic_year,
     s.district,
