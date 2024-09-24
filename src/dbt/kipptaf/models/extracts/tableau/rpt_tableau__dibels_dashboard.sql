@@ -190,7 +190,7 @@ left join
     on s.academic_year = a.mclass_academic_year
     and s.student_number = a.mclass_student_number
     and s.expected_test = a.mclass_period
-    and a.mclass_period = 'Benchmark'
+    and a.assessment_type = 'Benchmark'
 left join
     expanded_terms as t
     on s.academic_year = t.academic_year
