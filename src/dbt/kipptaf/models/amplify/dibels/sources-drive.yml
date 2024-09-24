@@ -59,6 +59,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_amplify__dibels_measures
             skip_leading_rows: 1
+        columns:
+          - name: grade_level
+            data_type: string
+          - name: measure_standard
+            data_type: string
+          - name: measure_name_code
+            data_type: string
+          - name: description
+            data_type: string
         meta:
           dagster:
             parent_asset_key_path:
