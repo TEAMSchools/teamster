@@ -97,7 +97,7 @@ with
         select
             academic_year,
             `name`,
-            `start_date`,
+            cast(`start_date` as date) as start_date,
             region,
 
             coalesce(
