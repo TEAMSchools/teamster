@@ -39,8 +39,8 @@ def adp_wfn_api_workers_asset_schedule(context: ScheduleEvaluationContext) -> Ge
 
     partition_keys = partitions_def.get_partition_keys()
 
-    # materialize +/- 2 weeks
-    for partition_key in partition_keys[-31:]:
+    # materialize +2 weeks & -1 month
+    for partition_key in partition_keys[-45:]:
         yield RunRequest(
             run_key=f"{context._schedule_name}_{partition_key}",
             partition_key=partition_key.format(fmt="MM/DD/YYYY"),

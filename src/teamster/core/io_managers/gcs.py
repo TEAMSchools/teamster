@@ -119,7 +119,7 @@ class AvroGCSIOManager(GCSUPathIOManager):
         if self.test:
             import json
 
-            fp = "env" / path.with_suffix(".json")
+            fp = "env/test" / path.with_suffix(".json")
 
             fp.parent.mkdir(parents=True, exist_ok=True)
 
