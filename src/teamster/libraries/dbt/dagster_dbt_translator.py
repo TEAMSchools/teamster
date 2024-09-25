@@ -40,7 +40,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             and dbt_resource_props["config"]["materialized"] == "view"
             and "extracts" in dbt_resource_props["fqn"]
         ):
-            return AutomationCondition.code_version_changed()
+            return (
+                AutomationCondition.code_version_changed()
+                | AutomationCondition.newly_missing()
+            )
         else:
             return (
                 AutomationCondition.eager() | AutomationCondition.code_version_changed()
