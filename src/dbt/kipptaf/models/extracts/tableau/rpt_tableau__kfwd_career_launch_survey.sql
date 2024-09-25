@@ -32,8 +32,8 @@ with
 
             c.first_name as sf_first_name,
             c.last_name as sf_last_name,
-            c.email as sf_email,
-            c.secondary_email as sf_secondary_email,
+            lower(c.email) as sf_email,
+            lower(c.secondary_email) as sf_secondary_email,
             c.kipp_ms_graduate,
             c.kipp_hs_graduate,
             c.kipp_hs_class,
@@ -64,7 +64,7 @@ with
             safe_cast(ri.response_id as string) as response_id,
             ri.response_date_submitted,
             ri.respondent_salesforce_id,
-            ri.respondent_user_principal_name,
+            lower(ri.respondent_user_principal_name) as respondent_user_principal_name,
 
             sr.survey_title,
             sr.question_short_name,
@@ -83,7 +83,7 @@ with
             safe_cast(fr.response_id as string) as response_id,
             safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
             null as respondent_salesforce_id,
-            fr.respondent_email as respondent_user_principal_name,
+            lower(fr.respondent_email) as respondent_user_principal_name,
 
             fr.info_document_title as survey_title,
             fr.item_abbreviation as question_short_name,
