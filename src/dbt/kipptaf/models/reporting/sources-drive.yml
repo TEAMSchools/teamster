@@ -61,3 +61,17 @@ sources:
               - kipptaf
               - reporting
               - gradebook_expectations
+      - name: src_reporting__promo_status_cutoffs
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1bRd3cI3WlTdizm5ja7IxGxGjJDzXrOX6i2G731h9yr8
+            sheet_range: src_reporting__promo_status_cutoffs
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - reporting
+              - promo_status_cutoffs
