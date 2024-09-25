@@ -25,7 +25,19 @@ with
             e.cohort,
 
             a.admin_season as expected_test,
+            a.test_code,
             a.month_round,
+
+            a.grade as expected_grade_level,
+            regexp_extract(
+                a.assessment_subject_area, r'^[^_]*'
+            ) as expected_mclass_measure_name_code,
+            regexp_substr(
+                a.assessment_subject_area, r'_(.*?)_'
+            ) as expected_mclass_measure_name,
+            regexp_substr(
+                a.assessment_subject_area, r'[^_]+$'
+            ) as expected_mclass_measure_standard,
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
         from {{ ref("int_tableau__student_enrollments") }} as e
@@ -80,24 +92,6 @@ with
                 'ELA Gr7',
                 'ELA Gr8'
             )
-    ),
-
-    expanded_terms as (
-        select
-            academic_year,
-            `name`,
-            `start_date`,
-            region,
-
-            coalesce(
-                lead(`start_date`, 1) over (
-                    partition by academic_year, region order by code asc
-                )
-                - 1,
-                '{{ var("current_fiscal_year") }}-06-30'
-            ) as end_date,
-        from {{ ref("stg_reporting__terms") }}
-        where `type` = 'LIT' and academic_year >= {{ var("current_academic_year") - 1 }}
     )
 
 select
@@ -125,6 +119,11 @@ select
     s.advisory,
     s.cohort,
     s.expected_test,
+    s.month_round,
+    s.expected_mclass_measure_name_code,
+    s.expected_mclass_measure_name,
+    s.expected_mclass_measure_standard,
+    null as goal,
 
     m.schedule_student_number,
     m.schedule_student_grade_level,
@@ -141,32 +140,30 @@ select
     a.mclass_assessment_grade,
     a.mclass_period,
     a.mclass_client_date,
-    a.mclass_sync_date,
-    a.mclass_measure,
-    a.mclass_measure_score,
-    a.mclass_measure_level,
-    a.mclass_measure_level_int,
+    a.mclass_measure_name,
+    a.mclass_measure_name_code,
+    a.mclass_measure_standard,
+    a.mclass_measure_standard_score,
+    a.mclass_measure_standard_level,
+    a.mclass_measure_standard_level_int,
     a.mclass_measure_percentile,
     a.mclass_measure_semester_growth,
     a.mclass_measure_year_growth,
     a.mclass_score_change,
+    null as mclass_probe_number,
+    null as mclass_total_number_of_probes,
 
-    t.name,
     t.start_date,
     t.end_date,
 
     f.nj_student_tier,
     f.tutoring_nj,
 
-    coalesce(a.pm_probe_eligible, 'No data') as pm_probe_eligible,
-    coalesce(a.pm_probe_tested, 'No data') as pm_probe_tested,
-    coalesce(a.boy_probe_eligible, 'No data') as boy_probe_eligible,
-    coalesce(a.moy_probe_eligible, 'No data') as moy_probe_eligible,
-    coalesce(a.boy_composite, 'No data') as boy_composite,
-    coalesce(a.moy_composite, 'No data') as moy_composite,
-    coalesce(a.eoy_composite, 'No data') as eoy_composite,
-    coalesce(a.mclass_probe_number, 0) as mclass_probe_number,
-    coalesce(a.mclass_total_number_of_probes, 0) as mclass_total_number_of_probes,
+    right(s.test_code, 1) as expected_round,
+    if(
+        s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
+    ) as expected_grade_level,
+
 from students as s
 left join
     schedules as m
@@ -178,14 +175,87 @@ left join
     on s.academic_year = a.mclass_academic_year
     and s.student_number = a.mclass_student_number
     and s.expected_test = a.mclass_period
+    and a.assessment_type = 'Benchmark'
 left join
-    expanded_terms as t
+    {{ ref("stg_reporting__terms") }} as t
     on s.academic_year = t.academic_year
     and s.expected_test = t.name
     and s.region = t.region
+    and t.type = 'LIT'
 left join
     {{ ref("int_reporting__student_filters") }} as f
     on s.academic_year = f.academic_year
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
+
+union all
+
+select
+    _dbt_source_relation,
+    academic_year,
+    district,
+    region,
+    state,
+    schoolid,
+    school,
+    studentid,
+    student_number,
+    student_name,
+    grade_level,
+    is_out_of_district,
+    gender,
+    ethnicity,
+    enroll_status,
+    is_homeless,
+    is_504,
+    iep_status,
+    lep_status,
+    lunch_status,
+    gifted_and_talented,
+    advisory,
+    cohort,
+    expected_test,
+    month_round,
+    expected_mclass_measure_name_code,
+    expected_mclass_measure_name,
+    expected_mclass_measure_standard,
+    goal,
+
+    schedule_student_number,
+    schedule_student_grade_level,
+    teacherid,
+    teacher_name,
+    course_name,
+    course_number,
+    section_number,
+    scheduled,
+    hos,
+
+    mclass_student_number,
+    assessment_type,
+    mclass_assessment_grade,
+    mclass_period,
+    mclass_client_date,
+    mclass_measure_name,
+    mclass_measure_name_code,
+    mclass_measure_standard,
+    mclass_measure_standard_score,
+    mclass_measure_standard_level,
+    mclass_measure_standard_level_int,
+    mclass_measure_percentile,
+    mclass_measure_semester_growth,
+    mclass_measure_year_growth,
+    mclass_score_change,
+    mclass_probe_number,
+    mclass_total_number_of_probes,
+
+    start_date,
+    end_date,
+
+    nj_student_tier,
+    tutoring_nj,
+
+    expected_round,
+    expected_grade_level,
+from {{ ref("rpt_tableau__dibels_pm_dashboard") }}
