@@ -91,12 +91,6 @@ with
                 'ELA Gr7',
                 'ELA Gr8'
             )
-    ),
-
-    terms as (
-        select academic_year, `name`, `start_date`, `end_date`, region,
-        from {{ ref("stg_reporting__terms") }}
-        where `type` = 'LIT' and academic_year >= {{ var("current_academic_year") - 1 }}
     )
 
 select
@@ -179,10 +173,11 @@ left join
     and s.expected_test = a.mclass_period
     and a.assessment_type = 'Benchmark'
 left join
-    terms as t
+    {{ ref("stg_reporting__terms") }} as t
     on s.academic_year = t.academic_year
     and s.expected_test = t.name
     and s.region = t.region
+    and t.type = 'LIT'
 left join
     {{ ref("int_reporting__student_filters") }} as f
     on s.academic_year = f.academic_year
