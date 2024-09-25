@@ -27,6 +27,7 @@ with
     )
 
 select
+    co.academic_year,
     co.student_number,
     co.lastfirst,
     co.grade_level,
@@ -115,9 +116,9 @@ left join
 left join
     {{ ref("stg_iready__personalized_instruction_by_lesson") }} as il
     on co.student_number = il.student_id
-    and co.academic_year = il.academic_year_int
     and subj = il.subject
     and il.completion_date between w.week_start_monday and w.week_end_sunday
+    and il.academic_year_int = {{ var("current_academic_year") }}
 left join
     {{ ref("base_iready__diagnostic_results") }} as dr
     on co.student_number = dr.student_id
@@ -128,9 +129,9 @@ left join
 left join
     {{ ref("snapshot_iready__instructional_usage_data") }} as iu
     on co.student_number = iu.student_id
-    and co.academic_year = cast(left(iu.academic_year, 4) as int)
     and subj = iu.subject
     and w.week_start_monday = iu.last_week_start_date
+    and iu.academic_year_int = {{ var("current_academic_year") }}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as hr
     on co.student_number = hr.students_student_number
@@ -160,7 +161,7 @@ left join
     = cr.courses_credittype
     and cr.rn_credittype_year = 1
 where
-    co.academic_year = {{ var("current_academic_year") }}
+    co.academic_year >= {{ var("current_academic_year") - 1 }}
     and co.rn_year = 1
     and co.enroll_status = 0
     and co.grade_level <= 8
