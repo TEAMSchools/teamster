@@ -82,7 +82,11 @@ with
             on e.academic_year = a.academic_year
             and e.region = a.region
             and e.grade_level = a.grade_level
-        where not e.is_self_contained and e.academic_year >= 2024 and e.grade_level <= 2
+        where
+            not e.is_self_contained
+            and e.academic_year >= 2024
+            and e.grade_level <= 2
+            and e.region != 'Miami'
     ),
 
     schedules as (
