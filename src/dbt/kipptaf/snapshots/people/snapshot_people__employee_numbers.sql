@@ -11,7 +11,15 @@
     select
         *,
 
-        {{ dbt_utils.generate_surrogate_key(["adp_associate_id", "is_active"]) }}
-        as surrogate_key,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "employee_number",
+                    "adp_associate_id",
+                    "adp_associate_id_legacy",
+                    "is_active",
+                ]
+            )
+        }} as surrogate_key,
     from {{ ref("stg_people__employee_numbers") }}
 {%- endsnapshot -%}
