@@ -177,7 +177,6 @@ select distinct
     a.mclass_assessment_grade,
     a.mclass_period,
     a.mclass_client_date,
-    a.mclass_sync_date,
     a.mclass_measure_name,
     a.mclass_measure_name_code,
     a.mclass_measure_standard,
