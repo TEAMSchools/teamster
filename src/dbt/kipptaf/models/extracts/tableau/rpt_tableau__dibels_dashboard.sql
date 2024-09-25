@@ -25,8 +25,9 @@ with
             e.cohort,
 
             a.admin_season as expected_test,
-            right(a.test_code, 1) as expected_round,
+            a.test_code,
             a.month_round,
+
             a.grade as expected_grade_level,
             regexp_extract(
                 a.assessment_subject_area, r'^[^_]*'
@@ -118,7 +119,6 @@ select
     s.advisory,
     s.cohort,
     s.expected_test,
-    s.expected_round,
     s.month_round,
     s.expected_grade_level,
     s.expected_mclass_measure_name_code,
@@ -159,6 +159,8 @@ select
 
     f.nj_student_tier,
     f.tutoring_nj,
+
+    right(s.test_code, 1) as expected_round,
 
 from students as s
 left join
@@ -212,7 +214,6 @@ select
     advisory,
     cohort,
     expected_test,
-    expected_round,
     month_round,
     expected_grade_level,
     expected_mclass_measure_name_code,
@@ -253,4 +254,6 @@ select
 
     nj_student_tier,
     tutoring_nj,
+
+    expected_round,
 from {{ ref("rpt_tableau__dibels_pm_dashboard") }}
