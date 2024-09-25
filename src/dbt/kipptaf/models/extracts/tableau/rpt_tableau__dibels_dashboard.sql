@@ -120,7 +120,6 @@ select
     s.cohort,
     s.expected_test,
     s.month_round,
-    s.expected_grade_level,
     s.expected_mclass_measure_name_code,
     s.expected_mclass_measure_name,
     s.expected_mclass_measure_standard,
@@ -161,6 +160,9 @@ select
     f.tutoring_nj,
 
     right(s.test_code, 1) as expected_round,
+    if(
+        s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
+    ) as expected_grade_level,
 
 from students as s
 left join
@@ -215,7 +217,6 @@ select
     cohort,
     expected_test,
     month_round,
-    expected_grade_level,
     expected_mclass_measure_name_code,
     expected_mclass_measure_name,
     expected_mclass_measure_standard,
@@ -256,4 +257,5 @@ select
     tutoring_nj,
 
     expected_round,
+    expected_grade_level,
 from {{ ref("rpt_tableau__dibels_pm_dashboard") }}

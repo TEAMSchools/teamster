@@ -163,7 +163,6 @@ select distinct
     s.start_date,
     s.end_date,
     s.month_round,
-    s.expected_grade_level,
     s.expected_mclass_measure_name_code,
     s.expected_mclass_measure_name,
     s.expected_mclass_measure_standard,
@@ -199,6 +198,10 @@ select distinct
 
     f.nj_student_tier,
     f.tutoring_nj,
+
+    if(
+        s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
+    ) as expected_grade_level,
 
 from students as s
 left join
