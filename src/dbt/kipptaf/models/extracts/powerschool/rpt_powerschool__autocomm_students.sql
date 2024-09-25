@@ -19,15 +19,23 @@ with
             )
     )
 
+-- trunk-ignore(sqlfluff/ST06)
 select
     se.student_number,
     se.student_web_id,
-    se.student_web_password,
+
+    if(
+        s.student_web_password is not null, null, se.student_web_password
+    ) as student_web_password,
+
     se.advisory_name as team,
     se.lunch_status as eligibility_name,
     se.lunch_balance as total_balance,
     se.advisor_lastfirst as home_room,
-    se.student_web_password as web_password,
+
+    if(
+        s.student_web_password is not null, null, se.student_web_password
+    ) as web_password,
 
     g.s_nj_stu_x__graduation_pathway_math,
     g.s_nj_stu_x__graduation_pathway_ela,
@@ -37,9 +45,11 @@ select
 
     se.student_web_id || '.fam' as web_id,
     se.academic_year + (13 - se.grade_level) as graduation_year,
+
     if(se.enroll_status = 0, 1, 0) as student_allowwebaccess,
     if(se.enroll_status = 0, 1, 0) as allowwebaccess,
     if(se.is_retained_year, 1, 0) as retained_tf,
+
     case
         when se.grade_level in (0, 5, 9)
         then 'A'
@@ -52,8 +62,13 @@ select
         when se.grade_level = 4
         then 'E'
     end as track,
+
     regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
 from {{ ref("base_powerschool__student_enrollments") }} as se
+left join
+    {{ ref("stg_powerschool__students") }} as s
+    on se.student_number = s.student_number
+    and {{ union_dataset_join_clause(left_alias="se", right_alias="s") }}
 left join
     {{ ref("int_powerschool__district_entry_date") }} as de
     on se.studentid = de.studentid
