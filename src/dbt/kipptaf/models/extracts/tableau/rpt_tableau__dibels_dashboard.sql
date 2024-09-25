@@ -93,20 +93,8 @@ with
             )
     ),
 
-    expanded_terms as (
-        select
-            academic_year,
-            `name`,
-            `start_date`,
-            region,
-
-            coalesce(
-                lead(`start_date`, 1) over (
-                    partition by academic_year, region order by code asc
-                )
-                - 1,
-                '{{ var("current_fiscal_year") }}-06-30'
-            ) as end_date,
+    terms as (
+        select academic_year, `name`, `start_date`, `end_date`, region,
         from {{ ref("stg_reporting__terms") }}
         where `type` = 'LIT' and academic_year >= {{ var("current_academic_year") - 1 }}
     )
@@ -191,7 +179,7 @@ left join
     and s.expected_test = a.mclass_period
     and a.assessment_type = 'Benchmark'
 left join
-    expanded_terms as t
+    terms as t
     on s.academic_year = t.academic_year
     and s.expected_test = t.name
     and s.region = t.region
