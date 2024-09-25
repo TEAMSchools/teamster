@@ -127,6 +127,13 @@ with
             )
     )
 
+-- added distinct because the following fields from int_amplify__all_assessments cause
+-- duplicates: pm_probe_eligible and pm_probe tested. at this point, i'm not 100% sure
+-- removing these will cause issues to the current views on the tableau report.
+-- i suspect i will be able to remove them, but im not sure yet because idk what the
+-- stakeholders want for pm views (it is not decided yet). if it turns out that i dont
+-- need those fields anymore, i will remove them from int_amplify__all_assessments at
+-- that time
 select distinct
     s._dbt_source_relation,
     s.academic_year,
