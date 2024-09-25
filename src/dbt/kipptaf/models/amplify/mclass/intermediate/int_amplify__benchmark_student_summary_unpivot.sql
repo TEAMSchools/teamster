@@ -17,7 +17,7 @@ with
                 then 'Composite'
                 when 'Reading Comprehension (Maze)'
                 then 'Comprehension'
-                else substr(measure, strpos(measure, '(') + 1, 3)
+                else regexp_extract(measure, r'\((.{3})')
             end as mclass_measure_name_code,
 
             case
