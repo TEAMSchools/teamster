@@ -214,6 +214,7 @@ left join
     on s.academic_year = a.mclass_academic_year
     and s.student_number = a.mclass_student_number
     and s.expected_test = a.mclass_period
+    and s.expected_mclass_measure_standard = a.mclass_measure_standard
     and a.mclass_client_date between s.start_date and s.end_date
     and a.assessment_type = 'PM'
 left join
