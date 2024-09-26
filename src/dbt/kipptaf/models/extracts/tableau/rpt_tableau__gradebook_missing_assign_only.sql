@@ -30,6 +30,7 @@ with
             {{ ref("int_tableau__student_enrollments") }} as e
             on a.studentid = e.studentid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+            and e.academic_year = 2024
         where
             a.school_level != 'ES'
             and a.assign_expected_to_be_scored
