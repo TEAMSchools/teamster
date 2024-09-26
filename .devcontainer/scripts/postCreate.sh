@@ -66,6 +66,7 @@ gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid-1
 # install pdm dependencies
 pdm install --frozen-lockfile
 
+# prepare dbt projects
 pdm run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kippcamden/__init__.py
 pdm run dagster-dbt project prepare-and-package \
@@ -74,3 +75,13 @@ pdm run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kippnewark/__init__.py
 pdm run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kipptaf/__init__.py
+
+# install dbt deps for packages
+pdm run dbt deanslist deps
+pdm run dbt edplan deps
+pdm run dbt iready deps
+pdm run dbt overgrad deps
+pdm run dbt pearson deps
+pdm run dbt powerschool deps
+pdm run dbt renlearn deps
+pdm run dbt titan deps
