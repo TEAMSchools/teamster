@@ -1,5 +1,4 @@
 import copy
-import gc
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from oauthlib.oauth2 import BackendApplicationClient
@@ -66,57 +65,50 @@ class SchoolMintGrowResource(ConfigurableResource):
         params = copy.deepcopy(self._default_params)
 
         params.update(kwargs)
-        self._log.debug(f"GET: {url}\nPARAMS: {params}")
 
         if args:
-            response = self._request(method="GET", url=url, params=params)
+            self._log.debug(f"GET: {url}\nPARAMS: {params}")
+            response_json = self._request(method="GET", url=url, params=params).json()
 
             # mock paginated response format
             return {
                 "count": 1,
                 "limit": self._default_params["limit"],
                 "skip": self._default_params["skip"],
-                "data": [response.json()],
+                "data": [response_json],
             }
         else:
-            all_data = {
+            data = []
+
+            response = {
                 "count": 0,
                 "limit": self._default_params["limit"],
                 "skip": self._default_params["skip"],
-                "data": [],
+                "data": data,
             }
 
             while True:
-                response = self._request(method="GET", url=url, params=params)
-
-                response_json = response.json()
-                del response
-                gc.collect()
+                self._log.debug(f"GET: {url}\nPARAMS: {params}")
+                response_json = self._request(
+                    method="GET", url=url, params=params
+                ).json()
 
                 count = response_json["count"]
-                data = response_json.get("data", [])
-                del response_json
-                gc.collect()
+                data.extend(response_json.get("data", []))
 
-                all_data["data"].extend(data)
+                len_data = len(data)
 
-                len_all_data = len(all_data["data"])
-
-                if len_all_data < count and not data:
-                    raise Exception("API returned an incomplete response")
-
-                del data
-                gc.collect()
-
-                if len_all_data >= count:
+                if len_data >= count:
                     break
                 else:
                     params["skip"] += params["limit"]
-                self._log.debug(params)
 
-            all_data["count"] = count
+            response["count"] = count
 
-            return all_data
+            if len_data != count:
+                raise Exception("API returned an incomplete response")
+            else:
+                return response
 
     def post(self, endpoint, *args, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
