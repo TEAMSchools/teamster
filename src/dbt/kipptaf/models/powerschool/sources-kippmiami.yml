@@ -483,14 +483,14 @@ sources:
               - kippmiami
               - powerschool
               - base_powerschool__sections
-      - name: base_powerschool__student_enrollments
+      - name: int_powerschool__student_enrollments
         meta:
           dagster:
             group: powerschool
             asset_key:
               - kippmiami
               - powerschool
-              - base_powerschool__student_enrollments
+              - int_powerschool__student_enrollments
       - name: int_powerschool__advisory
         meta:
           dagster:
