@@ -42,19 +42,16 @@ models:
       +schema: extracts
       +materialized: table
   deanslist:
-    +schema: deanslist
+    +materialized: table
   edplan:
-    +schema: edplan
+    +materialized: table
   iready:
-    +schema: iready
-    staging:
-      +materialized: table
+    +materialized: table
   overgrad:
-    +schema: overgrad
+    +materialized: table
   pearson:
-    +schema: pearson
+    +materialized: table
   powerschool:
-    +schema: powerschool
     +materialized: table
     staging:
       stg_powerschool__period:
@@ -64,7 +61,7 @@ models:
       stg_powerschool__u_def_ext_students:
         +enabled: false
   renlearn:
-    +schema: renlearn
+    +materialized: table
     staging:
       stg_renlearn__fast_star:
         +enabled: false
@@ -73,7 +70,7 @@ models:
       stg_renlearn__star_skill_area:
         +enabled: false
   titan:
-    +schema: titan
+    +materialized: table
     staging:
       stg_titan__income_form_data:
         +enabled: false

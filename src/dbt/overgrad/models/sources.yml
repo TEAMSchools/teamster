@@ -2,13 +2,15 @@ version: 2
 
 sources:
   - name: overgrad
-    schema: "{{ var('overgrad_schema', 'overgrad') }}"
+    schema: "{{ var('overgrad_schema', env_var('DBT_DEV_OVERGRAD_SCHEMA', 'overgrad')) }}"
     tags:
       - stage_external_sources
     tables:
       - name: src_overgrad__admissions
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/overgrad/admissions/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/overgrad/admissions/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -20,7 +22,9 @@ sources:
               - admissions
       - name: src_overgrad__custom_fields
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/overgrad/custom_fields/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/overgrad/custom_fields/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -32,7 +36,9 @@ sources:
               - custom_fields
       - name: src_overgrad__followings
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/overgrad/followings/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/overgrad/followings/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -44,7 +50,9 @@ sources:
               - followings
       - name: src_overgrad__schools
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/overgrad/schools/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/overgrad/schools/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -56,7 +64,9 @@ sources:
               - schools
       - name: src_overgrad__students
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/overgrad/students/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/overgrad/students/*"
           options:
             format: AVRO
             enable_logical_types: true
