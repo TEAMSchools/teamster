@@ -40,6 +40,13 @@ with
             ) as expected_mclass_measure_standard,
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
+
+            if(
+                e.academic_year = 2024
+                or (e.academic_year = 2023 and e.grade_level <= 2),
+                true,
+                false
+            ) as year_grade_filter,
         from {{ ref("int_tableau__student_enrollments") }} as e
         inner join
             {{ ref("stg_assessments__assessment_expectations") }} as a
@@ -149,9 +156,6 @@ select
     a.mclass_measure_percentile,
     a.mclass_measure_semester_growth,
     a.mclass_measure_year_growth,
-    a.mclass_score_change,
-    null as mclass_probe_number,
-    null as mclass_total_number_of_probes,
 
     t.start_date,
     t.end_date,
@@ -160,6 +164,7 @@ select
     f.tutoring_nj,
 
     right(s.test_code, 1) as expected_round,
+
     if(
         s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
     ) as expected_grade_level,
@@ -188,6 +193,7 @@ left join
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
+where s.year_grade_filter
 
 union all
 
@@ -246,9 +252,6 @@ select
     mclass_measure_percentile,
     mclass_measure_semester_growth,
     mclass_measure_year_growth,
-    mclass_score_change,
-    mclass_probe_number,
-    mclass_total_number_of_probes,
 
     start_date,
     end_date,
