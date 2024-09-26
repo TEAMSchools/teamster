@@ -11,7 +11,7 @@ with
 
     transformations as (
         select
-            * except (id, studentsdcid,),
+            * except (id, studentsdcid),
 
             /* column transformations */
             id.int_value as id,
