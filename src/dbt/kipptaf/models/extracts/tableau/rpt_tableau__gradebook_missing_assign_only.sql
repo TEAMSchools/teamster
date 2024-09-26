@@ -33,7 +33,7 @@ with
         where
             a.school_level != 'ES'
             and a.assign_expected_to_be_scored
-            and (a.ismissing = 1 or not assign_scored)
+            and (a.ismissing = 1 or not a.assign_scored)
     ),
 
     course_enrollments as (
