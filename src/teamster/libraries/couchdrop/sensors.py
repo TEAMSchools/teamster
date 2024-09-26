@@ -68,30 +68,28 @@ def build_couchdrop_sftp_sensor(
             files = ssh_couchdrop.listdir_attr_r(
                 remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
             )
-        except (SSHException, AuthenticationException) as e:
+        except Exception as e:
+            exception_str = str(e)
+
+            context.log.error(msg=exception_str)
+
             if isinstance(e, SSHException) and (
-                "Error reading SSH protocol banner" in e.args
-                or "Server connection dropped:" in e.args
+                "Error reading SSH protocol banner" in exception_str
+                or "Server connection dropped" in exception_str
             ):
-                context.log.error(msg=str(e))
-                return SkipReason(str(e))
+                return SkipReason(exception_str)
             elif (
                 isinstance(e, AuthenticationException)
-                and "Authentication timeout" in e.args
+                and "Authentication timeout" in exception_str
             ):
-                context.log.error(msg=str(e))
-                return SkipReason(str(e))
-            else:
-                raise e
-        except FileNotFoundError as e:
-            if "[Errno 2] no such file" in str(e):
-                context.log.error(msg=str(e))
-                return SkipReason(str(e))
-            else:
-                raise e
-        except TimeoutError as e:
-            if "timed out" in e.args:
-                return SkipReason(str(e))
+                return SkipReason(exception_str)
+            elif (
+                isinstance(e, FileNotFoundError)
+                and "[Errno 2] no such file" in exception_str
+            ):
+                return SkipReason(exception_str)
+            elif isinstance(e, TimeoutError) and "timed out" in exception_str:
+                return SkipReason(exception_str)
             else:
                 raise e
 
