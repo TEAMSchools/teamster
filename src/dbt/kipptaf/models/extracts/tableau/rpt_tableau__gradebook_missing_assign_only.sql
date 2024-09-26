@@ -58,7 +58,7 @@ with
             rn_course_number_year = 1
             and cc_academic_year = 2024
             and cc_sectionid > 0
-            and courses_excludefromgpa = 1
+            and courses_excludefromgpa = 0
             and cc_course_number not in (
                 'LOG100',
                 'LOG1010',
