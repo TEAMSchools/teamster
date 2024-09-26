@@ -156,6 +156,9 @@ select
     a.mclass_measure_percentile,
     a.mclass_measure_semester_growth,
     a.mclass_measure_year_growth,
+    a.boy_composite,
+    a.moy_composite,
+    a.eoy_composite,
 
     t.start_date,
     t.end_date,
@@ -252,6 +255,9 @@ select
     mclass_measure_percentile,
     mclass_measure_semester_growth,
     mclass_measure_year_growth,
+    boy_composite,
+    moy_composite,
+    eoy_composite,
 
     start_date,
     end_date,
