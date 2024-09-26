@@ -192,9 +192,6 @@ select distinct
     a.mclass_measure_percentile,
     a.mclass_measure_semester_growth,
     a.mclass_measure_year_growth,
-    a.mclass_score_change,
-    a.mclass_probe_number,
-    a.mclass_total_number_of_probes,
 
     f.nj_student_tier,
     f.tutoring_nj,
