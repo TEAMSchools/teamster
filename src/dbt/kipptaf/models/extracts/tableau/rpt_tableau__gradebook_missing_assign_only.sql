@@ -49,7 +49,6 @@ with
             sections_external_expression as external_expression,
             courses_credittype as credit_type,
             courses_course_name as course_name,
-            courses_excludefromgpa as exclude_from_gpa,
             teachernumber as teacher_number,
             teacher_lastfirst,
 
@@ -58,6 +57,7 @@ with
             rn_course_number_year = 1
             and cc_academic_year = 2024
             and cc_sectionid > 0
+            and courses_excludefromgpa = 1
             and cc_course_number not in (
                 'LOG100',
                 'LOG1010',
@@ -93,7 +93,6 @@ select
     c.external_expression,
     c.credit_type,
     c.course_name,
-    c.exclude_from_gpa,
     c.teacher_number,
     c.teacher_lastfirst,
 
