@@ -84,6 +84,18 @@ select
     m.student_name,
     m.grade_level,
 
+    c.course_number,
+    c.sectionid,
+    c.date_enrolled,
+    c.sections_dcid,
+    c.section_number,
+    c.external_expression,
+    c.credit_type,
+    c.course_name,
+    c.exclude_from_gpa,
+    c.teacher_number,
+    c.teacher_lastfirst,
+
     m.quarter,
     m.semester,
     m.week_number_quarter,
@@ -100,17 +112,6 @@ select
     m.max_score,
     m.assign_final_score_percent,
 
-    c.course_number,
-    c.sectionid,
-    c.date_enrolled,
-    c.sections_dcid,
-    c.section_number,
-    c.external_expression,
-    c.credit_type,
-    c.course_name,
-    c.exclude_from_gpa,
-    c.teacher_number,
-    c.teacher_lastfirst,
 from missing_assignments as m
 inner join
     course_enrollments as c
