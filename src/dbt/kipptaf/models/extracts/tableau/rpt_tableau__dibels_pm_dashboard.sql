@@ -192,6 +192,9 @@ select distinct
     a.mclass_measure_percentile,
     a.mclass_measure_semester_growth,
     a.mclass_measure_year_growth,
+    a.boy_composite,
+    a.moy_composite,
+    a.eoy_composite,
 
     f.nj_student_tier,
     f.tutoring_nj,
