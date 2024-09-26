@@ -3,7 +3,6 @@ with
         select
             a._dbt_source_relation,
             a.quarter,
-            a.semester,
             a.week_number_quarter,
             a.week_start_monday,
             a.week_end_sunday,
@@ -12,7 +11,7 @@ with
             a.assignment_category_term,
             a.assignmentid as assignment_id,
             a.assignment_name,
-            a.ismissing as missing,
+            a.ismissing as is_missing,
             a.scoretype as score_type,
             a.scorepoints as raw_score,
             a.score_converted,
@@ -98,7 +97,6 @@ select
     c.teacher_lastfirst,
 
     m.quarter,
-    m.semester,
     m.week_number_quarter,
     m.week_start_monday,
     m.week_end_sunday,
