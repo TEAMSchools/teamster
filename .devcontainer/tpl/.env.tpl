@@ -1,3 +1,6 @@
+DBT_DEV_POWERSCHOOL_SCHEMA=_dev_powerschool
+DBT_DEV_DEANSLIST_SCHEMA=_dev_deanslist
+DBT_DEV_CLOUD_STORAGE_URI_BASE=gs://teamster-kippnewark/dagster/kippnewark
 ADP_SFTP_HOST_IP=op://Data Team/ADP Workforce Now SFTP/ip
 ADP_SFTP_PASSWORD=op://Data Team/ADP Workforce Now SFTP/password
 ADP_SFTP_USERNAME=op://Data Team/ADP Workforce Now SFTP/username
