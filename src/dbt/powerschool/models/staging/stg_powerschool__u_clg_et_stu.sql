@@ -23,7 +23,7 @@ with
 
     {{
         dbt_utils.deduplicate(
-            relation="staging",
+            relation="transformations",
             partition_by="studentsdcid, exit_date",
             order_by="when_modified_or_created desc",
         )

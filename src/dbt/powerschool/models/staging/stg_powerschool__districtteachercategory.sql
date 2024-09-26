@@ -25,7 +25,7 @@ select
         defaulttotalvalue,
         isdefaultpublishscores,
         defaultdaysbeforedue,
-        whomodifiedid,
+        whomodifiedid
     ),
 
     /* column transformations */

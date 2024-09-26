@@ -7,9 +7,10 @@ with
                 order_by="_file_name desc",
             )
         }}
-    )
+    ),
 
     transformations as (
+        -- trunk-ignore(sqlfluff/AM04)
         select
             * except (
                 calculatedpercent,
@@ -30,11 +31,6 @@ with
                 whomodifiedid
             ),
 
-            /* column transformations */
-            nullif(grade, '--') as grade,
-            nullif(citizenship, '') as citizenship,
-            nullif(comment_value, '') as comment_value,
-
             /* records */
             dcid.int_value as dcid,
             id.int_value as id,
@@ -49,7 +45,12 @@ with
             isexempt.int_value as isexempt,
             whomodifiedid.int_value as whomodifiedid,
 
-            if(grade = '--', null, percent.double_value) as percent,
+            /* column transformations */
+            nullif(grade, '--') as grade,
+            nullif(citizenship, '') as citizenship,
+            nullif(comment_value, '') as comment_value,
+
+            if(grade = '--', null, percent.double_value) as `percent`,
         from deduplicate
     ),
 
