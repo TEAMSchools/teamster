@@ -90,6 +90,7 @@ with
             sr.preferred_name_lastfirst,
             sr.user_principal_name,
             sr.google_email,
+            sr.mail,
             sr.assignment_status,
             sr.business_unit_home_name,
             sr.business_unit_home_code,
@@ -118,7 +119,11 @@ with
                 then 'KTAF'
                 /* Non-KTAF teammate with KTAF manager*/
                 when
-                    sr.business_unit_home_code <> 'KIPP_TAF'
+                    sr.business_unit_home_code = 'KIPP_MIAMI'
+                    and sr2.business_unit_home_code = 'KIPP_TAF'
+                then 'MDO'
+                when
+                    sr.business_unit_home_code NOT IN ('KIPP_MIAMI','KIPP_TAF')
                     and sr2.business_unit_home_code = 'KIPP_TAF'
                 then 'MDSO'
                 /* Non-KTAF teammate with non-school location*/
@@ -170,6 +175,7 @@ with
             r.preferred_name_lastfirst,
             r.user_principal_name,
             r.google_email,
+            r.mail,
             r.assignment_status,
             r.business_unit_home_name,
             r.business_unit_home_code,
@@ -239,6 +245,7 @@ select
     r.preferred_name_lastfirst,
     r.user_principal_name,
     r.google_email,
+    r.mail,
     r.assignment_status,
     r.business_unit_home_name,
     r.business_unit_home_code,
