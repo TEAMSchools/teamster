@@ -13,6 +13,7 @@ dependencies = [
   "dagster-fivetran",
   "dagster-gcp",
   "dagster-k8s",
+  "dagster-slack",
   "dagster-ssh",
   "dbt-bigquery>=1.8,<1.9",
   "dbt-core>=1.8,<1.9",
@@ -29,7 +30,6 @@ dependencies = [
   "scikit-learn>=1.4.0",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
-  "dagster-slack>=0.24.8",
 ]
 requires-python = ">=3.12,<3.13"
 license = { text = "GPL-3.0-or-later" }
