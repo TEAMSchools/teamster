@@ -1,18 +1,19 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="phonenumberid.int_value",
-        transform_cols=[
-            {"name": "phonenumberid", "extract": "int_value"},
-            {"name": "issms", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("powerschool", "src_powerschool__phonenumber"),
+                partition_by="phonenumberid.int_value",
+                order_by="_file_name desc",
+            )
+        }}
     )
-}}
 
-select *
-from staging
+-- trunk-ignore(sqlfluff/AM04)
+select
+    * except (phonenumberid, issms),
+
+    /* column transformations */
+    phonenumberid.int_value as phonenumberid,
+    issms.int_value as issms,
+from deduplicate

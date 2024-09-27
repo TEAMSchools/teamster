@@ -1,15 +1,18 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="emailaddressid.int_value",
-        transform_cols=[{"name": "emailaddressid", "extract": "int_value"}],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("powerschool", "src_powerschool__emailaddress"),
+                partition_by="emailaddressid.int_value",
+                order_by="_file_name desc",
+            )
+        }}
     )
-}}
 
-select *
-from staging
+-- trunk-ignore(sqlfluff/AM04)
+select
+    * except (emailaddressid),
+
+    /* column transformations */
+    emailaddressid.int_value as emailaddressid,
+from deduplicate

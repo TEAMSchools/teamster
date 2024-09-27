@@ -5,7 +5,7 @@ with
         select
             date_day,
             {{
-                teamster_utils.date_to_fiscal_year(
+                date_to_fiscal_year(
                     date_field="date_day", start_month=10, year_source="start"
                 )
             }} as attrition_year,

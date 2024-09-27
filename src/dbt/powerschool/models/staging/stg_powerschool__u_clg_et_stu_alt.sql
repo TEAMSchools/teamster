@@ -1,23 +1,30 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="id.int_value",
-        transform_cols=[
-            {"name": "id", "extract": "int_value"},
-            {"name": "studentsdcid", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
-    )
-}}
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("powerschool", "src_powerschool__u_clg_et_stu_alt"),
+                partition_by="id.int_value",
+                order_by="_file_name desc",
+            )
+        }}
+    ),
 
-{{
-    dbt_utils.deduplicate(
-        relation="staging",
-        partition_by="studentsdcid, exit_date",
-        order_by="coalesce(whenmodified, whencreated) desc",
+    transformations as (
+        select
+            * except (id, studentsdcid),
+
+            /* column transformations */
+            id.int_value as id,
+            studentsdcid.int_value as studentsdcid,
+
+            coalesce(whenmodified, whencreated) as when_modified_or_created,
+        from deduplicate
     )
-}}
+
+    {{
+        dbt_utils.deduplicate(
+            relation="transformations",
+            partition_by="studentsdcid, exit_date",
+            order_by="when_modified_or_created desc",
+        )
+    }}
