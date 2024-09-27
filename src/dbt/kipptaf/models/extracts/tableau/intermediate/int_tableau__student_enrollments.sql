@@ -51,6 +51,7 @@ select
     e.rn_undergrad,
     e.contact_1_email_current as guardian_email,
     e.student_email_google as student_email,
+    e.code_location,
 
     m.ms_attended,
 
