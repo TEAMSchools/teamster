@@ -153,9 +153,7 @@ with
         left join mdo on sr.business_unit_home_name = mdo.region
         left join
             ktaf_approvers as k on sr.department_home_name = k.department_home_name
-        where
-            sr.worker_termination_date is null
-            or sr.worker_termination_date >= '2024-07-01'
+
     ),
 
     /* assigning approvers based on approval route*/
