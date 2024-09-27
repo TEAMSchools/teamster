@@ -90,6 +90,7 @@ with
             sr.preferred_name_lastfirst,
             sr.user_principal_name,
             sr.google_email,
+            sr.mail,
             sr.assignment_status,
             sr.business_unit_home_name,
             sr.business_unit_home_code,
@@ -118,7 +119,11 @@ with
                 then 'KTAF'
                 /* Non-KTAF teammate with KTAF manager*/
                 when
-                    sr.business_unit_home_code <> 'KIPP_TAF'
+                    sr.business_unit_home_code = 'KIPP_MIAMI'
+                    and sr2.business_unit_home_code = 'KIPP_TAF'
+                then 'MDO'
+                when
+                    sr.business_unit_home_code not in ('KIPP_MIAMI', 'KIPP_TAF')
                     and sr2.business_unit_home_code = 'KIPP_TAF'
                 then 'MDSO'
                 /* Non-KTAF teammate with non-school location*/
@@ -153,9 +158,7 @@ with
         left join mdo on sr.business_unit_home_name = mdo.region
         left join
             ktaf_approvers as k on sr.department_home_name = k.department_home_name
-        where
-            sr.worker_termination_date is null
-            or sr.worker_termination_date >= '2024-07-01'
+
     ),
 
     /* assigning approvers based on approval route*/
@@ -172,6 +175,7 @@ with
             r.preferred_name_lastfirst,
             r.user_principal_name,
             r.google_email,
+            r.mail,
             r.assignment_status,
             r.business_unit_home_name,
             r.business_unit_home_code,
@@ -241,6 +245,7 @@ select
     r.preferred_name_lastfirst,
     r.user_principal_name,
     r.google_email,
+    r.mail,
     r.assignment_status,
     r.business_unit_home_name,
     r.business_unit_home_code,
