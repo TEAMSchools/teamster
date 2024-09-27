@@ -183,6 +183,7 @@ left join
     on s.academic_year = a.mclass_academic_year
     and s.student_number = a.mclass_student_number
     and s.expected_test = a.mclass_period
+    and s.expected_mclass_measure_standard = a.mclass_measure_standard
     and a.assessment_type = 'Benchmark'
 left join
     {{ ref("stg_reporting__terms") }} as t
