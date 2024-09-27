@@ -75,7 +75,7 @@ with
         select
             *,
             row_number() over (
-                partition by row_hash, staging.fiscal_year order by effective_date asc
+                partition by row_hash, fiscal_year order by effective_date asc
             ) as rn_row_year_asc,
         from staging
     )
@@ -95,6 +95,7 @@ select
             then 'SPED'
         end
     ) as spedlep,
+
     if(
         nj_se_parentalconsentobtained in ('N', 'R'),
         null,

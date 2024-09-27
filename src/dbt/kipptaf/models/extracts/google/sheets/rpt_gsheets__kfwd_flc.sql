@@ -115,6 +115,14 @@ select
     ) as taf_enroll_status,
 
     gpa.cumulative_y1_gpa_unweighted,
+    case
+        when kt.contact_college_match_display_gpa >= 3.00
+        then 'FLC Eligible'
+        else 'Below FLC GPA'
+    end as flc_eligibility,
+
+    if(kt.overgrad_students_id is not null, 'Yes', 'No') as has_overgrad_account_yn,
+    kt.overgrad_students_assigned_counselor_lastfirst as overgrad_counselor,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
