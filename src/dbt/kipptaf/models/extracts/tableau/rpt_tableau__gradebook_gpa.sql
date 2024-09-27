@@ -56,19 +56,20 @@ with
             enr._dbt_source_relation,
             enr.studentid,
             enr.student_number,
-            enr.lastfirst,
+            enr.student_name,
             enr.enroll_status,
             enr.cohort,
             enr.gender,
             enr.ethnicity,
             enr.academic_year,
+            enr.academic_year_display,
             enr.yearid,
             enr.region,
             enr.school_level,
             enr.schoolid,
-            enr.school_abbreviation,
+            enr.school,
             enr.grade_level,
-            enr.advisor_lastfirst,
+            enr.advisory,
             enr.year_in_school,
             enr.year_in_network,
             enr.rn_undergrad,
@@ -78,16 +79,19 @@ with
             enr.is_retained_ever,
             enr.lunch_status,
             enr.lep_status,
+            enr.gifted_and_talented,
+            enr.iep_status,
             enr.is_504,
+            enr.contact_id as salesforce_id,
+            enr.ktc_cohort,
+            enr.is_counseling_services,
+            enr.is_student_athlete,
 
             term.storecode as term,
             term.term_start_date,
             term.term_end_date,
             term.is_current_term,
             term.semester,
-
-            ktc.contact_id as salesforce_id,
-            ktc.ktc_cohort,
 
             hos.head_of_school_preferred_name_lastfirst as head_of_school,
 
@@ -107,45 +111,18 @@ with
 
             round(ada.ada, 3) as ada,
 
-            if(enr.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
-            if(
-                enr.school_level in ('ES', 'MS'),
-                enr.advisory_name,
-                enr.advisor_lastfirst
-            ) as advisory,
-
             if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_term,
             if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
-            if(sp.studentid is not null, 1, null) as is_counseling_services,
-
-            if(sa.studentid is not null, 1, null) as is_student_athlete,
-        from {{ ref("base_powerschool__student_enrollments") }} as enr
+        from {{ ref("int_tableau__student_enrollments") }} as enr
         inner join
             term
             on enr.schoolid = term.schoolid
             and enr.yearid = term.yearid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="term") }}
         left join
-            {{ ref("int_kippadb__roster") }} as ktc
-            on enr.student_number = ktc.student_number
-        left join
             {{ ref("int_people__leadership_crosswalk") }} as hos
             on enr.schoolid = hos.home_work_location_powerschool_school_id
-        left join
-            {{ ref("int_powerschool__spenrollments") }} as sp
-            on enr.studentid = sp.studentid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="sp") }}
-            and current_date('{{ var("local_timezone") }}')
-            between sp.enter_date and sp.exit_date
-            and sp.specprog_name = 'Counseling Services'
-        left join
-            {{ ref("int_powerschool__spenrollments") }} as sa
-            on enr.studentid = sa.studentid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="sa") }}
-            and current_date('{{ var("local_timezone") }}')
-            between sa.enter_date and sa.exit_date
-            and sa.specprog_name = 'Student Athlete'
         left join
             {{ ref("int_powerschool__ada") }} as ada
             on enr.studentid = ada.studentid
@@ -173,9 +150,7 @@ with
             and gty.is_current
         where
             enr.academic_year = {{ var("current_academic_year") }}
-            and enr.rn_year = 1
             and not enr.is_out_of_district
-            and enr.grade_level != 99
     ),
 
     course_enrollments as (
@@ -397,23 +372,23 @@ with
 
 select
     s._dbt_source_relation,
-    s.studentid,
-    s.student_number,
-    s.salesforce_id,
-    s.lastfirst,
-    s.enroll_status,
-    s.cohort,
-    s.ktc_cohort,
-    s.gender,
-    s.ethnicity,
     s.academic_year,
+    s.academic_year_display,
     s.region,
     s.school_level,
     s.schoolid,
-    s.school_abbreviation as school,
+    s.school,
+    s.studentid,
+    s.student_number,
+    s.student_name,
     s.grade_level,
+    s.salesforce_id,
+    s.ktc_cohort,
+    s.enroll_status,
+    s.cohort,
+    s.gender,
+    s.ethnicity,
     s.advisory,
-    s.advisor_lastfirst as advisor_name,
     s.head_of_school as hos,
     s.region_school_level,
     s.year_in_school,
@@ -424,6 +399,7 @@ select
     s.is_retained_year,
     s.is_retained_ever,
     s.lunch_status,
+    s.gifted_and_talented,
     s.iep_status,
     s.lep_status,
     s.is_504,
@@ -551,23 +527,23 @@ union all
 
 select
     e1._dbt_source_relation,
-    e1.studentid,
-    e1.student_number,
-    e1.salesforce_id,
-    e1.lastfirst,
-    e1.enroll_status,
-    e1.cohort,
-    e1.ktc_cohort,
-    e1.gender,
-    e1.ethnicity,
     e1.academic_year,
+    e1.academic_year_display,
     e1.region,
     e1.school_level,
     e1.schoolid,
-    e1.school_abbreviation as school,
+    e1.school,
+    e1.studentid,
+    e1.student_number,
+    e1.student_name,
     e1.grade_level,
+    e1.salesforce_id,
+    e1.ktc_cohort,
+    e1.enroll_status,
+    e1.cohort,
+    e1.gender,
+    e1.ethnicity,
     e1.advisory,
-    e1.advisor_lastfirst as advisor_name,
     e1.head_of_school as hos,
     e1.region_school_level,
     e1.year_in_school,
@@ -578,6 +554,7 @@ select
     e1.is_retained_year,
     e1.is_retained_ever,
     e1.lunch_status,
+    e1.gifted_and_talented,
     e1.iep_status,
     e1.lep_status,
     e1.is_504,

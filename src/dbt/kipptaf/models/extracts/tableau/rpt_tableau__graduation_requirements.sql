@@ -3,29 +3,30 @@ with
         select
             e._dbt_source_relation,
             e.academic_year,
+            e.academic_year_display,
             e.region,
             e.schoolid,
             e.school_name,
-            e.school_abbreviation,
+            e.school,
             e.students_dcid,
             e.studentid,
             e.student_number,
-            e.lastfirst,
-            e.first_name,
-            e.last_name,
+            e.student_name,
+            e.student_first_name,
+            e.student_last_name,
             e.grade_level,
             e.enroll_status,
             e.cohort,
-            e.advisor_lastfirst,
+            e.advisory,
+            e.iep_status,
             e.is_504,
             e.lep_status,
             e.is_retained_year,
             e.is_retained_ever,
-            e.student_email_google,
-
-            adb.contact_id as kippadb_contact_id,
-            adb.ktc_cohort,
-            adb.contact_df_has_fafsa as has_fafsa,
+            e.student_email as student_email_google,
+            e.contact_id as kippadb_contact_id,
+            e.ktc_cohort,
+            e.has_fafsa,
 
             s.courses_course_name,
             s.teacher_lastfirst,
@@ -36,8 +37,7 @@ with
 
             safe_cast(e.state_studentnumber as int) as state_studentnumber,
 
-            if(e.spedlep like '%SPED%', 'Has IEP', 'No IEP') as iep_status,
-        from {{ ref("base_powerschool__student_enrollments") }} as e
+        from {{ ref("int_tableau__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
@@ -46,13 +46,9 @@ with
             and s.courses_course_name like 'College and Career%'
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
-        left join
-            {{ ref("int_kippadb__roster") }} as adb
-            on e.student_number = adb.student_number
         cross join unnest(['Math', 'ELA']) as discipline
         where
-            e.rn_year = 1
-            and e.academic_year = {{ var("current_academic_year") }}
+            e.academic_year = {{ var("current_academic_year") }}
             and e.schoolid != 999999
             and e.cohort between ({{ var("current_academic_year") - 1 }}) and (
                 {{ var("current_academic_year") + 5 }}
@@ -348,17 +344,18 @@ with
 select distinct
     r._dbt_source_relation,
     r.academic_year,
+    r.academic_year_display,
     r.region,
     r.schoolid,
     r.school_name,
-    r.school_abbreviation,
+    r.school,
     r.student_number,
     r.state_studentnumber,
     r.kippadb_contact_id,
     r.students_dcid,
-    r.lastfirst,
-    r.first_name,
-    r.last_name,
+    r.student_name,
+    r.student_first_name,
+    r.student_last_name,
     r.enroll_status,
     r.cohort,
     r.ktc_cohort,
@@ -370,7 +367,7 @@ select distinct
     r.is_retained_year,
     r.is_retained_ever,
     r.student_email_google,
-    r.advisor_lastfirst,
+    r.advisory,
     r.courses_course_name as ccr_course,
     r.teacher_lastfirst as ccr_teacher,
     r.sections_external_expression as ccr_period,
