@@ -1,24 +1,34 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="dcid.int_value",
-        transform_cols=[
-            {"name": "dcid", "extract": "int_value"},
-            {"name": "id", "extract": "int_value"},
-            {"name": "prefixcodesetid", "extract": "int_value"},
-            {"name": "suffixcodesetid", "extract": "int_value"},
-            {"name": "gendercodesetid", "extract": "int_value"},
-            {"name": "statecontactnumber", "extract": "int_value"},
-            {"name": "isactive", "extract": "int_value"},
-            {"name": "excludefromstatereporting", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("powerschool", "src_powerschool__person"),
+                partition_by="dcid.int_value",
+                order_by="_file_name desc",
+            )
+        }}
     )
-}}
 
-select *
-from staging
+-- trunk-ignore(sqlfluff/AM04)
+select
+    * except (
+        dcid,
+        id,
+        prefixcodesetid,
+        suffixcodesetid,
+        gendercodesetid,
+        statecontactnumber,
+        isactive,
+        excludefromstatereporting
+    ),
+
+    /* column transformations */
+    dcid.int_value as dcid,
+    id.int_value as id,
+    prefixcodesetid.int_value as prefixcodesetid,
+    suffixcodesetid.int_value as suffixcodesetid,
+    gendercodesetid.int_value as gendercodesetid,
+    statecontactnumber.int_value as statecontactnumber,
+    isactive.int_value as isactive,
+    excludefromstatereporting.int_value as excludefromstatereporting,
+from deduplicate
