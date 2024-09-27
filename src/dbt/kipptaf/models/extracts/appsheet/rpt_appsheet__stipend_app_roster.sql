@@ -123,7 +123,7 @@ with
                     and sr2.business_unit_home_code = 'KIPP_TAF'
                 then 'MDO'
                 when
-                    sr.business_unit_home_code NOT IN ('KIPP_MIAMI','KIPP_TAF')
+                    sr.business_unit_home_code not in ('KIPP_MIAMI', 'KIPP_TAF')
                     and sr2.business_unit_home_code = 'KIPP_TAF'
                 then 'MDSO'
                 /* Non-KTAF teammate with non-school location*/
