@@ -2,6 +2,7 @@
 select
     paa.personid,
     paa.addresspriorityorder as priority_order,
+
     if(paa.addresspriorityorder = 1, 1, 0) as is_primary,
 
     acs.code as contact_type,

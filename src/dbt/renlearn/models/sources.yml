@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: renlearn
-    schema: "{{ var('renlearn_schema', 'renlearn') }}"
+    schema: "{{ var('renlearn_schema', env_var('DBT_DEV_RENLEARN_SCHEMA', 'renlearn')) }}"
     database:
       "{% if target.type != 'spark' %}{{ var('renlearn_database', target.database) }}{% endif %}"
     tags:
@@ -16,10 +16,13 @@ sources:
               - renlearn
               - accelerated_reader
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/renlearn/accelerated_reader/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/renlearn/accelerated_reader/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/renlearn/accelerated_reader/"
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/renlearn/accelerated_reader/"
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__star
@@ -30,9 +33,13 @@ sources:
               - renlearn
               - star
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/renlearn/star/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/renlearn/star/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/renlearn/star/"
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/renlearn/star/"
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__star_skill_area
@@ -43,10 +50,13 @@ sources:
               - renlearn
               - star_skill_area
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/renlearn/star_skill_area/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/renlearn/star_skill_area/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/renlearn/star_skill_area/"
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/renlearn/star_skill_area/"
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__star_dashboard_standards
@@ -57,10 +67,13 @@ sources:
               - renlearn
               - star_dashboard_standards
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/renlearn/star_dashboard_standards/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/renlearn/star_dashboard_standards/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/renlearn/star_dashboard_standards/"
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/renlearn/star_dashboard_standards/"
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__fast_star
@@ -71,8 +84,12 @@ sources:
               - renlearn
               - fast_star
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/renlearn/fast_star/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/renlearn/fast_star/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/renlearn/fast_star/"
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/renlearn/fast_star/"
             format: AVRO
             enable_logical_types: true
