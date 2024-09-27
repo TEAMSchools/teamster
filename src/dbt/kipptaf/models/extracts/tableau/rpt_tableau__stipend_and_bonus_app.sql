@@ -1,12 +1,13 @@
 select
     o.*,
-    
+
     r.preferred_name_lastfirst as teammate,
     r.job_title,
     r.department_home_name as department,
     r.home_work_location_name as location,
     r.business_unit_home_name as entity,
     r.route,
+    r.position_id,
 
     case
         when o.first_approver_employee_number is null and route = 'MDSO'
