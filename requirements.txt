@@ -23,7 +23,7 @@ cryptography==43.0.1
 daff==1.3.46
 dagster==1.8.8
 dagster-airbyte==0.24.8
-dagster-cloud==1.8.8
+dagster-cloud==1.8.9
 dagster-cloud-cli==1.8.8
 dagster-dbt==0.24.8
 dagster-fivetran==0.24.8
