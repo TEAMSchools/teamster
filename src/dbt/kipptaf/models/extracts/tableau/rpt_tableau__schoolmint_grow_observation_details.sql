@@ -173,6 +173,8 @@ select
     null as tracking_rubric,
     null as tracking_academic_year,
     false as is_current,
+    null as start_date,
+    null as end_date,
 
     os.final_score,
     os.final_tier,
