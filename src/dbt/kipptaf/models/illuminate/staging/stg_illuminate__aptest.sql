@@ -153,4 +153,11 @@ select
 
     cast('20' || admin_year as int) as fiscal_year,
     cast('20' || admin_year as int) - 1 as academic_year,
+    row_number() over (
+        partition by (cast('20' || admin_year as int) - 1), student_id, exam_code
+        order by id
+    ) as rn,
+    row_number() over (
+        partition by student_id, exam_code order by exam_grade desc
+    ) as rn_highest,
 from coalesce_years
