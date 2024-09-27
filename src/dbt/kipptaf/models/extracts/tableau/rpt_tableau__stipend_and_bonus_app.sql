@@ -8,6 +8,7 @@ select
     r.business_unit_home_name as entity,
     r.route,
     r.position_id,
+    r.payroll_group_code as company_code,
 
     case
         when o.first_approver_employee_number is null and route = 'MDSO'
