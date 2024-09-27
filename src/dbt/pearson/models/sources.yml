@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: pearson
-    schema: "{{ var('pearson_schema', 'pearson') }}"
+    schema: "{{ var('pearson_schema', env_var('DBT_DEV_PEARSON_SCHEMA', 'pearson')) }}"
     database:
       "{% if target.type != 'spark' %}{{ var('pearson_database', target.database) }}{% endif %}"
     tags:
@@ -16,11 +16,15 @@ sources:
               - pearson
               - njgpa
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/pearson/njgpa/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/pearson/njgpa/*"
           options:
             format: AVRO
             enable_logical_types: true
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/pearson/njgpa/"
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/pearson/njgpa/"
       - name: src_pearson__njsla
         meta:
           dagster:
@@ -29,11 +33,15 @@ sources:
               - pearson
               - njsla
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/pearson/njsla/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/pearson/njsla/*"
           options:
             format: AVRO
             enable_logical_types: true
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/pearson/njsla/"
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/pearson/njsla/"
       - name: src_pearson__njsla_science
         meta:
           dagster:
@@ -42,11 +50,15 @@ sources:
               - pearson
               - njsla_science
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/pearson/njsla_science/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/pearson/njsla_science/*"
           options:
             format: AVRO
             enable_logical_types: true
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/pearson/njsla_science/"
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/pearson/njsla_science/"
       - name: src_pearson__parcc
         meta:
           dagster:
@@ -55,11 +67,15 @@ sources:
               - pearson
               - parcc
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/pearson/parcc/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/pearson/parcc/*"
           options:
             format: AVRO
             enable_logical_types: true
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/pearson/parcc/"
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/pearson/parcc/"
       - name: src_pearson__student_list_report
         meta:
           dagster:
@@ -68,9 +84,12 @@ sources:
               - pearson
               - student_list_report
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/pearson/student_list_report/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/pearson/student_list_report/*"
           options:
             format: AVRO
             enable_logical_types: true
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/pearson/student_list_report/"
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/pearson/student_list_report/"

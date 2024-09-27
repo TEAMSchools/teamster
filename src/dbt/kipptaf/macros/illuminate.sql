@@ -19,6 +19,7 @@
 
     select
         * except (_fivetran_deleted, _fivetran_synced),
+
         safe_cast(
             regexp_extract('{{ model_name }}', r'repository_(\d+)') as int
         ) as repository_id,
