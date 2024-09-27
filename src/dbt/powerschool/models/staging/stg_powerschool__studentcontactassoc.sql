@@ -1,30 +1,21 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source(
-                    "powerschool", "src_powerschool__studentcontactassoc"
-                ),
-                partition_by="studentcontactassocid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
+{{
+    teamster_utils.generate_staging_model(
+        unique_key="studentcontactassocid.int_value",
+        transform_cols=[
+            {"name": "studentcontactassocid", "extract": "int_value"},
+            {"name": "studentdcid", "extract": "int_value"},
+            {"name": "personid", "extract": "int_value"},
+            {"name": "contactpriorityorder", "extract": "int_value"},
+            {"name": "currreltypecodesetid", "extract": "int_value"},
+        ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
+        ],
     )
+}}
 
--- trunk-ignore(sqlfluff/AM04)
-select
-    * except (
-        studentcontactassocid,
-        studentdcid,
-        personid,
-        contactpriorityorder,
-        currreltypecodesetid
-    ),
-
-    /* column transformations */
-    studentcontactassocid.int_value as studentcontactassocid,
-    studentdcid.int_value as studentdcid,
-    personid.int_value as personid,
-    contactpriorityorder.int_value as contactpriorityorder,
-    currreltypecodesetid.int_value as currreltypecodesetid,
-from deduplicate
+select *
+from staging

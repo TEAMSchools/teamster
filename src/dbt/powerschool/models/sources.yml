@@ -2,8 +2,9 @@ version: 2
 
 sources:
   - name: powerschool
-    schema: "{{ var('powerschool_schema', env_var('DBT_DEV_POWERSCHOOL_SCHEMA', 'powerschool')) }}"
-    database: "{{ var('powerschool_database', target.database) }}"
+    schema: "{{ var('powerschool_schema', 'powerschool') }}"
+    database:
+      "{% if target.type != 'spark' %}{{ var('powerschool_database', target.database) }}{% endif %}"
     tags:
       - stage_external_sources
     tables:
@@ -15,13 +16,10 @@ sources:
               - powerschool
               - assignmentscore
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/assignmentscore/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentscore/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/powerschool/assignmentscore/"
+              "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentscore/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance
@@ -32,13 +30,9 @@ sources:
               - powerschool
               - attendance
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/attendance/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/attendance/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/powerschool/attendance/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/powerschool/attendance/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__pgfinalgrades
@@ -49,13 +43,10 @@ sources:
               - powerschool
               - pgfinalgrades
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/pgfinalgrades/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/pgfinalgrades/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/powerschool/pgfinalgrades/"
+              "{{ var('cloud_storage_uri_base') }}/powerschool/pgfinalgrades/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__storedgrades
@@ -66,13 +57,10 @@ sources:
               - powerschool
               - storedgrades
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/storedgrades/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/storedgrades/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/powerschool/storedgrades/"
+              "{{ var('cloud_storage_uri_base') }}/powerschool/storedgrades/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__assignmentcategoryassoc
@@ -83,15 +71,12 @@ sources:
               - powerschool
               - assignmentcategoryassoc
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/assignmentcategoryassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentcategoryassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/powerschool/assignmentcategoryassoc/"
+              "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentcategoryassoc/"
       - name: src_powerschool__assignmentsection
         meta:
           dagster:
@@ -100,15 +85,12 @@ sources:
               - powerschool
               - assignmentsection
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/assignmentsection/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentsection/*"
           options:
             format: AVRO
             enable_logical_types: true
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/powerschool/assignmentsection/"
+              "{{ var('cloud_storage_uri_base') }}/powerschool/assignmentsection/"
       - name: src_powerschool__cc
         meta:
           dagster:
@@ -117,9 +99,7 @@ sources:
               - powerschool
               - cc
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/cc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/cc/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -131,9 +111,7 @@ sources:
               - powerschool
               - codeset
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/codeset/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/codeset/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -145,9 +123,7 @@ sources:
               - powerschool
               - courses
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/courses/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/courses/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -159,9 +135,7 @@ sources:
               - powerschool
               - districtteachercategory
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/districtteachercategory/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/districtteachercategory/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -173,9 +147,7 @@ sources:
               - powerschool
               - emailaddress
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/emailaddress/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/emailaddress/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -187,9 +159,7 @@ sources:
               - powerschool
               - gradecalcformulaweight
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gradecalcformulaweight/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradecalcformulaweight/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -201,9 +171,7 @@ sources:
               - powerschool
               - gradecalcschoolassoc
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gradecalcschoolassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradecalcschoolassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -215,9 +183,7 @@ sources:
               - powerschool
               - gradecalculationtype
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gradecalculationtype/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradecalculationtype/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -229,9 +195,7 @@ sources:
               - powerschool
               - gradeformulaset
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gradeformulaset/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradeformulaset/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -243,9 +207,7 @@ sources:
               - powerschool
               - gradescaleitem
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gradescaleitem/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradescaleitem/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -257,9 +219,7 @@ sources:
               - powerschool
               - gradeschoolconfig
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gradeschoolconfig/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradeschoolconfig/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -271,9 +231,7 @@ sources:
               - powerschool
               - gradeschoolformulaassoc
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gradeschoolformulaassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradeschoolformulaassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -285,9 +243,7 @@ sources:
               - powerschool
               - gradesectionconfig
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gradesectionconfig/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradesectionconfig/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -299,9 +255,7 @@ sources:
               - powerschool
               - originalcontactmap
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/originalcontactmap/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/originalcontactmap/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -313,9 +267,7 @@ sources:
               - powerschool
               - person
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/person/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/person/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -327,9 +279,7 @@ sources:
               - powerschool
               - personaddress
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/personaddress/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/personaddress/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -341,9 +291,7 @@ sources:
               - powerschool
               - personaddressassoc
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/personaddressassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/personaddressassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -355,9 +303,7 @@ sources:
               - powerschool
               - personemailaddressassoc
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/personemailaddressassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/personemailaddressassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -369,9 +315,7 @@ sources:
               - powerschool
               - personphonenumberassoc
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/personphonenumberassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/personphonenumberassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -383,9 +327,7 @@ sources:
               - powerschool
               - phonenumber
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/phonenumber/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/phonenumber/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -397,9 +339,7 @@ sources:
               - powerschool
               - prefs
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/prefs/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/prefs/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -411,9 +351,7 @@ sources:
               - powerschool
               - roledef
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/roledef/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/roledef/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -425,9 +363,7 @@ sources:
               - powerschool
               - s_nj_crs_x
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/s_nj_crs_x/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/s_nj_crs_x/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -439,9 +375,7 @@ sources:
               - powerschool
               - s_nj_ren_x
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/s_nj_ren_x/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/s_nj_ren_x/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -453,9 +387,7 @@ sources:
               - powerschool
               - s_nj_stu_x
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/s_nj_stu_x/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/s_nj_stu_x/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -467,9 +399,7 @@ sources:
               - powerschool
               - s_nj_usr_x
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/s_nj_usr_x/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/s_nj_usr_x/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -481,9 +411,7 @@ sources:
               - powerschool
               - schools
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/schools/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/schools/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -495,9 +423,7 @@ sources:
               - powerschool
               - schoolstaff
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/schoolstaff/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/schoolstaff/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -509,9 +435,7 @@ sources:
               - powerschool
               - sections
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/sections/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/sections/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -523,9 +447,7 @@ sources:
               - powerschool
               - sectionteacher
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/sectionteacher/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/sectionteacher/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -537,9 +459,7 @@ sources:
               - powerschool
               - studentcontactassoc
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/studentcontactassoc/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/studentcontactassoc/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -551,9 +471,7 @@ sources:
               - powerschool
               - studentcontactdetail
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/studentcontactdetail/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/studentcontactdetail/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -565,9 +483,7 @@ sources:
               - powerschool
               - studentcorefields
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/studentcorefields/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/studentcorefields/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -579,9 +495,7 @@ sources:
               - powerschool
               - studentrace
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/studentrace/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/studentrace/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -593,9 +507,7 @@ sources:
               - powerschool
               - students
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/students/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/students/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -607,9 +519,7 @@ sources:
               - powerschool
               - teachercategory
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/teachercategory/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/teachercategory/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -621,9 +531,7 @@ sources:
               - powerschool
               - termbins
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/termbins/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/termbins/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -635,9 +543,7 @@ sources:
               - powerschool
               - terms
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/terms/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/terms/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -649,9 +555,7 @@ sources:
               - powerschool
               - u_clg_et_stu
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/u_clg_et_stu/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/u_clg_et_stu/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -663,9 +567,7 @@ sources:
               - powerschool
               - u_clg_et_stu_alt
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/u_clg_et_stu_alt/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/u_clg_et_stu_alt/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -677,9 +579,7 @@ sources:
               - powerschool
               - u_def_ext_students
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/u_def_ext_students/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/u_def_ext_students/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -691,9 +591,7 @@ sources:
               - powerschool
               - u_studentsuserfields
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/u_studentsuserfields/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/u_studentsuserfields/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -705,9 +603,7 @@ sources:
               - powerschool
               - users
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/users/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/users/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -720,9 +616,7 @@ sources:
               - powerschool
               - attendance_code
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/attendance_code/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/attendance_code/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -734,9 +628,7 @@ sources:
               - powerschool
               - attendance_conversion_items
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/attendance_conversion_items/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/attendance_conversion_items/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -748,9 +640,7 @@ sources:
               - powerschool
               - bell_schedule
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/bell_schedule/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/bell_schedule/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -762,9 +652,7 @@ sources:
               - powerschool
               - calendar_day
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/calendar_day/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/calendar_day/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -776,9 +664,7 @@ sources:
               - powerschool
               - cycle_day
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/cycle_day/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/cycle_day/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -790,9 +676,7 @@ sources:
               - powerschool
               - fte
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/fte/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/fte/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -804,9 +688,7 @@ sources:
               - powerschool
               - gen
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gen/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gen/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -818,9 +700,7 @@ sources:
               - powerschool
               - log
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/log/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/log/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -832,9 +712,7 @@ sources:
               - powerschool
               - period
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/period/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/period/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -846,9 +724,7 @@ sources:
               - powerschool
               - reenrollments
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/reenrollments/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/reenrollments/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -860,9 +736,7 @@ sources:
               - powerschool
               - spenrollments
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/spenrollments/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/spenrollments/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -874,9 +748,7 @@ sources:
               - powerschool
               - test
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/test/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/test/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -888,9 +760,7 @@ sources:
               - powerschool
               - testscore
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/testscore/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/testscore/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -902,9 +772,7 @@ sources:
               - powerschool
               - studenttest
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/studenttest/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/studenttest/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -916,9 +784,7 @@ sources:
               - powerschool
               - studenttestscore
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/studenttestscore/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/studenttestscore/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -930,9 +796,7 @@ sources:
               - powerschool
               - sced_code_mapping
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/sced_code_mapping/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/sced_code_mapping/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -944,9 +808,7 @@ sources:
               - powerschool
               - gpnode
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gpnode/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gpnode/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -958,9 +820,7 @@ sources:
               - powerschool
               - gpprogresssubject
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gpprogresssubject/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gpprogresssubject/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -972,9 +832,7 @@ sources:
               - powerschool
               - gpprogresssubjectwaived
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gpprogresssubjectwaived/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gpprogresssubjectwaived/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -986,9 +844,7 @@ sources:
               - powerschool
               - gpstudentwaiver
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gpstudentwaiver/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gpstudentwaiver/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -1000,9 +856,7 @@ sources:
               - powerschool
               - gpversion
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gpversion/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gpversion/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -1014,9 +868,7 @@ sources:
               - powerschool
               - gradplan
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/gradplan/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/gradplan/*"
           options:
             format: AVRO
             enable_logical_types: true
@@ -1028,9 +880,7 @@ sources:
               - powerschool
               - userscorefields
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/powerschool/userscorefields/*"
+          location: "{{ var('cloud_storage_uri_base') }}/powerschool/userscorefields/*"
           options:
             format: AVRO
             enable_logical_types: true

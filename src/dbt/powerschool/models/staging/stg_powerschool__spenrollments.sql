@@ -11,11 +11,11 @@ with
             gradelevel.int_value as gradelevel,
             studentid.int_value as studentid,
 
-            if(
-                extract(month from enter_date) >= 7,
-                extract(year from enter_date),
-                extract(year from enter_date) - 1
-            ) as academic_year,
+            {{
+                teamster_utils.date_to_fiscal_year(
+                    date_field="enter_date", start_month=7, year_source="start"
+                )
+            }} as academic_year,
         from {{ source("powerschool", "src_powerschool__spenrollments") }}
     )
 

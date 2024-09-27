@@ -10,7 +10,7 @@ with
             concat(u.first_name, ' ', u.last_name) as commlog_staff_name,
 
             {{
-                date_to_fiscal_year(
+                teamster_utils.date_to_fiscal_year(
                     date_field="call_date_time", start_month=7, year_source="start"
                 )
             }} as academic_year,

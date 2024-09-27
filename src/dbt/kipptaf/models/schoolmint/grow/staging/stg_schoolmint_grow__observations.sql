@@ -105,7 +105,7 @@ select
     *,
 
     {{
-        date_to_fiscal_year(
+        teamster_utils.date_to_fiscal_year(
             date_field="observed_at_date_local", start_month=7, year_source="start"
         )
     }} as academic_year,

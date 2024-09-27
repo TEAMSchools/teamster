@@ -41,10 +41,13 @@ models:
       +schema: fldoe
       +materialized: table
   deanslist:
-    +materialized: table
+    +schema: deanslist
   iready:
-    +materialized: table
+    +schema: iready
+    staging:
+      +materialized: table
   powerschool:
+    +schema: powerschool
     +materialized: table
     staging:
       stg_powerschool__s_nj_crs_x:
@@ -76,7 +79,7 @@ models:
       stg_powerschool__sced_code_mapping:
         +enabled: false
   renlearn:
-    +materialized: table
+    +schema: renlearn
 
 sources:
   powerschool:

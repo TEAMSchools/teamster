@@ -13,6 +13,9 @@ with
 
 select
     *,
-    {{ date_to_fiscal_year(date_field="att_date", start_month=7, year_source="start") }}
-    as academic_year,
+    {{
+        teamster_utils.date_to_fiscal_year(
+            date_field="att_date", start_month=7, year_source="start"
+        )
+    }} as academic_year,
 from union_relations

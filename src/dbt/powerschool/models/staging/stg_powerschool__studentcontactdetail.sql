@@ -1,44 +1,28 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source(
-                    "powerschool", "src_powerschool__studentcontactdetail"
-                ),
-                partition_by="studentcontactdetailid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
+{{
+    teamster_utils.generate_staging_model(
+        unique_key="studentcontactdetailid.int_value",
+        transform_cols=[
+            {"name": "studentcontactdetailid", "extract": "int_value"},
+            {"name": "studentcontactassocid", "extract": "int_value"},
+            {"name": "relationshiptypecodesetid", "extract": "int_value"},
+            {"name": "isactive", "extract": "int_value"},
+            {"name": "isemergency", "extract": "int_value"},
+            {"name": "iscustodial", "extract": "int_value"},
+            {"name": "liveswithflg", "extract": "int_value"},
+            {"name": "schoolpickupflg", "extract": "int_value"},
+            {"name": "receivesmailflg", "extract": "int_value"},
+            {"name": "excludefromstatereportingflg", "extract": "int_value"},
+            {"name": "generalcommflag", "extract": "int_value"},
+            {"name": "confidentialcommflag", "extract": "int_value"},
+        ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
+        ],
     )
+}}
 
--- trunk-ignore(sqlfluff/AM04)
-select
-    * except (
-        studentcontactdetailid,
-        studentcontactassocid,
-        relationshiptypecodesetid,
-        isactive,
-        isemergency,
-        iscustodial,
-        liveswithflg,
-        schoolpickupflg,
-        receivesmailflg,
-        excludefromstatereportingflg,
-        generalcommflag,
-        confidentialcommflag
-    ),
-
-    /* column transformations */
-    studentcontactdetailid.int_value as studentcontactdetailid,
-    studentcontactassocid.int_value as studentcontactassocid,
-    relationshiptypecodesetid.int_value as relationshiptypecodesetid,
-    isactive.int_value as isactive,
-    isemergency.int_value as isemergency,
-    iscustodial.int_value as iscustodial,
-    liveswithflg.int_value as liveswithflg,
-    schoolpickupflg.int_value as schoolpickupflg,
-    receivesmailflg.int_value as receivesmailflg,
-    excludefromstatereportingflg.int_value as excludefromstatereportingflg,
-    generalcommflag.int_value as generalcommflag,
-    confidentialcommflag.int_value as confidentialcommflag,
-from deduplicate
+select *
+from staging

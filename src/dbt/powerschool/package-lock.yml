@@ -1,6 +1,5 @@
 packages:
+  - local: ../teamster_utils
   - package: dbt-labs/dbt_utils
     version: 1.3.0
-  - package: dbt-labs/dbt_external_tables
-    version: 0.9.0
-sha1_hash: 86e37da85bb51f86f1ab00f54df3d63a162424dc
+sha1_hash: a536e0843ed924caec1b29b83f741d2915da52fc

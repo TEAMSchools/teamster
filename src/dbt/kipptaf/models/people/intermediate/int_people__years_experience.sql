@@ -101,7 +101,7 @@ with
             d as date_value,
 
             {{
-                date_to_fiscal_year(
+                teamster_utils.date_to_fiscal_year(
                     date_field="d", start_month=7, year_source="start"
                 )
             }} as academic_year,

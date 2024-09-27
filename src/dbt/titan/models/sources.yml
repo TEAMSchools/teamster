@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: titan
-    schema: "{{ var('titan_schema', env_var('DBT_DEV_TITAN_SCHEMA', 'titan')) }}"
+    schema: "{{ var('titan_schema', 'titan') }}"
     database:
       "{% if target.type != 'spark' %}{{ var('titan_database', target.database) }}{% endif %}"
     tags:
@@ -16,13 +16,9 @@ sources:
               - titan
               - person_data
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/titan/person_data/*"
+          location: "{{ var('cloud_storage_uri_base') }}/titan/person_data/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/titan/person_data/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/titan/person_data/"
             format: AVRO
             enable_logical_types: true
       - name: src_titan__income_form_data
@@ -33,12 +29,8 @@ sources:
               - titan
               - income_form_data
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/titan/income_form_data/*"
+          location: "{{ var('cloud_storage_uri_base') }}/titan/income_form_data/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/titan/income_form_data/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/titan/income_form_data/"
             format: AVRO
             enable_logical_types: true

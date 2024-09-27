@@ -1,34 +1,24 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__u_def_ext_students"),
-                partition_by="studentsdcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
+{{
+    teamster_utils.generate_staging_model(
+        unique_key="studentsdcid.int_value",
+        transform_cols=[
+            {"name": "studentsdcid", "extract": "int_value"},
+            {"name": "savings_529_optin", "extract": "int_value"},
+            {"name": "iep_registration_followup", "extract": "int_value"},
+            {"name": "lep_registration_followup", "extract": "int_value"},
+            {"name": "test_field", "extract": "int_value"},
+            {"name": "current_programid", "extract": "int_value"},
+            {"name": "aup_yn_1718", "extract": "int_value"},
+            {"name": "incorrect_region_grad_student", "extract": "int_value"},
+        ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
+        ],
     )
+}}
 
--- trunk-ignore(sqlfluff/AM04)
-select
-    * except (
-        studentsdcid,
-        savings_529_optin,
-        iep_registration_followup,
-        lep_registration_followup,
-        test_field,
-        current_programid,
-        aup_yn_1718,
-        incorrect_region_grad_student
-    ),
-
-    /* column transformations */
-    studentsdcid.int_value as studentsdcid,
-    savings_529_optin.int_value as savings_529_optin,
-    iep_registration_followup.int_value as iep_registration_followup,
-    lep_registration_followup.int_value as lep_registration_followup,
-    test_field.int_value as test_field,
-    current_programid.int_value as current_programid,
-    aup_yn_1718.int_value as aup_yn_1718,
-    incorrect_region_grad_student.int_value as incorrect_region_grad_student,
-from deduplicate
+select *
+from staging

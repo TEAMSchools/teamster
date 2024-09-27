@@ -1,32 +1,22 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source(
-                    "powerschool", "src_powerschool__personemailaddressassoc"
-                ),
-                partition_by="personemailaddressassocid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
+{{
+    teamster_utils.generate_staging_model(
+        unique_key="personemailaddressassocid.int_value",
+        transform_cols=[
+            {"name": "personemailaddressassocid", "extract": "int_value"},
+            {"name": "personid", "extract": "int_value"},
+            {"name": "emailaddressid", "extract": "int_value"},
+            {"name": "emailtypecodesetid", "extract": "int_value"},
+            {"name": "isprimaryemailaddress", "extract": "int_value"},
+            {"name": "emailaddresspriorityorder", "extract": "int_value"},
+        ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
+        ],
     )
+}}
 
--- trunk-ignore(sqlfluff/AM04)
-select
-    * except (
-        personemailaddressassocid,
-        personid,
-        emailaddressid,
-        emailtypecodesetid,
-        isprimaryemailaddress,
-        emailaddresspriorityorder
-    ),
-
-    /* column transformations */
-    personemailaddressassocid.int_value as personemailaddressassocid,
-    personid.int_value as personid,
-    emailaddressid.int_value as emailaddressid,
-    emailtypecodesetid.int_value as emailtypecodesetid,
-    isprimaryemailaddress.int_value as isprimaryemailaddress,
-    emailaddresspriorityorder.int_value as emailaddresspriorityorder,
-from deduplicate
+select *
+from staging

@@ -1,32 +1,23 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__codeset"),
-                partition_by="codesetid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
+{{
+    teamster_utils.generate_staging_model(
+        unique_key="codesetid.int_value",
+        transform_cols=[
+            {"name": "codesetid", "extract": "int_value"},
+            {"name": "parentcodesetid", "extract": "int_value"},
+            {"name": "uidisplayorder", "extract": "int_value"},
+            {"name": "isvisible", "extract": "int_value"},
+            {"name": "ismodifiable", "extract": "int_value"},
+            {"name": "isdeletable", "extract": "int_value"},
+            {"name": "excludefromstatereporting", "extract": "int_value"},
+        ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
+        ],
     )
+}}
 
--- trunk-ignore(sqlfluff/AM04)
-select
-    * except (
-        codesetid,
-        parentcodesetid,
-        uidisplayorder,
-        isvisible,
-        ismodifiable,
-        isdeletable,
-        excludefromstatereporting
-    ),
-
-    /* column transformations */
-    codesetid.int_value as codesetid,
-    parentcodesetid.int_value as parentcodesetid,
-    uidisplayorder.int_value as uidisplayorder,
-    isvisible.int_value as isvisible,
-    ismodifiable.int_value as ismodifiable,
-    isdeletable.int_value as isdeletable,
-    excludefromstatereporting.int_value as excludefromstatereporting,
-from deduplicate
+select *
+from staging

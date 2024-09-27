@@ -40,14 +40,15 @@ models:
       +schema: extracts
       +materialized: table
   deanslist:
-    +materialized: table
+    +schema: deanslist
   edplan:
-    +materialized: table
+    +schema: edplan
   overgrad:
-    +materialized: table
+    +schema: overgrad
   pearson:
-    +materialized: table
+    +schema: pearson
   powerschool:
+    +schema: powerschool
     +materialized: table
     staging:
       stg_powerschool__period:
@@ -57,7 +58,7 @@ models:
       stg_powerschool__u_def_ext_students:
         +enabled: false
   titan:
-    +materialized: table
+    +schema: titan
     staging:
       stg_titan__income_form_data:
         +enabled: false

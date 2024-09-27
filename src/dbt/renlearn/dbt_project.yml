@@ -27,4 +27,9 @@ clean-targets: # directories to be removed by `dbt clean`
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
-  +schema: renlearn
+  renlearn:
+    staging:
+      +materialized: table
+
+vars:
+  cloud_storage_uri_base: null

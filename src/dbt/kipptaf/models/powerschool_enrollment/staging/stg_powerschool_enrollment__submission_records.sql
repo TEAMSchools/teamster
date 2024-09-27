@@ -22,7 +22,7 @@ select
     datetime(sr.started) as `started`,
     datetime(sr.submitted) as submitted,
     {{
-        date_to_fiscal_year(
+        teamster_utils.date_to_fiscal_year(
             date_field="datetime(sr.submitted)", start_month=7, year_source="start"
         )
     }} as academic_year,

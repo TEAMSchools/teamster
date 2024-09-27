@@ -1,28 +1,21 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__gradeformulaset"),
-                partition_by="gradeformulasetid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
+{{
+    teamster_utils.generate_staging_model(
+        unique_key="gradeformulasetid.int_value",
+        transform_cols=[
+            {"name": "gradeformulasetid", "extract": "int_value"},
+            {"name": "yearid", "extract": "int_value"},
+            {"name": "iscoursegradecalculated", "extract": "int_value"},
+            {"name": "isreporttermsetupsame", "extract": "int_value"},
+            {"name": "sectionsdcid", "extract": "int_value"},
+        ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
+        ],
     )
+}}
 
--- trunk-ignore(sqlfluff/AM04)
-select
-    * except (
-        gradeformulasetid,
-        yearid,
-        iscoursegradecalculated,
-        isreporttermsetupsame,
-        sectionsdcid
-    ),
-
-    /* column transformations */
-    gradeformulasetid.int_value as gradeformulasetid,
-    yearid.int_value as yearid,
-    iscoursegradecalculated.int_value as iscoursegradecalculated,
-    isreporttermsetupsame.int_value as isreporttermsetupsame,
-    sectionsdcid.int_value as sectionsdcid,
-from deduplicate
+select *
+from staging

@@ -1,28 +1,20 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source(
-                    "powerschool", "src_powerschool__gradeschoolformulaassoc"
-                ),
-                partition_by="gradeschoolformulaassocid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
+{{
+    teamster_utils.generate_staging_model(
+        unique_key="gradeschoolformulaassocid.int_value",
+        transform_cols=[
+            {"name": "gradeschoolformulaassocid", "extract": "int_value"},
+            {"name": "gradeformulasetid", "extract": "int_value"},
+            {"name": "gradeschoolconfigid", "extract": "int_value"},
+            {"name": "isdefaultformulaset", "extract": "int_value"},
+        ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
+        ],
     )
+}}
 
--- trunk-ignore(sqlfluff/AM04)
-select
-    * except (
-        gradeschoolformulaassocid,
-        gradeformulasetid,
-        gradeschoolconfigid,
-        isdefaultformulaset
-    ),
-
-    /* column transformations */
-    gradeschoolformulaassocid.int_value as gradeschoolformulaassocid,
-    gradeformulasetid.int_value as gradeformulasetid,
-    gradeschoolconfigid.int_value as gradeschoolconfigid,
-    isdefaultformulaset.int_value as isdefaultformulaset,
-from deduplicate
+select *
+from staging

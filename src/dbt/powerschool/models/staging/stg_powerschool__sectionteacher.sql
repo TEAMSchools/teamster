@@ -1,26 +1,23 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__sectionteacher"),
-                partition_by="id.int_value",
-                order_by="_file_name desc",
-            )
-        }}
+{{
+    teamster_utils.generate_staging_model(
+        unique_key="id.int_value",
+        transform_cols=[
+            {"name": "id", "extract": "int_value"},
+            {"name": "teacherid", "extract": "int_value"},
+            {"name": "sectionid", "extract": "int_value"},
+            {"name": "roleid", "extract": "int_value"},
+            {"name": "allocation", "extract": "bytes_decimal_value"},
+            {"name": "priorityorder", "extract": "int_value"},
+            {"name": "whomodifiedid", "extract": "int_value"},
+        ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
+        ],
     )
+}}
 
--- trunk-ignore(sqlfluff/AM04)
-select
-    * except (
-        id, teacherid, sectionid, roleid, allocation, priorityorder, whomodifiedid
-    ),
-
-    /* column transformations */
-    id.int_value as id,
-    teacherid.int_value as teacherid,
-    sectionid.int_value as sectionid,
-    roleid.int_value as roleid,
-    allocation.bytes_decimal_value as allocation,
-    priorityorder.int_value as priorityorder,
-    whomodifiedid.int_value as whomodifiedid,
-from deduplicate
+select *
+from staging

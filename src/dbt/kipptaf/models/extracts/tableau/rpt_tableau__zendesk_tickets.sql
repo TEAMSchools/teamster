@@ -67,13 +67,13 @@ select
     oad.job_title as orig_assignee_job,
     oad.department_home_name as orig_assignee_dept,
 
-    {{ date_diff_weekday("gu.max_created_at", "t.created_at") }}
+    {{ teamster_utils.date_diff_weekday("gu.max_created_at", "t.created_at") }}
     as weekdays_created_to_last_group,
-    {{ date_diff_weekday("tm.solved_at", "t.created_at") }}
+    {{ teamster_utils.date_diff_weekday("tm.solved_at", "t.created_at") }}
     as weekdays_created_to_solved,
-    {{ date_diff_weekday("tm.initially_assigned_at", "t.created_at") }}
+    {{ teamster_utils.date_diff_weekday("tm.initially_assigned_at", "t.created_at") }}
     as weekdays_created_to_first_assigned,
-    {{ date_diff_weekday("tm.assignee_updated_at", "t.created_at") }}
+    {{ teamster_utils.date_diff_weekday("tm.assignee_updated_at", "t.created_at") }}
     as weekdays_created_to_last_assigned,
 from {{ source("zendesk", "tickets") }} as t
 left join

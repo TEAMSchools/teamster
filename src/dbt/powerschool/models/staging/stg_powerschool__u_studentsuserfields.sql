@@ -1,26 +1,18 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source(
-                    "powerschool", "src_powerschool__u_studentsuserfields"
-                ),
-                partition_by="studentsdcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    ),
-
-    transformations as (
-        -- trunk-ignore(sqlfluff/AM04)
-        select
-            * except (studentsdcid, c_504_status),
-
-            /* column transformations */
-            studentsdcid.int_value as studentsdcid,
-            safe_cast(c_504_status as int) as c_504_status,
-        from deduplicate
+{{
+    teamster_utils.generate_staging_model(
+        unique_key="studentsdcid.int_value",
+        transform_cols=[
+            {"name": "studentsdcid", "extract": "int_value"},
+            {"name": "c_504_status", "cast": "int"},
+        ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
+        ],
     )
+}}
 
-select *, if(c_504_status = 1, true, false) as is_504,
-from transformations
+select *, if(c_504_status = 1, true, false) as is_504
+from staging

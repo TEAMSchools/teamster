@@ -1,32 +1,22 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source(
-                    "powerschool", "src_powerschool__assignmentcategoryassoc"
-                ),
-                partition_by="assignmentcategoryassocid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
+{{
+    teamster_utils.generate_staging_model(
+        unique_key="assignmentcategoryassocid.int_value",
+        transform_cols=[
+            {"name": "assignmentcategoryassocid", "extract": "int_value"},
+            {"name": "assignmentsectionid", "extract": "int_value"},
+            {"name": "teachercategoryid", "extract": "int_value"},
+            {"name": "yearid", "extract": "int_value"},
+            {"name": "isprimary", "extract": "int_value"},
+            {"name": "whomodifiedid", "extract": "int_value"},
+        ],
+        except_cols=[
+            "_dagster_partition_fiscal_year",
+            "_dagster_partition_date",
+            "_dagster_partition_hour",
+            "_dagster_partition_minute",
+        ],
     )
+}}
 
--- trunk-ignore(sqlfluff/AM04)
-select
-    * except (
-        assignmentcategoryassocid,
-        assignmentsectionid,
-        teachercategoryid,
-        yearid,
-        isprimary,
-        whomodifiedid
-    ),
-
-    /* column transformations */
-    assignmentcategoryassocid.int_value as assignmentcategoryassocid,
-    assignmentsectionid.int_value as assignmentsectionid,
-    teachercategoryid.int_value as teachercategoryid,
-    yearid.int_value as yearid,
-    isprimary.int_value as isprimary,
-    whomodifiedid.int_value as whomodifiedid,
-from deduplicate
+select *
+from staging

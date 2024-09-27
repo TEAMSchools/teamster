@@ -2,8 +2,9 @@ version: 2
 
 sources:
   - name: deanslist
-    schema: "{{ var('deanslist_schema', env_var('DBT_DEV_DEANSLIST_SCHEMA', 'deanslist')) }}"
-    database: "{{ var('deanslist_database', target.database) }}"
+    schema: "{{ var('deanslist_schema', 'deanslist') }}"
+    database:
+      "{% if target.type != 'spark' %}{{ var('deanslist_database', target.database) }}{% endif %}"
     tags:
       - stage_external_sources
     tables:
@@ -15,13 +16,9 @@ sources:
               - deanslist
               - behavior
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/deanslist/behavior/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/behavior/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/deanslist/behavior/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/behavior/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__comm_log
@@ -32,13 +29,9 @@ sources:
               - deanslist
               - comm_log
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/deanslist/comm_log/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/comm_log/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/deanslist/comm_log/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/comm_log/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__followups
@@ -49,13 +42,9 @@ sources:
               - deanslist
               - followups
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/deanslist/followups/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/followups/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/deanslist/followups/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/followups/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__homework
@@ -66,13 +55,9 @@ sources:
               - deanslist
               - homework
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/deanslist/homework/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/homework/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/deanslist/homework/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/homework/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__incidents
@@ -83,13 +68,9 @@ sources:
               - deanslist
               - incidents
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/deanslist/incidents/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/incidents/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/deanslist/incidents/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/incidents/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__lists
@@ -100,13 +81,9 @@ sources:
               - deanslist
               - lists
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/deanslist/lists/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/lists/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/deanslist/lists/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/lists/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__roster_assignments
@@ -118,11 +95,11 @@ sources:
               - roster_assignments
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            "gs://teamster-{{ project_name }}/dagster/{{ project_name
             }}/deanslist/roster_assignments/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              "gs://teamster-{{ project_name }}/dagster/{{ project_name
               }}/deanslist/roster_assignments/"
             format: AVRO
             enable_logical_types: true
@@ -134,13 +111,9 @@ sources:
               - deanslist
               - rosters
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/deanslist/rosters/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/rosters/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/deanslist/rosters/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/rosters/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__terms
@@ -151,13 +124,9 @@ sources:
               - deanslist
               - terms
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/deanslist/terms/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/terms/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/deanslist/terms/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/terms/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__users
@@ -168,13 +137,9 @@ sources:
               - deanslist
               - users
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/deanslist/users/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/users/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/deanslist/users/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/users/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__students
@@ -185,13 +150,9 @@ sources:
               - deanslist
               - students
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/deanslist/students/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/students/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/deanslist/students/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/students/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__dff_stats
@@ -202,12 +163,8 @@ sources:
               - deanslist
               - dff_stats
         external:
-          location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/deanslist/dff_stats/*"
+          location: "{{ var('cloud_storage_uri_base') }}/deanslist/dff_stats/*"
           options:
-            hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/deanslist/dff_stats/"
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/deanslist/dff_stats/"
             format: AVRO
             enable_logical_types: true

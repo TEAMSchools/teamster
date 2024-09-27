@@ -104,7 +104,7 @@ select
     writing_remediation__c as writing_remediation,
 
     {{
-        date_to_fiscal_year(
+        teamster_utils.date_to_fiscal_year(
             date_field="benchmark_date__c", start_month=7, year_source="start"
         )
     }} as academic_year,
