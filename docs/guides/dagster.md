@@ -16,6 +16,8 @@ either a string (for a single schedule tick) or a list of strings (for multiple)
 
     Use [crontab guru](https://crontab.guru/) as a cron reference.
 
+<!-- prettier-ignore-start -->
+<!-- trunk-ignore(markdownlint/MD046) -->
 ```yaml
 - name: My Tableau Workbook
   deps:
@@ -32,9 +34,12 @@ either a string (for a single schedule tick) or a list of strings (for multiple)
       - 0 0 * * *
       - 0 12 * * *
 ```
+<!-- prettier-ignore-end -->
 
 To "turn off" a schedule, simply comment out the `cron_schedule` attribute:
 
+<!-- prettier-ignore-start -->
+<!-- trunk-ignore(markdownlint/MD046) -->
 ```yaml
 - name: My Tableau Workbook
   deps:
@@ -51,3 +56,4 @@ To "turn off" a schedule, simply comment out the `cron_schedule` attribute:
     #   - 0 0 * * *
     #   - 0 12 * * *
 ```
+<!-- prettier-ignore-end -->
