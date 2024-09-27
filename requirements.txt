@@ -27,7 +27,7 @@ dagster-cloud==1.8.8
 dagster-cloud-cli==1.8.8
 dagster-dbt==0.24.8
 dagster-fivetran==0.24.8
-dagster-gcp==0.24.8
+dagster-gcp==0.24.9
 dagster-k8s==0.24.8
 dagster-pandas==0.24.8
 dagster-pipes==1.8.8
