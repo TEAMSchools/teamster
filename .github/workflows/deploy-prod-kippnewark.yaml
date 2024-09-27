@@ -18,7 +18,6 @@ on:
       - src/dbt/pearson/**
       - src/dbt/powerschool/**
       - src/dbt/renlearn/**
-      - src/dbt/teamster_utils/**
       - src/dbt/titan/**
       - src/teamster/code_locations/kippnewark/**
       - src/teamster/core/**

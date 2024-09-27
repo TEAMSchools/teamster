@@ -11,7 +11,6 @@ on:
       - Dockerfile
       - requirements.txt
       - src/dbt/kipptaf/**
-      - src/dbt/teamster_utils/**
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**
       - src/teamster/libraries/adp/**

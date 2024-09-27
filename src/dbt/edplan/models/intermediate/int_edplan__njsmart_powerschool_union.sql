@@ -39,6 +39,7 @@ select
     ti_serv_other,
     ti_serv_physical,
     ti_serv_speech,
+
     row_number() over (
         partition by student_number, fiscal_year
         order by _dbt_source_relation desc, effective_date desc
