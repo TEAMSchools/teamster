@@ -139,6 +139,8 @@ select
     if(
         sr.department_home_name = 'New Teacher Development', 'TDT', 'NTNC'
     ) as observer_team,
+    -- trunk-ignore(sqlfluff/LT01)
+    date_trunc(td.observed_at, week(monday)) as week_start,
 from observations_td_union as td
 left join
     {{ ref("base_people__staff_roster_history") }} as srh
