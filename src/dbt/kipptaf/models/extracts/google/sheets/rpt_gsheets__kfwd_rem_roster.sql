@@ -140,6 +140,9 @@ select
     gpa.gpa,
 
     rs.fiscal_year,
+
+    r.contact_middle_school_attended,
+    r.contact_postsecondary_status,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
