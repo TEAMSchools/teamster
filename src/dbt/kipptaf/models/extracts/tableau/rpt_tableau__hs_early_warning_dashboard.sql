@@ -20,19 +20,18 @@ with
 select
     co.studentid,
     co.student_number,
-    co.lastfirst,
+    co.student_name,
     co.dob,
     co.academic_year,
     co.region,
     co.school_level,
     co.schoolid,
-    co.reporting_schoolid,
     co.school_name,
+    co.school,
     co.grade_level,
     co.cohort,
-    co.advisory_name as team,
-    co.advisor_lastfirst as advisor_name,
-    co.spedlep as iep_status,
+    co.advisory,
+    co.iep_status,
     co.lep_status,
     co.is_504 as c_504_status,
     co.gender,
@@ -76,7 +75,7 @@ select
 
     sus.suspension_count,
     sus.suspension_days,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_tableau__student_enrollments") }} as co
 inner join
     {{ ref("stg_reporting__terms") }} as dt
     on co.academic_year = dt.academic_year
@@ -117,6 +116,5 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sus") }}
 where
     co.academic_year = {{ var("current_academic_year") }}
-    and co.rn_year = 1
     and co.is_enrolled_recent
     and co.school_level = 'HS'
