@@ -14,7 +14,7 @@ certifi==2024.8.30
 cffi==1.17.1
 charset-normalizer==3.3.2
 click==8.1.7
-cmake==3.30.3
+cmake==3.30.4
 colorama==0.4.6
 coloredlogs==14.0
 cramjam==2.8.4
