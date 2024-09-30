@@ -2,6 +2,7 @@ with
     missing_assignments as (
         select
             a._dbt_source_relation,
+            a.sectionid,
             a.quarter,
             a.week_number_quarter,
             a.week_start_monday,
@@ -27,15 +28,16 @@ with
             e.student_number,
             e.student_name,
             e.grade_level,
-            e.gifted_and_talented,
+            e.advisory,
+            e.contact_owner_name as ktc_advisor,
         from {{ ref("int_powerschool__student_assignment_audit") }} as a
         inner join
             {{ ref("int_tableau__student_enrollments") }} as e
             on a.studentid = e.studentid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
-            and e.academic_year = 2024
+            and e.academic_year = {{ var("current_academic_year") }}
         where
-            a.school_level != 'ES'
+            a.school_level = 'HS'
             and a.assign_expected_to_be_scored
             and (a.ismissing = 1 or not a.assign_scored)
     ),
@@ -58,9 +60,9 @@ with
         from {{ ref("base_powerschool__course_enrollments") }}
         where
             rn_course_number_year = 1
-            and cc_academic_year = 2024
             and cc_sectionid > 0
             and courses_excludefromgpa = 0
+            and cc_academic_year = {{ var("current_academic_year") }}
             and cc_course_number not in (
                 'LOG100',
                 'LOG1010',
@@ -88,18 +90,8 @@ select
     m.student_number,
     m.student_name,
     m.grade_level,
-    m.gifted_and_talented,
-
-    c.course_number,
-    c.sectionid,
-    c.date_enrolled,
-    c.sections_dcid,
-    c.section_number,
-    c.external_expression,
-    c.credit_type,
-    c.course_name,
-    c.teacher_number,
-    c.teacher_lastfirst,
+    m.advisory,
+    m.ktc_advisor,
 
     m.quarter,
     m.week_number_quarter,
@@ -118,8 +110,20 @@ select
     m.max_score,
     m.assign_final_score_percent,
 
+    c.course_number,
+    c.sectionid,
+    c.date_enrolled,
+    c.sections_dcid,
+    c.section_number,
+    c.external_expression,
+    c.credit_type,
+    c.course_name,
+    c.teacher_number,
+    c.teacher_lastfirst,
+
 from missing_assignments as m
 inner join
     course_enrollments as c
     on m.studentid = c.studentid
+    and m.sectionid = c.sectionid
     and {{ union_dataset_join_clause(left_alias="m", right_alias="c") }}
