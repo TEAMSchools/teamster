@@ -265,13 +265,28 @@ select
         then r.manager_employee_number
         when r.first_approver_employee_number is null and r.route <> 'MDSO'
         then r.manager_employee_number
-
+        when
+            r.job_title in (
+                'Head of Schools',
+                'Managing Director of Operations',
+                'Managing Director of School Operations',
+                'Managing Director'
+            )
+        then r.manager_employee_number
         else r.first_approver_employee_number
     end as first_approver_employee_number,
     case
         when r.second_approver_employee_number = r.employee_number
         then r.grandmanager_employee_number
         when r.second_approver_employee_number is null and r.route <> 'MDSO'
+        then r.grandmanager_employee_number
+        when
+            r.job_title in (
+                'Head of Schools',
+                'Managing Director of Operations',
+                'Managing Director of School Operations',
+                'Managing Director'
+            )
         then r.grandmanager_employee_number
         else r.second_approver_employee_number
     end as second_approver_employee_number,
