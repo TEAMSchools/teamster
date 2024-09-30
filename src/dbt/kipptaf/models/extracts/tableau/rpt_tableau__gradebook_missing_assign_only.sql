@@ -75,7 +75,12 @@ select
 
     string_agg(
         concat(
-            ' • ', assignment_name, ' was due on ', assign_due_date, ' in ', course_name
+            ' • ',
+            m.assignment_name,
+            ' was due on ',
+            m.assign_due_date,
+            ' in ',
+            m.course_name
         ),
         '\n'
     )
