@@ -194,7 +194,4 @@ left join
     and hr.rn_course_number_year = 1
     and not hr.is_dropped_section
 where
-    co.academic_year >= {{ var("current_academic_year") - 1 }}
-    and co.grade_level != 99
-    and co.region = 'Miami'
-    and b.category_type = 'Corrective'
+    co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99
