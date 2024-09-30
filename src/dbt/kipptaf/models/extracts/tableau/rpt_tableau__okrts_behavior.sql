@@ -34,7 +34,9 @@ with
                 'Effort (Pride)',
                 'Accountability (Purpose, Courage)',
                 'Accountability (Empowerment)',
-                'Teamwork (Community)'
+                'Teamwork (Community)',
+                'Written Reminders',
+                'Big Reminders'
             )
             and behavior_date >= '{{ var("current_academic_year") - 1 }}-07-01'
     ),
@@ -192,4 +194,7 @@ left join
     and hr.rn_course_number_year = 1
     and not hr.is_dropped_section
 where
-    co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99
+    co.academic_year >= {{ var("current_academic_year") - 1 }}
+    and co.grade_level != 99
+    and co.region = 'Miami'
+    and b.category_type = 'Corrective'
