@@ -3,22 +3,9 @@ with
         select
             a._dbt_source_relation,
             a.sectionid,
-            a.quarter,
-            a.week_number_quarter,
-            a.week_start_monday,
-            a.week_end_sunday,
-            a.assignment_category_code,
             a.category_name,
-            a.assignment_category_term,
-            a.assignmentid as assignment_id,
             a.assignment_name,
             a.duedate as assign_due_date,
-            a.ismissing as is_missing,
-            a.scoretype as score_type,
-            a.scorepoints as raw_score,
-            a.score_converted,
-            a.totalpointvalue as max_score,
-            a.assign_final_score_percent,
 
             e.academic_year,
             e.academic_year_display,
@@ -29,7 +16,6 @@ with
             e.student_name,
             e.grade_level,
             e.advisory,
-            e.contact_owner_name as ktc_advisor,
         from {{ ref("int_powerschool__student_assignment_audit") }} as a
         inner join
             {{ ref("int_tableau__student_enrollments") }} as e
@@ -48,11 +34,7 @@ with
             cc_studentid as studentid,
             cc_course_number as course_number,
             cc_sectionid as sectionid,
-            cc_dateenrolled as date_enrolled,
-            sections_dcid,
-            sections_section_number as section_number,
             sections_external_expression as external_expression,
-            courses_credittype as credit_type,
             courses_course_name as course_name,
             teachernumber as teacher_number,
             teacher_lastfirst,
@@ -84,42 +66,20 @@ with
 
 select
     m.academic_year,
-    m.academic_year_display,
     m.region,
     m.school,
+    m.advisory,
     m.student_number,
     m.student_name,
     m.grade_level,
-    m.advisory,
-    m.ktc_advisor,
 
-    m.quarter,
-    m.week_number_quarter,
-    m.week_start_monday,
-    m.week_end_sunday,
-    m.assignment_category_code,
-    m.category_name,
-    m.assignment_category_term,
-    m.assignment_id,
-    m.assignment_name,
-    m.assign_due_date,
-    m.is_missing,
-    m.score_type,
-    m.raw_score,
-    m.score_converted,
-    m.max_score,
-    m.assign_final_score_percent,
-
-    c.course_number,
-    c.sectionid,
-    c.date_enrolled,
-    c.sections_dcid,
-    c.section_number,
-    c.external_expression,
-    c.credit_type,
-    c.course_name,
-    c.teacher_number,
-    c.teacher_lastfirst,
+    string_agg(
+        concat(
+            ' • ', assignment_name, ' was due on ', assign_due_date, ' in ', course_name
+        ),
+        '\n'
+    )
+    || '\n' as assignment_info,
 
 from missing_assignments as m
 inner join
@@ -127,3 +87,4 @@ inner join
     on m.studentid = c.studentid
     and m.sectionid = c.sectionid
     and {{ union_dataset_join_clause(left_alias="m", right_alias="c") }}
+group by all
