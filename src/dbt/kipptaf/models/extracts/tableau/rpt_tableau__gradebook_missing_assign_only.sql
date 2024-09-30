@@ -2,6 +2,7 @@ with
     missing_assignments as (
         select
             a._dbt_source_relation,
+            a.sectionid,
             a.quarter,
             a.week_number_quarter,
             a.week_start_monday,
@@ -124,4 +125,5 @@ from missing_assignments as m
 inner join
     course_enrollments as c
     on m.studentid = c.studentid
+    and m.sectionid = c.sectionid
     and {{ union_dataset_join_clause(left_alias="m", right_alias="c") }}
