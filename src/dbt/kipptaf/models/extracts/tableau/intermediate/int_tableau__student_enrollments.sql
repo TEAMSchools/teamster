@@ -49,7 +49,7 @@ select
     e.year_in_school,
     e.year_in_network,
     e.rn_undergrad,
-    e.contact_1_email_current as guardian_email,
+    coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
     e.student_email_google as student_email,
     e.code_location,
 
