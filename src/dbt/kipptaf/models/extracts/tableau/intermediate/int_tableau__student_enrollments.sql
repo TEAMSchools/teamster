@@ -49,7 +49,6 @@ select
     e.year_in_school,
     e.year_in_network,
     e.rn_undergrad,
-    coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
     e.student_email_google as student_email,
     e.code_location,
 
@@ -64,20 +63,23 @@ select
 
     'KTAF' as district,
 
+    coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
+
     cast(e.academic_year as string)
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
-    case
-        e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
-    end as race_ethnicity,
-
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
+
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
     if(sp.studentid is not null, 1, null) as is_counseling_services,
 
     if(sa.studentid is not null, 1, null) as is_student_athlete,
+
+    case
+        e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
+    end as race_ethnicity,
 
     case
         when e.school_level in ('ES', 'MS')
