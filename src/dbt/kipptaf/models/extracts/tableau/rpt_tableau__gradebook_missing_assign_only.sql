@@ -80,7 +80,7 @@ select
             ' was due on ',
             m.assign_due_date,
             ' in ',
-            m.course_name
+            c.course_name
         ),
         '\n'
     )
