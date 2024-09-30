@@ -128,6 +128,21 @@ with
             )
     ),
 
+    mclass as (
+        select
+            mclass_academic_year as academic_year,
+            mclass_student_number as student_number,
+            mclass_measure_standard_level_int,
+            mclass_client_date,
+
+            row_number() over (
+                partition by mclass_academic_year, mclass_student_number
+                order by mclass_client_date desc
+            ) as rn_composite,
+        from {{ ref("int_amplify__all_assessments") }}
+        where assessment_type = 'Benchmark' and mclass_measure_name_code = 'Composite'
+    ),
+
     ps_log as (
         select
             lg._dbt_source_relation,
@@ -290,6 +305,11 @@ with
             iready as ir
             on co.student_number = ir.student_id
             and co.academic_year = ir.academic_year_int
+        left join
+            mclass as m
+            on co.academic_year = m.academic_year
+            and co.student_number = m.student_number
+            and m.rn_composite = 1
         left join
             {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
             on co.students_dcid = nj.studentsdcid
