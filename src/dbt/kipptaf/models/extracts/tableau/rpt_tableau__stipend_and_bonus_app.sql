@@ -11,12 +11,12 @@ select
     r.payroll_group_code as company_code,
 
     case
-        when o.first_approver_employee_number is null and route = 'MDSO'
+        when o.first_approver_employee_number is null and r.route = 'MDSO'
         then 'MDSO Queue'
         else r1.preferred_name_lastfirst
     end as first_approver,
     case
-        when o.second_approver_employee_number is null and route = 'MDSO'
+        when o.second_approver_employee_number is null and r.route = 'MDSO'
         then 'MDSO Queue'
         else r2.preferred_name_lastfirst
     end as second_approver,
