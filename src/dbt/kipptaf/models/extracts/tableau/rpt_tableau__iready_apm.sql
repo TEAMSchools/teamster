@@ -28,19 +28,21 @@ with
 
 select
     co.academic_year,
+    co.academic_year_display,
     co.student_number,
-    co.lastfirst,
+    co.student_name,
     co.grade_level,
     co.region,
     co.school_name,
-    co.advisor_lastfirst as advisor_name,
+    co.advisory as advisor_name,
     co.lep_status,
-    co.spedlep as iep_status,
+    co.iep_status,
     co.school_level,
     co.gender,
     co.ethnicity,
     co.schoolid,
-    co.school_abbreviation,
+    co.school,
+    co.gifted_and_talented,
 
     subj as subject,
 
@@ -97,10 +99,12 @@ select
         true,
         false
     ) as is_curterm,
-    concat(left(co.first_name, 1), '. ', co.last_name) as student_name_short,
+    concat(
+        left(co.student_first_name, 1), '. ', co.student_last_name
+    ) as student_name_short,
     dr.mid_on_grade_level_scale_score
     - dr.overall_scale_score as scale_pts_to_mid_on_grade_level,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_tableau__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as w
     on co.schoolid = w.schoolid
@@ -162,6 +166,5 @@ left join
     and cr.rn_credittype_year = 1
 where
     co.academic_year >= {{ var("current_academic_year") - 1 }}
-    and co.rn_year = 1
     and co.enroll_status = 0
     and co.grade_level <= 8

@@ -20,12 +20,14 @@ with
             a.assign_final_score_percent,
 
             e.academic_year,
+            e.academic_year_display,
             e.region,
             e.school,
             e.studentid,
             e.student_number,
             e.student_name,
             e.grade_level,
+            e.gifted_and_talented,
         from {{ ref("int_powerschool__student_assignment_audit") }} as a
         inner join
             {{ ref("int_tableau__student_enrollments") }} as e
@@ -80,11 +82,13 @@ with
 
 select
     m.academic_year,
+    m.academic_year_display,
     m.region,
     m.school,
     m.student_number,
     m.student_name,
     m.grade_level,
+    m.gifted_and_talented,
 
     c.course_number,
     c.sectionid,

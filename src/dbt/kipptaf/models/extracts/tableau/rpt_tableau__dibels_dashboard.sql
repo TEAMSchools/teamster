@@ -3,6 +3,7 @@ with
         select
             e._dbt_source_relation,
             e.academic_year,
+            e.academic_year_display,
             e.district,
             e.state,
             e.region,
@@ -104,6 +105,7 @@ with
 select
     s._dbt_source_relation,
     s.academic_year,
+    s.academic_year_display,
     s.district,
     s.region,
     s.state,
@@ -204,6 +206,7 @@ union all
 select
     _dbt_source_relation,
     academic_year,
+    academic_year_display,
     district,
     region,
     state,
