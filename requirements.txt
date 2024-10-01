@@ -130,7 +130,7 @@ questionary==2.0.1
 referencing==0.35.1
 requests==2.32.3
 requests-oauthlib==2.0.0
-rich==13.8.1
+rich==13.9.1
 rpds-py==0.20.0
 rsa==4.9
 scikit-learn==1.5.2
