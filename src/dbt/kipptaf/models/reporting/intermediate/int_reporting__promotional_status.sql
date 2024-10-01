@@ -143,6 +143,91 @@ with
         where assessment_type = 'Benchmark' and mclass_measure_name_code = 'Composite'
     ),
 
+    star_results as (
+        select
+            s.student_display_id,
+            s.district_benchmark_category_level,
+
+            safe_cast(left(s.school_year, 4) as int) as academic_year,
+            safe_cast(if(s.grade = 'K', '0', s.grade) as int) as grade_level,
+            case
+                when s._dagster_partition_subject = 'SM'
+                then 'Math'
+                when s._dagster_partition_subject = 'SR'
+                then 'Reading'
+                when s._dagster_partition_subject = 'SEL'
+                then 'Early Literacy'
+            end as star_subject,
+            row_number() over (
+                partition by
+                    s.student_display_id,
+                    s._dagster_partition_subject,
+                    s.school_year,
+                    s.screening_period_window_name
+                order by s.completed_date desc
+            ) as rn_subj_year,
+        from {{ ref("stg_renlearn__star") }} as s
+        where s.deactivation_reason is null
+    ),
+
+    star as (
+        select
+            student_display_id,
+            academic_year,
+            star_math,
+            star_reading,
+            star_early_literacy,
+        from
+            (
+                select
+                    student_display_id,
+                    academic_year,
+                    star_subject,
+                    district_benchmark_category_level,
+                from star_results
+                where rn_subj_year = 1
+            ) pivot (
+                max(district_benchmark_category_level) for star_subject in (
+                    'Math' as star_math,
+                    'Reading' as star_reading,
+                    'Early Literacy' as star_early_literacy
+                )
+            )
+    ),
+
+    fast_results as (
+        select
+            student_id,
+            academic_year,
+            assessment_subject,
+            administration_window,
+            achievement_level_int,
+
+            row_number() over (
+                partition by student_id, academic_year, assessment_subject
+                order by administration_window desc
+            ) as rn_subject_year,
+        from {{ ref("stg_fldoe__fast") }}
+    ),
+
+    fast as (
+        select student_id, academic_year, administration_window, fast_ela, fast_math,
+        from
+            (
+                select
+                    student_id,
+                    academic_year,
+                    assessment_subject,
+                    administration_window,
+                    achievement_level_int,
+                from fast_results
+                where rn_subject_year = 1
+            ) pivot (
+                max(achievement_level_int) for assessment_subject
+                in ('English Language Arts' as fast_ela, 'Mathematics' as fast_math)
+            )
+    ),
+
     ps_log as (
         select
             lg._dbt_source_relation,
@@ -193,6 +278,15 @@ with
             c.n_failing,
             c.projected_credits_y1_term,
             c.projected_credits_cum,
+
+            m.mclass_measure_standard_level_int as dibels_composite_level_recent,
+
+            s.star_math as star_math_level_recent,
+            s.star_reading as star_reading_level_recent,
+            s.star_early_literacy as star_early_literacy_level_recent,
+
+            f.fast_ela as fast_ela_level_recent,
+            f.fast_math as fast_math_level_recent,
 
             case
                 when
@@ -311,6 +405,12 @@ with
             and co.student_number = m.student_number
             and m.rn_composite = 1
         left join
+            star as s
+            on co.student_number = s.student_display_id
+            and co.academic_year = s.academic_year
+        left join
+            fast as f on co.fleid = f.student_id and co.academic_year = f.academic_year
+        left join
             {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
             on co.students_dcid = nj.studentsdcid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
@@ -335,6 +435,12 @@ select
     n_failing,
     projected_credits_cum,
     projected_credits_y1_term,
+    dibels_composite_level_recent,
+    star_math_level_recent,
+    star_reading_level_recent,
+    star_early_literacy_level_recent,
+    fast_ela_level_recent,
+    fast_math_level_recent,
     attendance_status,
     attendance_status_hs_detail,
     academic_status,
