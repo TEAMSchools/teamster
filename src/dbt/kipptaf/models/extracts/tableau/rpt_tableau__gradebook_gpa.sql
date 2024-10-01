@@ -186,21 +186,16 @@ with
             m.rn_course_number_year = 1
             and m.cc_sectionid > 0
             and m.cc_course_number not in (
-                'LOG100',
-                'LOG1010',
-                'LOG11',
-                'LOG12',
-                'LOG20',
-                'LOG22999XL',
-                'LOG300',
-                'LOG9',
-                'SEM22106G1',
-                'SEM22106S1',
-                'SEM72005G1',
-                'SEM72005G2',
-                'SEM72005G3',
-                'SEM72005G4',
-                'SEM22101G1'
+                'LOG100',  -- Lunch
+                'LOG1010',  -- Lunch
+                'LOG11',  -- Lunch
+                'LOG12',  -- Lunch
+                'LOG20',  -- Early Dismissal
+                'LOG22999XL',  -- Lunch
+                'LOG300',  -- Study Hall
+                'LOG9',  -- Lunch
+                'SEM22106G1',  -- Advisory
+                'SEM22106S1'  -- Not in SY24-25 yet
             )
     ),
 
