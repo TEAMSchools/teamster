@@ -13,7 +13,7 @@ with
 
             case  -- noqa: ST02
                 when  -- noqa: ST02
-                    concat(sections_schoolid, sections_course_number) in (  -- noqa: ST02
+                    concat(sections_schoolid, sections_course_number) in (
                         '73252SEM72250G1',  -- noqa: ST02
                         '73252SEM72250G2',  -- noqa: ST02
                         '73252SEM72250G3',  -- noqa: ST02
