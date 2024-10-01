@@ -195,7 +195,7 @@ with
                 'LOG300',  -- Study Hall
                 'LOG9',  -- Lunch
                 'SEM22106G1',  -- Advisory
-                'SEM22106S1',  -- Not in SY24-25 yet
+                'SEM22106S1'  -- Not in SY24-25 yet
             )
     ),
 
