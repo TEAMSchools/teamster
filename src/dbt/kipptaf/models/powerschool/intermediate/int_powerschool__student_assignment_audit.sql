@@ -13,7 +13,7 @@ with
             cc_dateenrolled,
             cc_dateleft,
 
-            case  -- noqa: ST02
+            case
                 when
                     concat(cc_schoolid, cc_course_number) in (
                         '73252SEM72250G1',
@@ -36,7 +36,7 @@ with
                     )
                 then true
                 else false
-            end as exclude_from_audit,
+            end as exclude_from_audit,  -- noqa: ST02
         from {{ ref("base_powerschool__course_enrollments") }}
         where
             cc_sectionid > 0
