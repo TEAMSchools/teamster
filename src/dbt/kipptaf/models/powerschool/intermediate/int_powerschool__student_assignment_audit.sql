@@ -36,7 +36,7 @@ with
                     )
                 then true
                 else false
-            end as exclude_from_audit
+            end as exclude_from_audit,
         from {{ ref("base_powerschool__course_enrollments") }}
         where
             cc_sectionid > 0

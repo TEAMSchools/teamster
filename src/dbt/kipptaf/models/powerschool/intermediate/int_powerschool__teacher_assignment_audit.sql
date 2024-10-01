@@ -34,7 +34,7 @@ with
                     )
                 then true
                 else false
-            end as exclude_from_audit
+            end as exclude_from_audit,
         from {{ ref("base_powerschool__sections") }}
         where
             courses_course_number not in (
