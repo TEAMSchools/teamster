@@ -196,7 +196,6 @@ with
                 'LOG9',  -- Lunch
                 'SEM22106G1',  -- Advisory
                 'SEM22106S1',  -- Not in SY24-25 yet
-                'SEM22101G1'  -- Student Government
             )
     ),
 
