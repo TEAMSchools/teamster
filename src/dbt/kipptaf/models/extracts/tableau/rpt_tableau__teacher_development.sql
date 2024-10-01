@@ -37,13 +37,9 @@ with
             academic_year,
             max(case when term_code = 'PM1' then observation_score end) as pm1,
             max(case when term_code = 'PM2' then observation_score end) as pm2,
-            max(case when term_code = 'PM3' then observation_score end) as pm3
-        from {{ ref("int_performance_management__observations") }} as o
-        where
-            term_code in ('PM1', 'PM2', 'PM3')
-            and od.measurement_name not like '%4%'
-            and od.measurement_name not like '%5%'
-            and od.measurement_name not like '%S&O%'
+            max(case when term_code = 'PM3' then observation_score end) as pm3,
+        from {{ ref("int_performance_management__observations") }}
+        where term_code in ('PM1', 'PM2', 'PM3')
         group by employee_number, academic_year
     ),
 
