@@ -475,6 +475,7 @@ select
     c.contact_last_successful_contact as last_successful_contact_date,
     c.contact_last_successful_advisor_contact as last_successful_advisor_contact_date,
     c.contact_last_outreach as last_outreach_date,
+    c.student_number as powerschool_student_number,
 
     ay.academic_year,
 
@@ -690,6 +691,13 @@ select
 
     if(
         ei.ba_status = 'Graduated'
+        and ei.ba_actual_end_date <= date((c.ktc_cohort + 5), 08, 31),
+        1,
+        0
+    ) as is_5yr_ba_grad_int,
+
+    if(
+        ei.ba_status = 'Graduated'
         and ei.ba_actual_end_date <= date((c.ktc_cohort + 6), 08, 31),
         1,
         0
@@ -804,6 +812,30 @@ select
         then 1
         else 0
     end as is_24yo_ugrad_cte_grad_int,
+
+    case
+        when
+            ei.ugrad_status = 'Graduated'
+            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
+        then 1
+        else 0
+    end as is_4yr_ugrad_grad_int,
+
+    case
+        when
+            ei.ugrad_status = 'Graduated'
+            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 5), 08, 31)
+        then 1
+        else 0
+    end as is_5yr_ugrad_grad_int,
+
+    case
+        when
+            ei.ugrad_status = 'Graduated'
+            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
+        then 1
+        else 0
+    end as is_6yr_ugrad_grad_int,
 
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
