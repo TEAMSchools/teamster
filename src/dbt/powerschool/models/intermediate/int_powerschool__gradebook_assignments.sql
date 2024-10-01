@@ -1,6 +1,7 @@
 with
     assignment_category as (
         select
+            asec._dbt_source_relation,
             asec.assignmentsectionid,
             asec.sectionsdcid,
             asec.assignmentid,
