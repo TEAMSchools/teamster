@@ -11,30 +11,30 @@ with
             sections_course_number,
             teachernumber,
 
-            case
-                when
-                    concat(sections_schoolid, sections_course_number) in (
-                        '73252SEM72250G1',
-                        '73252SEM72250G2',
-                        '73252SEM72250G3',
-                        '73252SEM72250G4',
-                        '133570965SEM72250G1',
-                        '133570965SEM72250G2',
-                        '133570965SEM72250G3',
-                        '133570965SEM72250G4',
-                        '133570965LOG300',
-                        '73252LOG300',
-                        '73258LOG300',
-                        '732514LOG300',
-                        '732513LOG300',
-                        '732514GYM08035G1',
-                        '732514GYM08036G2',
-                        '732514GYM08037G3',
-                        '732514GYM08038G4'
-                    )
-                then true
-                else false
-            end as exclude_from_audit,
+            case  -- noqa: ST02
+                when  -- noqa: ST02
+                    concat(sections_schoolid, sections_course_number) in (  -- noqa: ST02
+                        '73252SEM72250G1',  -- noqa: ST02
+                        '73252SEM72250G2',  -- noqa: ST02
+                        '73252SEM72250G3',  -- noqa: ST02
+                        '73252SEM72250G4',  -- noqa: ST02
+                        '133570965SEM72250G1',  -- noqa: ST02
+                        '133570965SEM72250G2',  -- noqa: ST02
+                        '133570965SEM72250G3',  -- noqa: ST02
+                        '133570965SEM72250G4',  -- noqa: ST02
+                        '133570965LOG300',  -- noqa: ST02
+                        '73252LOG300',  -- noqa: ST02
+                        '73258LOG300',  -- noqa: ST02
+                        '732514LOG300',  -- noqa: ST02
+                        '732513LOG300',  -- noqa: ST02
+                        '732514GYM08035G1',  -- noqa: ST02
+                        '732514GYM08036G2',  -- noqa: ST02
+                        '732514GYM08037G3',  -- noqa: ST02
+                        '732514GYM08038G4'  -- noqa: ST02
+                    )  -- noqa: ST02
+                then true  -- noqa: ST02
+                else false  -- noqa: ST02
+            end as exclude_from_audit,  -- noqa: ST02
         from {{ ref("base_powerschool__sections") }}
         where
             courses_course_number not in (
