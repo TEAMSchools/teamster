@@ -31,6 +31,18 @@ with
         group by o.observation_id
     ),
 
+    pm_scores as (
+        select
+            employee_number,
+            academic_year,
+            max(case when term_code = 'PM1' then observation_score end) as pm1,
+            max(case when term_code = 'PM2' then observation_score end) as pm2,
+            max(case when term_code = 'PM3' then observation_score end) as pm3
+        from {{ ref("int_performance_management__observations") }} as o
+        where term_code in ('PM1', 'PM2', 'PM3')
+        group by employee_number, academic_year
+    ),
+
     observations_td_union as (
         select
             o.employee_number,
@@ -136,6 +148,9 @@ select
     os.final_tier as performance_management_final_tier,
 
     sr.preferred_name_lastfirst as observer_name,
+    pm.pm1,
+    pm.pm2,
+    pm.pm3,
     if(
         sr.department_home_name = 'New Teacher Development', 'TDT', 'NTNC'
     ) as observer_team,
@@ -159,3 +174,7 @@ left join
 left join
     {{ ref("base_people__staff_roster") }} as sr
     on td.observer_employee_number = sr.employee_number
+left join
+    pm_scores as pm
+    on td.employee_number = pm.employee_number
+    and td.academic_year = pm.academic_year
