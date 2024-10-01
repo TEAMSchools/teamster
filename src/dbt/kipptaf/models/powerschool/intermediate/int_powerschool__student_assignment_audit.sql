@@ -1,4 +1,60 @@
 with
+    filtered_courses as (
+        select
+            _dbt_source_relation,
+            cc_academic_year,
+            cc_yearid,
+            cc_schoolid,
+            students_dcid,
+            cc_studentid,
+            cc_course_number,
+            cc_sectionid,
+            sections_dcid,
+            cc_dateenrolled,
+            cc_dateleft,
+
+            case  -- noqa: ST02
+                when  -- noqa: ST02
+                    concat(cc_schoolid, cc_course_number) in (  -- noqa: ST02
+                        '73252SEM72250G1',  -- noqa: ST02
+                        '73252SEM72250G2',  -- noqa: ST02
+                        '73252SEM72250G3',  -- noqa: ST02
+                        '73252SEM72250G4',  -- noqa: ST02
+                        '133570965SEM72250G1',  -- noqa: ST02
+                        '133570965SEM72250G2',  -- noqa: ST02
+                        '133570965SEM72250G3',  -- noqa: ST02
+                        '133570965SEM72250G4',  -- noqa: ST02
+                        '133570965LOG300',  -- noqa: ST02
+                        '73252LOG300',  -- noqa: ST02
+                        '73258LOG300',  -- noqa: ST02
+                        '732514LOG300',  -- noqa: ST02
+                        '732513LOG300',  -- noqa: ST02
+                        '732514GYM08035G1',  -- noqa: ST02
+                        '732514GYM08036G2',  -- noqa: ST02
+                        '732514GYM08037G3',  -- noqa: ST02
+                        '732514GYM08038G4'  -- noqa: ST02
+                    )  -- noqa: ST02
+                then true  -- noqa: ST02
+                else false  -- noqa: ST02
+            end as exclude_from_audit,  -- noqa: ST02
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where
+            cc_sectionid > 0
+            and courses_course_number not in (
+                'LOG100',  -- Lunch
+                'LOG1010',  -- Lunch
+                'LOG11',  -- Lunch
+                'LOG12',  -- Lunch
+                'LOG20',  -- Early Dismissal
+                'LOG22999XL',  -- Lunch
+                'LOG300',  -- Study Hall
+                'LOG9',  -- Lunch
+                'SEM22106G1',  -- Advisory
+                'SEM22106S1',  -- Not in SY24-25 yet
+                'SEM22101G1'  -- Student Government
+            )
+    ),
+
     students_assignments as (
         select
             ce._dbt_source_relation,
@@ -37,7 +93,7 @@ with
                 (a.totalpointvalue * s.scorepoints) / 100,
                 s.scorepoints
             ) as score_converted,
-        from {{ ref("base_powerschool__course_enrollments") }} as ce
+        from filtered_courses as ce
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on ce.cc_schoolid = sch.school_number
@@ -73,23 +129,17 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
         where
             ce.cc_academic_year = {{ var("current_academic_year") }}
-            and ce.cc_sectionid > 0
-            and ce.cc_course_number not in (
-                'HR',
-                'LOG100',
-                'LOG1010',
-                'LOG11',
-                'LOG12',
-                'LOG20',
-                'LOG22999XL',
-                'LOG300',
-                'LOG9',
-                'SEM22106G1',
-                'SEM22106S1'
-                'SEM72005G1',
-                'SEM72005G2',
-                'SEM72005G3',
-                'SEM72005G4'
+            and not ce.exclude_from_audit
+            -- leaves only WH category for iReady courses
+            and concat(ce.cc_course_number, ge.assignment_category_code) not in (
+                'SEM72005G1F',
+                'SEM72005G2F',
+                'SEM72005G3F',
+                'SEM72005G4F',
+                'SEM72005G1S',
+                'SEM72005G2S',
+                'SEM72005G3S',
+                'SEM72005G4S'
             )
     )
 
