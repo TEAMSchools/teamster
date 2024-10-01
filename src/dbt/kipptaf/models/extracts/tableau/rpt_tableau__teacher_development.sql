@@ -51,9 +51,9 @@ with
         select
             o.employee_number,
             o.academic_year,
-            avg(case when od.term_code = 'PM1' then row_score end) as pm1,
-            avg(case when od.term_code = 'PM2' then row_score end) as pm2,
-            avg(case when od.term_code = 'PM3' then row_score end) as pm3,
+            avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
+            avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
+            avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
         from {{ ref("int_performance_management__observations") }} as o
         left join
             {{ ref("int_performance_management__observation_details") }} as od
@@ -71,9 +71,9 @@ with
         select
             o.employee_number,
             o.academic_year,
-            avg(case when od.term_code = 'PM1' then row_score end) as pm1,
-            avg(case when od.term_code = 'PM2' then row_score end) as pm2,
-            avg(case when od.term_code = 'PM3' then row_score end) as pm3,
+            avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
+            avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
+            avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
         from {{ ref("int_performance_management__observations") }} as o
         left join
             {{ ref("int_performance_management__observation_details") }} as od
@@ -88,9 +88,9 @@ with
         select
             o.employee_number,
             o.academic_year,
-            avg(case when od.term_code = 'PM1' then row_score end) as pm1,
-            avg(case when od.term_code = 'PM2' then row_score end) as pm2,
-            avg(case when od.term_code = 'PM3' then row_score end) as pm3,
+            avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
+            avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
+            avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
         from {{ ref("int_performance_management__observations") }} as o
         left join
             {{ ref("int_performance_management__observation_details") }} as od
