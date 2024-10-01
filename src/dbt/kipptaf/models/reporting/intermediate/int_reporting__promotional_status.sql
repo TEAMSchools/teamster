@@ -80,6 +80,14 @@ with
             sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) as n_failing,
             sum(
                 if(
+                    y1_letter_grade_adjusted in ('F', 'F*')
+                    and credittype in ('ENG', 'MATH', 'SCI', 'SOC'),
+                    1,
+                    0
+                )
+            ) as n_failing_core,
+            sum(
+                if(
                     {# TODO: exclude credits if current year Y1 is stored #}
                     y1_letter_grade_adjusted not in ('F', 'F*'),
                     potential_credit_hours,
@@ -98,6 +106,7 @@ with
             fg.storecode,
             fg.enrolled_credit_hours,
             fg.n_failing,
+            fg.n_failing_core,
             fg.projected_credits_y1_term,
 
             coalesce(fg.projected_credits_y1_term, 0)
@@ -276,6 +285,7 @@ with
             ir.iready_math_recent,
 
             c.n_failing,
+            c.n_failing_core,
             c.projected_credits_y1_term,
             c.projected_credits_cum,
 
@@ -310,13 +320,21 @@ with
                 when co.grade_level <= 8 and att.ada_term_running is null
                 then 'Off-Track'
                 /* Gr K */
-                when co.grade_level = 0 and att.ada_term_running < 0.75
+                when co.grade_level = 0 and att.ada_term_running < 0.80
                 then 'Off-Track'
                 /* Gr 1-2 */
-                when co.grade_level between 1 and 2 and att.ada_term_running < 0.80
+                when co.grade_level between 1 and 2 and att.ada_term_running < 0.85
                 then 'Off-Track'
                 /* Gr3-8 */
-                when co.grade_level between 3 and 8 and att.ada_term_running < 0.85
+                when
+                    co.grade_level between 3 and 8
+                    and co.region = 'Camden'
+                    and att.ada_term_running < 0.86
+                then 'Off-Track'
+                when
+                    co.grade_level between 3 and 8
+                    and co.region = 'Newark'
+                    and att.ada_term_running < 0.87
                 then 'Off-Track'
                 /* HS */
                 when
@@ -335,13 +353,21 @@ with
                 when co.grade_level <= 8 and att.ada_term_running is null
                 then 'Off-Track'
                 /* Gr K */
-                when co.grade_level = 0 and att.ada_term_running < 0.75
+                when co.grade_level = 0 and att.ada_term_running < 0.80
                 then 'Off-Track'
                 /* Gr 1-2 */
-                when co.grade_level between 1 and 2 and att.ada_term_running < 0.80
+                when co.grade_level between 1 and 2 and att.ada_term_running < 0.85
                 then 'Off-Track'
                 /* Gr3-8 */
-                when co.grade_level between 3 and 8 and att.ada_term_running < 0.85
+                when
+                    co.grade_level between 3 and 8
+                    and co.region = 'Camden'
+                    and att.ada_term_running < 0.86
+                then 'Off-Track'
+                when
+                    co.grade_level between 3 and 8
+                    and co.region = 'Newark'
+                    and att.ada_term_running < 0.87
                 then 'Off-Track'
                 /* HS */
                 when
@@ -356,20 +382,27 @@ with
             end as attendance_status_hs_detail,
 
             case
-                /* Gr1-2 */
+                /* GrK-1 NJ */
+                when co.grade_level <= 1 and m.mclass_measure_standard_level_int = 1
+                then 'Off-Track'
+                /* Gr2 NJ */
                 when
-                    co.grade_level between 1 and 2
+                    co.grade_level = 2
                     and coalesce(ir.iready_reading_recent, '')
                     in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
                 then 'Off-Track'
                 /* Gr3-8 */
                 when
                     co.grade_level between 3 and 8
-                    and coalesce(ir.iready_reading_recent, '')
-                    in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
-                    and coalesce(ir.iready_math_recent, '')
-                    in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
+                    and (
+                        coalesce(ir.iready_reading_recent, '')
+                        in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
+                        and coalesce(ir.iready_math_recent, '')
+                        in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
+                    )
+                    or c.n_failing_core >= 2
                 then 'Off-Track'
+
                 /* HS */
                 when co.grade_level = 9 and c.projected_credits_cum < 25
                 then 'Off-Track'
@@ -433,6 +466,7 @@ select
     iready_reading_recent,
     iready_math_recent,
     n_failing,
+    n_failing_core,
     projected_credits_cum,
     projected_credits_y1_term,
     dibels_composite_level_recent,
