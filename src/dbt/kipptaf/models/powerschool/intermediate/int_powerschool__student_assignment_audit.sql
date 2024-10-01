@@ -12,7 +12,7 @@ with
             sections_dcid,
             cc_dateenrolled,
             cc_dateleft,
-
+            -- noqa: ST02
             case
                 when
                     concat(cc_schoolid, cc_course_number) in (

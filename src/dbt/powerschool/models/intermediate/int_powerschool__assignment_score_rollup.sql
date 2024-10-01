@@ -42,7 +42,7 @@ with
             cc_course_number,
             cc_sectionid,
             cc_sections_dcid,
-
+            -- noqa: ST02
             case
                 when
                     concat(cc_schoolid, cc_course_number) in (
