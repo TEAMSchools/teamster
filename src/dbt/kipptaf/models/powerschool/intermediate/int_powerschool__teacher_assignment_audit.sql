@@ -1,4 +1,57 @@
 with
+    filtered_sections as (
+        select
+            _dbt_source_relation,
+            terms_yearid,
+            sections_schoolid,
+            sections_id,
+            sections_dcid,
+            terms_firstday,
+            terms_lastday,
+            sections_course_number,
+            teachernumber,
+
+            case  -- noqa: ST02
+                when  -- noqa: ST02
+                    concat(sections_schoolid, sections_course_number) in (  -- noqa: ST02,LT05
+                        '73252SEM72250G1',  -- noqa: ST02
+                        '73252SEM72250G2',  -- noqa: ST02
+                        '73252SEM72250G3',  -- noqa: ST02
+                        '73252SEM72250G4',  -- noqa: ST02
+                        '133570965SEM72250G1',  -- noqa: ST02
+                        '133570965SEM72250G2',  -- noqa: ST02
+                        '133570965SEM72250G3',  -- noqa: ST02
+                        '133570965SEM72250G4',  -- noqa: ST02
+                        '133570965LOG300',  -- noqa: ST02
+                        '73252LOG300',  -- noqa: ST02
+                        '73258LOG300',  -- noqa: ST02
+                        '732514LOG300',  -- noqa: ST02
+                        '732513LOG300',  -- noqa: ST02
+                        '732514GYM08035G1',  -- noqa: ST02
+                        '732514GYM08036G2',  -- noqa: ST02
+                        '732514GYM08037G3',  -- noqa: ST02
+                        '732514GYM08038G4'  -- noqa: ST02
+                    )  -- noqa: ST02
+                then true  -- noqa: ST02
+                else false  -- noqa: ST02
+            end as exclude_from_audit,  -- noqa: ST02
+        from {{ ref("base_powerschool__sections") }}
+        where
+            courses_course_number not in (
+                'LOG100',  -- Lunch
+                'LOG1010',  -- Lunch
+                'LOG11',  -- Lunch
+                'LOG12',  -- Lunch
+                'LOG20',  -- Early Dismissal
+                'LOG22999XL',  -- Lunch
+                'LOG300',  -- Study Hall
+                'LOG9',  -- Lunch
+                'SEM22106G1',  -- Advisory
+                'SEM22106S1',  -- Not in SY24-25 yet
+                'SEM22101G1'  -- Student Government
+            )
+    ),
+
     assignments as (
         select
             sec._dbt_source_relation,
@@ -95,7 +148,7 @@ with
             and c.week_number_quarter = ge.week_number
             and c.school_level = ge.school_level
         left join
-            {{ ref("base_powerschool__sections") }} as sec
+            filtered_sections as sec
             on c.schoolid = sec.sections_schoolid
             and c.yearid = sec.terms_yearid
             and c.week_end_date between sec.terms_firstday and sec.terms_lastday
@@ -111,22 +164,17 @@ with
             on a.assignmentsectionid = asg.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
         where
-            sec.sections_course_number not in (
-                'HR',
-                'LOG100',
-                'LOG1010',
-                'LOG11',
-                'LOG12',
-                'LOG20',
-                'LOG22999XL',
-                'LOG300',
-                'LOG9',
-                'SEM22106G1',
-                'SEM22106S1',
-                'SEM72005G1',
-                'SEM72005G2',
-                'SEM72005G3',
-                'SEM72005G4'
+            not sec.exclude_from_audit
+            -- leaves only WH category for iReady courses
+            and concat(sec.sections_course_number, ge.assignment_category_code) not in (
+                'SEM72005G1F',
+                'SEM72005G2F',
+                'SEM72005G3F',
+                'SEM72005G4F',
+                'SEM72005G1S',
+                'SEM72005G2S',
+                'SEM72005G3S',
+                'SEM72005G4S'
             )
             and sec.terms_firstday >= '{{ var("current_academic_year") }}-07-01'
     )
