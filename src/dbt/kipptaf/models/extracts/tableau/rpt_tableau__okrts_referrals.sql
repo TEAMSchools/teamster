@@ -126,7 +126,7 @@ select
     concat(dli.create_last, ', ', dli.create_first) as entry_staff,
     concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
     case
-        when left(dli.category, 2) in ('SW', 'SSC')
+        when left(dli.category, 2) in ('SW', 'SS')
         then 'Social Work'
         when left(dli.category, 2) = 'TX'
         then 'Non-Behavioral'
