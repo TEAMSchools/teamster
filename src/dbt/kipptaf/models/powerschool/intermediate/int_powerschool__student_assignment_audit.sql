@@ -12,8 +12,8 @@ with
             sections_dcid,
             cc_dateenrolled,
             cc_dateleft,
-            -- noqa: ST02
-            case
+
+            case  -- noqa: ST02
                 when
                     concat(cc_schoolid, cc_course_number) in (
                         '73252SEM72250G1',
