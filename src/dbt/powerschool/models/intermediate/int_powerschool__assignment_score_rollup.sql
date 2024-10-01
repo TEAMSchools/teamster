@@ -35,7 +35,7 @@ with
             on a.assignmentsectionid = s.assignmentsectionid
     ),
 
-    school_course_exemptions as (
+    school_course_exceptions as (
         select
             cc_yearid,
             cc_schoolid,
@@ -66,7 +66,7 @@ with
                     )
                 then true
                 else false
-            end as exclude_from_audit
+            end as exclude_from_audit,
         from {{ ref("base_powerschool__course_enrollments") }}
         where cc_sectionid > 0
     )
@@ -84,6 +84,6 @@ select
 
     avg(if(s.is_expected_scored, s.score_percent, null)) as avg_expected_scored_percent,
 from scores as s
-left join school_course_exemptions as e on s.sections_dcid = e.sectionsdcid
+left join school_course_exceptions as e on s.sections_dcid = e.sectionsdcid
 where not e.exclude_from_audit
 group by s.assignmentsectionid
