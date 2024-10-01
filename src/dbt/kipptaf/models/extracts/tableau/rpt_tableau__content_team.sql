@@ -32,6 +32,7 @@ select
     srh.sam_account_name,
     srh.report_to_sam_account_name,
     sr.preferred_name_lastfirst as observer_name,
+    -- trunk-ignore(sqlfluff/LT01) 
     date_trunc(o.observed_at, week(monday)) as week_start,
 from {{ ref("int_performance_management__observations") }} as o
 left join
