@@ -154,29 +154,28 @@ with
 
     star_results as (
         select
-            s.student_display_id,
-            s.district_benchmark_category_level,
+            student_display_id,
+            district_benchmark_category_level,
 
-            safe_cast(left(s.school_year, 4) as int) as academic_year,
-            safe_cast(if(s.grade = 'K', '0', s.grade) as int) as grade_level,
+            safe_cast(left(school_year, 4) as int) as academic_year,
             case
-                when s._dagster_partition_subject = 'SM'
+                when _dagster_partition_subject = 'SM'
                 then 'Math'
-                when s._dagster_partition_subject = 'SR'
+                when _dagster_partition_subject = 'SR'
                 then 'Reading'
-                when s._dagster_partition_subject = 'SEL'
+                when _dagster_partition_subject = 'SEL'
                 then 'Early Literacy'
             end as star_subject,
             row_number() over (
                 partition by
-                    s.student_display_id,
-                    s._dagster_partition_subject,
-                    s.school_year,
-                    s.screening_period_window_name
-                order by s.completed_date desc
+                    student_display_id,
+                    _dagster_partition_subject,
+                    school_year,
+                    screening_period_window_name
+                order by completed_date desc
             ) as rn_subj_year,
         from {{ ref("stg_renlearn__star") }} as s
-        where s.deactivation_reason is null
+        where deactivation_reason is null
     ),
 
     star as (
@@ -189,12 +188,12 @@ with
         from
             (
                 select
-                    student_display_id,
-                    academic_year,
-                    star_subject,
-                    district_benchmark_category_level,
-                from star_results
-                where rn_subj_year = 1
+                    s.student_display_id,
+                    s.academic_year,
+                    s.star_subject,
+                    s.district_benchmark_category_level,
+                from star_results as s
+                where s.rn_subj_year = 1
             ) pivot (
                 max(district_benchmark_category_level) for star_subject in (
                     'Math' as star_math,
