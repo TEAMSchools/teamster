@@ -94,6 +94,7 @@ select
     dli.category,
     dli.reported_details,
     dli.admin_summary,
+    dli.infraction as incident_type,
 
     dlp.incident_penalty_id,
     dlp.num_days,
