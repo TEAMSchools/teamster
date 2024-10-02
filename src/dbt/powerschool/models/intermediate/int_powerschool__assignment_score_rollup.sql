@@ -41,7 +41,7 @@ with
             cc_schoolid,
             cc_course_number,
             cc_sectionid,
-            cc_sections_dcid,
+            sections_dcid,
 
             case  -- noqa: ST02
                 when  -- noqa: ST02
@@ -84,6 +84,6 @@ select
 
     avg(if(s.is_expected_scored, s.score_percent, null)) as avg_expected_scored_percent,
 from scores as s
-left join school_course_exceptions as e on s.sections_dcid = e.sectionsdcid
+left join school_course_exceptions as e on s.sectionsdcid = e.sections_dcid
 where not e.exclude_from_audit
 group by s.assignmentsectionid
