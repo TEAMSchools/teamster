@@ -25,6 +25,8 @@ clean-targets: # directories to be removed by `dbt clean`
   - dbt_packages
 
 vars:
-  cloud_storage_uri_base: null
   current_academic_year: 0
   local_timezone: UTC
+
+models:
+  +schema: powerschool

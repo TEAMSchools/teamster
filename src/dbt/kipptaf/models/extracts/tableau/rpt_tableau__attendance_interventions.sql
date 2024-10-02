@@ -10,7 +10,7 @@ with
             c._dbt_source_relation,
 
             {{
-                teamster_utils.date_to_fiscal_year(
+                date_to_fiscal_year(
                     date_field="c.call_date_time", start_month=7, year_source="start"
                 )
             }} as academic_year,

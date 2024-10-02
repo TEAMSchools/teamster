@@ -7,14 +7,15 @@ with
             `date`,
             form,
             `remote`,
-            score,
+            score as mclass_measure_standard_score,
             benchmark_status,
-            national_dds_percentile,
+            national_dds_percentile as mclass_measure_percentile,
             district_percentile,
             school_percentile,
 
-            split(name_column, '|')[0] as measure,
+            split(name_column, '|')[0] as mclass_measure_standard,
             split(name_column, '|')[1] as assessment_period,
+
         from
             {{ ref("stg_amplify__dibels_data_farming") }} unpivot (
                 (
@@ -239,48 +240,83 @@ with
                     ) as 'orf_errors|End'
                 )
             )
+    ),
+
+    df_data as (
+
+        select
+            *,
+
+            case
+                mclass_measure_standard
+                when 'Composite'
+                then 'Composite'
+                when 'Reading Comprehension (Maze)'
+                then 'Comprehension'
+                else
+                    substr(
+                        mclass_measure_standard,
+                        strpos(mclass_measure_standard, '(') + 1,
+                        3
+                    )
+            end as mclass_measure_name_code,
+
+            case
+                assessment_period
+                when 'Beginning'
+                then 'BOY'
+                when 'Middle'
+                then 'MOY'
+                when 'End'
+                then 'EOY'
+            end as mclass_period,
+
+            case
+                benchmark_status
+                when 'Core^ Support'
+                then 'Above Benchmark'
+                when 'Core Support'
+                then 'At Benchmark'
+                when 'Strategic Support'
+                then 'Below Benchmark'
+                when 'Intensive Support'
+                then 'Well Below Benchmark'
+            end as mclass_measure_standard_level,
+
+            case
+                benchmark_status
+                when 'Core^ Support'
+                then 4
+                when 'Core Support'
+                then 3
+                when 'Strategic Support'
+                then 2
+                when 'Intensive Support'
+                then 1
+            end as mclass_measure_standard_level_int,
+
+            {{
+                dbt_utils.generate_surrogate_key(
+                    ["student_id", "academic_year", "assessment_period"]
+                )
+            }} as surrogate_key,
+        from df_unpivot
     )
 
 select
     *,
-
     case
-        assessment_period
-        when 'Beginning'
-        then 'BOY'
-        when 'Middle'
-        then 'MOY'
-        when 'End'
-        then 'EOY'
-    end as mclass_period,
-
-    case
-        benchmark_status
-        when 'Core^ Support'
-        then 'Above Benchmark'
-        when 'Core Support'
-        then 'At Benchmark'
-        when 'Strategic Support'
-        then 'Below Benchmark'
-        when 'Intensive Support'
-        then 'Well Below Benchmark'
-    end as mclass_measure_level,
-
-    case
-        benchmark_status
-        when 'Core^ Support'
-        then 4
-        when 'Core Support'
-        then 3
-        when 'Strategic Support'
-        then 2
-        when 'Intensive Support'
-        then 1
-    end as mclass_measure_level_int,
-
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["student_id", "academic_year", "assessment_period"]
-        )
-    }} as surrogate_key,
-from df_unpivot
+        mclass_measure_name_code
+        when 'LNF'
+        then 'Letter Names'
+        when 'PSF'
+        then 'Phonological Awareness'
+        when 'NWF'
+        then 'Nonsense Word Fluency'
+        when 'WRF'
+        then 'Word Reading Fluency'
+        when 'ORF'
+        then 'Oral Reading Fluency'
+        else mclass_measure_name_code
+    end as mclass_measure_name,
+from df_data

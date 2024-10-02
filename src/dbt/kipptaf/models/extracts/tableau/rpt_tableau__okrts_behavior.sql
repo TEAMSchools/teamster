@@ -34,7 +34,9 @@ with
                 'Effort (Pride)',
                 'Accountability (Purpose, Courage)',
                 'Accountability (Empowerment)',
-                'Teamwork (Community)'
+                'Teamwork (Community)',
+                'Written Reminders',
+                'Big Reminders'
             )
             and behavior_date >= '{{ var("current_academic_year") - 1 }}-07-01'
     ),

@@ -16,7 +16,6 @@ on:
       - src/dbt/overgrad/**
       - src/dbt/pearson/**
       - src/dbt/powerschool/**
-      - src/dbt/teamster_utils/**
       - src/dbt/titan/**
       - src/teamster/code_locations/kippcamden/**
       - src/teamster/core/**

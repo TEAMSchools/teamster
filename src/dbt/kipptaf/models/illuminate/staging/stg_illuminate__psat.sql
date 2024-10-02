@@ -377,7 +377,7 @@ select
     coalesce(psat_2023_apworldhist, psat_2024_apworldhist) as ap_world_hist,
 
     {{
-        teamster_utils.date_to_fiscal_year(
+        date_to_fiscal_year(
             date_field="test_date", start_month=7, year_source="start"
         )
     }} as academic_year,
