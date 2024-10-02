@@ -201,41 +201,6 @@ select
     p.moy as moy_composite,
     p.eoy as eoy_composite,
 
-    case
-        when p.boy_probe_eligible = 'Yes' and s.mclass_period = 'BOY->MOY'
-        then 'Yes'
-        when p.moy_probe_eligible = 'Yes' and s.mclass_period = 'MOY->EOY'
-        then 'Yes'
-        when p.boy_probe_eligible = 'No' and s.mclass_period = 'BOY->MOY'
-        then 'No'
-        when p.moy_probe_eligible = 'No' and s.mclass_period = 'MOY->EOY'
-        then 'No'
-        else 'Not applicable'
-    end as pm_probe_eligible,
-
-    case
-        when
-            p.boy_probe_eligible = 'Yes'
-            and s.mclass_period = 'BOY->MOY'
-            and s.mclass_total_number_of_probes is not null
-        then 'Yes'
-        when
-            p.moy_probe_eligible = 'Yes'
-            and s.mclass_period = 'MOY->EOY'
-            and s.mclass_total_number_of_probes is not null
-        then 'Yes'
-        when
-            p.boy_probe_eligible = 'Yes'
-            and s.mclass_period = 'BOY->MOY'
-            and s.mclass_total_number_of_probes is null
-        then 'No'
-        when
-            p.moy_probe_eligible = 'Yes'
-            and s.mclass_period = 'MOY->EOY'
-            and s.mclass_total_number_of_probes is null
-        then 'No'
-        else 'Not applicable'
-    end as pm_probe_tested,
 from assessments_scores as s
 left join
     probe_eligible_tag as p

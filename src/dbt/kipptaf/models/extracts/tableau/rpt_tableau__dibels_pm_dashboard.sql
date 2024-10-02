@@ -16,6 +16,7 @@ with
             assessment_type = 'Benchmark'
             and mclass_assessment_grade_int <= 2
             and mclass_academic_year >= 2024
+            and mclass_measure_standard = 'Composite'
     ),
 
     students as (
