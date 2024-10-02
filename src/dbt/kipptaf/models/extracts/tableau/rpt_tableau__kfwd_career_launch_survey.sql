@@ -32,8 +32,6 @@ with
 
             c.first_name as sf_first_name,
             c.last_name as sf_last_name,
-            c.email as sf_email,
-            c.secondary_email as sf_secondary_email,
             c.kipp_ms_graduate,
             c.kipp_hs_graduate,
             c.kipp_hs_class,
@@ -45,6 +43,9 @@ with
 
             a.adjusted_6_year_minority_graduation_rate as ecc,
             a.name as institution,
+
+            lower(c.email) as sf_email,
+            lower(c.secondary_email) as sf_secondary_email,
 
             extract(month from e.actual_end_date) as actual_end_date_month,
             extract(year from e.actual_end_date) as actual_end_date_year,
@@ -64,11 +65,12 @@ with
             safe_cast(ri.response_id as string) as response_id,
             ri.response_date_submitted,
             ri.respondent_salesforce_id,
-            ri.respondent_user_principal_name,
 
             sr.survey_title,
             sr.question_short_name,
             sr.response_string_value,
+
+            lower(ri.respondent_user_principal_name) as respondent_user_principal_name,
         from {{ ref("int_surveys__response_identifiers") }} as ri
         inner join
             {{ ref("base_alchemer__survey_results") }} as sr
@@ -83,11 +85,12 @@ with
             safe_cast(fr.response_id as string) as response_id,
             safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
             null as respondent_salesforce_id,
-            fr.respondent_email as respondent_user_principal_name,
 
             fr.info_document_title as survey_title,
             fr.item_abbreviation as question_short_name,
             fr.text_value as response_string_value,
+
+            lower(fr.respondent_email) as respondent_user_principal_name,
         from {{ ref("base_google_forms__form_responses") }} as fr
         where form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
     -- 'KIPP Forward Career Launch Survey'
