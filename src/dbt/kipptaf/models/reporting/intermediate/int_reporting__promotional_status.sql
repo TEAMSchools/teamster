@@ -482,10 +482,8 @@ select
     exemption,
 
     case
-        when grade_level = 0
-        then attendance_status
         when
-            grade_level between 1 and 8
+            grade_level <= 8
             and academic_status = 'Off-Track'
             and attendance_status = 'Off-Track'
         then 'Off-Track'
