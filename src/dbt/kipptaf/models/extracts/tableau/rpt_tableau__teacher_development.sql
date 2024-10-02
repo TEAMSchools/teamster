@@ -31,6 +31,72 @@ with
         group by o.observation_id
     ),
 
+    pm_scores as (
+        select
+            employee_number,
+            academic_year,
+            max(case when term_code = 'PM1' then observation_score end) as pm1,
+            max(case when term_code = 'PM2' then observation_score end) as pm2,
+            max(case when term_code = 'PM3' then observation_score end) as pm3,
+        from {{ ref("int_performance_management__observations") }}
+        where term_code in ('PM1', 'PM2', 'PM3')
+        group by employee_number, academic_year
+    ),
+
+    tir_etr as (
+        select
+            o.employee_number,
+            o.academic_year,
+            avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
+            avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
+            avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
+        from {{ ref("int_performance_management__observations") }} as o
+        left join
+            {{ ref("int_performance_management__observation_details") }} as od
+            on o.observation_id = od.observation_id
+        where
+            od.observation_type_abbreviation in ('PM', 'PMS')
+            and od.measurement_name not like '%4%'
+            and od.measurement_name not like '%5%'
+            and od.measurement_name not like '%S&O%'
+        group by o.employee_number, o.academic_year
+
+    ),
+
+    pm_etr as (
+        select
+            o.employee_number,
+            o.academic_year,
+            avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
+            avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
+            avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
+        from {{ ref("int_performance_management__observations") }} as o
+        left join
+            {{ ref("int_performance_management__observation_details") }} as od
+            on o.observation_id = od.observation_id
+        where
+            od.observation_type_abbreviation in ('PM', 'PMS')
+            and od.measurement_name not like '%S&O%'
+        group by o.employee_number, o.academic_year
+    ),
+
+    tir_so as (
+        select
+            o.employee_number,
+            o.academic_year,
+            avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
+            avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
+            avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
+        from {{ ref("int_performance_management__observations") }} as o
+        left join
+            {{ ref("int_performance_management__observation_details") }} as od
+            on o.observation_id = od.observation_id
+        where
+            od.observation_type_abbreviation = 'PMS'
+            and od.measurement_name like '%S&O%'
+        group by o.employee_number, o.academic_year
+    ),
+
     observations_td_union as (
         select
             o.employee_number,
@@ -136,10 +202,31 @@ select
     os.final_tier as performance_management_final_tier,
 
     sr.preferred_name_lastfirst as observer_name,
+
+    pm.pm1,
+    pm.pm2,
+    pm.pm3,
+
+    pme.pm1 as smg_etr_pm1,
+    pme.pm2 as smg_etr_pm2,
+    pme.pm3 as smg_etr_pm3,
+
+    etr.pm1 as tir_etr_pm1,
+    etr.pm2 as tir_etr_pm2,
+    etr.pm3 as tir_etr_pm3,
+
+    so.pm1 as tir_so_pm1,
+    so.pm2 as tir_so_pm2,
+    so.pm3 as tir_so_pm3,
+
+    (etr.pm1 * .8 + so.pm1 * .2) as tir_pm1,
+    (etr.pm2 * .8 + so.pm2 * .2) as tir_pm2,
+    (etr.pm3 * .8 + so.pm3 * .2) as tir_pm3,
+
     if(
         sr.department_home_name = 'New Teacher Development', 'TDT', 'NTNC'
     ) as observer_team,
-    -- trunk-ignore(sqlfluff/LT01)
+    -- trunk-ignore(sqlfluff/LT01) 
     date_trunc(td.observed_at, week(monday)) as week_start,
 from observations_td_union as td
 left join
@@ -159,3 +246,21 @@ left join
 left join
     {{ ref("base_people__staff_roster") }} as sr
     on td.observer_employee_number = sr.employee_number
+left join
+    pm_scores as pm
+    on td.employee_number = pm.employee_number
+    and td.academic_year = pm.academic_year
+left join
+    pm_etr as pme
+    on td.employee_number = pme.employee_number
+    and td.academic_year = pme.academic_year
+left join
+    tir_etr as etr
+    on td.employee_number = etr.employee_number
+    and td.academic_year = etr.academic_year
+    and srh.job_title = 'Teacher in Residence'
+left join
+    tir_so as so
+    on td.employee_number = so.employee_number
+    and td.academic_year = so.academic_year
+    and srh.job_title = 'Teacher in Residence'
