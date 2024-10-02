@@ -168,6 +168,8 @@ select
     f.nj_student_tier,
     f.tutoring_nj,
 
+    null as met_goal,
+
     right(s.test_code, 1) as expected_round,
 
     if(
@@ -269,6 +271,9 @@ select
     nj_student_tier,
     tutoring_nj,
 
+    met_goal,
+
     expected_round,
     expected_grade_level,
+
 from {{ ref("rpt_tableau__dibels_pm_dashboard") }}
