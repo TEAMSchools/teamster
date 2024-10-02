@@ -9,15 +9,16 @@ select
     f.label as sight_word,
 
     co.student_number,
-    co.lastfirst,
+    co.student_name,
     co.region,
-    co.reporting_schoolid,
-    co.school_abbreviation as school,
+    co.schoolid,
+    co.school,
     co.grade_level,
-    co.advisory_name as team,
+    co.advisory as team,
     co.is_self_contained as is_pathways,
-    co.spedlep as iep_status,
+    co.iep_status,
     co.lep_status,
+    co.gifted_and_talented,
     co.gender,
     co.ethnicity,
 
@@ -41,11 +42,10 @@ inner join
     {{ ref("stg_illuminate__repository_grade_levels") }} as g
     on r.repository_id = g.repository_id
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_tableau__student_enrollments") }} as co
     on g.grade_level = co.grade_level
     and rt.academic_year = co.academic_year
     and co.is_enrolled_recent
-    and co.rn_year = 1
 left join
     {{ ref("int_illuminate__repository_data") }} as sw
     on co.student_number = sw.local_student_id
@@ -76,15 +76,16 @@ select
     f.label as sight_word,
 
     co.student_number,
-    co.lastfirst,
+    co.student_name,
     co.region,
-    co.reporting_schoolid,
-    co.school_abbreviation as school,
+    co.schoolid,
+    co.school,
     co.grade_level,
-    co.advisory_name as team,
+    co.advisory as team,
     co.is_self_contained as is_pathways,
-    co.spedlep as iep_status,
+    co.iep_status,
     co.lep_status,
+    co.gifted_and_talented,
     co.gender,
     co.ethnicity,
 
@@ -108,11 +109,10 @@ inner join
     {{ ref("stg_illuminate__repository_grade_levels") }} as g
     on r.repository_id = g.repository_id
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_tableau__student_enrollments") }} as co
     on g.grade_level != co.grade_level
     and rt.academic_year = co.academic_year
     and co.is_enrolled_recent
-    and co.rn_year = 1
 inner join
     {{ ref("int_illuminate__repository_data") }} as sw
     on co.student_number = sw.local_student_id

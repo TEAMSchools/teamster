@@ -6,6 +6,7 @@ with
         select
             _dbt_source_relation,
             academic_year,
+            academic_year_display,
             region,
             schoolid,
             school,
@@ -18,6 +19,7 @@ with
             is_out_of_district,
             gender,
             lunch_status,
+            gifted_and_talented,
             is_504,
             lep_status,
             ethnicity as race_ethnicity,
@@ -142,6 +144,7 @@ with
 
 select
     s.academic_year,
+    s.academic_year_display,
     s.region,
     s.schoolid,
     s.school,
@@ -156,6 +159,7 @@ select
     s.iep_status,
     s.is_504,
     s.lunch_status,
+    s.gifted_and_talented,
     s.ms_attended,
     s.lep_status,
     s.advisory,

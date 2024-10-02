@@ -61,6 +61,8 @@ select
     t.name as tracking_rubric,
     t.academic_year as tracking_academic_year,
     t.is_current,
+    t.start_date,
+    t.end_date,
 
     os.final_score,
     os.final_tier,
@@ -171,6 +173,8 @@ select
     null as tracking_rubric,
     null as tracking_academic_year,
     false as is_current,
+    null as start_date,
+    null as end_date,
 
     os.final_score,
     os.final_tier,

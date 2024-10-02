@@ -1,18 +1,19 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="originalcontactmapid.int_value",
-        transform_cols=[
-            {"name": "originalcontactmapid", "extract": "int_value"},
-            {"name": "studentcontactassocid", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("powerschool", "src_powerschool__originalcontactmap"),
+                partition_by="originalcontactmapid.int_value",
+                order_by="_file_name desc",
+            )
+        }}
     )
-}}
 
-select *
-from staging
+-- trunk-ignore(sqlfluff/AM04)
+select
+    * except (originalcontactmapid, studentcontactassocid),
+
+    /* column transformations */
+    originalcontactmapid.int_value as originalcontactmapid,
+    studentcontactassocid.int_value as studentcontactassocid,
+from deduplicate

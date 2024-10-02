@@ -4,7 +4,6 @@ with
             * except (
                 _fivetran_start,
                 _fivetran_end,
-                _fivetran_synced,
                 assignment_status_reason,
                 home_work_location_name,
                 worker_type
@@ -12,6 +11,7 @@ with
 
             extract(date from _fivetran_start) as _fivetran_start_date,
             extract(date from _fivetran_end) as _fivetran_end_date,
+            extract(date from _fivetran_synced) as _fivetran_synced_date,
 
             coalesce(
                 assignment_status_reason_long_name, assignment_status_reason_short_name
@@ -30,10 +30,20 @@ with
                 timestamp('9999-12-31 23:59:59.999999')
             ) as _fivetran_end,
 
+            max(extract(date from _fivetran_synced)) over (
+            ) as _fivetran_synced_date_max,
+        from {{ source("adp_workforce_now", "work_assignment_history") }}
+    ),
+
+    window_calcs as (
+        select
+            *,
+
             lag(assignment_status_long_name, 1) over (
                 partition by worker_id order by assignment_status_effective_date asc
             ) as assignment_status_long_name_lag,
-        from {{ source("adp_workforce_now", "work_assignment_history") }}
+        from work_assignment_history
+        where _fivetran_synced_date = _fivetran_synced_date_max
     )
 
 select
@@ -49,4 +59,4 @@ select
         true,
         false
     ) as is_prestart,
-from work_assignment_history
+from window_calcs

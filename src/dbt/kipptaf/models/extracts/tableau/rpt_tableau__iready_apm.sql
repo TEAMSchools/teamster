@@ -27,19 +27,22 @@ with
     )
 
 select
+    co.academic_year,
+    co.academic_year_display,
     co.student_number,
-    co.lastfirst,
+    co.student_name,
     co.grade_level,
     co.region,
     co.school_name,
-    co.advisor_lastfirst as advisor_name,
+    co.advisory as advisor_name,
     co.lep_status,
-    co.spedlep as iep_status,
+    co.iep_status,
     co.school_level,
     co.gender,
     co.ethnicity,
     co.schoolid,
-    co.school_abbreviation,
+    co.school,
+    co.gifted_and_talented,
 
     subj as subject,
 
@@ -96,10 +99,12 @@ select
         true,
         false
     ) as is_curterm,
-    concat(left(co.first_name, 1), '. ', co.last_name) as student_name_short,
+    concat(
+        left(co.student_first_name, 1), '. ', co.student_last_name
+    ) as student_name_short,
     dr.mid_on_grade_level_scale_score
     - dr.overall_scale_score as scale_pts_to_mid_on_grade_level,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_tableau__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as w
     on co.schoolid = w.schoolid
@@ -115,9 +120,9 @@ left join
 left join
     {{ ref("stg_iready__personalized_instruction_by_lesson") }} as il
     on co.student_number = il.student_id
-    and co.academic_year = il.academic_year_int
     and subj = il.subject
     and il.completion_date between w.week_start_monday and w.week_end_sunday
+    and il.academic_year_int = {{ var("current_academic_year") }}
 left join
     {{ ref("base_iready__diagnostic_results") }} as dr
     on co.student_number = dr.student_id
@@ -128,9 +133,9 @@ left join
 left join
     {{ ref("snapshot_iready__instructional_usage_data") }} as iu
     on co.student_number = iu.student_id
-    and co.academic_year = cast(left(iu.academic_year, 4) as int)
     and subj = iu.subject
     and w.week_start_monday = iu.last_week_start_date
+    and iu.academic_year_int = {{ var("current_academic_year") }}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as hr
     on co.student_number = hr.students_student_number
@@ -160,7 +165,6 @@ left join
     = cr.courses_credittype
     and cr.rn_credittype_year = 1
 where
-    co.academic_year = {{ var("current_academic_year") }}
-    and co.rn_year = 1
+    co.academic_year >= {{ var("current_academic_year") - 1 }}
     and co.enroll_status = 0
     and co.grade_level <= 8
