@@ -258,7 +258,9 @@ left join
     tir_etr as etr
     on td.employee_number = etr.employee_number
     and td.academic_year = etr.academic_year
+    and srh.job_title = 'Teacher in Residence'
 left join
     tir_so as so
     on td.employee_number = so.employee_number
     and td.academic_year = so.academic_year
+    and srh.job_title = 'Teacher in Residence'
