@@ -223,13 +223,13 @@ with
         from
             (
                 select
-                    student_id,
-                    academic_year,
-                    assessment_subject,
-                    administration_window,
-                    achievement_level_int,
-                from fast_results
-                where rn_subject_year = 1
+                    f.student_id,
+                    f.academic_year,
+                    f.assessment_subject,
+                    f.administration_window,
+                    f.achievement_level_int,
+                from fast_results as f
+                where f.rn_subject_year = 1
             ) pivot (
                 max(achievement_level_int) for assessment_subject
                 in ('English Language Arts' as fast_ela, 'Mathematics' as fast_math)
