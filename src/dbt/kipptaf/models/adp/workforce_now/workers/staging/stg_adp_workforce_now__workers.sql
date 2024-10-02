@@ -1,5 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
     workers as (
         select
             associateoid as associate_oid,
@@ -34,13 +33,13 @@ with
     ),
 
     deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="workers",
-                partition_by="associate_oid, surrogate_key",
-                order_by="effective_date_start asc",
-            )
-        }}
+        select
+            *,
+
+            lag(surrogate_key, 1, '') over (
+                partition by associate_oid order by effective_date_start asc
+            ) as surrogate_key_lag,
+        from workers
     ),
 
     flattened as (
@@ -367,6 +366,7 @@ with
                 '9999-12-31'
             ) as effective_date_end,
         from deduplicate
+        where surrogate_key != surrogate_key_lag
     )
 
 select
