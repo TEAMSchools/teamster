@@ -55,6 +55,8 @@ with
             a.measure_standard as expected_mclass_measure_standard,
             a.goal,
 
+            concat(e.grade_level, a.period, a.pm_round) as goal_filter,
+
             format_datetime('%B', a.start_date) as month_round,
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
@@ -127,16 +129,62 @@ with
             -- 'ELA Gr7',
             -- 'ELA Gr8'
             )
+    ),
+
+    goal_met_g1 as (
+        select
+            s.academic_year,
+            s.student_number,
+            s.grade_level,
+            s.expected_test,
+            s.expected_round,
+            s.expected_mclass_measure_standard,
+            s.goal,
+
+            a.mclass_measure_standard_score,
+
+            if(a.mclass_measure_standard_score >= s.goal, true, false) as met_goal,
+
+        from students as s
+        left join
+            `kipptaf_amplify.int_amplify__all_assessments` as a
+            on s.academic_year = a.mclass_academic_year
+            and s.student_number = a.mclass_student_number
+            and s.expected_test = a.mclass_period
+            and s.expected_mclass_measure_standard = a.mclass_measure_standard
+            and a.mclass_client_date between s.start_date and s.end_date
+            and a.assessment_type = 'PM'
+        where s.goal_filter in ('1BOY->MOY3', '1BOY->MOY4')
+    -- and a.mclass_measure_standard_score is not null
+    ),
+
+    goal_met_calculation_g1 as (
+        select
+            academic_year,
+            student_number,
+            grade_level,
+            expected_test,
+            expected_round,
+
+            max(psf) as psf,
+            max(cls) as cls,
+            max(wrc) as wrc,
+
+            if(max(psf) or (max(cls) and max(wrc)), true, false) as met_goal,
+
+        from
+            goal_met_g1 pivot (
+                max(met_goal)
+                for expected_mclass_measure_standard in (
+                    'Phonemic Awareness (PSF)' as psf,
+                    'Letter Sounds (NWF-CLS)' as cls,
+                    'Decoding (NWF-WRC)' as wrc
+                )
+            ) as pvt
+        group by all
     )
 
--- added distinct because the following fields from int_amplify__all_assessments cause
--- duplicates: pm_probe_eligible and pm_probe tested. at this point, i'm not 100% sure
--- removing these will cause issues to the current views on the tableau report.
--- i suspect i will be able to remove them, but im not sure yet because idk what the
--- stakeholders want for pm views (it is not decided yet). if it turns out that i dont
--- need those fields anymore, i will remove them from int_amplify__all_assessments at
--- that time
-select distinct
+select
     s._dbt_source_relation,
     s.academic_year,
     s.academic_year_display,
@@ -206,6 +254,12 @@ select distinct
         s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
     ) as expected_grade_level,
 
+    if(
+        s.grade_level = '1' and s.expected_round in ('3', '4'),
+        g1.met_goal,
+        if(a.mclass_measure_standard_score >= s.goal, true, false)
+    ) as met_goal,
+
 from students as s
 left join
     schedules as m
@@ -220,6 +274,12 @@ left join
     and s.expected_mclass_measure_standard = a.mclass_measure_standard
     and a.mclass_client_date between s.start_date and s.end_date
     and a.assessment_type = 'PM'
+left join
+    goal_met_calculation_g1 as g1
+    on s.academic_year = g1.academic_year
+    and s.student_number = g1.student_number
+    and s.expected_test = g1.expected_test
+    and s.expected_round = g1.expected_round
 left join
     {{ ref("int_reporting__student_filters") }} as f
     on s.academic_year = f.academic_year
