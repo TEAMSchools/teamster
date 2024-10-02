@@ -382,7 +382,9 @@ with
 
             case
                 /* GrK-1 NJ */
-                when co.grade_level <= 1 and m.mclass_measure_standard_level_int = 1
+                when
+                    co.grade_level <= 1
+                    and coalesce(m.mclass_measure_standard_level_int, 0) <= 1
                 then 'Off-Track'
                 /* Gr2 NJ */
                 when
