@@ -162,7 +162,9 @@ select
     actualscoreentered,
     scorepoints,
 
-    safe_divide(scorepoints, totalpointvalue) * 100 as assign_final_score_percent,
+    round(
+        safe_divide(scorepoints, totalpointvalue) * 100, 2
+    ) as assign_final_score_percent,
 
     if(isexempt, 1, 0) as isexempt,
     if(islate, 1, 0) as islate,
