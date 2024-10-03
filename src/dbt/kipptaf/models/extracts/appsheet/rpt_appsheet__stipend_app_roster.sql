@@ -5,7 +5,7 @@ with
             sr1.department_home_name,
             sr1.preferred_name_lastfirst,
             sr1.employee_number as ktaf_approver,
-        from {{ ref("base_people__staff_roster") }} as sr1
+        from {{ ref('base_people__staff_roster') }} as sr1
         where
             (
                 sr1.job_title like '%Chief%Officer'
@@ -33,9 +33,9 @@ with
                 ),
                 null
             ) as ktaf_approver,
-        from {{ ref("base_people__staff_roster") }} as sr1
+        from {{ ref('base_people__staff_roster') }} as sr1
         left join
-            {{ ref("base_people__staff_roster") }} as sr2
+            {{ ref('base_people__staff_roster') }} as sr2
             on sr1.report_to_employee_number = sr2.employee_number
         where
             sr1.business_unit_home_code = 'KIPP_TAF'
@@ -68,9 +68,9 @@ with
                     null
                 )
             ) as mdo_employee_number,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref('base_people__staff_roster') }} as sr
         left join
-            {{ ref("stg_people__location_crosswalk") }} as lc
+            {{ ref('stg_people__location_crosswalk') }} as lc
             on sr.home_work_location_name = lc.name
         where sr.assignment_status = 'Active'
         group by lc.region
@@ -117,15 +117,6 @@ with
                 /* KTAF teammate with KTAF manager*/
                 when sr.business_unit_home_code = 'KIPP_TAF'
                 then 'KTAF'
-                /* Non-KTAF teammate with KTAF manager*/
-                when
-                    sr.business_unit_home_code = 'KIPP_MIAMI'
-                    and sr2.business_unit_home_code = 'KIPP_TAF'
-                then 'MDO'
-                when
-                    sr.business_unit_home_code not in ('KIPP_MIAMI', 'KIPP_TAF')
-                    and sr2.business_unit_home_code = 'KIPP_TAF'
-                then 'MDSO'
                 /* Non-KTAF teammate with non-school location*/
                 when
                     (
@@ -133,7 +124,6 @@ with
                         or sr.home_work_location_name like '%Campus%'
                     )
                     and sr.business_unit_home_code <> 'KIPP_TAF'
-
                 then 'MDO'
                 /* School-based teammate*/
                 when
@@ -145,15 +135,15 @@ with
                 then 'School'
             end as route,
             coalesce(cc.name, sr.home_work_location_name) as campus,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref('base_people__staff_roster') }} as sr
         left join
-            {{ ref("base_people__staff_roster") }} as sr2
+            {{ ref('base_people__staff_roster') }} as sr2
             on sr.report_to_employee_number = sr2.employee_number
         left join
-            {{ ref("stg_people__campus_crosswalk") }} as cc
+            {{ ref('stg_people__campus_crosswalk') }} as cc
             on sr.home_work_location_name = cc.location_name
         left join
-            {{ ref("int_people__leadership_crosswalk") }} as lc
+            {{ ref('int_people__leadership_crosswalk') }} as lc
             on sr.home_work_location_name = lc.home_work_location_name
         left join mdo on sr.business_unit_home_name = mdo.region
         left join
@@ -202,9 +192,6 @@ with
                         r.mdso_employee_number,
                         r.mdo_employee_number
                     )
-                /* Non-KTAF teammate with KTAF manager*/
-                when r.route = 'MDSO'
-                then r.mdso_employee_number
                 /* Non-KTAF teammate with non-school location*/
                 when r.route = 'MDO'
                 then r.mdo_employee_number
@@ -219,9 +206,6 @@ with
                 /* School-based operations teammate*/
                 when r.route = 'School' and r.department_home_name = 'Operations'
                 then coalesce(r.mdso_employee_number, r.mdo_employee_number)
-                /* Non-KTAF teammate with KTAF manager*/
-                when r.route = 'MDSO'
-                then r.mdso_employee_number
                 /* Non-KTAF teammate with non-school location*/
                 when r.route = 'MDO'
                 then r.mdo_employee_number
@@ -263,14 +247,15 @@ select
     case
         when r.first_approver_employee_number = r.employee_number
         then r.manager_employee_number
-        when r.first_approver_employee_number is null and r.route <> 'MDSO'
+        when r.first_approver_employee_number is null
         then r.manager_employee_number
         when
             r.job_title in (
                 'Head of Schools',
                 'Managing Director of Operations',
                 'Managing Director of School Operations',
-                'Managing Director'
+                'Managing Director',
+                'School Leader'
             )
         then r.manager_employee_number
         else r.first_approver_employee_number
@@ -278,14 +263,15 @@ select
     case
         when r.second_approver_employee_number = r.employee_number
         then r.grandmanager_employee_number
-        when r.second_approver_employee_number is null and r.route <> 'MDSO'
+        when r.second_approver_employee_number is null
         then r.grandmanager_employee_number
         when
             r.job_title in (
                 'Head of Schools',
                 'Managing Director of Operations',
                 'Managing Director of School Operations',
-                'Managing Director'
+                'Managing Director',
+                'School Leader'
             )
         then r.grandmanager_employee_number
         else r.second_approver_employee_number
