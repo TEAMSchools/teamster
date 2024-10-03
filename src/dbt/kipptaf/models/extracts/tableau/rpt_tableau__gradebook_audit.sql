@@ -889,8 +889,21 @@ select distinct
         then null
         else actualscoreentered
     end as assign_score_raw,
-    -- remove when the data model is redone
-    null as assign_score_converted,
+    case
+        when
+            audit_flag_name in (
+                'w_percent_graded_completion_by_qt_audit_week_not_100',
+                'f_percent_graded_completion_by_qt_audit_week_not_100',
+                's_percent_graded_completion_by_qt_audit_week_not_100',
+                'w_expected_assign_count_not_met',
+                'f_expected_assign_count_not_met',
+                's_expected_assign_count_not_met',
+                'qt_student_is_ada_80_plus_gpa_less_2',
+                'w_grade_inflation'
+            )
+        then null
+        else scorepoints
+    end as assign_score_converted,
     case
         when
             audit_flag_name in (
