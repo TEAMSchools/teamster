@@ -21,14 +21,10 @@ with
                 else false
             end as is_expected_scored,
 
-            safe_divide(
-                if(
-                    a.scoretype = 'PERCENT',
-                    (a.totalpointvalue * s.scorepoints) / 100,
-                    s.scorepoints
-                ),
-                a.totalpointvalue
+            round(
+                safe_divide(s.scorepoints, a.totalpointvalue) * 100, 2
             ) as score_percent,
+
         from {{ ref("int_powerschool__gradebook_assignments") }} as a
         left join
             {{ ref("stg_powerschool__assignmentscore") }} as s
