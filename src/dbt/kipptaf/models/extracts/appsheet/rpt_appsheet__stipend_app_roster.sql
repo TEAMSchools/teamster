@@ -5,7 +5,7 @@ with
             sr1.department_home_name,
             sr1.preferred_name_lastfirst,
             sr1.employee_number as ktaf_approver,
-        from {{ ref('base_people__staff_roster') }} as sr1
+        from {{ ref("base_people__staff_roster") }} as sr1
         where
             (
                 sr1.job_title like '%Chief%Officer'
@@ -33,9 +33,9 @@ with
                 ),
                 null
             ) as ktaf_approver,
-        from {{ ref('base_people__staff_roster') }} as sr1
+        from {{ ref("base_people__staff_roster") }} as sr1
         left join
-            {{ ref('base_people__staff_roster') }} as sr2
+            {{ ref("base_people__staff_roster") }} as sr2
             on sr1.report_to_employee_number = sr2.employee_number
         where
             sr1.business_unit_home_code = 'KIPP_TAF'
@@ -68,9 +68,9 @@ with
                     null
                 )
             ) as mdo_employee_number,
-        from {{ ref('base_people__staff_roster') }} as sr
+        from {{ ref("base_people__staff_roster") }} as sr
         left join
-            {{ ref('stg_people__location_crosswalk') }} as lc
+            {{ ref("stg_people__location_crosswalk") }} as lc
             on sr.home_work_location_name = lc.name
         where sr.assignment_status = 'Active'
         group by lc.region
@@ -135,15 +135,15 @@ with
                 then 'School'
             end as route,
             coalesce(cc.name, sr.home_work_location_name) as campus,
-        from {{ ref('base_people__staff_roster') }} as sr
+        from {{ ref("base_people__staff_roster") }} as sr
         left join
-            {{ ref('base_people__staff_roster') }} as sr2
+            {{ ref("base_people__staff_roster") }} as sr2
             on sr.report_to_employee_number = sr2.employee_number
         left join
-            {{ ref('stg_people__campus_crosswalk') }} as cc
+            {{ ref("stg_people__campus_crosswalk") }} as cc
             on sr.home_work_location_name = cc.location_name
         left join
-            {{ ref('int_people__leadership_crosswalk') }} as lc
+            {{ ref("int_people__leadership_crosswalk") }} as lc
             on sr.home_work_location_name = lc.home_work_location_name
         left join mdo on sr.business_unit_home_name = mdo.region
         left join
