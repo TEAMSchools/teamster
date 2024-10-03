@@ -1,4 +1,5 @@
 select
+    'Benchmark' as type,
     student_display_id as student_number,
     academic_year,
     screening_period_window_name as test_round,
