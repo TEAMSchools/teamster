@@ -43,7 +43,7 @@ dbt-semantic-interfaces==0.5.1
 deepdiff==7.0.1
 defusedxml==0.7.1
 docstring-parser==0.16
-durationpy==0.7
+durationpy==0.9
 fastavro==1.9.7
 filelock==3.16.1
 fsspec==2024.9.0; python_version >= "3.12"
