@@ -3,7 +3,7 @@ select
 
     p.assessmentyear as academic_year,
     p.academic_year as academic_year_int,
-    'Spring' as test_round,
+    p.period as test_round,
     p.assessment_name as test_type,
     p.discipline as `subject`,
     p.subject as test_name,
