@@ -84,15 +84,11 @@ with
             a.category_name,
 
             s.scorepoints,
+            s.actualscoreentered,
             if(s.islate in (0, null), false, true) as islate,
             if(s.isexempt in (0, null), false, true) as isexempt,
             if(s.ismissing in (0, null), false, true) as ismissing,
 
-            if(
-                a.scoretype = 'PERCENT',
-                (a.totalpointvalue * s.scorepoints) / 100,
-                s.scorepoints
-            ) as score_converted,
         from filtered_courses as ce
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
@@ -163,16 +159,16 @@ select
     duedate,
     scoretype,
     totalpointvalue,
+    actualscoreentered,
     scorepoints,
-    score_converted,
 
-    safe_divide(score_converted, totalpointvalue) * 100 as assign_final_score_percent,
+    safe_divide(scorepoints, totalpointvalue) * 100 as assign_final_score_percent,
 
     if(isexempt, 1, 0) as isexempt,
     if(islate, 1, 0) as islate,
     if(ismissing, 1, 0) as ismissing,
 
-    if(score_converted > totalpointvalue, true, false) as assign_score_above_max,
+    if(scorepoints > totalpointvalue, true, false) as assign_score_above_max,
 
     if(
         assignmentid is not null and not isexempt, true, false
@@ -196,30 +192,26 @@ select
         false
     ) as assign_expected_with_score,
 
-    if(isexempt and score_converted > 0, true, false) as assign_exempt_with_score,
+    if(isexempt and scorepoints > 0, true, false) as assign_exempt_with_score,
 
     if(
-        assignment_category_code = 'W' and score_converted < 5, true, false
+        assignment_category_code = 'W' and scorepoints < 5, true, false
     ) as assign_w_score_less_5,
 
     if(
-        assignment_category_code = 'F' and score_converted < 5, true, false
+        assignment_category_code = 'F' and scorepoints < 5, true, false
     ) as assign_f_score_less_5,
 
     if(
-        assignment_category_code = 'W' and ismissing and score_converted != 5,
-        true,
-        false
+        assignment_category_code = 'W' and ismissing and scorepoints != 5, true, false
     ) as assign_w_missing_score_not_5,
 
     if(
-        assignment_category_code = 'F' and ismissing and score_converted != 5,
-        true,
-        false
+        assignment_category_code = 'F' and ismissing and scorepoints != 5, true, false
     ) as assign_f_missing_score_not_5,
 
     if(
-        assignment_category_code = 'S' and score_converted < (totalpointvalue / 2),
+        assignment_category_code = 'S' and scorepoints < (totalpointvalue / 2),
         true,
         false
     ) as assign_s_score_less_50p,
