@@ -12,6 +12,8 @@ select
 
     if(p.is_proficient, 1, 0) as is_proficient,
 
+    concat(p.testperformancelevel_text, ' (', p.testscalescore, ')') as score_display,
+
     row_number() over (
         partition by co.student_number, p.subject order by p.assessmentyear asc
     ) as test_index,
@@ -37,6 +39,8 @@ select
     fl.achievement_level as proficiency_level,
 
     if(fl.is_proficient, 1, 0) as is_proficient,
+
+    concat(fl.achievement_level, ' (', fl.scale_score, ')') as score_display,
 
     row_number() over (
         partition by co.student_number, fl.assessment_subject
