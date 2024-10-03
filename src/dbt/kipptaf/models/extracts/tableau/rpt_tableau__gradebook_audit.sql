@@ -995,6 +995,8 @@ from
             w_percent_graded_completion_by_qt_audit_week_not_100,
             f_percent_graded_completion_by_qt_audit_week_not_100,
             s_percent_graded_completion_by_qt_audit_week_not_100,
+            assign_s_hs_score_not_conversion_chart_options,
+            assign_s_ms_score_not_conversion_chart_options,
             assign_null_score,
             assign_score_above_max,
             assign_exempt_with_score,
