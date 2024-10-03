@@ -107,8 +107,8 @@ with
             t.f_expected_assign_count_not_met,
             t.s_expected_assign_count_not_met,
 
+            s.actualscoreentered,
             s.scorepoints,
-            s.score_converted,
             s.isexempt,
             s.islate,
             s.ismissing,
@@ -300,7 +300,7 @@ with
                 isexempt = 0
                 and school_level = 'MS'
                 and assignment_category_code = 'S'
-                and (assign_final_score_percent * 100)
+                and (assign_final_score_percent)
                 not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100),
                 true,
                 false
@@ -311,7 +311,7 @@ with
                 and school_level = 'HS'
                 and assignment_category_code = 'S'
                 and is_ap_course
-                and (assign_final_score_percent * 100)
+                and (assign_final_score_percent)
                 not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100),
                 true,
                 false
@@ -887,23 +887,10 @@ select distinct
                 'w_grade_inflation'
             )
         then null
-        else scorepoints
+        else actualscoreentered
     end as assign_score_raw,
-    case
-        when
-            audit_flag_name in (
-                'w_percent_graded_completion_by_qt_audit_week_not_100',
-                'f_percent_graded_completion_by_qt_audit_week_not_100',
-                's_percent_graded_completion_by_qt_audit_week_not_100',
-                'w_expected_assign_count_not_met',
-                'f_expected_assign_count_not_met',
-                's_expected_assign_count_not_met',
-                'qt_student_is_ada_80_plus_gpa_less_2',
-                'w_grade_inflation'
-            )
-        then null
-        else score_converted
-    end as assign_score_converted,
+    -- remove when the data model is redone
+    null as assign_score_converted,
     case
         when
             audit_flag_name in (

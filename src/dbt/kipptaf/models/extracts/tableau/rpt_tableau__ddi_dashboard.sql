@@ -162,6 +162,8 @@ with
         where
             co.enroll_status = 0
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
+            /* Manual filter to avoid dashboard roll-up #TODO: Remove SY26 */
+            and sc.module_type != 'WPP'
     ),
 
     microgoals as (
