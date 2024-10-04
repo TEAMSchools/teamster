@@ -11,7 +11,7 @@ select
     o.academic_year,
     o.is_published,
 
-    mn.text as magic_notes_text,
+    string_agg(mn.text, "; ") as magic_notes_text,
 
     s.name as school_name,
 
@@ -42,3 +42,22 @@ left join
 left join
     {{ ref("stg_schoolmint_grow__generic_tags") }} as gt3
     on o.teaching_assignment_grade = gt3.tag_id
+group by
+    o.observation_id,
+    o.rubric_id,
+    o.rubric_name,
+    o.score,
+    o.glows,
+    o.grows,
+    o.locked,
+    o.observed_at,
+    o.observed_at_date_local,
+    o.academic_year,
+    o.is_published,
+    s.name,
+    gt.name,
+    gt.abbreviation,
+    gt2.name,
+    gt3.name,
+    ut.internal_id,
+    uo.internal_id
