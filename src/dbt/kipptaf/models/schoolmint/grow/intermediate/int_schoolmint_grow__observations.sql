@@ -11,8 +11,6 @@ select
     o.academic_year,
     o.is_published,
 
-    string_agg(mn.text, "; ") as magic_notes_text,
-
     s.name as school_name,
 
     gt.name as observation_type_name,
@@ -24,6 +22,8 @@ select
     safe_cast(ut.internal_id as int) as teacher_internal_id,
 
     safe_cast(uo.internal_id as int) as observer_internal_id,
+
+    string_agg(mn.text, '; ') as magic_notes_text,
 from {{ ref("stg_schoolmint_grow__observations") }} as o
 left join
     {{ ref("stg_schoolmint_grow__observations__magic_notes") }} as mn
