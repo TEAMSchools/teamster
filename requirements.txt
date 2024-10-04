@@ -24,7 +24,7 @@ daff==1.3.46
 dagster==1.8.9
 dagster-airbyte==0.24.9
 dagster-cloud==1.8.9
-dagster-cloud-cli==1.8.9
+dagster-cloud-cli==1.8.10
 dagster-dbt==0.24.9
 dagster-fivetran==0.24.9
 dagster-gcp==0.24.9
