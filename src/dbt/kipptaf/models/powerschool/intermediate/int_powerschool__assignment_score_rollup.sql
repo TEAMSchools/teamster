@@ -58,6 +58,7 @@ with
     )
 
 select
+    s._dbt_source_relation,
     s.assignmentsectionid,
 
     count(s.studentsdcid) as n_students,
@@ -75,4 +76,4 @@ left join
     on s.sectionsdcid = e.dcid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="e") }}
 where e.dcid is not null
-group by s.assignmentsectionid
+group by s._dbt_source_relation, s.assignmentsectionid
