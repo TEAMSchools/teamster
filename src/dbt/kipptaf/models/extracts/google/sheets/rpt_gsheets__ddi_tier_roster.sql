@@ -5,6 +5,7 @@ select
     co.school_abbreviation as school,
     co.grade_level,
     co.advisory_name as team,
+    co.spedlep as iep_status,
 
     f.iready_subject as subject,
     f.nj_student_tier,
@@ -15,7 +16,7 @@ inner join
     {{ ref("base_powerschool__student_enrollments") }} as co
     on f.student_number = co.student_number
     and f.academic_year = co.academic_year
-    and co.region != 'Miami'
+    and co.rn_year = 1
 where
     f.nj_student_tier is not null
     and f.academic_year = {{ var("current_academic_year") }}

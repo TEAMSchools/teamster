@@ -117,15 +117,6 @@ with
                 /* KTAF teammate with KTAF manager*/
                 when sr.business_unit_home_code = 'KIPP_TAF'
                 then 'KTAF'
-                /* Non-KTAF teammate with KTAF manager*/
-                when
-                    sr.business_unit_home_code = 'KIPP_MIAMI'
-                    and sr2.business_unit_home_code = 'KIPP_TAF'
-                then 'MDO'
-                when
-                    sr.business_unit_home_code not in ('KIPP_MIAMI', 'KIPP_TAF')
-                    and sr2.business_unit_home_code = 'KIPP_TAF'
-                then 'MDSO'
                 /* Non-KTAF teammate with non-school location*/
                 when
                     (
@@ -133,7 +124,6 @@ with
                         or sr.home_work_location_name like '%Campus%'
                     )
                     and sr.business_unit_home_code <> 'KIPP_TAF'
-
                 then 'MDO'
                 /* School-based teammate*/
                 when
@@ -202,9 +192,6 @@ with
                         r.mdso_employee_number,
                         r.mdo_employee_number
                     )
-                /* Non-KTAF teammate with KTAF manager*/
-                when r.route = 'MDSO'
-                then r.mdso_employee_number
                 /* Non-KTAF teammate with non-school location*/
                 when r.route = 'MDO'
                 then r.mdo_employee_number
@@ -219,9 +206,6 @@ with
                 /* School-based operations teammate*/
                 when r.route = 'School' and r.department_home_name = 'Operations'
                 then coalesce(r.mdso_employee_number, r.mdo_employee_number)
-                /* Non-KTAF teammate with KTAF manager*/
-                when r.route = 'MDSO'
-                then r.mdso_employee_number
                 /* Non-KTAF teammate with non-school location*/
                 when r.route = 'MDO'
                 then r.mdo_employee_number
@@ -263,15 +247,32 @@ select
     case
         when r.first_approver_employee_number = r.employee_number
         then r.manager_employee_number
-        when r.first_approver_employee_number is null and r.route <> 'MDSO'
+        when r.first_approver_employee_number is null
         then r.manager_employee_number
-
+        when
+            r.job_title in (
+                'Head of Schools',
+                'Managing Director of Operations',
+                'Managing Director of School Operations',
+                'Managing Director',
+                'School Leader'
+            )
+        then r.manager_employee_number
         else r.first_approver_employee_number
     end as first_approver_employee_number,
     case
         when r.second_approver_employee_number = r.employee_number
         then r.grandmanager_employee_number
-        when r.second_approver_employee_number is null and r.route <> 'MDSO'
+        when r.second_approver_employee_number is null
+        then r.grandmanager_employee_number
+        when
+            r.job_title in (
+                'Head of Schools',
+                'Managing Director of Operations',
+                'Managing Director of School Operations',
+                'Managing Director',
+                'School Leader'
+            )
         then r.grandmanager_employee_number
         else r.second_approver_employee_number
     end as second_approver_employee_number,
