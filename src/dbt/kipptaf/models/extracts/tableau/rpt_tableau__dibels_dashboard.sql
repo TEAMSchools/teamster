@@ -3,6 +3,7 @@ with
         select
             e._dbt_source_relation,
             e.academic_year,
+            e.academic_year_display,
             e.district,
             e.state,
             e.region,
@@ -104,6 +105,7 @@ with
 select
     s._dbt_source_relation,
     s.academic_year,
+    s.academic_year_display,
     s.district,
     s.region,
     s.state,
@@ -166,6 +168,8 @@ select
     f.nj_student_tier,
     f.tutoring_nj,
 
+    null as met_goal,
+
     right(s.test_code, 1) as expected_round,
 
     if(
@@ -204,6 +208,7 @@ union all
 select
     _dbt_source_relation,
     academic_year,
+    academic_year_display,
     district,
     region,
     state,
@@ -266,6 +271,9 @@ select
     nj_student_tier,
     tutoring_nj,
 
+    met_goal,
+
     expected_round,
     expected_grade_level,
+
 from {{ ref("rpt_tableau__dibels_pm_dashboard") }}

@@ -14,6 +14,7 @@ with
 select
     e._dbt_source_relation,
     e.academic_year,
+    e.yearid,
     e.region,
     e.school_level,
     e.schoolid,
@@ -29,35 +30,56 @@ select
     e.gender,
     e.ethnicity,
     e.enroll_status,
+    e.entrydate,
+    e.exitdate,
     e.cohort,
-    e.is_out_of_district,
-    e.is_self_contained,
     e.is_504,
     e.lep_status,
     e.lunch_status,
     e.gifted_and_talented,
     e.is_homeless,
+    e.dob,
+    e.boy_status,
+    e.is_out_of_district,
+    e.is_self_contained,
+    e.is_enrolled_recent,
+    e.is_enrolled_y1,
+    e.is_retained_year,
+    e.is_retained_ever,
+    e.year_in_school,
+    e.year_in_network,
+    e.rn_undergrad,
+    e.student_email_google as student_email,
+    e.code_location,
 
     m.ms_attended,
 
     adb.contact_id,
     adb.ktc_cohort,
     adb.contact_owner_name,
+    adb.contact_df_has_fafsa as has_fafsa,
 
     hr.sections_section_number as team,
 
     'KTAF' as district,
 
-    cast(sp.academic_year as string)
+    coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
+
+    cast(e.academic_year as string)
     || '-'
-    || right(cast(sp.academic_year + 1 as string), 2) as academic_year_display,
+    || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
+
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
     if(sp.studentid is not null, 1, null) as is_counseling_services,
 
     if(sa.studentid is not null, 1, null) as is_student_athlete,
+
+    case
+        e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
+    end as race_ethnicity,
 
     case
         when e.school_level in ('ES', 'MS')

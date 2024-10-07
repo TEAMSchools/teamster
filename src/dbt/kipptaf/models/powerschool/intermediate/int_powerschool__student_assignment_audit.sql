@@ -28,15 +28,11 @@ with
             a.category_name,
 
             s.scorepoints,
-            if(s.islate in (0, null), false, true) as islate,
-            if(s.isexempt in (0, null), false, true) as isexempt,
-            if(s.ismissing in (0, null), false, true) as ismissing,
+            s.actualscoreentered,
 
-            if(
-                a.scoretype = 'PERCENT',
-                (a.totalpointvalue * s.scorepoints) / 100,
-                s.scorepoints
-            ) as score_converted,
+            if(s.islate = 0 or s.islate is null, false, true) as islate,
+            if(s.isexempt = 0 or s.isexempt is null, false, true) as isexempt,
+            if(s.ismissing = 0 or s.ismissing is null, false, true) as ismissing,
         from {{ ref("base_powerschool__course_enrollments") }} as ce
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
@@ -74,22 +70,47 @@ with
         where
             ce.cc_academic_year = {{ var("current_academic_year") }}
             and ce.cc_sectionid > 0
-            and ce.cc_course_number not in (
-                'HR',
+            /* exclude courses */
+            and ce.courses_course_number not in (
+                'LOG20',  -- Early Dismissal
+                'LOG300',  -- Study Hall
+                'SEM22101G1',  -- Student Government
+                'SEM22106G1',  -- Advisory
+                'SEM22106S1',  -- Not in SY24-25 yet
+                /* Lunch */
                 'LOG100',
                 'LOG1010',
                 'LOG11',
                 'LOG12',
-                'LOG20',
                 'LOG22999XL',
-                'LOG300',
-                'LOG9',
-                'SEM22106G1',
-                'SEM22106S1'
-                'SEM72005G1',
-                'SEM72005G2',
-                'SEM72005G3',
-                'SEM72005G4'
+                'LOG9'
+            )
+            /* exclude courses by school */
+            and concat(ce.cc_schoolid, ce.cc_course_number) not in (
+                '133570965LOG300',
+                '133570965SEM72250G1',
+                '133570965SEM72250G2',
+                '133570965SEM72250G3',
+                '133570965SEM72250G4',
+                '732514GYM08035G1',
+                '732514GYM08036G2',
+                '732514GYM08037G3',
+                '732514GYM08038G4',
+                '73252SEM72250G1',
+                '73252SEM72250G2',
+                '73252SEM72250G3',
+                '73252SEM72250G4'
+            )
+            /* exclude F & S categories for iReady courses */
+            and concat(ce.cc_course_number, ge.assignment_category_code) not in (
+                'SEM72005G1F',
+                'SEM72005G2F',
+                'SEM72005G3F',
+                'SEM72005G4F',
+                'SEM72005G1S',
+                'SEM72005G2S',
+                'SEM72005G3S',
+                'SEM72005G4S'
             )
     )
 
@@ -113,16 +134,18 @@ select
     duedate,
     scoretype,
     totalpointvalue,
+    actualscoreentered,
     scorepoints,
-    score_converted,
 
-    safe_divide(score_converted, totalpointvalue) * 100 as assign_final_score_percent,
+    round(
+        safe_divide(scorepoints, totalpointvalue) * 100, 2
+    ) as assign_final_score_percent,
 
     if(isexempt, 1, 0) as isexempt,
     if(islate, 1, 0) as islate,
     if(ismissing, 1, 0) as ismissing,
 
-    if(score_converted > totalpointvalue, true, false) as assign_score_above_max,
+    if(scorepoints > totalpointvalue, true, false) as assign_score_above_max,
 
     if(
         assignmentid is not null and not isexempt, true, false
@@ -146,30 +169,26 @@ select
         false
     ) as assign_expected_with_score,
 
-    if(isexempt and score_converted > 0, true, false) as assign_exempt_with_score,
+    if(isexempt and scorepoints > 0, true, false) as assign_exempt_with_score,
 
     if(
-        assignment_category_code = 'W' and score_converted < 5, true, false
+        assignment_category_code = 'W' and scorepoints < 5, true, false
     ) as assign_w_score_less_5,
 
     if(
-        assignment_category_code = 'F' and score_converted < 5, true, false
+        assignment_category_code = 'F' and scorepoints < 5, true, false
     ) as assign_f_score_less_5,
 
     if(
-        assignment_category_code = 'W' and ismissing and score_converted != 5,
-        true,
-        false
+        assignment_category_code = 'W' and ismissing and scorepoints != 5, true, false
     ) as assign_w_missing_score_not_5,
 
     if(
-        assignment_category_code = 'F' and ismissing and score_converted != 5,
-        true,
-        false
+        assignment_category_code = 'F' and ismissing and scorepoints != 5, true, false
     ) as assign_f_missing_score_not_5,
 
     if(
-        assignment_category_code = 'S' and score_converted < (totalpointvalue / 2),
+        assignment_category_code = 'S' and scorepoints < (totalpointvalue / 2),
         true,
         false
     ) as assign_s_score_less_50p,

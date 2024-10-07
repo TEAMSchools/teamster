@@ -100,6 +100,36 @@ with
             and c.yearid = sec.terms_yearid
             and c.week_end_date between sec.terms_firstday and sec.terms_lastday
             and {{ union_dataset_join_clause(left_alias="c", right_alias="sec") }}
+            /* exclude courses */
+            and sec.courses_course_number not in (
+                'LOG20',  -- Early Dismissal
+                'LOG300',  -- Study Hall
+                'SEM22101G1',  -- Student Government
+                'SEM22106G1',  -- Advisory
+                'SEM22106S1',  -- Not in SY24-25 yet
+                /* Lunch */
+                'LOG100',
+                'LOG1010',
+                'LOG11',
+                'LOG12',
+                'LOG22999XL',
+                'LOG9'
+            )
+            /* exclude courses at specific schools */
+            and concat(sec.sections_schoolid, sec.sections_course_number) not in (
+                '73252SEM72250G1',
+                '73252SEM72250G2',
+                '73252SEM72250G3',
+                '73252SEM72250G4',
+                '133570965SEM72250G1',
+                '133570965SEM72250G2',
+                '133570965SEM72250G3',
+                '133570965SEM72250G4',
+                '732514GYM08035G1',
+                '732514GYM08036G2',
+                '732514GYM08037G3',
+                '732514GYM08038G4'
+            )
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on sec.sections_dcid = a.sectionsdcid
@@ -111,22 +141,16 @@ with
             on a.assignmentsectionid = asg.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
         where
-            sec.sections_course_number not in (
-                'HR',
-                'LOG100',
-                'LOG1010',
-                'LOG11',
-                'LOG12',
-                'LOG20',
-                'LOG22999XL',
-                'LOG300',
-                'LOG9',
-                'SEM22106G1',
-                'SEM22106S1',
-                'SEM72005G1',
-                'SEM72005G2',
-                'SEM72005G3',
-                'SEM72005G4'
+            /* exclude F & S categories for iReady courses */
+            concat(sec.sections_course_number, ge.assignment_category_code) not in (
+                'SEM72005G1F',
+                'SEM72005G2F',
+                'SEM72005G3F',
+                'SEM72005G4F',
+                'SEM72005G1S',
+                'SEM72005G2S',
+                'SEM72005G3S',
+                'SEM72005G4S'
             )
             and sec.terms_firstday >= '{{ var("current_academic_year") }}-07-01'
     )
