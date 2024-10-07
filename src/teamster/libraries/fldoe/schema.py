@@ -1,6 +1,16 @@
 from pydantic import BaseModel, Field
 
 
+class FTE(BaseModel):
+    school_number: str | None = None
+    student_id: str | None = None
+    florida_student_id: str | None = None
+    student_name: str | None = None
+    grade: str | None = None
+    fte_capped: str | None = None
+    fte_uncapped: str | None = None
+
+
 class FLDOECore(BaseModel):
     date_taken: str | None = None
     english_language_learner_ell_status: str | None = None
