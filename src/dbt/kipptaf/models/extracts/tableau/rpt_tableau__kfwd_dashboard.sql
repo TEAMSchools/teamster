@@ -1,7 +1,9 @@
 with
     year_scaffold as (
         select {{ var("current_academic_year") }} as academic_year
-        union distinct
+
+        union all
+
         select {{ var("current_academic_year") - 1 }} as academic_year
     ),
 
