@@ -1,7 +1,7 @@
 with
     survey_reconciliation as (
         select
-            survey_response_id,
+            answer_survey_response_id as survey_response_id,
             sf_contact_id,
 
             row_number() over (
@@ -10,7 +10,7 @@ with
         from
             {{ ref("int_surveys__survey_responses") }} pivot (
                 max(answer) for question_title in (
-                    'Survey response ID' as survey_response_id,
+                    'Survey response ID' as answer_survey_response_id,
                     'Salesforce contact ID' as sf_contact_id
                 )
             )
