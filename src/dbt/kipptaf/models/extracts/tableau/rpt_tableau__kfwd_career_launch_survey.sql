@@ -1,5 +1,3 @@
-{{- config(enabled=false) -}}
-
 with
     survey_reconciliation as (
         select
@@ -54,15 +52,13 @@ with
                 partition by e.student order by e.actual_end_date desc
             ) as rn_latest,
         from {{ ref("stg_kippadb__enrollment") }} as e
-        left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
         inner join {{ ref("stg_kippadb__contact") }} as c on e.student = c.id
+        left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
         where e.status = 'Graduated' and e.type not in ('High School', 'Middle School')
     ),
 
     survey_data as (
         select
-            safe_cast(ri.survey_id as string) as survey_id,
-            safe_cast(ri.response_id as string) as response_id,
             ri.response_date_submitted,
             ri.respondent_salesforce_id,
 
@@ -70,30 +66,35 @@ with
             sr.question_short_name,
             sr.response_string_value,
 
+            cast(ri.survey_id as string) as survey_id,
+            cast(ri.response_id as string) as response_id,
             lower(ri.respondent_user_principal_name) as respondent_user_principal_name,
-        from {{ ref("int_surveys__response_identifiers") }} as ri
+        /* hardcode disabled model */
+        from kipptaf_surveys.int_surveys__response_identifiers as ri
         inner join
-            {{ ref("base_alchemer__survey_results") }} as sr
+            /* hardcode disabled model */
+            kipptaf_alchemer.base_alchemer__survey_results as sr
             on ri.survey_id = sr.survey_id
             and ri.response_id = sr.response_id
-        where ri.survey_id = 6734664  -- 'KIPP Forward Career Launch Survey'
+        where ri.survey_id = 6734664  /* 'KIPP Forward Career Launch Survey' */
 
         union all
 
         select
-            safe_cast(fr.form_id as string) as survey_id,
-            safe_cast(fr.response_id as string) as response_id,
             safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
+
             null as respondent_salesforce_id,
 
             fr.info_document_title as survey_title,
             fr.item_abbreviation as question_short_name,
             fr.text_value as response_string_value,
 
+            cast(fr.form_id as string) as survey_id,
+            cast(fr.response_id as string) as response_id,
             lower(fr.respondent_email) as respondent_user_principal_name,
         from {{ ref("base_google_forms__form_responses") }} as fr
+        /* 'KIPP Forward Career Launch Survey' */
         where form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
-    -- 'KIPP Forward Career Launch Survey'
     ),
 
     survey_pivot as (
@@ -105,7 +106,7 @@ with
             respondent_salesforce_id,
             respondent_user_principal_name,
 
-            {# pivot cols #}
+            /* pivot cols */
             first_name,
             last_name,
             after_grad,
@@ -126,7 +127,7 @@ with
             reenrollment,
             search_focus,
             company,
-            role,
+            `role`,
 
             safe_cast(cur_1 as numeric) as cur_1,
             safe_cast(cur_2 as numeric) as cur_2,
@@ -180,6 +181,7 @@ with
     weight_questions as (
         select
             question_short_name,
+
             safe_cast(response_string_value as numeric) as response_float_value,
         from survey_data
         where
@@ -204,6 +206,7 @@ with
     weight_table as (
         select
             s.question_short_name,
+
             (sum(s.response_float_value) / a.answer_total) * 10 as item_weight,
         from weight_questions as s
         cross join weight_denominator as a
@@ -244,6 +247,7 @@ with
             s.cur_8 * p.imp_8 as enjoyment_quality,
             s.cur_9 * p.imp_9 as purpose_quality,
             s.cur_10 * p.imp_10 as power_quality,
+
             (
                 (s.cur_1 * p.imp_1)
                 + (s.cur_2 * p.imp_2)
@@ -262,9 +266,9 @@ with
     )
 
 select
-    ad.*,
-
     sw.*,
+
+    ad.*,
 
     case
         when ad.actual_end_date_month between 1 and 6
