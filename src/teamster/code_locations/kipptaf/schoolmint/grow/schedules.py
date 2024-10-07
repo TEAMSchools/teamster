@@ -66,7 +66,7 @@ schoolmint_grow_observations_asset_job = define_asset_job(
 
 @schedule(
     name=f"{schoolmint_grow_observations_asset_job.name}_schedule",
-    cron_schedule=["0 0 * * *", "0 14 * * *", "45 15 * * *"],
+    cron_schedule=["15 11 * * *", "15 13 * * *", "15 15 * * *"],
     execution_timezone=LOCAL_TIMEZONE.name,
     job=schoolmint_grow_observations_asset_job,
 )
