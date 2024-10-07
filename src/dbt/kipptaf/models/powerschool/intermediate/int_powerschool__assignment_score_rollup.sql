@@ -1,6 +1,7 @@
 with
     scores as (
         select
+            a._dbt_source_relation,
             a.sectionsdcid,
             a.assignmentsectionid,
 
