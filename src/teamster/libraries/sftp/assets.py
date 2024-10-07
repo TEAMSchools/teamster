@@ -13,6 +13,7 @@ from dagster import (
 )
 from numpy import nan
 from pandas import read_csv
+from pypdf import PdfReader
 from slugify import slugify
 
 from teamster.core.asset_checks import (
@@ -43,20 +44,52 @@ def compose_regex(
         return regexp
 
 
+def extract_csv_to_dict(
+    local_filepath: str, slugify_cols: bool, slugify_replacements: tuple
+):
+    df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
+
+    df.replace({nan: None}, inplace=True)
+
+    if slugify_cols:
+        df.rename(
+            columns=lambda x: slugify(
+                text=x, separator="_", replacements=slugify_replacements
+            ),
+            inplace=True,
+        )
+
+    return df.to_dict(orient="records"), df.shape
+
+
+def extract_pdf_to_dict(stream: str, pdf_row_pattern: str):
+    records = []
+
+    reader = PdfReader(stream=stream, strict=True)
+
+    for page in reader.pages:
+        matches = re.finditer(pattern=pdf_row_pattern, string=page.extract_text())
+
+        records.extend([m.groupdict() for m in matches])
+
+    return records, len(records)
+
+
 def build_sftp_file_asset(
     asset_key: Sequence[str],
     remote_dir_regex: str,
     remote_file_regex: str,
     ssh_resource_key: str,
     avro_schema,
+    slugify_cols: bool | None = True,
+    slugify_replacements: tuple | None = (),
     partitions_def=None,
     automation_condition=None,
-    slugify_cols=True,
-    slugify_replacements=(),
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
     group_name: str | None = None,
     exclude_dirs: list[str] | None = None,
+    pdf_row_pattern: str | None = None,
 ):
     if group_name is None:
         group_name = asset_key[1]
@@ -140,60 +173,48 @@ def build_sftp_file_asset(
 
         # exit if no matches
         if not file_matches:
-            context.log.error(
-                msg=(
-                    "Found no files matching: "
-                    f"{remote_dir_regex_composed}/{remote_file_regex_composed}"
-                )
+            msg = (
+                f"Found no files matching: {remote_dir_regex_composed}/"
+                f"{remote_file_regex_composed}"
             )
-            raise FileNotFoundError
 
-        if len(file_matches) > 1:
-            context.log.error(
-                msg=(
-                    "Found multiple files matching: "
-                    f"{remote_dir_regex_composed}/{remote_file_regex_composed}\n"
-                    f"{file_matches}"
-                )
+            context.log.error(msg=msg)
+            raise FileNotFoundError(msg)
+        # exit if multiple matches
+        elif len(file_matches) > 1:
+            msg = (
+                f"Found multiple files matching: {remote_dir_regex_composed}/"
+                f"{remote_file_regex_composed}\n{file_matches}"
             )
-            raise Exception
 
-        file_match = file_matches[0]
+            context.log.error(msg=msg)
+            raise Exception(msg)
+        else:
+            file_match = file_matches[0]
 
         local_filepath = ssh.sftp_get(
             remote_filepath=file_match, local_filepath=f"./env/{file_match}"
         )
 
-        # exit if file is empty
         if os.path.getsize(local_filepath) == 0:
             context.log.warning(msg=f"File is empty: {local_filepath}")
-            records = [{}]
-
-            yield Output(value=(records, avro_schema), metadata={"records": 0})
-            yield check_avro_schema_valid(
-                asset_key=context.asset_key, records=records, schema=avro_schema
+            records, n_rows = ([{}], 0)
+        elif remote_file_regex[-4:] == ".pdf":
+            records, n_rows = extract_pdf_to_dict(
+                stream=local_filepath,
+                pdf_row_pattern=_check.not_none(value=pdf_row_pattern),
             )
-            return
-
-        df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
-
-        df.replace({nan: None}, inplace=True)
-        if slugify_cols:
-            df.rename(
-                columns=lambda x: slugify(
-                    text=x, separator="_", replacements=slugify_replacements
-                ),
-                inplace=True,
+        else:
+            records, (n_rows, _) = extract_csv_to_dict(
+                local_filepath=local_filepath,
+                slugify_cols=_check.not_none(value=slugify_cols),
+                slugify_replacements=_check.not_none(value=slugify_replacements),
             )
 
-        records = df.to_dict(orient="records")
+            if n_rows == 0:
+                context.log.warning(msg="File contains 0 rows")
 
-        rows, _ = df.shape
-
-        if rows == 0:
-            context.log.warning(msg="File contains 0 rows")
-
-        yield Output(value=(records, avro_schema), metadata={"records": rows})
+        yield Output(value=(records, avro_schema), metadata={"records": n_rows})
         yield check_avro_schema_valid(
             asset_key=context.asset_key, records=records, schema=avro_schema
         )
@@ -317,7 +338,9 @@ def build_sftp_archive_asset(
         with zipfile.ZipFile(file=local_filepath) as zf:
             zf.extract(member=archive_file_regex_composed, path="./env")
 
-        local_filepath = f"./env/{archive_file_regex_composed}"
+        local_filepath = (
+            f"./env/{context.asset_key.to_user_string()}/{archive_file_regex_composed}"
+        )
 
         # exit if extracted file is empty
         if os.path.getsize(local_filepath) == 0:

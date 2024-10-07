@@ -58,3 +58,16 @@ sources:
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/eoc/"
             format: AVRO
             enable_logical_types: true
+      - name: src_fldoe__fte
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kippmiami
+              - fldoe
+              - fte
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/fldoe/fte/*"
+          options:
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/fte/"
+            format: AVRO
+            enable_logical_types: true
