@@ -61,11 +61,10 @@ select
 
     if(r.contact_most_recent_iep_date is not null, true, false) as is_iep,
     if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
-
     if(
         r.ktc_cohort
-        between {{ var("current_academic_year") }}
-        - 5 and {{ var("current_academic_year") }},
+        between {{ var("current_academic_year") - 5 }}
+        and {{ var("current_academic_year") }},
         true,
         false
     ) as is_college_cohort,
