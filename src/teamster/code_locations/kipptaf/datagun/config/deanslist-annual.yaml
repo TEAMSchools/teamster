@@ -153,6 +153,17 @@ assets:
       suffix: json.gz
     destination_config:
       name: deanslist
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_deanslist__star
+          schema: kipptaf_extracts
+    file_config:
+      stem: rpt_deanslist__star
+      suffix: json.gz
+    destination_config:
+      name: deanslist
   # increased resources
   - query_config:
       type: schema
