@@ -28,4 +28,4 @@ select
     parse_date('%m/%d/%Y', completion_date) as completion_date,
 
     if(passed_or_not_passed = 'Passed', 1.0, 0.0) as passed_or_not_passed_numeric,
-from {{ source("iready", "src_iready__personalized_instruction_by_lesson") }}
+from {{ source("iready", "src_iready__instruction_by_lesson") }}

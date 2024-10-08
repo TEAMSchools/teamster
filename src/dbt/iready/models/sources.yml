@@ -58,7 +58,7 @@ sources:
               }}/iready/instructional_usage_data/"
             format: AVRO
             enable_logical_types: true
-      - name: src_iready__personalized_instruction_by_lesson
+      - name: src_iready__instruction_by_lesson
         meta:
           dagster:
             parent_asset_key_path:
