@@ -5,7 +5,7 @@ with
                 annual_stretch_growth_measure,
                 annual_typical_growth_measure,
                 completion_date,
-                grouping,
+                `grouping`,
                 mid_on_grade_level_scale_score,
                 most_recent_diagnostic_y_n,
                 most_recent_diagnostic_ytd_y_n,
@@ -14,10 +14,10 @@ with
                 `subject`
             ),
 
+            cast(_dagster_partition_academic_year as int) as academic_year_int,
+
             parse_date('%m/%d/%Y', `start_date`) as `start_date`,
             parse_date('%m/%d/%Y', completion_date) as completion_date,
-
-            cast(_dagster_partition_academic_year as int) as academic_year_int,
 
             coalesce(
                 student_grade.string_value, cast(student_grade.long_value as string)
@@ -34,8 +34,8 @@ with
             ) as annual_typical_growth_measure,
 
             coalesce(
-                grouping.long_value, cast(grouping.double_value as int)
-            ) as grouping,
+                `grouping`.long_value, cast(`grouping`.double_value as int)
+            ) as `grouping`,
 
             coalesce(
                 mid_on_grade_level_scale_score.long_value,
