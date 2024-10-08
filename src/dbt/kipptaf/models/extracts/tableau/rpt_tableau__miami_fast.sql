@@ -226,6 +226,9 @@ select
         then false
     end as is_fldoe_growth,
 
+    (cwf.scale_high + 1) - ft.scale_score as fast_scale_points_to_growth,
+    cwp.scale_low - ft.scale_score as fast_scale_points_to_proficiency,
+
     row_number() over (
         partition by
             co.student_number,
@@ -285,6 +288,13 @@ left join
     and ft.scale_score between cwf.scale_low and cwf.scale_high
     and sc.source_system = cwf.source_system
     and sc.destination_system = cwf.destination_system
+left join
+    {{ ref("stg_assessments__iready_crosswalk") }} as cwp
+    on ft.assessment_subject = cwp.test_name
+    and ft.assessment_grade = cwp.grade_level
+    and sc.source_system = cwp.source_system
+    and sc.destination_system = cwp.destination_system
+    and cwp.sublevel_number = 6
 left join
     {{ ref("int_fldoe__fast_standard_performance_unpivot") }} as fs
     on co.fleid = fs.student_id
