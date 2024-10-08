@@ -145,7 +145,6 @@ select
     m.hos,
 
     a.mclass_student_number,
-    a.assessment_type,
     a.mclass_assessment_grade,
     a.mclass_period,
     a.mclass_client_date,
@@ -167,6 +166,8 @@ select
 
     f.nj_student_tier,
     f.tutoring_nj,
+
+    coalesce(a.assessment_type, 'Benchmark') as assessment_type,
 
     null as met_standard_goal,
     null as met_overall_goal,
@@ -249,7 +250,6 @@ select
     hos,
 
     mclass_student_number,
-    assessment_type,
     mclass_assessment_grade,
     mclass_period,
     mclass_client_date,
@@ -271,6 +271,8 @@ select
 
     nj_student_tier,
     tutoring_nj,
+
+    assessment_type,
 
     met_standard_goal,
     met_overall_goal,
