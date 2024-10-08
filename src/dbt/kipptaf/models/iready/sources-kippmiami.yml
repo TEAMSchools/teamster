@@ -3,8 +3,8 @@ version: 2
 sources:
   - name: kippmiami_iready
     schema:
-      "{% if env_var('DBT_DEV_IREADY_SCHEMA') != '' %}_dev_kippmiami_iready{% else
-      %}kippmiami_iready{% endif %}"
+      "{% if env_var('DBT_DEV') == 'true' %}_dev_kippmiami_iready{% else %}kippmiami_iready{% endif
+      %}"
     tables:
       - name: stg_iready__diagnostic_results
         meta:
