@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: kippnj_iready
-    schema: kippnewark_iready
+    schema:
+      "{% if env_var('DBT_DEV_IREADY_SCHEMA') != '' %}_dev_kippnewark_iready{% else
+      %}kippnewark_iready{% endif %}"
     tables:
       - name: stg_iready__diagnostic_results
         meta:
@@ -20,14 +22,6 @@ sources:
               - kippnewark
               - iready
               - stg_iready__instructional_usage_data
-      - name: stg_iready__personalized_instruction_by_lesson
-        meta:
-          dagster:
-            group: iready
-            asset_key:
-              - kippnewark
-              - iready
-              - stg_iready__personalized_instruction_by_lesson
       - name: stg_iready__instruction_by_lesson
         meta:
           dagster:
@@ -36,3 +30,11 @@ sources:
               - kippnewark
               - iready
               - stg_iready__instruction_by_lesson
+      - name: stg_iready__instruction_by_lesson_pro
+        meta:
+          dagster:
+            group: iready
+            asset_key:
+              - kippnewark
+              - iready
+              - stg_iready__instruction_by_lesson_pro
