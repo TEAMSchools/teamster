@@ -46,7 +46,7 @@
   },
   "dbt.deferConfigPerProject": {
     "src/dbt/kipptaf": {
-      "deferToProduction": true,
+      "deferToProduction": false,
       "favorState": false,
       "manifestPathForDeferral": "/workspaces/teamster/src/dbt/kipptaf/target",
       "manifestPathType": "local"
