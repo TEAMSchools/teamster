@@ -168,7 +168,8 @@ select
     f.nj_student_tier,
     f.tutoring_nj,
 
-    null as met_goal,
+    null as met_standard_goal,
+    null as met_overall_goal,
 
     right(s.test_code, 1) as expected_round,
 
@@ -271,7 +272,8 @@ select
     nj_student_tier,
     tutoring_nj,
 
-    met_goal,
+    met_standard_goal,
+    met_overall_goal,
 
     expected_round,
     expected_grade_level,
