@@ -3,8 +3,7 @@ version: 2
 sources:
   - name: iready
     schema: "{{ var('iready_schema', env_var('DBT_DEV_IREADY_SCHEMA', 'iready')) }}"
-    database:
-      "{% if target.type != 'spark' %}{{ var('iready_database', target.database) }}{% endif %}"
+    database: "{{ var('iready_database', target.database) }}"
     tags:
       - stage_external_sources
     tables:
