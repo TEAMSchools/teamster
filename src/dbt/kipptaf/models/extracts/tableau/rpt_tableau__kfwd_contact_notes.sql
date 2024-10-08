@@ -21,5 +21,8 @@ select
     cn.next_steps,
     cn.status,
     cn.type,
+
+    {{ date_to_fiscal_year(date_field="cn.date", start_month=7, year_source="start") }}
+    as academic_year,
 from {{ ref("int_kippadb__roster") }} as ktc
 inner join {{ ref("stg_kippadb__contact_note") }} as cn on ktc.contact_id = cn.contact
