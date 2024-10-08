@@ -27,6 +27,24 @@ with
             home_work_location_powerschool_school_id,
             home_work_location_name,
             business_unit_home_name
+    ),
+
+    mdo as (
+        select
+            lc.region,
+            max(
+                if(
+                    sr.job_title = 'Managing Director of Operations',
+                    sr.employee_number,
+                    null
+                )
+            ) as mdo_employee_number,
+        from {{ ref("base_people__staff_roster") }} as sr
+        left join
+            {{ ref("stg_people__location_crosswalk") }} as lc
+            on sr.home_work_location_name = lc.name
+        where sr.assignment_status in ('Active', 'Leave')
+        group by lc.region
     )
 
 select
@@ -64,6 +82,13 @@ select
     mdso.job_title as mdso_job_title,
     mdso.sam_account_name as mdso_sam_account_name,
 
+    mdo.employee_number as mdo_employee_number,
+    mdo.preferred_name_lastfirst as mdo_preferred_name_lastfirst,
+    mdo.mail as mdo_mail,
+    mdo.google_email as mdo_google_email,
+    mdo.job_title as mdo_job_title,
+    mdo.sam_account_name as mdo_sam_account_name,
+
 from school_leadership as l
 left join
     {{ ref("base_people__staff_roster") }} as sl
@@ -77,3 +102,7 @@ left join
 left join
     {{ ref("base_people__staff_roster") }} as mdso
     on dso.report_to_employee_number = mdso.employee_number
+left join mdo as m on l.business_unit_home_name = m.region
+left join
+    {{ ref("base_people__staff_roster") }} as mdo
+    on m.mdo_employee_number = mdo.employee_number
