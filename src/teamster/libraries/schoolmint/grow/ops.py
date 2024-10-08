@@ -85,7 +85,6 @@ def schoolmint_grow_user_update_op(
 
                 schoolmint_grow.delete(*request_args)
         except Exception as e:
-            context.log.exception(e)
             exception_str.append(str(e))
 
             exceptions.append("\t".join(exception_str))
