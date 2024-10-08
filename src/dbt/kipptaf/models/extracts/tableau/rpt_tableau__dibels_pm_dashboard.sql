@@ -156,8 +156,9 @@ with
             and s.expected_mclass_measure_standard = a.mclass_measure_standard
             and a.mclass_client_date between s.start_date and s.end_date
             and a.assessment_type = 'PM'
-        where s.goal_filter in ('1BOY->MOY3', '1BOY->MOY4')
-    -- and a.mclass_measure_standard_score is not null
+        where
+            s.goal_filter in ('1BOY->MOY3', '1BOY->MOY4')
+            and a.mclass_measure_standard_score is not null
     ),
 
     met_overall_goal_calculation_g1 as (
@@ -257,13 +258,30 @@ select
         s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
     ) as expected_grade_level,
 
-    if(a.mclass_measure_standard_score >= s.goal, true, false) as met_standard_goal,
-
     if(
-        s.grade_level = '1' and s.expected_round in ('3', '4'),
-        g1.met_overall_goal,
+        a.mclass_measure_standard_score is null,
+        null,
         if(a.mclass_measure_standard_score >= s.goal, true, false)
-    ) as met_overall_goal,
+    ) as met_standard_goal,
+
+    case
+        when
+            s.grade_level = '1'
+            and s.expected_test = 'BOY->MOY'
+            and s.expected_round in ('3', '4')
+            and a.mclass_measure_standard_score is not null
+        then g1.met_overall_goal
+        when
+            s.grade_level = '1'
+            and s.expected_test = 'BOY->MOY'
+            and s.expected_round in ('3', '4')
+            and a.mclass_measure_standard_score is null
+        then null
+        when a.mclass_measure_standard_score is null
+        then null
+        when a.mclass_measure_standard_score >= s.goal
+        then true
+    end as met_overall_goal,
 
 from students as s
 left join
