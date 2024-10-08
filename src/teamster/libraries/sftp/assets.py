@@ -193,7 +193,8 @@ def build_sftp_file_asset(
             file_match = file_matches[0]
 
         local_filepath = ssh.sftp_get(
-            remote_filepath=file_match, local_filepath=f"./env/{file_match}"
+            remote_filepath=file_match,
+            local_filepath=f"./env/{context.asset_key.to_user_string()}/{file_match}",
         )
 
         if os.path.getsize(local_filepath) == 0:
@@ -317,7 +318,8 @@ def build_sftp_archive_asset(
         file_match = file_matches[0]
 
         local_filepath = ssh.sftp_get(
-            remote_filepath=file_match, local_filepath=f"./env/{file_match}"
+            remote_filepath=file_match,
+            local_filepath=f"./env/{context.asset_key.to_user_string()}/{file_match}",
         )
 
         # exit if file is empty
@@ -336,42 +338,29 @@ def build_sftp_archive_asset(
         ).replace("\\", "")
 
         with zipfile.ZipFile(file=local_filepath) as zf:
-            zf.extract(member=archive_file_regex_composed, path="./env")
+            zf.extract(
+                member=archive_file_regex_composed,
+                path=f"./env/{context.asset_key.to_user_string()}",
+            )
 
         local_filepath = (
             f"./env/{context.asset_key.to_user_string()}/{archive_file_regex_composed}"
         )
 
-        # exit if extracted file is empty
         if os.path.getsize(local_filepath) == 0:
             context.log.warning(msg=f"File is empty: {local_filepath}")
-            records = [{}]
-
-            yield Output(value=(records, avro_schema), metadata={"records": 0})
-            yield check_avro_schema_valid(
-                asset_key=context.asset_key, records=records, schema=avro_schema
-            )
-            return
+            records, n_rows = ([{}], 0)
         else:
-            df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
+            records, (n_rows, _) = extract_csv_to_dict(
+                local_filepath=local_filepath,
+                slugify_cols=_check.not_none(value=slugify_cols),
+                slugify_replacements=_check.not_none(value=slugify_replacements),
+            )
 
-            df.replace({nan: None}, inplace=True)
-            if slugify_cols:
-                df.rename(
-                    columns=lambda x: slugify(
-                        text=x, separator="_", replacements=slugify_replacements
-                    ),
-                    inplace=True,
-                )
+            if n_rows == 0:
+                context.log.warning(msg="File contains 0 rows")
 
-            records = df.to_dict(orient="records")
-
-        rows, _ = df.shape
-
-        if rows == 0:
-            context.log.warning(msg="File contains 0 rows")
-
-        yield Output(value=(records, avro_schema), metadata={"records": rows})
+        yield Output(value=(records, avro_schema), metadata={"records": n_rows})
         yield check_avro_schema_valid(
             asset_key=context.asset_key, records=records, schema=avro_schema
         )
@@ -459,7 +448,8 @@ def build_sftp_folder_asset(
 
         for file in file_matches:
             local_filepath = ssh.sftp_get(
-                remote_filepath=file, local_filepath=f"./env/{file}"
+                remote_filepath=file,
+                local_filepath=f"./env/{context.asset_key.to_user_string()}/{file}",
             )
 
             # skip if file is empty
@@ -467,24 +457,17 @@ def build_sftp_folder_asset(
                 context.log.warning(msg=f"File is empty: {local_filepath}")
                 continue
 
-            df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
+            records, (n_rows, _) = extract_csv_to_dict(
+                local_filepath=local_filepath,
+                slugify_cols=_check.not_none(value=slugify_cols),
+                slugify_replacements=_check.not_none(value=slugify_replacements),
+            )
 
-            df.replace({nan: None}, inplace=True)
-            if slugify_cols:
-                df.rename(
-                    columns=lambda text: slugify(
-                        text=text, separator="_", replacements=slugify_replacements
-                    ),
-                    inplace=True,
-                )
-
-            rows, _ = df.shape
-
-            if rows == 0:
+            if n_rows == 0:
                 context.log.warning(msg="File contains 0 rows")
 
-            records.extend(df.to_dict(orient="records"))
-            record_count += rows
+            records.extend(records)
+            record_count += n_rows
 
         yield Output(value=(records, avro_schema), metadata={"records": record_count})
         yield check_avro_schema_valid(
