@@ -232,7 +232,6 @@ select
     m.hos,
 
     a.mclass_student_number,
-    a.assessment_type,
     a.mclass_assessment_grade,
     a.mclass_period,
     a.mclass_client_date,
@@ -251,6 +250,8 @@ select
 
     f.nj_student_tier,
     f.tutoring_nj,
+
+    coalesce(a.assessment_type, 'PM') as assessment_type,
 
     if(
         s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
