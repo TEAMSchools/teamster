@@ -10,6 +10,18 @@ with
         group by employee_number
     ),
 
+    round_eligible as (
+        select distinct
+            srh.employee_number, t.academic_year, t.code, false as round_eligible,
+        from {{ ref("base_people__staff_roster_history") }} as srh
+        inner join
+            `teamster-332318`.`kipptaf_reporting`.`stg_reporting__terms` as t
+            on assignment_status_effective_date
+            between date_sub(t.start_date, interval 6 week) and t.start_date
+            and t.type in ('PMS', 'PMC', 'TR')
+            and (assignment_status = 'Leave' or assignment_status_lag = 'Leave')
+    ),
+
     tracks as (
         select
             o.observation_id,
@@ -102,17 +114,25 @@ select
 
     regexp_replace(od.measurement_comments, r'<[^>]+>', '') as measurement_comments,
 
+    /* fix this*/
     case
-        when srh.business_unit_home_name = 'KIPP Miami'
+        when t.code = 'PM1' and srh.business_unit_home_name <> 'KIPP Miami'
+        then false
+        when t.code = 'PM1' and srh.job_title <> 'Teacher in Residence'
+        then false
+        when t.code = 'PM1' and srh.worker_original_hire_date <= '2024-04-01'
+        then false
+        when t.code = 'PM1' and tir.prior_year_tir
         then true
-        when srh.job_title = 'Teacher in Residence'
-        then true
-        when srh.worker_original_hire_date >= '{{ var("current_academic_year") }}-04-01'
-        then true
-        when tir.prior_year_tir is true
-        then true
-        else false
-    end as boy_eligible,
+        when
+            t.code <> 'PM1'
+            and srh.worker_original_hire_date >= date_sub(t.start_date, interval 6 week)
+        then false
+        when r.round_eligible = false
+        then false
+
+        else true
+    end as round_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as t
@@ -147,6 +167,11 @@ left join
     on srh.powerschool_teacher_number = tgl.teachernumber
     and t.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
+left join
+    round_eligible as r
+    on srh.employee_number = r.employee_number
+    and t.academic_year = r.academic_year
+    and t.code = r.code
 where
     (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
     and srh.assignment_status = 'Active'
@@ -215,7 +240,7 @@ select
 
     regexp_replace(od.measurement_comments, r'<[^>]+>', '') as measurement_comments,
 
-    null as boy_eligible,
+    null as round_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("int_performance_management__observation_details") }} as od
