@@ -1,10 +1,11 @@
 from dagster import MultiPartitionsDefinition, StaticPartitionsDefinition
 
-from teamster.code_locations.kippmiami import CODE_LOCATION
+from teamster.code_locations.kippmiami import CODE_LOCATION, CURRENT_FISCAL_YEAR
 from teamster.code_locations.kippmiami.fldoe.schema import (
     EOC_SCHEMA,
     FAST_SCHEMA,
     FSA_SCHEMA,
+    FTE_SCHEMA,
     SCIENCE_SCHEMA,
 )
 from teamster.libraries.sftp.assets import (
@@ -25,33 +26,22 @@ fast = build_sftp_folder_asset(
     partitions_def=MultiPartitionsDefinition(
         {
             "school_year_term": StaticPartitionsDefinition(
-                [
-                    "SY23/PM1",
-                    "SY23/PM2",
-                    "SY23/PM3",
-                    "SY24/PM1",
-                    "SY24/PM2",
-                    "SY24/PM3",
-                    "SY25/PM1",
-                    "SY25/PM2",
-                    "SY25/PM3",
-                ]
+                sorted(
+                    [
+                        f"SY{str(year)[-2:]}/PM{term}"
+                        for term in [1, 2, 3]
+                        for year in range(2023, CURRENT_FISCAL_YEAR.fiscal_year + 1)
+                    ]
+                )
             ),
             "grade_level_subject": StaticPartitionsDefinition(
-                [
-                    "Grade3FASTELAReading",
-                    "Grade3FASTMathematics",
-                    "Grade4FASTELAReading",
-                    "Grade4FASTMathematics",
-                    "Grade5FASTELAReading",
-                    "Grade5FASTMathematics",
-                    "Grade6FASTELAReading",
-                    "Grade6FASTMathematics",
-                    "Grade7FASTELAReading",
-                    "Grade7FASTMathematics",
-                    "Grade8FASTELAReading",
-                    "Grade8FASTMathematics",
-                ]
+                sorted(
+                    [
+                        f"Grade{grade}FAST{subject}"
+                        for subject in ["ELAReading", "Mathematics"]
+                        for grade in [3, 4, 5, 6, 7, 8]
+                    ]
+                )
             ),
         }
     ),
@@ -67,7 +57,9 @@ eoc = build_sftp_file_asset(
     avro_schema=EOC_SCHEMA,
     partitions_def=MultiPartitionsDefinition(
         {
-            "school_year_term": StaticPartitionsDefinition(["2023", "2024"]),
+            "school_year_term": StaticPartitionsDefinition(
+                [str(year) for year in range(2023, CURRENT_FISCAL_YEAR.fiscal_year + 1)]
+            ),
             "grade_level_subject": StaticPartitionsDefinition(
                 ["Civics", "B.E.S.T.Algebra1"]
             ),
@@ -85,12 +77,52 @@ science = build_sftp_file_asset(
     avro_schema=SCIENCE_SCHEMA,
     partitions_def=MultiPartitionsDefinition(
         {
-            "school_year_term": StaticPartitionsDefinition(["2023", "2024"]),
+            "school_year_term": StaticPartitionsDefinition(
+                [str(year) for year in range(2023, CURRENT_FISCAL_YEAR.fiscal_year + 1)]
+            ),
             "grade_level_subject": StaticPartitionsDefinition(["5", "8"]),
         }
     ),
 )
 
+fte = build_sftp_file_asset(
+    asset_key=[CODE_LOCATION, "fldoe", "fte"],
+    remote_dir_regex=(
+        r"/data-team/kippmiami/fldoe/fte/SY(?P<school_year>\w+)/Survey (?P<survey>\d)"
+    ),
+    remote_file_regex=r".+\.pdf",
+    ssh_resource_key="ssh_couchdrop",
+    avro_schema=FTE_SCHEMA,
+    pdf_row_pattern=(
+        r"\s+(?P<school_number>\d+)"
+        r"\s+(?P<student_id>\d+)"
+        r"\s+(?P<florida_student_id>[\dX]+)"
+        r"\s+(?P<student_name>[\D]+)"
+        r"\s+(?P<grade>\w+)"
+        r"\s+(?P<fte_capped>[\d\.]+)"
+        r"\s+(?P<fte_uncapped>[\d\.]+)"
+    ),
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "school_year": StaticPartitionsDefinition(
+                [
+                    str(year)[-2:]
+                    for year in range(2022, CURRENT_FISCAL_YEAR.fiscal_year + 1)
+                ]
+            ),
+            "survey": StaticPartitionsDefinition(["2", "3"]),
+        }
+    ),
+)
+
+assets = [
+    eoc,
+    fast,
+    fte,
+    science,
+]
+
+# archived
 fsa = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "fldoe", "fsa"],
     remote_dir_regex=r"/data-team/kippmiami/fldoe/fsa/student_scores",
@@ -109,9 +141,3 @@ fsa = build_sftp_file_asset(
         }
     ),
 )
-
-assets = [
-    eoc,
-    fast,
-    science,
-]

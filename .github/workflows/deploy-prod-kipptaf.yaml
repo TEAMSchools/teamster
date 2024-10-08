@@ -27,6 +27,7 @@ on:
       - src/teamster/libraries/performance_management/**
       - src/teamster/libraries/powerschool/enrollment/**
       - src/teamster/libraries/schoolmint/**
+      - src/teamster/libraries/sftp/**
       - src/teamster/libraries/smartrecruiters/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/tableau/**
@@ -48,6 +49,7 @@ on:
       - src/teamster/libraries/performance_management/**
       - src/teamster/libraries/powerschool/enrollment/**
       - src/teamster/libraries/schoolmint/**
+      - src/teamster/libraries/sftp/**
       - src/teamster/libraries/smartrecruiters/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/tableau/**

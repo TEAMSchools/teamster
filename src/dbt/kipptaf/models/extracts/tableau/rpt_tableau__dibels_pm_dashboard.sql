@@ -131,7 +131,7 @@ with
             )
     ),
 
-    goal_met_g1 as (
+    met_overall_goal_g1 as (
         select
             s.academic_year,
             s.student_number,
@@ -143,11 +143,13 @@ with
 
             a.mclass_measure_standard_score,
 
-            if(a.mclass_measure_standard_score >= s.goal, true, false) as met_goal,
+            if(
+                a.mclass_measure_standard_score >= s.goal, true, false
+            ) as met_overall_goal,
 
         from students as s
         left join
-            `kipptaf_amplify.int_amplify__all_assessments` as a
+            {{ ref("int_amplify__all_assessments") }} as a
             on s.academic_year = a.mclass_academic_year
             and s.student_number = a.mclass_student_number
             and s.expected_test = a.mclass_period
@@ -158,7 +160,7 @@ with
     -- and a.mclass_measure_standard_score is not null
     ),
 
-    goal_met_calculation_g1 as (
+    met_overall_goal_calculation_g1 as (
         select
             academic_year,
             student_number,
@@ -170,11 +172,11 @@ with
             max(cls) as cls,
             max(wrc) as wrc,
 
-            if(max(psf) or (max(cls) and max(wrc)), true, false) as met_goal,
+            if(max(psf) or (max(cls) and max(wrc)), true, false) as met_overall_goal,
 
         from
-            goal_met_g1 pivot (
-                max(met_goal)
+            met_overall_goal_g1 pivot (
+                max(met_overall_goal)
                 for expected_mclass_measure_standard in (
                     'Phonemic Awareness (PSF)' as psf,
                     'Letter Sounds (NWF-CLS)' as cls,
@@ -254,11 +256,13 @@ select
         s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
     ) as expected_grade_level,
 
+    if(a.mclass_measure_standard_score >= s.goal, true, false) as met_standard_goal,
+
     if(
         s.grade_level = '1' and s.expected_round in ('3', '4'),
-        g1.met_goal,
+        g1.met_overall_goal,
         if(a.mclass_measure_standard_score >= s.goal, true, false)
-    ) as met_goal,
+    ) as met_overall_goal,
 
 from students as s
 left join
@@ -275,7 +279,7 @@ left join
     and a.mclass_client_date between s.start_date and s.end_date
     and a.assessment_type = 'PM'
 left join
-    goal_met_calculation_g1 as g1
+    met_overall_goal_calculation_g1 as g1
     on s.academic_year = g1.academic_year
     and s.student_number = g1.student_number
     and s.expected_test = g1.expected_test

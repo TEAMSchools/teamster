@@ -1,6 +1,8 @@
 #!/bin/bash
 
 if [[ -z ${1} ]]; then
+  dagster dev -m teamster.code_locations.dev.definitions
+elif [[ ${1} == "all" ]]; then
   dagster dev \
     -m teamster.code_locations.kippcamden.definitions \
     -m teamster.code_locations.kippmiami.definitions \
