@@ -3,19 +3,21 @@ with
         select
             il.academic_year_int,
             il.student_id,
-            lower(il.subject) as subject,
 
             cw.powerschool_school_id,
 
             pw.week_start_monday,
 
+            lower(il.subject) as `subject`,
+
             if(
                 sum(il.passed_or_not_passed_numeric) >= 2, 1, 0
             ) as is_pass_2_lessons_int,
+
             if(
                 sum(il.passed_or_not_passed_numeric) >= 4, 1, 0
             ) as is_pass_4_lessons_int,
-        from {{ ref("stg_iready__personalized_instruction_by_lesson") }} as il
+        from {{ ref("stg_iready__instruction_by_lesson") }} as il
         inner join
             {{ ref("stg_people__location_crosswalk") }} as cw on il.school = cw.name
         inner join
@@ -44,7 +46,7 @@ with
         from
             iready_weekly pivot (
                 max(is_pass_2_lessons_int) as is_pass_2_lessons_int,
-                max(is_pass_4_lessons_int) as is_pass_4_lessons_int for subject
+                max(is_pass_4_lessons_int) as is_pass_4_lessons_int for `subject`
                 in ('reading', 'math')
             )
     ),
@@ -101,6 +103,8 @@ with
 
             lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
+            cast(r.assessment_id as string) as assessment_id,
+
             if(co.lep_status, 'ML', 'Not ML') as ml_status,
             if(co.is_504, 'Has 504', 'No 504') as status_504,
             if(
@@ -115,11 +119,11 @@ with
                 false
             ) as is_current_week,
 
-            safe_cast(r.assessment_id as string) as assessment_id,
+            if(r.date_taken is not null, 1, 0) as is_complete,
+
             case
                 when r.is_mastery then 1 when not r.is_mastery then 0
             end as is_mastery_int,
-            if(r.date_taken is not null, 1, 0) as is_complete,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("int_powerschool__calendar_week") }} as w
@@ -162,46 +166,96 @@ with
         where
             co.enroll_status = 0
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
-            /* Manual filter to avoid dashboard roll-up #TODO: Remove SY26 */
+            {# TODO: Remove SY26 #}
+            /* Manual filter to avoid dashboard roll-up */
             and sc.module_type != 'WPP'
+    ),
+
+    microgoals_long as (
+        select
+            u.internal_id_int as employee_number,
+
+            m.goal_name,
+
+            date_add(
+                date(timestamp_trunc(timestamp(a.created), week)), interval 1 day
+            ) as week_start_monday,
+        from {{ ref("stg_schoolmint_grow__users") }} as u
+        left join
+            {{ ref("stg_schoolmint_grow__assignments") }} as a on u.user_id = a.user_id
+        left join
+            {{ ref("stg_schoolmint_grow__assignments__tags") }} as t
+            on a.assignment_id = t.assignment_id
+        left join
+            {{ ref("stg_schoolmint_grow__microgoals") }} as m
+            on t.tag_id = m.goal_tag_id
+        where m.goal_code is not null
     ),
 
     microgoals as (
         select
             employee_number,
             week_start_monday,
+
             string_agg(goal_name, ', ') as microgoals,
-        from
-            (
-                select
-                    u.internal_id_int as employee_number,
-
-                    m.goal_name,
-
-                    date_add(
-                        date(timestamp_trunc(timestamp(a.created), week)),
-                        interval 1 day
-                    ) as week_start_monday,
-                from {{ ref("stg_schoolmint_grow__users") }} as u
-                left join
-                    {{ ref("stg_schoolmint_grow__assignments") }} as a
-                    on u.user_id = a.user_id
-                left join
-                    {{ ref("stg_schoolmint_grow__assignments__tags") }} as t
-                    on a.assignment_id = t.assignment_id
-                left join
-                    {{ ref("stg_schoolmint_grow__microgoals") }} as m
-                    on t.tag_id = m.goal_tag_id
-                where m.goal_code is not null
-            )
+        from microgoals_long
         group by employee_number, week_start_monday
     )
 
 /* ES/MS assessments */
 select
-    co.*,
+    co.student_number,
+    co.student_name,
+    co.academic_year,
+    co.schoolid,
+    co.school,
+    co.region,
+    co.grade_level,
+    co.enroll_status,
+    co.cohort,
+    co.school_level,
+    co.gender,
+    co.ethnicity,
+    co.week_start_monday,
+    co.week_end_sunday,
+    co.days_in_session,
+    co.term,
+    co.title,
+    co.subject_area,
+    co.administered_at,
+    co.module_type,
+    co.module_code,
+    co.date_taken,
+    co.response_type,
+    co.response_type_code,
+    co.response_type_description,
+    co.response_type_root_description,
+    co.percent_correct,
+    co.is_mastery,
+    co.performance_band_label_number,
+    co.performance_band_label,
+    co.is_replacement,
+    co.standard_domain,
+    co.course_section,
+    co.course_name,
+    co.course_number,
+    co.course_credittype,
+    co.course_teachernumber,
+    co.course_teacher_name,
+    co.homeroom_section,
+    co.homeroom_teachernumber,
+    co.homeroom_teacher_name,
+    co.head_of_school,
+    co.ml_status,
+    co.status_504,
+    co.self_contained_status,
+    co.iep_status,
+    co.is_current_week,
+    co.assessment_id,
+    co.is_mastery_int,
+    co.is_complete,
 
-    qbl.qbl,
+    qbls.qbl,
 
     g.grade_goal,
     g.school_goal,
@@ -211,7 +265,7 @@ select
     sf.nj_student_tier,
     sf.dibels_most_recent_composite,
 
-    if(qbl.qbl is not null, true, false) as is_qbl,
+    if(qbls.qbl is not null, true, false) as is_qbl,
 
     coalesce(ip.is_pass_2_lessons_int_reading, 0) as is_passed_iready_2plus_reading_int,
     coalesce(ip.is_pass_4_lessons_int_reading, 0) as is_passed_iready_4plus_reading_int,
@@ -224,14 +278,14 @@ left join
     and co.academic_year = sf.academic_year
     and co.subject_area = sf.illuminate_subject_area
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as qbl
-    on co.academic_year = qbl.academic_year
-    and co.term = qbl.term_name
-    and co.region = qbl.region
-    and co.grade_level = qbl.grade_level
-    and co.response_type_code = qbl.standard_code
-    and co.subject_area = qbl.illuminate_subject_area
-    and qbl.qbl is not null
+    {{ ref("stg_assessments__qbls_power_standards") }} as qbls
+    on co.academic_year = qbls.academic_year
+    and co.term = qbls.term_name
+    and co.region = qbls.region
+    and co.grade_level = qbls.grade_level
+    and co.response_type_code = qbls.standard_code
+    and co.subject_area = qbls.illuminate_subject_area
+    and qbls.qbl is not null
 left join
     {{ ref("int_assessments__academic_goals") }} as g
     on co.schoolid = g.school_id
@@ -249,9 +303,58 @@ union all
 
 /* HS assessments */
 select
-    co.*,
+    co.student_number,
+    co.student_name,
+    co.academic_year,
+    co.schoolid,
+    co.school,
+    co.region,
+    co.grade_level,
+    co.enroll_status,
+    co.cohort,
+    co.school_level,
+    co.gender,
+    co.ethnicity,
+    co.week_start_monday,
+    co.week_end_sunday,
+    co.days_in_session,
+    co.term,
+    co.title,
+    co.subject_area,
+    co.administered_at,
+    co.module_type,
+    co.module_code,
+    co.date_taken,
+    co.response_type,
+    co.response_type_code,
+    co.response_type_description,
+    co.response_type_root_description,
+    co.percent_correct,
+    co.is_mastery,
+    co.performance_band_label_number,
+    co.performance_band_label,
+    co.is_replacement,
+    co.standard_domain,
+    co.course_section,
+    co.course_name,
+    co.course_number,
+    co.course_credittype,
+    co.course_teachernumber,
+    co.course_teacher_name,
+    co.homeroom_section,
+    co.homeroom_teachernumber,
+    co.homeroom_teacher_name,
+    co.head_of_school,
+    co.ml_status,
+    co.status_504,
+    co.self_contained_status,
+    co.iep_status,
+    co.is_current_week,
+    co.assessment_id,
+    co.is_mastery_int,
+    co.is_complete,
 
-    qbl.qbl,
+    qbls.qbl,
 
     g.grade_goal,
     g.school_goal,
@@ -259,9 +362,10 @@ select
     g.organization_goal,
 
     sf.nj_student_tier,
+
     null as dibels_most_recent_composite,
 
-    if(qbl.qbl is not null, true, false) as is_qbl,
+    if(qbls.qbl is not null, true, false) as is_qbl,
 
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
@@ -274,12 +378,12 @@ left join
     and co.academic_year = sf.academic_year
     and co.course_credittype = sf.powerschool_credittype
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as qbl
-    on co.academic_year = qbl.academic_year
-    and co.term = qbl.term_name
-    and co.region = qbl.region
-    and co.response_type_code = qbl.standard_code
-    and co.subject_area = qbl.illuminate_subject_area
+    {{ ref("stg_assessments__qbls_power_standards") }} as qbls
+    on co.academic_year = qbls.academic_year
+    and co.term = qbls.term_name
+    and co.region = qbls.region
+    and co.response_type_code = qbls.standard_code
+    and co.subject_area = qbls.illuminate_subject_area
 left join
     {{ ref("int_assessments__academic_goals") }} as g
     on co.schoolid = g.school_id
@@ -288,6 +392,7 @@ left join
 where co.grade_level between 9 and 12
 
 union all
+
 /* walkthrough data */
 select
     null as student_number,
@@ -325,20 +430,22 @@ select
     o.rubric_name as title,
     m.microgoals as subject_area,
     o.observed_at as administered_at,
+
     null as module_type,
     null as module_code,
-
     null as date_taken,
     'walkthrough' as response_type,
     null as response_type_code,
+
     o.measurement_name as response_type_description,
     o.strand_name as response_type_root_description,
     o.observation_score as percent_correct,
+
     if(o.row_score = 1, true, false) as is_mastery,
+
     null as performance_band_label_number,
     null as performance_band_label,
     null as is_replacement,
-
     null as standard_domain,
     null as course_section,
     null as course_name,
@@ -346,10 +453,12 @@ select
     null as course_credittype,
 
     r.powerschool_teacher_number as course_teachernumber,
+
     t.lastfirst as course_teacher_name,
 
     null as homeroom_section,
     null as homeroom_teachernumber,
+
     r.report_to_user_principal_name as homeroom_teacher_name,
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
@@ -368,19 +477,16 @@ select
 
     o.observation_id as assessment_id,
     o.row_score as is_mastery_int,
-    null as is_complete,
 
+    null as is_complete,
     null as qbl,
     null as grade_goal,
     null as school_goal,
     null as region_goal,
     null as organization_goal,
-
     null as nj_student_tier,
     null as dibels_most_recent_composite,
-
     null as is_qbl,
-
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
     null as is_passed_iready_2plus_math_int,
