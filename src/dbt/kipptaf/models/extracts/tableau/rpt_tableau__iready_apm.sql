@@ -2,8 +2,9 @@ with
     expanded_terms as (
         select
             academic_year,
-            name,
-            start_date,
+            `name`,
+            `start_date`,
+
             case
                 region
                 when 'KIPP Miami'
@@ -13,10 +14,10 @@ with
                 when 'KIPP Cooper Norcross Academy'
                 then 'Camden'
             end as region,
-            -- end_date contains test window end date
-            -- this needs continuous dates
+
+            /* end_date contains test window end date this needs continuous dates */
             coalesce(
-                lead(start_date, 1) over (
+                lead(`start_date`, 1) over (
                     partition by academic_year, region order by code asc
                 )
                 - 1,
@@ -44,7 +45,7 @@ select
     co.school,
     co.gifted_and_talented,
 
-    subj as subject,
+    subj as `subject`,
 
     w.week_start_monday,
     w.week_end_sunday,
@@ -99,9 +100,11 @@ select
         true,
         false
     ) as is_curterm,
+
     concat(
         left(co.student_first_name, 1), '. ', co.student_last_name
     ) as student_name_short,
+
     dr.mid_on_grade_level_scale_score
     - dr.overall_scale_score as scale_pts_to_mid_on_grade_level,
 from {{ ref("int_tableau__student_enrollments") }} as co
@@ -118,7 +121,7 @@ left join
     and co.region = rt.region
     and w.week_start_monday between rt.start_date and rt.end_date
 left join
-    {{ ref("stg_iready__personalized_instruction_by_lesson") }} as il
+    {{ ref("stg_iready__instruction_by_lesson") }} as il
     on co.student_number = il.student_id
     and subj = il.subject
     and il.completion_date between w.week_start_monday and w.week_end_sunday
