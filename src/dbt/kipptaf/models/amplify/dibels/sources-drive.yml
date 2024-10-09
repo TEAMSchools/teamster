@@ -8,36 +8,6 @@ sources:
     tags:
       - stage_external_sources
     tables:
-      - name: src_amplify__dibels_goals_wide
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_amplify__dibels_goals_wide
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - amplify
-              - dibels
-              - goals_wide
-      - name: src_amplify__dibels_goals_long
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_amplify__dibels_goals_long
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - amplify
-              - dibels
-              - goals_long
       - name: src_amplify__dibels_pm_expectations
         external:
           options:
@@ -46,6 +16,13 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_amplify__dibels_pm_expectations
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - amplify
+              - dibels
+              - pm_expectations
         columns:
           - name: region
             data_type: string
@@ -69,13 +46,6 @@ sources:
             data_type: int
           - name: eoy_benchmark
             data_type: int
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - amplify
-              - dibels
-              - pm_expectations
       - name: src_amplify__dibels_measures
         external:
           options:
@@ -84,6 +54,13 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_amplify__dibels_measures
             skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - amplify
+              - dibels
+              - measures
         columns:
           - name: grade_level
             data_type: string
@@ -93,10 +70,37 @@ sources:
             data_type: string
           - name: description
             data_type: string
+      - name: src_amplify__dibels_goals_wide
+        config:
+          enabled: false
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_goals_wide
+            skip_leading_rows: 1
         meta:
           dagster:
             parent_asset_key_path:
               - kipptaf
               - amplify
               - dibels
-              - measures
+              - goals_wide
+      - name: src_amplify__dibels_goals_long
+        config:
+          enabled: false
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_goals_long
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - amplify
+              - dibels
+              - goals_long
