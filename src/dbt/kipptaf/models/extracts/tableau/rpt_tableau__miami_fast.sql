@@ -18,10 +18,11 @@ with
     iready_lessons as (
         select
             student_id,
-            subject,
+            `subject`,
+
             count(distinct lesson_id) as total_lessons,
             sum(passed_or_not_passed_numeric) as lessons_passed,
-        from {{ ref("stg_iready__personalized_instruction_by_lesson") }}
+        from {{ ref("stg_iready__instruction_by_lesson") }}
         where
             completion_date in (
                 select date_value,
@@ -36,7 +37,7 @@ with
                         )
                     ) as date_value
             )
-        group by student_id, subject
+        group by student_id, `subject`
     ),
 
     pre_filter_qaf as (
@@ -55,21 +56,9 @@ with
 
     scale_crosswalk as (
         select
-            2022 as academic_year,
             administration_window,
-            'FAST' as source_system,
-            'FL' as destination_system,
-        from unnest(['PM1', 'PM2']) as administration_window
-        union all
-        select
-            2022 as academic_year,
-            'PM3' as administration_window,
-            'FAST_NEW' as source_system,
-            'FL' as destination_system,
-        union all
-        select
             academic_year,
-            administration_window,
+
             'FAST_NEW' as source_system,
             'FL' as destination_system,
         from
@@ -77,6 +66,24 @@ with
                 generate_array(2023, {{ var("current_academic_year") }})
             ) as academic_year
         cross join unnest(['PM1', 'PM2', 'PM3']) as administration_window
+
+        union all
+
+        select
+            administration_window,
+
+            2022 as academic_year,
+            'FAST' as source_system,
+            'FL' as destination_system,
+        from unnest(['PM1', 'PM2']) as administration_window
+
+        union all
+
+        select
+            'PM3' as administration_window,
+            2022 as academic_year,
+            'FAST_NEW' as source_system,
+            'FL' as destination_system,
     ),
 
     prev_pm3 as (
@@ -90,6 +97,7 @@ with
             i.sublevel_number as prev_pm3_sublevel_number,
 
             f.academic_year + 1 as academic_year_next,
+
             round(
                 rank() over (
                     partition by
