@@ -18,7 +18,7 @@ with
             `teamster-332318`.`kipptaf_reporting`.`stg_reporting__terms` as t
             on assignment_status_effective_date
             between date_sub(t.lockbox_date, interval 6 week) and t.lockbox_date
-            and t.type in ('PMS', 'PMC', 'TR')
+            and t.type = 'PMS'
             and (assignment_status = 'Leave' or assignment_status_lag = 'Leave')
     ),
 
@@ -137,7 +137,7 @@ select
             t.code in ('PM2', 'PM3')
             and (
                 srh.worker_original_hire_date
-                >= date_sub(t.lockbox_date, interval 6 week)
+                <= date_sub(t.lockbox_date, interval 6 week)
             )
         then true
         else false
