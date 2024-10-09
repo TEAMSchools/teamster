@@ -17,7 +17,7 @@ with
         inner join
             `teamster-332318`.`kipptaf_reporting`.`stg_reporting__terms` as t
             on assignment_status_effective_date
-            between date_sub(t.start_date, interval 6 week) and t.start_date
+            between date_sub(t.lockbox_date, interval 6 week) and t.lockbox_date
             and t.type in ('PMS', 'PMC', 'TR')
             and (assignment_status = 'Leave' or assignment_status_lag = 'Leave')
     ),
@@ -75,6 +75,7 @@ select
     t.is_current,
     t.start_date,
     t.end_date,
+    t.lockbox_date,
 
     os.final_score,
     os.final_tier,
@@ -116,21 +117,23 @@ select
 
     /* fix this*/
     case
-        when t.code = 'PM1' and srh.business_unit_home_name <> 'KIPP Miami'
-        then false
-        when t.code = 'PM1' and srh.job_title <> 'Teacher in Residence'
-        then false
-        when t.code = 'PM1' and srh.worker_original_hire_date <= '2024-04-01'
-        then false
-        when t.code = 'PM1' and tir.prior_year_tir
+        when
+            t.code = 'PM1'
+            and (
+                srh.job_title = 'Teacher in Residence'
+                or srh.business_unit_home_name = 'KIPP Miami'
+                or srh.worker_original_hire_date >= '2024-04-01'
+                or tir.prior_year_tir
+            )
         then true
         when
-            t.code <> 'PM1'
-            and srh.worker_original_hire_date >= date_sub(t.start_date, interval 6 week)
+            t.code in ('PM2', 'PM3')
+            and (
+                srh.worker_original_hire_date
+                >= date_sub(t.lockbox_date, interval 6 week)
+                or r.round_eligible = false
+            )
         then false
-        when r.round_eligible = false
-        then false
-
         else true
     end as round_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
