@@ -21,5 +21,6 @@ select
     cn.next_steps,
     cn.status,
     cn.type,
+    cn.academic_year,
 from {{ ref("int_kippadb__roster") }} as ktc
 inner join {{ ref("stg_kippadb__contact_note") }} as cn on ktc.contact_id = cn.contact
