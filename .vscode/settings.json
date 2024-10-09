@@ -51,5 +51,6 @@
       "manifestPathForDeferral": "/workspaces/teamster/src/dbt/kipptaf/target",
       "manifestPathType": "local"
     }
-  }
+  },
+  "dbt.perspectiveTheme": "Vintage"
 }
