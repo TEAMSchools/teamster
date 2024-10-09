@@ -220,7 +220,14 @@ with
     ),
 
     state_comps as (
-        select academic_year, test_name, test_code, region, city, `state`,
+        select
+            academic_year,
+            test_name,
+            test_code,
+            region,
+            city,
+            `state`,
+            'Spring' as season,
         from
             {{ ref("stg_assessments__state_test_comparison") }}
             pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
@@ -305,6 +312,7 @@ left join
     and s.assessment_name = c.test_name
     and s.test_code = c.test_code
     and s.region = c.region
+    and s.season = c.season
 left join
     goals as g
     on s.academic_year = g.academic_year
