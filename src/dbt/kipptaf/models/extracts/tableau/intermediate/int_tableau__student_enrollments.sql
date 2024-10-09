@@ -94,7 +94,6 @@ select
         when e.region = 'Miami'
         then 'FL'
     end as `state`,
-
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     ms_grad_sub as m
