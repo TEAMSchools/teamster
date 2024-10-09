@@ -1,7 +1,7 @@
 import json
+from datetime import datetime
 from itertools import groupby
 
-import pendulum
 from dagster import (
     AssetMaterialization,
     SensorEvaluationContext,
@@ -9,7 +9,6 @@ from dagster import (
     _check,
     sensor,
 )
-from gspread.exceptions import APIError
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf._google.sheets.assets import asset_specs
@@ -33,22 +32,21 @@ def google_sheets_asset_sensor(
     for sheet_id, grouper in ASSET_KEYS_BY_SHEET_ID:
         asset_keys = [g.key for g in grouper]
 
-        try:
-            spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
-        except APIError as e:
-            if str(e.code)[0] == "5":
-                context.log.error(msg=str(e))
-                continue
-            else:
-                raise e
+        spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
 
-        last_update_time = _check.inst(
-            pendulum.parse(text=spreadsheet.get_lastUpdateTime()), pendulum.DateTime
-        )
-
-        last_update_timestamp = last_update_time.timestamp()
+        last_update_timestamp = datetime.fromisoformat(
+            spreadsheet.get_lastUpdateTime()
+        ).timestamp()
 
         last_materialization_timestamp = cursor.get(sheet_id, 0)
+
+        context.log.debug(
+            msg=(
+                f"{sheet_id}: "
+                f"{last_update_timestamp} > {last_materialization_timestamp}: "
+                f"{last_update_timestamp > last_materialization_timestamp}"
+            )
+        )
 
         if last_update_timestamp > last_materialization_timestamp:
             context.log.info(asset_keys)
