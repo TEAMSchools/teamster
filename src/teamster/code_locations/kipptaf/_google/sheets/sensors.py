@@ -14,10 +14,6 @@ from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf._google.sheets.assets import asset_specs
 from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 
-ASSET_KEYS_BY_SHEET_ID = groupby(
-    iterable=asset_specs, key=lambda x: x.metadata["sheet_id"]
-)
-
 
 @sensor(
     name=f"{CODE_LOCATION}_google_sheets_asset_sensor",
@@ -29,8 +25,10 @@ def google_sheets_asset_sensor(
     cursor: dict = json.loads(context.cursor or "{}")
     asset_events: list = []
 
-    for sheet_id, grouper in ASSET_KEYS_BY_SHEET_ID:
-        asset_keys = [g.key for g in grouper]
+    for sheet_id, group in groupby(
+        iterable=asset_specs, key=lambda x: x.metadata["sheet_id"]
+    ):
+        asset_keys = [g.key for g in group]
 
         spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
 
