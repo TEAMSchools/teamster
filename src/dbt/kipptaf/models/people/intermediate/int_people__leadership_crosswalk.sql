@@ -4,18 +4,16 @@ with
             home_work_location_powerschool_school_id,
             home_work_location_name,
 
-            max(
-                coalesce(
-                    if(job_title = 'Director School Operations', employee_number, null),
-                    if(job_title = 'Director Campus Operations', employee_number, null)
-                )
+            coalesce(
+                max(
+                    if(job_title = 'Director School Operations', employee_number, null)
+                ),
+                max(if(job_title = 'Director Campus Operations', employee_number, null))
             ) as dso_employee_number,
 
-            max(
-                coalesce(
-                    if(job_title = 'School Leader', employee_number, null),
-                    if(job_title = 'School Leader in Residence', employee_number, null)
-                )
+            coalesce(
+                max(if(job_title = 'School Leader', employee_number, null)),
+                max(if(job_title = 'School Leader in Residence', employee_number, null))
             ) as sl_employee_number,
         from {{ ref("int_people__staff_roster") }}
         where
