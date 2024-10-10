@@ -76,6 +76,7 @@ assets:
     select_columns:
       - studentsdcid
       - c_504_status
+      - cr_prevschoolname
+      - fleid
       - infosnap_id
       - media_release
-      - fleid
