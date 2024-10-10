@@ -57,25 +57,6 @@ with
         from other_chiefs as o
     ),
 
-    /* selecting the MDO from each region*/
-    mdo as (
-        select
-            lc.region,
-            max(
-                if(
-                    sr.job_title = 'Managing Director of Operations',
-                    sr.employee_number,
-                    null
-                )
-            ) as mdo_employee_number,
-        from {{ ref("base_people__staff_roster") }} as sr
-        left join
-            {{ ref("stg_people__location_crosswalk") }} as lc
-            on sr.home_work_location_name = lc.name
-        where sr.assignment_status = 'Active'
-        group by lc.region
-    ),
-
     /* assigning approval routes according to location, entity, manager's entity*/
     route_assignments as (
         select
@@ -103,8 +84,7 @@ with
             lc.sl_employee_number,
             lc.head_of_school_employee_number,
             lc.mdso_employee_number,
-
-            mdo.mdo_employee_number,
+            lc.mdo_employee_number,
 
             k.ktaf_approver,
 
@@ -145,7 +125,6 @@ with
         left join
             {{ ref("int_people__leadership_crosswalk") }} as lc
             on sr.home_work_location_name = lc.home_work_location_name
-        left join mdo on sr.business_unit_home_name = mdo.region
         left join
             ktaf_approvers as k on sr.department_home_name = k.department_home_name
 
