@@ -3,7 +3,7 @@
     {{
         config(
             enabled=false,
-            target_schema=snapshot_target_schema(target_schema="kipptaf_people"),
+            target_schema=generate_schema_name("people"),
             unique_key="work_assignment_id",
             strategy="check",
             check_cols="all",
