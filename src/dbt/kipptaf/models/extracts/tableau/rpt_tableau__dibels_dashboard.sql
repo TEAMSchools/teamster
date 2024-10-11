@@ -133,6 +133,7 @@ select
     s.expected_mclass_measure_name,
     s.expected_mclass_measure_standard,
     null as goal,
+    null as admin_benchmark,
 
     m.schedule_student_number,
     m.schedule_student_grade_level,
@@ -171,6 +172,7 @@ select
 
     null as met_standard_goal,
     null as met_overall_goal,
+    null as met_bm_goal,
 
     right(s.test_code, 1) as expected_round,
 
@@ -238,6 +240,7 @@ select
     expected_mclass_measure_name,
     expected_mclass_measure_standard,
     goal,
+    admin_benchmark,
 
     schedule_student_number,
     schedule_student_grade_level,
@@ -276,6 +279,7 @@ select
 
     met_standard_goal,
     met_overall_goal,
+    met_bm_goal,
 
     expected_round,
     expected_grade_level,
