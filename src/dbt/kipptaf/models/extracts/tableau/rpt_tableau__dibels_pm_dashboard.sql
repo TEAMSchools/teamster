@@ -61,6 +61,10 @@ with
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
 
+            if(
+                a.period = 'BOY->MOY', a.moy_benchmark, a.eoy_benchmark
+            ) as admin_benchmark,
+
             case
                 a.measure_level_code
                 when 'LNF'
@@ -131,7 +135,7 @@ with
             )
     ),
 
-    met_overall_goal_g1 as (
+    met_overall_goal_or_bm_g1 as (
         select
             s.academic_year,
             s.student_number,
@@ -146,6 +150,10 @@ with
             if(
                 a.mclass_measure_standard_score >= s.goal, true, false
             ) as met_overall_goal,
+
+            if(
+                a.mclass_measure_standard_score >= s.admin_benchmark, true, false
+            ) as met_admin_benchmark,
 
         from students as s
         left join
@@ -176,8 +184,34 @@ with
             if(max(psf) or (max(cls) and max(wrc)), true, false) as met_overall_goal,
 
         from
-            met_overall_goal_g1 pivot (
+            met_overall_goal_or_bm_g1 pivot (
                 max(met_overall_goal)
+                for expected_mclass_measure_standard in (
+                    'Phonemic Awareness (PSF)' as psf,
+                    'Letter Sounds (NWF-CLS)' as cls,
+                    'Decoding (NWF-WRC)' as wrc
+                )
+            ) as pvt
+        group by all
+    ),
+
+    met_overall_bm_calculation_g1 as (
+        select
+            academic_year,
+            student_number,
+            grade_level,
+            expected_test,
+            expected_round,
+
+            max(psf) as psf,
+            max(cls) as cls,
+            max(wrc) as wrc,
+
+            if(max(psf) or (max(cls) and max(wrc)), true, false) as met_bm_benchmark,
+
+        from
+            met_overall_goal_or_bm_g1 pivot (
+                max(met_admin_benchmark)
                 for expected_mclass_measure_standard in (
                     'Phonemic Awareness (PSF)' as psf,
                     'Letter Sounds (NWF-CLS)' as cls,
@@ -221,6 +255,7 @@ select
     s.expected_mclass_measure_name,
     s.expected_mclass_measure_standard,
     s.goal,
+    s.admin_benchmark,
 
     m.schedule_student_number,
     m.schedule_student_grade_level,
@@ -283,6 +318,26 @@ select
         then true
     end as met_overall_goal,
 
+    case
+        when
+            s.grade_level = '1'
+            and s.expected_test = 'BOY->MOY'
+            and s.expected_round in ('3', '4')
+            and a.mclass_measure_standard_score is not null
+        then bm1.met_bm_benchmark
+        when
+            s.grade_level = '1'
+            and s.expected_test = 'BOY->MOY'
+            and s.expected_round in ('3', '4')
+            and a.mclass_measure_standard_score is null
+        then null
+        when a.mclass_measure_standard_score is null
+        then null
+        when a.mclass_measure_standard_score >= s.admin_benchmark
+        then true
+        else false
+    end as met_bm_goal,
+
 from students as s
 left join
     schedules as m
@@ -303,6 +358,12 @@ left join
     and s.student_number = g1.student_number
     and s.expected_test = g1.expected_test
     and s.expected_round = g1.expected_round
+left join
+    met_overall_bm_calculation_g1 as bm1
+    on s.academic_year = bm1.academic_year
+    and s.student_number = bm1.student_number
+    and s.expected_test = bm1.expected_test
+    and s.expected_round = bm1.expected_round
 left join
     {{ ref("int_reporting__student_filters") }} as f
     on s.academic_year = f.academic_year
