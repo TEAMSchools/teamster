@@ -57,8 +57,6 @@ def transform_data(
     if file_format is None:
         file_format = {}
 
-    transformed_data = None
-
     if file_suffix == "json":
         transformed_data = json.dumps(obj=data, cls=CustomJSONEncoder).encode(
             file_encoding
@@ -68,9 +66,9 @@ def transform_data(
             json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
         )
     elif file_suffix in ["csv", "txt", "tsv"]:
-        f = StringIO()
-
         write_header = file_format.pop("header", True)
+
+        f = StringIO()
 
         dict_writer = DictWriter(f=f, fieldnames=data[0].keys(), **file_format)
 
@@ -80,6 +78,8 @@ def transform_data(
         dict_writer.writerows(data)
 
         transformed_data = f.getvalue().encode(file_encoding)
+    else:
+        raise Exception(f"Invalid {file_suffix=}")
 
     del data
     gc.collect()
