@@ -23,4 +23,6 @@ select
     coalesce(
         percent_skills_successful.long_value, percent_skills_successful.double_value
     ) as percent_skills_successful,
+
+    if(lesson_result = 'Passed', 1.0, 0.0) as passed_or_not_passed_numeric,
 from {{ source("iready", "src_iready__instruction_by_lesson_pro") }}
