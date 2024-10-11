@@ -1,37 +1,46 @@
 assets:
-  - dataset_config:
-      dataset_id: kippnewark_extracts
-      table_id: rpt_powerschool__autocomm_teachers
-    extract_job_config:
-      field_delimiter: "\t"
-      print_header: False
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippnewark_extracts
+          name: rpt_powerschool__autocomm_teachers
     file_config:
       stem: powerschool_autocomm_teachers_accounts
       suffix: txt
+      format:
+        sep: "\t"
+        header: False
     destination_config:
-      name: powerschool
-      path: couchdrop
-  - dataset_config:
-      dataset_id: kippnewark_extracts
-      table_id: rpt_powerschool__autocomm_students
-    extract_job_config:
-      field_delimiter: "\t"
-      print_header: False
+      name: couchdrop
+      path: teamster-kippnewark/couchdrop/powerschool
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippnewark_extracts
+          name: rpt_powerschool__autocomm_students
     file_config:
       stem: powerschool_autocomm_students
       suffix: txt
+      format:
+        sep: "\t"
+        header: False
     destination_config:
-      name: powerschool
-      path: couchdrop
-  - dataset_config:
-      dataset_id: kippnewark_extracts
-      table_id: rpt_powerschool__autocomm_students_iep
-    extract_job_config:
-      field_delimiter: "\t"
-      print_header: False
+      name: couchdrop
+      path: teamster-kippnewark/couchdrop/powerschool
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippnewark_extracts
+          name: rpt_powerschool__autocomm_students_iep
     file_config:
       stem: powerschool_autocomm_students_iep
       suffix: txt
+      format:
+        sep: "\t"
+        header: False
     destination_config:
-      name: powerschool
-      path: couchdrop
+      name: couchdrop
+      path: teamster-kippnewark/couchdrop/powerschool

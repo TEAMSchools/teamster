@@ -88,6 +88,7 @@ assets:
     select_columns:
       - studentsdcid
       - c_504_status
+      - cr_prevschoolname
       - infosnap_id
       - infosnap_opt_in
       - media_release
