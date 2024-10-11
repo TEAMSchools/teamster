@@ -15,6 +15,7 @@ kippnewark:
       method: oauth
       project: teamster-332318
       schema: _dev_kippnewark
+      # schema: kippnewark
 
 kippcamden:
   target: kippcamden
@@ -24,6 +25,7 @@ kippcamden:
       method: oauth
       project: teamster-332318
       schema: _dev_kippcamden
+      # schema: kippcamden
 
 kippmiami:
   target: kippmiami
@@ -33,6 +35,7 @@ kippmiami:
       method: oauth
       project: teamster-332318
       schema: _dev_kippmiami
+      # schema: kippmiami
 
 kipptaf:
   target: kipptaf
@@ -42,6 +45,7 @@ kipptaf:
       method: oauth
       project: teamster-332318
       schema: _dev_kipptaf
+      # schema: kipptaf
 
 integration_tests:
   target: integration_tests
