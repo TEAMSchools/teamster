@@ -23,6 +23,7 @@ with
             e.ms_attended,
             e.advisory,
             e.race_ethnicity,
+            e.year_in_network,
 
             max(e.grade_level) over (
                 partition by e.student_number
@@ -120,6 +121,7 @@ with
             s.gifted_and_talented,
             s.ms_attended,
             s.advisory,
+            s.year_in_network,
 
             a.assessment_name,
             a.discipline,
@@ -269,6 +271,7 @@ select
     s.iep_status,
     s.ms_attended,
     s.advisory,
+    s.year_in_network,
     s.assessment_name,
     s.discipline,
     s.subject,
