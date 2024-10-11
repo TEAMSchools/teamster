@@ -15,7 +15,7 @@ with
             srh.employee_number, t.academic_year, t.code, true as recent_leave,
         from {{ ref("base_people__staff_roster_history") }} as srh
         inner join
-            `teamster-332318`.`kipptaf_reporting`.`stg_reporting__terms` as t
+            {{ ref("stg_reporting__terms") }} as t
             on assignment_status_effective_date
             between date_sub(t.lockbox_date, interval 6 week) and t.lockbox_date
             and t.type = 'PMS'
