@@ -2,8 +2,8 @@ import pathlib
 
 from dagster import config_from_files
 
-from teamster.code_locations.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.libraries.datagun.assets import build_bigquery_query_sftp_asset
+from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.libraries.extracts.assets import build_bigquery_query_sftp_asset
 
 config_dir = pathlib.Path(__file__).parent / "config"
 

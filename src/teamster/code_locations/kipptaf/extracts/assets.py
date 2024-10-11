@@ -6,7 +6,7 @@ from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.payroll.assets import (
     GENERAL_LEDGER_FILE_PARTITIONS_DEF,
 )
-from teamster.libraries.datagun.assets import (
+from teamster.libraries.extracts.assets import (
     build_bigquery_extract_sftp_asset,
     build_bigquery_query_sftp_asset,
 )

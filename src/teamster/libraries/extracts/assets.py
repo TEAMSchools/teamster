@@ -3,6 +3,8 @@ import gzip
 import json
 import pathlib
 import re
+from csv import DictWriter
+from io import StringIO
 
 import pendulum
 from dagster import (
@@ -18,7 +20,6 @@ from google.cloud.bigquery import Client as BigQueryClient
 from google.cloud.bigquery import DatasetReference, ExtractJobConfig
 from google.cloud.storage import Blob
 from google.cloud.storage import Client as CloudStorageClient
-from pandas import DataFrame
 from sqlalchemy.sql.expression import literal_column, select, table, text
 
 from teamster.core.utils.classes import CustomJSONEncoder
@@ -67,11 +68,18 @@ def transform_data(
             json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
         )
     elif file_suffix in ["csv", "txt", "tsv"]:
-        transformed_data = (
-            DataFrame(data=data, dtype=object)
-            .to_csv(index=False, encoding=file_encoding, **file_format)
-            .encode(file_encoding)
-        )
+        f = StringIO()
+
+        write_header = file_format.pop("header", True)
+
+        dict_writer = DictWriter(f=f, fieldnames=data[0].keys(), **file_format)
+
+        if write_header:
+            dict_writer.writeheader()
+
+        dict_writer.writerows(data)
+
+        transformed_data = f.getvalue().encode(file_encoding)
 
     del data
     gc.collect()
@@ -158,7 +166,7 @@ def build_bigquery_query_sftp_asset(
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         partitions_def=partitions_def,
         op_tags=op_tags,
-        group_name="datagun",
+        group_name="extracts",
         compute_kind="python",
     )
     def _asset(context: AssetExecutionContext):
@@ -250,7 +258,7 @@ def build_bigquery_extract_sftp_asset(
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         partitions_def=partitions_def,
         op_tags=op_tags,
-        group_name="datagun",
+        group_name="extracts",
         compute_kind="python",
     )
     def _asset(context: AssetExecutionContext):
@@ -339,7 +347,7 @@ def build_bigquery_extract_asset(
         key=[code_location, "extracts", destination_name, asset_name],
         deps=[AssetKey([code_location, "extracts", table_id])],
         op_tags=op_tags,
-        group_name="datagun",
+        group_name="extracts",
         compute_kind="python",
     )
     def _asset(

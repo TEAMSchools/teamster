@@ -37,8 +37,6 @@ assets:
     file_config:
       stem: roles
       suffix: txt
-      format:
-        sep: "\t"
     destination_config:
       name: illuminate
   - dataset_config:

@@ -1,7 +1,7 @@
 from dagster import define_asset_job
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
-from teamster.code_locations.kipptaf.datagun.assets import (
+from teamster.code_locations.kipptaf.extracts.assets import (
     clever_extract_assets,
     coupa_extract,
     deanslist_annual_extract_assets,
