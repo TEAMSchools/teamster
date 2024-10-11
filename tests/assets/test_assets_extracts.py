@@ -124,7 +124,7 @@ def test_intacct_extract_asset():
     )
 
 
-def test_datagun_powerschool_kippnewark():
+def test_extracts_powerschool_kippnewark():
     from teamster.code_locations.kippnewark.extracts.assets import (
         powerschool_extract_assets,
     )
