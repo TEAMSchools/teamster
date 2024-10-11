@@ -1,4 +1,4 @@
-with
+{# with
     applications as (
         select
             application_id,
@@ -15,7 +15,7 @@ with
             date_val,
         from
             {{ ref("stg_smartrecruiters__applications") }} unpivot (
-                date_val for status_type in (
+                max(date_val) for status_type in (
                     demo_date,
                     hired_date,
                     new_date,
@@ -24,8 +24,7 @@ with
                     phone_screen_requested_date
                 )
             )
-    )
-
+    ) #}
 select
     a.application_id,
     a.job_city,
@@ -36,8 +35,12 @@ select
     a.reason_for_rejection,
     a.phone_interview_score,
     a.resume_score,
-    a.status_type,
-    a.date_val,
+    a.demo_date,
+    a.hired_date,
+    a.new_date,
+    a.offer_date,
+    a.phone_screen_complete_date,
+    a.phone_screen_requested_date,
 
     s.candidate_email,
     s.candidate_first_and_last_name,
@@ -69,6 +72,7 @@ select
     s.grad_gpa,
     s.certification_in_state,
     s.certification_out_of_state,
-from applications as a
+
+from {{ ref("stg_smartrecruiters__applications") }} as a
 left join
     {{ ref("stg_smartrecruiters__applicants") }} as s on a.candidate_id = s.candidate_id
