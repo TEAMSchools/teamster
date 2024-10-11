@@ -48,8 +48,8 @@ def construct_query(query_type, query_value) -> str:
 
 
 def transform_data(
-    data,
-    file_suffix,
+    data: list[dict],
+    file_suffix: str,
     file_encoding: str = "utf-8",
     file_format: dict | None = None,
 ):
@@ -68,7 +68,7 @@ def transform_data(
         )
     elif file_suffix in ["csv", "txt", "tsv"]:
         transformed_data = (
-            DataFrame(data=data)
+            DataFrame(data=data, dtype=object)
             .to_csv(index=False, encoding=file_encoding, **file_format)
             .encode(file_encoding)
         )

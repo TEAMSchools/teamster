@@ -130,9 +130,14 @@ def test_datagun_powerschool_kippnewark():
     )
 
     _test_asset(
-        asset=powerschool_extract_assets[
-            random.randint(a=0, b=(len(powerschool_extract_assets) - 1))
-        ],
+        # asset=powerschool_extract_assets[
+        #     random.randint(a=0, b=(len(powerschool_extract_assets) - 1))
+        # ],
+        asset=[
+            a
+            for a in powerschool_extract_assets
+            if a.key.path[-1] == "powerschool_autocomm_students_iep_txt"
+        ][0],
         ssh_couchdrop=SSH_COUCHDROP,
     )
 
