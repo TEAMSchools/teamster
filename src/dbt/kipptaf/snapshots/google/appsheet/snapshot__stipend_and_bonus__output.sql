@@ -2,7 +2,7 @@
 
     {{
         config(
-            target_schema=snapshot_target_schema(target_schema="kipptaf_appsheet"),
+            target_schema=generate_schema_name("appsheet"),
             strategy="timestamp",
             updated_at="edited_at",
             unique_key="event_id",

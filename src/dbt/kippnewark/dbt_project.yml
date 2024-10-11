@@ -40,7 +40,6 @@ models:
   kippnewark:
     extracts:
       +schema: extracts
-      +materialized: table
   deanslist:
     +materialized: table
   edplan:
