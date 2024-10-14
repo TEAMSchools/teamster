@@ -125,7 +125,7 @@ python-dotenv==1.0.1
 python-slugify==8.0.4
 pytimeparse==1.1.8
 pytz==2024.2
-pywin32==307; platform_system == "Windows"
+pywin32==308; platform_system == "Windows"
 pyyaml==6.0.2
 questionary==2.0.1
 referencing==0.35.1
