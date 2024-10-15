@@ -49,7 +49,7 @@ select
         cw1.sublevel_number = 8, null, (cw1.scale_high + 1) - fl.scale_score
     ) as points_to_growth,
 
-    lag(scale_score, 1) over (
+    lag(fl.scale_score, 1) over (
         partition by fl.student_id, fl.academic_year, fl.assessment_subject
         order by fl.administration_window asc
     ) as scale_score_prev,
