@@ -42,7 +42,6 @@ def schoolmint_grow_user_update_op(
                 request_args = ["users"]
                 exception_str = [user_email]
             except Exception as e:
-                context.log.exception(e)
                 exception_str.append(str(e))
 
                 exceptions.append("\t".join(exception_str))
