@@ -184,15 +184,18 @@ select
     ft.achievement_level,
     ft.scale_score,
     ft.scale_score_prev,
+    ft.sublevel_name as fast_sublevel_name,
+    ft.sublevel_number as fast_sublevel_number,
+    ft.scale_for_growth as fast_scale_for_growth,
+    ft.scale_for_proficiency as fast_scale_for_proficiency,
+    ft.points_to_growth as fast_scale_points_to_growth,
+    ft.points_to_proficiency as fast_scale_points_to_proficiency,
 
     p.prev_pm3_scale,
     p.prev_pm3_level_int,
     p.prev_pm3_sublevel_name,
     p.prev_pm3_sublevel_number,
     p.fldoe_percentile_rank,
-
-    cwf.sublevel_name as fast_sublevel_name,
-    cwf.sublevel_number as fast_sublevel_number,
 
     fs.standard as standard_domain,
     fs.performance as mastery_indicator,
@@ -220,22 +223,19 @@ select
     case
         when
             p.prev_pm3_scale is not null
-            and cwf.sublevel_number > p.prev_pm3_sublevel_number
+            and ft.sublevel_number > p.prev_pm3_sublevel_number
         then true
-        when p.prev_pm3_scale is not null and cwf.sublevel_number = 8
+        when p.prev_pm3_scale is not null and ft.sublevel_number = 8
         then true
         when
             p.prev_pm3_scale is not null
             and p.prev_pm3_sublevel_number in (6, 7)
-            and p.prev_pm3_sublevel_number = cwf.sublevel_number
+            and p.prev_pm3_sublevel_number = ft.sublevel_number
             and ft.scale_score > p.prev_pm3_scale
         then true
         when p.prev_pm3_scale is not null
         then false
     end as is_fldoe_growth,
-
-    (cwf.scale_high + 1) - ft.scale_score as fast_scale_points_to_growth,
-    cwp.scale_low - ft.scale_score as fast_scale_points_to_proficiency,
 
     row_number() over (
         partition by
@@ -275,34 +275,17 @@ left join
     and subj.iready_subject = dr.subject
     and dr.baseline_diagnostic_y_n = 'Y'
 left join
-    {{ ref("stg_fldoe__fast") }} as ft
+    {{ ref("int_fldoe__all_assessments") }} as ft
     on co.fleid = ft.student_id
     and co.academic_year = ft.academic_year
     and subj.fast_subject = ft.assessment_subject
     and administration_window = ft.administration_window
+    and ft.assessment_name = 'FAST'
 left join
     prev_pm3 as p
     on co.fleid = p.student_id
     and co.academic_year = p.academic_year_next
     and subj.fast_subject = p.assessment_subject
-left join
-    scale_crosswalk as sc
-    on ft.academic_year = sc.academic_year
-    and ft.administration_window = sc.administration_window
-left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cwf
-    on ft.assessment_subject = cwf.test_name
-    and ft.assessment_grade = cwf.grade_level
-    and ft.scale_score between cwf.scale_low and cwf.scale_high
-    and sc.source_system = cwf.source_system
-    and sc.destination_system = cwf.destination_system
-left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cwp
-    on ft.assessment_subject = cwp.test_name
-    and ft.assessment_grade = cwp.grade_level
-    and sc.source_system = cwp.source_system
-    and sc.destination_system = cwp.destination_system
-    and cwp.sublevel_number = 6
 left join
     {{ ref("int_fldoe__fast_standard_performance_unpivot") }} as fs
     on co.fleid = fs.student_id
