@@ -1,4 +1,12 @@
 with
+    source as (
+        {{
+            dbt_utils.union_relations(
+                relations=[source("kippmiami_fldoe", model.name)]
+            )
+        }}
+    ),
+
     scale_crosswalk as (
         select
             administration_window,
@@ -53,7 +61,7 @@ select
         partition by fl.student_id, fl.academic_year, fl.assessment_subject
         order by fl.administration_window asc
     ) as scale_score_prev,
-from {{ source("kippmiami_fldoe", "int_fldoe__all_assessments") }} as fl
+from source as fl
 left join
     scale_crosswalk as sc
     on fl.academic_year = sc.academic_year
