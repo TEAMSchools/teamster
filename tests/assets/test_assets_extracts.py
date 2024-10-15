@@ -5,7 +5,7 @@ from dagster import AssetsDefinition, DagsterInstance, MultiPartitionKey, materi
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
 from teamster.core.resources import BIGQUERY_RESOURCE, GCS_RESOURCE, SSH_COUCHDROP
-from teamster.libraries.datagun.assets import format_file_name
+from teamster.libraries.extracts.assets import format_file_name
 
 
 def _test_asset(
@@ -29,7 +29,7 @@ def _test_asset(
 
 
 def test_construct_query_schema():
-    from teamster.libraries.datagun.assets import construct_query
+    from teamster.libraries.extracts.assets import construct_query
 
     group_code = "3LE"
     date = "20230815"
@@ -65,7 +65,7 @@ def test_construct_query_schema():
 
 
 def test_format_file_name_default():
-    from teamster.libraries.datagun.assets import format_file_name
+    from teamster.libraries.extracts.assets import format_file_name
 
     now = pendulum.now(tz=LOCAL_TIMEZONE)
 
@@ -113,7 +113,7 @@ def test_format_file_name_multi_partition():
 
 
 def test_intacct_extract_asset():
-    from teamster.code_locations.kipptaf.datagun.assets import intacct_extract
+    from teamster.code_locations.kipptaf.extracts.assets import intacct_extract
 
     _test_asset(
         asset=intacct_extract,
@@ -124,8 +124,8 @@ def test_intacct_extract_asset():
     )
 
 
-def test_datagun_powerschool_kippnewark():
-    from teamster.code_locations.kippnewark.datagun.assets import (
+def test_extracts_powerschool_kippnewark():
+    from teamster.code_locations.kippnewark.extracts.assets import (
         powerschool_extract_assets,
     )
 
@@ -143,14 +143,14 @@ def test_datagun_powerschool_kippnewark():
 
 
 def test_littlesis_extract():
-    from teamster.code_locations.kipptaf.datagun.assets import littlesis_extract
+    from teamster.code_locations.kipptaf.extracts.assets import littlesis_extract
     from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_LITTLESIS
 
     _test_asset(asset=littlesis_extract, ssh_littlesis=SSH_RESOURCE_LITTLESIS)
 
 
 def test_deanslist_jsongz():
-    from teamster.code_locations.kipptaf.datagun.assets import (
+    from teamster.code_locations.kipptaf.extracts.assets import (
         deanslist_continuous_extract,
     )
     from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_DEANSLIST
@@ -161,7 +161,7 @@ def test_deanslist_jsongz():
 
 
 def test_clever_extract():
-    from teamster.code_locations.kipptaf.datagun.assets import clever_extract_assets
+    from teamster.code_locations.kipptaf.extracts.assets import clever_extract_assets
     from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_CLEVER
 
     _test_asset(

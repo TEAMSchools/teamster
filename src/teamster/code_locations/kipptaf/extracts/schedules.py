@@ -1,7 +1,7 @@
 from dagster import ScheduleDefinition
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.datagun.jobs import (
+from teamster.code_locations.kipptaf.extracts.jobs import (
     clever_extract_asset_job,
     coupa_extract_asset_job,
     deanslist_annual_extract_asset_job,

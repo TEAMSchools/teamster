@@ -3,44 +3,44 @@ assets:
       type: schema
       value:
         table:
-          schema: kippnewark_extracts
+          schema: kippcamden_extracts
           name: rpt_powerschool__autocomm_teachers
     file_config:
       stem: powerschool_autocomm_teachers_accounts
       suffix: txt
       format:
-        sep: "\t"
+        delimiter: "\t"
         header: False
     destination_config:
       name: couchdrop
-      path: teamster-kippnewark/couchdrop/powerschool
+      path: teamster-kippcamden/couchdrop/powerschool
   - query_config:
       type: schema
       value:
         table:
-          schema: kippnewark_extracts
+          schema: kippcamden_extracts
           name: rpt_powerschool__autocomm_students
     file_config:
       stem: powerschool_autocomm_students
       suffix: txt
       format:
-        sep: "\t"
+        delimiter: "\t"
         header: False
     destination_config:
       name: couchdrop
-      path: teamster-kippnewark/couchdrop/powerschool
+      path: teamster-kippcamden/couchdrop/powerschool
   - query_config:
       type: schema
       value:
         table:
-          schema: kippnewark_extracts
+          schema: kippcamden_extracts
           name: rpt_powerschool__autocomm_students_iep
     file_config:
       stem: powerschool_autocomm_students_iep
       suffix: txt
       format:
-        sep: "\t"
+        delimiter: "\t"
         header: False
     destination_config:
       name: couchdrop
-      path: teamster-kippnewark/couchdrop/powerschool
+      path: teamster-kippcamden/couchdrop/powerschool
