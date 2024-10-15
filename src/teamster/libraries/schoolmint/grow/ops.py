@@ -38,8 +38,9 @@ def schoolmint_grow_user_update_op(
                     *request_args, params={"district": schoolmint_grow.district_id}
                 )
 
-                # reset `request_args` for update
+                # reset vars for update
                 request_args = ["users"]
+                exception_str = [user_email]
             except Exception as e:
                 context.log.exception(e)
                 exception_str.append(str(e))
