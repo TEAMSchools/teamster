@@ -11,9 +11,9 @@ from teamster.code_locations.kippcamden import (
     DBT_PROJECT,
     _dbt,
     couchdrop,
-    datagun,
     deanslist,
     edplan,
+    extracts,
     overgrad,
     pearson,
     powerschool,
@@ -40,7 +40,7 @@ defs = Definitions(
     assets=load_assets_from_modules(
         modules=[
             _dbt,
-            datagun,
+            extracts,
             deanslist,
             edplan,
             overgrad,
@@ -50,7 +50,7 @@ defs = Definitions(
         ]
     ),
     schedules=[
-        *datagun.schedules,
+        *extracts.schedules,
         *deanslist.schedules,
         *overgrad.schedules,
         *powerschool.schedules,

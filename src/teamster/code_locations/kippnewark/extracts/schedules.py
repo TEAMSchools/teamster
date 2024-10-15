@@ -1,7 +1,7 @@
 from dagster import ScheduleDefinition
 
-from teamster.code_locations.kippcamden import LOCAL_TIMEZONE
-from teamster.code_locations.kippcamden.datagun.jobs import (
+from teamster.code_locations.kippnewark import LOCAL_TIMEZONE
+from teamster.code_locations.kippnewark.extracts.jobs import (
     powerschool_extract_asset_job,
 )
 

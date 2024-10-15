@@ -9,7 +9,7 @@ assets:
       stem: powerschool_autocomm_teachers_accounts
       suffix: txt
       format:
-        sep: "\t"
+        delimiter: "\t"
         header: False
     destination_config:
       name: couchdrop
@@ -24,7 +24,7 @@ assets:
       stem: powerschool_autocomm_students
       suffix: txt
       format:
-        sep: "\t"
+        delimiter: "\t"
         header: False
     destination_config:
       name: couchdrop
