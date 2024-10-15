@@ -2,14 +2,18 @@
 # https://squidfunk.github.io/mkdocs-material/setup/
 
 site_name: teamster
+
 theme:
   name: material
   favicon: images/horse-variant.svg
   icon:
     logo: material/horse-variant
+    repo: fontawesome/brands/github
   features:
     - navigation.instant
     - navigation.tabs
+
+repo_url: https://github.com/TEAMSchools/teamster
 
 nav:
   - Home: README.md
