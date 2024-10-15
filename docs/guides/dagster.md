@@ -1,19 +1,22 @@
 # Dagster
 
+!!! warning "DON'T PANIC! :fontawesome-solid-thumbs-up:"
+
 ## Tier 1 Troubleshooting
 
-### Morning routine
+### Asset health
 
-1. Check the [Asset Health](https://kipptaf.dagster.cloud/prod/overview/asset-health) page for
-   failed materializations. If there are any, click on the link to the Asset Overview and click the
-   "Materialize..." button to force a new run. If the asset is partitioned, go to the "Partitions"
-   view, filter for "Failed" partitions and materialize only those partitions.
+Check the [Asset Health](https://kipptaf.dagster.cloud/prod/overview/asset-health) page for failed
+materializations. If there are any, click on the link to the Asset Overview and click the
+"Materialize..." button to force a new run. If the asset is partitioned, go to the "Partitions"
+view, filter for "Failed" partitions and materialize only those partitions.
 
-2. Check [#dagster-alerts](https://kippnj.slack.com/archives/C04A0KC1YSW) on Slack for failed Job
-   runs. These are rare, but you may see some logs from our nightly user-provisioning scripts.
-   Typically, they indicate an issue on the vendor side or something that will require a manual
-   intervention (e.g. a rehire uses their work email as their personal email on ADP) or a code
-   change. Log them on Asana.
+### Slack alerts
+
+Check [#dagster-alerts](https://kippnj.slack.com/archives/C04A0KC1YSW) on Slack for failed Job runs.
+These are rare, but you may see some logs from our nightly user-provisioning scripts. Typically,
+they indicate an issue on the vendor side or something that will require a manual intervention (e.g.
+a rehire uses their work email as their personal email on ADP) or a code change. Log them on Asana.
 
 ## Tableau Workbooks
 
