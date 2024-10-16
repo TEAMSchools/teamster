@@ -9,6 +9,7 @@ with
                 mid_on_grade_level_scale_score,
                 most_recent_diagnostic_y_n,
                 most_recent_diagnostic_ytd_y_n,
+                percentile,
                 `start_date`,
                 student_grade,
                 `subject`
@@ -18,6 +19,10 @@ with
 
             parse_date('%m/%d/%Y', `start_date`) as `start_date`,
             parse_date('%m/%d/%Y', completion_date) as completion_date,
+
+            coalesce(
+                most_recent_diagnostic_y_n, most_recent_diagnostic_ytd_y_n
+            ) as most_recent_diagnostic_ytd_y_n,
 
             coalesce(
                 student_grade.string_value, cast(student_grade.long_value as string)
@@ -43,8 +48,8 @@ with
             ) as mid_on_grade_level_scale_score,
 
             coalesce(
-                most_recent_diagnostic_y_n, most_recent_diagnostic_ytd_y_n
-            ) as most_recent_diagnostic_ytd_y_n,
+                percentile.long_value, cast(percentile.double_value as int)
+            ) as percentile,
 
             if(
                 _dagster_partition_subject = 'ela',
