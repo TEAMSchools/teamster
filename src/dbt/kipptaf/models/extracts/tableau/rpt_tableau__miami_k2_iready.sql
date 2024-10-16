@@ -1,9 +1,12 @@
 with
     subjects as (
         select 'Reading' as iready_subject, 'ENG' as ps_credittype,
+
         union all
+
         select 'Math' as iready_subject, 'MATH' as ps_credittype,
     )
+
 select
     co.student_number,
     co.lastfirst as student_name,
@@ -35,6 +38,7 @@ select
 
     up.relative_placement,
     up.rn_subject_test,
+
     regexp_replace(
         left(up.domain_name, length(up.domain_name) - 19), '_', ' '
     ) as domain_name,
@@ -45,6 +49,7 @@ left join
     {{ ref("base_powerschool__course_enrollments") }} as e
     on co.student_number = e.students_student_number
     and co.academic_year = e.cc_academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="e") }}
     and subj.ps_credittype = e.courses_credittype
     and not e.is_dropped_section
     and e.rn_credittype_year = 1
@@ -52,6 +57,7 @@ left join
     {{ ref("base_iready__diagnostic_results") }} as ir
     on co.student_number = ir.student_id
     and co.academic_year = ir.academic_year_int
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="ir") }}
     and subj.iready_subject = ir.subject
     and ar = ir.test_round
     and ir.rn_subj_round = 1
@@ -62,6 +68,7 @@ left join
     and ir.subject = up.subject
     and ir.start_date = up.start_date
     and ir.completion_date = up.completion_date
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="up") }}
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
