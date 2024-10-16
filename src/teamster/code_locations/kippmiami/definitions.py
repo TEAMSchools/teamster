@@ -11,8 +11,8 @@ from teamster.code_locations.kippmiami import (
     DBT_PROJECT,
     _dbt,
     couchdrop,
-    datagun,
     deanslist,
+    extracts,
     fldoe,
     iready,
     powerschool,
@@ -38,7 +38,7 @@ defs = Definitions(
     assets=load_assets_from_modules(
         modules=[
             _dbt,
-            datagun,
+            extracts,
             deanslist,
             fldoe,
             iready,
@@ -47,7 +47,7 @@ defs = Definitions(
         ]
     ),
     schedules=[
-        *datagun.schedules,
+        *extracts.schedules,
         *deanslist.schedules,
         *powerschool.schedules,
     ],
