@@ -35,7 +35,7 @@ def test_schoolmint_grow_school_update_op():
         context=context,
         db_bigquery=BIGQUERY_RESOURCE,
         config=BigQueryGetTableOpConfig(
-            dataset_id="_dev_kipptaf_extracts", table_id="rpt_schoolmint_grow__users"
+            dataset_id="kipptaf_extracts", table_id="rpt_schoolmint_grow__users"
         ),
     )
 

@@ -133,16 +133,20 @@ def schoolmint_grow_school_update_op(
             g for g in school["observationGroups"] if g["name"] == "Teachers"
         ][0]
 
-        user_role_map = {
-            role: [u["user_id"] for u in school_users if role in u["group_type"]]
-            for role in ["observees", "observers"]
-        }
+        observees = [
+            u["user_id"] for u in school_users if "observees" in u["group_type"]
+        ]
+        observers = set(
+            [u["user_id"] for u in school_users if "observers" in u["group_type"]]
+        )
+        coaches = set([u["coach_id"] for u in school_users])
 
         payload["observationGroups"] = [
             {
                 "_id": teachers_observation_group["_id"],
                 "name": "Teachers",
-                **user_role_map,
+                "observees": observees,
+                "observers": list(observers | coaches),
             }
         ]
 
