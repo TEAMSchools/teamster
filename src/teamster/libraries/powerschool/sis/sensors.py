@@ -19,7 +19,7 @@ from dagster import (
     sensor,
 )
 from sqlalchemy import text
-from sshtunnel import BaseSSHTunnelForwarderError, HandlerSSHTunnelForwarderError
+from sshtunnel import BaseSSHTunnelForwarderError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
@@ -100,14 +100,6 @@ def build_powerschool_asset_sensor(
 
         try:
             ssh_tunnel.start()
-        except HandlerSSHTunnelForwarderError as e:
-            ssh_tunnel.stop(force=True)
-            e_str = str(e)
-
-            if "An error occurred while opening tunnels." in e_str:
-                return SkipReason(e_str)
-            else:
-                raise e
         except BaseSSHTunnelForwarderError as e:
             ssh_tunnel.stop(force=True)
             e_str = str(e)
