@@ -48,23 +48,19 @@ def test_iready_diagnostic_results_kippmiami():
 def test_iready_diagnostic_results_kippnj():
     from teamster.code_locations.kippnewark.iready.assets import diagnostic_results
 
-    _test_asset(asset=diagnostic_results, partition_key="2024|ela")
+    _test_asset(asset=diagnostic_results, partition_key="2024|math")
 
 
 def test_iready_personalized_instruction_by_lesson_kippmiami():
-    from teamster.code_locations.kippmiami.iready.assets import (
-        personalized_instruction_by_lesson,
-    )
+    from teamster.code_locations.kippmiami.iready.assets import instruction_by_lesson
 
-    _test_asset(asset=personalized_instruction_by_lesson, partition_key="2024|ela")
+    _test_asset(asset=instruction_by_lesson, partition_key="2024|ela")
 
 
 def test_iready_personalized_instruction_by_lesson_kippnj():
-    from teamster.code_locations.kippnewark.iready.assets import (
-        personalized_instruction_by_lesson,
-    )
+    from teamster.code_locations.kippnewark.iready.assets import instruction_by_lesson
 
-    _test_asset(asset=personalized_instruction_by_lesson, partition_key="2024|ela")
+    _test_asset(asset=instruction_by_lesson, partition_key="2024|ela")
 
 
 def test_iready_instructional_usage_data_kippmiami():
