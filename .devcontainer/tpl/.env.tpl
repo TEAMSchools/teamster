@@ -1,5 +1,5 @@
 DBT_DEV=true
-DBT_DEV_CLOUD_STORAGE_URI_BASE=gs://teamster-kippnewark/dagster/kippnewark
+DBT_DEV_CLOUD_STORAGE_URI_BASE=gs://teamster-test/dagster/kippnewark
 DBT_DEV_DEANSLIST_SCHEMA=_dev_deanslist
 DBT_DEV_EDPLAN_SCHEMA=_dev_edplan
 DBT_DEV_IREADY_SCHEMA=_dev_iready
