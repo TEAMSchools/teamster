@@ -44,13 +44,5 @@
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "dbt.deferConfigPerProject": {
-    "src/dbt/kipptaf": {
-      "deferToProduction": false,
-      "favorState": false,
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/kipptaf/target",
-      "manifestPathType": "local"
-    }
-  },
   "dbt.perspectiveTheme": "Vintage"
 }
