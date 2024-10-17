@@ -121,17 +121,11 @@ left join
     and co.region = rt.region
     and w.week_start_monday between rt.start_date and rt.end_date
 left join
-    {{ ref('int_iready__instruction_by_lesson_union') }} as il
+    {{ ref("int_iready__instruction_by_lesson_union") }} as il
     on co.student_number = il.student_id
     and subj = il.subject
     and il.completion_date between w.week_start_monday and w.week_end_sunday
     and il.academic_year_int = {{ var("current_academic_year") }}
--- left join
--- {{ ref("stg_iready__instruction_by_lesson") }} as il
--- on co.student_number = il.student_id
--- and subj = il.subject
--- and il.completion_date between w.week_start_monday and w.week_end_sunday
--- and il.academic_year_int = {{ var("current_academic_year") }}
 left join
     {{ ref("base_iready__diagnostic_results") }} as dr
     on co.student_number = dr.student_id
