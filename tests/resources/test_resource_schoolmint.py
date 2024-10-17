@@ -29,11 +29,11 @@ def test_users_single():
 
 
 def test_users_all():
-    response = _test_resource("GET", "users", limit=100)
+    response = _test_resource("GET", "users")
 
     user_ids = [user["_id"] for user in response["data"]]
 
-    assert "66e14104727cdd0011350d61" in user_ids
+    assert "6704d9fad037e00011d78610" in user_ids
 
 
 def test_users_restore():
