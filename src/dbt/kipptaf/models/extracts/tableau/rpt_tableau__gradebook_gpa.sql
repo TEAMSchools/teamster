@@ -149,7 +149,7 @@ with
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
             and gty.is_current
         where
-            enr.academic_year = {{ var("current_academic_year") }}
+            enr.academic_year >= {{ var("current_academic_year") - 1 }}
             and not enr.is_out_of_district
     ),
 
