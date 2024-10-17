@@ -31,3 +31,9 @@ select
     'Diagnostic' as assessment_type,
 
 from {{ ref("base_iready__diagnostic_results") }}
+where rn_subj_round = 1
+
+union all
+
+select
+from {{ ref("model_name") }}
