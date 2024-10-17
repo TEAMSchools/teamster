@@ -65,5 +65,6 @@ select
     is_self_contained as is_selfcontained,
     infosnap_id,
     rides_staff,
+    gifted_and_talented,
 from {{ ref("base_powerschool__student_enrollments") }}
 where enroll_status in (0, -1) and rn_all = 1
