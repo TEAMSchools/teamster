@@ -123,6 +123,6 @@ left join
     and e.schoolid = hr.cc_schoolid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="hr") }}
     and not hr.is_dropped_section
-    and hr.cc_course_number = 'HR'
+    and hr.courses_credittype = 'HR'
     and hr.rn_course_number_year = 1
 where e.rn_year = 1 and e.schoolid != 999999
