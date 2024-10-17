@@ -145,7 +145,7 @@ class DiagnosticResults(IReadyBaseModel):
     overall_scale_score: int | None = None
     percent_progress_to_annual_stretch_growth_percent: float | None = None
     percent_progress_to_annual_typical_growth_percent: float | None = None
-    percentile: int | None = None
+    percentile: int | float | None = None
     phonics_placement: str | None = None
     phonics_relative_placement: str | None = None
     phonics_scale_score: float | None = None

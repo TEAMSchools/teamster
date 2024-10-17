@@ -45,7 +45,7 @@ def compose_regex(
 
 
 def extract_csv_to_dict(
-    local_filepath: str, slugify_cols: bool, slugify_replacements: tuple
+    local_filepath: str, slugify_cols: bool, slugify_replacements: list[list[str]]
 ):
     df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
 
@@ -81,21 +81,24 @@ def build_sftp_file_asset(
     remote_file_regex: str,
     ssh_resource_key: str,
     avro_schema,
-    slugify_cols: bool | None = True,
-    slugify_replacements: tuple | None = (),
+    slugify_cols: bool = True,
     partitions_def=None,
     automation_condition=None,
+    group_name: str | None = None,
+    pdf_row_pattern: str | None = None,
+    exclude_dirs: list[str] | None = None,
+    slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
-    group_name: str | None = None,
-    exclude_dirs: list[str] | None = None,
-    pdf_row_pattern: str | None = None,
 ):
     if group_name is None:
         group_name = asset_key[1]
 
     if exclude_dirs is None:
         exclude_dirs = []
+
+    if slugify_replacements is None:
+        slugify_replacements = []
 
     @asset(
         key=asset_key,
@@ -208,8 +211,8 @@ def build_sftp_file_asset(
         else:
             records, (n_rows, _) = extract_csv_to_dict(
                 local_filepath=local_filepath,
-                slugify_cols=_check.not_none(value=slugify_cols),
-                slugify_replacements=_check.not_none(value=slugify_replacements),
+                slugify_cols=slugify_cols,
+                slugify_replacements=slugify_replacements,
             )
 
             if n_rows == 0:
@@ -231,18 +234,21 @@ def build_sftp_archive_asset(
     ssh_resource_key: str,
     avro_schema,
     partitions_def=None,
-    slugify_cols=True,
-    slugify_replacements=(),
-    tags: dict[str, str] | None = None,
-    op_tags: dict | None = None,
+    slugify_cols: bool = True,
     group_name: str | None = None,
     exclude_dirs: list[str] | None = None,
+    slugify_replacements: list[list[str]] | None = None,
+    tags: dict[str, str] | None = None,
+    op_tags: dict | None = None,
 ):
     if group_name is None:
         group_name = asset_key[1]
 
     if exclude_dirs is None:
         exclude_dirs = []
+
+    if slugify_replacements is None:
+        slugify_replacements = []
 
     @asset(
         key=asset_key,
@@ -353,8 +359,8 @@ def build_sftp_archive_asset(
         else:
             records, (n_rows, _) = extract_csv_to_dict(
                 local_filepath=local_filepath,
-                slugify_cols=_check.not_none(value=slugify_cols),
-                slugify_replacements=_check.not_none(value=slugify_replacements),
+                slugify_cols=slugify_cols,
+                slugify_replacements=slugify_replacements,
             )
 
             if n_rows == 0:
@@ -375,18 +381,21 @@ def build_sftp_folder_asset(
     ssh_resource_key: str,
     avro_schema,
     partitions_def=None,
-    slugify_cols=True,
-    slugify_replacements: tuple = (),
-    tags: dict[str, str] | None = None,
-    op_tags: dict | None = None,
+    slugify_cols: bool = True,
     group_name: str | None = None,
     exclude_dirs: list[str] | None = None,
+    slugify_replacements: list[list[str]] | None = None,
+    tags: dict[str, str] | None = None,
+    op_tags: dict | None = None,
 ):
     if group_name is None:
         group_name = asset_key[1]
 
     if exclude_dirs is None:
         exclude_dirs = []
+
+    if slugify_replacements is None:
+        slugify_replacements = []
 
     @asset(
         key=asset_key,
@@ -459,8 +468,8 @@ def build_sftp_folder_asset(
 
             records, (n_rows, _) = extract_csv_to_dict(
                 local_filepath=local_filepath,
-                slugify_cols=_check.not_none(value=slugify_cols),
-                slugify_replacements=_check.not_none(value=slugify_replacements),
+                slugify_cols=slugify_cols,
+                slugify_replacements=slugify_replacements,
             )
 
             if n_rows == 0:
