@@ -121,7 +121,7 @@ left join
     and co.region = rt.region
     and w.week_start_monday between rt.start_date and rt.end_date
 left join
-    {{ ref("stg_iready__instruction_by_lesson") }} as il
+    {{ ref("int_iready__instruction_by_lesson_union") }} as il
     on co.student_number = il.student_id
     and subj = il.subject
     and il.completion_date between w.week_start_monday and w.week_end_sunday
