@@ -19,11 +19,11 @@ from dagster import (
     sensor,
 )
 from sqlalchemy import text
-from sshtunnel import BaseSSHTunnelForwarderError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
+from teamster.libraries.ssh.sshtunnel.errors import BaseSSHTunnelForwarderError
 
 
 def get_query_text(
