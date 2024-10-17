@@ -5,6 +5,7 @@ select
     school,
     `subject`,
     lesson_id,
+    lesson_name,
     completion_date,
     passed_or_not_passed_numeric,
 
@@ -20,6 +21,7 @@ select
     school,
     `subject`,
     lesson as lesson_id,
+    lesson as lesson_name,
     completion_date,
     passed_or_not_passed_numeric,
 
