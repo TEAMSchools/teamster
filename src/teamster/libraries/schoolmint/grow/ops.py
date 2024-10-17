@@ -139,14 +139,15 @@ def schoolmint_grow_school_update_op(
         observers = set(
             [u["user_id"] for u in school_users if "observers" in u["group_type"]]
         )
-        coaches = set([u["coach_id"] for u in school_users])
+        # coaches = set([u["coach_id"] for u in school_users])
 
         payload["observationGroups"] = [
             {
                 "_id": teachers_observation_group["_id"],
                 "name": "Teachers",
                 "observees": observees,
-                "observers": list(observers | coaches),
+                "observers": list(observers),
+                # "observers": list(observers | coaches),
             }
         ]
 
