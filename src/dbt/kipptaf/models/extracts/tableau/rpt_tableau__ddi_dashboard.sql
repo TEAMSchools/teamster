@@ -17,7 +17,7 @@ with
             if(
                 sum(il.passed_or_not_passed_numeric) >= 4, 1, 0
             ) as is_pass_4_lessons_int,
-        from {{ ref("stg_iready__instruction_by_lesson") }} as il
+        from {{ ref("int_iready__instruction_by_lesson_union") }} as il
         inner join
             {{ ref("stg_people__location_crosswalk") }} as cw on il.school = cw.name
         inner join
