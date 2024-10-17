@@ -18,6 +18,7 @@ with
 
 select
     *,
+
     case
         code_location when 'kippnewark' then 'NJSLA' when 'kippmiami' then 'FL'
     end as state_assessment_type,
