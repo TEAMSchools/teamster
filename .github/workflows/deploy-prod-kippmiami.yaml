@@ -29,6 +29,9 @@ on:
       - src/teamster/libraries/ssh/**
   pull_request:
     paths:
+      - .github/workflows/dagster-cloud-deploy.yaml
+      - .github/workflows/deploy-prod-kippmiami.yaml
+      - Dockerfile
       - src/teamster/code_locations/kippmiami/**
       - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**

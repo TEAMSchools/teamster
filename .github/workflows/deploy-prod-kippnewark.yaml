@@ -36,6 +36,9 @@ on:
       - src/teamster/libraries/titan/**
   pull_request:
     paths:
+      - .github/workflows/dagster-cloud-deploy.yaml
+      - .github/workflows/deploy-prod-kippnewark.yaml
+      - Dockerfile
       - src/teamster/code_locations/kippnewark/**
       - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
