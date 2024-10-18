@@ -48,16 +48,6 @@ files = [
 ]
 
 [[package]]
-name = "aniso8601"
-version = "9.0.1"
-summary = "A library for parsing ISO 8601 strings."
-groups = ["dev"]
-files = [
-    {file = "aniso8601-9.0.1-py2.py3-none-any.whl", hash = "sha256:1d2b7ef82963909e93c4f24ce48d4de9e66009a21bf1c1e1c85bdd0812fe412f"},
-    {file = "aniso8601-9.0.1.tar.gz", hash = "sha256:72e3117667eedf66951bb2d93f4296a56b94b078a8a95905a052611fb3f1b973"},
-]
-
-[[package]]
 name = "annotated-types"
 version = "0.7.0"
 requires_python = ">=3.8"
@@ -770,7 +760,7 @@ files = [
 
 [[package]]
 name = "dbt-bigquery"
-version = "1.8.2"
+version = "1.8.3"
 requires_python = ">=3.8"
 summary = "The Bigquery adapter plugin for dbt"
 groups = ["default"]
@@ -784,8 +774,8 @@ dependencies = [
     "google-cloud-storage~=2.4",
 ]
 files = [
-    {file = "dbt_bigquery-1.8.2-py3-none-any.whl", hash = "sha256:b18bb2f90665a77e9588fe5939d0251325da214048a7250ffd3cfd9a8443c1d3"},
-    {file = "dbt_bigquery-1.8.2.tar.gz", hash = "sha256:beb44cce8b8dcd1c874bf1d52cbd91116c531668a7b45ff00c966b4b034872cb"},
+    {file = "dbt_bigquery-1.8.3-py3-none-any.whl", hash = "sha256:f618637a6b7ec83e3bb81fe110bfcf3e0544eeb197a5637fa96ceddd5631eaa6"},
+    {file = "dbt_bigquery-1.8.3.tar.gz", hash = "sha256:cc3240af407676fc5452b9a8273e70b73578c5aaa940d1c5afe9744c869df69a"},
 ]
 
 [[package]]
@@ -1321,17 +1311,17 @@ files = [
 
 [[package]]
 name = "graphene"
-version = "3.3"
+version = "3.4"
 summary = "GraphQL Framework for Python"
 groups = ["dev"]
 dependencies = [
-    "aniso8601<10,>=8",
     "graphql-core<3.3,>=3.1",
     "graphql-relay<3.3,>=3.1",
+    "typing-extensions<5,>=4.7.1",
 ]
 files = [
-    {file = "graphene-3.3-py2.py3-none-any.whl", hash = "sha256:bb3810be33b54cb3e6969506671eb72319e8d7ba0d5ca9c8066472f75bf35a38"},
-    {file = "graphene-3.3.tar.gz", hash = "sha256:529bf40c2a698954217d3713c6041d69d3f719ad0080857d7ee31327112446b0"},
+    {file = "graphene-3.4-py2.py3-none-any.whl", hash = "sha256:28bf359b802cdb808130a5521135d4c88a262564598cfdc91628d2c172b99dce"},
+    {file = "graphene-3.4.tar.gz", hash = "sha256:65e5ec84c5b7fb4fc41518acfbafb62ebb393d3982fbba00cd5393e431a80b97"},
 ]
 
 [[package]]
@@ -2210,20 +2200,20 @@ files = [
 
 [[package]]
 name = "psutil"
-version = "6.0.0"
+version = "6.1.0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
 summary = "Cross-platform lib for process and system monitoring in Python."
 groups = ["default", "dev"]
 marker = "platform_system == \"Windows\""
 files = [
-    {file = "psutil-6.0.0-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:c588a7e9b1173b6e866756dde596fd4cad94f9399daf99ad8c3258b3cb2b47a0"},
-    {file = "psutil-6.0.0-cp36-abi3-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6ed2440ada7ef7d0d608f20ad89a04ec47d2d3ab7190896cd62ca5fc4fe08bf0"},
-    {file = "psutil-6.0.0-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5fd9a97c8e94059b0ef54a7d4baf13b405011176c3b6ff257c247cae0d560ecd"},
-    {file = "psutil-6.0.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e2e8d0054fc88153ca0544f5c4d554d42e33df2e009c4ff42284ac9ebdef4132"},
-    {file = "psutil-6.0.0-cp37-abi3-win32.whl", hash = "sha256:a495580d6bae27291324fe60cea0b5a7c23fa36a7cd35035a16d93bdcf076b9d"},
-    {file = "psutil-6.0.0-cp37-abi3-win_amd64.whl", hash = "sha256:33ea5e1c975250a720b3a6609c490db40dae5d83a4eb315170c4fe0d8b1f34b3"},
-    {file = "psutil-6.0.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:ffe7fc9b6b36beadc8c322f84e1caff51e8703b88eee1da46d1e3a6ae11b4fd0"},
-    {file = "psutil-6.0.0.tar.gz", hash = "sha256:8faae4f310b6d969fa26ca0545338b21f73c6b15db7c4a8d934a5482faa818f2"},
+    {file = "psutil-6.1.0-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:6e2dcd475ce8b80522e51d923d10c7871e45f20918e027ab682f94f1c6351688"},
+    {file = "psutil-6.1.0-cp36-abi3-macosx_11_0_arm64.whl", hash = "sha256:0895b8414afafc526712c498bd9de2b063deaac4021a3b3c34566283464aff8e"},
+    {file = "psutil-6.1.0-cp36-abi3-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9dcbfce5d89f1d1f2546a2090f4fcf87c7f669d1d90aacb7d7582addece9fb38"},
+    {file = "psutil-6.1.0-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:498c6979f9c6637ebc3a73b3f87f9eb1ec24e1ce53a7c5173b8508981614a90b"},
+    {file = "psutil-6.1.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d905186d647b16755a800e7263d43df08b790d709d575105d419f8b6ef65423a"},
+    {file = "psutil-6.1.0-cp37-abi3-win32.whl", hash = "sha256:1ad45a1f5d0b608253b11508f80940985d1d0c8f6111b5cb637533a0e6ddc13e"},
+    {file = "psutil-6.1.0-cp37-abi3-win_amd64.whl", hash = "sha256:a8fb3752b491d246034fa4d279ff076501588ce8cbcdbb62c32fd7a377d996be"},
+    {file = "psutil-6.1.0.tar.gz", hash = "sha256:353815f59a7f64cdaca1c0307ee13558a0512f6db064e92fe833784f08539c7a"},
 ]
 
 [[package]]
