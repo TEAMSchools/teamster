@@ -168,6 +168,8 @@ select
         co.is_self_contained, 'Self-contained', 'Not self-contained'
     ) as self_contained_status,
 
+    extract(month from cw.week_start_monday) as behavior_month,
+
     count(distinct co.student_number) over (
         partition by co.schoolid, cw.week_start_monday
     ) as school_enrollment_by_week,
