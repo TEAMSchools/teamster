@@ -33,6 +33,9 @@ on:
       - src/teamster/libraries/tableau/**
   pull_request:
     paths:
+      - .github/workflows/dagster-cloud-deploy.yaml
+      - .github/workflows/deploy-prod-kipptaf.yaml
+      - Dockerfile
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**
       - src/teamster/libraries/adp/**
