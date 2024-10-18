@@ -1,5 +1,6 @@
-# https://hub.docker.com/_/python
 ARG PYTHON_VERSION=3.12
+
+# https://hub.docker.com/_/python
 FROM python:"${PYTHON_VERSION}"-slim
 
 ARG CODE_LOCATION
@@ -17,7 +18,7 @@ WORKDIR /app
 
 # install uv & create venv
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install "uv==0.4.23" --no-cache-dir \
+    pip install "uv==0.4.24" --no-cache-dir \
     && uv venv
 
 # install dependencies
