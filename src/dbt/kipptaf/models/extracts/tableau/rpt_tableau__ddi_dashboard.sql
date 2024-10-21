@@ -116,6 +116,7 @@ with
                 co.is_self_contained, 'Self-contained', 'Not self-contained'
             ) as self_contained_status,
             if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+            coalesce(co.gifted_and_talented, 'N') as gifted_and_talented,
 
             if(
                 current_date('America/New_York')
@@ -256,6 +257,7 @@ select
     co.status_504,
     co.self_contained_status,
     co.iep_status,
+    co.gifted_and_talented,
     co.is_current_week,
     co.assessment_id,
     co.is_mastery_int,
@@ -360,6 +362,7 @@ select
     co.status_504,
     co.self_contained_status,
     co.iep_status,
+    co.gifted_and_talented,
     co.is_current_week,
     co.assessment_id,
     co.is_mastery_int,
@@ -481,6 +484,7 @@ select
     null as status_504,
     null as self_contained_status,
     null as iep_status,
+    null as gifted_and_talented,
 
     if(
         current_date('America/New_York')
