@@ -201,6 +201,24 @@ assets:
     metadata:
       id: 35484db7-cd5b-4834-828a-5bfc645a09c6
       cron_schedule: 0 8 * * *
+  - name: Number of School Days Between Two Dates
+    deps:
+      - [kipptaf, tableau, rpt_tableau__powerschool_calendar_day]
+    metadata:
+      id: fdd90889-8efb-4254-b892-bad96a7d131f
+      cron_schedule: 0 20 * * 0
+  - name: Content Team Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__teacher_development]
+    metadata:
+      id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1
+      cron_schedule: 0 6 * * *
+  - name: Leadership Development
+    deps:
+      - [kipptaf, tableau, rpt_tableau__leadership_development]
+    metadata:
+      id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
+      cron_schedule: 0 * * * *
   # - name: Coaching Conversation Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
@@ -223,4 +241,3 @@ assets:
   #     - [kipptaf, tableau, rpt_tableau__survey_responses]
   #   metadata:
   #     id: b11542a2-6780-4feb-a1dd-534ffe724faf
-  # prospects_import - Daily 4:00 AM America/Los_Angeles
