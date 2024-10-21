@@ -1,3 +1,5 @@
+import time
+
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
@@ -92,5 +94,12 @@ class AdpWorkforceNowResource(ConfigurableResource):
             all_records.extend(response_json)
 
             params.update({"$skip": params["$skip"] + page_size})
+
+            # https://developers.adp.com/learn/key-concepts/access-tokens
+            # Your application should limit access to under 300 times in a 60 second
+            # period, with no more than 50 concurrent requests in any time. ADP will
+            # throttle your requests when this limit is exceeded. Then, return a
+            # response of HTTP 429 for too many requests.
+            time.sleep(60 / 300)
 
         return all_records
