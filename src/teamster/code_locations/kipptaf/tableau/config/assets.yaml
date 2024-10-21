@@ -195,6 +195,12 @@ assets:
     metadata:
       id: 5698ccc2-b952-4123-878b-48166b686b16
       cron_schedule: 0 1 * * *
+  - name: Stipend and Bonus Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__stipend_and_bonus_app]
+    metadata:
+      id: 35484db7-cd5b-4834-828a-5bfc645a09c6
+      cron_schedule: 0 8 * * *
   # - name: Coaching Conversation Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
