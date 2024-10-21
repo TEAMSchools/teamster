@@ -19,11 +19,11 @@ from dagster import (
     sensor,
 )
 from sqlalchemy import text
-from sshtunnel import HandlerSSHTunnelForwarderError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
+from teamster.libraries.ssh.sshtunnel.errors import BaseSSHTunnelForwarderError
 
 
 def get_query_text(
@@ -100,11 +100,12 @@ def build_powerschool_asset_sensor(
 
         try:
             ssh_tunnel.start()
-        except HandlerSSHTunnelForwarderError as e:
+        except BaseSSHTunnelForwarderError as e:
             ssh_tunnel.stop(force=True)
+            e_str = str(e)
 
-            if "An error occurred while opening tunnels." in e.args:
-                return SkipReason(str(e))
+            if "Could not establish session to SSH gateway" in e_str:
+                return SkipReason(e_str)
             else:
                 raise e
         except Exception as e:
@@ -363,7 +364,7 @@ def build_powerschool_asset_sensor(
                     job_name=job_name,
                     partition_key=parition_key,
                     asset_selection=[g["asset_key"] for g in group],
-                    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
+                    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
                 )
             )
 

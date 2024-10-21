@@ -38,17 +38,15 @@ models:
   kippcamden:
     extracts:
       +schema: extracts
-      +materialized: table
   deanslist:
-    +schema: deanslist
+    +materialized: table
   edplan:
-    +schema: edplan
+    +materialized: table
   overgrad:
-    +schema: overgrad
+    +materialized: table
   pearson:
-    +schema: pearson
+    +materialized: table
   powerschool:
-    +schema: powerschool
     +materialized: table
     staging:
       stg_powerschool__period:
@@ -58,7 +56,7 @@ models:
       stg_powerschool__u_def_ext_students:
         +enabled: false
   titan:
-    +schema: titan
+    +materialized: table
     staging:
       stg_titan__income_form_data:
         +enabled: false

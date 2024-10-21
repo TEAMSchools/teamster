@@ -11,7 +11,6 @@ on:
       - Dockerfile
       - requirements.txt
       - src/dbt/kipptaf/**
-      - src/dbt/teamster_utils/**
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**
       - src/teamster/libraries/adp/**
@@ -28,11 +27,15 @@ on:
       - src/teamster/libraries/performance_management/**
       - src/teamster/libraries/powerschool/enrollment/**
       - src/teamster/libraries/schoolmint/**
+      - src/teamster/libraries/sftp/**
       - src/teamster/libraries/smartrecruiters/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/tableau/**
   pull_request:
     paths:
+      - .github/workflows/dagster-cloud-deploy.yaml
+      - .github/workflows/deploy-prod-kipptaf.yaml
+      - Dockerfile
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**
       - src/teamster/libraries/adp/**
@@ -49,6 +52,7 @@ on:
       - src/teamster/libraries/performance_management/**
       - src/teamster/libraries/powerschool/enrollment/**
       - src/teamster/libraries/schoolmint/**
+      - src/teamster/libraries/sftp/**
       - src/teamster/libraries/smartrecruiters/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/tableau/**

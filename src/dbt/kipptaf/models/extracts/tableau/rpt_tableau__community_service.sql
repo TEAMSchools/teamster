@@ -1,18 +1,18 @@
 select
     co.student_number,
     co.academic_year,
-    co.lastfirst,
+    co.student_name,
     co.gender,
     co.ethnicity,
-    co.spedlep as iep_status,
+    co.iep_status,
     co.lep_status,
     co.is_504 as c_504_status,
     co.grade_level,
     co.cohort,
-    co.advisor_lastfirst as advisor_name,
-    co.contact_1_email_current as guardianemail,
-    co.student_email_google as student_email,
-    co.school_abbreviation as school_name,
+    co.advisory as advisor_name,
+    co.guardian_email,
+    co.student_email,
+    co.school as school_name,
 
     b.behavior_date,
     b.behavior,
@@ -25,7 +25,7 @@ select
     coalesce(safe_cast(c.`10th_hours` as numeric), 0) as grade_10_hours,
     coalesce(safe_cast(c.`11th_hours` as numeric), 0) as grade_11_hours,
     coalesce(safe_cast(c.`12th_hours` as numeric), 0) as grade_12_hours,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_tableau__student_enrollments") }} as co
 left join
     {{ ref("stg_deanslist__behavior") }} as b
     on co.student_number = b.student_school_id
@@ -39,4 +39,3 @@ where
     co.grade_level >= 9
     and co.enroll_status = 0
     and co.academic_year = {{ var("current_academic_year") }}
-    and co.rn_year = 1

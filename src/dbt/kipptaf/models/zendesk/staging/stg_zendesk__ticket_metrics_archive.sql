@@ -12,4 +12,4 @@ select
     as full_resolution_time_in_minutes_business,
     reply_time_in_minutes.business as reply_time_in_minutes_business,
 from {{ source("zendesk", "src_zendesk__ticket_metrics_archive") }}
-where id not in (select id, from {{ source("zendesk", "ticket_metrics") }})
+where id not in (select tm.id, from {{ source("zendesk", "ticket_metrics") }} as tm)

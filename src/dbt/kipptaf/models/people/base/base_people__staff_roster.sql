@@ -11,7 +11,7 @@ with
             dbt_utils.deduplicate(
                 relation="staff_roster_active",
                 partition_by="employee_number",
-                order_by="is_prestart desc, primary_indicator desc, work_assignment_end_date desc",
+                order_by="is_prestart desc, primary_indicator desc, work_assignment_end_date desc, work_assignment_start_date desc",
             )
         }}
     )

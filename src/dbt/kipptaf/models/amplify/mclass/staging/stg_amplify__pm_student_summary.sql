@@ -57,19 +57,43 @@ with
 
             coalesce(
                 cast(score.double_value as numeric), cast(score.long_value as numeric)
-            ) as score,
+            ) as mclass_measure_standard_score,
 
             coalesce(
                 cast(score_change.double_value as numeric),
                 cast(score_change.string_value as numeric)
-            ) as score_change,
+            ) as mclass_measure_standard_score_change,
 
             cast(left(school_year, 4) as int) as academic_year,
+
+            case
+                measure
+                when 'Composite'
+                then 'Composite'
+                when 'Reading Comprehension (Maze)'
+                then 'Comprehension'
+                else substr(measure, strpos(measure, '(') + 1, 3)
+            end as mclass_measure_name_code,
         from {{ src_pss }}
     )
 
 select
     *,
+
+    case
+        mclass_measure_name_code
+        when 'LNF'
+        then 'Letter Names'
+        when 'PSF'
+        then 'Phonological Awareness'
+        when 'NWF'
+        then 'Nonsense Word Fluency'
+        when 'WRF'
+        then 'Word Reading Fluency'
+        when 'ORF'
+        then 'Oral Reading Fluency'
+        else mclass_measure_name_code
+    end as mclass_measure_name,
 
     if(
         assessment_grade = 'K', 0, safe_cast(assessment_grade as int)

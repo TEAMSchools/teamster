@@ -39,20 +39,15 @@ with
         where course_rank = expected_course_rank
     ),
 
-    dlm as (
-        select distinct student_number,
-        from {{ ref("int_students__graduation_path_codes") }}
-        where code = 'M'
-    ),
-
     roster as (
         select
             e.academic_year,
+            e.academic_year_display,
             e.region,
             e.schoolid,
-            e.school_abbreviation,
+            e.school,
             e.student_number,
-            e.lastfirst,
+            e.student_name,
             e.grade_level,
             e.enroll_status,
             e.cohort,
@@ -60,20 +55,20 @@ with
             e.exitdate,
             e.is_504 as c_504_status,
             e.lep_status,
-            e.advisor_lastfirst,
-
-            adb.contact_id,
-            adb.ktc_cohort,
-            adb.contact_owner_name,
+            e.gifted_and_talented,
+            e.advisory,
+            e.contact_id,
+            e.ktc_cohort,
+            e.contact_owner_name,
 
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
 
-            if(e.spedlep in ('No IEP', null), 0, 1) as sped,
+            if(e.iep_status = 'No IEP', 0, 1) as sped,
 
-            if(d.student_number is null, false, true) as dlm,
-        from {{ ref("base_powerschool__student_enrollments") }} as e
+            coalesce(f.is_exempt_state_testing, false) as dlm,
+        from {{ ref("int_tableau__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
@@ -89,20 +84,17 @@ with
                 'HR'
             )
         left join
-            {{ ref("int_kippadb__roster") }} as adb
-            on e.student_number = adb.student_number
-        left join dlm as d on e.student_number = d.student_number
-        left join
             expected_course as ec
             on s.cc_academic_year = ec.cc_academic_year
             and s.students_student_number = ec.student_number
             and s.courses_course_name = ec.courses_course_name_expected
             and {{ union_dataset_join_clause(left_alias="s", right_alias="ec") }}
-        where
-            e.rn_year = 1
-            and e.school_level = 'HS'
-            and e.schoolid != 999999
-            and ec.courses_course_name_expected is not null
+        left join
+            {{ ref("int_reporting__student_filters") }} as f
+            on s.cc_academic_year = f.academic_year
+            and s.students_student_number = f.student_number
+            and s.courses_credittype = f.powerschool_credittype
+        where e.school_level = 'HS' and ec.courses_course_name_expected is not null
     ),
 
     college_assessments_official as (
@@ -144,7 +136,7 @@ with
             end as course_discipline,
 
             {{
-                teamster_utils.date_to_fiscal_year(
+                date_to_fiscal_year(
                     date_field="date", start_month=7, year_source="start"
                 )
             }} as test_academic_year,
@@ -221,11 +213,12 @@ with
 
 select
     e.academic_year,
+    e.academic_year_display,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
     e.student_number,
-    e.lastfirst,
+    e.student_name,
     e.grade_level,
     e.enroll_status,
     e.cohort,
@@ -234,7 +227,8 @@ select
     e.sped,
     e.c_504_status,
     e.lep_status,
-    e.advisor_lastfirst,
+    e.gifted_and_talented,
+    e.advisory,
     e.contact_id,
     e.ktc_cohort,
     e.contact_owner_name,
@@ -276,11 +270,12 @@ union all
 
 select
     e.academic_year,
+    e.academic_year_display,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
     e.student_number,
-    e.lastfirst,
+    e.student_name,
     e.grade_level,
     e.enroll_status,
     e.cohort,
@@ -289,7 +284,8 @@ select
     e.sped,
     e.c_504_status,
     e.lep_status,
-    e.advisor_lastfirst,
+    e.gifted_and_talented,
+    e.advisory,
     e.contact_id,
     e.ktc_cohort,
     e.contact_owner_name,
@@ -331,11 +327,12 @@ union all
 
 select
     e.academic_year,
+    e.academic_year_display,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
     e.student_number,
-    e.lastfirst,
+    e.student_name,
     e.grade_level,
     e.enroll_status,
     e.cohort,
@@ -344,7 +341,8 @@ select
     e.sped,
     e.c_504_status,
     e.lep_status,
-    e.advisor_lastfirst,
+    e.gifted_and_talented,
+    e.advisory,
     e.contact_id,
     e.ktc_cohort,
     e.contact_owner_name,

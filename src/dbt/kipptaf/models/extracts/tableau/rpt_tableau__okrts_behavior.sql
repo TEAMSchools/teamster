@@ -14,7 +14,9 @@ with
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
             case
-                when regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami'
+                when
+                    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami'
+                    and behavior_category != 'Earned Incentives'
                 then regexp_extract(behavior_category, r'([\w\s]+) \(')
                 when behavior like '%(%)'
                 then regexp_extract(behavior, r'([\w\s]+) \(')
@@ -32,7 +34,9 @@ with
                 'Effort (Pride)',
                 'Accountability (Purpose, Courage)',
                 'Accountability (Empowerment)',
-                'Teamwork (Community)'
+                'Teamwork (Community)',
+                'Written Reminders',
+                'Big Reminders'
             )
             and behavior_date >= '{{ var("current_academic_year") - 1 }}-07-01'
     ),
@@ -163,6 +167,8 @@ select
     if(
         co.is_self_contained, 'Self-contained', 'Not self-contained'
     ) as self_contained_status,
+
+    extract(month from cw.week_start_monday) as behavior_month,
 
     count(distinct co.student_number) over (
         partition by co.schoolid, cw.week_start_monday

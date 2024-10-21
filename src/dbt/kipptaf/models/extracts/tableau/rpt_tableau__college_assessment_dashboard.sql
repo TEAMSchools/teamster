@@ -2,6 +2,7 @@ with
     roster as (
         select
             e.academic_year,
+            e.academic_year_display,
             e.region,
             e.schoolid,
             e.school,
@@ -12,6 +13,7 @@ with
             e.cohort,
             e.is_504,
             e.lep_status,
+            e.gifted_and_talented,
             e.advisory,
             e.contact_id,
             e.ktc_cohort,
@@ -119,7 +121,7 @@ with
             end as course_discipline,
 
             {{
-                teamster_utils.date_to_fiscal_year(
+                date_to_fiscal_year(
                     date_field="date", start_month=7, year_source="start"
                 )
             }} as test_academic_year,
@@ -196,6 +198,7 @@ with
 
 select
     e.academic_year,
+    e.academic_year_display,
     e.region,
     e.schoolid,
     e.school,
@@ -207,6 +210,7 @@ select
     e.sped,
     e.is_504,
     e.lep_status,
+    e.gifted_and_talented,
     e.advisory,
     e.contact_id,
     e.ktc_cohort,
@@ -263,6 +267,7 @@ union all
 
 select
     e.academic_year,
+    e.academic_year_display,
     e.region,
     e.schoolid,
     e.school,
@@ -274,6 +279,7 @@ select
     e.sped,
     e.is_504,
     e.lep_status,
+    e.gifted_and_talented,
     e.advisory,
     e.contact_id,
     e.ktc_cohort,
@@ -330,6 +336,7 @@ union all
 
 select
     e.academic_year,
+    e.academic_year_display,
     e.region,
     e.schoolid,
     e.school,
@@ -341,6 +348,7 @@ select
     e.sped,
     e.is_504,
     e.lep_status,
+    e.gifted_and_talented,
     e.advisory,
     e.contact_id,
     e.ktc_cohort,
