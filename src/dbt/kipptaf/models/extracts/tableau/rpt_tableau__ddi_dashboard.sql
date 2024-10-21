@@ -10,6 +10,8 @@ with
 
             lower(il.subject) as `subject`,
 
+            sum(il.passed_or_not_passed_numeric) as total_iready_lessons_passed,
+
             if(
                 sum(il.passed_or_not_passed_numeric) >= 2, 1, 0
             ) as is_pass_2_lessons_int,
@@ -39,12 +41,15 @@ with
             student_id,
             powerschool_school_id,
             week_start_monday,
+            total_iready_lessons_passed_reading,
             is_pass_2_lessons_int_reading,
             is_pass_4_lessons_int_reading,
+            total_iready_lessons_passed_math,
             is_pass_2_lessons_int_math,
             is_pass_4_lessons_int_math,
         from
             iready_weekly pivot (
+                max(total_iready_lessons_passed) as total_iready_lessons_passed,
                 max(is_pass_2_lessons_int) as is_pass_2_lessons_int,
                 max(is_pass_4_lessons_int) as is_pass_4_lessons_int for `subject`
                 in ('reading', 'math')
@@ -263,8 +268,13 @@ select
     g.region_goal,
     g.organization_goal,
 
-    sf.nj_student_tier,
     sf.dibels_most_recent_composite,
+    sf.state_test_proficiency,
+
+    ip.total_iready_lessons_passed_reading,
+    ip.total_iready_lessons_passed_math,
+
+    coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
 
     if(qbls.qbl is not null, true, false) as is_qbl,
 
@@ -365,6 +375,9 @@ select
     sf.nj_student_tier,
 
     null as dibels_most_recent_composite,
+    null as state_test_proficiency,
+    null as total_iready_lessons_passed_reading,
+    null as total_iready_lessons_passed_math,
 
     if(qbls.qbl is not null, true, false) as is_qbl,
 
@@ -487,6 +500,9 @@ select
     null as organization_goal,
     null as nj_student_tier,
     null as dibels_most_recent_composite,
+    null as state_test_proficiency,
+    null as total_iready_lessons_passed_reading,
+    null as total_iready_lessons_passed_math,
     null as is_qbl,
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
