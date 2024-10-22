@@ -6,6 +6,7 @@ select
 
     cum.cumulative_y1_gpa as gpa_cum,
     cum.cumulative_y1_gpa_projected as gpa_cum_projected,
+    cum.earned_credits_cum as grades_y1_credits_projected,
 
     gpa.gpa_term,
     gpa.gpa_y1,
@@ -13,7 +14,6 @@ select
     p.overall_status as promo_status_overall,
     p.attendance_status as promo_status_attendance,
     p.academic_status as promo_status_grades,
-    cum.earned_credits_cum as grades_y1_credits_projected,
     p.n_failing as grades_y1_failing_projected,
     p.ada_term_running,
     p.projected_credits_y1_term,
