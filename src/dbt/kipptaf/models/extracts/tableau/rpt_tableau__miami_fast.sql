@@ -203,6 +203,8 @@ select
 
     sf.territory,
 
+    coalesce(sf.nj_student_tier, 'Unbucketed') as student_tier,
+
     if(fte.is_enrolled_fte2 and fte.is_enrolled_fte3, true, false) as is_enrolled_fte,
 
     round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
@@ -245,6 +247,10 @@ select
             administration_window
         order by fs.standard asc
     ) as rn_test_fast,
+    row_number() over (
+        partition by co.student_number, co.academic_year, subj.fast_subject
+        order by administration_window desc
+    ) as rn_year_fast,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['PM1', 'PM2', 'PM3']) as administration_window
