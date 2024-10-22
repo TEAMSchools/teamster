@@ -16,6 +16,7 @@ asset_key = [CODE_LOCATION, "adp", "workforce_now", "workers"]
     io_manager_key="io_manager_gcs_avro",
     group_name="adp_workforce_now",
     compute_kind="python",
+    op_tags={"dagster/concurrency_key": "adp_wfn_api"},
     check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     partitions_def=DailyPartitionsDefinition(
         start_date="01/01/2021",
