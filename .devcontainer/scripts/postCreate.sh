@@ -53,16 +53,6 @@ op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
   --out-file=env/dbt_cloud.yml &&
   sudo mv -f env/dbt_cloud.yml /home/vscode/.dbt/dbt_cloud.yml
 
-# authenticate gcloud
-gcloud auth activate-service-account --key-file=/etc/secret-volume/gcloud_service_account_json
-
-# set gcloud project & region
-gcloud config set project teamster-332318
-gcloud config set compute/region us-central1
-
-# update the kubectl configuration to use the plugin
-gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid-1
-
 # install pdm dependencies
 pdm install --frozen-lockfile
 
