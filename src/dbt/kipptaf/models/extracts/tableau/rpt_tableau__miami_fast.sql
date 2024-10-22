@@ -211,6 +211,8 @@ select
 
     case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
 
+    right(cast(ft.achievement_level as string), 1) as fast_level_int,
+
     if(
         not co.is_retained_year
         and co.grade_level = 3
