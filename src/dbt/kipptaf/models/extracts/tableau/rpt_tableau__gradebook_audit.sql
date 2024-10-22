@@ -332,7 +332,7 @@ with
         from grades_and_assignments
     )
 
-select distinct
+select
     _dbt_source_relation,
     academic_year,
     academic_year_display,
