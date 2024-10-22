@@ -249,7 +249,7 @@ select
     ) as rn_test_fast,
     row_number() over (
         partition by co.student_number, co.academic_year, subj.fast_subject
-        order by administration_window asc
+        order by administration_window desc
     ) as rn_year_fast,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
