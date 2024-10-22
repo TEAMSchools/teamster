@@ -1,5 +1,4 @@
 {
-  "dbt.enableNewLineagePanel": true,
   "diffEditor.experimental.showMoves": true,
   "diffEditor.ignoreTrimWhitespace": false,
   "editor.defaultFormatter": "trunk.io",
@@ -44,5 +43,5 @@
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "dbt.perspectiveTheme": "Vintage"
+  "dbt.enableNewLineagePanel": true
 }

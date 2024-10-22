@@ -75,7 +75,6 @@ workspace:
   # This timeout should be increased if your code locations can take more than 3
   # minutes to load your Dagster definitions.
   serverProcessStartupTimeout: 300
-
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ########################################################################################
@@ -87,7 +86,7 @@ extraManifests:
     metadata:
       name: pdb-agent
     spec:
-      maxUnavailable: 0
+      minAvailable: 1
       selector:
         matchLabels:
           component: agent
@@ -96,7 +95,7 @@ extraManifests:
     metadata:
       name: pdb-kippcamden
     spec:
-      maxUnavailable: 0
+      minAvailable: 1
       selector:
         matchLabels:
           location_name: kippcamden
@@ -105,7 +104,7 @@ extraManifests:
     metadata:
       name: pdb-kippmiami
     spec:
-      maxUnavailable: 0
+      minAvailable: 1
       selector:
         matchLabels:
           location_name: kippmiami
@@ -114,7 +113,7 @@ extraManifests:
     metadata:
       name: pdb-kippnewark
     spec:
-      maxUnavailable: 0
+      minAvailable: 1
       selector:
         matchLabels:
           location_name: kippnewark
@@ -123,7 +122,7 @@ extraManifests:
     metadata:
       name: pdb-kipptaf
     spec:
-      maxUnavailable: 0
+      minAvailable: 1
       selector:
         matchLabels:
           location_name: kipptaf

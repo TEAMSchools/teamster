@@ -24,7 +24,7 @@ with
             ) as `route`,
         from {{ ref("int_people__staff_roster") }} as sr
         left join
-            {{ ref("stg_leadership_development_active_users") }} as au
+            {{ ref("stg_leadership_development__active_users") }} as au
             on sr.employee_number = au.employee_number
         where au.active_title
     )

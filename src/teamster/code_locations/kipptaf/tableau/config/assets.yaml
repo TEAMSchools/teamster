@@ -200,7 +200,6 @@ assets:
       - [kipptaf, tableau, rpt_tableau__stipend_and_bonus_app]
     metadata:
       id: 35484db7-cd5b-4834-828a-5bfc645a09c6
-      cron_schedule: 0 8 * * *
   - name: Number of School Days Between Two Dates
     deps:
       - [kipptaf, tableau, rpt_tableau__powerschool_calendar_day]
