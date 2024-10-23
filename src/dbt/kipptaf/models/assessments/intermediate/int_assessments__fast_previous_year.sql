@@ -29,7 +29,7 @@ with
         inner join
             {{ ref("stg_fldoe__fast") }} as pp
             on co.fleid = pp.student_id
-            and co.academic_year = pp.academic_year + 1
+            and (co.academic_year - 1) = pp.academic_year
             and pp.administration_window = 'PM3'
         left join
             {{ ref("stg_assessments__iready_crosswalk") }} as cw
@@ -38,11 +38,21 @@ with
             and pp.scale_score between cw.scale_low and cw.scale_high
             and cw.source_system = 'FAST_NEW'
             and cw.destination_system = 'FL'
-        where co.rn_year = 1 and co.grade_level != 99 and co.region = 'Miami'
+        where co.rn_year = 1 and co.region = 'Miami' and co.grade_level != 99
     )
 
 select
-    py.*,
+    py.student_number,
+    py.academic_year,
+    py.grade_level,
+    py.student_id,
+    py.assessment_subject,
+    py.prev_pm3_scale,
+    py.prev_pm3_achievement_level,
+    py.prev_pm3_level_int,
+    py.prev_pm3_sublevel_name,
+    py.prev_pm3_sublevel_number,
+    py.fldoe_percentile_rank,
 
     cw1.scale_low as scale_for_growth,
     cw1.sublevel_name as sublevel_for_growth,
@@ -69,7 +79,7 @@ left join
     {{ ref("stg_assessments__iready_crosswalk") }} as cw1
     on py.assessment_subject = cw1.test_name
     and py.grade_level = cw1.grade_level
-    and py.prev_pm3_sublevel_number + 1 = cw1.sublevel_number
+    and (py.prev_pm3_sublevel_number + 1) = cw1.sublevel_number
     and cw1.source_system = 'FAST_NEW'
     and cw1.destination_system = 'FL'
 /* gets proficient scale score */
@@ -77,9 +87,9 @@ left join
     {{ ref("stg_assessments__iready_crosswalk") }} as cw2
     on py.assessment_subject = cw2.test_name
     and py.grade_level = cw2.grade_level
-    and cw2.sublevel_number = 6
     and cw2.source_system = 'FAST_NEW'
     and cw2.destination_system = 'FL'
+    and cw2.sublevel_number = 6
 /* gets growth scale for students scoring 3 or 4 */
 left join
     {{ ref("stg_assessments__iready_crosswalk") }} as cw3

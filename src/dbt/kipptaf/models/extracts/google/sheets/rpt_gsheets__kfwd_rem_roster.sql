@@ -5,6 +5,7 @@ with
             cumulative_credits_earned,
             credits_required_for_graduation,
             gpa,
+
             row_number() over (
                 partition by student order by transcript_date desc
             ) as rn_transcript,
@@ -15,25 +16,26 @@ with
         select
             contact,
             `date`,
-            subject,
+            `subject`,
 
-            cast(concat('20', right(left(subject, 8), 2)) as int) as fiscal_year,
-            row_number() over (partition by contact order by date desc) as rn_note,
+            cast(concat('20', right(left(`subject`, 8), 2)) as int) as fiscal_year,
+
+            row_number() over (partition by contact order by `date` desc) as rn_note,
         from {{ ref("stg_kippadb__contact_note") }}
-        where subject like 'REM FY%'
+        where `subject` like 'REM FY%'
     ),
 
     rem_handoff as (
         select
             contact,
             `date` as rem_handoff_date,
-            subject,
-            row_number() over (partition by contact order by date desc) as rn_note,
+            `subject`,
+
+            row_number() over (partition by contact order by `date` desc) as rn_note,
         from {{ ref("stg_kippadb__contact_note") }}
-        where subject like 'REM Handoff'
+        where `subject` like 'REM Handoff'
     )
 
--- trunk-ignore(sqlfluff/ST06)
 select
     r.lastfirst as student_name,
     r.contact_id,
@@ -64,7 +66,9 @@ select
 
     if(
         date_diff(
-            current_date('America/New_York'), c.contact_last_successful_contact, day
+            current_date('{{ var("local_timezone") }}'),
+            c.contact_last_successful_contact,
+            day
         )
         > 30,
         'Successful Contact > 30 days',
@@ -72,7 +76,10 @@ select
     ) as successful_contact_status,
 
     if(
-        date_diff(current_date('America/New_York'), c.contact_last_outreach, day) > 30,
+        date_diff(
+            current_date('{{ var("local_timezone") }}'), c.contact_last_outreach, day
+        )
+        > 30,
         'Last Outreach > 30 days',
         'Last Outreach within 30'
     ) as last_outreach_status,

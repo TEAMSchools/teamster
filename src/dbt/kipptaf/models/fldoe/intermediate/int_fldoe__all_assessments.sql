@@ -48,11 +48,13 @@ select
     cast(regexp_extract(fl.achievement_level, r'\d+') as int) as achievement_level_int,
 
     if(cw1.sublevel_number >= 6, null, cw2.scale_low) as scale_for_proficiency,
+
     if(
         cw1.sublevel_number >= 6, null, cw2.scale_low - fl.scale_score
     ) as points_to_proficiency,
 
     if(cw1.sublevel_number = 8, null, cw1.scale_high + 1) as scale_for_growth,
+
     if(
         cw1.sublevel_number = 8, null, (cw1.scale_high + 1) - fl.scale_score
     ) as points_to_growth,
