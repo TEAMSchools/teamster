@@ -784,7 +784,7 @@ select
 
     if(
         ei.ugrad_status = 'Graduated'
-        and ei.ugrad_actual_end_date <= current_date('America/New_York'),
+        and ei.ugrad_actual_end_date <= current_date('{{ var("local_timezone") }}'),
         1,
         0
     ) as is_grad_ever,
