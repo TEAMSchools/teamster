@@ -200,7 +200,6 @@ assets:
       - [kipptaf, tableau, rpt_tableau__stipend_and_bonus_app]
     metadata:
       id: 35484db7-cd5b-4834-828a-5bfc645a09c6
-      cron_schedule: 0 8 * * *
   - name: Number of School Days Between Two Dates
     deps:
       - [kipptaf, tableau, rpt_tableau__powerschool_calendar_day]
@@ -219,18 +218,19 @@ assets:
     metadata:
       id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
       cron_schedule: 0 * * * *
+  - name: KIPP Miami FAST & i-Ready Analysis
+    deps:
+      - [kipptaf, tableau, rpt_tableau__miami_fast]
+      - [kipptaf, tableau, rpt_tableau__miami_k2_iready]
+      - [kipptaf, tableau, rpt_tableau__miami_k2_star]
+    metadata:
+      id: 9a4decae-3707-468f-8098-d3f625d770eb
+      cron_schedule: 0 2 * * *
   # - name: Coaching Conversation Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
   #   metadata:
   #     id: db88d328-0d54-4dac-8003-6197841e1432
-  # - name: KIPP Miami FAST & i-Ready Analysis
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__miami_fast]
-  #     - [kipptaf, tableau, rpt_tableau__miami_k2_iready]
-  #     - [kipptaf, tableau, rpt_tableau__miami_k2_star]
-  #   metadata:
-  #     id: 9a4decae-3707-468f-8098-d3f625d770eb
   # - name: Master Renewal Tracking Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__staff_performance_compliance_history]

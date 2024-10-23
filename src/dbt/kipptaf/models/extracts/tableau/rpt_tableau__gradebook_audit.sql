@@ -293,8 +293,12 @@ with
             ) as w_grade_inflation,
 
             if(
-                region = 'Miami' and category_quarter_percent_grade is null, true, false
-            ) as qt_category_grade_missing,
+                region = 'Miami'
+                and assignment_category_code = 'W'
+                and category_quarter_percent_grade is null,
+                true,
+                false
+            ) as qt_effort_grade_missing,
 
             if(
                 isexempt = 0
@@ -701,7 +705,8 @@ select
                 'f_expected_assign_count_not_met',
                 's_expected_assign_count_not_met',
                 'qt_student_is_ada_80_plus_gpa_less_2',
-                'w_grade_inflation'
+                'w_grade_inflation',
+                'qt_effort_grade_missing'
             )
         then null
         else assignmentid
@@ -716,7 +721,8 @@ select
                 'f_expected_assign_count_not_met',
                 's_expected_assign_count_not_met',
                 'qt_student_is_ada_80_plus_gpa_less_2',
-                'w_grade_inflation'
+                'w_grade_inflation',
+                'qt_effort_grade_missing'
             )
         then null
         else assignment_name
@@ -731,7 +737,8 @@ select
                 'f_expected_assign_count_not_met',
                 's_expected_assign_count_not_met',
                 'qt_student_is_ada_80_plus_gpa_less_2',
-                'w_grade_inflation'
+                'w_grade_inflation',
+                'qt_effort_grade_missing'
             )
         then null
         else scoretype
@@ -746,7 +753,8 @@ select
                 'f_expected_assign_count_not_met',
                 's_expected_assign_count_not_met',
                 'qt_student_is_ada_80_plus_gpa_less_2',
-                'w_grade_inflation'
+                'w_grade_inflation',
+                'qt_effort_grade_missing'
             )
         then null
         else totalpointvalue
@@ -761,7 +769,8 @@ select
                 'f_expected_assign_count_not_met',
                 's_expected_assign_count_not_met',
                 'qt_student_is_ada_80_plus_gpa_less_2',
-                'w_grade_inflation'
+                'w_grade_inflation',
+                'qt_effort_grade_missing'
             )
         then null
         else duedate
@@ -1017,6 +1026,7 @@ from
             qt_percent_grade_greater_100,
             qt_teacher_s_total_greater_200,
             qt_student_is_ada_80_plus_gpa_less_2,
+            qt_effort_grade_missing,
             w_grade_inflation
         )
     )

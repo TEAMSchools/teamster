@@ -8,7 +8,7 @@ endpoints:
         container_config:
           resources:
             requests:
-              memory: 1.5Gi
+              memory: 2.5Gi
   - endpoint: homework
     api_version: v1
     params:
