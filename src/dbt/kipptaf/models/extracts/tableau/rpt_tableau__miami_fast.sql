@@ -24,18 +24,14 @@ with
             sum(passed_or_not_passed_numeric) as lessons_passed,
         from {{ ref("stg_iready__instruction_by_lesson") }}
         where
-            completion_date in (
-                select date_value,
-                from
-                    unnest(
-                        generate_date_array(
-                            date_sub(
-                                date_trunc(current_date('America/New_York'), week),
-                                interval 1 week
-                            ),
-                            last_day(current_date('America/New_York'), week)
-                        )
-                    ) as date_value
+            completion_date in unnest(
+                generate_date_array(
+                    date_sub(
+                        date_trunc(current_date('{{ var("local_timezone") }}'), week),
+                        interval 1 week
+                    ),
+                    last_day(current_date('{{ var("local_timezone") }}'), week)
+                )
             )
         group by student_id, `subject`
     ),
@@ -190,6 +186,7 @@ select
     ft.scale_for_proficiency as fast_scale_for_proficiency,
     ft.points_to_growth as fast_scale_points_to_growth,
     ft.points_to_proficiency as fast_scale_points_to_proficiency,
+    ft.achievement_level_int as fast_level_int,
 
     p.prev_pm3_scale,
     p.prev_pm3_level_int,
@@ -211,13 +208,11 @@ select
 
     coalesce(sf.nj_student_tier, 'Unbucketed') as student_tier,
 
-    if(fte.is_enrolled_fte2 and fte.is_enrolled_fte3, true, false) as is_enrolled_fte,
-
     round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
 
-    case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
+    if(fte.is_enrolled_fte2 and fte.is_enrolled_fte3, true, false) as is_enrolled_fte,
 
-    right(cast(ft.achievement_level as string), 1) as fast_level_int,
+    if(p.fldoe_percentile_rank < .255, true, false) as is_low_25,
 
     if(
         not co.is_retained_year
@@ -228,7 +223,7 @@ select
         0
     ) as gr3_retention_flag,
 
-    if(p.fldoe_percentile_rank < .255, true, false) as is_low_25,
+    case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
 
     case
         when
@@ -255,6 +250,7 @@ select
             administration_window
         order by fs.standard asc
     ) as rn_test_fast,
+
     row_number() over (
         partition by co.student_number, co.academic_year, subj.fast_subject
         order by administration_window desc
@@ -296,7 +292,7 @@ left join
     and administration_window = ft.administration_window
     and ft.assessment_name = 'FAST'
 left join
-    {{ ref("int_assessments__previous_year_fast") }} as p
+    {{ ref("int_assessments__fast_previous_year") }} as p
     on co.student_number = p.student_number
     and co.academic_year = p.academic_year
     and subj.fast_subject = p.assessment_subject

@@ -135,7 +135,9 @@ with
             end as is_retained_int,
 
             case
-                when r.persistence_date_fall > current_date('America/New_York')
+                when
+                    r.persistence_date_fall
+                    > current_date('{{ var("local_timezone") }}')
                 then null
                 when
                     e.actual_end_date >= r.persistence_date_fall
@@ -262,7 +264,9 @@ with
             end as is_retained_int,
 
             case
-                when r.persistence_date_spring > current_date('America/New_York')
+                when
+                    r.persistence_date_spring
+                    > current_date('{{ var("local_timezone") }}')
                 then null
                 when
                     e.actual_end_date >= r.persistence_date_spring

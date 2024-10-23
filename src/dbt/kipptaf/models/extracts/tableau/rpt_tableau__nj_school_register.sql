@@ -9,7 +9,7 @@ with
             sum(membershipvalue) as n_mem,
             sum(
                 if(
-                    calendardate <= current_date('America/New_York'),
+                    calendardate <= current_date('{{ var("local_timezone") }}'),
                     membershipvalue,
                     null
                 )
