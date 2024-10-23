@@ -16,7 +16,7 @@ powerschool_sis_asset_gradebook_schedule = build_powerschool_sis_asset_schedule(
         *powerschool_table_assets_gradebook_full,
         *powerschool_table_assets_gradebook_monthly,
     ],
-    cron_schedule="5 0 * * *",
+    cron_schedule="0 2 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
