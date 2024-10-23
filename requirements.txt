@@ -103,7 +103,7 @@ pathspec==0.12.1
 pendulum==3.0.0
 pex==2.20.3
 prompt-toolkit==3.0.36
-proto-plus==1.24.0
+proto-plus==1.25.0
 protobuf==4.25.5
 psutil==6.1.0; platform_system == "Windows"
 py-avro-schema==3.8.2
