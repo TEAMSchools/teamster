@@ -220,8 +220,7 @@ with
             ) as qt_g1_g8_conduct_code_incorrect,
 
             if(
-                region != 'Miami'
-                and is_quarter_end_date_range
+                is_quarter_end_date_range
                 and grade_level > 4
                 and quarter_course_percent_grade_that_matters < 70
                 and quarter_comment_value is null,
