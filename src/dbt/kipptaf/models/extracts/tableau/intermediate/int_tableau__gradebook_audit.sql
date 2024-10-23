@@ -458,7 +458,6 @@ select
         then 'Data Entry'
         when
             audit_flag_name in (
-
                 'w_percent_graded_completion_by_qt_audit_week_not_100',
                 'f_percent_graded_completion_by_qt_audit_week_not_100',
                 's_percent_graded_completion_by_qt_audit_week_not_100'

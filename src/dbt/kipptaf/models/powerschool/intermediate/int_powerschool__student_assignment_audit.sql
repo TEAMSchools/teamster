@@ -1,9 +1,13 @@
 with
-    students_assignments as (
+    enr_week_expectations as (
         select
             ce._dbt_source_relation,
             ce.cc_studentid as studentid,
             ce.cc_sectionid as sectionid,
+            ce.cc_dateenrolled,
+            ce.cc_dateleft,
+            ce.sections_dcid,
+            ce.students_dcid,
 
             sch.school_level,
 
@@ -12,27 +16,16 @@ with
             c.semester,
             c.week_number_quarter,
             c.week_number_academic_year,
+            c.week_start_date,
+            c.week_end_date,
             c.week_start_monday,
             c.week_end_sunday,
             c.school_week_start_date_lead,
 
             ge.assignment_category_code,
+            ge.assignment_category_name,
             ge.assignment_category_term,
             ge.expectation,
-
-            a.assignmentid,
-            a.name as assignment_name,
-            a.duedate,
-            a.scoretype,
-            a.totalpointvalue,
-            a.category_name,
-
-            s.scorepoints,
-            s.actualscoreentered,
-
-            if(s.islate = 0 or s.islate is null, false, true) as islate,
-            if(s.isexempt = 0 or s.isexempt is null, false, true) as isexempt,
-            if(s.ismissing = 0 or s.ismissing is null, false, true) as ismissing,
         from {{ ref("base_powerschool__course_enrollments") }} as ce
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
@@ -51,22 +44,6 @@ with
             and c.week_number_quarter = ge.week_number
             and c.region = ge.region
             and sch.school_level = ge.school_level
-        left join
-            {{ ref("int_powerschool__gradebook_assignments") }} as a
-            on ce.sections_dcid = a.sectionsdcid
-            and ce.cc_dateenrolled <= a.duedate
-            and {{ union_dataset_join_clause(left_alias="ce", right_alias="a") }}
-            and a.duedate between c.week_start_date and c.week_end_date
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="a") }}
-            and ge.assignment_category_name = a.category_name
-            and a.iscountedinfinalgrade = 1
-            and a.scoretype in ('POINTS', 'PERCENT')
-        left join
-            {{ ref("stg_powerschool__assignmentscore") }} as s
-            on ce.students_dcid = s.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="ce", right_alias="s") }}
-            and a.assignmentsectionid = s.assignmentsectionid
-            and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
         where
             ce.cc_academic_year = {{ var("current_academic_year") }}
             and ce.cc_sectionid > 0
@@ -112,6 +89,55 @@ with
                 'SEM72005G3S',
                 'SEM72005G4S'
             )
+    ),
+
+    students_assignments as (
+        select
+            ewe._dbt_source_relation,
+            ewe.studentid,
+            ewe.sectionid,
+            ewe.school_level,
+            ewe.region,
+            ewe.quarter,
+            ewe.semester,
+            ewe.week_number_quarter,
+            ewe.week_number_academic_year,
+            ewe.week_start_monday,
+            ewe.week_end_sunday,
+            ewe.school_week_start_date_lead,
+            ewe.assignment_category_code,
+            ewe.assignment_category_term,
+            ewe.expectation,
+
+            a.assignmentid,
+            a.name as assignment_name,
+            a.duedate,
+            a.scoretype,
+            a.totalpointvalue,
+            a.category_name,
+
+            s.scorepoints,
+            s.actualscoreentered,
+
+            if(s.islate = 0 or s.islate is null, false, true) as islate,
+            if(s.isexempt = 0 or s.isexempt is null, false, true) as isexempt,
+            if(s.ismissing = 0 or s.ismissing is null, false, true) as ismissing,
+        from enr_week_expectations as ewe
+        left join
+            {{ ref("int_powerschool__gradebook_assignments") }} as a
+            on ewe.sections_dcid = a.sectionsdcid
+            and ewe.assignment_category_name = a.category_name
+            and ewe.cc_dateenrolled <= a.duedate
+            and a.duedate between ewe.week_start_date and ewe.week_end_date
+            and {{ union_dataset_join_clause(left_alias="ewe", right_alias="a") }}
+            and a.iscountedinfinalgrade = 1
+            and a.scoretype in ('POINTS', 'PERCENT')
+        left join
+            {{ ref("stg_powerschool__assignmentscore") }} as s
+            on ewe.students_dcid = s.studentsdcid
+            and {{ union_dataset_join_clause(left_alias="ewe", right_alias="s") }}
+            and a.assignmentsectionid = s.assignmentsectionid
+            and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
     )
 
 select

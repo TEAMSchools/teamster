@@ -1,10 +1,12 @@
 with
-    assignments as (
+    section_week_expectations as (
         select
             sec._dbt_source_relation,
             sec.sections_id as sectionid,
             sec.teachernumber as teacher_number,
             sec.terms_yearid as yearid,
+            sec.sections_dcid,
+            sec.sections_schoolid,
 
             c.semester,
             c.quarter,
@@ -17,76 +19,13 @@ with
             ge.assignment_category_name,
             ge.assignment_category_term,
             ge.expectation,
-
-            a.assignmentid,
-            a.name as assignment_name,
-            a.duedate,
-            a.scoretype,
-            a.totalpointvalue,
-
-            asg.n_students,
-            asg.n_late,
-            asg.n_exempt,
-            asg.n_missing,
-            asg.n_expected,
-            asg.n_expected_scored,
-            asg.avg_expected_scored_percent,
-
-            sum(a.totalpointvalue) over (
-                partition by sec._dbt_source_relation, sec.sections_id, c.quarter
-            ) as total_totalpointvalue_section_quarter,
-
-            sum(asg.n_missing) over (
-                partition by sec._dbt_source_relation, sec.sections_id, c.quarter
-            ) as total_missing_section_quarter,
-
-            count(a.assignmentid) over (
-                partition by
-                    sec._dbt_source_relation,
-                    sec.sections_id,
-                    c.quarter,
-                    ge.assignment_category_code
-                order by c.week_number_quarter asc
-            ) as assignment_count_section_quarter_category_running_week,
-
-            sum(asg.n_expected) over (
-                partition by
-                    sec._dbt_source_relation,
-                    sec.sections_id,
-                    c.quarter,
-                    c.week_number_quarter,
-                    ge.assignment_category_code
-            ) as total_expected_section_quarter_week_category,
-
-            sum(asg.n_expected_scored) over (
-                partition by
-                    sec._dbt_source_relation,
-                    sec.sections_id,
-                    c.quarter,
-                    c.week_number_quarter,
-                    ge.assignment_category_code
-            ) as total_expected_scored_section_quarter_week_category,
-
-            sum(asg.n_expected) over (
-                partition by
-                    sec._dbt_source_relation,
-                    sec.teachernumber,
-                    sec.sections_schoolid,
-                    c.quarter,
-                    c.week_number_quarter,
-                    ge.assignment_category_code
-            ) as total_expected_teacher_school_quarter_week_category,
-
-            sum(asg.n_expected_scored) over (
-                partition by
-                    sec._dbt_source_relation,
-                    sec.teachernumber,
-                    sec.sections_schoolid,
-                    c.quarter,
-                    c.week_number_quarter,
-                    ge.assignment_category_code
-            ) as total_expected_scored_teacher_school_quarter_week_category,
-        from {{ ref("int_powerschool__calendar_week") }} as c
+        from {{ ref("base_powerschool__sections") }} as sec
+        inner join
+            {{ ref("int_powerschool__calendar_week") }} as c
+            on sec.sections_schoolid = c.schoolid
+            and sec.terms_yearid = c.yearid
+            and c.week_end_date between sec.terms_firstday and sec.terms_lastday
+            and {{ union_dataset_join_clause(left_alias="sec", right_alias="c") }}
         inner join
             {{ ref("stg_reporting__gradebook_expectations") }} as ge
             on c.academic_year = ge.academic_year
@@ -94,14 +33,9 @@ with
             and c.quarter = ge.quarter
             and c.week_number_quarter = ge.week_number
             and c.school_level = ge.school_level
-        left join
-            {{ ref("base_powerschool__sections") }} as sec
-            on c.schoolid = sec.sections_schoolid
-            and c.yearid = sec.terms_yearid
-            and c.week_end_date between sec.terms_firstday and sec.terms_lastday
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="sec") }}
+        where
             /* exclude courses */
-            and sec.courses_course_number not in (
+            sec.courses_course_number not in (
                 'LOG20',  -- Early Dismissal
                 'LOG300',  -- Study Hall
                 'SEM22101G1',  -- Student Government
@@ -130,19 +64,8 @@ with
                 '732514GYM08037G3',
                 '732514GYM08038G4'
             )
-        left join
-            {{ ref("int_powerschool__gradebook_assignments") }} as a
-            on sec.sections_dcid = a.sectionsdcid
-            and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
-            and ge.assignment_category_name = a.category_name
-            and a.duedate between c.week_start_monday and c.week_end_sunday
-        left join
-            {{ ref("int_powerschool__assignment_score_rollup") }} as asg
-            on a.assignmentsectionid = asg.assignmentsectionid
-            and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
-        where
             /* exclude F & S categories for iReady courses */
-            concat(sec.sections_course_number, ge.assignment_category_code) not in (
+            and concat(sec.sections_course_number, ge.assignment_category_code) not in (
                 'SEM72005G1F',
                 'SEM72005G2F',
                 'SEM72005G3F',
@@ -153,6 +76,104 @@ with
                 'SEM72005G4S'
             )
             and sec.terms_firstday >= '{{ var("current_academic_year") }}-07-01'
+    ),
+
+    assignments as (
+        select
+            swe._dbt_source_relation,
+            swe.sectionid,
+            swe.teacher_number,
+            swe.yearid,
+            swe.semester,
+            swe.quarter,
+            swe.week_number_quarter,
+            swe.week_start_monday,
+            swe.week_end_sunday,
+            swe.school_week_start_date_lead,
+            swe.assignment_category_code,
+            swe.assignment_category_name,
+            swe.assignment_category_term,
+            swe.expectation,
+
+            a.assignmentid,
+            a.name as assignment_name,
+            a.duedate,
+            a.scoretype,
+            a.totalpointvalue,
+
+            asg.n_students,
+            asg.n_late,
+            asg.n_exempt,
+            asg.n_missing,
+            asg.n_expected,
+            asg.n_expected_scored,
+            asg.avg_expected_scored_percent,
+
+            sum(a.totalpointvalue) over (
+                partition by swe._dbt_source_relation, swe.sectionid, swe.quarter
+            ) as total_totalpointvalue_section_quarter,
+
+            sum(asg.n_missing) over (
+                partition by swe._dbt_source_relation, swe.sectionid, swe.quarter
+            ) as total_missing_section_quarter,
+
+            sum(asg.n_expected) over (
+                partition by
+                    swe._dbt_source_relation,
+                    swe.sectionid,
+                    swe.quarter,
+                    swe.week_number_quarter,
+                    swe.assignment_category_code
+            ) as total_expected_section_quarter_week_category,
+
+            sum(asg.n_expected_scored) over (
+                partition by
+                    swe._dbt_source_relation,
+                    swe.sectionid,
+                    swe.quarter,
+                    swe.week_number_quarter,
+                    swe.assignment_category_code
+            ) as total_expected_scored_section_quarter_week_category,
+
+            sum(asg.n_expected) over (
+                partition by
+                    swe._dbt_source_relation,
+                    swe.teacher_number,
+                    swe.sections_schoolid,
+                    swe.quarter,
+                    swe.week_number_quarter,
+                    swe.assignment_category_code
+            ) as total_expected_teacher_school_quarter_week_category,
+
+            sum(asg.n_expected_scored) over (
+                partition by
+                    swe._dbt_source_relation,
+                    swe.teacher_number,
+                    swe.sections_schoolid,
+                    swe.quarter,
+                    swe.week_number_quarter,
+                    swe.assignment_category_code
+            ) as total_expected_scored_teacher_school_quarter_week_category,
+
+            count(a.assignmentid) over (
+                partition by
+                    swe._dbt_source_relation,
+                    swe.sectionid,
+                    swe.quarter,
+                    swe.assignment_category_code
+                order by swe.week_number_quarter asc
+            ) as assignment_count_section_quarter_category_running_week,
+        from section_week_expectations as swe
+        left join
+            {{ ref("int_powerschool__gradebook_assignments") }} as a
+            on swe.sections_dcid = a.sectionsdcid
+            and swe.assignment_category_name = a.category_name
+            and a.duedate between swe.week_start_monday and swe.week_end_sunday
+            and {{ union_dataset_join_clause(left_alias="swe", right_alias="a") }}
+        left join
+            {{ ref("int_powerschool__assignment_score_rollup") }} as asg
+            on a.assignmentsectionid = asg.assignmentsectionid
+            and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
     )
 
 select
