@@ -14,7 +14,7 @@ google_directory_nonpartitioned_asset_schedule = ScheduleDefinition(
         name=f"{CODE_LOCATION}__google__directory__nonpartitioned_asset_job",
         selection=[a.key for a in google_directory_nonpartitioned_assets],
     ),
-    cron_schedule="0 0 * * *",
+    cron_schedule="30 1 * * *",
     execution_timezone=LOCAL_TIMEZONE.name,
 )
 
