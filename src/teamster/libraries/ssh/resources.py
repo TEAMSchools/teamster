@@ -49,7 +49,6 @@ class SSHResource(DagsterSSHResource):
                 channel_timeout=self.timeout,
                 compress=self.compress,
                 port=int(self.remote_port),
-                # trunk-ignore(pyright/reportArgumentType)
                 sock=self._host_proxy,
                 look_for_keys=False,
             )
@@ -65,7 +64,6 @@ class SSHResource(DagsterSSHResource):
                 channel_timeout=self.timeout,
                 compress=self.compress,
                 port=int(self.remote_port),
-                # trunk-ignore(pyright/reportArgumentType)
                 sock=self._host_proxy,
             )
 

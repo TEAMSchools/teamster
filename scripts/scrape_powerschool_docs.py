@@ -1,4 +1,3 @@
-# trunk-ignore-all(bandit/B101,bandit/B113)
 import re
 
 import pandas

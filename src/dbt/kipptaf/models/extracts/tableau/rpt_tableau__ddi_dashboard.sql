@@ -119,7 +119,7 @@ with
             coalesce(co.gifted_and_talented, 'N') as gifted_and_talented,
 
             if(
-                current_date('America/New_York')
+                current_date('{{ var("local_timezone") }}')
                 between w.week_start_monday and w.week_end_sunday,
                 true,
                 false
@@ -487,7 +487,7 @@ select
     null as gifted_and_talented,
 
     if(
-        current_date('America/New_York')
+        current_date('{{ var("local_timezone") }}')
         between w.week_start_monday and w.week_end_sunday,
         true,
         false
