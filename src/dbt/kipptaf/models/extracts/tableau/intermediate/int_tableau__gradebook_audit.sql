@@ -1,18 +1,18 @@
--- note to charlie: changed this from a rpt view to an int view to: remove the fields
--- i dont need for calculations from grades_and_assignments cte; tag each flag to its
--- audit category (which differ between ms/hs and es), make some flags not count for
--- the audit even though they exist (katie calls them "non-scorable"), and move some
--- of the calcs from tableu to this view to support other reporting needs
+/*
+- remove the fields i dont need for calculations from grades_and_assignments cte;
+- tag each flag to its audit category (which differ between ms/hs and es)
+- make some flags not count for the audit even though they exist ("non-scorable")
+- move some of the calcs from tableu to this view to support other reporting needs
+*/
 with
     grades_and_assignments as (
         select
             f._dbt_source_relation,
+            f.student_number,
             f.academic_year,
             f.region,
             f.school_level,
             f.schoolid,
-            f.studentid,
-            f.student_number,
             f.grade_level,
             f.region_school_level,
             f.ada,
@@ -320,11 +320,11 @@ with
     unpivot_flags_only as (
         select
             _dbt_source_relation,
+            student_number,
             academic_year,
             region,
             school_level,
             schoolid,
-            student_number,
             semester,
             `quarter`,
             quarter_start_date,
@@ -431,9 +431,10 @@ with
         where audit_flag_value
     )
 
--- categories for ms/hs nj and fl
+/* categories for ms/hs nj and fl */
 select
     *,
+
     case
         when
             audit_flag_name in (
@@ -487,9 +488,10 @@ where school_level != 'ES'
 
 union all
 
--- categories for fl es
+/* categories for fl es */
 select
     *,
+
     case
         when
             audit_flag_name in (
@@ -539,10 +541,10 @@ where school_level = 'ES' and region = 'Miami'
 
 union all
 
--- categories for nj es
+/* categories for nj es */
 select *, 'Comments' as gradebook_audit_category,
 from unpivot_flags_only
 where
     school_level = 'ES'
-    and region != 'Miami'
     and audit_flag_name = 'qt_es_comment_missing'
+    and region != 'Miami'
