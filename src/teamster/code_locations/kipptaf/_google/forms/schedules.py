@@ -10,7 +10,7 @@ from teamster.code_locations.kipptaf._google.forms.assets import (
 )
 
 job = define_asset_job(
-    name=f"{CODE_LOCATION}_google_forms_asset_job", selection=[form, responses]
+    name=f"{CODE_LOCATION}__google__forms__asset_job", selection=[form, responses]
 )
 
 
