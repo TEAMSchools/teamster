@@ -104,7 +104,7 @@ pendulum==3.0.0
 pex==2.20.3
 prompt-toolkit==3.0.36
 proto-plus==1.24.0
-protobuf==4.25.5
+protobuf==5.28.3
 psutil==6.1.0; platform_system == "Windows"
 py-avro-schema==3.8.2
 pyarrow==17.0.0
