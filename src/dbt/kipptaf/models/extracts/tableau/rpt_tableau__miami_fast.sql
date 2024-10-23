@@ -196,6 +196,12 @@ select
     p.prev_pm3_sublevel_name,
     p.prev_pm3_sublevel_number,
     p.fldoe_percentile_rank,
+    p.scale_for_growth as scale_for_growth_prev_pm3,
+    p.sublevel_for_growth as sublevel_for_growth_prev_pm3,
+    p.sublevel_number_for_growth as sublevel_number_for_growth_prev_pm3,
+    p.scale_for_proficiency as scale_for_proficiency_prev_pm3,
+    p.scale_points_to_growth_pm3,
+    p.scale_points_to_proficiency_pm3,
 
     fs.standard as standard_domain,
     fs.performance as mastery_indicator,
@@ -290,9 +296,9 @@ left join
     and administration_window = ft.administration_window
     and ft.assessment_name = 'FAST'
 left join
-    prev_pm3 as p
-    on co.fleid = p.student_id
-    and co.academic_year = p.academic_year_next
+    {{ ref("int_assessments__previous_year_fast") }} as p
+    on co.student_number = p.student_number
+    and co.academic_year = p.academic_year
     and subj.fast_subject = p.assessment_subject
 left join
     {{ ref("int_fldoe__fast_standard_performance_unpivot") }} as fs
