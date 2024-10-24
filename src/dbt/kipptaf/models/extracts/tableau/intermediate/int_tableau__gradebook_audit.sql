@@ -38,7 +38,7 @@ with
             t.week_start_monday as audit_start_date,
             t.week_end_sunday as audit_end_date,
             t.school_week_start_date_lead as audit_due_date,
-            t.assignment_category_code as expected_teacher_assign_category_code,
+            t.assignment_category_code as t.assignment_category_code,
             t.assignment_category_name as expected_teacher_assign_category_name,
             t.assignment_category_term as expected_teacher_assign_category_term,
             t.expectation as audit_category_exp_audit_week_ytd,
@@ -89,7 +89,7 @@ with
             s.assign_f_missing_score_not_5,
             s.assign_s_score_less_50p,
 
-            if(--FL ES/MS only - summative assignment max score cannot be > 100
+            if(  -- FL ES/MS only - summative assignment max score cannot be > 100
                 f.region = 'Miami'
                 and t.assignment_category_code = 'S'
                 and t.totalpointvalue > 100,
@@ -97,7 +97,7 @@ with
                 false
             ) as s_max_score_greater_100,
 
-            if(--FL ES/MS only - conduct grade must exist in all courses by EOQ, but not in HR course
+            if(  -- FL ES/MS only - conduct grade must exist in all courses by EOQ, but not in HR course
                 f.region = 'Miami'
                 and f.is_quarter_end_date_range
                 and f.course_name != 'HR'
@@ -106,7 +106,7 @@ with
                 false
             ) as qt_g1_g8_conduct_code_missing,
 
-            if(--FL ES/MS only -- conduct grade must be valid code by EOQ, but not in HR course
+            if(  -- FL ES/MS only -- conduct grade must be valid code by EOQ, but not in HR course
                 f.region = 'Miami'
                 and f.is_quarter_end_date_range
                 and f.course_name != 'HR'
@@ -116,7 +116,7 @@ with
                 false
             ) as qt_g1_g8_conduct_code_incorrect,
 
-            if(--All regions/levels -- if a grade is below 70 for the quarter, a comment must exist
+            if(  -- All f.regions/levels -- if a grade is below 70 for the quarter, a comment must exist
                 f.is_quarter_end_date_range
                 and f.quarter_course_percent_grade_that_matters < 70
                 and f.quarter_comment_value is null,
@@ -124,72 +124,75 @@ with
                 false
             ) as qt_grade_70_comment_missing,
 
-            if(--All regions/levels -- a quarter grade above 100 must not exist
+            if(  -- All f.regions/levels -- a quarter grade above 100 must not exist
                 f.quarter_course_percent_grade_that_matters > 100, true, false
             ) as qt_percent_grade_greater_100,
 
-            if(--All regions/lvels -- all W assignments must be graded
+            if(  -- All f.regions/levels -- all W assignments for the week must be graded
                 t.assignment_category_code = 'W'
-                and percent_graded_completion_by_cat_qt_audit_week != 1,
+                and t.percent_graded_completion_by_cat_qt_audit_week != 1,
                 true,
                 false
             ) as w_percent_graded_completion_by_qt_audit_week_not_100,
 
-            if(
+            if(  -- All f.regions/levels -- all F assignments for the week must be graded
                 t.assignment_category_code = 'F'
-                and percent_graded_completion_by_cat_qt_audit_week != 1,
+                and t.percent_graded_completion_by_cat_qt_audit_week != 1,
                 true,
                 false
             ) as f_percent_graded_completion_by_qt_audit_week_not_100,
 
-            if(
+            if(  -- All f.regions/levels -- all S assignments for the week must be graded
                 t.assignment_category_code = 'S'
-                and percent_graded_completion_by_cat_qt_audit_week != 1,
+                and t.percent_graded_completion_by_cat_qt_audit_week != 1,
                 true,
                 false
             ) as s_percent_graded_completion_by_qt_audit_week_not_100,
 
-            if(
-                ada_above_or_at_80 and quarter_course_grade_points_that_matters < 2.0,
+            if(  -- MS/HS levels -- flag students with ada > 80% but GPA below 2.0
+                f.ada_above_or_at_80
+                and f.quarter_course_grade_points_that_matters < 2.0,
                 true,
                 false
             ) as qt_student_is_ada_80_plus_gpa_less_2,
-
+            -- MS/HS levels - the difference between a single course work habits
+            -- quarter average grade should not be more/less than 30pts away from the
+            -- overall work habits average for all courses for a student
             if(
                 t.assignment_category_code = 'W'
                 and abs(
-                    round(category_quarter_average_all_courses, 2)
-                    - round(category_quarter_percent_grade, 2)
+                    round(f.category_quarter_average_all_courses, 2)
+                    - round(f.category_quarter_percent_grade, 2)
                 )
                 >= 30,
                 true,
                 false
             ) as w_grade_inflation,
 
-            if(
-                region = 'Miami'
+            if(  -- Miami ES/MS must have a work habits quarter grade so that an effort grade exists
+                f.region = 'Miami'
                 and t.assignment_category_code = 'W'
-                and category_quarter_percent_grade is null,
+                and f.category_quarter_percent_grade is null,
                 true,
                 false
             ) as qt_effort_grade_missing,
 
-            if(
-                assign_is_exempt = 0
-                and school_level = 'MS'
+            if(  -- All MS S assignment grades must be one of the values on the conversion chart
+                a.isexempt = 0
+                and f.school_level = 'MS'
                 and t.assignment_category_code = 'S'
-                and (assign_final_score_percent)
+                and s.assign_final_score_percent
                 not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100),
                 true,
                 false
             ) as assign_s_ms_score_not_conversion_chart_options,
 
-            if(
-                assign_is_exempt = 0
-                and school_level = 'HS'
+            if(  -- All HS, non-AP S assignment grades must be one of the values on the conversion chart
+                a.isexempt = 0
+                and f.school_level = 'HS'
                 and t.assignment_category_code = 'S'
-                and not is_ap_course
-                and (assign_final_score_percent)
+                and not f.is_ap_course
+                and s.assign_final_score_percent
                 not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100),
                 true,
                 false
@@ -198,14 +201,16 @@ with
             if(
                 sum(
                     if(
-                        teacher_assign_id is null
-                        and student_course_entry_date >= teacher_assign_due_date - 7,
+                        t.assignmentid is null and s.date_enrolled >= s.duedate - 7,
                         0,
                         1
                     )
                 ) over (
                     partition by
-                        _dbt_source_relation, sectionid, student_number, `quarter`
+                        f._dbt_source_relation,
+                        f.sectionid,
+                        f.student_number,
+                        f.`quarter`
                 )
                 = 0,
                 true,
@@ -273,7 +278,7 @@ with
             t.week_start_monday as audit_start_date,
             t.week_end_sunday as audit_end_date,
             t.school_week_start_date_lead as audit_due_date,
-            t.assignment_category_code as expected_teacher_assign_category_code,
+            t.assignment_category_code as t.assignment_category_code,
             t.assignment_category_name as expected_teacher_assign_category_name,
             t.assignment_category_term as expected_teacher_assign_category_term,
             t.expectation as audit_category_exp_audit_week_ytd,
@@ -325,119 +330,117 @@ with
             s.assign_s_score_less_50p,
 
             if(
-                region = 'Miami'
-                and expected_teacher_assign_category_code = 'S'
-                and totalpointvalue > 100,
+                f.region = 'Miami'
+                and t.assignment_category_code = 'S'
+                and t.totalpointvalue > 100,
                 true,
                 false
             ) as s_max_score_greater_100,
 
             if(
-                region = 'Miami'
-                and is_quarter_end_date_range
-                and grade_level = 0
-                and course_name != 'HR'
-                and quarter_citizenship is not null,
+                f.region = 'Miami'
+                and f.is_quarter_end_date_range
+                and f.grade_level = 0
+                and f.course_name != 'HR'
+                and f.quarter_citizenship is not null,
                 true,
                 false
             ) as qt_kg_conduct_code_not_hr,
 
             case
-                when not is_quarter_end_date_range
+                when not f.is_quarter_end_date_range
                 then false
                 when
-                    grade_level = 0
-                    and course_name = 'HR'
-                    and quarter_citizenship is null
+                    f.grade_level = 0
+                    and f.course_name = 'HR'
+                    and f.quarter_citizenship is null
                 then true
                 else false
             end as qt_kg_conduct_code_missing,
 
             if(
-                region = 'Miami'
-                and is_quarter_end_date_range
-                and grade_level != 0
-                and course_name != 'HR'
-                and quarter_citizenship is null,
+                f.region = 'Miami'
+                and f.is_quarter_end_date_range
+                and f.grade_level != 0
+                and f.course_name != 'HR'
+                and f.quarter_citizenship is null,
                 true,
                 false
             ) as qt_g1_g8_conduct_code_missing,
 
             if(
-                region = 'Miami'
-                and is_quarter_end_date_range
-                and grade_level = 0
-                and course_name = 'HR'
-                and quarter_citizenship is not null
-                and quarter_citizenship not in ('E', 'G', 'S', 'M'),
+                f.region = 'Miami'
+                and f.is_quarter_end_date_range
+                and f.grade_level = 0
+                and f.course_name = 'HR'
+                and f.quarter_citizenship is not null
+                and f.quarter_citizenship not in ('E', 'G', 'S', 'M'),
                 true,
                 false
             ) as qt_kg_conduct_code_incorrect,
 
             if(
-                region = 'Miami'
-                and is_quarter_end_date_range
-                and grade_level != 0
-                and course_name != 'HR'
-                and quarter_citizenship is not null
-                and quarter_citizenship not in ('A', 'B', 'C', 'D', 'E', 'F'),
+                f.region = 'Miami'
+                and f.is_quarter_end_date_range
+                and f.grade_level != 0
+                and f.course_name != 'HR'
+                and f.quarter_citizenship is not null
+                and f.quarter_citizenship not in ('A', 'B', 'C', 'D', 'E', 'F'),
                 true,
                 false
             ) as qt_g1_g8_conduct_code_incorrect,
 
             if(
-                region = 'Miami'
-                and grade_level < 5
-                and is_quarter_end_date_range
-                and quarter_comment_value is null,
+                f.region = 'Miami'
+                and f.grade_level < 5
+                and f.is_quarter_end_date_range
+                and f.quarter_comment_value is null,
                 true,
                 false
             ) as qt_comment_missing,
 
             if(
-                quarter_course_percent_grade_that_matters > 100, true, false
+                f.quarter_course_percent_grade_that_matters > 100, true, false
             ) as qt_percent_grade_greater_100,
 
             if(
-                expected_teacher_assign_category_code = 'W'
-                and percent_graded_completion_by_cat_qt_audit_week != 1,
+                t.assignment_category_code = 'W'
+                and t.percent_graded_completion_by_cat_qt_audit_week != 1,
                 true,
                 false
             ) as w_percent_graded_completion_by_qt_audit_week_not_100,
 
             if(
-                expected_teacher_assign_category_code = 'F'
-                and percent_graded_completion_by_cat_qt_audit_week != 1,
+                t.assignment_category_code = 'F'
+                and t.percent_graded_completion_by_cat_qt_audit_week != 1,
                 true,
                 false
             ) as f_percent_graded_completion_by_qt_audit_week_not_100,
 
             if(
-                expected_teacher_assign_category_code = 'S'
-                and percent_graded_completion_by_cat_qt_audit_week != 1,
+                t.assignment_category_code = 'S'
+                and t.percent_graded_completion_by_cat_qt_audit_week != 1,
                 true,
                 false
             ) as s_percent_graded_completion_by_qt_audit_week_not_100,
 
             if(
-                region = 'Miami'
-                and expected_teacher_assign_category_code = 'W'
-                and category_quarter_percent_grade is null,
+                f.region = 'Miami'
+                and t.assignment_category_code = 'W'
+                and f.category_quarter_percent_grade is null,
                 true,
                 false
             ) as qt_effort_grade_missing,
 
             if(
                 sum(
-                    if(
-                        teacher_assign_id is null
-                        and student_course_entry_date >= teacher_assign_due_date - 7,
-                        0,
-                        1
-                    )
+                    if(t.assignmentid is null and f.dateenrolled >= t.duedate - 7, 0, 1)
                 ) over (
                     partition by
-                        _dbt_source_relation, sectionid, student_number, `quarter`
+                        f._dbt_source_relation,
+                        f.sectionid,
+                        f.student_number,
+                        f.`quarter`
                 )
                 = 0,
                 true,
@@ -503,11 +506,11 @@ with
             t.school_week_start_date_lead as audit_due_date,
 
             if(
-                region != 'Miami'
-                and is_quarter_end_date_range
-                and grade_level < 5
-                and credit_type in ('MATH', 'ENG', 'HR')
-                and quarter_comment_value is null,
+                f.region != 'Miami'
+                and f.is_quarter_end_date_range
+                and f.grade_level < 5
+                and f.credit_type in ('MATH', 'ENG', 'HR')
+                and f.quarter_comment_value is null,
                 true,
                 false
             ) as qt_es_comment_missing,
@@ -528,12 +531,12 @@ with
             and f.region != 'Miami'
     )
 
-     unpivot_flags_only as (
+    unpivot_flags_only as (
         select
             _dbt_source_relation,
             student_number,
             academic_year,
-            region,
+            f.region,
             school_level,
             schoolid,
             semester,
@@ -541,7 +544,7 @@ with
             quarter_start_date,
             quarter_end_date,
             is_current_quarter,
-            course_name,
+            f.course_name,
             course_number,
             section_number,
             external_expression,
@@ -550,24 +553,24 @@ with
             teacher_number,
             teacher_name,
             exclude_from_gpa,
-            quarter_course_percent_grade_that_matters,
+            f.quarter_course_percent_grade_that_matters,
             quarter_course_grade_points_that_matters,
-            quarter_citizenship,
-            quarter_comment_value,
-            category_quarter_percent_grade,
+            f.quarter_citizenship,
+            f.quarter_comment_value,
+            f.category_quarter_percent_grade,
             category_quarter_average_all_courses,
             audit_qt_week_number,
             audit_start_date,
             audit_end_date,
             audit_due_date,
-            expected_teacher_assign_category_code,
+            t.assignment_category_code,
             expected_teacher_assign_category_name,
             expected_teacher_assign_category_term,
             audit_category_exp_audit_week_ytd,
             teacher_assign_id,
             teacher_assign_name,
             teacher_assign_score_type,
-            totalpointvalue as teacher_assign_max_score,
+            t.totalpointvalue as teacher_assign_max_score,
             teacher_assign_due_date,
             teacher_assign_count,
             n_students,
@@ -584,15 +587,15 @@ with
             total_expected_graded_assignments_by_course_cat_qt_audit_week,
             total_expected_actual_graded_assignments_by_course_assign_id_qt_audit_week,
             total_expected_graded_assignments_by_course_assign_id_qt_audit_week,
-            percent_graded_completion_by_cat_qt_audit_week_all_courses,
-            percent_graded_completion_by_cat_qt_audit_week,
+            t.percent_graded_completion_by_cat_qt_audit_week_all_courses,
+            t.percent_graded_completion_by_cat_qt_audit_week,
             percent_graded_completion_by_assign_id_qt_audit_week,
 
             qt_teacher_no_missing_assignments,
             qt_teacher_s_total_less_200,
             assign_score_raw,
             assign_score_converted,
-            totalpointvalue as assign_max_score,
+            t.totalpointvalue as assign_max_score,
             assign_final_score_percent,
             assign_is_exempt,
             assign_is_late,
@@ -747,7 +750,7 @@ select
         else 'Need to categorize'
     end as gradebook_audit_category,
 from unpivot_flags_only
-where school_level = 'ES' and region = 'Miami'
+where school_level = 'ES' and f.region = 'Miami'
 
 union all
 
@@ -757,4 +760,4 @@ from unpivot_flags_only
 where
     school_level = 'ES'
     and audit_flag_name = 'qt_es_comment_missing'
-    and region != 'Miami'
+    and f.region != 'Miami'
