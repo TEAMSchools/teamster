@@ -114,6 +114,13 @@ with
             if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_term,
             if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
+            if(
+                current_date('{{ var("local_timezone") }}')
+                between (term.term_start_date - 7) and (term.term_end_date + 14),
+                true,
+                false
+            ) as is_quarter_end_date_range,
+
         from {{ ref("int_tableau__student_enrollments") }} as enr
         inner join
             term
@@ -149,7 +156,7 @@ with
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
             and gty.is_current
         where
-            enr.academic_year >= {{ var("current_academic_year") - 1 }}
+            enr.academic_year = {{ var("current_academic_year") }}
             and not enr.is_out_of_district
     ),
 
@@ -359,7 +366,7 @@ with
             ) as category_quarter_average_all_courses,
         from {{ ref("int_powerschool__category_grades") }}
         where
-            yearid >= {{ var("current_academic_year") - 1990 - 1 }}
+            yearid = {{ var("current_academic_year") - 1990 }}
             and not is_dropped_section
             and storecode_type not in ('Q', 'H')
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
@@ -407,6 +414,7 @@ select
     s.term_end_date as quarter_end_date,
     s.term_end_date as cal_quarter_end_date,
     s.is_current_term as is_current_quarter,
+    s.is_quarter_end_date_range,
     s.gpa_term as gpa_for_quarter,
     s.gpa_semester,
     s.gpa_y1,
@@ -562,6 +570,7 @@ select
     e1.term_end_date as quarter_end_date,
     e1.term_end_date as cal_quarter_end_date,
     e1.is_current_term as is_current_quarter,
+    e1.is_quarter_end_date_range,
     e1.gpa_term as gpa_for_quarter,
     e1.gpa_semester,
     e1.gpa_y1,
