@@ -124,7 +124,7 @@ with
 
             if(
                 current_date('{{ var("local_timezone") }}')
-                between (f.quarter_end_date - 7) and (f.quarter_end_date + 14),
+                between (f.quarter_end_date - 10) and (f.quarter_end_date + 14),
                 true,
                 false
             ) as is_quarter_end_date_range,
@@ -220,7 +220,7 @@ with
 
             if(
                 current_date('{{ var("local_timezone") }}')
-                between (quarter_end_date - 7) and (quarter_end_date + 14),
+                between (quarter_end_date - 10) and (quarter_end_date + 14),
                 true,
                 false
             ) as is_quarter_end_date_range,
@@ -420,15 +420,13 @@ with
         select
             *,
             if(
-                region != 'Miami'
-                and is_quarter_end_date_range
+                is_quarter_end_date_range
                 and grade_level < 5
                 and credit_type in ('HR', 'MATH', 'ENG')
                 and quarter_comment_value is null,
                 true,
                 false
             ) as qt_es_comment_missing,
-
         from grades_and_assignments_nj
     )
 
