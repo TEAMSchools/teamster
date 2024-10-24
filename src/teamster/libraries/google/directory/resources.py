@@ -159,6 +159,7 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_insert_users(self, users):
         def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
+                self._log.exception(msg=(id, exception))
                 self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(
@@ -184,7 +185,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
 
-            exceptions.extend([f"{batch[i]} {e}" for i, e in self._exceptions])
+            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
 
             time.sleep(1)
 
@@ -193,6 +194,7 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_update_users(self, users):
         def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
+                self._log.exception(msg=(id, exception))
                 self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(
@@ -220,7 +222,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
 
-            exceptions.extend([f"{batch[i]} {e}" for i, e in self._exceptions])
+            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
 
             time.sleep(1)
 
@@ -229,6 +231,7 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_insert_members(self, members):
         def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
+                self._log.exception(msg=(id, exception))
                 self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(
@@ -256,7 +259,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
 
-            exceptions.extend([f"{batch[i]} {e}" for i, e in self._exceptions])
+            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
 
             time.sleep(1)
 
@@ -265,6 +268,7 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_insert_role_assignments(self, role_assignments, customer=None):
         def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
+                self._log.exception(msg=(id, exception))
                 self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(msg=" ".join([f"{k}={v}" for k, v in response.items()]))
@@ -294,7 +298,7 @@ class GoogleDirectoryResource(ConfigurableResource):
                 delay_generator=self.backoff_delay_generator(),
             )
 
-            exceptions.extend([f"{batch[i]} {e}" for i, e in self._exceptions])
+            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
 
             time.sleep(1)
 
