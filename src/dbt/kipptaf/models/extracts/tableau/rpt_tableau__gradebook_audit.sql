@@ -124,7 +124,7 @@ with
 
             if(
                 current_date('{{ var("local_timezone") }}')
-                between (f.quarter_end_date - 7) and (f.quarter_end_date + 30),
+                between (f.quarter_end_date - 7) and (f.quarter_end_date + 14),
                 true,
                 false
             ) as is_quarter_end_date_range,
@@ -152,7 +152,88 @@ with
             and f.region_school_level not in ('ESCamden', 'ESNewark')
     ),
 
-    audits as (
+    grades_and_assignments_nj as (
+        select
+            f._dbt_source_relation,
+            f.academic_year,
+            f.academic_year_display,
+            f.region,
+            f.school_level,
+            f.schoolid,
+            f.school,
+            f.studentid,
+            f.student_number,
+            f.student_name,
+            f.grade_level,
+            f.salesforce_id,
+            f.ktc_cohort,
+            f.enroll_status,
+            f.cohort,
+            f.gender,
+            f.ethnicity,
+            f.advisory,
+            f.hos,
+            f.region_school_level,
+            f.year_in_school,
+            f.year_in_network,
+            f.rn_undergrad,
+            f.is_out_of_district,
+            f.is_pathways,
+            f.is_retained_year,
+            f.is_retained_ever,
+            f.lunch_status,
+            f.gifted_and_talented,
+            f.iep_status,
+            f.lep_status,
+            f.is_504,
+            f.is_counseling_services,
+            f.is_student_athlete,
+            f.ada,
+            f.ada_above_or_at_80,
+            f.quarter,
+            f.semester,
+            f.quarter_start_date,
+            f.quarter_end_date,
+            f.is_current_quarter,
+            f.sectionid,
+            f.sections_dcid,
+            f.section_number,
+            f.external_expression,
+            f.section_or_period,
+            f.date_enrolled,
+            f.credit_type,
+            f.course_number,
+            f.course_name,
+            f.exclude_from_gpa,
+            f.teacher_number,
+            f.teacher_name,
+            f.tableau_username,
+            f.tutoring_nj,
+            f.nj_student_tier,
+            f.quarter_course_percent_grade_that_matters,
+            f.quarter_course_grade_points_that_matters,
+            f.quarter_comment_value,
+            f.category_name_code,
+            f.category_quarter_code,
+            f.category_quarter_percent_grade,
+            f.category_quarter_average_all_courses,
+
+            if(
+                current_date('{{ var("local_timezone") }}')
+                between (f.quarter_end_date - 7) and (f.quarter_end_date + 14),
+                true,
+                false
+            ) as is_quarter_end_date_range,
+        from {{ ref("rpt_tableau__gradebook_gpa") }} as f
+        where
+            f.academic_year = {{ var("current_academic_year") }}
+            and f.enroll_status = 0
+            and f.roster_type = 'Local'
+            and f.quarter != 'Y1'
+            and f.region_school_level in ('ESCamden', 'ESNewark')
+    ),
+
+    audits_non_es_nj as (
         select
             *,
 
@@ -333,6 +414,22 @@ with
                 false
             ) as qt_assign_no_course_assignments,
         from grades_and_assignments
+    ),
+
+    audits_es_nj as (
+        select
+            *,
+            if(
+                region != 'Miami'
+                and is_quarter_end_date_range
+                and grade_level < 5
+                and credit_type in ('HR', 'MATH', 'ENG')
+                and quarter_comment_value is null,
+                true,
+                false
+            ) as qt_es_comment_missing,
+
+        from grades_and_assignments_nj
     )
 
 select distinct
@@ -868,6 +965,7 @@ select distinct
 
     qt_teacher_no_missing_assignments,
     qt_teacher_s_total_less_200,
+
     case
         when
             audit_flag_name in (
@@ -987,12 +1085,11 @@ select distinct
         then null
         else ismissing
     end as assign_is_missing,
-
     audit_flag_name,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 from
-    audits unpivot (
+    audits_non_es_nj unpivot (
         audit_flag_value for audit_flag_name in (
             w_assign_max_score_not_10,
             f_assign_max_score_not_10,
@@ -1020,7 +1117,6 @@ from
             qt_kg_conduct_code_incorrect,
             qt_g1_g8_conduct_code_incorrect,
             qt_grade_70_comment_missing,
-            qt_es_comment_missing,
             qt_comment_missing,
             qt_percent_grade_greater_100,
             qt_teacher_s_total_greater_200,
@@ -1029,4 +1125,105 @@ from
             w_grade_inflation
         )
     )
+where audit_flag_value
+
+union all
+
+select distinct
+    _dbt_source_relation,
+    academic_year,
+    academic_year_display,
+    region,
+    school_level,
+    schoolid,
+    school,
+    student_number,
+    student_name,
+    gender,
+    grade_level,
+    enroll_status,
+    ethnicity,
+    lep_status,
+    is_504,
+    is_pathways,
+    iep_status,
+    gifted_and_talented,
+    is_counseling_services,
+    is_student_athlete,
+    tutoring_nj,
+    nj_student_tier,
+    `ada`,
+    ada_above_or_at_80,
+    advisory,
+    hos,
+    semester,
+    `quarter`,
+    quarter_start_date,
+    quarter_end_date,
+    is_current_quarter,
+    course_name,
+    course_number,
+    section_number,
+    external_expression,
+    section_or_period,
+    credit_type,
+    teacher_number,
+    teacher_name,
+    tableau_username,
+    exclude_from_gpa,
+    quarter_course_percent_grade_that_matters,
+    quarter_course_grade_points_that_matters,
+    '' as quarter_citizenship,
+    quarter_comment_value,
+    null as category_quarter_percent_grade,
+    null as category_quarter_average_all_courses,
+    null as audit_qt_week_number,
+    safe_cast(null as date) as audit_start_date,
+    safe_cast(null as date) as audit_end_date,
+    safe_cast(null as date) as audit_due_date,
+    '' as expected_teacher_assign_category_code,
+    '' as expected_teacher_assign_category_name,
+    null as audit_category_exp_audit_week_ytd,
+    null as teacher_assign_id,
+    '' as teacher_assign_name,
+    '' as teacher_assign_score_type,
+    null as teacher_assign_max_score,
+    safe_cast(null as date) as teacher_assign_due_date,
+    null as teacher_assign_count,
+    null as n_students,
+    null as n_late,
+    null as n_exempt,
+    null as n_missing,
+    null as n_expected,
+    null as n_expected_scored,
+
+    null as teacher_running_total_assign_by_cat,
+    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    null as total_expected_actual_graded_assignments_by_cat_qt_audit_week_all_courses,
+    null as total_expected_graded_assignments_by_cat_qt_audit_week_all_courses,
+    null as total_expected_actual_graded_assignments_by_course_cat_qt_audit_week,
+    null as total_expected_graded_assignments_by_course_cat_qt_audit_week,
+    null as total_expected_actual_graded_assignments_by_course_assign_id_qt_audit_week,
+    null as total_expected_graded_assignments_by_course_assign_id_qt_audit_week,
+    null as percent_graded_completion_by_cat_qt_audit_week_all_courses,
+    null as percent_graded_completion_by_cat_qt_audit_week,
+    null as percent_graded_completion_by_assign_id_qt_audit_week,
+
+    false as qt_teacher_no_missing_assignments,
+    false as qt_teacher_s_total_less_200,
+
+    date_enrolled as student_course_entry_date,
+    '' as assign_score_raw,
+    null as assign_score_converted,
+    null as assign_max_score,
+    null as assign_final_score_percent,
+    null as assign_is_exempt,
+    null as assign_is_late,
+    null as assign_is_missing,
+    audit_flag_name,
+
+    if(audit_flag_value, 1, 0) as audit_flag_value,
+from
+    audits_es_nj
+    unpivot (audit_flag_value for audit_flag_name in (qt_es_comment_missing))
 where audit_flag_value
