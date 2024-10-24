@@ -155,7 +155,7 @@ select
 
     if(
         ei.ecc_pursuing_degree_type
-        in ("Associate's (2 year)", "Bachelor's (4-year)", "Certificate"),
+        in ("Associate's (2 year)", "Bachelor's (4-year)", 'Certificate'),
         true,
         false
     ) as is_enrolled_bool,
