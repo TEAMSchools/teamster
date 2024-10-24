@@ -150,6 +150,15 @@ select
 
     r.contact_middle_school_attended,
     r.contact_postsecondary_status,
+
+    if(r.contact_most_recent_iep_date is not null, 'Has IEP', 'No IEP') as iep_status,
+
+    if(
+        ei.ecc_pursuing_degree_type
+        in ("Associate's (2 year)", "Bachelor's (4-year)", 'Certificate'),
+        true,
+        false
+    ) as is_enrolled_bool,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
