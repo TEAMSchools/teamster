@@ -313,7 +313,7 @@ with
                 isexempt = 0
                 and school_level = 'HS'
                 and assignment_category_code = 'S'
-                and is_ap_course
+                and not is_ap_course
                 and (assign_final_score_percent)
                 not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100),
                 true,
