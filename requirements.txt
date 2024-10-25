@@ -22,7 +22,7 @@ croniter==3.0.3
 cryptography==43.0.1
 daff==1.3.46
 dagster==1.8.12
-dagster-airbyte==0.24.12
+dagster-airbyte==0.24.13
 dagster-cloud==1.8.12
 dagster-cloud-cli==1.8.12
 dagster-dbt==0.24.12
