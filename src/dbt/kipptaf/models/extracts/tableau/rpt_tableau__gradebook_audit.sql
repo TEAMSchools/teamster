@@ -1022,3 +1022,8 @@ from
         )
     )
 where audit_flag_value
+
+union all
+
+select *
+from {{ ref("rpt_tableau__gradebook_audit_nj_es") }}
