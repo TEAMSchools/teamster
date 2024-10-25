@@ -1,98 +1,98 @@
-grades_and_assignments_nj as (
-    select
-        _dbt_source_relation,
-        academic_year,
-        academic_year_display,
-        region,
-        school_level,
-        schoolid,
-        school,
-        studentid,
-        student_number,
-        student_name,
-        grade_level,
-        salesforce_id,
-        ktc_cohort,
-        enroll_status,
-        cohort,
-        gender,
-        ethnicity,
-        advisory,
-        hos,
-        region_school_level,
-        year_in_school,
-        year_in_network,
-        rn_undergrad,
-        is_out_of_district,
-        is_pathways,
-        is_retained_year,
-        is_retained_ever,
-        lunch_status,
-        gifted_and_talented,
-        iep_status,
-        lep_status,
-        is_504,
-        is_counseling_services,
-        is_student_athlete,
-        ada,
-        ada_above_or_at_80,
-        quarter,
-        semester,
-        quarter_start_date,
-        quarter_end_date,
-        is_current_quarter,
-        sectionid,
-        sections_dcid,
-        section_number,
-        external_expression,
-        section_or_period,
-        date_enrolled,
-        credit_type,
-        course_number,
-        course_name,
-        exclude_from_gpa,
-        teacher_number,
-        teacher_name,
-        tableau_username,
-        tutoring_nj,
-        nj_student_tier,
-        quarter_course_percent_grade_that_matters,
-        quarter_course_grade_points_that_matters,
-        quarter_comment_value,
-        category_name_code,
-        category_quarter_code,
-        category_quarter_percent_grade,
-        category_quarter_average_all_courses,
+with
+    grades_and_assignments_nj as (
+        select
+            _dbt_source_relation,
+            academic_year,
+            academic_year_display,
+            region,
+            school_level,
+            schoolid,
+            school,
+            studentid,
+            student_number,
+            student_name,
+            grade_level,
+            salesforce_id,
+            ktc_cohort,
+            enroll_status,
+            cohort,
+            gender,
+            ethnicity,
+            advisory,
+            hos,
+            region_school_level,
+            year_in_school,
+            year_in_network,
+            rn_undergrad,
+            is_out_of_district,
+            is_pathways,
+            is_retained_year,
+            is_retained_ever,
+            lunch_status,
+            gifted_and_talented,
+            iep_status,
+            lep_status,
+            is_504,
+            is_counseling_services,
+            is_student_athlete,
+            ada,
+            ada_above_or_at_80,
+            quarter,
+            semester,
+            quarter_start_date,
+            quarter_end_date,
+            is_current_quarter,
+            sectionid,
+            sections_dcid,
+            section_number,
+            external_expression,
+            section_or_period,
+            date_enrolled,
+            credit_type,
+            course_number,
+            course_name,
+            exclude_from_gpa,
+            teacher_number,
+            teacher_name,
+            tableau_username,
+            tutoring_nj,
+            nj_student_tier,
+            quarter_course_percent_grade_that_matters,
+            quarter_course_grade_points_that_matters,
+            quarter_comment_value,
+            category_name_code,
+            category_quarter_code,
+            category_quarter_percent_grade,
+            category_quarter_average_all_courses,
 
-        if(
-            current_date('{{ var("local_timezone") }}')
-            between (quarter_end_date - 10) and (quarter_end_date + 14),
-            true,
-            false
-        ) as is_quarter_end_date_range,
-    from {{ ref("rpt_tableau__gradebook_gpa") }}
-    where
-        academic_year = {{ var("current_academic_year") }}
-        and enroll_status = 0
-        and roster_type = 'Local'
-        and quarter != 'Y1'
-        and region_school_level in ('CamdenES', 'NewarkES')
-),
+            if(
+                current_date('{{ var("local_timezone") }}')
+                between (quarter_end_date - 10) and (quarter_end_date + 14),
+                true,
+                false
+            ) as is_quarter_end_date_range,
+        from {{ ref("rpt_tableau__gradebook_gpa") }}
+        where
+            academic_year = {{ var("current_academic_year") }}
+            and enroll_status = 0
+            and roster_type = 'Local'
+            and quarter != 'Y1'
+            and region_school_level in ('CamdenES', 'NewarkES')
+    ),
 
-audits_es_nj as (
-    select
-        *,
-        if(
-            is_quarter_end_date_range
-            and grade_level < 5
-            and credit_type in ('HR', 'MATH', 'ENG')
-            and quarter_comment_value is null,
-            true,
-            false
-        ) as qt_es_comment_missing,
-    from grades_and_assignments_nj
-)
-
+    audits_es_nj as (
+        select
+            *,
+            if(
+                is_quarter_end_date_range
+                and grade_level < 5
+                and credit_type in ('HR', 'MATH', 'ENG')
+                and quarter_comment_value is null,
+                true,
+                false
+            ) as qt_es_comment_missing,
+        from grades_and_assignments_nj
+    )
 
 select distinct
     _dbt_source_relation,
