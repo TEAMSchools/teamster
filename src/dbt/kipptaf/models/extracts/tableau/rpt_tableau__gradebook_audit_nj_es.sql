@@ -180,7 +180,7 @@ select distinct
     false as qt_teacher_s_total_less_200,
 
     date_enrolled as student_course_entry_date,
-    '' as assign_score_raw,
+    cast(null as numeric) as assign_score_raw,
     cast(null as numeric) as assign_score_converted,
     cast(null as numeric) as assign_max_score,
     cast(null as numeric) as assign_final_score_percent,
