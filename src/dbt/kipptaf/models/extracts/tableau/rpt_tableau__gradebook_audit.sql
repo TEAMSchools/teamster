@@ -107,7 +107,6 @@ with
             t.f_expected_assign_count_not_met,
             t.s_expected_assign_count_not_met,
 
-            s.actualscoreentered,
             s.scorepoints,
             s.isexempt,
             s.islate,
@@ -121,6 +120,10 @@ with
             s.assign_w_missing_score_not_5,
             s.assign_f_missing_score_not_5,
             s.assign_s_score_less_50p,
+
+            -- TODO: historical grades have letter grades on this field, so maybe we
+            -- can split it for old grades and new grades?
+            safe_cast(s.actualscoreentered as numeric) as actualscoreentered,
 
             if(
                 current_date('{{ var("local_timezone") }}')
