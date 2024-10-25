@@ -153,7 +153,7 @@ select distinct
     '' as teacher_assign_name,
     '' as teacher_assign_score_type,
     cast(null as numeric) as teacher_assign_max_score,
-    safe_cast(null as date) as teacher_assign_due_date,
+    cast(null as date) as teacher_assign_due_date,
     null as teacher_assign_count,
     null as n_students,
     null as n_late,
