@@ -155,7 +155,7 @@ threadpoolctl==3.5.0
 time-machine==2.16.0; implementation_name != "pypy"
 tomli==2.0.2
 toposort==1.10
-tqdm==4.66.5
+tqdm==4.66.6
 typeguard==4.3.0
 typer==0.12.5
 typing-extensions==4.12.2
