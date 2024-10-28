@@ -147,7 +147,7 @@ sqlglotrs==0.2.12
 sqlparse==0.5.1
 sshtunnel==0.4.0
 structlog==24.4.0
-tableauserverclient==0.33
+tableauserverclient==0.34
 tabulate==0.9.0
 tenacity==9.0.0
 text-unidecode==1.3
