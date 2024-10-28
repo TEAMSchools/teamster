@@ -23,17 +23,17 @@ select
 
     null as standard_domain,
 
-    round(avg(ar.percent_correct), 2) as avg_percent_correct,
+    round(avg(ar.percent_correct), 0) as avg_percent_correct,
     case
-        when round(avg(ar.percent_correct), 2) >= 85
+        when round(avg(ar.percent_correct), 0) >= 85
         then 'Exceeds Expectations'
-        when round(avg(ar.percent_correct), 2) >= 70
+        when round(avg(ar.percent_correct), 0) >= 70
         then 'Met Expectations'
-        when round(avg(ar.percent_correct), 2) >= 50
+        when round(avg(ar.percent_correct), 0) >= 50
         then 'Approaching Expectations'
-        when round(avg(ar.percent_correct), 2) >= 30
+        when round(avg(ar.percent_correct), 0) >= 30
         then 'Below Expectations'
-        when round(avg(ar.percent_correct), 2) >= 0
+        when round(avg(ar.percent_correct), 0) >= 0
         then 'Far Below Expectations'
     end as performance_level,
 from {{ ref("int_assessments__response_rollup") }} as ar
@@ -66,17 +66,17 @@ select
 
     sd.standard_domain,
 
-    round(avg(ar.percent_correct), 2) as avg_percent_correct,
+    round(avg(ar.percent_correct), 0) as avg_percent_correct,
     case
-        when round(avg(ar.percent_correct), 2) >= 85
+        when round(avg(ar.percent_correct), 0) >= 85
         then 'Exceeds Expectations'
-        when round(avg(ar.percent_correct), 2) >= 70
+        when round(avg(ar.percent_correct), 0) >= 70
         then 'Met Expectations'
-        when round(avg(ar.percent_correct), 2) >= 50
+        when round(avg(ar.percent_correct), 0) >= 50
         then 'Approaching Expectations'
-        when round(avg(ar.percent_correct), 2) >= 30
+        when round(avg(ar.percent_correct), 0) >= 30
         then 'Below Expectations'
-        when round(avg(ar.percent_correct), 2) >= 0
+        when round(avg(ar.percent_correct), 0) >= 0
         then 'Far Below Expectations'
     end as performance_level,
 from {{ ref("int_assessments__response_rollup") }} as ar
