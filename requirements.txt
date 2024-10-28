@@ -107,7 +107,7 @@ proto-plus==1.24.0
 protobuf==4.25.5
 psutil==6.1.0; platform_system == "Windows"
 py-avro-schema==3.8.2
-pyarrow==17.0.0
+pyarrow==18.0.0
 pyasn1==0.6.1
 pyasn1-modules==0.4.1
 pycparser==2.22
