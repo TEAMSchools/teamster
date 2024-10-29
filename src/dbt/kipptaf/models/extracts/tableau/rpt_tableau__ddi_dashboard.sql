@@ -375,7 +375,7 @@ select
     g.region_goal,
     g.organization_goal,
 
-    sf.nj_student_tier,
+    coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
 
     null as dibels_most_recent_composite,
     null as state_test_proficiency,
@@ -393,7 +393,7 @@ left join
     {{ ref("int_reporting__student_filters") }} as sf
     on co.student_number = sf.student_number
     and co.academic_year = sf.academic_year
-    and co.course_credittype = sf.powerschool_credittype
+    and co.course_credittype = sf.assessment_dashboard_join
 left join
     {{ ref("stg_assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year
