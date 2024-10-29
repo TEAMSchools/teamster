@@ -70,7 +70,7 @@ with
             safe_cast(pt.local_student_id as int) as local_student_id,
 
             if(
-                pt.score_type = 'sat10_eb_read_write_section_score', 'ELA', 'Math'
+                pt.score_type = 'psat10_eb_read_write_section_score', 'ELA', 'Math'
             ) as discipline,
 
             max(pt.score) as score,
