@@ -62,7 +62,7 @@ google-resumable-media==2.7.2
 googleapis-common-protos[grpc]==1.65.0
 greenlet==3.1.1; (platform_machine == "win32" or platform_machine == "WIN32" or platform_machine == "AMD64" or platform_machine == "amd64" or platform_machine == "x86_64" or platform_machine == "ppc64le" or platform_machine == "aarch64") and python_version < "3.13"
 grpc-google-iam-v1==0.13.1
-grpcio==1.67.0
+grpcio==1.67.1
 grpcio-health-checking==1.62.3
 grpcio-status==1.62.3
 gspread==6.1.3
