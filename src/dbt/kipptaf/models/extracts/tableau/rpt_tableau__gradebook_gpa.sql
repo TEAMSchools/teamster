@@ -114,6 +114,13 @@ with
             if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_term,
             if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
+            if(
+                current_date('{{ var("local_timezone") }}')
+                between (term.term_end_date - 10) and (term.term_start_date + 14),
+                true,
+                false
+            ) as is_quarter_end_date_range,
+
         from {{ ref("int_tableau__student_enrollments") }} as enr
         inner join
             term
