@@ -375,12 +375,12 @@ select
     g.region_goal,
     g.organization_goal,
 
-    coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
-
     null as dibels_most_recent_composite,
     null as state_test_proficiency,
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
+
+    coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
 
     if(qbls.qbl is not null, true, false) as is_qbl,
 
@@ -502,11 +502,11 @@ select
     null as school_goal,
     null as region_goal,
     null as organization_goal,
-    null as nj_student_tier,
     null as dibels_most_recent_composite,
     null as state_test_proficiency,
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
+    null as nj_student_tier,
     null as is_qbl,
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
