@@ -7,12 +7,14 @@ with
             se.school_name,
             se.is_out_of_district,
 
-            to_hex(sha1(se.student_web_password)) as `password`,
-            if(se.grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
-            if(se.enroll_status = 0, false, true) as `suspended`,
             concat(
                 'group-students-', lower(se.region), '@teamstudents.org'
             ) as `groupKey`,
+
+            to_hex(sha1(se.student_web_password)) as `password`,
+
+            if(se.grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
+            if(se.enroll_status = 0, false, true) as `suspended`,
         from {{ ref("base_powerschool__student_enrollments") }} as se
         where se.rn_all = 1 and se.student_email_google is not null
     ),
@@ -30,18 +32,17 @@ with
             u.name__given_name as given_name_target,
             u.name__family_name as family_name_target,
             u.suspended as suspended_target,
-
-            o.org_unit_path as org_unit_path_target,
+            u.org_unit_path as org_unit_path_target,
 
             'SHA-1' as `hashFunction`,
+
+            if(u.primary_email is not null, true, false) as is_matched,
 
             if(
                 s.suspended or s.is_out_of_district,
                 '/Students/Disabled',
                 o.org_unit_path
             ) as `orgUnitPath`,
-
-            if(u.primary_email is not null, true, false) as is_matched,
         from students as s
         left join
             {{ ref("stg_google_directory__users") }} as u
