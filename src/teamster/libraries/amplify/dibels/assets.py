@@ -36,7 +36,7 @@ def build_amplify_dds_report_asset(
         key=asset_key,
         io_manager_key="io_manager_gcs_avro",
         group_name="amplify",
-        compute_kind="python",
+        kinds={"python"},
         partitions_def=partitions_def,
         metadata=report_kwargs,
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],

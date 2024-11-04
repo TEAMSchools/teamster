@@ -25,7 +25,7 @@ def build_overgrad_asset(
         automation_condition=automation_condition,
         check_specs=[build_check_spec_avro_schema_valid(key)],
         deps=deps,
-        compute_kind="python",
+        kinds={"python"},
         op_tags={"dagster/concurrency_key": f"overgrad_api_limit_{code_location}"},
     )
     def _asset(context: AssetExecutionContext, overgrad: OvergradResource):
