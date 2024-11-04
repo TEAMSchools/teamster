@@ -16,7 +16,7 @@ with
             e.fleid,
             e.infosnap_id,
 
-            a.contact_id as contact_id,
+            a.contact_id,
 
             i.student_id as illuminate_id,
         from {{ ref("base_powerschool__student_enrollments") }} as e
@@ -87,10 +87,12 @@ with
             e.students_dcid,
             e.studentid,
             e.student_number,
-
-            sub.earnedcredits as total_earnedcredits,  -- from stored grades
-            sub.enrolledcredits as total_enrolledcredits,  -- from cc table
-            sub.requestedcredits as total_requestedcredits,  -- from schedule requests table
+            -- from stored grades
+            sub.earnedcredits as total_earnedcredits,
+            -- from cc table
+            sub.enrolledcredits as total_enrolledcredits,
+            -- from schedule requests table 
+            sub.requestedcredits as total_requestedcredits,
             sub.requiredcredits as total_requiredcredits,
             sub.waivedcredits as total_waivedcredits,
 
@@ -154,11 +156,6 @@ select
     gpver.endyear,
     gpver.minimumgrade,
     gpver.minimumgradepercentage,
-    coalesce(
-        gpver.minimumgpa.int_value,
-        gpver.minimumgpa.double_value,
-        gpver.minimumgpa.bytes_decimal_value
-    ) as minimumgpa,
 
     gp.name as gradplan_name,
 
@@ -171,6 +168,12 @@ select
     tc.total_waivedcredits,
     tc.total_requiredcredits,
     tc.total_creditcapacity,
+
+    coalesce(
+        gpver.minimumgpa.int_value,
+        gpver.minimumgpa.double_value,
+        gpver.minimumgpa.bytes_decimal_value
+    ) as minimumgpa,
 
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
