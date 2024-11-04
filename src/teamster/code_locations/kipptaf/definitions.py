@@ -87,7 +87,7 @@ defs = Definitions(
         ),
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
-            asset_selection=AssetSelection.all(),
+            target=AssetSelection.all(),
         ),
     ],
     resources={
