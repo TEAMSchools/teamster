@@ -114,7 +114,7 @@ def build_sftp_file_asset(
         group_name=group_name,
         automation_condition=automation_condition,
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
-        compute_kind="python",
+        kinds={"python", "file"},
     )
     def _asset(context: AssetExecutionContext):
         ssh: SSHResource = getattr(context.resources, ssh_resource_key)
@@ -264,7 +264,7 @@ def build_sftp_archive_asset(
         op_tags=op_tags,
         group_name=group_name,
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
-        compute_kind="python",
+        kinds={"python", "file"},
     )
     def _asset(context: AssetExecutionContext):
         ssh: SSHResource = getattr(context.resources, ssh_resource_key)
@@ -410,7 +410,7 @@ def build_sftp_folder_asset(
         op_tags=op_tags,
         group_name=group_name,
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
-        compute_kind="python",
+        kinds={"python", "file"},
     )
     def _asset(context: AssetExecutionContext):
         records = []

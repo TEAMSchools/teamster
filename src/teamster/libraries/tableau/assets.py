@@ -58,7 +58,7 @@ def build_tableau_workbook_refresh_asset(
         deps=deps,
         metadata=metadata,
         automation_condition=automation_condition,
-        compute_kind="tableau",
+        kinds={"tableau"},
         group_name="tableau",
         output_required=False,
         op_tags={"dagster/concurrency_key": "tableau_pat_session_limit"},
@@ -92,7 +92,7 @@ def build_tableau_workbook_stats_asset(
         ),
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
         io_manager_key="io_manager_gcs_avro",
-        compute_kind="tableau",
+        kinds={"tableau"},
         group_name="tableau",
         op_tags={
             "dagster/concurrency_key": "tableau_pat_session_limit",

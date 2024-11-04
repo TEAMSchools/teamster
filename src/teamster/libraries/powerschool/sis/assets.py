@@ -62,7 +62,7 @@ def build_powerschool_table_asset(
         op_tags=op_tags,
         io_manager_key="io_manager_gcs_file",
         group_name="powerschool",
-        compute_kind="python",
+        kinds={"python"},
     )
     def _asset(
         context: AssetExecutionContext,

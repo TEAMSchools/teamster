@@ -27,7 +27,7 @@ def build_ticket_metrics_archive(code_location, timezone, avro_schema):
             timezone=timezone,
         ),
         group_name="zendesk",
-        compute_kind="python",
+        kinds={"python"},
     )
     def _asset(context: AssetExecutionContext, zendesk: ZendeskResource):
         partition_key = _check.not_none(value=context.partition_key)

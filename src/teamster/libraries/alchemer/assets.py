@@ -30,7 +30,7 @@ def build_alchemer_assets(
         partitions_def=partitions_def,
         io_manager_key="io_manager_gcs_avro",
         group_name="alchemer",
-        compute_kind="python",
+        kinds={"python"},
     )
     def survey(context: OpExecutionContext, alchemer: AlchemerResource):
         survey = alchemer._client.survey.get(id=context.partition_key)
@@ -51,7 +51,7 @@ def build_alchemer_assets(
         partitions_def=partitions_def,
         io_manager_key="io_manager_gcs_avro",
         group_name="alchemer",
-        compute_kind="python",
+        kinds={"python"},
     )
     def survey_question(context: OpExecutionContext, alchemer: AlchemerResource):
         survey = alchemer._client.survey.get(id=context.partition_key)
@@ -74,10 +74,10 @@ def build_alchemer_assets(
         partitions_def=partitions_def,
         io_manager_key="io_manager_gcs_avro",
         group_name="alchemer",
-        compute_kind="python",
+        kinds={"python"},
     )
     def survey_campaign(context: OpExecutionContext, alchemer: AlchemerResource):
-        asset_name = context.assets_def.key[-1]
+        asset_name = context.asset_key.path[-1]
         context.log.debug(asset_name)
 
         survey = alchemer._client.survey.get(id=context.partition_key)
@@ -102,7 +102,7 @@ def build_alchemer_assets(
         ),
         io_manager_key="io_manager_gcs_avro",
         group_name="alchemer",
-        compute_kind="python",
+        kinds={"python"},
     )
     def survey_response(context: OpExecutionContext, alchemer: AlchemerResource):
         partition_key_split = context.partition_key.split("_")
@@ -157,7 +157,7 @@ def build_alchemer_assets(
         partitions_def=partitions_def,
         io_manager_key="io_manager_gcs_avro",
         group_name="alchemer",
-        compute_kind="python",
+        kinds={"python"},
     )
     def survey_response_disqualified(
         context: OpExecutionContext, alchemer: AlchemerResource

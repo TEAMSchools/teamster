@@ -19,7 +19,7 @@ def build_mclass_asset(asset_key, dyd_payload, partitions_def, schema, op_tags=N
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         group_name="amplify",
-        compute_kind="python",
+        kinds={"python"},
         op_tags=op_tags,
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
