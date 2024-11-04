@@ -105,6 +105,8 @@ select
 
     cf.nj_state_reporting,
     cf.restraint_used,
+    cf.restraint_duration,
+    cf.restraint_type,
     cf.ssds_incident_id,
 
     st.suspension_type,
