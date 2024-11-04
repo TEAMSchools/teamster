@@ -15,6 +15,7 @@ select
     p.attendance_status as promo_status_attendance,
     p.academic_status as promo_status_grades,
     p.n_failing as grades_y1_failing_projected,
+    p.n_failing_core,
     p.ada_term_running,
     p.projected_credits_y1_term,
 
