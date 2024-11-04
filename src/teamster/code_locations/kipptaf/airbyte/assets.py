@@ -15,6 +15,7 @@ asset_specs = [
             "table_id": table,
         },
         group_name=a["group_name"],
+        kinds={"airbyte", "bigquery", *a.get("kinds", [])},
     )
     for a in config_from_files([f"{config_dir}/config/assets.yaml"])["assets"]
     for table in a["destination_tables"]

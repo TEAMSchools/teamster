@@ -10,6 +10,7 @@ asset_specs = [
             "table_id": source.get("identifier") or source["name"],
         },
         group_name="google_appsheet",
+        kinds={"bigquery"},
     )
     for source in manifest["sources"].values()
     if source["source_name"] == "google_appsheet"
