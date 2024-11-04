@@ -10,7 +10,7 @@ from requests.exceptions import HTTPError
 class DeansListResource(ConfigurableResource):
     subdomain: str
     api_key_map: str
-    request_timeout: float = 30.0
+    request_timeout: float = 60.0
 
     _session: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr()
