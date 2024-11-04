@@ -82,12 +82,19 @@ jobs:
             projects/${{ vars.GCP_PROJECT_NUMBER
             }}/locations/global/workloadIdentityPools/github/providers/teamster
 
-      # https://github.com/google-github-actions/setup-gcloud
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+      # # https://github.com/google-github-actions/setup-gcloud
+      # - name: Set up Cloud SDK
+      #   uses: google-github-actions/setup-gcloud@v2
 
-      - name: gcloud auth configure-docker
-        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev
+      # - name: gcloud auth configure-docker
+      #   run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev
+
+      - name: Login to GAR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.GCP_REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       # https://github.com/docker/metadata-action
       - name: Docker meta
