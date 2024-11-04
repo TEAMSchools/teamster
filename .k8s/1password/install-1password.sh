@@ -1,5 +1,10 @@
 #!/bin/bash
 
+curl -fsSL -o .k8s/get_helm.sh \
+  https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 &&
+  chmod 700 .k8s/get_helm.sh &&
+  .k8s/get_helm.sh
+
 helm repo add 1password https://1password.github.io/connect-helm-charts/
 helm repo update
 
