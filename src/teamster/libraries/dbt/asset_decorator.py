@@ -88,7 +88,7 @@ def dbt_external_source_assets(
         internal_asset_deps=internal_asset_deps,
         deps=deps,
         required_resource_keys=required_resource_keys,
-        kinds={"dbt"},
+        compute_kind="dbt",
         partitions_def=partitions_def,
         can_subset=True,
         op_tags=resolved_op_tags,
