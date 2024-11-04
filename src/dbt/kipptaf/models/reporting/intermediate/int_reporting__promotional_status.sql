@@ -141,6 +141,7 @@ with
         select
             mclass_academic_year as academic_year,
             mclass_student_number as student_number,
+            mclass_measure_standard_level,
             mclass_measure_standard_level_int,
             mclass_client_date,
 
@@ -288,6 +289,7 @@ with
             c.projected_credits_y1_term,
             c.projected_credits_cum,
 
+            m.mclass_measure_standard_level as dibels_composite_level_recent_str,
             m.mclass_measure_standard_level_int as dibels_composite_level_recent,
 
             s.star_math as star_math_level_recent,
@@ -470,6 +472,7 @@ select
     n_failing_core,
     projected_credits_cum,
     projected_credits_y1_term,
+    dibels_composite_level_recent_str,
     dibels_composite_level_recent,
     star_math_level_recent,
     star_reading_level_recent,
