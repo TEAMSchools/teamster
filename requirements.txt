@@ -89,7 +89,7 @@ minimal-snowplow-tracker==0.0.2
 more-itertools==10.5.0
 msgpack==1.1.0
 networkx==3.4.1
-numpy==2.1.2
+numpy==2.1.3
 oauth2client==4.1.3
 oauthlib==3.2.2
 oracledb==2.4.1
