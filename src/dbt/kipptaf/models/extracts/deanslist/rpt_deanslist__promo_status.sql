@@ -17,6 +17,7 @@ select
     p.n_failing as grades_y1_failing_projected,
     p.ada_term_running,
     p.projected_credits_y1_term,
+    p.dibels_composite_level_recent_str as dibels_composite_recent,
 
     null as promo_status_lit,
     null as promo_status_qa_math,
