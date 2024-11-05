@@ -142,7 +142,7 @@ six==1.16.0
 slack-sdk==3.33.3
 soupsieve==2.6
 sqlalchemy==2.0.36
-sqlglot[rs]==25.28.0
+sqlglot[rs]==25.29.0
 sqlglotrs==0.2.13
 sqlparse==0.5.1
 sshtunnel==0.4.0
