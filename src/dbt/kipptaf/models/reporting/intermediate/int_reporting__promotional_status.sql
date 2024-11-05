@@ -490,7 +490,7 @@ select
             and academic_status = 'Off-Track'
             and attendance_status = 'Off-Track'
         then 'Off-Track'
-        when grade_level = 8 and n_failing_core >= 2
+        when grade_level between 5 and 8 and n_failing_core >= 2
         then 'Off-Track'
         when
             grade_level >= 9
