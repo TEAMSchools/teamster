@@ -50,6 +50,12 @@ with
 
             bg.business_group_names as content_groups,
 
+            date_diff(
+                current_date('{{ var("local_timezone") }}'),
+                sr.worker_termination_date,
+                day
+            ) as days_terminated,
+
             case
                 cu.purchasing_user when true then 'Yes' when false then 'No'
             end as purchasing_user,
@@ -91,6 +97,7 @@ with
             true as active,
             'Expense User' as roles,
             null as content_groups,
+            null as days_terminated,
             'No' as purchasing_user,
         from {{ ref("int_people__staff_roster") }} as sr
         left join
@@ -123,6 +130,9 @@ with
             au.sam_account_name,
             au.user_principal_name,
             au.mail,
+            au.days_terminated,
+
+            x.sage_intacct_department,
 
             a.location_code,
             a.street_1,
@@ -139,6 +149,8 @@ with
                 when au.worker_type_code like 'Intern%'
                 then 'inactive'
                 when au.uac_account_disable = 0
+                then 'active'
+                when au.days_terminated <= 7
                 then 'active'
                 else 'inactive'
             end as coupa_status,
@@ -225,6 +237,8 @@ select
         then 'No'
         when sub.assignment_status = 'Leave'
         then 'No'
+        when sub.days_terminated >= 0
+        then 'No'
         when sub.coupa_status != 'inactive'
         then sub.purchasing_user
         else 'No'
@@ -267,7 +281,9 @@ select
     ) as `Sage Intacct Program`,
 
     coalesce(
-        idl1.sage_intacct_department, idl2.sage_intacct_department
+        sub.sage_intacct_department,
+        idl1.sage_intacct_department,
+        idl2.sage_intacct_department
     ) as `Sage Intacct Department`,
 
     coalesce(
