@@ -138,7 +138,6 @@ with
         union all
 
         select
-            _dbt_source_relation,
             student_id as student_number,
             academic_year_int as academic_year,
             `subject`,
