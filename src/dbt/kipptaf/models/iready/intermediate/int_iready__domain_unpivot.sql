@@ -31,7 +31,6 @@ with
     )
 
 select
-    _dbt_source_relation,
     student_id,
     `subject`,
     academic_year_int,

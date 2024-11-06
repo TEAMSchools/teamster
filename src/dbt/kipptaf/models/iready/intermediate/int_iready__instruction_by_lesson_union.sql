@@ -1,5 +1,4 @@
 select
-    _dbt_source_relation,
     academic_year_int,
     student_id,
     school,
@@ -20,7 +19,6 @@ from {{ ref("stg_iready__instruction_by_lesson") }}
 union all
 
 select
-    _dbt_source_relation,
     academic_year_int,
     student_id,
     school,
