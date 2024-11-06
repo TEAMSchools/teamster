@@ -1,6 +1,7 @@
 with
     diagnostic_results as (
         select
+            _dbt_source_relation,
             student_id,
             academic_year,
             academic_year_int,
