@@ -16,13 +16,13 @@ sources:
             skip_leading_rows: 1
         columns:
           - name: powerschool_ap_course_name
-            data_type: STRING
+            data_type: string
           - name: ap_course_name
-            data_type: STRING
+            data_type: string
           - name: nj_ap_course_subject_code
-            data_type: STRING
+            data_type: string
           - name: adb_test_subject
-            data_type: STRING
+            data_type: string
         meta:
           dagster:
             parent_asset_key_path:
@@ -109,9 +109,9 @@ sources:
             skip_leading_rows: 1
         columns:
           - name: standard_code
-            data_type: STRING
+            data_type: string
           - name: standard_domain
-            data_type: STRING
+            data_type: string
         meta:
           dagster:
             parent_asset_key_path:

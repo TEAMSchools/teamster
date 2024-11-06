@@ -15,9 +15,9 @@ sources:
             skip_leading_rows: 1
         columns:
           - name: adp_home_work_location_name
-            data_type: STRING
+            data_type: string
           - name: coupa_address_name
-            data_type: STRING
+            data_type: string
         meta:
           dagster:
             parent_asset_key_path:
@@ -34,9 +34,9 @@ sources:
             skip_leading_rows: 1
         columns:
           - name: ldap_physical_delivery_office_name
-            data_type: STRING
+            data_type: string
           - name: coupa_school_name
-            data_type: STRING
+            data_type: string
         meta:
           dagster:
             parent_asset_key_path:
@@ -53,13 +53,13 @@ sources:
             skip_leading_rows: 1
         columns:
           - name: adp_business_unit_home_code
-            data_type: STRING
+            data_type: string
           - name: adp_department_home_name
-            data_type: STRING
+            data_type: string
           - name: adp_job_title
-            data_type: STRING
+            data_type: string
           - name: coupa_school_name
-            data_type: STRING
+            data_type: string
         meta:
           dagster:
             parent_asset_key_path:
@@ -76,9 +76,11 @@ sources:
             skip_leading_rows: 1
         columns:
           - name: employee_number
-            data_type: INT
+            data_type: int64
           - name: coupa_school_name
-            data_type: STRING
+            data_type: string
+          - name: sage_intacct_department
+            data_type: int64
         meta:
           dagster:
             parent_asset_key_path:
@@ -109,13 +111,13 @@ sources:
             skip_leading_rows: 1
         columns:
           - name: adp_business_unit_home_code
-            data_type: STRING
+            data_type: string
           - name: adp_department_home_name
-            data_type: STRING
+            data_type: string
           - name: adp_job_title
-            data_type: STRING
+            data_type: string
           - name: sage_intacct_location
-            data_type: STRING
+            data_type: string
         meta:
           dagster:
             parent_asset_key_path:
