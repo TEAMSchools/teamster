@@ -100,7 +100,6 @@ with
 
     prev_yr_iready as (
         select
-            _dbt_source_relation,
             student_id,
             `subject`,
 
@@ -120,7 +119,6 @@ with
 
     cur_yr_iready as (
         select
-            _dbt_source_relation,
             student_id as student_number,
             academic_year_int as academic_year,
             `subject`,
@@ -318,18 +316,15 @@ left join
     and co.academic_year = py.academic_year_plus
     and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
     and sj.illuminate_subject_area = py.subject
-/* removed union join clause due to issues with i-Ready source data */
 left join
     prev_yr_iready as pr
     on co.student_number = pr.student_id
     and co.academic_year = pr.academic_year_plus
-    -- and {{ union_dataset_join_clause(left_alias="co", right_alias="pr") }}
     and sj.iready_subject = pr.subject
 left join
     cur_yr_iready as ci
     on co.student_number = ci.student_number
     and co.academic_year = ci.academic_year
-    -- and {{ union_dataset_join_clause(left_alias="co", right_alias="ci") }}
     and sj.iready_subject = ci.subject
 left join
     iready_exempt as ie

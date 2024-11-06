@@ -57,7 +57,6 @@ left join
     {{ ref("base_iready__diagnostic_results") }} as ir
     on co.student_number = ir.student_id
     and co.academic_year = ir.academic_year_int
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ir") }}
     and subj.iready_subject = ir.subject
     and ar = ir.test_round
     and ir.rn_subj_round = 1
@@ -68,7 +67,6 @@ left join
     and ir.subject = up.subject
     and ir.start_date = up.start_date
     and ir.completion_date = up.completion_date
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="up") }}
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
