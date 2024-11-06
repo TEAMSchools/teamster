@@ -1,6 +1,6 @@
 version: 0.1
 cli:
-  version: 1.22.7
+  version: 1.22.8
 plugins:
   sources:
     - id: trunk
@@ -8,8 +8,8 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - pyright@1.1.387
-    - actionlint@1.7.3
+    - pyright@1.1.388
+    - actionlint@1.7.4
     - git-diff-check
     - gitleaks@8.21.1
     - hadolint@2.12.0
