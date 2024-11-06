@@ -16,6 +16,7 @@ select
 
     /* cascading match on home_work_location_name/dept/job */
     coalesce(
+        tgx.traveler_group,
         tg.egencia_traveler_group,
         tg2.egencia_traveler_group,
         tg3.egencia_traveler_group,
@@ -41,6 +42,9 @@ left join
 left join
     {{ source("egencia", "src_egencia__travel_managers") }} as tm
     on sr.employee_number = tm.employee_number
+left join
+    {{ source("egencia", "src_egencia__traveler_group_exceptions") }} as tgx
+    on sr.employee_number = tgx.employee_number
 where
     (sr.worker_type_code not in ('Intern', 'Part Time') or sr.worker_type_code is null)
     and coalesce(
