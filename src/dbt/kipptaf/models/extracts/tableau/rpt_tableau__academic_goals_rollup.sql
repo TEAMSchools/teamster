@@ -102,7 +102,6 @@ with
 
     iready as (
         select
-            _dbt_source_relation,
             student_id as student_number,
             academic_year_int as academic_year,
             `subject`,
@@ -139,7 +138,6 @@ with
         union all
 
         select
-            _dbt_source_relation,
             student_id as student_number,
             academic_year_int as academic_year,
             `subject`,
@@ -254,7 +252,6 @@ with
             iready as ir
             on co.student_number = ir.student_number
             and co.academic_year = ir.academic_year
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="ir") }}
             and s.subject = ir.subject
         where co.rn_year = 1 and co.enroll_status = 0 and co.grade_level between 3 and 8
 
@@ -327,7 +324,6 @@ with
             iready as ir
             on co.student_number = ir.student_number
             and co.academic_year = ir.academic_year
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="ir") }}
             and s.subject = ir.subject
         where co.rn_year = 1 and co.enroll_status = 0 and co.grade_level between 0 and 2
     ),
