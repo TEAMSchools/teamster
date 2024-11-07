@@ -81,7 +81,7 @@ select
             coalesce(level_of_education, ''),
             /* undergraduate school */
             '&entry.844913390=',
-            coalesce(undergraduate_school, ''),
+            coalesce(replace(undergraduate_school, "'", ""), ''),
             /* years outside of kipp */
             '&entry.2136123484=',
             coalesce(cast(years_exp_outside_kipp as string), ''),
