@@ -125,9 +125,6 @@ class AvroGCSIOManager(GCSUPathIOManager):
 
             json.dump(obj=records, fp=fp.open("w"))
 
-        if self.path_exists(path):
-            context.log.warning(f"Existing GCS key: {path}")
-
         backoff(
             fn=fastavro.writer,
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
