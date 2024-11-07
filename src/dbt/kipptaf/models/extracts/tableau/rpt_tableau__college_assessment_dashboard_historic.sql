@@ -60,6 +60,7 @@ with
             e.contact_id,
             e.ktc_cohort,
             e.contact_owner_name,
+            e.ms_attended,
 
             s.courses_course_name,
             s.teacher_lastfirst,
@@ -236,6 +237,7 @@ select
     e.teacher_lastfirst,
     e.sections_external_expression,
     e.dlm,
+    e.ms_attended,
 
     o.test_type,
     o.scope,
@@ -293,6 +295,7 @@ select
     e.teacher_lastfirst,
     e.sections_external_expression,
     e.dlm,
+    e.ms_attended,
 
     o.test_type,
     o.scope,
@@ -350,6 +353,7 @@ select
     e.teacher_lastfirst,
     e.sections_external_expression,
     e.dlm,
+    e.ms_attended,
 
     p.test_type,
     p.scope,
