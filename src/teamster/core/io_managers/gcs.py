@@ -114,31 +114,35 @@ class AvroGCSIOManager(GCSUPathIOManager):
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
         bucket_obj: Bucket = self.bucket_obj
+
         records, schema = obj
 
         if self.test:
             import json
 
-            fp = "env/test" / path.with_suffix(".json")
+            test_path = "env/test" / path.with_suffix(".json")
 
-            fp.parent.mkdir(parents=True, exist_ok=True)
+            test_path.parent.mkdir(parents=True, exist_ok=True)
+            json.dump(obj=records, fp=test_path.open("w"))
 
-            json.dump(obj=records, fp=fp.open("w"))
+        context.log.info(f"Writing records to {path}")
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        with path.open(mode="wb") as fo:
+            fastavro.writer(
+                fo=fo,
+                schema=fastavro.parse_schema(schema),
+                records=records,
+                codec="snappy",
+            )
 
         if self.path_exists(path):
             context.log.warning(f"Existing GCS key: {path}")
 
         backoff(
-            fn=fastavro.writer,
+            fn=bucket_obj.blob(blob_name=str(path)).upload_from_filename,
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
-            kwargs={
-                "fo": bucket_obj.blob(blob_name=str(path)).open(
-                    mode="wb", ignore_flush=True
-                ),
-                "schema": fastavro.parse_schema(schema),
-                "records": records,
-                "codec": "snappy",
-            },
+            kwargs={"filename": path},
         )
 
 
