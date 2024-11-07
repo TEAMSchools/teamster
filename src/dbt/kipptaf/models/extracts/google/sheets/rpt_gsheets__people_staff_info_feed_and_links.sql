@@ -81,7 +81,7 @@ select
             coalesce(level_of_education, ''),
             /* undergraduate school */
             '&entry.844913390=',
---trunk-ignore(sqlfluff/CV10)
+            -- trunk-ignore(sqlfluff/CV10)
             coalesce(replace(undergraduate_school, "'", ""), ''),
             /* years outside of kipp */
             '&entry.2136123484=',
