@@ -1,4 +1,16 @@
 with
+    ms_grad_sub as (
+        select
+            _dbt_source_relation,
+            student_number,
+            school_abbreviation as ms_attended,
+            row_number() over (
+                partition by student_number order by exitdate desc
+            ) as rn,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where school_level = 'MS'
+    ),
+
     overall_filters as (
         select distinct
             academic_year,
@@ -44,6 +56,8 @@ with
             dt.name as term,
 
             f.nj_overall_student_tier,
+
+            ms.ms_attended,
 
             cast(mem.attendancevalue as numeric) as is_present,
             abs(mem.attendancevalue - 1) as is_absent,
@@ -101,6 +115,11 @@ with
             overall_filters as f
             on co.academic_year = f.academic_year
             and co.student_number = f.student_number
+        left join
+            ms_grad_sub as ms
+            on co.student_number = ms.student_number
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="ms") }}
+            and ms.rn = 1
         where
             mem.attendancevalue is not null
             and mem.membershipvalue > 0
@@ -137,6 +156,7 @@ select
     is_counselingservices,
     is_studentathlete,
     term,
+    ms_attended,
     if(
         nj_overall_student_tier = 0,
         'Unbucketed',
