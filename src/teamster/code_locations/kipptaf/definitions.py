@@ -55,6 +55,7 @@ defs = Definitions(
                 amplify,
                 extracts,
                 deanslist,
+                illuminate,
                 ldap,
                 overgrad,
                 performance_management,

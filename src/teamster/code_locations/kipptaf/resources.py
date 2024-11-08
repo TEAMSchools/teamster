@@ -169,14 +169,18 @@ SLING_RESOURCE = SlingResource(
         SlingConnectionResource(
             name="ILLUMINATE",
             type="postgres",
+            # trunk-ignore-begin(pyright/reportCallIssue)
             host=EnvVar("SNOWFLAKE_HOST"),
             user=EnvVar("SNOWFLAKE_USER"),
+            # trunk-ignore-end(pyright/reportCallIssue)
         ),
         SlingConnectionResource(
             name="BIGQUERY",
             type="bigquery",
+            # trunk-ignore-begin(pyright/reportCallIssue)
             host=EnvVar("SNOWFLAKE_HOST"),
             user=EnvVar("SNOWFLAKE_USER"),
+            # trunk-ignore-end(pyright/reportCallIssue)
         ),
     ]
 )
