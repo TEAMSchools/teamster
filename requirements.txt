@@ -2,7 +2,7 @@
 # Please do not edit it manually.
 
 agate==1.9.1
-alembic==1.13.3
+alembic==1.14.0
 annotated-types==0.7.0
 attrs==24.2.0
 avro==1.12.0
@@ -21,18 +21,18 @@ cramjam==2.9.0
 croniter==3.0.4
 cryptography==43.0.3
 daff==1.3.46
-dagster==1.9.0
-dagster-airbyte==0.25.0
-dagster-cloud==1.9.0
-dagster-cloud-cli==1.9.0
-dagster-dbt==0.25.0
-dagster-fivetran==0.25.0
-dagster-gcp==0.25.0
-dagster-k8s==0.25.0
-dagster-pandas==0.25.0
-dagster-pipes==1.9.0
-dagster-slack==0.25.0
-dagster-ssh==0.25.0
+dagster==1.9.1
+dagster-airbyte==0.25.1
+dagster-cloud==1.9.1
+dagster-cloud-cli==1.9.1
+dagster-dbt==0.25.1
+dagster-fivetran==0.25.1
+dagster-gcp==0.25.1
+dagster-k8s==0.25.1
+dagster-pandas==0.25.1
+dagster-pipes==1.9.1
+dagster-slack==0.25.1
+dagster-ssh==0.25.1
 db-dtypes==1.3.0
 dbt-adapters==1.7.0
 dbt-bigquery==1.8.3
@@ -50,7 +50,7 @@ fsspec==2024.10.0; python_version >= "3.12"
 github3-py==4.0.1
 google-api-core[grpc]==2.22.0
 google-api-python-client==2.151.0
-google-auth==2.35.0
+google-auth==2.36.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
 google-cloud-bigquery[pandas]==3.26.0
@@ -92,16 +92,16 @@ networkx==3.4.2
 numpy==2.1.3
 oauth2client==4.1.3
 oauthlib==3.2.2
-oracledb==2.4.1
+oracledb==2.5.0
 ordered-set==4.1.0
 orjson==3.10.11
-packaging==24.1
+packaging==24.2
 pandas==2.2.3
 paramiko==3.5.0
 parsedatetime==2.6
 pathspec==0.12.1
 pendulum==3.0.0
-pex==2.24.0
+pex==2.24.1
 prompt-toolkit==3.0.36
 proto-plus==1.25.0
 protobuf==4.25.5
@@ -132,7 +132,7 @@ referencing==0.35.1
 requests==2.32.3
 requests-oauthlib==2.0.0
 rich==13.9.4
-rpds-py==0.20.1
+rpds-py==0.21.0
 rsa==4.9
 scikit-learn==1.5.2
 scipy==1.14.1
@@ -142,7 +142,7 @@ six==1.16.0
 slack-sdk==3.33.3
 soupsieve==2.6
 sqlalchemy==2.0.36
-sqlglot[rs]==25.28.0
+sqlglot[rs]==25.29.0
 sqlglotrs==0.2.13
 sqlparse==0.5.1
 sshtunnel==0.4.0
@@ -155,9 +155,9 @@ threadpoolctl==3.5.0
 time-machine==2.16.0; implementation_name != "pypy"
 tomli==2.0.2
 toposort==1.10
-tqdm==4.66.6
+tqdm==4.67.0
 typeguard==4.4.1
-typer==0.12.5
+typer==0.13.0
 typing-extensions==4.12.2
 tzdata==2024.2
 universal-pathlib==0.2.5; python_version >= "3.12"
