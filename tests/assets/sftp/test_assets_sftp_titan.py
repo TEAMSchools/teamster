@@ -2,7 +2,7 @@ import random
 
 from dagster import EnvVar, materialize
 
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.libraries.ssh.resources import SSHResource
 
 SSH_TITAN_KIPPNEWARK = SSHResource(
@@ -65,12 +65,4 @@ def test_titan_person_data_kippcamden():
         asset=person_data,
         ssh_resource={"ssh_titan": SSH_TITAN_KIPPCAMDEN},
         partition_key="2023",
-    )
-
-
-def test_titan_income_form_data_kippnewark():
-    from teamster.code_locations.kippnewark.titan.assets import income_form_data
-
-    _test_asset(
-        asset=income_form_data, ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK}
     )

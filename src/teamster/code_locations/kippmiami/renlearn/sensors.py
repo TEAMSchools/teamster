@@ -1,5 +1,3 @@
-from dagster import MAX_RUNTIME_SECONDS_TAG
-
 from teamster.code_locations.kippmiami import (
     CODE_LOCATION,
     CURRENT_FISCAL_YEAR,
@@ -14,7 +12,6 @@ sftp_sensor = build_renlearn_sftp_sensor(
     partition_key_start_date=CURRENT_FISCAL_YEAR.start.to_date_string(),
     timezone=LOCAL_TIMEZONE,
     minimum_interval_seconds=(60 * 10),
-    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
 )
 
 sensors = [

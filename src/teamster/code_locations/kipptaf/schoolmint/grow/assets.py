@@ -28,12 +28,13 @@ MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
 key_prefix = [CODE_LOCATION, "schoolmint", "grow"]
 config_dir = pathlib.Path(__file__).parent / "config"
 
-schoolmint_grow_static_partitions_assets = [
+schoolmint_grow_static_partition_assets = [
     build_schoolmint_grow_asset(
         asset_key=[*key_prefix, e["asset_name"].replace("-", "_").replace("/", "_")],
         endpoint=e["asset_name"],
         partitions_def=STATIC_PARTITONS_DEF,
         schema=ASSET_SCHEMA[e["asset_name"]],
+        op_tags=e.get("op_tags"),
     )
     for e in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
         "endpoints"
@@ -61,5 +62,5 @@ schoolmint_grow_multi_partitions_assets = [
 
 assets = [
     *schoolmint_grow_multi_partitions_assets,
-    *schoolmint_grow_static_partitions_assets,
+    *schoolmint_grow_static_partition_assets,
 ]

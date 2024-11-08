@@ -3,13 +3,14 @@ import gc
 import yaml
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from pydantic import PrivateAttr
-from requests import Response, Session
+from requests import Session
 from requests.exceptions import HTTPError
 
 
 class DeansListResource(ConfigurableResource):
     subdomain: str
     api_key_map: str
+    request_timeout: float = 60.0
 
     _session: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr()
@@ -36,18 +37,20 @@ class DeansListResource(ConfigurableResource):
             return f"{self._base_url}/{api_version}/{endpoint}"
 
     def _request(self, method, url, params, **kwargs):
-        response = Response()
-
         try:
             response = self._session.request(
-                method=method, url=url, params=params, **kwargs
+                method=method,
+                url=url,
+                params=params,
+                timeout=self.request_timeout,
+                **kwargs,
             )
 
             response.raise_for_status()
             return response
         except HTTPError as e:
             self._log.exception(e)
-            raise HTTPError(response.text) from e
+            raise e
 
     def _parse_response(self, response):
         response_json = response.json()
@@ -61,6 +64,11 @@ class DeansListResource(ConfigurableResource):
 
         data = response_json.get("data", [])
         deleted_data = response_json.get("deleted_data", [])
+
+        if isinstance(data, dict):
+            data = [data]
+            total_row_count = 1
+
         for d in deleted_data:
             d["is_deleted"] = True
 

@@ -17,10 +17,15 @@ with
             test_round,
             percentile,
             overall_placement,
+            overall_relative_placement,
             overall_scale_score,
             percent_progress_to_annual_typical_growth_percent,
             percent_progress_to_annual_stretch_growth_percent,
             rn_subj_round,
+
+            concat(
+                overall_relative_placement, ' (', overall_scale_score, ')'
+            ) as score_display,
 
             case
                 test_round
@@ -68,10 +73,12 @@ select
     test_round_display_short,
     percentile,
     overall_placement,
+    overall_relative_placement,
     overall_scale_score,
     overall_placement_display,
     percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
+    score_display,
 
     'Test Rounds' as `domain`,
 from diagnostic_results
@@ -90,10 +97,12 @@ select
     ir.test_round_display_short,
     ir.percentile,
     ir.overall_placement,
+    ir.overall_relative_placement,
     ir.overall_scale_score,
     ir.overall_placement_display,
     ir.percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     ir.percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
+    ir.score_display,
 
     'YTD Growth' as `domain`,
 from diagnostic_results as ir

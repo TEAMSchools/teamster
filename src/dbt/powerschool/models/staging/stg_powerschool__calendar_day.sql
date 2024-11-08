@@ -1,16 +1,5 @@
 with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__calendar_day"),
-                partition_by="dcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    ),
-
     staging as (
-        -- trunk-ignore(sqlfluff/AM04)
         select
             * except (
                 dcid,
@@ -45,7 +34,7 @@ with
             bell_schedule_id.int_value as bell_schedule_id,
             week_num.int_value as week_num,
             whomodifiedid.int_value as whomodifiedid,
-        from deduplicate
+        from {{ source("powerschool", "src_powerschool__calendar_day") }}
     ),
 
     with_start as (

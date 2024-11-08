@@ -16,12 +16,12 @@ def _test_sensor(sftp_sensor, **kwargs):
 
 
 def test_titan_sftp_sensor_kippcamden():
-    from teamster.code_locations.kippcamden.titan.sensors import sftp_sensor
+    from teamster.code_locations.kippcamden.titan.sensors import titan_sftp_sensor
 
     _test_sensor(
-        sftp_sensor=sftp_sensor,
+        sftp_sensor=titan_sftp_sensor,
         ssh_titan=SSHResource(
-            remote_host="sftp.titank12.com",
+            remote_host="104.154.118.214",
             username=EnvVar("TITAN_SFTP_USERNAME_KIPPCAMDEN"),
             password=EnvVar("TITAN_SFTP_PASSWORD_KIPPCAMDEN"),
         ),
@@ -29,12 +29,12 @@ def test_titan_sftp_sensor_kippcamden():
 
 
 def test_titan_sftp_sensor_kippnewark():
-    from teamster.code_locations.kippnewark.titan.sensors import sftp_sensor
+    from teamster.code_locations.kippnewark.titan.sensors import titan_sftp_sensor
 
     _test_sensor(
-        sftp_sensor=sftp_sensor,
+        sftp_sensor=titan_sftp_sensor,
         ssh_titan=SSHResource(
-            remote_host="sftp.titank12.com",
+            remote_host="104.154.118.214",
             username=EnvVar("TITAN_SFTP_USERNAME_KIPPNEWARK"),
             password=EnvVar("TITAN_SFTP_PASSWORD_KIPPNEWARK"),
         ),

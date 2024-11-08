@@ -1,22 +1,23 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="id.int_value",
-        transform_cols=[
-            {"name": "id", "extract": "int_value"},
-            {"name": "rolemoduleid", "extract": "int_value"},
-            {"name": "islocked", "extract": "int_value"},
-            {"name": "isvisible", "extract": "int_value"},
-            {"name": "isenabled", "extract": "int_value"},
-            {"name": "sortorder", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("powerschool", "src_powerschool__roledef"),
+                partition_by="id.int_value",
+                order_by="_file_name desc",
+            )
+        }}
     )
-}}
 
-select *
-from staging
+-- trunk-ignore(sqlfluff/AM04)
+select
+    * except (id, rolemoduleid, islocked, isvisible, isenabled, sortorder),
+
+    /* column transformations */
+    id.int_value as id,
+    rolemoduleid.int_value as rolemoduleid,
+    islocked.int_value as islocked,
+    isvisible.int_value as isvisible,
+    isenabled.int_value as isenabled,
+    sortorder.int_value as sortorder,
+from deduplicate

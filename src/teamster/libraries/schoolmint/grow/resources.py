@@ -1,5 +1,4 @@
 import copy
-import gc
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from oauthlib.oauth2 import BackendApplicationClient
@@ -51,77 +50,81 @@ class SchoolMintGrowResource(ConfigurableResource):
             "/" + "/".join(args) if args else ""
         )
 
-    def _request(self, method, url, **kwargs):
-        response = Response()
+    def _request(self, method, url, **kwargs) -> Response:
+        response = self._session.request(method=method, url=url, **kwargs)
 
         try:
-            response = self._session.request(method=method, url=url, **kwargs)
-
             response.raise_for_status()
             return response
         except HTTPError as e:
             self._log.error(response.text)
-            raise HTTPError() from e
+            raise HTTPError(response.text) from e
 
-    def get(self, endpoint, *args, **kwargs):
+    def get(self, endpoint, *args, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
         params = copy.deepcopy(self._default_params)
 
         params.update(kwargs)
-        self._log.debug(f"GET: {url}\nPARAMS: {params}")
 
         if args:
-            response = self._request(method="GET", url=url, params=params)
+            self._log.debug(f"GET: {url}\nPARAMS: {params}")
+            response_json = self._request(method="GET", url=url, params=params).json()
 
             # mock paginated response format
             return {
                 "count": 1,
                 "limit": self._default_params["limit"],
                 "skip": self._default_params["skip"],
-                "data": [response.json()],
+                "data": [response_json],
             }
         else:
-            all_data = {
+            data = []
+            len_data = 0
+
+            response = {
                 "count": 0,
                 "limit": self._default_params["limit"],
                 "skip": self._default_params["skip"],
-                "data": [],
+                "data": data,
             }
 
             while True:
-                response = self._request(method="GET", url=url, params=params)
+                self._log.debug(f"GET: {url}\nPARAMS: {params}")
+                response_json = self._request(
+                    method="GET", url=url, params=params
+                ).json()
 
-                response_json = response.json()
-                del response
-                gc.collect()
+                count = response_json["count"]
 
-                count = response_json.get("count", 0)
-                data = response_json.get("data", [])
-                del response_json
-                gc.collect()
+                try:
+                    data.extend(response_json["data"])
+                except KeyError as e:
+                    self._log.exception(msg=e)
+                    break
 
-                all_data["data"].extend(data)
-                del data
-                gc.collect()
+                len_data = len(data)
 
-                if len(all_data["data"]) >= count:
+                self._log.debug(f"{len_data}/{count} records")
+
+                if len_data >= count:
                     break
                 else:
                     params["skip"] += params["limit"]
 
-                self._log.debug(params)
+            response["count"] = count
 
-            all_data["count"] = count
+            if len_data != count:
+                raise Exception("API returned an incomplete response")
+            else:
+                return response
 
-            return all_data
-
-    def post(self, endpoint, *args, **kwargs):
+    def post(self, endpoint, *args, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
 
         self._log.debug(f"POST: {url}")
         return self._request(method="POST", url=url, **kwargs).json()
 
-    def put(self, endpoint, *args, **kwargs):
+    def put(self, endpoint, *args, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
 
         self._log.debug(f"PUT: {url}")

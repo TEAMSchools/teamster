@@ -3,57 +3,55 @@ dev:
   outputs:
     dev:
       type: bigquery
-      method: service-account
+      method: oauth
       project: teamster-332318
       schema: _dev
-      keyfile: /etc/secret-volume/dbt_user_creds_json
 
 kippnewark:
   target: kippnewark
   outputs:
     kippnewark:
       type: bigquery
-      method: service-account
+      method: oauth
       project: teamster-332318
       schema: _dev_kippnewark
-      keyfile: /etc/secret-volume/dbt_user_creds_json
+      # schema: kippnewark
 
 kippcamden:
   target: kippcamden
   outputs:
     kippcamden:
       type: bigquery
-      method: service-account
+      method: oauth
       project: teamster-332318
       schema: _dev_kippcamden
-      keyfile: /etc/secret-volume/dbt_user_creds_json
+      # schema: kippcamden
 
 kippmiami:
   target: kippmiami
   outputs:
     kippmiami:
       type: bigquery
-      method: service-account
+      method: oauth
       project: teamster-332318
       schema: _dev_kippmiami
-      keyfile: /etc/secret-volume/dbt_user_creds_json
+      # schema: kippmiami
 
 kipptaf:
   target: kipptaf
   outputs:
     kipptaf:
       type: bigquery
-      method: service-account
+      method: oauth
       project: teamster-332318
       schema: _dev_kipptaf
-      keyfile: /etc/secret-volume/dbt_user_creds_json
+      # schema: kipptaf
 
 integration_tests:
   target: integration_tests
   outputs:
     integration_tests:
       type: bigquery
-      method: service-account
+      method: oauth
       project: teamster-332318
       schema: _dev
-      keyfile: /etc/secret-volume/dbt_user_creds_json

@@ -42,7 +42,8 @@ with
             `4_data_analysis_and_probability_performance`
             as data_analysis_and_probability,
 
-            'FAST' as assessment_name,
+            parse_date('%m/%d/%Y', date_taken) as date_taken,
+            parse_date('%m/%d/%Y', test_completion_date) as test_completion_date,
 
             coalesce(
                 fast_grade_3_ela_reading_achievement_level,
@@ -70,12 +71,15 @@ with
                 fast_grade_8_mathematics_achievement_level,
                 grade_8_fast_mathematics_achievement_level
             ) as achievement_level,
+
             coalesce(
                 `2_algebraic_reasoning_performance`, `3_algebraic_reasoning_performance`
             ) as algebraic_reasoning,
+
             coalesce(
                 `3_geometric_reasoning_performance`, `4_geometric_reasoning_performance`
             ) as geometric_reasoning,
+
             coalesce(
                 -- trunk-ignore(sqlfluff/LT05)
                 `3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`,
@@ -185,10 +189,8 @@ with
                 safe_cast(grade_8_fast_mathematics_scale_score.string_value as int)
             ) as scale_score,
 
-            parse_date('%m/%d/%Y', date_taken) as date_taken,
-            parse_date('%m/%d/%Y', test_completion_date) as test_completion_date,
-
             regexp_extract(test_reason, r'\w+\d') as administration_window,
+
             regexp_extract(
                 _dagster_partition_grade_level_subject, r'^Grade\dFAST(\w+)$'
             ) as assessment_subject,
@@ -248,10 +250,12 @@ with
                 order by administration_window asc
             ) as scale_score_prev,
         from fast_data
+        where achievement_level not in ('Insufficient to score', 'Invalidated')
     )
 
 select
     *,
+
     case
         when achievement_level_int >= 3
         then true

@@ -9,7 +9,7 @@ from teamster.code_locations.kipptaf._google.directory.schema import (
     ROLES_SCHEMA,
     USERS_SCHEMA,
 )
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
@@ -23,7 +23,7 @@ key_prefix = [CODE_LOCATION, "google", "directory"]
     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "orgunits"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="google_directory",
-    compute_kind="python",
+    kinds={"python"},
 )
 def orgunits(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_orgunits(org_unit_type="all")
@@ -40,7 +40,7 @@ def orgunits(context: AssetExecutionContext, google_directory: GoogleDirectoryRe
     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "users"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="google_directory",
-    compute_kind="python",
+    kinds={"python"},
 )
 def users(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_users(projection="full")
@@ -57,7 +57,7 @@ def users(context: AssetExecutionContext, google_directory: GoogleDirectoryResou
     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "groups"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="google_directory",
-    compute_kind="python",
+    kinds={"python"},
 )
 def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_groups()
@@ -74,7 +74,7 @@ def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryReso
     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "roles"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="google_directory",
-    compute_kind="python",
+    kinds={"python"},
 )
 def roles(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_roles()
@@ -91,7 +91,7 @@ def roles(context: AssetExecutionContext, google_directory: GoogleDirectoryResou
     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "role_assignments"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="google_directory",
-    compute_kind="python",
+    kinds={"python"},
 )
 def role_assignments(
     context: AssetExecutionContext, google_directory: GoogleDirectoryResource
@@ -119,7 +119,7 @@ def role_assignments(
     ),
     io_manager_key="io_manager_gcs_avro",
     group_name="google_directory",
-    compute_kind="python",
+    kinds={"python"},
 )
 def members(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
     data = google_directory.list_members(group_key=context.partition_key)
@@ -144,10 +144,6 @@ google_directory_partitioned_assets = [
 ]
 
 assets = [
-    groups,
-    members,
-    orgunits,
-    role_assignments,
-    roles,
-    users,
+    *google_directory_nonpartitioned_assets,
+    *google_directory_partitioned_assets,
 ]

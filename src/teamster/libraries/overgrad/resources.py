@@ -34,6 +34,11 @@ class OvergradResource(ConfigurableResource):
             response = self._session.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
+
+            # Overgrad's API limits users to making 60 requests per minute
+            # and 1000 requests per hour
+            time.sleep(1)
+
             return response
         except HTTPError as e:
             self._log.exception(e)
@@ -62,9 +67,5 @@ class OvergradResource(ConfigurableResource):
                 break
             else:
                 page += 1
-
-                # Overgrad's API limits users to making 60 requests per minute
-                # and 1000 requests per hour
-                time.sleep(1)
 
         return data

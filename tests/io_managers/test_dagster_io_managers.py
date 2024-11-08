@@ -1,5 +1,7 @@
+import json
 import pathlib
 
+import py_avro_schema
 from dagster import (
     AssetsDefinition,
     DailyPartitionsDefinition,
@@ -12,34 +14,29 @@ from dagster import (
     materialize,
 )
 from dagster._core.events import HandledOutputData
-from dagster_gcp import GCSResource
+from pydantic import BaseModel
 
-from teamster import GCS_PROJECT_NAME
-from teamster.libraries.core.io_managers.gcs import GCSIOManager
+from teamster.core.resources import get_io_manager_gcs_avro
 
-GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
+
+class TestSchema(BaseModel):
+    foo: str | None = None
 
 
 def build_test_asset_avro(
-    name, partitions_def=None, output_schema_fields=None, output_data=None
+    name, partitions_def=None, output_schema=None, output_data=None
 ):
-    if output_schema_fields is None:
-        output_schema_fields = [
-            {"name": "foo", "type": ["null", "string"], "default": None}
-        ]
-
     if output_data is None:
         output_data = [{"foo": "bar"}]
+        output_schema = json.loads(py_avro_schema.generate(py_type=TestSchema))
 
     @asset(
         key=["staging", "test", name],
         partitions_def=partitions_def,
-        io_manager_def=GCSIOManager(
-            gcs=GCS_RESOURCE, gcs_bucket="teamster-staging", object_type="avro"
-        ),
+        io_manager_def=get_io_manager_gcs_avro(code_location="test", test=True),
     )
     def _asset():
-        yield Output(value=(output_data, output_schema_fields))
+        yield Output(value=(output_data, output_schema))
 
     return _asset
 
@@ -48,9 +45,7 @@ def build_test_asset_file(name, partitions_def=None):
     @asset(
         key=["staging", "test", name],
         partitions_def=partitions_def,
-        io_manager_def=GCSIOManager(
-            gcs=GCS_RESOURCE, gcs_bucket="teamster-staging", object_type="file"
-        ),
+        io_manager_def=get_io_manager_gcs_avro(code_location="test", test=True),
     )
     def _asset():
         path = pathlib.Path("/workspaces/teamster/env/data.avro")

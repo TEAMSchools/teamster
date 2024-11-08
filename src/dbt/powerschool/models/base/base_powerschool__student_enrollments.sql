@@ -195,18 +195,19 @@ with
             ) as grade_level_prev,
 
             row_number() over (
+                partition by studentid order by yearid desc, exitdate desc
+            ) as rn_all,
+            row_number() over (
                 partition by studentid, yearid order by yearid desc, exitdate desc
             ) as rn_year,
             row_number() over (
                 partition by studentid, schoolid order by yearid desc, exitdate desc
             ) as rn_school,
+
             row_number() over (
-                partition by studentid, case when grade_level = 99 then 1 else 0 end
+                partition by studentid, if(grade_level = 99, true, false)
                 order by yearid desc, exitdate desc
             ) as rn_undergrad,
-            row_number() over (
-                partition by studentid order by yearid desc, exitdate desc
-            ) as rn_all,
         from union_relations
     ),
 
@@ -447,16 +448,7 @@ select
 
     if(ood.dcid is not null, ood.specprog_name, sch.name) as reporting_school_name,
 
-    case
-        when ood.dcid is not null
-        then 'OD'
-        when sch.high_grade = 12
-        then 'HS'
-        when sch.high_grade = 8
-        then 'MS'
-        when sch.high_grade = 4
-        then 'ES'
-    end as school_level,
+    if(ood.dcid is not null, 'OD', sch.school_level) as school_level,
 from with_boy_status_window as enr
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on enr.schoolid = sch.school_number

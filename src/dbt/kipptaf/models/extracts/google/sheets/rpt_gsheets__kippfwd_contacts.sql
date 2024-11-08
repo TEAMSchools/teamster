@@ -1,5 +1,6 @@
-select  -- noqa: disable=ST06
-    -- noqa: disable=RF05
+-- trunk-ignore(sqlfluff/ST06)
+select
+    -- trunk-ignore-begin(sqlfluff/RF05)
     ktc.contact_currently_enrolled_school as `Currently Enrolled School`,
     ktc.last_name as `Last Name`,
     ktc.first_name as `First Name`,
@@ -12,8 +13,11 @@ select  -- noqa: disable=ST06
     c.topic as `Comments`,
     c.response as `Next Steps`,
     c.record_id as dlcall_log_id,
+
     format_date('%m/%d/%Y', c.call_date_time) as `Contact Date`,
+
     if(c.call_status = 'Completed', 'Successful', 'Outreach') as `Status`,
+
     case
         c.call_type
         when 'P'
@@ -32,6 +36,7 @@ select  -- noqa: disable=ST06
 
     null as `Category`,
     null as `Current Category Ranking`,
+-- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_kippadb__roster") }} as ktc
 inner join
     {{ ref("stg_powerschool__students") }} as s on ktc.student_number = s.student_number

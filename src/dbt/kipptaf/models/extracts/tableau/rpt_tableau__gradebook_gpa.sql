@@ -39,7 +39,9 @@ with
             _dbt_source_relation,
             schoolid,
             yearid,
+
             'Y1' as storecode,
+
             firstday as term_start_date,
             lastday as term_end_date,
 
@@ -54,21 +56,20 @@ with
             enr._dbt_source_relation,
             enr.studentid,
             enr.student_number,
-            enr.lastfirst,
+            enr.student_name,
             enr.enroll_status,
             enr.cohort,
             enr.gender,
             enr.ethnicity,
-
             enr.academic_year,
+            enr.academic_year_display,
             enr.yearid,
             enr.region,
             enr.school_level,
             enr.schoolid,
-            enr.school_abbreviation,
+            enr.school,
             enr.grade_level,
-            enr.advisor_lastfirst,
-
+            enr.advisory,
             enr.year_in_school,
             enr.year_in_network,
             enr.rn_undergrad,
@@ -78,16 +79,19 @@ with
             enr.is_retained_ever,
             enr.lunch_status,
             enr.lep_status,
+            enr.gifted_and_talented,
+            enr.iep_status,
             enr.is_504,
+            enr.contact_id as salesforce_id,
+            enr.ktc_cohort,
+            enr.is_counseling_services,
+            enr.is_student_athlete,
 
             term.storecode as term,
             term.term_start_date,
             term.term_end_date,
             term.is_current_term,
             term.semester,
-
-            ktc.contact_id as salesforce_id,
-            ktc.ktc_cohort,
 
             hos.head_of_school_preferred_name_lastfirst as head_of_school,
 
@@ -98,53 +102,34 @@ with
             gc.cumulative_y1_gpa_projected_s1_unweighted,
             gc.core_cumulative_y1_gpa,
 
-            gt.gpa_term,
-            gt.gpa_semester,
-            gt.gpa_y1,
-            gt.gpa_y1_unweighted,
-            gt.total_credit_hours,
-            gt.n_failing_y1,
+            gtq.gpa_semester,
+            gtq.gpa_y1_unweighted,
+            gtq.total_credit_hours_y1,
+            gtq.n_failing_y1,
 
             concat(enr.region, enr.school_level) as region_school_level,
 
-            if(enr.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
-            if(
-                enr.school_level in ('ES', 'MS'),
-                enr.advisory_name,
-                enr.advisor_lastfirst
-            ) as advisory,
-
-            if(sp.studentid is not null, 1, null) as is_counseling_services,
-
-            if(sa.studentid is not null, 1, null) as is_student_athlete,
-
             round(ada.ada, 3) as ada,
-        from {{ ref("base_powerschool__student_enrollments") }} as enr
+
+            if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_term,
+            if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
+
+            if(
+                current_date('{{ var("local_timezone") }}')
+                between (term.term_end_date - 10) and (term.term_start_date + 14),
+                true,
+                false
+            ) as is_quarter_end_date_range,
+
+        from {{ ref("int_tableau__student_enrollments") }} as enr
         inner join
             term
             on enr.schoolid = term.schoolid
             and enr.yearid = term.yearid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="term") }}
         left join
-            {{ ref("int_kippadb__roster") }} as ktc
-            on enr.student_number = ktc.student_number
-        left join
             {{ ref("int_people__leadership_crosswalk") }} as hos
             on enr.schoolid = hos.home_work_location_powerschool_school_id
-        left join
-            {{ ref("int_powerschool__spenrollments") }} as sp
-            on enr.studentid = sp.studentid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="sp") }}
-            and current_date('{{ var("local_timezone") }}')
-            between sp.enter_date and sp.exit_date
-            and sp.specprog_name = 'Counseling Services'
-        left join
-            {{ ref("int_powerschool__spenrollments") }} as sa
-            on enr.studentid = sa.studentid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="sa") }}
-            and current_date('{{ var("local_timezone") }}')
-            between sa.enter_date and sa.exit_date
-            and sa.specprog_name = 'Student Athlete'
         left join
             {{ ref("int_powerschool__ada") }} as ada
             on enr.studentid = ada.studentid
@@ -156,17 +141,23 @@ with
             and enr.schoolid = gc.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gc") }}
         left join
-            {{ ref("int_powerschool__gpa_term") }} as gt
-            on enr.studentid = gt.studentid
-            and enr.yearid = gt.yearid
-            and enr.schoolid = gt.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gt") }}
-            and term.storecode = gt.term_name
+            {{ ref("int_powerschool__gpa_term") }} as gtq
+            on enr.studentid = gtq.studentid
+            and enr.yearid = gtq.yearid
+            and enr.schoolid = gtq.schoolid
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gtq") }}
+            and term.storecode = gtq.term_name
+            and {{ union_dataset_join_clause(left_alias="term", right_alias="gtq") }}
+        left join
+            {{ ref("int_powerschool__gpa_term") }} as gty
+            on enr.studentid = gty.studentid
+            and enr.yearid = gty.yearid
+            and enr.schoolid = gty.schoolid
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
+            and gty.is_current
         where
-            enr.academic_year >= {{ var("current_academic_year") - 1 }}
-            and enr.rn_year = 1
+            enr.academic_year = {{ var("current_academic_year") }}
             and not enr.is_out_of_district
-            and enr.grade_level != 99
     ),
 
     course_enrollments as (
@@ -202,16 +193,16 @@ with
             m.rn_course_number_year = 1
             and m.cc_sectionid > 0
             and m.cc_course_number not in (
-                'LOG100',
-                'LOG1010',
-                'LOG11',
-                'LOG12',
-                'LOG20',
-                'LOG22999XL',
-                'LOG300',
-                'LOG9',
-                'SEM22106G1',
-                'SEM22106S1'
+                'LOG100',  -- Lunch
+                'LOG1010',  -- Lunch
+                'LOG11',  -- Lunch
+                'LOG12',  -- Lunch
+                'LOG20',  -- Early Dismissal
+                'LOG22999XL',  -- Lunch
+                'LOG300',  -- Study Hall
+                'LOG9',  -- Lunch
+                'SEM22106G1',  -- Advisory
+                'SEM22106S1'  -- Not in SY24-25 yet
             )
     ),
 
@@ -270,33 +261,27 @@ with
             sectionid,
             termid,
             storecode,
-
             fg_percent,
             fg_letter_grade,
             fg_grade_points,
             fg_percent_adjusted,
             fg_letter_grade_adjusted,
-
             sg_percent,
             sg_letter_grade,
             sg_grade_points,
-
             term_percent_grade_adjusted,
             term_letter_grade_adjusted,
             term_grade_points,
-
             y1_percent_grade,
             y1_percent_grade_adjusted,
             y1_letter_grade,
             y1_letter_grade_adjusted,
             y1_grade_points,
             y1_grade_points_unweighted,
-
             need_60,
             need_70,
             need_80,
             need_90,
-
             citizenship,
             comment_value,
         from {{ ref("base_powerschool__final_grades") }}
@@ -317,28 +302,24 @@ with
             termid,
 
             'Y1' as term,
-
             null as fg_percent,
             null as fg_letter_grade,
             null as fg_grade_points,
             null as fg_percent_adjusted,
             null as fg_letter_grade_adjusted,
-
             null as sg_percent,
             null as sg_letter_grade,
             null as sg_grade_points,
 
-            term_percent_grade_adjusted,
-            term_letter_grade_adjusted,
-            term_grade_points,
-
+            y1_percent_grade_adjusted as term_percent_grade_adjusted,
+            y1_letter_grade_adjusted as term_letter_grade_adjusted,
+            y1_grade_points as term_grade_points,
             y1_percent_grade,
             y1_percent_grade_adjusted,
             y1_letter_grade,
             y1_letter_grade_adjusted,
             y1_grade_points,
             y1_grade_points_unweighted,
-
             need_60,
             need_70,
             need_80,
@@ -385,7 +366,7 @@ with
             ) as category_quarter_average_all_courses,
         from {{ ref("int_powerschool__category_grades") }}
         where
-            yearid >= {{ var("current_academic_year") - 1990 - 1 }}
+            yearid = {{ var("current_academic_year") - 1990 }}
             and not is_dropped_section
             and storecode_type not in ('Q', 'H')
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
@@ -393,27 +374,25 @@ with
 
 select
     s._dbt_source_relation,
-    s.studentid,
-    s.student_number,
-    s.salesforce_id,
-    s.lastfirst,
-    s.enroll_status,
-    s.cohort,
-    s.ktc_cohort,
-    s.gender,
-    s.ethnicity,
-
     s.academic_year,
+    s.academic_year_display,
     s.region,
     s.school_level,
     s.schoolid,
-    s.school_abbreviation as school,
+    s.school,
+    s.studentid,
+    s.student_number,
+    s.student_name,
     s.grade_level,
+    s.salesforce_id,
+    s.ktc_cohort,
+    s.enroll_status,
+    s.cohort,
+    s.gender,
+    s.ethnicity,
     s.advisory,
-    s.advisor_lastfirst as advisor_name,
     s.head_of_school as hos,
     s.region_school_level,
-
     s.year_in_school,
     s.year_in_network,
     s.rn_undergrad,
@@ -422,28 +401,26 @@ select
     s.is_retained_year,
     s.is_retained_ever,
     s.lunch_status,
+    s.gifted_and_talented,
     s.iep_status,
     s.lep_status,
     s.is_504,
     s.is_counseling_services,
     s.is_student_athlete,
-
     s.ada,
-
     s.term as `quarter`,
     s.semester,
     s.term_start_date as quarter_start_date,
     s.term_end_date as quarter_end_date,
     s.term_end_date as cal_quarter_end_date,
     s.is_current_term as is_current_quarter,
-
+    s.is_quarter_end_date_range,
     s.gpa_term as gpa_for_quarter,
     s.gpa_semester,
     s.gpa_y1,
     s.gpa_y1_unweighted,
-    s.total_credit_hours as gpa_total_credit_hours,
+    s.total_credit_hours_y1 as gpa_total_credit_hours,
     s.n_failing_y1 as gpa_n_failing_y1,
-
     s.cumulative_y1_gpa as gpa_cumulative_y1_gpa,
     s.cumulative_y1_gpa_unweighted as gpa_cumulative_y1_gpa_unweighted,
     s.cumulative_y1_gpa_projected as gpa_cumulative_y1_gpa_projected,
@@ -547,32 +524,31 @@ left join
     and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
     and ce.sectionid = c.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="c") }}
+where s.term_start_date <= current_date('{{ var("local_timezone") }}')
 
 union all
 
 select
     e1._dbt_source_relation,
-    e1.studentid,
-    e1.student_number,
-    e1.salesforce_id,
-    e1.lastfirst,
-    e1.enroll_status,
-    e1.cohort,
-    e1.ktc_cohort,
-    e1.gender,
-    e1.ethnicity,
-
     e1.academic_year,
+    e1.academic_year_display,
     e1.region,
     e1.school_level,
     e1.schoolid,
-    e1.school_abbreviation as school,
+    e1.school,
+    e1.studentid,
+    e1.student_number,
+    e1.student_name,
     e1.grade_level,
+    e1.salesforce_id,
+    e1.ktc_cohort,
+    e1.enroll_status,
+    e1.cohort,
+    e1.gender,
+    e1.ethnicity,
     e1.advisory,
-    e1.advisor_lastfirst as advisor_name,
     e1.head_of_school as hos,
     e1.region_school_level,
-
     e1.year_in_school,
     e1.year_in_network,
     e1.rn_undergrad,
@@ -581,28 +557,26 @@ select
     e1.is_retained_year,
     e1.is_retained_ever,
     e1.lunch_status,
+    e1.gifted_and_talented,
     e1.iep_status,
     e1.lep_status,
     e1.is_504,
     e1.is_counseling_services,
     e1.is_student_athlete,
-
     e1.ada,
-
     e1.term as `quarter`,
     e1.semester,
     e1.term_start_date as quarter_start_date,
     e1.term_end_date as quarter_end_date,
     e1.term_end_date as cal_quarter_end_date,
     e1.is_current_term as is_current_quarter,
-
+    e1.is_quarter_end_date_range,
     e1.gpa_term as gpa_for_quarter,
     e1.gpa_semester,
     e1.gpa_y1,
     e1.gpa_y1_unweighted,
-    e1.total_credit_hours as gpa_total_credit_hours,
+    e1.total_credit_hours_y1 as gpa_total_credit_hours,
     e1.n_failing_y1 as gpa_n_failing_y1,
-
     e1.cumulative_y1_gpa as gpa_cumulative_y1_gpa,
     e1.cumulative_y1_gpa_unweighted as gpa_cumulative_y1_gpa_unweighted,
     e1.cumulative_y1_gpa_projected as gpa_cumulative_y1_gpa_projected,
@@ -666,9 +640,7 @@ select
     null as category_y1_percent_grade_running,
     null as category_y1_percent_grade_current,
     null as category_quarter_average_all_courses,
-
     'Transfer' as roster_type,
-
     null as ada_above_or_at_80,
     null as section_or_period,
 from y1_historical as y1h

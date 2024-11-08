@@ -50,6 +50,14 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
+  name: op-amplify-dds-service-account
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/DIBELS Data System
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
   name: op-clever-sftp
   namespace: dagster-cloud
 spec:
@@ -330,23 +338,23 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-overgrad-api
+  name: op-overgrad-api-kippnewark
   namespace: dagster-cloud
 spec:
-  itemPath: vaults/Data Team/items/Overgrad API
+  itemPath: vaults/Data Team/items/Overgrad API - Newark
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-illuminate-db
+  name: op-overgrad-api-kippcamden
   namespace: dagster-cloud
 spec:
-  itemPath: vaults/Data Team/items/Illuminate ODBC
+  itemPath: vaults/Data Team/items/Overgrad API - Camden
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-gcp-service-account-dlt
+  name: op-slack-api
   namespace: dagster-cloud
 spec:
-  itemPath: vaults/Data Team/items/Teamster Service Account - dlt
+  itemPath: vaults/Data Team/items/Slack API - Teamster

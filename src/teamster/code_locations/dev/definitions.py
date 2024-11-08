@@ -7,13 +7,10 @@ warnings.filterwarnings("ignore", category=ExperimentalWarning)
 # trunk-ignore-begin(ruff/E402)
 from dagster import Definitions, load_assets_from_modules
 
-from teamster.code_locations.kipptaf import (  # adp,; airbyte,; amplify,; couchdrop,; datagun,; deanslist,; fivetran,;  ldap,; performance_management,; powerschool,; schoolmint,; smartrecruiters,; tableau; overgrad,; resources,; _google,
-    CODE_LOCATION,
-    _dbt,
-)
-from teamster.libraries.core.resources import (  # BIGQUERY_RESOURCE,; SSH_COUCHDROP,
+from teamster.code_locations.kippmiami import CODE_LOCATION, fldoe
+from teamster.core.resources import (
     GCS_RESOURCE,
-    get_dbt_cli_resource,
+    SSH_COUCHDROP,
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
@@ -24,12 +21,12 @@ from teamster.libraries.core.resources import (  # BIGQUERY_RESOURCE,; SSH_COUCH
 defs = Definitions(
     assets=load_assets_from_modules(
         modules=[
-            _dbt,
+            fldoe,
             # _google,
             # adp,
             # airbyte,
             # amplify,
-            # datagun,
+            # extracts,
             # deanslist,
             # fivetran,
             # ldap,
@@ -47,7 +44,7 @@ defs = Definitions(
     #     *adp.schedules,
     #     *airbyte.schedules,
     #     *amplify.schedules,
-    #     *datagun.schedules,
+    #     *extracts.schedules,
     #     *fivetran.schedules,
     #     *ldap.schedules,
     #     *schoolmint.schedules,
@@ -64,11 +61,12 @@ defs = Definitions(
     #     *tableau.sensors,
     # ],
     resources={
-        "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
         "gcs": GCS_RESOURCE,
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
         "io_manager_gcs_file": get_io_manager_gcs_file(CODE_LOCATION),
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
+        "ssh_couchdrop": SSH_COUCHDROP,
+        # "dbt_cli": get_dbt_cli_resource(CODE_LOCATION),
         # "overgrad": resources.OVERGRAD_RESOURCE,
         # "adp_wfm": resources.ADP_WORKFORCE_MANAGER_RESOURCE,
         # "adp_wfn": resources.ADP_WORKFORCE_NOW_RESOURCE,
@@ -86,7 +84,6 @@ defs = Definitions(
         # "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
         # "ssh_adp_workforce_now": resources.SSH_RESOURCE_ADP_WORKFORCE_NOW,
         # "ssh_clever": resources.SSH_RESOURCE_CLEVER,
-        # "ssh_couchdrop": SSH_COUCHDROP,
         # "ssh_coupa": resources.SSH_RESOURCE_COUPA,
         # "ssh_deanslist": resources.SSH_RESOURCE_DEANSLIST,
         # "ssh_egencia": resources.SSH_RESOURCE_EGENCIA,

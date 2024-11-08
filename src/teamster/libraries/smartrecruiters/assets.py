@@ -6,7 +6,7 @@ from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
@@ -21,7 +21,7 @@ def build_smartrecruiters_report_asset(
         metadata={"report_id": report_id},
         io_manager_key="io_manager_gcs_avro",
         group_name="smartrecruiters",
-        compute_kind="python",
+        kinds={"python"},
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(

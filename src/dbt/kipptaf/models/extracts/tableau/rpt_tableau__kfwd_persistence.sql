@@ -11,6 +11,8 @@ select
     p.actual_end_date,
     p.account_name,
     p.account_type,
+    p.competitiveness_ranking,
+    p.adjusted_6_year_minority_graduation_rate,
     p.hs_account_name,
     p.semester,
     p.ecc_pursuing_degree_type,
@@ -22,8 +24,12 @@ select
     p.is_retained_int,
     p.persistence_status,
     p.rn_enrollment_year,
-    p.cumulative_credits_earned,
-    p.credits_required_for_graduation,
+    p.cumulative_credits_earned_recent,
+    p.credits_required_for_graduation_recent,
+    p.cumulative_gpa_recent,
+    p.cumulative_credits_earned_semester,
+    p.credits_required_for_graduation_semester,
+    p.cumulative_gpa_semester,
     p.n_semester,
     p.progress_multiplier_4yr,
     p.progress_multiplier_6yr,
@@ -31,7 +37,7 @@ select
     r.lastfirst as student_name,
     r.last_name as student_last_name,
     r.first_name as student_first_name,
-    r.record_type_name as record_type_name,
+    r.record_type_name,
     r.contact_owner_name as counselor_name,
     r.contact_kipp_ms_graduate as is_kipp_ms_graduate,
     r.contact_kipp_hs_graduate as is_kipp_hs_graduate,
@@ -53,18 +59,20 @@ select
     r.contact_actual_college_graduation_date as actual_college_graduation_date,
     r.contact_expected_college_graduation as expected_college_graduation_date,
 
+    if(r.contact_most_recent_iep_date is not null, true, false) as is_iep,
+    if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
     if(
         r.ktc_cohort
-        between {{ var("current_academic_year") }}
-        - 5 and {{ var("current_academic_year") }},
+        between {{ var("current_academic_year") - 5 }}
+        and {{ var("current_academic_year") }},
         true,
         false
     ) as is_college_cohort,
+
     if(
         p.academic_year = {{ var("current_academic_year") }}, true, false
     ) as is_current_academic_year,
-    if(r.contact_most_recent_iep_date is not null, true, false) as is_iep,
-    if(r.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
+
     case
         when r.contact_college_match_display_gpa >= 3.50
         then '3.50+'
@@ -77,6 +85,5 @@ select
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
-
 from {{ ref("int_kippadb__persistence") }} as p
 left join {{ ref("int_kippadb__roster") }} as r on p.student_number = r.student_number

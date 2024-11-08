@@ -2,7 +2,6 @@ select
     o.observation_id,
     o.rubric_name,
     o.observation_score,
-    o.strand_score,
     o.glows,
     o.grows,
     o.locked,
@@ -17,18 +16,21 @@ select
     o.observer_employee_number,
     o.eval_date,
     o.overall_tier,
-    o.etr_score,
-    o.etr_tier,
-    o.so_score,
-    o.so_tier,
+    o.observation_notes,
+
+    null as etr_score,
+    null as etr_tier,
+    null as so_score,
+    null as so_tier,
 
     os.value_score as row_score,
+    os.value_text as measurement_dropdown_selection,
 
     m.name as measurement_name,
 
     mg.measurement_group_name as strand_name,
-    /* os.value_text is dropdown selections, text box values are comments */
-    coalesce(os.value_text, tb.value_clean) as text_box,
+
+    tb.value_clean as measurement_comments,
 from {{ ref("int_performance_management__observations") }} as o
 left join
     {{ ref("stg_schoolmint_grow__observations__observation_scores") }} as os
@@ -55,7 +57,6 @@ select
     observation_id,
     rubric_name,
     score as observation_score,
-    null as strand_score,
     glows,
     grows,
     locked,
@@ -70,12 +71,14 @@ select
     observer_employee_number,
     eval_date,
     overall_tier,
+    null as observation_notes,
     etr_score,
     etr_tier,
     so_score,
     so_tier,
     value_score as row_score,
+    null as dropdown_selection,
     measurement_name,
     measurement_group_name as strand_name,
-    text_box,
+    text_box as measurement_comments,
 from {{ ref("stg_performance_management__observation_details_archive") }}

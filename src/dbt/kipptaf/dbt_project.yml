@@ -58,14 +58,17 @@ models:
         +schema: adp_workforce_now
         staging:
           +materialized: table
+        workers:
+          staging:
+            +materialized: table
     alchemer:
       +schema: alchemer
+      +enabled: false
       staging:
         +materialized: table
     amplify:
       +schema: amplify
-      staging:
-        +materialized: table
+      +materialized: table
     assessments:
       +schema: assessments
       staging:
@@ -114,13 +117,11 @@ models:
         +schema: google_appsheet
     illuminate:
       +schema: illuminate
+      +materialized: table
       staging:
-        +materialized: table
         repositories:
           archive:
             +enabled: false
-      base:
-        +materialized: table
     instagram:
       business:
         +schema: instagram_business
@@ -140,8 +141,6 @@ models:
         +materialized: table
     overgrad:
       +schema: overgrad
-      staging:
-        +materialized: table
     pearson:
       +schema: pearson
     people:

@@ -1,7 +1,6 @@
+# not using partitions
 assets:
-  # not using partitions
-  - asset_name: cc
-    partition_column: transaction_date
+  # transaction_date
   - asset_name: courses
     partition_column: transaction_date
   - asset_name: schools
@@ -14,27 +13,12 @@ assets:
     partition_column: transaction_date
   - asset_name: terms
     partition_column: transaction_date
+  # whenmodified
   - asset_name: codeset
-    partition_column: whenmodified
-  - asset_name: districtteachercategory
     partition_column: whenmodified
   - asset_name: emailaddress
     partition_column: whenmodified
-  - asset_name: gradecalcformulaweight
-    partition_column: whenmodified
-  - asset_name: gradecalcschoolassoc
-    partition_column: whenmodified
-  - asset_name: gradecalculationtype
-    partition_column: whenmodified
-  - asset_name: gradeformulaset
-    partition_column: whenmodified
   - asset_name: gradescaleitem
-    partition_column: whenmodified
-  - asset_name: gradeschoolconfig
-    partition_column: whenmodified
-  - asset_name: gradeschoolformulaassoc
-    partition_column: whenmodified
-  - asset_name: gradesectionconfig
     partition_column: whenmodified
   - asset_name: originalcontactmap
     partition_column: whenmodified
@@ -72,13 +56,41 @@ assets:
     partition_column: whenmodified
   - asset_name: studentrace
     partition_column: whenmodified
-  - asset_name: teachercategory
-    partition_column: whenmodified
-  - asset_name: u_def_ext_students
-    partition_column: whenmodified
-  - asset_name: u_studentsuserfields
-    partition_column: whenmodified
   - asset_name: users
     partition_column: whenmodified
-  - asset_name: sced_code_mapping
-    partition_column: last_modified_ts
+  - asset_name: u_clg_et_stu
+    partition_column: whenmodified
+  - asset_name: u_clg_et_stu_alt
+    partition_column: whenmodified
+  - asset_name: gpstudentwaiver
+    partition_column: whenmodified
+  - asset_name: userscorefields
+    partition_column: whenmodified
+  - asset_name: cc
+    partition_column: transaction_date
+    select_columns:
+      - dcid
+      - id
+      - studentid
+      - sectionid
+      - section_number
+      - schoolid
+      - studyear
+      - termid
+      - dateenrolled
+      - dateleft
+      - course_number
+      - teacherid
+      - currentabsences
+      - currenttardies
+  - asset_name: u_studentsuserfields
+    partition_column: whenmodified
+    select_columns:
+      - studentsdcid
+      - c_504_status
+      - cr_prevschoolname
+      - infosnap_id
+      - infosnap_opt_in
+      - media_release
+      - newark_enrollment_number
+      - rides_staff

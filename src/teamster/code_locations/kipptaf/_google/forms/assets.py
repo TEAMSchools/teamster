@@ -5,7 +5,7 @@ from teamster.code_locations.kipptaf._google.forms.schema import (
     FORM_SCHEMA,
     RESPONSES_SCHEMA,
 )
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
@@ -19,7 +19,7 @@ key_prefix = [CODE_LOCATION, "google", "forms"]
 asset_kwargs = {
     "io_manager_key": "io_manager_gcs_avro",
     "group_name": "google_forms",
-    "compute_kind": "python",
+    "kinds": {"python"},
     "partitions_def": GOOGLE_FORMS_PARTITIONS_DEF,
 }
 

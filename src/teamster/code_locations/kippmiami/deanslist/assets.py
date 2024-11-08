@@ -1,4 +1,5 @@
 import pathlib
+import re
 
 from dagster import (
     MonthlyPartitionsDefinition,
@@ -9,7 +10,7 @@ from dagster import (
 
 from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kippmiami.deanslist.schema import ASSET_SCHEMA
-from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.deanslist.assets import (
     build_deanslist_multi_partition_asset,
     build_deanslist_static_partition_asset,
@@ -42,7 +43,11 @@ config_dir = pathlib.Path(__file__).parent / "config"
 
 static_partitions_assets = [
     build_deanslist_static_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        asset_key=[
+            CODE_LOCATION,
+            "deanslist",
+            re.sub(pattern=r"\W", repl="_", string=e["endpoint"]),
+        ],
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_STATIC_PARTITIONS_DEF,
         **e,
@@ -54,7 +59,11 @@ static_partitions_assets = [
 
 monthly_multi_partitions_assets = [
     build_deanslist_multi_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        asset_key=[
+            CODE_LOCATION,
+            "deanslist",
+            re.sub(pattern=r"\W", repl="_", string=e["endpoint"]),
+        ],
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF,
         **e,
@@ -66,7 +75,11 @@ monthly_multi_partitions_assets = [
 
 fiscal_multi_partitions_assets = [
     build_deanslist_multi_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        asset_key=[
+            CODE_LOCATION,
+            "deanslist",
+            re.sub(pattern=r"\W", repl="_", string=e["endpoint"]),
+        ],
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
         **e,

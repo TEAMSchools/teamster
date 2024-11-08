@@ -1,21 +1,28 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="personaddressid.int_value",
-        transform_cols=[
-            {"name": "personaddressid", "extract": "int_value"},
-            {"name": "statescodesetid", "extract": "int_value"},
-            {"name": "countrycodesetid", "extract": "int_value"},
-            {"name": "geocodelatitude", "extract": "bytes_decimal_value"},
-            {"name": "geocodelongitude", "extract": "bytes_decimal_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("powerschool", "src_powerschool__personaddress"),
+                partition_by="personaddressid.int_value",
+                order_by="_file_name desc",
+            )
+        }}
     )
-}}
 
-select *
-from staging
+-- trunk-ignore(sqlfluff/AM04)
+select
+    * except (
+        personaddressid,
+        statescodesetid,
+        countrycodesetid,
+        geocodelatitude,
+        geocodelongitude
+    ),
+
+    /* column transformations */
+    personaddressid.int_value as personaddressid,
+    statescodesetid.int_value as statescodesetid,
+    countrycodesetid.int_value as countrycodesetid,
+    geocodelatitude.bytes_decimal_value as geocodelatitude,
+    geocodelongitude.bytes_decimal_value as geocodelongitude,
+from deduplicate

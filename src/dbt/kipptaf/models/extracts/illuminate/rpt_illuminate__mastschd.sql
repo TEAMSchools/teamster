@@ -1,5 +1,4 @@
-select  -- noqa: disable=ST06
-    -- noqa: disable=RF05
+select
     concat(
         regexp_extract(sec._dbt_source_relation, r'(kipp\w+)_'), sec.id
     ) as `01 Section ID`,
@@ -11,9 +10,7 @@ select  -- noqa: disable=ST06
 
     t.teachernumber as `05 User ID`,
 
-    case
-        when tr.schoolid = 73253 then sec.expression else sec.section_number
-    end as `06 Period`,
+    if(tr.schoolid = 73253, sec.expression, sec.section_number) as `06 Period`,
 
     concat((tr.yearid + 1990), '-', (tr.yearid + 1991)) as `07 Academic Year`,
 

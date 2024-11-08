@@ -131,3 +131,11 @@ sources:
               - kippnewark
               - deanslist
               - int_deanslist__students__custom_fields__pivot
+      - name: stg_deanslist__dff_stats
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippnewark
+              - deanslist
+              - stg_deanslist__dff_stats

@@ -1,27 +1,52 @@
-import json
-
 from dagster import OpExecutionContext, op
+from dagster_slack import SlackResource
 
 from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 
 
 @op
 def schoolmint_grow_user_update_op(
-    context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource, users
+    context: OpExecutionContext,
+    schoolmint_grow: SchoolMintGrowResource,
+    slack: SlackResource,
+    users,
 ):
+    exceptions = []
+
+    slack_client = slack.get_client()
+
     for u in users:
+        if u["surrogate_key_source"] == u["surrogate_key_destination"]:
+            continue
+
+        request_args = ["users"]
+
         user_id = u["user_id"]
         inactive = u["inactive"]
         user_email = u["user_email"]
 
-        try:
-            # restore
-            if inactive == 0 and u["inactive_ws"] == 1:
+        exception_str = [user_email]
+
+        # restore
+        if inactive == 0 and u["archived_at"] is not None:
+            try:
                 context.log.info(f"RESTORING\t{user_email}")
-                schoolmint_grow.put("users", user_id, "restore")
-        except Exception as e:
-            context.log.exception(e)
-            continue
+                request_args.extend([user_id, "restore"])
+                exception_str.extend([*request_args, "PUT"])
+
+                schoolmint_grow.put(
+                    *request_args, params={"district": schoolmint_grow.district_id}
+                )
+
+                # reset vars for update
+                request_args = ["users"]
+                exception_str = [user_email]
+            except Exception as e:
+                exception_str.append(str(e))
+
+                exceptions.append("\t".join(exception_str))
+
+                continue
 
         # build user payload
         payload = {
@@ -36,32 +61,48 @@ def schoolmint_grow_user_update_op(
                 "course": u["course_id"],
             },
             "coach": u["coach_id"],
-            "roles": json.loads(u["role_id"]),
+            "roles": [u["role_id"]],
         }
 
         try:
             # create
             if inactive == 0 and user_id is None:
                 context.log.info(f"CREATING\t{user_email}")
-                create_resp = schoolmint_grow.post("users", json=payload)
-                user_id = create_resp["_id"]
-                u["user_id"] = user_id
+                exception_str.extend([*request_args, "POST"])
+
+                create_response = schoolmint_grow.post(*request_args, json=payload)
+
+                u["user_id"] = create_response["_id"]
             # update
-            elif inactive == 0:
+            elif inactive == 0 and user_id is not None:
                 context.log.info(f"UPDATING\t{user_email}")
-                schoolmint_grow.put("users", user_id, json=payload)
+                request_args.append(user_id)
+                exception_str.extend([*request_args, "PUT"])
+
+                schoolmint_grow.put(*request_args, json=payload)
+            # archive
+            elif inactive == 1 and user_id is not None and u["archived_at"] is None:
+                context.log.info(f"ARCHIVING\t{user_email}")
+                request_args.append(user_id)
+                exception_str.extend([*request_args, "DELETE"])
+
+                schoolmint_grow.delete(*request_args)
         except Exception as e:
-            context.log.exception(e)
+            exception_str.append(str(e))
+
+            exceptions.append("\t".join(exception_str))
+
             continue
 
-        try:
-            # archive
-            if inactive == 1 and u["archived_at"] is None:
-                context.log.info(f"ARCHIVING\t{user_email}")
-                schoolmint_grow.delete("users", user_id)
-        except Exception as e:
-            context.log.exception(e)
-            continue
+    if exceptions:
+        exceptions.insert(0, "*`schoolmint_grow_user_update_op` errors:*")
+        exceptions.insert(
+            1, f"https://kipptaf.dagster.cloud/prod/runs/{context.run_id}"
+        )
+
+        slack_client.chat_postMessage(
+            channel="#dagster-alerts", text="\n".join(exceptions)
+        )
 
     return users
 
@@ -77,8 +118,7 @@ def schoolmint_grow_school_update_op(
 
         context.log.info(f"UPDATING\t{school['name']}")
 
-        role_change = False
-        payload = {"district": schoolmint_grow.district_id, "observationGroups": []}
+        payload: dict = {"district": schoolmint_grow.district_id}
 
         school_users = [
             u
@@ -89,34 +129,28 @@ def schoolmint_grow_school_update_op(
         ]
 
         # observation groups
-        for group in school["observationGroups"]:
-            group_name = group["name"]
+        teachers_observation_group = [
+            g for g in school["observationGroups"] if g["name"] == "Teachers"
+        ][0]
 
-            group_update = {"_id": group["_id"], "name": group_name}
+        observees = [
+            u["user_id"] for u in school_users if "observees" in u["group_type"]
+        ]
+        observers = set(
+            [u["user_id"] for u in school_users if "observers" in u["group_type"]]
+        )
+        coaches = set(
+            [u["coach_id"] for u in school_users if u["coach_id"] is not None]
+        )
 
-            group_users = [u for u in school_users if u["group_name"] == group_name]
-            group_roles = {
-                k: group[k] for k in group if k in ["observees", "observers"]
+        payload["observationGroups"] = [
+            {
+                "_id": teachers_observation_group["_id"],
+                "name": "Teachers",
+                "observees": observees,
+                "observers": list(observers | coaches),
             }
-
-            for role, membership in group_roles.items():
-                mem_ids = [m["_id"] for m in membership]
-                role_users = [u for u in group_users if role in u["group_type"]]
-
-                for user in role_users:
-                    user_id = user["user_id"]
-
-                    if user_id not in mem_ids:
-                        context.log.info(
-                            f"Adding {user['user_email']} to {group_name}/{role}"
-                        )
-
-                        mem_ids.append(user_id)
-                        role_change = True
-
-                group_update[role] = mem_ids
-
-            payload["observationGroups"].append(group_update)
+        ]
 
         # school admins
         admin_roles = {
@@ -125,43 +159,10 @@ def schoolmint_grow_school_update_op(
         }
 
         for key, role_name in admin_roles.items():
-            existing_users = school[key]
-            new_users = [
-                u for u in school_users if role_name in u.get("role_names", [])
+            payload[key] = [
+                {"_id": u["user_id"], "name": u["user_name"]}
+                for u in school_users
+                if role_name == u["role_name"]
             ]
 
-            for user in new_users:
-                match = [u for u in existing_users if u["_id"] == user["user_id"]]
-
-                if not match:
-                    context.log.info(f"Adding {user['user_email']} to {role_name}")
-
-                    role_change = True
-                    existing_users.append(
-                        {"_id": user["user_id"], "name": user["user_name"]}
-                    )
-
-            payload[key] = existing_users
-
-        if role_change:
-            schoolmint_grow.put("schools", school_id, json=payload)
-        else:
-            context.log.info("No school role changes")
-
-
-@op
-def schoolmint_grow_user_delete_op(
-    context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource, users
-):
-    for u in users:
-        user_id = u["user_id"]
-
-        context.log.info(f"DEACTIVATING\t{user_id}")
-        schoolmint_grow.put(
-            "users",
-            user_id,
-            json={"district": schoolmint_grow.district_id, "inactive": 1},
-        )
-
-        context.log.info(f"ARCHIVING\t{user_id}")
-        schoolmint_grow.delete("users", user_id)
+        schoolmint_grow.put("schools", school_id, json=payload)

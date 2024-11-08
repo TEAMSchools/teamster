@@ -1,25 +1,31 @@
 select
-    -- noqa: disable=RF05
-    worker_id as `Associate ID`,
-    employee_number as `Position ID`,
-    preferred_name_given_name as `First Name`,
-    preferred_name_family_name as `Last Name`,
-    business_unit_assigned_name as `Company Code`,
-    home_work_location_name as `Location Description`,
-    department_assigned_name as `Business Unit Description`,
-    department_assigned_name as `Home Department Description`,
-    job_title as `Job Title Description`,
+    -- trunk-ignore-begin(sqlfluff/RF05)
+    w.worker_id as `Associate ID`,
+    w.given_name as `First Name`,
+    w.family_name_1 as `Last Name`,
+    w.job_title as `Job Title Description`,
+    w.assignment_status as `Position Status`,
+    w.assigned_business_unit_name as `Company Code`,
+    w.home_work_location_name as `Location Description`,
+    w.assigned_department_name as `Business Unit Description`,
+    w.assigned_department_name as `Home Department Description`,
+    w.employee_number as `Position ID`,
 
     null as `Preferred Name`,
 
-    safe_cast(report_to_employee_number as string) as `Business Unit Code`,
-    format_date('%m/%d/%Y', worker_rehire_date) as `Rehire Date`,
-    format_date('%m/%d/%Y', worker_termination_date) as `Termination Date`,
-    format_date('%m/%d/%Y', birth_date) as `Birth Date`,
-    if(is_prestart, 'Active', assignment_status) as `Position Status`,
-from {{ ref("base_people__staff_roster") }}
+    cast(w.reports_to_employee_number as string) as `Business Unit Code`,
+
+    format_date('%m/%d/%Y', w.worker_rehire_date) as `Rehire Date`,
+    format_date('%m/%d/%Y', w.worker_termination_date) as `Termination Date`,
+    format_date('%m/%d/%Y', w.birth_date) as `Birth Date`,
+-- trunk-ignore-end(sqlfluff/RF05)
+from {{ ref("int_people__staff_roster") }} as w
 where
-    coalesce(worker_rehire_date, worker_original_hire_date)
-    <= date_add(current_date('{{ var("local_timezone") }}'), interval 10 day)
-    and business_unit_assigned_name is not null
-    and home_work_location_name is not null
+    w.assigned_business_unit_name is not null
+    and w.assigned_department_name is not null
+    and date_diff(
+        coalesce(w.worker_rehire_date, w.worker_original_hire_date),
+        current_date('{{ var("local_timezone") }}'),
+        day
+    )
+    <= 10

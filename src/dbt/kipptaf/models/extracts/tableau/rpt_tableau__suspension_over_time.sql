@@ -113,7 +113,7 @@ from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     unnest(
         generate_date_array(
-            date({{ var("current_academic_year") - 1 }}, 8, 1),
+            '{{ var("current_academic_year") - 1 }}-08-01',
             current_date('{{ var("local_timezone") }}')
         )
     ) as date_day

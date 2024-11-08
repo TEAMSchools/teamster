@@ -2,7 +2,7 @@ import random
 
 from dagster import materialize
 
-from teamster.libraries.core.resources import SSH_IREADY, get_io_manager_gcs_avro
+from teamster.core.resources import SSH_IREADY, get_io_manager_gcs_avro
 
 
 def _test_asset(asset, partition_key=None, instance=None):
@@ -48,23 +48,19 @@ def test_iready_diagnostic_results_kippmiami():
 def test_iready_diagnostic_results_kippnj():
     from teamster.code_locations.kippnewark.iready.assets import diagnostic_results
 
-    _test_asset(asset=diagnostic_results, partition_key="2024|ela")
+    _test_asset(asset=diagnostic_results, partition_key="2024|math")
 
 
 def test_iready_personalized_instruction_by_lesson_kippmiami():
-    from teamster.code_locations.kippmiami.iready.assets import (
-        personalized_instruction_by_lesson,
-    )
+    from teamster.code_locations.kippmiami.iready.assets import instruction_by_lesson
 
-    _test_asset(asset=personalized_instruction_by_lesson, partition_key="2024|ela")
+    _test_asset(asset=instruction_by_lesson, partition_key="2024|ela")
 
 
 def test_iready_personalized_instruction_by_lesson_kippnj():
-    from teamster.code_locations.kippnewark.iready.assets import (
-        personalized_instruction_by_lesson,
-    )
+    from teamster.code_locations.kippnewark.iready.assets import instruction_by_lesson
 
-    _test_asset(asset=personalized_instruction_by_lesson, partition_key="2023|math")
+    _test_asset(asset=instruction_by_lesson, partition_key="2024|ela")
 
 
 def test_iready_instructional_usage_data_kippmiami():
@@ -95,3 +91,15 @@ def test_iready_diagnostic_and_instruction_kippnj():
     )
 
     _test_asset(asset=diagnostic_and_instruction, partition_key="2021|math")
+
+
+def test_iready_instruction_by_lesson_kippnj():
+    from teamster.code_locations.kippnewark.iready.assets import instruction_by_lesson
+
+    _test_asset(asset=instruction_by_lesson)
+
+
+def test_iready_instruction_by_lesson_kippmiami():
+    from teamster.code_locations.kippmiami.iready.assets import instruction_by_lesson
+
+    _test_asset(asset=instruction_by_lesson, partition_key="2024|ela")

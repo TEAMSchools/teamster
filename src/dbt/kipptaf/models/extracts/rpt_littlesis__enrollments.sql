@@ -7,22 +7,20 @@ select
     sec.sections_external_expression as `period`,
     sec.sections_room as room,
 
+    s.student_number as student_id,
+
+    sas.google_email as student_gsuite_email,
+
     sch.name as school_name,
+
+    scw.google_email as teacher_gsuite_email,
 
     concat(
         sec.courses_course_name,
         ' (' || sec.sections_course_number || ') - ',
         sec.sections_section_number || ' - ',
-        {{ var("current_academic_year") }},
-        '-',
-        ({{ var("current_academic_year") + 1 }})
+        '{{ var("current_academic_year") }}-{{ var("current_fiscal_year") }}'
     ) as class_name,
-
-    scw.google_email as teacher_gsuite_email,
-
-    s.student_number as student_id,
-
-    sas.google_email as student_gsuite_email,
 from {{ ref("base_powerschool__course_enrollments") }} as sec
 inner join
     {{ ref("stg_powerschool__students") }} as s
@@ -37,7 +35,7 @@ inner join
     on sec.sections_schoolid = sch.school_number
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="sch") }}
 inner join
-    {{ ref("base_people__staff_roster") }} as scw
+    {{ ref("int_people__staff_roster") }} as scw
     on sec.teachernumber = scw.powerschool_teacher_number
 where
     sec.cc_academic_year = {{ var("current_academic_year") }}

@@ -1,10 +1,11 @@
 with
     domain_unpivot as (
         select
+            _dbt_source_relation,
             student_id,
-            subject,
+            `subject`,
             academic_year_int,
-            start_date,
+            `start_date`,
             completion_date,
             domain_name,
             relative_placement,
@@ -31,15 +32,21 @@ with
 
 select
     student_id,
-    subject,
+    `subject`,
     academic_year_int,
-    start_date,
+    `start_date`,
     completion_date,
     domain_name,
     relative_placement,
 
     row_number() over (
-        partition by student_id, subject, academic_year_int, start_date, completion_date
+        partition by
+            _dbt_source_relation,
+            student_id,
+            `subject`,
+            academic_year_int,
+            `start_date`,
+            completion_date
         order by domain_name asc
     ) as rn_subject_test,
 from domain_unpivot

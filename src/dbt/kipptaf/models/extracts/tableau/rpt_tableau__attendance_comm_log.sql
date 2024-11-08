@@ -111,4 +111,4 @@ left join
     and rt.type = 'RT'
 where
     co.academic_year = {{ var("current_academic_year") }}
-    and att.att_date <= current_date('America/New_York')
+    and att.att_date <= current_date('{{ var("local_timezone") }}')

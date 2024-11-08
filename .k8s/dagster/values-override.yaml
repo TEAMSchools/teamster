@@ -11,12 +11,25 @@ dagsterCloud:
   # organization.
   branchDeployments: true
 
+  # Optionally customize the socket_options that are passed in to the underlying HTTP
+  # connection pool used to send HTTP requests to Dagster Cloud.
+  # See https://urllib3.readthedocs.io/en/stable/reference/urllib3.connection.html for
+  # the expected format.
+  # socketOptions should be a list of lists, where each inner list has three elements.
+  # The list values can either be string name of socket attributes (like "IPPROTO_TCP")
+  # or the integer value of that attribute.
+  socketOptions:
+    - [SOL_SOCKET, SO_KEEPALIVE, 1]
+    - [IPPROTO_TCP, TCP_KEEPIDLE, 11]
+    - [IPPROTO_TCP, TCP_KEEPINTVL, 7]
+    - [IPPROTO_TCP, TCP_KEEPCNT, 5]
+
 ########################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ########################################################################################
 dagsterCloudAgent:
   nodeSelector:
-    cloud.google.com/gke-placement-group: servers
+    # cloud.google.com/gke-placement-group: servers
     cloud.google.com/compute-class: Balanced
     cloud.google.com/gke-spot: "true"
 
@@ -44,28 +57,24 @@ workspace:
       nodeSelector:
         cloud.google.com/gke-spot: "true"
         cloud.google.com/compute-class: Balanced
-        cloud.google.com/gke-placement-group: servers
-      terminationGracePeriodSeconds: 25
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
   # Branch deployments servers have a default TTL of 24 hours
   # The max code servers defaults to 25, and only applies to servers with TTL.
   serverTTL:
+    fullDeployments:
+      enabled: true
+      ttlSeconds: 21600 # 6 hours
     branchDeployments:
       ttlSeconds: 300
 
   # Specifies the timeout in seconds the agent should use when waiting for a code
-  # server to be ready after the Kubernetes deployment is created. If not set, defaults
-  # to 180 seconds.
+  # server to be ready after the Kubernetes deployment is created.
+  # If not set, defaults to 180 seconds.
   # This timeout should be increased if your code locations can take more than 3
   # minutes to load your Dagster definitions.
-  serverProcessStartupTimeout: 600
-
-  # Specifies the timeout when creating a new Kubernetes deployment for a code server.
-  # If not set, defaults to 300 seconds.
-  deploymentStartupTimeout: 600
-
+  serverProcessStartupTimeout: 300
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ########################################################################################
@@ -77,7 +86,7 @@ extraManifests:
     metadata:
       name: pdb-agent
     spec:
-      maxUnavailable: 0
+      minAvailable: 1
       selector:
         matchLabels:
           component: agent
@@ -86,7 +95,7 @@ extraManifests:
     metadata:
       name: pdb-kippcamden
     spec:
-      maxUnavailable: 0
+      minAvailable: 1
       selector:
         matchLabels:
           location_name: kippcamden
@@ -95,7 +104,7 @@ extraManifests:
     metadata:
       name: pdb-kippmiami
     spec:
-      maxUnavailable: 0
+      minAvailable: 1
       selector:
         matchLabels:
           location_name: kippmiami
@@ -104,7 +113,7 @@ extraManifests:
     metadata:
       name: pdb-kippnewark
     spec:
-      maxUnavailable: 0
+      minAvailable: 1
       selector:
         matchLabels:
           location_name: kippnewark
@@ -113,7 +122,7 @@ extraManifests:
     metadata:
       name: pdb-kipptaf
     spec:
-      maxUnavailable: 0
+      minAvailable: 1
       selector:
         matchLabels:
           location_name: kipptaf

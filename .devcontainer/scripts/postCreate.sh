@@ -7,8 +7,7 @@ git config pull.rebase false # merge
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
   sudo apt-get -y --no-install-recommends install \
-    bash-completion \
-    google-cloud-cli-gke-gcloud-auth-plugin &&
+    bash-completion &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
@@ -54,28 +53,25 @@ op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
   --out-file=env/dbt_cloud.yml &&
   sudo mv -f env/dbt_cloud.yml /home/vscode/.dbt/dbt_cloud.yml
 
-# authenticate gcloud
-gcloud auth activate-service-account --key-file=/etc/secret-volume/gcloud_service_account_json
-
-# set gcloud project & region
-gcloud config set project teamster-332318
-gcloud config set compute/region us-central1
-
-# update the kubectl configuration to use the plugin
-gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid-1
-
 # install pdm dependencies
 pdm install --frozen-lockfile
 
-# install dbt deps and generate manifests
-# trunk-ignore(shellcheck/SC2312)
-find ./src/dbt/ -maxdepth 2 -name "dbt_project.yml" -print0 |
-  while IFS= read -r -d "" file; do
-    directory=$(dirname "${file}")
-    project_name=$(basename "${directory}")
+# prepare dbt projects
+pdm run dagster-dbt project prepare-and-package \
+  --file src/teamster/code_locations/kippcamden/__init__.py
+pdm run dagster-dbt project prepare-and-package \
+  --file src/teamster/code_locations/kippmiami/__init__.py
+pdm run dagster-dbt project prepare-and-package \
+  --file src/teamster/code_locations/kippnewark/__init__.py
+pdm run dagster-dbt project prepare-and-package \
+  --file src/teamster/code_locations/kipptaf/__init__.py
 
-    pdm run dbt "${project_name}" deps && pdm run dbt "${project_name}" parse
-  done
-
-# install dbt cloud cli
-# sudo pip install dbt
+# install dbt deps for packages
+pdm run dbt deanslist deps
+pdm run dbt edplan deps
+pdm run dbt iready deps
+pdm run dbt overgrad deps
+pdm run dbt pearson deps
+pdm run dbt powerschool deps
+pdm run dbt renlearn deps
+pdm run dbt titan deps

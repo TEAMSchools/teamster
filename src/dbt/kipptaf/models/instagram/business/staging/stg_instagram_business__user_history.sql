@@ -1,11 +1,13 @@
 with
-    user_history as (  -- noqa: ST03
+    -- trunk-ignore(sqlfluff/ST03)
+    user_history as (
         select
             id,
             followers_count,
             media_count,
             _fivetran_synced,
-            safe_cast(_fivetran_synced as date) as _fivetran_synced_date,
+
+            cast(_fivetran_synced as date) as _fivetran_synced_date,
         from {{ source("instagram_business", "user_history") }}
     ),
 
@@ -24,6 +26,7 @@ select
     followers_count,
     media_count,
     _fivetran_synced_date,
+
     lag(_fivetran_synced_date, 1, '2010-10-06') over (
         partition by id order by _fivetran_synced_date asc
     ) as _fivetran_synced_date_prev,
