@@ -11,6 +11,8 @@ assets:
       - users
   - connection_id: e4856fb7-1f97-4bcd-bc4e-e616c5ae4e52
     group_name: kippadb
+    kinds:
+      - salesforce
     dataset_id: kipptaf_kippadb
     destination_tables:
       - Account
@@ -23,6 +25,7 @@ assets:
       - Contact
       - Contact_Note__c
       - ContentDocument
+      - Counseling_Case__c
       - Employment__c
       - Enrollment__c
       - Enrollment__History

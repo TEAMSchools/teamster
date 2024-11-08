@@ -7,7 +7,9 @@ from dagster_airbyte import AirbyteCloudResource
 
 def test_resource():
     with build_resources(
-        resources={"airbyte": AirbyteCloudResource(api_key=EnvVar("AIRBYTE_API_KEY"))}
+        resources={
+            "airbyte": AirbyteCloudResource(client_id=EnvVar(), client_secret=EnvVar())
+        }
     ) as resources:
         airbyte: AirbyteCloudResource = resources.airbyte
 

@@ -1,5 +1,6 @@
 with
-    enr_gr as (  -- noqa: ST03
+    -- trunk-ignore(sqlfluff/ST03)
+    enr_gr as (
         select
             enr.cc_abs_sectionid as sectionid,
             enr.cc_studentid as studentid,

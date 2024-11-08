@@ -20,7 +20,9 @@ class DYDModel(BaseModel):
     enrollment_date: str | None = None
     external_program: str | None = None
     gender: str | None = None
+    hispanic_or_latino_ethnicity: str | None = None
     home_language: str | None = None
+    iep_status: str | None = None
     internal_program: str | None = None
     meal_status: str | None = None
     migrant: str | None = None
@@ -28,7 +30,6 @@ class DYDModel(BaseModel):
     municipality_primary_id: str | None = None
     official_teacher_name: str | None = None
     primary_id_student_number: float | None = None
-    primary_school_id: str | None = None
     race: str | None = None
     reporting_class_id: str | None = None
     reporting_class_name: str | None = None
@@ -51,8 +52,9 @@ class DYDModel(BaseModel):
     enrollment_grade: str | int | None = None
     assessing_teacher_staff_id: str | float | None = None
     assessment_grade: str | int | None = None
-    official_teacher_staff_id: int | str | None = None
     primary_id_student_id_district_id: int | float | None = None
+    primary_school_id: str | int | None = None
+    official_teacher_staff_id: int | str | float | None = None
 
 
 class BenchmarkStudentSummary(DYDModel):

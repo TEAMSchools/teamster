@@ -11,6 +11,7 @@ with
             se.grade_level as exit_grade_level,
             se.exitdate as exit_date,
             se.exitcode as exit_code,
+            se.enroll_status as powerschool_enroll_status,
             se._dbt_source_relation as exit_db_name,
             se.contact_1_name as powerschool_contact_1_name,
             se.contact_1_email_current as powerschool_contact_1_email_current,
@@ -21,6 +22,16 @@ with
             se.state as powerschool_state,
             se.zip as powerschool_zip,
             se.is_504 as powerschool_is_504,
+
+            os.id as overgrad_students_id,
+            os.graduation_year as overgrad_students_graduation_year,
+            os.school__name as overgrad_students_school,
+
+            concat(
+                os.assigned_counselor__last_name,
+                ', ',
+                os.assigned_counselor__first_name
+            ) as overgrad_students_assigned_counselor_lastfirst,
 
             se.street
             || ' '
@@ -49,12 +60,15 @@ with
                 {{ var("current_fiscal_year") }}
                 - extract(year from c.contact_actual_hs_graduation_date)
             ) as years_out_of_hs,
+
             coalesce(
                 c.contact_current_kipp_student, 'Missing from Salesforce'
             ) as contact_current_kipp_student,
+
             coalesce(c.contact_kipp_hs_class, se.cohort) as ktc_cohort,
             coalesce(c.contact_first_name, se.first_name) as first_name,
             coalesce(c.contact_last_name, se.last_name) as last_name,
+
             coalesce(
                 c.contact_last_name || ', ' || c.contact_first_name, se.lastfirst
             ) as lastfirst,
@@ -92,6 +106,9 @@ with
         from {{ ref("base_powerschool__student_enrollments") }} as se
         left join
             {{ ref_contact }} as c on se.student_number = c.contact_school_specific_id
+        left join
+            {{ ref("stg_overgrad__students") }} as os
+            on c.contact_id = os.external_student_id
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

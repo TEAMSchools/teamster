@@ -635,14 +635,6 @@ sources:
               - kippmiami
               - powerschool
               - int_powerschool__gpa_cumulative
-      - name: int_powerschool__assignment_score_rollup
-        meta:
-          dagster:
-            group: powerschool
-            asset_key:
-              - kippmiami
-              - powerschool
-              - int_powerschool__assignment_score_rollup
       - name: int_powerschool__gradebook_assignments
         meta:
           dagster:
@@ -731,3 +723,11 @@ sources:
               - kippmiami
               - powerschool
               - int_powerschool__calendar_week
+      - name: stg_powerschool__userscorefields
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippmiami
+              - powerschool
+              - stg_powerschool__userscorefields

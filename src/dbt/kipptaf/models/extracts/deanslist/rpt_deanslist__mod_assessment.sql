@@ -1,4 +1,3 @@
-/* Enrichment UA avgs */
 with
     assessment_response_avg as (
         select
@@ -6,9 +5,11 @@ with
             academic_year,
             subject_area,
             term_administered,
+
             replace(term_administered, 'Q', 'QA') as module_num,
 
             min(performance_band_set_id) as performance_band_set_id,
+
             round(avg(percent_correct), 0) as avg_pct_correct,
         from {{ ref("int_assessments__response_rollup") }}
         where
@@ -34,6 +35,6 @@ select
     null as rn_unit,
 from assessment_response_avg as ara
 inner join
-    {{ ref("base_illuminate__performance_band_sets") }} as pbl
+    {{ ref("int_illuminate__performance_band_sets") }} as pbl
     on ara.performance_band_set_id = pbl.performance_band_set_id
     and ara.avg_pct_correct between pbl.minimum_value and pbl.maximum_value

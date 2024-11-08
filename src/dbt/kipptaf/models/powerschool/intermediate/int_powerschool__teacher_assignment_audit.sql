@@ -1,15 +1,4 @@
 with
-    schools as (
-        select
-            _dbt_source_relation,
-            school_number,
-
-            case
-                high_grade when 12 then 'HS' when 8 then 'MS' when 4 then 'ES'
-            end as school_level,
-        from {{ ref("stg_powerschool__schools") }}
-    ),
-
     assignments as (
         select
             sec._dbt_source_relation,
@@ -20,10 +9,8 @@ with
             c.semester,
             c.quarter,
             c.week_number_quarter,
-            c.week_start_date,
-            c.week_end_date,
-            c.school_week_start_date,
-            c.school_week_end_date,
+            c.week_start_monday,
+            c.week_end_sunday,
             c.school_week_start_date_lead,
 
             ge.assignment_category_code,
@@ -99,49 +86,73 @@ with
                     c.week_number_quarter,
                     ge.assignment_category_code
             ) as total_expected_scored_teacher_school_quarter_week_category,
-        from {{ ref("base_powerschool__sections") }} as sec
-        inner join
-            schools as sch
-            on sec.sections_schoolid = sch.school_number
-            and {{ union_dataset_join_clause(left_alias="sec", right_alias="sch") }}
-        inner join
-            {{ ref("int_powerschool__calendar_week") }} as c
-            on sec.sections_schoolid = c.schoolid
-            and sec.terms_yearid = c.yearid
-            and c.week_end_date between sec.terms_firstday and sec.terms_lastday
-            and {{ union_dataset_join_clause(left_alias="sec", right_alias="c") }}
+        from {{ ref("int_powerschool__calendar_week") }} as c
         inner join
             {{ ref("stg_reporting__gradebook_expectations") }} as ge
             on c.academic_year = ge.academic_year
             and c.region = ge.region
             and c.quarter = ge.quarter
             and c.week_number_quarter = ge.week_number
-            and sch.school_level = ge.school_level
+            and c.school_level = ge.school_level
+        left join
+            {{ ref("base_powerschool__sections") }} as sec
+            on c.schoolid = sec.sections_schoolid
+            and c.yearid = sec.terms_yearid
+            and c.week_end_date between sec.terms_firstday and sec.terms_lastday
+            and {{ union_dataset_join_clause(left_alias="c", right_alias="sec") }}
+            /* exclude courses */
+            and sec.courses_course_number not in (
+                'LOG20',  -- Early Dismissal
+                'LOG300',  -- Study Hall
+                'SEM22101G1',  -- Student Government
+                'SEM22106G1',  -- Advisory
+                'SEM22106S1',  -- Not in SY24-25 yet
+                /* Lunch */
+                'LOG100',
+                'LOG1010',
+                'LOG11',
+                'LOG12',
+                'LOG22999XL',
+                'LOG9'
+            )
+            /* exclude courses at specific schools */
+            and concat(sec.sections_schoolid, sec.sections_course_number) not in (
+                '73252SEM72250G1',
+                '73252SEM72250G2',
+                '73252SEM72250G3',
+                '73252SEM72250G4',
+                '133570965SEM72250G1',
+                '133570965SEM72250G2',
+                '133570965SEM72250G3',
+                '133570965SEM72250G4',
+                '732514GYM08035G1',
+                '732514GYM08036G2',
+                '732514GYM08037G3',
+                '732514GYM08038G4'
+            )
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on sec.sections_dcid = a.sectionsdcid
             and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
             and ge.assignment_category_name = a.category_name
-            and a.duedate between c.week_start_date and c.week_end_date
+            and a.duedate between c.week_start_monday and c.week_end_sunday
         left join
             {{ ref("int_powerschool__assignment_score_rollup") }} as asg
             on a.assignmentsectionid = asg.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
         where
-            sec.sections_course_number not in (
-                'HR',
-                'LOG100',
-                'LOG1010',
-                'LOG11',
-                'LOG12',
-                'LOG20',
-                'LOG22999XL',
-                'LOG300',
-                'LOG9',
-                'SEM22106G1',
-                'SEM22106S1'
+            /* exclude F & S categories for iReady courses */
+            concat(sec.sections_course_number, ge.assignment_category_code) not in (
+                'SEM72005G1F',
+                'SEM72005G2F',
+                'SEM72005G3F',
+                'SEM72005G4F',
+                'SEM72005G1S',
+                'SEM72005G2S',
+                'SEM72005G3S',
+                'SEM72005G4S'
             )
-            and sec.terms_firstday >= date({{ var("current_academic_year") }}, 7, 1)
+            and sec.terms_firstday >= '{{ var("current_academic_year") }}-07-01'
     )
 
 select
@@ -151,8 +162,8 @@ select
     `quarter`,
     semester,
     week_number_quarter,
-    week_start_date,
-    week_end_date,
+    week_start_monday,
+    week_end_sunday,
     school_week_start_date_lead,
     assignment_category_code,
     assignment_category_name,
@@ -163,6 +174,12 @@ select
     scoretype,
     totalpointvalue,
     duedate,
+    n_students,
+    n_late,
+    n_exempt,
+    n_missing,
+    n_expected,
+    n_expected_scored,
 
     assignment_count_section_quarter_category_running_week
     as teacher_running_total_assign_by_cat,

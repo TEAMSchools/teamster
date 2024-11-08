@@ -1,4 +1,5 @@
-select  -- noqa: disable=ST06
+-- trunk-ignore(sqlfluff/ST06)
+select
     student_number,
 
     if(region = 'Miami', fleid, newark_enrollment_number) as newark_enrollment_number,
@@ -64,5 +65,6 @@ select  -- noqa: disable=ST06
     is_self_contained as is_selfcontained,
     infosnap_id,
     rides_staff,
+    gifted_and_talented,
 from {{ ref("base_powerschool__student_enrollments") }}
 where enroll_status in (0, -1) and rn_all = 1

@@ -2,9 +2,8 @@ version: 2
 
 sources:
   - name: iready
-    schema: "{{ var('iready_schema', 'iready') }}"
-    database:
-      "{% if target.type != 'spark' %}{{ var('iready_database', target.database) }}{% endif %}"
+    schema: "{{ var('iready_schema', env_var('DBT_DEV_IREADY_SCHEMA', 'iready')) }}"
+    database: "{{ var('iready_database', target.database) }}"
     tags:
       - stage_external_sources
     tables:
@@ -16,10 +15,13 @@ sources:
               - iready
               - diagnostic_results
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/iready/diagnostic_results/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/iready/diagnostic_results/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/iready/diagnostic_results/"
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/iready/diagnostic_results/"
             format: AVRO
             enable_logical_types: true
       - name: src_iready__diagnostic_and_instruction
@@ -30,10 +32,13 @@ sources:
               - iready
               - diagnostic_and_instruction
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/iready/diagnostic_and_instruction/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/iready/diagnostic_and_instruction/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/iready/diagnostic_and_instruction/"
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/iready/diagnostic_and_instruction/"
             format: AVRO
             enable_logical_types: true
       - name: src_iready__instructional_usage_data
@@ -44,13 +49,16 @@ sources:
               - iready
               - instructional_usage_data
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/iready/instructional_usage_data/*"
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/iready/instructional_usage_data/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/iready/instructional_usage_data/"
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/iready/instructional_usage_data/"
             format: AVRO
             enable_logical_types: true
-      - name: src_iready__personalized_instruction_by_lesson
+      - name: src_iready__instruction_by_lesson
         meta:
           dagster:
             parent_asset_key_path:
@@ -59,9 +67,28 @@ sources:
               - personalized_instruction_by_lesson
         external:
           location:
-            "{{ var('cloud_storage_uri_base') }}/iready/personalized_instruction_by_lesson/*"
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/iready/personalized_instruction_by_lesson/*"
           options:
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/iready/personalized_instruction_by_lesson/"
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/iready/personalized_instruction_by_lesson/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_iready__instruction_by_lesson_pro
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - "{{ project_name }}"
+              - iready
+              - instruction_by_lesson
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/iready/instruction_by_lesson/*"
+          options:
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/iready/instruction_by_lesson/"
             format: AVRO
             enable_logical_types: true

@@ -3,7 +3,7 @@ from dagster import SensorResult, _check, build_sensor_context
 from teamster.code_locations.kipptaf._google.bigquery.sensors import (
     bigquery_table_modified_sensor,
 )
-from teamster.libraries.core.resources import BIGQUERY_RESOURCE
+from teamster.core.resources import BIGQUERY_RESOURCE
 
 
 def test_bigquery_table_sensor():

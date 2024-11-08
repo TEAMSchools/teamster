@@ -15,7 +15,7 @@ from teamster.code_locations.kipptaf.adp.workforce_manager.assets import (
     time_details,
 )
 from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_MANAGER_RESOURCE
-from teamster.libraries.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(asset: AssetsDefinition):

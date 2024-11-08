@@ -53,8 +53,8 @@ with
             {{ ref("stg_reporting__terms") }} as rt
             on od.academic_year = rt.academic_year
             and od.form_term = rt.code
-            and rt.type = 'PM'
-            and rt.name like '%Coach ETR%'
+            and rt.type in ('PM', 'PMS')
+            and rt.name = 'Coach ETR'
     ),
 
     score_aggs as (
@@ -74,10 +74,11 @@ with
         from {{ ref("int_performance_management__observation_details") }} as obs
         inner join
             {{ ref("base_people__staff_roster_history") }} as srh
-            on obs.rubric_name = 'Coaching Tool: Coach ETR and Reflection'
-            and obs.employee_number = srh.employee_number
+            on obs.employee_number = srh.employee_number
             and obs.observed_at_timestamp
-            between srh.work_assignment_start_date and srh.work_assignment_end_date
+            between srh.work_assignment_start_timestamp
+            and srh.work_assignment_end_timestamp
+            and obs.rubric_name = 'Coach ETR'
         group by
             obs.employee_number,
             obs.observer_employee_number,
@@ -156,7 +157,7 @@ inner join
     {{ ref("base_people__staff_roster_history") }} as srh
     on sd.observer_employee_number = srh.employee_number
     and sd.end_date_timestamp
-    between srh.work_assignment_start_date and srh.work_assignment_end_date
+    between srh.work_assignment_start_timestamp and srh.work_assignment_end_timestamp
 inner join
     score_aggs as sa
     on sd.observer_employee_number = sa.observer_employee_number

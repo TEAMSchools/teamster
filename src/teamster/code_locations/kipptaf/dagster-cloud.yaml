@@ -101,11 +101,16 @@ locations:
                   secretKeyRef:
                     name: op-adp-wfn-api
                     key: client-secret
-              - name: AIRBYTE_API_KEY
+              - name: AIRBYTE_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
                     name: op-airbyte-api
-                    key: api-key
+                    key: username
+              - name: AIRBYTE_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-airbyte-api
+                    key: credential
               - name: AMPLIFY_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -115,6 +120,16 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-amplify-service-account
+                    key: username
+              - name: AMPLIFY_DDS_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-dds-service-account
+                    key: password_confirm
+              - name: AMPLIFY_DDS_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-dds-service-account
                     key: username
               - name: CLEVER_SFTP_PASSWORD
                 valueFrom:
@@ -361,51 +376,11 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api
                     key: credential
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE
+              - name: SLACK_TOKEN
                 valueFrom:
                   secretKeyRef:
-                    name: op-illuminate-db
-                    key: database
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-illuminate-db
-                    key: driver
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-illuminate-db
-                    key: ip
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-illuminate-db
-                    key: password
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__PORT
-                valueFrom:
-                  secretKeyRef:
-                    name: op-illuminate-db
-                    key: port
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-illuminate-db
-                    key: username
-              # - name: DESTINATION__BIGQUERY__CREDENTIALS__CLIENT_EMAIL
-              #   valueFrom:
-              #     secretKeyRef:
-              #       name: op-gcp-service-account-dlt
-              #       key: username
-              # - name: DESTINATION__BIGQUERY__CREDENTIALS__PRIVATE_KEY
-              #   valueFrom:
-              #     secretKeyRef:
-              #       name: op-gcp-service-account-dlt
-              #       key: password
-              # - name: DESTINATION__BIGQUERY__CREDENTIALS__PROJECT_ID
-              #   valueFrom:
-              #     secretKeyRef:
-              #       name: op-gcp-service-account-dlt
-              #       key: project-id
+                    name: op-slack-api
+                    key: credential
         run_k8s_config:
           container_config:
             resources:
@@ -464,11 +439,16 @@ locations:
                   secretKeyRef:
                     name: op-adp-wfn-api
                     key: client-secret
-              - name: AIRBYTE_API_KEY
+              - name: AIRBYTE_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
                     name: op-airbyte-api
-                    key: api-key
+                    key: username
+              - name: AIRBYTE_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-airbyte-api
+                    key: credential
               - name: AMPLIFY_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -478,6 +458,16 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-amplify-service-account
+                    key: username
+              - name: AMPLIFY_DDS_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-dds-service-account
+                    key: password_confirm
+              - name: AMPLIFY_DDS_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-dds-service-account
                     key: username
               - name: CLEVER_SFTP_PASSWORD
                 valueFrom:
@@ -722,7 +712,12 @@ locations:
               - name: OVERGRAD_API_KEY
                 valueFrom:
                   secretKeyRef:
-                    name: op-overgrad-api
+                    name: op-overgrad-api-kippnewark
+                    key: credential
+              - name: SLACK_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-slack-api
                     key: credential
               - name: SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE
                 valueFrom:

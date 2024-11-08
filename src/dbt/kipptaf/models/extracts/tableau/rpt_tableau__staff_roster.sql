@@ -1,7 +1,7 @@
 select
     b.employee_number as df_employee_number,
     b.worker_id as associate_id,
-    b.position_id as position_id,
+    b.position_id,
     b.payroll_file_number as file_number,
     b.legal_name_given_name as first_name,
     b.legal_name_family_name as last_name,
@@ -24,13 +24,13 @@ select
     b.worker_group_value as benefits_eligibility_class_description,
     b.wage_law_coverage_short_name as flsa_description,
     b.ethnicity_long_name as eeo_ethnic_description,
-    b.birth_date as birth_date,
+    b.birth_date,
     b.legal_address_line_one as `address`,
     b.legal_address_city_name as primary_address_city,
     b.legal_address_country_subdivision_level_1 as primary_address_state_territory_code,
     b.legal_address_postal_code as primary_address_zip_postal_code,
     b.communication_person_mobile as personal_contact_personal_mobile,
-    b.mail as mail,
+    b.mail,
     b.user_principal_name as userprincipalname,
     b.report_to_employee_number as manager_df_employee_number,
     b.report_to_worker_id as manager_custom_assoc_id,
@@ -45,13 +45,14 @@ select
     b.community_professional_exp,
     b.alumni_status,
     b.path_to_education,
-    b.primary_grade_level_taught,
     b.level_of_education,
     b.base_remuneration_annual_rate_amount_amount_value as base_salary,
 
     ye.years_at_kipp_total,
     ye.years_teaching_total,
     ye.years_experience_total,
+
+    tgl.grade_level as primary_grade_level_taught,
 
     /* retired fields, kept to not break tableau */
     null as salesforce_job_position_name_custom,
@@ -70,3 +71,8 @@ left join
     {{ ref("int_people__years_experience") }} as ye
     on b.employee_number = ye.employee_number
     and ye.academic_year = {{ var("current_academic_year") }}
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on b.powerschool_teacher_number = tgl.teachernumber
+    and tgl.academic_year = {{ var("current_academic_year") }}
+    and tgl.grade_level_rank = 1

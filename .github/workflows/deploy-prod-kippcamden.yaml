@@ -13,34 +13,39 @@ on:
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
       - src/dbt/kippcamden/**
+      - src/dbt/overgrad/**
       - src/dbt/pearson/**
       - src/dbt/powerschool/**
-      - src/dbt/teamster_utils/**
       - src/dbt/titan/**
       - src/teamster/code_locations/kippcamden/**
-      - src/teamster/libraries/core/**
+      - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/datagun/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**
+      - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
-      - src/teamster/libraries/sqlalchemy/**
+      - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
   pull_request:
     paths:
+      - .github/workflows/dagster-cloud-deploy.yaml
+      - .github/workflows/deploy-prod-kippcamden.yaml
+      - Dockerfile
       - src/teamster/code_locations/kippcamden/**
-      - src/teamster/libraries/core/**
+      - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/datagun/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**
+      - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
-      - src/teamster/libraries/sqlalchemy/**
+      - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
     types:

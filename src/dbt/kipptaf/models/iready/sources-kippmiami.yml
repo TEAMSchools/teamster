@@ -2,6 +2,9 @@ version: 2
 
 sources:
   - name: kippmiami_iready
+    schema:
+      "{% if env_var('DBT_DEV', '') == 'true' %}_dev_kippmiami_iready{% else %}kippmiami_iready{%
+      endif %}"
     tables:
       - name: stg_iready__diagnostic_results
         meta:
@@ -19,11 +22,19 @@ sources:
               - kippmiami
               - iready
               - stg_iready__instructional_usage_data
-      - name: stg_iready__personalized_instruction_by_lesson
+      - name: stg_iready__instruction_by_lesson
         meta:
           dagster:
             group: iready
             asset_key:
               - kippmiami
               - iready
-              - stg_iready__personalized_instruction_by_lesson
+              - stg_iready__instruction_by_lesson
+      - name: stg_iready__instruction_by_lesson_pro
+        meta:
+          dagster:
+            group: iready
+            asset_key:
+              - kippmiami
+              - iready
+              - stg_iready__instruction_by_lesson_pro

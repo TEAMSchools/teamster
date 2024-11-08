@@ -9,15 +9,16 @@ select
     f.label as sight_word,
 
     co.student_number,
-    co.lastfirst,
+    co.student_name,
     co.region,
-    co.reporting_schoolid,
-    co.school_abbreviation as school,
+    co.schoolid,
+    co.school,
     co.grade_level,
-    co.advisory_name as team,
+    co.advisory as team,
     co.is_self_contained as is_pathways,
-    co.spedlep as iep_status,
+    co.iep_status,
     co.lep_status,
+    co.gifted_and_talented,
     co.gender,
     co.ethnicity,
 
@@ -28,7 +29,7 @@ select
     hos.head_of_school_preferred_name_lastfirst as hos,
 
     false as is_replacement,
-from {{ ref("base_illuminate__repositories") }} as r
+from {{ ref("int_illuminate__repositories") }} as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on r.date_administered between rt.start_date and rt.end_date
@@ -41,13 +42,12 @@ inner join
     {{ ref("stg_illuminate__repository_grade_levels") }} as g
     on r.repository_id = g.repository_id
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_tableau__student_enrollments") }} as co
     on g.grade_level = co.grade_level
     and rt.academic_year = co.academic_year
     and co.is_enrolled_recent
-    and co.rn_year = 1
 left join
-    {{ ref("base_illuminate__repository_data") }} as sw
+    {{ ref("int_illuminate__repository_data") }} as sw
     on co.student_number = sw.local_student_id
     and r.repository_id = sw.repository_id
     and f.label = sw.field_label
@@ -76,15 +76,16 @@ select
     f.label as sight_word,
 
     co.student_number,
-    co.lastfirst,
+    co.student_name,
     co.region,
-    co.reporting_schoolid,
-    co.school_abbreviation as school,
+    co.schoolid,
+    co.school,
     co.grade_level,
-    co.advisory_name as team,
+    co.advisory as team,
     co.is_self_contained as is_pathways,
-    co.spedlep as iep_status,
+    co.iep_status,
     co.lep_status,
+    co.gifted_and_talented,
     co.gender,
     co.ethnicity,
 
@@ -95,7 +96,7 @@ select
     hos.head_of_school_preferred_name_lastfirst as hos,
 
     true as is_replacement,
-from {{ ref("base_illuminate__repositories") }} as r
+from {{ ref("int_illuminate__repositories") }} as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on r.date_administered between rt.start_date and rt.end_date
@@ -108,13 +109,12 @@ inner join
     {{ ref("stg_illuminate__repository_grade_levels") }} as g
     on r.repository_id = g.repository_id
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_tableau__student_enrollments") }} as co
     on g.grade_level != co.grade_level
     and rt.academic_year = co.academic_year
     and co.is_enrolled_recent
-    and co.rn_year = 1
 inner join
-    {{ ref("base_illuminate__repository_data") }} as sw
+    {{ ref("int_illuminate__repository_data") }} as sw
     on co.student_number = sw.local_student_id
     and r.repository_id = sw.repository_id
     and f.label = sw.field_label

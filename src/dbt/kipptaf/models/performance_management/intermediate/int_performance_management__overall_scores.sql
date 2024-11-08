@@ -26,4 +26,4 @@ from observation_rollup
 union all
 
 select employee_number, academic_year, final_score, final_tier,
-from {{ ref("int_performance_management__observations_archive") }}
+from {{ ref("int_performance_management__overall_scores_archive") }}

@@ -24,7 +24,7 @@ connect:
   nodeSelector:
     cloud.google.com/gke-spot: "true"
     cloud.google.com/compute-class: Balanced
-    cloud.google.com/gke-placement-group: servers
+    # cloud.google.com/gke-placement-group: servers
 
 # This section of values is for 1Password Operator Configuration
 operator:
@@ -48,4 +48,4 @@ operator:
   nodeSelector:
     cloud.google.com/gke-spot: "true"
     cloud.google.com/compute-class: Balanced
-    cloud.google.com/gke-placement-group: servers
+    # cloud.google.com/gke-placement-group: servers

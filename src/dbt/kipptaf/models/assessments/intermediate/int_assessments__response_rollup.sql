@@ -10,7 +10,8 @@ with
             s.academic_year,
             s.administered_at,
             s.module_type,
-            s.module_number,
+            s.module_code,
+            s.region,
             s.performance_band_set_id,
             s.powerschool_school_id,
             s.grade_level_id,
@@ -41,7 +42,8 @@ with
             scope,
             subject_area,
             module_type,
-            module_number,
+            module_code,
+            region,
             is_internal_assessment,
             is_replacement,
             response_type,
@@ -50,34 +52,22 @@ with
             response_type_description,
             response_type_root_description,
             powerschool_school_id,
+
             min(assessment_id) as assessment_id,
             min(title) as title,
             min(grade_level_id) as grade_level_id,
             min(administered_at) as administered_at,
             min(performance_band_set_id) as performance_band_set_id,
             min(date_taken) as date_taken,
+
             sum(points) as points,
+
             round(
                 safe_divide(sum(points), sum(points_possible)) * 100, 1
             ) as percent_correct,
         from scaffold_responses
         where is_internal_assessment
-        group by
-            illuminate_student_id,
-            powerschool_student_number,
-            academic_year,
-            scope,
-            subject_area,
-            module_type,
-            module_number,
-            is_internal_assessment,
-            is_replacement,
-            response_type,
-            response_type_id,
-            response_type_code,
-            response_type_description,
-            response_type_root_description,
-            powerschool_school_id
+        group by all
     ),
 
     response_union as (
@@ -88,7 +78,8 @@ with
             scope,
             subject_area,
             module_type,
-            module_number,
+            module_code,
+            region,
             is_internal_assessment,
             is_replacement,
             response_type,
@@ -100,6 +91,7 @@ with
             points,
             percent_correct,
             powerschool_school_id,
+
             if(
                 not is_replacement,
                 min(title) over (
@@ -107,12 +99,14 @@ with
                         academic_year,
                         scope,
                         subject_area,
-                        module_number,
+                        module_code,
+                        region,
                         grade_level_id,
                         is_replacement
                 ),
                 title
             ) as title,
+
             if(
                 not is_replacement,
                 min(assessment_id) over (
@@ -120,12 +114,14 @@ with
                         academic_year,
                         scope,
                         subject_area,
-                        module_number,
+                        module_code,
+                        region,
                         grade_level_id,
                         is_replacement
                 ),
                 assessment_id
             ) as assessment_id,
+
             if(
                 not is_replacement,
                 min(administered_at) over (
@@ -133,12 +129,14 @@ with
                         academic_year,
                         scope,
                         subject_area,
-                        module_number,
+                        module_code,
+                        region,
                         grade_level_id,
                         is_replacement
                 ),
                 administered_at
             ) as administered_at,
+
             if(
                 not is_replacement,
                 min(performance_band_set_id) over (
@@ -146,7 +144,8 @@ with
                         academic_year,
                         scope,
                         subject_area,
-                        module_number,
+                        module_code,
+                        region,
                         grade_level_id,
                         is_replacement,
                         response_type,
@@ -165,7 +164,8 @@ with
             scope,
             subject_area,
             module_type,
-            module_number,
+            module_code,
+            region,
             is_internal_assessment,
             is_replacement,
             response_type,
@@ -192,7 +192,8 @@ select
     ru.scope,
     ru.subject_area,
     ru.module_type,
-    ru.module_number,
+    ru.module_code,
+    ru.region,
     ru.is_internal_assessment,
     ru.is_replacement,
     ru.response_type,
@@ -217,7 +218,7 @@ select
     rtt.name as term_taken,
 from response_union as ru
 left join
-    {{ ref("base_illuminate__performance_band_sets") }} as pbl
+    {{ ref("int_illuminate__performance_band_sets") }} as pbl
     on ru.performance_band_set_id = pbl.performance_band_set_id
     and ru.percent_correct between pbl.minimum_value and pbl.maximum_value
 left join

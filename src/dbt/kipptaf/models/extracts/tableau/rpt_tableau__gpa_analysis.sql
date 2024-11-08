@@ -41,7 +41,7 @@ select
     gt.gpa_y1_unweighted,
     gt.gpa_points_total_y1,
     gt.weighted_gpa_points_y1,
-    gt.total_credit_hours,
+    gt.total_credit_hours_y1 as total_credit_hours,
     gt.grade_avg_y1,
     gt.n_failing_y1,
 

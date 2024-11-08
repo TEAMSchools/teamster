@@ -8,5 +8,6 @@ datamodel-codegen \
   --input-file-type "${input_file_type}" \
   --output "${input_array[0]}".py \
   --output-model-type pydantic_v2.BaseModel \
+  --force-optional \
   --use-standard-collections \
-  --force-optional
+  --use-union-operator

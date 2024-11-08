@@ -4,21 +4,18 @@ with
             se.first_name as `givenName`,
             se.last_name as `familyName`,
             se.student_email_google as `primaryEmail`,
+            se.school_name,
             se.is_out_of_district,
 
-            o.org_unit_path,
-
-            to_hex(sha1(se.student_web_password)) as `password`,
-            if(se.grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
-            if(se.enroll_status = 0, false, true) as `suspended`,
             concat(
                 'group-students-', lower(se.region), '@teamstudents.org'
             ) as `groupKey`,
+
+            to_hex(sha1(se.student_web_password)) as `password`,
+
+            if(se.grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
+            if(se.enroll_status = 0, false, true) as `suspended`,
         from {{ ref("base_powerschool__student_enrollments") }} as se
-        left join
-            {{ ref("stg_google_directory__orgunits") }} as o
-            on se.school_name = o.description
-            and o.org_unit_path like '/Students/%'
         where se.rn_all = 1 and se.student_email_google is not null
     ),
 
@@ -39,17 +36,21 @@ with
 
             'SHA-1' as `hashFunction`,
 
+            if(u.primary_email is not null, true, false) as is_matched,
+
             if(
                 s.suspended or s.is_out_of_district,
                 '/Students/Disabled',
-                s.org_unit_path
+                o.org_unit_path
             ) as `orgUnitPath`,
-
-            if(u.primary_email is not null, true, false) as is_matched,
         from students as s
         left join
             {{ ref("stg_google_directory__users") }} as u
             on s.primaryemail = u.primary_email
+        left join
+            {{ ref("stg_google_directory__orgunits") }} as o
+            on s.school_name = o.description
+            and o.org_unit_path like '/Students/%'
     ),
 
     final as (

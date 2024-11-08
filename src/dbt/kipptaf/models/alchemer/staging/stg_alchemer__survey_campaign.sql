@@ -1,7 +1,8 @@
 {%- set src_campaign = source("alchemer", "src_alchemer__survey_campaign") -%}
 
 with
-    parse_partition_key as (  -- noqa: ST03
+    -- trunk-ignore(sqlfluff/ST03)
+    parse_partition_key as (
         select
             *,
 
@@ -73,7 +74,7 @@ select
     *,
 
     {{
-        teamster_utils.date_to_fiscal_year(
+        date_to_fiscal_year(
             date_field="link_open_date", start_month=7, year_source="end"
         )
     }} as fiscal_year,

@@ -1,6 +1,4 @@
 select
-    'Enrollments' as data_source,
-
     r.contact_id,
     r.lastfirst as student_name,
     r.ktc_cohort as cohort,
@@ -33,13 +31,19 @@ select
     a.name as school_name,
     a.hbcu,
 
+    'Enrollments' as `data_source`,
+
     null as match_type,
     null as application_admission_type,
+    null as application_status,
     null as application_submission_status,
     null as matriculation_decision,
 
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
     if(e.id = ei.ugrad_enrollment_id, true, false) as is_ugrad_enrollment,
+
+    if(ei.ecc_account_name = ei.ugrad_account_name, 1, 0) as is_same_school,
+
     case
         when
             e.school = ei.ecc_account_id
@@ -57,6 +61,7 @@ select
             and e.actual_end_date is not null
         then 0
     end as is_4yr_grad_int,
+
     case
         when
             e.school = ei.ecc_account_id
@@ -74,6 +79,7 @@ select
             and e.actual_end_date is not null
         then 0
     end as is_6yr_grad_int,
+
     case
         when r.contact_college_match_display_gpa >= 3.50
         then '3.50+'
@@ -86,7 +92,6 @@ select
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
-    if(ei.ecc_account_name = ei.ugrad_account_name, 1, 0) as is_same_school,
 from {{ ref("int_kippadb__roster") }} as r
 inner join
     {{ ref("stg_kippadb__enrollment") }} as e
@@ -99,8 +104,6 @@ left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.
 union all
 
 select
-    'Applications' as data_source,
-
     r.contact_id,
     r.lastfirst as student_name,
     r.ktc_cohort as cohort,
@@ -112,14 +115,18 @@ select
     r.contact_college_match_display_gpa as hs_gpa,
     r.contact_highest_act_score as highest_act_score,
 
-    a.application_status as status,
+    a.application_status as `status`,
     a.intended_degree_type as pursuing_degree_type,
-    safe_cast(a.created_date as date) as start_date,
+    safe_cast(a.created_date as date) as `start_date`,
+
     null as actual_end_date,
+
     a.account_type,
 
     null as ugrad_status,
+
     ei.hs_account_name,
+
     null as ecc_account_name,
     null as ugrad_account_name,
 
@@ -133,15 +140,20 @@ select
     a.account_name as school_name,
     a.hbcu,
 
+    'Applications' as `data_source`,
+
     a.match_type,
     a.application_admission_type,
+    a.application_status,
     a.application_submission_status,
     a.matriculation_decision,
 
     null as is_ecc_enrollment,
     null as is_ugrad_enrollment,
+    null as is_same_school,
     null as is_4yr_grad_int,
     null as is_6yr_grad_int,
+
     case
         when r.contact_college_match_display_gpa >= 3.50
         then '3.50+'
@@ -154,7 +166,6 @@ select
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
-    null as is_same_school,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__application") }} as a on r.contact_id = a.applicant
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student

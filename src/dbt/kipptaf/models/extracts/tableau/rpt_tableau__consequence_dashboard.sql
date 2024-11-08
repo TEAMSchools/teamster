@@ -11,7 +11,7 @@ with
     )
 
 select
-    -- noqa: disable=RF05
+
     co.student_number,
     co.state_studentnumber,
     co.lastfirst,

@@ -41,14 +41,18 @@ def build_edplan_sftp_sensor(
         try:
             files = ssh_edplan.listdir_attr_r("Reports")
         except gaierror as e:
-            if "[Errno -3] Temporary failure in name resolution" in e.args:
-                context.log.error(msg=str(e))
+            if (
+                "[Errno -3] Temporary failure in name resolution" in e.args
+                or "[Errno -5] No address associated with hostname" in e.args
+            ):
                 return SkipReason(str(e))
             else:
                 raise e
-        except Exception as e:
-            context.log.error(msg=str(e))
-            raise e
+        except TimeoutError as e:
+            if "timed out" in e.args:
+                return SkipReason(str(e))
+            else:
+                raise e
 
         asset_identifier = asset.key.to_python_identifier()
         context.log.info(asset_identifier)

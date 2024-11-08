@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 with
     -- trunk-ignore(sqlfluff/ST03)
     observations as (
@@ -10,7 +12,10 @@ with
             rubric.name as rubric_name,
 
             timestamp(lastmodified) as last_modified_timestamp,
-            date(timestamp(lastmodified), 'America/New_York') as last_modified_date,
+
+            date(
+                timestamp(lastmodified), '{{ var("local_timezone") }}'
+            ) as last_modified_date,
         from {{ source("schoolmint_grow", "src_schoolmint_grow__observations") }}
         where _dagster_partition_archived = 'f'
     ),

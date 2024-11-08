@@ -10,6 +10,7 @@ with
             _dbt_source_relation,
             students_student_number,
             cc_academic_year,
+
             count(cc_sectionid) as sectionid_count,
         from {{ ref("base_powerschool__course_enrollments") }}
         where
@@ -40,6 +41,9 @@ with
             r.racecd,
 
             safe_cast(se.dob as string) as dob,
+
+            safe_cast(cec.sectionid_count as string) as sectionid_count,
+
             if(
                 regexp_contains(se.lastfirst, r"\s{2,}|[^\w\s',-]"), 1, 0
             ) as name_spelling_flag,
@@ -48,10 +52,10 @@ with
             if(se.state_studentnumber is null, 1, 0) as missing_sid_flag,
             if(se.dob is null, 1, 0) as missing_dob_flag,
 
-            safe_cast(cec.sectionid_count as string) as sectionid_count,
             if(cec.sectionid_count < 3, true, false) as underenrollment_flag,
 
-            -- noqa: disable=CV10
+            if(se.region = 'KMS', se.ethnicity, r.racecd) as race_eth_detail,
+
             case
                 when se.fteid != fte.id
                 then concat(se.fteid, ' != ', fte.id)
@@ -61,6 +65,7 @@ with
                 then 'FTE == 0'
                 else safe_cast(se.fteid as string)
             end as fteid_detail,
+
             case
                 when se.fteid is null
                 then 1
@@ -71,7 +76,6 @@ with
                 else 0
             end as missing_fte_flag,
 
-            if(se.region = 'KMS', se.ethnicity, r.racecd) as race_eth_detail,
             case
                 when se.region = 'Miami' and se.ethnicity is null
                 then 1

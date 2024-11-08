@@ -20,7 +20,7 @@ from teamster.code_locations.kipptaf.performance_management.schema import (
     OBSERVATION_DETAILS_SCHEMA,
     OUTLIER_DETECTION_SCHEMA,
 )
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )

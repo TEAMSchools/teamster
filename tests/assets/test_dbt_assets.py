@@ -1,10 +1,15 @@
 import json
 import pathlib
 
-from dagster import AssetExecutionContext, AssetMaterialization, materialize
-from dagster_dbt import DbtCliResource, dbt_assets
+from dagster import (
+    AssetExecutionContext,
+    AssetMaterialization,
+    AssetsDefinition,
+    materialize,
+)
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
-from teamster.libraries.core.resources import get_dbt_cli_resource
+from teamster.core.resources import get_dbt_cli_resource
 from teamster.libraries.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
 MANIFEST = json.loads(
@@ -13,9 +18,7 @@ MANIFEST = json.loads(
 
 MANIFEST_NODES = MANIFEST["nodes"]
 
-DAGSTER_DBT_TRANSLATOR = CustomDagsterDbtTranslator(
-    asset_key_prefix="kipptaf", source_asset_key_prefix="kipptaf"
-)
+DAGSTER_DBT_TRANSLATOR = CustomDagsterDbtTranslator(code_location="kipptaf")
 
 
 @dbt_assets(
@@ -23,7 +26,7 @@ DAGSTER_DBT_TRANSLATOR = CustomDagsterDbtTranslator(
     exclude="tag:stage_external_sources",
     dagster_dbt_translator=DAGSTER_DBT_TRANSLATOR,
 )
-def _test_dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
+def _dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
     asset_materialization_keys = []
 
     latest_code_versions = context.instance.get_latest_materialization_code_versions(
@@ -40,7 +43,7 @@ def _test_dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
     for a in new_code_version_asset_keys:
         new_code_version_node_names.add(f"model.{a.path[0]}.{a.path[-1]}")
 
-    for output_name in context.selected_output_names:
+    for output_name in context.op_execution_context.selected_output_names:
         node = [
             v for k, v in MANIFEST_NODES.items() if k.replace(".", "_") == output_name
         ][0]
@@ -66,35 +69,46 @@ def _test_dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
             yield AssetMaterialization(asset_key=asset_key)
 
 
-def test_dbt_assets():
+def _test_dbt_assets(
+    assets: list[AssetsDefinition], code_location: str, selection: list[str]
+):
     result = materialize(
-        assets=[_test_dbt_assets],
-        resources={"dbt_cli": get_dbt_cli_resource(code_location="kipptaf", test=True)},
-        selection=["kipptaf/tableau/rpt_tableau__assessment_dashboard"],
+        assets=assets,
+        resources={
+            "dbt_cli": get_dbt_cli_resource(
+                dbt_project=DbtProject(project_dir=f"src/dbt/{code_location}"),
+                test=True,
+            )
+        },
+        selection=selection,
     )
 
     assert result.success
+
+
+def test_dbt_assets():
+    _test_dbt_assets(
+        assets=[_dbt_assets],
+        code_location="kipptaf",
+        selection=["kipptaf/tableau/rpt_tableau__assessment_dashboard"],
+    )
 
 
 def test_external_source_dbt_assets():
     from teamster.code_locations.kipptaf._dbt.assets import external_source_dbt_assets
 
-    result = materialize(
+    _test_dbt_assets(
         assets=[external_source_dbt_assets],
-        resources={"dbt_cli": get_dbt_cli_resource(code_location="kipptaf", test=True)},
+        code_location="kipptaf",
         selection=["kipptaf/google_forms/src_google_forms__form"],
     )
-
-    assert result.success
 
 
 def test_dbt_assets_kipptaf():
     from teamster.code_locations.kipptaf._dbt.assets import adp_payroll_dbt_assets
 
-    result = materialize(
+    _test_dbt_assets(
         assets=[adp_payroll_dbt_assets],
-        resources={"dbt_cli": get_dbt_cli_resource(code_location="kipptaf", test=True)},
+        code_location="kipptaf",
         selection=["kipptaf/extracts/rpt_gsheets__intacct_integration_file"],
     )
-
-    assert result.success

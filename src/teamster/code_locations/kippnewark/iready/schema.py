@@ -6,6 +6,7 @@ from teamster.libraries.iready.schema import (
     DiagnosticInstruction,
     DiagnosticResults,
     InstructionalUsage,
+    InstructionByLesson,
     PersonalizedInstruction,
 )
 
@@ -48,4 +49,8 @@ PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA = json.loads(
     py_avro_schema.generate(
         py_type=personalized_instruction_by_lesson_record, options=pas_options
     )
+)
+
+INSTRUCTION_BY_LESSON_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=InstructionByLesson, options=pas_options)
 )

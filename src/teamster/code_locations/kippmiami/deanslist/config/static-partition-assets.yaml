@@ -19,3 +19,5 @@ endpoints:
       IncludeCustomFields: Y
       IncludeUnenrolled: Y
       IncludeParents: Y
+  - endpoint: dff/stats
+    api_version: v1

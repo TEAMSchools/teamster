@@ -20,6 +20,7 @@ with
             if(
                 job_title in (
                     'Teacher',
+                    'ESE Teacher',
                     'Learning Specialist',
                     'Learning Specialist Coordinator',
                     'Teacher in Residence',
@@ -100,7 +101,7 @@ with
             d as date_value,
 
             {{
-                teamster_utils.date_to_fiscal_year(
+                date_to_fiscal_year(
                     date_field="d", start_month=7, year_source="start"
                 )
             }} as academic_year,
@@ -166,7 +167,6 @@ with
                 partition by employee_number order by academic_year asc
             ) as work_assignment_day_count,
         from with_date_diff
-        where not is_teacher
 
         union all
 

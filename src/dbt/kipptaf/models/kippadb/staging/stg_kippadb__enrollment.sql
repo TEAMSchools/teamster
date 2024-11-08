@@ -68,7 +68,9 @@ with
 
 select
     *,
+
     extract(year from `start_date`) as start_date_year,
+
     row_number() over (
         partition by student, school, extract(year from `start_date`)
         order by `start_date` asc

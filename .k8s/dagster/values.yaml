@@ -362,10 +362,48 @@ workspace:
   #   podTemplateSpecMetadata: # raw config for the pod's metadata
   #     annotations:
   #       mykey: myvalue
-  #   podSpecConfig: # raw config for the spec of the launched's pod
+  #   podSpecConfig: # raw config for the spec of the launched pod
   #     nodeSelector:
   #       disktype: ssd
+  #   deploymentMetadata: # raw config for the spec of the launched k8s deployment
+  #     annotations:
+  #       mykey: myvalue
+  #   serviceMetadata: # raw config for the spec of the launched k8s service
+  #     annotations:
+  #       mykey: myvalue
   serverK8sConfig: {}
+
+  # Uncomment to specify a restricted set of k8s fields that can be configured remotely from the
+  # Dagster+ control plane (for example, by setting per-location configuration via a `dagster_cloud.yaml`
+  # file or for a specific job via setting `dagster-k8s/config` tags in code). Allows you to
+  # Has no effect on other k8s configuration set in the Helm chart, since that configuration is set
+  # from within the agent rather than configured via an API call to a remote server. Each of the
+  # keys corresponds to the name of the field in the underkying Kubernetes object being configured.
+  # If this key is not set, any configuration that the agent's service account has permissions to
+  # set can be configured.
+  #
+  # Example:
+  # onlyAllowUserDefinedK8sConfigFields:
+  #  containerConfig: # Allow the resources and environment variables of the Dagster container to be configured.
+  #    resources: true
+  #    env: true
+  #  podSpecConfig: # Allow the node selector of the pod to be configured.
+  #    nodeSelector: true
+  #  podTemplateSpecMetadata: # Allow the pod annotations to be configured.
+  #    annotations: true
+  #  podTemplateSpecMetadata: # Allow annotations on the pod to be configured.
+  #    annotations: true
+  #  jobSpecConfig: # for runs, allow the TTL after job completion to be configured.
+  #    ttlSecondsAfterFinished: true
+  #  jobMetadata: # For runs, allow annotations to be configured.
+  #    annotations: true
+  #  serviceMetadata: # For code servers, allow annotations on the k8s service to be configured.
+  #    annotations: true
+  #  deploymentMetadata: # For code servers, allow annotations on the k8s deployment to be configured.
+  #    annotations: true
+  #  namespace: true # Allow the namespace to be configured.
+  #
+  # onlyAllowUserDefinedK8sConfigFields: {}
 
 ####################################################################################################
 # Compute Logs: (Optional) settings for compute logging

@@ -5,7 +5,7 @@ select
     enr.courses_course_name as course_name,
     enr.courses_credittype as credittype,
     enr.teacher_lastfirst as teacher_name,
-    regexp_extract(enr._dbt_source_relation, r'(kippw\+)_') as db_name,
+    regexp_extract(enr._dbt_source_relation, r'(kipp\w+)_') as db_name,
 
     co.student_number,
     co.lastfirst,
@@ -59,7 +59,7 @@ left join
     on a.assignmentsectionid = s.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
     and enr.students_dcid = s.studentsdcid
-where enr.cc_academic_year >= {{ var("current_academic_year") - 1 }}
+where enr.cc_academic_year = {{ var("current_academic_year") }}
 
 union all
 
@@ -70,7 +70,7 @@ select
     enr.courses_course_name as course_name,
     enr.courses_credittype as credittype,
     enr.teacher_lastfirst as teacher_name,
-    regexp_extract(enr._dbt_source_relation, r'(kippw\+)_') as db_name,
+    regexp_extract(enr._dbt_source_relation, r'(kipp\w+)_') as db_name,
 
     co.student_number,
     co.lastfirst,
@@ -125,4 +125,4 @@ left join
     on a.assignmentsectionid = s.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
     and enr.students_dcid = s.studentsdcid
-where enr.cc_academic_year >= {{ var("current_academic_year") }}
+where enr.cc_academic_year = {{ var("current_academic_year") }}

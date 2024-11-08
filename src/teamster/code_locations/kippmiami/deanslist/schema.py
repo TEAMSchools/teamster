@@ -9,6 +9,7 @@ from teamster.libraries.deanslist.schema import (
     CommLog,
     CustomField,
     Date,
+    DFFStats,
     Followup,
     Homework,
     Incident,
@@ -124,5 +125,8 @@ ASSET_SCHEMA = {
     ),
     "incidents": json.loads(
         py_avro_schema.generate(py_type=incidents_record, options=pas_options)
+    ),
+    "dff/stats": json.loads(
+        py_avro_schema.generate(py_type=DFFStats, options=pas_options)
     ),
 }

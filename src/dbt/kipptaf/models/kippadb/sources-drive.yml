@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: kippadb
+    schema: kipptaf_kippadb
+    tags:
+      - stage_external_sources
+    tables:
+      - name: src_kippadb__nsc_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1smCSUKz2SXwnohmz59LNptoN5jHzYD2TfZNHZwK7Dts
+            sheet_range: src_kippadb__nsc_crosswalk
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - kippadb
+              - nsc_crosswalk

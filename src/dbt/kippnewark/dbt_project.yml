@@ -27,11 +27,12 @@ vars:
   current_fiscal_year: 2025
   deanslist_schema: kippnewark_deanslist
   edplan_schema: kippnewark_edplan
+  iready_schema: kippnj_iready
   pearson_schema: kippnewark_pearson
   powerschool_schema: kippnewark_powerschool
-  titan_schema: kippnewark_titan
-  iready_schema: kippnj_iready
+  overgrad_schema: kippnewark_overgrad
   renlearn_schema: kippnj_renlearn
+  titan_schema: kippnewark_titan
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -39,22 +40,27 @@ models:
   kippnewark:
     extracts:
       +schema: extracts
-      +materialized: table
   deanslist:
-    +schema: deanslist
-  edplan:
-    +schema: edplan
-  iready:
-    +schema: iready
-    staging:
-      +materialized: table
-  pearson:
-    +schema: pearson
-  powerschool:
-    +schema: powerschool
     +materialized: table
+  edplan:
+    +materialized: table
+  iready:
+    +materialized: table
+  overgrad:
+    +materialized: table
+  pearson:
+    +materialized: table
+  powerschool:
+    +materialized: table
+    staging:
+      stg_powerschool__period:
+        +enabled: false
+      stg_powerschool__sced_code_mapping:
+        +enabled: false
+      stg_powerschool__u_def_ext_students:
+        +enabled: false
   renlearn:
-    +schema: renlearn
+    +materialized: table
     staging:
       stg_renlearn__fast_star:
         +enabled: false
@@ -63,7 +69,10 @@ models:
       stg_renlearn__star_skill_area:
         +enabled: false
   titan:
-    +schema: titan
+    +materialized: table
+    staging:
+      stg_titan__income_form_data:
+        +enabled: false
 
 sources:
   renlearn:
@@ -73,4 +82,20 @@ sources:
       src_renlearn__star_dashboard_standards:
         +enabled: false
       src_renlearn__fast_star:
+        +enabled: false
+  titan:
+    titan:
+      src_titan__income_form_data:
+        +enabled: false
+  powerschool:
+    powerschool:
+      src_powerschool__period:
+        +enabled: false
+      src_powerschool__sced_code_mapping:
+        +enabled: false
+      src_powerschool__u_def_ext_students:
+        +enabled: false
+  iready:
+    iready:
+      src_iready__diagnostic_and_instruction:
         +enabled: false

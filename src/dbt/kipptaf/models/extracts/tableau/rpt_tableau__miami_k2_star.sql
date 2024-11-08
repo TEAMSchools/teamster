@@ -1,8 +1,56 @@
 with
     subjects as (
         select 'Reading' as iready_subject, 'ENG' as ps_credittype,
+
         union all
+
         select 'Math' as iready_subject, 'MATH' as ps_credittype,
+    ),
+
+    sub as (
+        select
+            student_identifier as student_number,
+            _dagster_partition_subject as star_subject,
+            district_benchmark_category_level,
+            district_benchmark_category_name,
+            district_benchmark_proficient,
+            scaled_score,
+            unified_score,
+            current_sgp,
+            completed_date,
+            assessment_id,
+            assessment_number,
+            assessment_status,
+
+            case
+                _dagster_partition_subject
+                when 'SR'
+                then 'Reading'
+                when 'SM'
+                then 'Math'
+                when 'SEL'
+                then 'Reading'
+            end as `subject`,
+
+            case
+                screening_period_window_name
+                when 'Fall'
+                then 'BOY'
+                when 'Winter'
+                then 'MOY'
+                when 'Spring'
+                then 'EOY'
+            end as administration_window,
+
+            row_number() over (
+                partition by
+                    student_identifier,
+                    _dagster_partition_subject,
+                    screening_period_window_name
+                order by completed_date desc
+            ) as rn_subject_round,
+        from {{ ref("stg_renlearn__star") }}
+        where assessment_status = 'Active'
     ),
 
     star as (
@@ -21,6 +69,7 @@ with
             sub.subject,
             sub.star_subject,
             sub.administration_window,
+
             d.domain_name,
             d.domain_mastery_level,
             d.domain_percent_mastery,
@@ -28,56 +77,16 @@ with
             d.standard_description,
             d.standard_mastery_level,
             d.standard_percent_mastery,
+
             row_number() over (
                 partition by sub.student_number, sub.subject, sub.administration_window
                 order by d.standard_name desc
             ) as rn_subject_round_star,
-        from
-            (
-                select
-                    student_identifier as student_number,
-                    district_benchmark_category_level,
-                    district_benchmark_category_name,
-                    district_benchmark_proficient,
-                    scaled_score,
-                    unified_score,
-                    current_sgp,
-                    completed_date,
-                    assessment_id,
-                    assessment_number,
-                    assessment_status,
-                    _dagster_partition_subject as star_subject,
-                    case
-                        when _dagster_partition_subject = 'SR'
-                        then 'Reading'
-                        when _dagster_partition_subject = 'SM'
-                        then 'Math'
-                        when _dagster_partition_subject = 'SEL'
-                        then 'Reading'
-                    end as subject,
-                    case
-                        when screening_period_window_name = 'Fall'
-                        then 'BOY'
-                        when screening_period_window_name = 'Winter'
-                        then 'MOY'
-                        when screening_period_window_name = 'Spring'
-                        then 'EOY'
-                    end as administration_window,
-                    row_number() over (
-                        partition by
-                            student_identifier,
-                            _dagster_partition_subject,
-                            screening_period_window_name
-                        order by completed_date desc
-                    ) as rn_subject_round,
-                from {{ ref("stg_renlearn__star") }}
-                where assessment_status = 'Active'
-            ) as sub
+        from sub
         left join
             {{ ref("stg_renlearn__star_dashboard_standards") }} as d
             on sub.assessment_id = d.assessment_id
         where sub.rn_subject_round = 1
-
     )
 
 select
@@ -94,7 +103,7 @@ select
     subj.iready_subject,
     subj.ps_credittype,
 
-    ar as administration_round,
+    administration_round,
 
     e.courses_course_name as course_name,
     e.sections_section_number as section_number,
@@ -117,7 +126,7 @@ select
     s.rn_subject_round_star,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
-cross join unnest(['BOY', 'MOY', 'EOY']) as ar
+cross join unnest(['BOY', 'MOY', 'EOY']) as administration_round
 left join
     {{ ref("base_powerschool__course_enrollments") }} as e
     on co.student_number = e.students_student_number
@@ -129,7 +138,7 @@ left join
     star as s
     on co.student_number = s.student_number
     and subj.iready_subject = s.subject
-    and ar = s.administration_window
+    and administration_round = s.administration_window
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1

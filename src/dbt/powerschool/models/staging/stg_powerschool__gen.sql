@@ -1,30 +1,34 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="dcid.int_value",
-        transform_cols=[
-            {"name": "dcid", "extract": "int_value"},
-            {"name": "id", "extract": "int_value"},
-            {"name": "valueli", "extract": "int_value"},
-            {"name": "valueli2", "extract": "int_value"},
-            {"name": "valuer", "extract": "double_value"},
-            {"name": "sortorder", "extract": "int_value"},
-            {"name": "schoolid", "extract": "int_value"},
-            {"name": "valueli3", "extract": "int_value"},
-            {"name": "valuer2", "extract": "double_value"},
-            {"name": "time1", "extract": "int_value"},
-            {"name": "time2", "extract": "int_value"},
-            {"name": "spedindicator", "extract": "int_value"},
-            {"name": "valueli4", "extract": "int_value"},
-            {"name": "yearid", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
-    )
-}}
+select
+    * except (
+        dcid,
+        id,
+        valueli,
+        valueli2,
+        valuer,
+        sortorder,
+        schoolid,
+        valueli3,
+        valuer2,
+        time1,
+        time2,
+        spedindicator,
+        valueli4,
+        yearid
+    ),
 
-select *
-from staging
+    /* column transformations */
+    dcid.int_value as dcid,
+    id.int_value as id,
+    valueli.int_value as valueli,
+    valueli2.int_value as valueli2,
+    valuer.double_value as valuer,
+    sortorder.int_value as sortorder,
+    schoolid.int_value as schoolid,
+    valueli3.int_value as valueli3,
+    valuer2.double_value as valuer2,
+    time1.int_value as time1,
+    time2.int_value as time2,
+    spedindicator.int_value as spedindicator,
+    valueli4.int_value as valueli4,
+    yearid.int_value as yearid,
+from {{ source("powerschool", "src_powerschool__gen") }}

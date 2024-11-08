@@ -8,7 +8,7 @@ from teamster.code_locations.kippmiami.renlearn.schema import (
     STAR_SCHEMA,
     STAR_SKILL_AREA_SCHEMA,
 )
-from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.sftp.assets import build_sftp_archive_asset
 
 asset_key_prefix = [CODE_LOCATION, "renlearn"]

@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 select
     position_id,
     academic_year,

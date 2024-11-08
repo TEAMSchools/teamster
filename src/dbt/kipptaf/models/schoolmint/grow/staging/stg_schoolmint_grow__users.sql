@@ -93,4 +93,3 @@ select
     regionaladminschools as regional_admin_schools,
     roles,
 from {{ source("schoolmint_grow", "src_schoolmint_grow__users") }}
-where _dagster_partition_key = 'f'

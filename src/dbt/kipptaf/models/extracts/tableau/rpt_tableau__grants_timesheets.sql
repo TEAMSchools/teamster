@@ -20,9 +20,12 @@ with
                 sr.response_session_id,
                 '&sg_navigate=start'
             ) as edit_link,
-        from {{ ref("base_alchemer__survey_results") }} as sr
+        from
+            /* hardcode disabled model */
+            kipptaf_alchemer.base_alchemer__survey_results as sr
         left join
-            {{ ref("int_surveys__response_identifiers") }} as ri
+            /* hardcode disabled model */
+            kipptaf_surveys.int_surveys__response_identifiers as ri
             on sr.survey_id = ri.survey_id
             and sr.response_id = ri.response_id
         where

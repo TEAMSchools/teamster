@@ -4,7 +4,7 @@ from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.powerschool.enrollment.schema import (
     SUBMISSION_RECORD_SCHEMA,
 )
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )

@@ -1,25 +1,24 @@
-{{
-    teamster_utils.generate_staging_model(
-        unique_key="dcid.int_value",
-        transform_cols=[
-            {"name": "dcid", "extract": "int_value"},
-            {"name": "id", "extract": "int_value"},
-            {"name": "schoolid", "extract": "int_value"},
-            {"name": "yearid", "extract": "int_value"},
-            {"name": "course_credit_points", "extract": "double_value"},
-            {"name": "assignment_filter_yn", "extract": "int_value"},
-            {"name": "calculate_ada_yn", "extract": "int_value"},
-            {"name": "calculate_adm_yn", "extract": "int_value"},
-            {"name": "sortorder", "extract": "int_value"},
-        ],
-        except_cols=[
-            "_dagster_partition_fiscal_year",
-            "_dagster_partition_date",
-            "_dagster_partition_hour",
-            "_dagster_partition_minute",
-        ],
-    )
-}}
+select
+    * except (
+        dcid,
+        id,
+        schoolid,
+        yearid,
+        course_credit_points,
+        assignment_filter_yn,
+        calculate_ada_yn,
+        calculate_adm_yn,
+        sortorder
+    ),
 
-select *
-from staging
+    /* column transformations */
+    dcid.int_value as dcid,
+    id.int_value as id,
+    schoolid.int_value as schoolid,
+    yearid.int_value as yearid,
+    course_credit_points.double_value as course_credit_points,
+    assignment_filter_yn.int_value as assignment_filter_yn,
+    calculate_ada_yn.int_value as calculate_ada_yn,
+    calculate_adm_yn.int_value as calculate_adm_yn,
+    sortorder.int_value as sortorder,
+from {{ source("powerschool", "src_powerschool__attendance_code") }}

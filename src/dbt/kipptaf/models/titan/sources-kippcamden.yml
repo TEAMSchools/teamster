@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: kippcamden_titan
+    tables:
+      - name: stg_titan__person_data
+        meta:
+          dagster:
+            group: titan
+            asset_key:
+              - kippcamden
+              - titan
+              - stg_titan__person_data

@@ -23,6 +23,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
     _resource: discovery.Resource = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
+    _exceptions: list[tuple] = PrivateAttr(default=[])
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._log = _check.not_none(value=context.log)
@@ -156,34 +157,24 @@ class GoogleDirectoryResource(ConfigurableResource):
             i = i * 2
 
     def batch_insert_users(self, users):
-        def callback(request_id, response, exception):
+        def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._log.error(exception)
-                if exception.status_code == 403:
-                    raise exception
-                elif exception.status_code == 409 and exception.reason not in [
-                    "Entity already exists.",
-                    "Invalid Given/Family Name: GivenName",
-                ]:
-                    raise exception
+                self._log.exception(msg=(id, exception))
+                self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(
-                    msg=(
-                        f"CREATED {response['primaryEmail']}: "
-                        f"{response['name'].get('givenName')} "
-                        f"{response['name'].get('familyName')} "
-                        f"OU={response['orgUnitPath']} "
-                        f"changepassword={response['changePasswordAtNextLogin']}"
-                    )
+                    msg="CREATED " + " ".join([f"{k}={v}" for k, v in response.items()])
                 )
+
+        exceptions = []
 
         # You cannot create more than 10 users per domain per second using the
         # Directory API
-        # https://developers.google.com/admin-sdk/directory/v1/limits#api-limits-and-quotas
+        # developers.google.com/admin-sdk/directory/v1/limits#api-limits-and-quotas
         batches = self._batch_list(list=users, size=10)
 
         for i, batch in enumerate(batches):
-            self._log.info(f"Processing batch {i + 1}")
+            self._log.info(msg=f"Processing batch {i + 1}")
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
@@ -194,30 +185,29 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
 
+            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
+
             time.sleep(1)
 
+        return exceptions
+
     def batch_update_users(self, users):
-        def callback(request_id, response, exception):
+        def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._log.error(exception)
-                if exception.status_code in [403, 409]:
-                    raise exception
+                self._log.exception(msg=(id, exception))
+                self._exceptions.append((int(id) - 1, exception))
             else:
                 self._log.info(
-                    msg=(
-                        f"UPDATED {response['primaryEmail']}: "
-                        f"{response['name'].get('givenName')} "
-                        f"{response['name'].get('familyName')} "
-                        f"OU={response['orgUnitPath']} "
-                        f"suspended={response['suspended']}"
-                    )
+                    msg="UPDATED " + " ".join([f"{k}={v}" for k, v in response.items()])
                 )
+
+        exceptions = []
 
         # Queries per minute per user == 2400 (40/sec)
         batches = self._batch_list(list=users, size=40)
 
         for i, batch in enumerate(batches):
-            self._log.info(f"Processing batch {i + 1}")
+            self._log.info(msg=f"Processing batch {i + 1}")
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
@@ -232,31 +222,34 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
 
+            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
+
             time.sleep(1)
 
+        return exceptions
+
     def batch_insert_members(self, members):
-        def callback(request_id, response, exception):
+        def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._log.error(exception)
-                if exception.status_code == 403:
-                    raise exception
-                elif (
-                    exception.status_code == 409
-                    and exception.reason != "Member already exists."
-                ):
-                    raise exception
+                self._log.exception(msg=(id, exception))
+                self._exceptions.append((int(id) - 1, exception))
+            else:
+                self._log.info(
+                    msg="ADDING " + " ".join([f"{k}={v}" for k, v in response.items()])
+                )
+
+        exceptions = []
 
         # Queries per minute per user == 2400 (40/sec)
         batches = self._batch_list(list=members, size=40)
 
         for i, batch in enumerate(batches):
-            self._log.info(f"Processing batch {i + 1}")
+            self._log.info(msg=f"Processing batch {i + 1}")
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
 
             for member in batch:
-                self._log.info(f"ADDING {member['email']} to {member['groupKey']}")
                 batch_request.add(
                     # trunk-ignore(pyright/reportAttributeAccessIssue)
                     self._resource.members().insert(
@@ -266,25 +259,26 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
 
+            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
+
             time.sleep(1)
 
+        return exceptions
+
     def batch_insert_role_assignments(self, role_assignments, customer=None):
-        def callback(request_id, response, exception):
+        def callback(id: str, response: dict, exception: Exception):
             if exception is not None:
-                self._log.error(exception)
-                if exception.status_code == 403:
-                    raise exception
-                elif (
-                    exception.status_code == 409
-                    and exception.reason
-                    != "Role assignment already exists for the role"
-                ):
-                    raise exception
+                self._log.exception(msg=(id, exception))
+                self._exceptions.append((int(id) - 1, exception))
+            else:
+                self._log.info(msg=" ".join([f"{k}={v}" for k, v in response.items()]))
+
+        exceptions = []
 
         batches = self._batch_list(list=role_assignments, size=10)
 
         for i, batch in enumerate(batches):
-            self._log.info(f"Processing batch {i + 1}")
+            self._log.info(msg=f"Processing batch {i + 1}")
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(callback=callback)
@@ -304,4 +298,8 @@ class GoogleDirectoryResource(ConfigurableResource):
                 delay_generator=self.backoff_delay_generator(),
             )
 
+            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
+
             time.sleep(1)
+
+        return exceptions

@@ -1,20 +1,15 @@
 import json
-import pathlib
 
-from teamster.code_locations.kippnewark import CODE_LOCATION
+from teamster.code_locations.kippnewark import CODE_LOCATION, DBT_PROJECT
 from teamster.libraries.dbt.assets import (
     build_dbt_assets,
     build_dbt_external_source_assets,
 )
 from teamster.libraries.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
-manifest = json.loads(
-    s=pathlib.Path(f"src/dbt/{CODE_LOCATION}/target/manifest.json").read_text()
-)
+manifest = json.loads(s=DBT_PROJECT.manifest_path.read_text())
 
-dagster_dbt_translator = CustomDagsterDbtTranslator(
-    asset_key_prefix=CODE_LOCATION, source_asset_key_prefix=CODE_LOCATION
-)
+dagster_dbt_translator = CustomDagsterDbtTranslator(code_location=CODE_LOCATION)
 
 dbt_assets = build_dbt_assets(
     manifest=manifest,
@@ -24,7 +19,7 @@ dbt_assets = build_dbt_assets(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"requests": {"cpu": "1250m"}, "limits": {"cpu": "1250m"}}
+                "resources": {"requests": {"cpu": "1750m"}, "limits": {"cpu": "1750m"}}
             }
         }
     },

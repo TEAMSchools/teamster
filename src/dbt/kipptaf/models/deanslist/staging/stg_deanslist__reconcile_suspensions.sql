@@ -4,7 +4,7 @@ select
     schoolname as school_name,
     studentfirst as student_first_name,
     studentlast as student_last_name,
-    consequence as consequence,
+    consequence,
     attendancebehavior as attendance_behavior,
     submittedfn as submitted_first_name,
     submittedln as submitted_last_name,

@@ -271,9 +271,7 @@ select
         then ar.lunch_status
         when ar.region = 'Miami'
         then ar.lunch_status
-        when ar.region = 'Newark' and ar.rn_year = 1
-        then coalesce(if(tpd.is_directly_certified, 'F', null), ifd.eligibility_name)
-        when ar.region = 'Camden' and ar.rn_year = 1
+        when ar.rn_year = 1
         then coalesce(if(tpd.is_directly_certified, 'F', null), tpd.eligibility_name)
     end as lunch_status,
     case
@@ -281,16 +279,7 @@ select
         then ar.lunch_status
         when ar.region = 'Miami'
         then ar.lunch_status
-        when ar.region = 'Newark' and ar.rn_year = 1
-        then
-            case
-                when tpd.is_directly_certified
-                then 'Direct Certification'
-                when ifd.lunch_application_status is null
-                then 'No Application'
-                else ifd.lunch_application_status
-            end
-        when ar.region = 'Camden' and ar.rn_year = 1
+        when ar.rn_year = 1
         then
             case
                 when tpd.is_directly_certified
@@ -312,8 +301,3 @@ left join
     on ar.student_number = tpd.person_identifier
     and ar.academic_year = tpd.academic_year
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="tpd") }}
-left join
-    {{ ref("stg_titan__income_form_data") }} as ifd
-    on ar.student_number = ifd.student_identifier
-    and ar.academic_year = ifd.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="ifd") }}

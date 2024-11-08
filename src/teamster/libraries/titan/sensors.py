@@ -63,8 +63,10 @@ def build_titan_sftp_sensor(
         try:
             files = ssh_titan.listdir_attr_r(exclude_dirs=exclude_dirs)
         except SSHException as e:
-            context.log.error(msg=e)
-            if "No existing session" in e.args:
+            if (
+                "No existing session" in e.args
+                or "Error reading SSH protocol banner" in e.args
+            ):
                 return SkipReason(str(e))
             else:
                 raise e
@@ -73,9 +75,6 @@ def build_titan_sftp_sensor(
                 return SkipReason(str(e))
             else:
                 raise e
-        except Exception as e:
-            context.log.error(msg=str(e))
-            raise e
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()
