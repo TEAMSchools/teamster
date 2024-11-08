@@ -1,4 +1,16 @@
 with
+    ms_grad_sub as (
+        select
+            _dbt_source_relation,
+            student_number,
+            school_abbreviation as ms_attended,
+            row_number() over (
+                partition by student_number order by exitdate desc
+            ) as rn,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where school_level = 'MS'
+    ),
+
     suspension_type as (
         select penalty_name, 'ISS' as suspension_type,
         from
@@ -116,6 +128,8 @@ select
     gpa.gpa_y1,
 
     ar.att_discrepancy_count,
+
+    ms.ms_attended,
 
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
@@ -235,5 +249,10 @@ left join
     and dli.incident_id = sr.incident_id
     and co.schoolid = sr.schoolid
     and sr.rn_incident = 1
+left join
+    ms_grad_sub as ms
+    on co.student_number = ms.student_number
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="ms") }}
+    and ms.rn = 1
 where
     co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99
