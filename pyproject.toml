@@ -15,6 +15,7 @@ dependencies = [
   "dagster-k8s",
   "dagster-slack",
   "dagster-ssh",
+  "dagster-embedded-elt",
   "dbt-bigquery>=1.8,<1.9",
   "dbt-core>=1.8,<1.9",
   "beautifulsoup4>=4.12.2",
@@ -30,8 +31,6 @@ dependencies = [
   "scikit-learn>=1.4.0",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
-  "dagster-embedded-elt>=0.23.14",
-  "psycopg2-binary>=2.9.9",
   "pypdf>=5.0.0",
 ]
 requires-python = ">=3.12,<3.13"
