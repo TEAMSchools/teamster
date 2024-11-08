@@ -67,33 +67,33 @@ with
     ),
 
     metric_union as (
-        -- select
-        --     'Attendance' as discipline,
-        --     'ADA' as subject,
+        select
+            'Attendance' as discipline,
+            'ADA' as subject,
 
-        --     studentid,
-        --     null as student_number,
-        --     _dbt_source_relation,
-        --     academic_year,
-        --     term_name,
-        --     ada_term_running as metric,
-        -- from attendance
+            studentid,
+            null as student_number,
+            _dbt_source_relation,
+            academic_year,
+            term_name,
+            ada_term_running as metric,
+        from attendance
 
-        -- union all
+        union all
 
-        -- select
-        --     'Attendance' as discipline,
-        --     'Days Absent' as subject,
+        select
+            'Attendance' as discipline,
+            'Days Absent' as subject,
 
-        --     studentid,
-        --     null as student_number,
-        --     _dbt_source_relation,
-        --     academic_year,
-        --     term_name,
-        --     n_absences_y1_running_non_susp as metric,
-        -- from attendance
+            studentid,
+            null as student_number,
+            _dbt_source_relation,
+            academic_year,
+            term_name,
+            n_absences_y1_running_non_susp as metric,
+        from attendance
 
-        -- union all
+        union all
 
         select
             'DIBELS' as discipline,
@@ -101,7 +101,7 @@ with
 
             null as studentid,
             student_number,
-            null as _dbt_source_relation,
+            cast(null as string) as _dbt_source_relation,
             academic_year,
             term_name,
             mclass_measure_standard_level_int as metric,
@@ -127,10 +127,9 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="mu1") }}
 left join
     metric_union as mu2
-    on co.studentid = mu2.studentid
+    on co.student_number = mu2.student_number
     and co.academic_year = mu2.academic_year
     and term_name = mu2.term_name
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="mu2") }}
 -- inner join
 --     {{ ref("stg_reporting__promo_status_cutoffs") }} as c
 --     on mu.discipline = c.discipline
