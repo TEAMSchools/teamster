@@ -2,7 +2,7 @@ select
     w.work_assignment_id,
     w.work_assignment_worker_id as worker_id,
     w.work_assignment_position_id as position_id,
-    w.work_assignment_primary_indicator as primary_indicator,
+    w.work_assignment__primary_indicator as primary_indicator,
     w.work_assignment_start_date,
     w.work_assignment_end_date,
     w.work_assignment_start_timestamp,
