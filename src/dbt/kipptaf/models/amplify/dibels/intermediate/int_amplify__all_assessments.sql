@@ -206,4 +206,41 @@ left join
     probe_eligible_tag as p
     on s.mclass_academic_year = p.mclass_academic_year
     and s.mclass_student_number = p.mclass_student_number
-where s.rn_highest = 1
+where s.assessment_type = 'Benchmark' and s.rn_highest = 1
+
+union all
+
+select
+    s.mclass_academic_year,
+    s.mclass_student_number,
+    s.assessment_type,
+    s.mclass_assessment_grade,
+    s.mclass_assessment_grade_int,
+    s.mclass_period,
+    s.mclass_client_date,
+    s.mclass_sync_date,
+    s.mclass_measure_name,
+    s.mclass_measure_name_code,
+    s.mclass_measure_standard,
+    s.mclass_measure_standard_score,
+    s.mclass_measure_standard_level,
+    s.mclass_measure_standard_level_int,
+    s.mclass_measure_percentile,
+    s.mclass_measure_semester_growth,
+    s.mclass_measure_year_growth,
+    s.mclass_probe_number,
+    s.mclass_total_number_of_probes,
+    s.mclass_score_change,
+
+    p.boy_probe_eligible,
+    p.moy_probe_eligible,
+    p.boy as boy_composite,
+    p.moy as moy_composite,
+    p.eoy as eoy_composite,
+
+from assessments_scores as s
+left join
+    probe_eligible_tag as p
+    on s.mclass_academic_year = p.mclass_academic_year
+    and s.mclass_student_number = p.mclass_student_number
+where s.assessment_type = 'PM'
