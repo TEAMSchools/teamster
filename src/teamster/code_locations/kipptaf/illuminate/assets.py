@@ -7,7 +7,7 @@ from teamster.libraries.dlt_sources.sql_database import sql_database
 
 @dlt_assets(
     dlt_source=sql_database(
-        schema="dna_assessments", table_names=["assessments", "students_assessments"]
+        schema="dna_assessments", table_names=["agg_student_responses_standard"]
     ),
     dlt_pipeline=pipeline(
         pipeline_name="illuminate",
