@@ -53,7 +53,7 @@ google-api-python-client==2.151.0
 google-auth==2.36.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
-google-cloud-bigquery[pandas]==3.26.0
+google-cloud-bigquery[pandas]==3.27.0
 google-cloud-core==2.4.1
 google-cloud-dataproc==5.15.1
 google-cloud-storage==2.18.2
