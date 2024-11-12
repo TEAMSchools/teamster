@@ -3,6 +3,7 @@ select
     student_name,
     student_number,
     school,
+    grade_level,
     team,
     iep_status,
     gender,
