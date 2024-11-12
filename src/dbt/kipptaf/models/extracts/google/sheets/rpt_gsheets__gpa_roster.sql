@@ -31,18 +31,18 @@ from
             co.gender,
             co.lep_status,
             co.is_504,
-            `quarter`,
+            q as quarter,
             gpa.gpa_term,
             gpa.gpa_y1,
 
             coalesce(co.gifted_and_talented, 'N') as gifted_and_talented,
         from {{ ref("int_tableau__student_enrollments") }} as co
-        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as quarter
+        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as q
         left join
             {{ ref("int_powerschool__gpa_term") }} as gpa
             on co.studentid = gpa.studentid
             and co.yearid = gpa.yearid
-            and quarter = gpa.term_name
+            and q = gpa.term_name
             and co.schoolid = gpa.schoolid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
         where
