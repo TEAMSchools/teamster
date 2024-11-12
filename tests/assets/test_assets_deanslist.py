@@ -96,10 +96,10 @@ def test_asset_deanslist_students_kippnewark():
 
 def test_asset_deanslist_behavior_kippnewark():
     from teamster.code_locations.kippnewark.deanslist.assets import (
-        monthly_multi_partitions_assets,
+        fiscal_multi_partitions_assets,
     )
 
-    _test_asset(assets=monthly_multi_partitions_assets, asset_name="behavior")
+    _test_asset(assets=fiscal_multi_partitions_assets, asset_name="behavior")
 
 
 def test_asset_deanslist_homework_kippnewark():
@@ -184,10 +184,10 @@ def test_asset_deanslist_students_kippcamden():
 
 def test_asset_deanslist_behavior_kippcamden():
     from teamster.code_locations.kippcamden.deanslist.assets import (
-        monthly_multi_partitions_assets,
+        fiscal_multi_partitions_assets,
     )
 
-    _test_asset(assets=monthly_multi_partitions_assets, asset_name="behavior")
+    _test_asset(assets=fiscal_multi_partitions_assets, asset_name="behavior")
 
 
 def test_asset_deanslist_homework_kippcamden():
@@ -272,10 +272,10 @@ def test_asset_deanslist_students_kippmiami():
 
 def test_asset_deanslist_behavior_kippmiami():
     from teamster.code_locations.kippmiami.deanslist.assets import (
-        monthly_multi_partitions_assets,
+        fiscal_multi_partitions_assets,
     )
 
-    _test_asset(assets=monthly_multi_partitions_assets, asset_name="behavior")
+    _test_asset(assets=fiscal_multi_partitions_assets, asset_name="behavior")
 
 
 def test_asset_deanslist_homework_kippmiami():
