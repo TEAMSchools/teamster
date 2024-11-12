@@ -22,9 +22,9 @@ from teamster.libraries.deanslist.resources import DeansListResource
 
 
 def build_deanslist_static_partition_asset(
-    code_location,
-    endpoint,
-    api_version,
+    code_location: str,
+    endpoint: str,
+    api_version: str,
     schema,
     partitions_def: StaticPartitionsDefinition | None = None,
     op_tags: dict | None = None,
@@ -66,9 +66,9 @@ def build_deanslist_static_partition_asset(
 
 
 def build_deanslist_multi_partition_asset(
-    code_location,
-    endpoint,
-    api_version,
+    code_location: str,
+    endpoint: str,
+    api_version: str,
     schema,
     partitions_def: MultiPartitionsDefinition,
     op_tags: dict | None = None,
@@ -135,9 +135,9 @@ def build_deanslist_multi_partition_asset(
 
 
 def build_deanslist_paginated_multi_partition_asset(
-    code_location,
-    endpoint,
-    api_version,
+    code_location: str,
+    endpoint: str,
+    api_version: str,
     schema,
     partitions_def: MultiPartitionsDefinition,
     op_tags: dict | None = None,
