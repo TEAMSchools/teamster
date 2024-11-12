@@ -1,8 +1,10 @@
 select
     academic_year_display as academic_year,
+    region,
     student_name,
     student_number,
     school,
+    grade_level,
     team,
     iep_status,
     gender,
@@ -23,6 +25,7 @@ from
     (
         select
             co.academic_year_display,
+            co.region,
             co.school,
             co.grade_level,
             co.team,
