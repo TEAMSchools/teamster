@@ -1,7 +1,6 @@
 from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudResource
 from dagster_embedded_elt.dlt import DagsterDltResource
-from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
 from dagster_fivetran import FivetranResource
 
 from teamster.libraries.adp.workforce_manager.resources import (
@@ -162,25 +161,4 @@ SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_port=EnvVar("LITTLESIS_SFTP_PORT"),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
-)
-
-SLING_RESOURCE = SlingResource(
-    connections=[
-        SlingConnectionResource(
-            name="ILLUMINATE",
-            type="postgres",
-            # trunk-ignore-begin(pyright/reportCallIssue)
-            host=EnvVar("SNOWFLAKE_HOST"),
-            user=EnvVar("SNOWFLAKE_USER"),
-            # trunk-ignore-end(pyright/reportCallIssue)
-        ),
-        SlingConnectionResource(
-            name="BIGQUERY",
-            type="bigquery",
-            # trunk-ignore-begin(pyright/reportCallIssue)
-            host=EnvVar("SNOWFLAKE_HOST"),
-            user=EnvVar("SNOWFLAKE_USER"),
-            # trunk-ignore-end(pyright/reportCallIssue)
-        ),
-    ]
 )

@@ -5,6 +5,7 @@ from dagster import (
     build_sensor_for_freshness_checks,
     load_assets_from_modules,
 )
+from dagster_embedded_elt.dlt import DagsterDltResource
 from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kipptaf import (
@@ -99,6 +100,7 @@ defs = Definitions(
         "db_bigquery": BIGQUERY_RESOURCE,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "dds": resources.DIBELS_DATA_SYSTEM_RESOURCE,
+        "dlt": DagsterDltResource(),
         "fivetran": resources.FIVETRAN_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,

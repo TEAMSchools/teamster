@@ -119,6 +119,9 @@ prompt-toolkit==3.0.36
 proto-plus==1.25.0
 protobuf==4.25.5
 psutil==6.1.0; platform_system == "Windows"
+psycopg-binary==3.2.3; implementation_name != "pypy"
+psycopg-pool==3.2.3
+psycopg[binary,pool]==3.2.3
 py-avro-schema==3.8.2
 pyarrow==18.0.0
 pyasn1==0.6.1
