@@ -1,3 +1,5 @@
+import re
+
 import pendulum
 from dagster import (
     AssetExecutionContext,
@@ -20,9 +22,9 @@ from teamster.libraries.deanslist.resources import DeansListResource
 
 
 def build_deanslist_static_partition_asset(
-    asset_key,
-    api_version,
+    code_location,
     endpoint,
+    api_version,
     schema,
     partitions_def: StaticPartitionsDefinition | None = None,
     op_tags: dict | None = None,
@@ -30,6 +32,12 @@ def build_deanslist_static_partition_asset(
 ) -> AssetsDefinition:
     if params is None:
         params = {}
+
+    asset_key = [
+        code_location,
+        "deanslist",
+        re.sub(pattern=r"\W", repl="_", string=endpoint),
+    ]
 
     @asset(
         key=asset_key,
@@ -42,19 +50,14 @@ def build_deanslist_static_partition_asset(
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
-        endpoint_content = deanslist.get(
+        total_count, data = deanslist.get(
             api_version=api_version,
             endpoint=endpoint,
             school_id=int(context.partition_key),
             params=params,
         )
 
-        data = endpoint_content["data"]
-
-        yield Output(
-            value=(data, schema), metadata={"records": endpoint_content["row_count"]}
-        )
-
+        yield Output(value=(data, schema), metadata={"records": total_count})
         yield check_avro_schema_valid(
             asset_key=context.asset_key, records=data, schema=schema
         )
@@ -63,9 +66,9 @@ def build_deanslist_static_partition_asset(
 
 
 def build_deanslist_multi_partition_asset(
-    asset_key,
-    api_version,
+    code_location,
     endpoint,
+    api_version,
     schema,
     partitions_def: MultiPartitionsDefinition,
     op_tags: dict | None = None,
@@ -73,6 +76,12 @@ def build_deanslist_multi_partition_asset(
 ) -> AssetsDefinition:
     if params is None:
         params = {}
+
+    asset_key = [
+        code_location,
+        "deanslist",
+        re.sub(pattern=r"\W", repl="_", string=endpoint),
+    ]
 
     @asset(
         key=asset_key,
@@ -90,18 +99,18 @@ def build_deanslist_multi_partition_asset(
         )
         partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
 
-        partition_keys_by_dimension = partition_key.keys_by_dimension
-
         date_partition_def = partitions_def.get_partitions_def_for_dimension("date")
         date_partition_key = pendulum.from_format(
-            string=partition_keys_by_dimension["date"], fmt="YYYY-MM-DD"
+            string=partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
         )
-
-        request_params = {"UpdatedSince": date_partition_key.to_date_string(), **params}
 
         date_partition_key_fy = FiscalYear(datetime=date_partition_key, start_month=7)
 
-        request_params["StartDate"] = date_partition_key_fy.start.to_date_string()
+        request_params = {
+            "UpdatedSince": date_partition_key.to_date_string(),
+            "StartDate": date_partition_key_fy.start.to_date_string(),
+            **params,
+        }
 
         if isinstance(date_partition_def, MonthlyPartitionsDefinition):
             request_params["EndDate"] = date_partition_key.end_of(
@@ -110,18 +119,67 @@ def build_deanslist_multi_partition_asset(
         elif isinstance(date_partition_def, FiscalYearPartitionsDefinition):
             request_params["EndDate"] = date_partition_key_fy.end.to_date_string()
 
-        endpoint_content = deanslist.get(
+        total_count, data = deanslist.get(
             api_version=api_version,
             endpoint=endpoint,
-            school_id=int(partition_keys_by_dimension["school"]),
+            school_id=int(partition_key.keys_by_dimension["school"]),
             params=request_params,
         )
 
-        data = endpoint_content["data"]
-        row_count = endpoint_content["row_count"]
+        yield Output(value=(data, schema), metadata={"records": total_count})
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=data, schema=schema
+        )
 
-        yield Output(value=(data, schema), metadata={"records": row_count})
+    return _asset
 
+
+def build_deanslist_paginated_multi_partition_asset(
+    code_location,
+    endpoint,
+    api_version,
+    schema,
+    partitions_def: MultiPartitionsDefinition,
+    op_tags: dict | None = None,
+    params: dict | None = None,
+) -> AssetsDefinition:
+    if params is None:
+        params = {}
+
+    asset_key = [code_location, "deanslist", "behavior"]
+
+    @asset(
+        key=asset_key,
+        metadata=params,
+        io_manager_key="io_manager_gcs_avro",
+        partitions_def=partitions_def,
+        op_tags=op_tags,
+        group_name="deanslist",
+        kinds={"python"},
+        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
+    )
+    def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
+        partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
+
+        date_partition_key = pendulum.from_format(
+            string=partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
+        )
+
+        date_partition_key_fy = FiscalYear(datetime=date_partition_key, start_month=7)
+
+        total_count, data = deanslist.list(
+            api_version=api_version,
+            endpoint=endpoint,
+            school_id=int(partition_key.keys_by_dimension["school"]),
+            params={
+                "UpdatedSince": date_partition_key.to_date_string(),
+                "StartDate": date_partition_key_fy.start.to_date_string(),
+                "EndDate": date_partition_key_fy.end.to_date_string(),
+                **params,
+            },
+        )
+
+        yield Output(value=(data, schema), metadata={"records": total_count})
         yield check_avro_schema_valid(
             asset_key=context.asset_key, records=data, schema=schema
         )

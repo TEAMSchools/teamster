@@ -1,5 +1,3 @@
-import gc
-
 import yaml
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from pydantic import PrivateAttr
@@ -24,7 +22,7 @@ class DeansListResource(ConfigurableResource):
         with open(self.api_key_map) as f:
             self._api_key_map = yaml.safe_load(f)["api_key_map"]
 
-    def _get_url(self, api_version, endpoint, *args):
+    def _get_url(self, api_version: str, endpoint: str, *args):
         if api_version == "beta":
             return (
                 f"{self._base_url}/{api_version}/export/get-{endpoint}"
@@ -36,7 +34,11 @@ class DeansListResource(ConfigurableResource):
         else:
             return f"{self._base_url}/{api_version}/{endpoint}"
 
-    def _request(self, method, url, params, **kwargs):
+    def _request(self, method: str, url: str, school_id: int, params: dict, **kwargs):
+        self._log.info(f"GET:\t{url}\nSCHOOL_ID:\t{school_id}\nPARAMS:\t{params}")
+
+        params["apikey"] = self._api_key_map[school_id]
+
         try:
             response = self._session.request(
                 method=method,
@@ -46,48 +48,78 @@ class DeansListResource(ConfigurableResource):
                 **kwargs,
             )
 
+            params.pop("apikey")
+
             response.raise_for_status()
             return response
         except HTTPError as e:
+            params.pop("apikey")
+
             self._log.exception(e)
             raise e
 
-    def _parse_response(self, response):
-        response_json = response.json()
-        del response
-        gc.collect()
+    def get(
+        self,
+        api_version: str,
+        endpoint: str,
+        school_id: int,
+        params: dict,
+        *args,
+        **kwargs,
+    ):
+        url = self._get_url(*args, api_version=api_version, endpoint=endpoint)
 
-        row_count = response_json.get("rowcount", 0)
-        deleted_row_count = response_json.get("deleted_rowcount", 0)
+        response_json: dict = self._request(
+            method="GET", url=url, school_id=school_id, params=params, **kwargs
+        ).json()
 
-        total_row_count = row_count + deleted_row_count
+        total_row_count = response_json.get("rowcount", 0) + response_json.get(
+            "deleted_rowcount", 0
+        )
 
         data = response_json.get("data", [])
-        deleted_data = response_json.get("deleted_data", [])
 
         if isinstance(data, dict):
             data = [data]
             total_row_count = 1
 
+        deleted_data = response_json.get("deleted_data", [])
+
         for d in deleted_data:
             d["is_deleted"] = True
 
-        del response_json
-        gc.collect()
-
         all_data = data + deleted_data
 
-        return {"row_count": total_row_count, "data": all_data}
+        return total_row_count, all_data
 
-    def get(self, api_version, endpoint, school_id, params, *args, **kwargs):
+    def list(
+        self,
+        api_version: str,
+        endpoint: str,
+        school_id: int,
+        params: dict,
+        page_size: int = 250000,
+        *args,
+        **kwargs,
+    ):
+        page = 1
+        total_pages = 2
+        total_count = 0
+        data = []
+
         url = self._get_url(*args, api_version=api_version, endpoint=endpoint)
 
-        self._log.info(f"GET:\t{url}\nSCHOOL_ID:\t{school_id}\nPARAMS:\t{params}")
+        while page <= total_pages:
+            params.update({"page_size": page_size, "page": page})
 
-        params["apikey"] = self._api_key_map[school_id]
+            response_json = self._request(
+                method="GET", url=url, school_id=school_id, params=params, **kwargs
+            ).json()
 
-        response = self._request(method="GET", url=url, params=params, **kwargs)
+            data.extend(response_json["data"])
 
-        response.raise_for_status()
+            total_count = response_json["total_count"]
+            total_pages = response_json["total_pages"]
+            page += 1
 
-        return self._parse_response(response)
+        return total_count, data
