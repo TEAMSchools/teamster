@@ -31,18 +31,18 @@ from
             co.gender,
             co.lep_status,
             co.is_504,
-            q as quarter,
+            term,
             gpa.gpa_term,
             gpa.gpa_y1,
 
             coalesce(co.gifted_and_talented, 'N') as gifted_and_talented,
         from {{ ref("int_tableau__student_enrollments") }} as co
-        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as q
+        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
         left join
             {{ ref("int_powerschool__gpa_term") }} as gpa
             on co.studentid = gpa.studentid
             and co.yearid = gpa.yearid
-            and q = gpa.term_name
+            and term = gpa.term_name
             and co.schoolid = gpa.schoolid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
         where
@@ -51,5 +51,5 @@ from
             and co.grade_level >= 5
     ) pivot (
         max(gpa_term) as gpa_term,
-        max(gpa_y1) as gpa_y1 for quarter in ('Q1', 'Q2', 'Q3', 'Q4')
+        max(gpa_y1) as gpa_y1 for term in ('Q1', 'Q2', 'Q3', 'Q4')
     )
