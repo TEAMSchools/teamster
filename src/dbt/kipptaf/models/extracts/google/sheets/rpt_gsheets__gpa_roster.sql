@@ -31,7 +31,7 @@ from
             co.gender,
             co.lep_status,
             co.is_504,
-            quarter,
+            `quarter`,
             gpa.gpa_term,
             gpa.gpa_y1,
 
