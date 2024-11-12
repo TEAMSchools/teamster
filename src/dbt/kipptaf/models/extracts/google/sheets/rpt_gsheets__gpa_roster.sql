@@ -3,6 +3,7 @@ select
     student_name,
     student_number,
     school,
+    team,
     iep_status,
     gender,
     lep_status,
