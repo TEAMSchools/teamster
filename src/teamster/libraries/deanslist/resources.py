@@ -102,10 +102,10 @@ class DeansListResource(ConfigurableResource):
         *args,
         **kwargs,
     ):
-        page = 1
-        total_pages = 2
-        total_count = 0
-        data = []
+        page: int = 1
+        total_pages: int = 2
+        total_count: int = 0
+        data: list[dict] = []
 
         url = self._get_url(*args, api_version=api_version, endpoint=endpoint)
 
@@ -116,10 +116,10 @@ class DeansListResource(ConfigurableResource):
                 method="GET", url=url, school_id=school_id, params=params, **kwargs
             ).json()
 
-            data.extend(response_json["data"])
-
             total_count = response_json["total_count"]
             total_pages = response_json["total_pages"]
+            data.extend(response_json["data"])
+
             page += 1
 
-        return total_count, data
+        return int(total_count), data
