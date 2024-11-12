@@ -49,7 +49,6 @@ config_dir = pathlib.Path(__file__).parent / "config"
 static_partitions_assets = [
     build_deanslist_static_partition_asset(
         code_location=CODE_LOCATION,
-        endpoint=e["endpoint"],
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_STATIC_PARTITIONS_DEF,
         **e,
@@ -62,7 +61,6 @@ static_partitions_assets = [
 monthly_multi_partitions_assets = [
     build_deanslist_multi_partition_asset(
         code_location=CODE_LOCATION,
-        endpoint=e["endpoint"],
         api_version="v1",
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF,
@@ -76,7 +74,7 @@ monthly_multi_partitions_assets = [
 fiscal_multi_partitions_assets = [
     build_deanslist_multi_partition_asset(
         code_location=CODE_LOCATION,
-        endpoint=e["endpoint"],
+        api_version="v1",
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
         **e,
