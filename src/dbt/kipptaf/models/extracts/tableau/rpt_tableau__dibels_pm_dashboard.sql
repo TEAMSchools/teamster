@@ -135,6 +135,42 @@ with
             )
     ),
 
+    max_score as (
+        select
+            s.academic_year,
+            s.student_number,
+            s.grade_level,
+            s.expected_test,
+            s.expected_round,
+            s.expected_mclass_measure_standard,
+            s.goal,
+
+            a.mclass_period,
+            a.mclass_measure_standard,
+            a.mclass_measure_standard_score,
+            a.mclass_client_date,
+
+            row_number() over (
+                partition by
+                    s.academic_year,
+                    s.student_number,
+                    s.expected_test,
+                    s.expected_round,
+                    s.expected_mclass_measure_standard
+                order by a.mclass_measure_standard_score desc
+            ) as rn_highest,
+
+        from students as s
+        left join
+            {{ ref("int_amplify__all_assessments") }} as a
+            on s.academic_year = a.mclass_academic_year
+            and s.student_number = a.mclass_student_number
+            and s.expected_test = a.mclass_period
+            and s.expected_mclass_measure_standard = a.mclass_measure_standard
+            and a.mclass_client_date between s.start_date and s.end_date
+            and a.assessment_type = 'PM'
+    ),
+
     met_overall_goal_or_bm_g1 as (
         select
             s.academic_year,
@@ -157,16 +193,16 @@ with
 
         from students as s
         left join
-            {{ ref("int_amplify__all_assessments") }} as a
-            on s.academic_year = a.mclass_academic_year
-            and s.student_number = a.mclass_student_number
+            max_score as a
+            on s.academic_year = a.academic_year
+            and s.student_number = a.student_number
             and s.expected_test = a.mclass_period
             and s.expected_mclass_measure_standard = a.mclass_measure_standard
             and a.mclass_client_date between s.start_date and s.end_date
-            and a.assessment_type = 'PM'
         where
             s.goal_filter in ('1BOY->MOY3', '1BOY->MOY4')
             and a.mclass_measure_standard_score is not null
+            and a.rn_highest = 1
     ),
 
     met_overall_goal_calculation_g1 as (
