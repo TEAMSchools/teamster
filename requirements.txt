@@ -153,7 +153,7 @@ tenacity==9.0.0
 text-unidecode==1.3
 threadpoolctl==3.5.0
 time-machine==2.16.0; implementation_name != "pypy"
-tomli==2.0.2
+tomli==2.1.0
 toposort==1.10
 tqdm==4.67.0
 typeguard==4.4.1
