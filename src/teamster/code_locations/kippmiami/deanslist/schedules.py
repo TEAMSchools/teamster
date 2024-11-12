@@ -12,7 +12,7 @@ from teamster.code_locations.kippmiami.deanslist.assets import (
 from teamster.libraries.deanslist.schedules import build_deanslist_job_schedule
 
 deanslist_static_partitions_assets_job_schedule = build_deanslist_job_schedule(
-    job_name=f"{CODE_LOCATION}__deanslist____static_partitions_assets_job",
+    job_name=f"{CODE_LOCATION}__deanslist__static_partitions_assets_job",
     selection=static_partitions_assets,
     partitions_def=DEANSLIST_STATIC_PARTITIONS_DEF,
     cron_schedule="0 0 * * *",
