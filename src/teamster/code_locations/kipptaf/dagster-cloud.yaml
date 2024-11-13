@@ -381,6 +381,36 @@ locations:
                   secretKeyRef:
                     name: op-slack-api
                     key: credential
+              - name: SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: database
+              - name: SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: driver
+              - name: SOURCES__SQL_DATABASE__CREDENTIALS__HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: ip
+              - name: SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: password
+              - name: SOURCES__SQL_DATABASE__CREDENTIALS__PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: port
+              - name: SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: username
         run_k8s_config:
           container_config:
             resources:
