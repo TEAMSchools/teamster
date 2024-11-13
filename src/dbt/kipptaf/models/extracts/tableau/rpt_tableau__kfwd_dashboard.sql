@@ -276,6 +276,27 @@ select
     ei.ugrad_competitiveness_ranking,
     ei.ugrad_status,
 
+    gc.is_4yr_ba_grad_int,
+    gc.is_5yr_ba_grad_int,
+    gc.is_6yr_ba_grad_int,
+    gc.is_2yr_aa_grad_int,
+    gc.is_3yr_aa_grad_int,
+    gc.is_4yr_aa_grad_int,
+    gc.is_5yr_aa_grad_int,
+    gc.is_6yr_aa_grad_int,
+    gc.is_1yr_cte_grad_int,
+    gc.is_2yr_cte_grad_int,
+    gc.is_3yr_cte_grad_int,
+    gc.is_4yr_cte_grad_int,
+    gc.is_5yr_cte_grad_int,
+    gc.is_6yr_cte_grad_int,
+    gc.is_grad_ever,
+    gc.is_6yr_ugrad_cte_grad_int,
+    gc.is_24yo_ugrad_cte_grad_int,
+    gc.is_4yr_ugrad_grad_int,
+    gc.is_5yr_ugrad_grad_int,
+    gc.is_6yr_ugrad_grad_int,
+
     apps.name as application_name,
     apps.account_type as application_account_type,
 
@@ -443,161 +464,6 @@ select
         then '<2.00'
     end as hs_gpa_bands,
 
-    if(
-        ei.ba_status = 'Graduated'
-        and ei.ba_actual_end_date <= date((c.ktc_cohort + 4), 08, 31),
-        1,
-        0
-    ) as is_4yr_ba_grad_int,
-
-    if(
-        ei.ba_status = 'Graduated'
-        and ei.ba_actual_end_date <= date((c.ktc_cohort + 5), 08, 31),
-        1,
-        0
-    ) as is_5yr_ba_grad_int,
-
-    if(
-        ei.ba_status = 'Graduated'
-        and ei.ba_actual_end_date <= date((c.ktc_cohort + 6), 08, 31),
-        1,
-        0
-    ) as is_6yr_ba_grad_int,
-
-    if(
-        ei.aa_status = 'Graduated'
-        and ei.aa_actual_end_date <= date((c.ktc_cohort + 2), 08, 31),
-        1,
-        0
-    ) as is_2yr_aa_grad_int,
-
-    if(
-        ei.aa_status = 'Graduated'
-        and ei.aa_actual_end_date <= date((c.ktc_cohort + 3), 08, 31),
-        1,
-        0
-    ) as is_3yr_aa_grad_int,
-
-    if(
-        ei.aa_status = 'Graduated'
-        and ei.aa_actual_end_date <= date((c.ktc_cohort + 4), 08, 31),
-        1,
-        0
-    ) as is_4yr_aa_grad_int,
-
-    if(
-        ei.aa_status = 'Graduated'
-        and ei.aa_actual_end_date <= date((c.ktc_cohort + 5), 08, 31),
-        1,
-        0
-    ) as is_5yr_aa_grad_int,
-
-    if(
-        ei.aa_status = 'Graduated'
-        and ei.aa_actual_end_date <= date((c.ktc_cohort + 6), 08, 31),
-        1,
-        0
-    ) as is_6yr_aa_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 1), 08, 31),
-        1,
-        0
-    ) as is_1yr_cte_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 2), 08, 31),
-        1,
-        0
-    ) as is_2yr_cte_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 3), 08, 31),
-        1,
-        0
-    ) as is_3yr_cte_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 4), 08, 31),
-        1,
-        0
-    ) as is_4yr_cte_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 5), 08, 31),
-        1,
-        0
-    ) as is_5yr_cte_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 6), 08, 31),
-        1,
-        0
-    ) as is_6yr_cte_grad_int,
-
-    if(
-        ei.ugrad_status = 'Graduated'
-        and ei.ugrad_actual_end_date <= current_date('{{ var("local_timezone") }}'),
-        1,
-        0
-    ) as is_grad_ever,
-
-    case
-        when
-            ei.ugrad_status = 'Graduated'
-            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
-        then 1
-        when
-            ei.cte_status = 'Graduated'
-            and ei.cte_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
-        then 1
-        else 0
-    end as is_6yr_ugrad_cte_grad_int,
-
-    case
-        when
-            ei.ugrad_status = 'Graduated'
-            and ei.ugrad_actual_end_date
-            <= date_add(c.contact_birthdate, interval 25 year)
-        then 1
-        when
-            ei.cte_status = 'Graduated'
-            and ei.cte_actual_end_date
-            <= date_add(c.contact_birthdate, interval 25 year)
-        then 1
-        else 0
-    end as is_24yo_ugrad_cte_grad_int,
-
-    case
-        when
-            ei.ugrad_status = 'Graduated'
-            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
-        then 1
-        else 0
-    end as is_4yr_ugrad_grad_int,
-
-    case
-        when
-            ei.ugrad_status = 'Graduated'
-            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 5), 08, 31)
-        then 1
-        else 0
-    end as is_5yr_ugrad_grad_int,
-
-    case
-        when
-            ei.ugrad_status = 'Graduated'
-            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
-        then 1
-        else 0
-    end as is_6yr_ugrad_grad_int,
-
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
     ) as prev_spr_semester_credits_earned,
@@ -715,9 +581,8 @@ select
             and ar.n_68_plus_ecc_submitted >= 2
             and ar.n_meets_full_need_68plus_ecc_ea_ed_submitted >= 1
         then 1
-        when
-            cf.best_guess_pathway = '4-year'
-        else 0 
+        -- when cf.best_guess_pathway = '4-year' and
+        else 0
     end as is_submitted_quality_bar_int,
 
     if(
@@ -739,6 +604,7 @@ left join
     and not apps.transfer_application
     and apps.rn_app_enr = 1
 left join {{ ref("int_kippadb__app_rollup") }} as ar on c.contact_id = ar.applicant
+left join {{ ref("int_kippadb__grad_calcs") }} as gc on c.contact_id = gc.contact_id
 left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cnr
     on c.contact_id = cnr.contact_id
