@@ -59,7 +59,7 @@ google-cloud-dataproc==5.15.1
 google-cloud-storage==2.18.2
 google-crc32c==1.6.0
 google-resumable-media==2.7.2
-googleapis-common-protos[grpc]==1.65.0
+googleapis-common-protos[grpc]==1.66.0
 greenlet==3.1.1; (platform_machine == "win32" or platform_machine == "WIN32" or platform_machine == "AMD64" or platform_machine == "amd64" or platform_machine == "x86_64" or platform_machine == "ppc64le" or platform_machine == "aarch64") and python_version < "3.13"
 grpc-google-iam-v1==0.13.1
 grpcio==1.67.1
