@@ -66,13 +66,64 @@ with
         where assessment_type = 'Benchmark' and mclass_measure_name_code = 'Composite'
     ),
 
-    metric_union as (
+    fg_credits as (
+        select
+            _dbt_source_relation,
+            studentid,
+            academic_year,
+            schoolid,
+            storecode,
+
+            sum(potential_credit_hours) as enrolled_credit_hours,
+
+            sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) as n_failing,
+            sum(
+                if(
+                    y1_letter_grade_adjusted in ('F', 'F*')
+                    and credittype in ('ENG', 'MATH', 'SCI', 'SOC'),
+                    1,
+                    0
+                )
+            ) as n_failing_core,
+            sum(
+                if(
+                    {# TODO: exclude credits if current year Y1 is stored #}
+                    y1_letter_grade_adjusted not in ('F', 'F*'),
+                    potential_credit_hours,
+                    null
+                )
+            ) as projected_credits_y1_term,
+        from {{ ref("base_powerschool__final_grades") }}
+        group by _dbt_source_relation, studentid, academic_year, schoolid, storecode
+    ),
+
+    credits as (
+        select
+            fg._dbt_source_relation,
+            fg.studentid,
+            fg.academic_year,
+            fg.storecode,
+            fg.enrolled_credit_hours,
+            fg.n_failing,
+            fg.n_failing_core,
+            fg.projected_credits_y1_term,
+
+            coalesce(fg.projected_credits_y1_term, 0)
+            + coalesce(gc.earned_credits_cum, 0) as projected_credits_cum,
+        from fg_credits as fg
+        left join
+            {{ ref("int_powerschool__gpa_cumulative") }} as gc
+            on fg.studentid = gc.studentid
+            and fg.schoolid = gc.schoolid
+            and {{ union_dataset_join_clause(left_alias="fg", right_alias="gc") }}
+    ),
+
+    metric_union_sid as (
         select
             'Attendance' as discipline,
             'ADA' as subject,
 
             studentid,
-            null as student_number,
             _dbt_source_relation,
             academic_year,
             term_name,
@@ -86,7 +137,6 @@ with
             'Days Absent' as subject,
 
             studentid,
-            null as student_number,
             _dbt_source_relation,
             academic_year,
             term_name,
@@ -96,48 +146,126 @@ with
         union all
 
         select
+            'Credits' as discipline,
+            'Failing Core' as subject,
+
+            studentid,
+            _dbt_source_relation,
+            academic_year,
+            storecode as term_name,
+            n_failing_core as metric,
+        from credits
+
+        union all
+
+        select
+            'Credits' as discipline,
+            'Projected' as subject,
+
+            studentid,
+            _dbt_source_relation,
+            academic_year,
+            storecode as term_name,
+            projected_credits_cum as metric,
+        from credits
+    ),
+
+    metric_union_sn as (
+        select
             'DIBELS' as discipline,
             'Benchmark' as subject,
 
-            null as studentid,
             student_number,
-            cast(null as string) as _dbt_source_relation,
             academic_year,
             term_name,
             mclass_measure_standard_level_int as metric,
         from mclass
         where rn_composite = 1
+
+        union all
+
+        select
+            'i-Ready' as discipline,
+            i.subject,
+
+            i.student_id as student_number,
+            i.academic_year_int as academic_year,
+            term_name,
+            i.most_recent_overall_relative_placement_int as metric,
+        from {{ ref("base_iready__diagnostic_results") }} as i
+        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name
+    ),
+
+    identifiers as (
+        select
+            co.student_number,
+            co.academic_year,
+            co.grade_level,
+            co.is_self_contained,
+            co.special_education_code,
+
+            ps.discipline,
+            ps.subject,
+            ps.code as term_name,
+            ps.cutoff,
+
+            mu.metric,
+        from {{ ref("base_powerschool__student_enrollments") }} as co
+        inner join
+            {{ ref("stg_reporting__promo_status_cutoffs") }} as ps
+            on co.academic_year = ps.academic_year
+            and co.region = ps.region
+            and co.grade_level = ps.grade_level
+            and ps.domain = 'Promotion'
+            and ps.type = 'studentid'
+        left join
+            metric_union_sid as mu
+            on co.studentid = mu.studentid
+            and co.academic_year = mu.academic_year
+            and ps.code = mu.term_name
+            and ps.discipline = mu.discipline
+            and ps.subject = mu.subject
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="mu") }}
+
+        union all
+
+        select
+            co.student_number,
+            co.academic_year,
+            co.grade_level,
+            co.is_self_contained,
+            co.special_education_code,
+
+            ps.discipline,
+            ps.subject,
+            ps.code as term_name,
+            ps.cutoff,
+
+            mu.metric,
+        from {{ ref("base_powerschool__student_enrollments") }} as co
+        inner join
+            {{ ref("stg_reporting__promo_status_cutoffs") }} as ps
+            on co.academic_year = ps.academic_year
+            and co.region = ps.region
+            and co.grade_level = ps.grade_level
+            and ps.domain = 'Promotion'
+            and ps.type = 'student_number'
+        left join
+            metric_union_sn as mu
+            on co.student_number = mu.student_number
+            and co.academic_year = mu.academic_year
+            and ps.code = mu.term_name
+            and ps.discipline = mu.discipline
+            and ps.subject = mu.subject
     )
 
 select
-    co.student_number,
-    co.grade_level,
-    co.academic_year,
-    term_name,
-    coalesce(mu1.discipline, mu2.discipline) as discipline,
-    coalesce(mu1.subject, mu2.subject) as subject,
-    coalesce(mu1.metric, mu2.metric) as metric,
-from {{ ref("base_powerschool__student_enrollments") }} as co
-cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name
-left join
-    metric_union as mu1
-    on co.studentid = mu1.studentid
-    and co.academic_year = mu1.academic_year
-    and term_name = mu1.term_name
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="mu1") }}
-left join
-    metric_union as mu2
-    on co.student_number = mu2.student_number
-    and co.academic_year = mu2.academic_year
-    and term_name = mu2.term_name
--- inner join
---     {{ ref("stg_reporting__promo_status_cutoffs") }} as c
---     on mu.discipline = c.discipline
---     and mu.subject = c.subject
---     and mu.academic_year = c.academic_year
---     and mu.term_name = c.code
---     and mu.region = c.region
---     and co.grade_level = c.grade_level
-where co.rn_year = 1
-and co.grade_level != 99
-and co.academic_year = {{ var('current_academic_year') }}
+    *,
+    case
+        when discipline = 'Attendance' and subject = 'Days Absent' and cutoff <= metric
+        then true
+        when cutoff >= metric
+        then true
+        else false
+    end as is_off_track,
+from identifiers

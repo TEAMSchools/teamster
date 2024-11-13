@@ -50,6 +50,16 @@ with
             ) as most_recent_overall_relative_placement,
 
             max(
+                if(
+                    most_recent_diagnostic_ytd_y_n = 'Y',
+                    overall_relative_placement_int,
+                    null
+                )
+            ) over (
+                partition by _dbt_source_relation, student_id, academic_year, `subject`
+            ) as most_recent_overall_relative_placement_int,
+
+            max(
                 if(most_recent_diagnostic_ytd_y_n = 'Y', overall_placement, null)
             ) over (
                 partition by _dbt_source_relation, student_id, academic_year, `subject`
@@ -104,6 +114,7 @@ select
     dr.annual_stretch_growth_measure,
     dr.most_recent_overall_scale_score,
     dr.most_recent_overall_relative_placement,
+    dr.most_recent_overall_relative_placement_int,
     dr.most_recent_overall_placement,
     dr.most_recent_diagnostic_gain,
     dr.most_recent_lexile_measure,
