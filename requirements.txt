@@ -49,7 +49,7 @@ filelock==3.16.1
 fsspec==2024.10.0; python_version >= "3.12"
 github3-py==4.0.1
 google-api-core[grpc]==2.22.0
-google-api-python-client==2.151.0
+google-api-python-client==2.153.0
 google-auth==2.36.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
