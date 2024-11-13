@@ -1,4 +1,3 @@
-# flake8: noqa
 import os
 from typing import Any
 
@@ -8,7 +7,6 @@ import sqlalchemy as sa
 from dlt.common import pendulum
 from dlt.sources.credentials import ConnectionStringCredentials
 from dlt.sources.sql_database import Table, sql_database, sql_table
-from sqlalchemy.sql.sqltypes import TypeEngine
 
 
 def load_select_tables_from_database() -> None:
@@ -132,7 +130,7 @@ def select_columns() -> None:
         if table.name == "family":
             # this is SqlAlchemy table. _columns are writable
             # let's drop updated column
-            table._columns.remove(table.columns["updated"])  # type: ignore
+            table._columns.remove(table.columns["updated"])
 
     family = sql_table(
         credentials="mysql+pymysql://rfamro@mysql-rfam-public.ebi.ac.uk:4497/Rfam",
@@ -240,7 +238,6 @@ def create_unsw_flow() -> None:
 
 def test_connectorx_speed() -> None:
     """Uses unsw_flow dataset (~2mln rows, 25+ columns) to test connectorx speed"""
-    import os
 
     # from dlt.destinations import filesystem
 
