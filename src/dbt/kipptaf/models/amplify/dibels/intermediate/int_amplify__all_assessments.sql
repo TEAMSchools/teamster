@@ -78,6 +78,7 @@ with
                 partition by academic_year, student_id order by `date`
             ) as rn_distinct,
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }}
+
         where
             mclass_measure_standard
             in ('Reading Fluency (ORF)', 'Reading Comprehension (Maze)', 'Composite')
@@ -85,17 +86,17 @@ with
         union all
 
         select
-            academic_year as mclass_academic_year,
-            student_primary_id as mclass_student_number,
-            assessment_grade as mclass_assessment_grade,
-            assessment_grade_int as mclass_assessment_grade_int,
-            pm_period as mclass_period,
-            client_date as mclass_client_date,
-            sync_date as mclass_sync_date,
-            mclass_measure_name,
-            mclass_measure_name_code,
-            measure as mclass_measure_standard,
-            mclass_measure_standard_score,
+            p.academic_year as mclass_academic_year,
+            p.student_primary_id as mclass_student_number,
+            p.assessment_grade as mclass_assessment_grade,
+            p.assessment_grade_int as mclass_assessment_grade_int,
+            p.pm_period as mclass_period,
+            p.client_date as mclass_client_date,
+            p.sync_date as mclass_sync_date,
+            p.mclass_measure_name,
+            p.mclass_measure_name_code,
+            p.measure as mclass_measure_standard,
+            p.mclass_measure_standard_score,
 
             'NA' as mclass_measure_standard_level,
 
@@ -106,22 +107,30 @@ with
             'NA' as mclass_measure_year_growth,
             'PM' as assessment_type,
 
-            probe_number as mclass_probe_number,
-            total_number_of_probes as mclass_total_number_of_probes,
-            mclass_measure_standard_score_change,
+            p.probe_number as mclass_probe_number,
+            p.total_number_of_probes as mclass_total_number_of_probes,
+            p.mclass_measure_standard_score_change,
 
             row_number() over (
-                partition by surrogate_key, measure
-                order by mclass_measure_standard_score desc
+                partition by p.surrogate_key, p.measure, a.pm_round
+                order by p.mclass_measure_standard_score desc
             ) as rn_highest,
 
             row_number() over (
-                partition by academic_year, student_primary_id order by client_date
+                partition by p.academic_year, p.student_primary_id
+                order by p.client_date
             ) as rn_distinct,
-        from {{ ref("stg_amplify__pm_student_summary") }}
+        from {{ ref("stg_amplify__pm_student_summary") }} as p
+        inner join
+            {{ ref("stg_amplify__dibels_pm_expectations") }} as a
+            on p.academic_year = a.academic_year
+            and p.region = a.region
+            and p.assessment_grade_int = a.grade_level
+            and p.measure = a.measure_standard
+            and p.client_date between a.start_date and a.end_date
         where
-            academic_year >= {{ var("current_academic_year") - 1 }}
-            and enrollment_grade = assessment_grade
+            p.academic_year >= {{ var("current_academic_year") - 1 }}
+            and p.enrollment_grade = p.assessment_grade
     ),
 
     composite_only as (
@@ -206,41 +215,4 @@ left join
     probe_eligible_tag as p
     on s.mclass_academic_year = p.mclass_academic_year
     and s.mclass_student_number = p.mclass_student_number
-where s.assessment_type = 'Benchmark' and s.rn_highest = 1
-
-union all
-
-select
-    s.mclass_academic_year,
-    s.mclass_student_number,
-    s.assessment_type,
-    s.mclass_assessment_grade,
-    s.mclass_assessment_grade_int,
-    s.mclass_period,
-    s.mclass_client_date,
-    s.mclass_sync_date,
-    s.mclass_measure_name,
-    s.mclass_measure_name_code,
-    s.mclass_measure_standard,
-    s.mclass_measure_standard_score,
-    s.mclass_measure_standard_level,
-    s.mclass_measure_standard_level_int,
-    s.mclass_measure_percentile,
-    s.mclass_measure_semester_growth,
-    s.mclass_measure_year_growth,
-    s.mclass_probe_number,
-    s.mclass_total_number_of_probes,
-    s.mclass_score_change,
-
-    p.boy_probe_eligible,
-    p.moy_probe_eligible,
-    p.boy as boy_composite,
-    p.moy as moy_composite,
-    p.eoy as eoy_composite,
-
-from assessments_scores as s
-left join
-    probe_eligible_tag as p
-    on s.mclass_academic_year = p.mclass_academic_year
-    and s.mclass_student_number = p.mclass_student_number
-where s.assessment_type = 'PM'
+where s.rn_highest = 1

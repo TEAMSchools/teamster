@@ -16,7 +16,7 @@ from teamster.code_locations.kipptaf.deanslist import assets
 from teamster.libraries.ssh.resources import SSHResource
 
 job = define_asset_job(
-    name=f"{CODE_LOCATION}_deanslist_sftp_asset_job", selection=assets
+    name=f"{CODE_LOCATION}__deanslist__sftp_asset_job", selection=assets
 )
 
 

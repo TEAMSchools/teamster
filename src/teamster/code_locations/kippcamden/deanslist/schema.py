@@ -100,6 +100,10 @@ class incidents_record(Incident):
 
 pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
 
+BEHAVIOR_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=behavior_record, options=pas_options)
+)
+
 ASSET_SCHEMA = {
     "comm-log": json.loads(py_avro_schema.generate(py_type=CommLog)),
     "lists": json.loads(py_avro_schema.generate(py_type=ListModel)),
@@ -113,9 +117,6 @@ ASSET_SCHEMA = {
     ),
     "reconcile_suspensions": json.loads(
         py_avro_schema.generate(py_type=ReconcileSuspensions)
-    ),
-    "behavior": json.loads(
-        py_avro_schema.generate(py_type=behavior_record, options=pas_options)
     ),
     "followups": json.loads(
         py_avro_schema.generate(py_type=followups_record, options=pas_options)
