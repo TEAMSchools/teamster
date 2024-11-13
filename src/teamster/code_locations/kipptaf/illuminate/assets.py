@@ -8,6 +8,7 @@ from dlt.sources.sql_database import sql_database
     dlt_source=sql_database(
         schema="dna_assessments",
         table_names=["assessments", "agg_student_responses_standard"],
+        defer_table_reflect=True,
     ),
     dlt_pipeline=pipeline(
         pipeline_name="illuminate",
