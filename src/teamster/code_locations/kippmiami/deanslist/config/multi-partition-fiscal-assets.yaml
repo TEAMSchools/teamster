@@ -1,5 +1,3 @@
 endpoints:
   - endpoint: comm-log
-    api_version: v1
   - endpoint: followups
-    api_version: v1
