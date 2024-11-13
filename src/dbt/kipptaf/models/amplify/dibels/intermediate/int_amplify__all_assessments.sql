@@ -112,8 +112,7 @@ with
             p.mclass_measure_standard_score_change,
 
             row_number() over (
-                partition by
-                    p.surrogate_key, p.measure, a.period, a.pm_round, a.measure_standard
+                partition by p.surrogate_key, p.measure, a.pm_round
                 order by p.mclass_measure_standard_score desc
             ) as rn_highest,
 
@@ -128,6 +127,7 @@ with
             and p.region = a.region
             and p.assessment_grade_int = a.grade_level
             and p.measure = a.measure_standard
+            and p.client_date between a.start_date and a.end_date
         where
             p.academic_year >= {{ var("current_academic_year") - 1 }}
             and p.enrollment_grade = p.assessment_grade
