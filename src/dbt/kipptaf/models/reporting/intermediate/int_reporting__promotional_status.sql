@@ -1,4 +1,10 @@
 with
+    hs_absence_threshold as (
+        select region, academic_year, grade_level, cutoff
+        from {{ ref("stg_reporting__promo_status_cutoffs") }}
+        where code = 'Q4' and subject = 'Days Absent'
+    ),
+
     attendance as (
         select
             mem.studentid,
@@ -103,10 +109,7 @@ with
             fg.studentid,
             fg.academic_year,
             fg.storecode,
-            fg.enrolled_credit_hours,
-            fg.n_failing,
             fg.n_failing_core,
-            fg.projected_credits_y1_term,
 
             coalesce(fg.projected_credits_y1_term, 0)
             + coalesce(gc.earned_credits_cum, 0) as projected_credits_cum,
@@ -211,21 +214,18 @@ with
             co.is_self_contained,
             co.special_education_code,
 
-            ps.discipline,
             ps.subject,
             ps.code as term_name,
-            ps.cutoff,
 
-            mu.metric,
             mu.metric_display,
 
             case
-                when ps.subject = 'Days Absent' and ps.cutoff <= mu.metric
+                when ps.sf_standardized_test = 'golf' and mu.metric < ps.cutoff
                 then true
-                when ps.cutoff > mu.metric
+                when ps.sf_standardized_test = 'baseball' and mu.metric >= ps.cutoff
                 then true
                 else false
-            end as is_off_track,
+            end as is_on_track,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("stg_reporting__promo_status_cutoffs") }} as ps
@@ -257,21 +257,18 @@ with
             co.is_self_contained,
             co.special_education_code,
 
-            ps.discipline,
             ps.subject,
             ps.code as term_name,
-            ps.cutoff,
 
-            mu.metric,
             mu.metric_display,
 
             case
-                when ps.subject = 'Days Absent' and ps.cutoff <= mu.metric
+                when ps.sf_standardized_test = 'golf' and mu.metric < ps.cutoff
                 then true
-                when ps.cutoff >= mu.metric
+                when ps.sf_standardized_test = 'baseball' and mu.metric >= ps.cutoff
                 then true
                 else false
-            end as is_off_track,
+            end as is_on_track,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("stg_reporting__promo_status_cutoffs") }} as ps
@@ -293,21 +290,176 @@ with
             and co.enroll_status = 0
     ),
 
-    identifiers_simple as (
-        select region, grade_level, is_self_contained, special_education_code, student_number, academic_year, term_name, subject, metric_display, is_off_track,
-        from identifiers
+    identifiers_pivot as (
+        select
+            student_number,
+            academic_year,
+            region,
+            grade_level,
+            is_self_contained,
+            special_education_code,
+            term_name,
+
+            `is_on_track_ADA` as is_on_track_ada,
+            `is_on_track_Days Absent` as is_on_track_days_absent,
+            `is_on_track_i-Ready Reading` as is_on_track_iready_reading,
+            `is_on_track_i-Ready Math` as is_on_track_iready_math,
+            `is_on_track_DIBELS Benchmark` as is_on_track_dibels,
+            `is_on_track_Core Fs` as is_on_track_core_f,
+            `is_on_track_Projected Credits` as is_on_track_projected_credits,
+
+            cast(`metric_display_ADA` as float64) as ada_running,
+            cast(
+                `metric_display_Projected Credits` as float64
+            ) as projected_credits_cum,
+            cast(`metric_display_Days Absent` as int) as days_absent_running,
+            cast(`metric_display_Core Fs` as int) as n_failing_core,
+            cast(
+                `metric_display_i-Ready Reading` as string
+            ) as iready_reading_orp_recent,
+            cast(`metric_display_i-Ready Math` as string) as iready_math_orp_recent,
+            cast(
+                `metric_display_DIBELS Benchmark` as string
+            ) as dibels_composite_recent,
+        from
+            identifiers pivot (
+                max(metric_display) as metric_display,
+                max(is_on_track) as is_on_track for subject in (
+                    'ADA',
+                    'Days Absent',
+                    'i-Ready Reading',
+                    'i-Ready Math',
+                    'DIBELS Benchmark',
+                    'Core Fs',
+                    'Projected Credits'
+                )
+            )
+    ),
+
+    status_detail as (
+        select
+            student_number,
+            academic_year,
+            region,
+            grade_level,
+            is_self_contained,
+            special_education_code,
+            term_name,
+
+            ada_running,
+            projected_credits_cum,
+            days_absent_running,
+            n_failing_core,
+            iready_reading_orp_recent,
+            iready_math_orp_recent,
+            dibels_composite_recent,
+
+            case
+                /* NJ grades k-1 */
+                when
+                    region in ('Camden', 'Newark')
+                    and grade_level between 0 and 1
+                    and not is_on_track_dibels
+                then 'Off-Track'
+                /* NJ grade 2 */
+                when
+                    region in ('Camden', 'Newark')
+                    and grade_level = 2
+                    and not is_on_track_iready_math
+                then 'Off-Track'
+                /* NJ grades 3-8 */
+                when
+                    region in ('Camden', 'Newark')
+                    and grade_level between 3 and 8
+                    and (not is_on_track_iready_math and not is_on_track_iready_reading)
+                    or not is_on_track_core_f
+                then 'Off-Track'
+                /* NJ HS */
+                when
+                    region in ('Camden', 'Newark')
+                    and grade_level >= 9
+                    and not is_on_track_projected_credits
+                then 'Off-Track'
+                else 'On-Track'
+            end as academic_status,
+
+            case
+                /* NJ grades K-8 */
+                when
+                    region in ('Camden', 'Newark')
+                    and grade_level <= 8
+                    and not is_on_track_ada
+                then 'Off-Track'
+                /* NJ HS */
+                when
+                    region in ('Camden', 'Newark')
+                    and grade_level >= 9
+                    and not is_on_track_days_absent
+                then 'Off-Track'
+                else 'On-Track'
+            end as attendance_status,
+        from identifiers_pivot
     )
 
-select *
-from
-    identifiers_simple pivot (
-        max(metric_display) as metric_display, max(is_off_track) as is_off_track for subject in (
-            'ADA',
-            'Days Absent',
-            'i-Ready Reading',
-            'i-Ready Math',
-            'DIBELS Benchmark',
-            'Core Fs',
-            'Projected Credits'
-        )
-    )
+select
+    s.student_number,
+    s.academic_year,
+    s.region,
+    s.grade_level,
+    s.is_self_contained,
+    s.special_education_code,
+    s.term_name,
+
+    s.ada_running,
+    s.projected_credits_cum,
+    s.days_absent_running,
+    s.n_failing_core,
+    s.iready_reading_orp_recent,
+    s.iready_math_orp_recent,
+    s.dibels_composite_recent,
+
+    s.academic_status,
+    s.attendance_status,
+
+    case
+        when s.grade_level >= 9 and s.days_absent_running >= hs.cutoff
+        then 'Off-Track (Already reached threshold)'
+        when s.grade_level >= 9 and s.attendance_status = 'Off-Track'
+        then 'Off-Track (Approaching threshold)'
+        else s.attendance_status
+    end as attendance_status_hs_detail,
+
+    case
+        /* NJ k-4 */
+        when
+            s.region in ('Camden', 'Newark')
+            and s.grade_level <= 4
+            and s.academic_status = 'Off-Track'
+            and s.attendance_status = 'Off-Track'
+        then 'Off-Track'
+        /* NJ MS */
+        when
+            s.region in ('Camden', 'Newark')
+            and s.grade_level between 5 and 8
+            and s.academic_status = 'Off-Track'
+            and s.attendance_status = 'Off-Track'
+        then 'Off-Track'
+        when
+            s.region in ('Camden', 'Newark')
+            and s.grade_level between 5 and 8
+            and s.n_failing_core >= 2
+        then 'Off-Track'
+        /* NJ HS */
+        when
+            s.region in ('Camden', 'Newark')
+            and s.grade_level >= 9
+            and (s.academic_status = 'Off-Track' or s.attendance_status = 'Off-Track')
+        then 'Off-Track'
+        else 'On-Track'
+    end as overall_status,
+from status_detail as s
+left join
+    hs_absence_threshold as hs
+    on s.academic_year = hs.academic_year
+    and s.region = hs.region
+    and s.grade_level = hs.grade_level
