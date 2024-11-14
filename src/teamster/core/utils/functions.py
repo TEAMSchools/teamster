@@ -4,6 +4,7 @@ from typing import Mapping
 from zoneinfo import ZoneInfo
 
 from dagster import MultiPartitionKey, _check
+
 from teamster.core.utils.classes import FiscalYear
 
 
