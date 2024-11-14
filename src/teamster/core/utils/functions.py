@@ -53,7 +53,7 @@ def parse_partition_key(partition_key, dimension=None):
 
         return [
             f"_dagster_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
-            f"_dagster_partition_date={partition_key_parsed.isoformat()}",
+            f"_dagster_partition_date={partition_key_parsed.date().isoformat()}",
             f"_dagster_partition_hour={partition_key_parsed.strftime('%H')}",
             f"_dagster_partition_minute={partition_key_parsed.strftime('%M')}",
         ]

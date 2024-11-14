@@ -31,7 +31,7 @@ class GCSUPathIOManager(PickledObjectGCSIOManager):
                 [
                     "_dagster_partition_fiscal_year="
                     + str(FiscalYear(datetime=datetime, start_month=7).fiscal_year),
-                    f"_dagster_partition_date={datetime.strftime("%Y-%m-%d")}",
+                    f"_dagster_partition_date={datetime.date().isoformat()}",
                     f"_dagster_partition_hour={datetime.strftime('%H')}",
                     f"_dagster_partition_minute={datetime.strftime('%M')}",
                 ]

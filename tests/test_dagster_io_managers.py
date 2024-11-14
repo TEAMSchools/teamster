@@ -2,9 +2,6 @@ import json
 import pathlib
 
 import py_avro_schema
-from dagster._core.events import HandledOutputData
-from pydantic import BaseModel
-
 from dagster import (
     AssetsDefinition,
     DailyPartitionsDefinition,
@@ -16,6 +13,9 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster._core.events import HandledOutputData
+from pydantic import BaseModel
+
 from teamster.core.resources import get_io_manager_gcs_avro, get_io_manager_gcs_file
 
 
