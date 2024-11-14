@@ -116,9 +116,9 @@ def build_powerschool_table_asset(
             constructed_where = (
                 f"{partition_column} BETWEEN "
                 f"TO_TIMESTAMP('{partition_start_fmt}', "
-                "'%Y-%m-%d\"T\"HH24:MI:SS.FF6') AND "
+                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
                 f"TO_TIMESTAMP('{partition_end_fmt}', "
-                "'%Y-%m-%d\"T\"HH24:MI:SS.FF6')"
+                "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
             )
 
         sql = (

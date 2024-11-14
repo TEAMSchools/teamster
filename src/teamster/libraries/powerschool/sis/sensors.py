@@ -40,14 +40,14 @@ def get_query_text(
         query = (
             f"SELECT COUNT(*) FROM {table} "
             f"WHERE {column} >= "
-            f"TO_TIMESTAMP('{start_value}', '%Y-%m-%d\"T\"HH24:MI:SS.FF6')"
+            f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
         )
     else:
         query = (
             f"SELECT COUNT(*) FROM {table} "
             f"WHERE {column} BETWEEN "
-            f"TO_TIMESTAMP('{start_value}', '%Y-%m-%d\"T\"HH24:MI:SS.FF6') AND "
-            f"TO_TIMESTAMP('{end_value}', '%Y-%m-%d\"T\"HH24:MI:SS.FF6')"
+            f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
+            f"TO_TIMESTAMP('{end_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
         )
 
     return text(query)
