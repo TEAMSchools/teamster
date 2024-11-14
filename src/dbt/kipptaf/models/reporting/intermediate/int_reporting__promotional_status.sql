@@ -128,6 +128,7 @@ with
             academic_year,
             term_name,
             ada_term_running as metric,
+            cast(ada_term_running as string) as metric_display,
         from attendance
 
         union all
@@ -141,57 +142,62 @@ with
             academic_year,
             term_name,
             n_absences_y1_running_non_susp as metric,
+            cast(n_absences_y1_running as string) as metric_display,
         from attendance
 
         union all
 
         select
-            'Credits' as discipline,
-            'Failing Core' as subject,
+            'Academics' as discipline,
+            'Core Fs' as subject,
 
             studentid,
             _dbt_source_relation,
             academic_year,
             storecode as term_name,
             n_failing_core as metric,
+            cast(n_failing_core as string) as metric_display,
         from credits
 
         union all
 
         select
-            'Credits' as discipline,
-            'Projected' as subject,
+            'Academics' as discipline,
+            'Projected Credits' as subject,
 
             studentid,
             _dbt_source_relation,
             academic_year,
             storecode as term_name,
             projected_credits_cum as metric,
+            cast(projected_credits_cum as string) as metric_display,
         from credits
     ),
 
     metric_union_sn as (
         select
-            'DIBELS' as discipline,
-            'Benchmark' as subject,
+            'Academics' as discipline,
+            'DIBELS Benchmark' as subject,
 
             student_number,
             academic_year,
             term_name,
             mclass_measure_standard_level_int as metric,
+            mclass_measure_standard_level as metric_display,
         from mclass
         where rn_composite = 1
 
         union all
 
         select
-            'i-Ready' as discipline,
-            i.subject,
+            'Academics' as discipline,
+            concat('i-Ready ', i.subject) as subject,
 
             i.student_id as student_number,
             i.academic_year_int as academic_year,
             term_name,
             i.most_recent_overall_relative_placement_int as metric,
+            i.most_recent_overall_relative_placement as metric_display,
         from {{ ref("base_iready__diagnostic_results") }} as i
         cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name
     ),
@@ -200,6 +206,7 @@ with
         select
             co.student_number,
             co.academic_year,
+            co.region,
             co.grade_level,
             co.is_self_contained,
             co.special_education_code,
@@ -210,6 +217,15 @@ with
             ps.cutoff,
 
             mu.metric,
+            mu.metric_display,
+
+            case
+                when ps.subject = 'Days Absent' and ps.cutoff <= mu.metric
+                then true
+                when ps.cutoff > mu.metric
+                then true
+                else false
+            end as is_off_track,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("stg_reporting__promo_status_cutoffs") }} as ps
@@ -226,12 +242,17 @@ with
             and ps.discipline = mu.discipline
             and ps.subject = mu.subject
             and {{ union_dataset_join_clause(left_alias="co", right_alias="mu") }}
+        where
+            co.academic_year >= {{ var("current_academic_year") - 1 }}
+            and co.rn_year = 1
+            and co.enroll_status = 0
 
         union all
 
         select
             co.student_number,
             co.academic_year,
+            co.region,
             co.grade_level,
             co.is_self_contained,
             co.special_education_code,
@@ -242,6 +263,15 @@ with
             ps.cutoff,
 
             mu.metric,
+            mu.metric_display,
+
+            case
+                when ps.subject = 'Days Absent' and ps.cutoff <= mu.metric
+                then true
+                when ps.cutoff >= mu.metric
+                then true
+                else false
+            end as is_off_track,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("stg_reporting__promo_status_cutoffs") }} as ps
@@ -257,15 +287,27 @@ with
             and ps.code = mu.term_name
             and ps.discipline = mu.discipline
             and ps.subject = mu.subject
+        where
+            co.academic_year >= {{ var("current_academic_year") - 1 }}
+            and co.rn_year = 1
+            and co.enroll_status = 0
+    ),
+
+    identifiers_simple as (
+        select region, grade_level, is_self_contained, special_education_code, student_number, academic_year, term_name, subject, metric_display, is_off_track,
+        from identifiers
     )
 
-select
-    *,
-    case
-        when discipline = 'Attendance' and subject = 'Days Absent' and cutoff <= metric
-        then true
-        when cutoff >= metric
-        then true
-        else false
-    end as is_off_track,
-from identifiers
+select *
+from
+    identifiers_simple pivot (
+        max(metric_display) as metric_display, max(is_off_track) as is_off_track for subject in (
+            'ADA',
+            'Days Absent',
+            'i-Ready Reading',
+            'i-Ready Math',
+            'DIBELS Benchmark',
+            'Core Fs',
+            'Projected Credits'
+        )
+    )
