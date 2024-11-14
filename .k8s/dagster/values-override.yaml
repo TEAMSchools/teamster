@@ -75,54 +75,55 @@ workspace:
   # This timeout should be increased if your code locations can take more than 3
   # minutes to load your Dagster definitions.
   serverProcessStartupTimeout: 300
+
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ########################################################################################
-extraManifests:
-  # Useful for providing extra configuration -- e.g. RBAC/serviceAccount information,
-  # etc. -- for user workspace pods.
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-agent
-    spec:
-      minAvailable: 1
-      selector:
-        matchLabels:
-          component: agent
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kippcamden
-    spec:
-      minAvailable: 1
-      selector:
-        matchLabels:
-          location_name: kippcamden
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kippmiami
-    spec:
-      minAvailable: 1
-      selector:
-        matchLabels:
-          location_name: kippmiami
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kippnewark
-    spec:
-      minAvailable: 1
-      selector:
-        matchLabels:
-          location_name: kippnewark
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kipptaf
-    spec:
-      minAvailable: 1
-      selector:
-        matchLabels:
-          location_name: kipptaf
+# extraManifests:
+#   # Useful for providing extra configuration -- e.g. RBAC/serviceAccount information,
+#   # etc. -- for user workspace pods.
+#   - apiVersion: policy/v1
+#     kind: PodDisruptionBudget
+#     metadata:
+#       name: pdb-agent
+#     spec:
+#       minAvailable: 1
+#       selector:
+#         matchLabels:
+#           component: agent
+#   - apiVersion: policy/v1
+#     kind: PodDisruptionBudget
+#     metadata:
+#       name: pdb-kippcamden
+#     spec:
+#       minAvailable: 1
+#       selector:
+#         matchLabels:
+#           location_name: kippcamden
+#   - apiVersion: policy/v1
+#     kind: PodDisruptionBudget
+#     metadata:
+#       name: pdb-kippmiami
+#     spec:
+#       minAvailable: 1
+#       selector:
+#         matchLabels:
+#           location_name: kippmiami
+#   - apiVersion: policy/v1
+#     kind: PodDisruptionBudget
+#     metadata:
+#       name: pdb-kippnewark
+#     spec:
+#       minAvailable: 1
+#       selector:
+#         matchLabels:
+#           location_name: kippnewark
+#   - apiVersion: policy/v1
+#     kind: PodDisruptionBudget
+#     metadata:
+#       name: pdb-kipptaf
+#     spec:
+#       minAvailable: 1
+#       selector:
+#         matchLabels:
+#           location_name: kipptaf
