@@ -1,6 +1,6 @@
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from dagster import (
@@ -12,7 +12,6 @@ from dagster import (
     _check,
     sensor,
 )
-from dateutil.relativedelta import relativedelta
 
 from teamster.libraries.alchemer.resources import AlchemerResource
 
@@ -108,7 +107,7 @@ def build_alchemer_survey_response_asset_sensor(
         available via the API can be upwards of 5 minutes.
         """
         now = (
-            datetime.now(ZoneInfo("America/New_York")) - relativedelta(minutes=15)
+            datetime.now(ZoneInfo("America/New_York")) - timedelta(minutes=15)
         ).replace(second=0, microsecond=0)
 
         survey_response_partitions_def = _check.inst(

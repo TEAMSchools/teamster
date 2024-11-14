@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from dagster import (
     AssetExecutionContext,
@@ -9,7 +9,6 @@ from dagster import (
     _check,
     asset,
 )
-from dateutil.relativedelta import relativedelta
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
@@ -44,7 +43,7 @@ def build_schoolmint_grow_asset(
             ).timestamp()
 
             last_modified_start = (
-                last_modified_datetime - relativedelta(days=1)
+                last_modified_datetime - timedelta(days=1)
             ).timestamp()
 
             last_modified_def = (
