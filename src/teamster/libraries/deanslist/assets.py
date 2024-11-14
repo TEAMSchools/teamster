@@ -108,7 +108,7 @@ def build_deanslist_multi_partition_asset(
         date_partition_key_fy = FiscalYear(datetime=date_partition_key, start_month=7)
 
         request_params = {
-            "UpdatedSince": date_partition_key.isoformat(),
+            "UpdatedSince": date_partition_key.date().isoformat(),
             "StartDate": date_partition_key_fy.start.isoformat(),
             **params,
         }
@@ -118,9 +118,9 @@ def build_deanslist_multi_partition_asset(
                 year=date_partition_key.year, month=date_partition_key.month
             )
 
-            request_params["EndDate"] = date_partition_key.replace(
-                day=last_day
-            ).isoformat()
+            request_params["EndDate"] = (
+                date_partition_key.replace(day=last_day).date().isoformat()
+            )
         elif isinstance(date_partition_def, FiscalYearPartitionsDefinition):
             request_params["EndDate"] = date_partition_key_fy.end.isoformat()
 
@@ -177,7 +177,7 @@ def build_deanslist_paginated_multi_partition_asset(
             endpoint=endpoint,
             school_id=int(partition_key.keys_by_dimension["school"]),
             params={
-                "UpdatedSince": date_partition_key.isoformat(),
+                "UpdatedSince": date_partition_key.date().isoformat(),
                 "StartDate": date_partition_key_fy.start.isoformat(),
                 "EndDate": date_partition_key_fy.end.isoformat(),
                 **params,

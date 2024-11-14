@@ -11,7 +11,9 @@ class CustomJSONEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, (timedelta, Decimal, bytes)):
             return str(o)
-        elif isinstance(o, (datetime, date)):
+        elif isinstance(o, datetime):
+            return o.date().isoformat()
+        elif isinstance(o, date):
             return o.isoformat()
         else:
             return super().default(o)

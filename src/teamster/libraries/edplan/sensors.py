@@ -72,9 +72,13 @@ def build_edplan_sftp_sensor(
                 and _check.not_none(value=f.st_size) > 0
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                partition_key = datetime.fromtimestamp(
-                    timestamp=_check.not_none(value=f.st_mtime), tz=ZoneInfo("UTC")
-                ).isoformat()
+                partition_key = (
+                    datetime.fromtimestamp(
+                        timestamp=_check.not_none(value=f.st_mtime), tz=ZoneInfo("UTC")
+                    )
+                    .date()
+                    .isoformat()
+                )
 
                 run_requests.append(
                     RunRequest(

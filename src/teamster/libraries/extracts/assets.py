@@ -187,7 +187,7 @@ def build_bigquery_query_sftp_asset(
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),
-                "today": now.isoformat(),
+                "today": now.date().isoformat(),
             }
 
         file_name = format_file_name(
@@ -275,7 +275,7 @@ def build_bigquery_extract_sftp_asset(
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),
-                "today": now.isoformat(),
+                "today": now.date().isoformat(),
             }
 
         file_name = format_file_name(
@@ -366,7 +366,7 @@ def build_bigquery_extract_asset(
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),
-                "today": now.isoformat(),
+                "today": now.date().isoformat(),
             }
 
         file_name = format_file_name(
