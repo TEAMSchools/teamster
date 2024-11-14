@@ -29,7 +29,7 @@ def test_resource():
         params = urlencode(
             query={
                 "connectionId": connection_id,
-                "updatedAtStart": last_updated.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "updatedAtStart": last_updated.isoformat(),
                 "status": "succeeded",
             }
         )
