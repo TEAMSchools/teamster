@@ -1,4 +1,5 @@
-import pendulum
+from datetime import datetime
+
 from dagster import (
     AssetExecutionContext,
     AssetsDefinition,
@@ -8,6 +9,7 @@ from dagster import (
     _check,
     asset,
 )
+from dateutil.relativedelta import relativedelta
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
@@ -35,12 +37,15 @@ def build_schoolmint_grow_asset(
             archived_key = partition_key.keys_by_dimension["archived"]
             last_modified_key = partition_key.keys_by_dimension["last_modified"]
 
-            last_modified_datetime = pendulum.from_format(
-                string=last_modified_key, fmt="YYYY-MM-DD"
-            )
+            last_modified_datetime = datetime.strptime(last_modified_key, "%Y-%m-%d")
 
-            last_modified_end = last_modified_datetime.end_of("day").timestamp()
-            last_modified_start = last_modified_datetime.subtract(days=1).timestamp()
+            last_modified_end = last_modified_datetime.replace(
+                hour=23, minute=59, second=59, microsecond=999999
+            ).timestamp()
+
+            last_modified_start = (
+                last_modified_datetime - relativedelta(days=1)
+            ).timestamp()
 
             last_modified_def = (
                 context.assets_def.partitions_def.get_partitions_def_for_dimension(

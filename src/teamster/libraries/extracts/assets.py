@@ -4,9 +4,9 @@ import json
 import pathlib
 import re
 from csv import DictWriter
+from datetime import datetime
 from io import StringIO
 
-import pendulum
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -170,7 +170,7 @@ def build_bigquery_query_sftp_asset(
         kinds={"python"},
     )
     def _asset(context: AssetExecutionContext):
-        now = pendulum.now(tz=timezone)
+        now = datetime.now(timezone)
 
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
@@ -187,7 +187,7 @@ def build_bigquery_query_sftp_asset(
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),
-                "today": now.to_date_string(),
+                "today": now.isoformat(),
             }
 
         file_name = format_file_name(
@@ -262,7 +262,7 @@ def build_bigquery_extract_sftp_asset(
         kinds={"python"},
     )
     def _asset(context: AssetExecutionContext):
-        now = pendulum.now(tz=timezone)
+        now = datetime.now(timezone)
 
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
@@ -275,7 +275,7 @@ def build_bigquery_extract_sftp_asset(
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),
-                "today": now.to_date_string(),
+                "today": now.isoformat(),
             }
 
         file_name = format_file_name(
@@ -353,7 +353,7 @@ def build_bigquery_extract_asset(
     def _asset(
         context: AssetExecutionContext, gcs: GCSResource, db_bigquery: BigQueryResource
     ):
-        now = pendulum.now(tz=timezone)
+        now = datetime.now(timezone)
 
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
@@ -366,7 +366,7 @@ def build_bigquery_extract_asset(
         else:
             substitutions = {
                 "now": str(now.timestamp()).replace(".", "_"),
-                "today": now.to_date_string(),
+                "today": now.isoformat(),
             }
 
         file_name = format_file_name(

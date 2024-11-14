@@ -1,8 +1,9 @@
 import json
 import re
+from datetime import datetime
 from socket import gaierror
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     AssetsDefinition,
     RunRequest,
@@ -20,7 +21,7 @@ from teamster.libraries.ssh.resources import SSHResource
 def build_edplan_sftp_sensor(
     code_location: str,
     asset: AssetsDefinition,
-    timezone,
+    timezone: ZoneInfo,
     minimum_interval_seconds=None,
 ):
     job = define_asset_job(
@@ -33,7 +34,7 @@ def build_edplan_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_edplan: SSHResource):
-        now_timestamp = pendulum.now(tz=timezone).timestamp()
+        now_timestamp = datetime.now(timezone).timestamp()
 
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
@@ -71,9 +72,9 @@ def build_edplan_sftp_sensor(
                 and _check.not_none(value=f.st_size) > 0
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                partition_key = pendulum.from_timestamp(
-                    timestamp=_check.not_none(value=f.st_mtime)
-                ).to_date_string()
+                partition_key = datetime.fromtimestamp(
+                    timestamp=_check.not_none(value=f.st_mtime), tz=ZoneInfo("UTC")
+                ).isoformat()
 
                 run_requests.append(
                     RunRequest(
