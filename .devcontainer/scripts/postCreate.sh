@@ -53,6 +53,10 @@ op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
   --out-file=env/dbt_cloud.yml &&
   sudo mv -f env/dbt_cloud.yml /home/vscode/.dbt/dbt_cloud.yml
 
+op inject -f --in-file=.devcontainer/tpl/gcloud_teamster_dlt_keyfile.json.tpl \
+  --out-file=env/gcloud_teamster_dlt_keyfile.json &&
+  sudo mv -f env/gcloud_teamster_dlt_keyfile.json /etc/secret-volume/gcloud_teamster_dlt_keyfile.json
+
 # install pdm dependencies
 pdm install --frozen-lockfile
 

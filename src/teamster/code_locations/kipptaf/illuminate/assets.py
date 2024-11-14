@@ -1,3 +1,5 @@
+import json
+
 from dagster import AssetExecutionContext, EnvVar, _check
 from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
 from dlt import pipeline
@@ -30,7 +32,12 @@ from sqlalchemy import URL, create_engine
     ),
 )
 def illuminate_dna_assessments(context: AssetExecutionContext, dlt: DagsterDltResource):
-    yield from dlt.run(context=context)
+    yield from dlt.run(
+        context=context,
+        credentials=json.load(
+            fp=open(file="/etc/secret-volume/gcloud_teamster_dlt_keyfile.json")
+        ),
+    )
 
 
 assets = [
