@@ -48,13 +48,13 @@ locations:
                         path: gcloud_teamster_dlt_keyfile.json
         server_k8s_config:
           container_config:
-            resources:
-              requests:
-                cpu: 1250m
-                memory: 2.0Gi
-              limits:
-                cpu: 1250m
-                memory: 2.0Gi
+            # resources:
+            #   requests:
+            #     cpu: 1250m
+            #     memory: 2.0Gi
+            #   limits:
+            #     cpu: 1250m
+            #     memory: 2.0Gi
             env:
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
@@ -413,11 +413,11 @@ locations:
                     key: password
         run_k8s_config:
           container_config:
-            resources:
-              requests:
-                cpu: 750m
-              limits:
-                cpu: 750m
+            # resources:
+            #   requests:
+            #     cpu: 750m
+            #   limits:
+            #     cpu: 750m
             env:
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
