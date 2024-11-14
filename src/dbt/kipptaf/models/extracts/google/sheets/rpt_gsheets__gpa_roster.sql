@@ -1,32 +1,5 @@
 with
-    y1 as (
-        select yearid, studentid, _dbt_source_relation, schoolid, gpa_y1,
-        from {{ ref("int_powerschool__gpa_term") }}
-        where is_current
-    )
-
-select
-    academic_year_display as academic_year,
-    region,
-    student_name,
-    student_number,
-    school,
-    grade_level,
-    team,
-    iep_status,
-    gender,
-    lep_status,
-    gifted_and_talented,
-    is_504,
-
-    gpa_y1,
-
-    gpa_q1,
-    gpa_q2,
-    gpa_q3,
-    gpa_q4,
-from
-    (
+    roster as (
         select
             co.academic_year_display,
             co.region,
@@ -49,10 +22,11 @@ from
         from {{ ref("int_tableau__student_enrollments") }} as co
         cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
         left join
-            y1 as y
+            {{ ref("int_powerschool__gpa_term") }} as y
             on co.studentid = y.studentid
             and co.yearid = y.yearid
             and co.schoolid = y.schoolid
+            and y.is_current
             and {{ union_dataset_join_clause(left_alias="co", right_alias="y") }}
         left join
             {{ ref("int_powerschool__gpa_term") }} as gpa
@@ -66,4 +40,25 @@ from
             and co.enroll_status = 0
             and co.grade_level >= 5
     )
-    pivot (max(gpa_term) as gpa for term in ('Q1', 'Q2', 'Q3', 'Q4'))
+
+select
+    academic_year_display as academic_year,
+    region,
+    student_name,
+    student_number,
+    school,
+    grade_level,
+    team,
+    iep_status,
+    gender,
+    lep_status,
+    gifted_and_talented,
+    is_504,
+
+    gpa_q1,
+    gpa_q2,
+    gpa_q3,
+    gpa_q4,
+
+    gpa_y1,
+from roster pivot (max(gpa_term) as gpa for term in ('Q1', 'Q2', 'Q3', 'Q4'))
