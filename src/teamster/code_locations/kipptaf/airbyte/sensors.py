@@ -46,7 +46,7 @@ def airbyte_job_status_sensor(
         params = urlencode(
             query={
                 "connectionId": connection_id,
-                "updatedAtStart": last_updated.isoformat(timespec="seconds"),
+                "updatedAtStart": last_updated.isoformat(),
                 "status": "succeeded",
             }
         )

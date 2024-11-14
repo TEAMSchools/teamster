@@ -88,11 +88,11 @@ def build_powerschool_table_asset(
         elif context.partition_key == first_partition_key:
             constructed_where = ""
         else:
-            partition_start = datetime.strptime(
-                context.partition_key, "%Y-%m-%dT%H:%M:%S%z"
-            )
+            partition_start = datetime.fromisoformat(context.partition_key)
 
-            partition_start_fmt = partition_start.strftime("%Y-%m-%dT%H:%M:%S.%f")
+            partition_start_fmt = partition_start.replace(tzinfo=None).isoformat(
+                timespec="microseconds"
+            )
 
             if isinstance(partitions_def, FiscalYearPartitionsDefinition):
                 date_add_kwargs = {"years": 1}
@@ -109,7 +109,8 @@ def build_powerschool_table_asset(
                     - relativedelta(days=1)
                 )
                 .replace(hour=23, minute=59, second=59, microsecond=999999)
-                .strftime("%Y-%m-%dT%H:%M:%S.%f")
+                .replace(tzinfo=None)
+                .isoformat(timespec="microseconds")
             )
 
             constructed_where = (

@@ -160,9 +160,13 @@ def build_powerschool_asset_sensor(
                         ttype=float,
                     )
 
-                    timestamp_fmt = datetime.fromtimestamp(
-                        timestamp=timestamp, tz=execution_timezone
-                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")
+                    timestamp_fmt = (
+                        datetime.fromtimestamp(
+                            timestamp=timestamp, tz=execution_timezone
+                        )
+                        .replace(tzinfo=None)
+                        .isoformat(timespec="microseconds")
+                    )
 
                     [(modified_count,)] = _check.inst(
                         db_powerschool.execute_query(
@@ -272,9 +276,13 @@ def build_powerschool_asset_sensor(
                             ttype=float,
                         )
 
-                        timestamp_fmt = datetime.fromtimestamp(
-                            timestamp=timestamp, tz=execution_timezone
-                        ).strftime("%Y-%m-%dT%H:%M:%S.%f")
+                        timestamp_fmt = (
+                            datetime.fromtimestamp(
+                                timestamp=timestamp, tz=execution_timezone
+                            )
+                            .replace(tzinfo=None)
+                            .isoformat(timespec="microseconds")
+                        )
 
                         [(modified_count,)] = _check.inst(
                             db_powerschool.execute_query(
@@ -308,9 +316,7 @@ def build_powerschool_asset_sensor(
                     # request run if partition count != latest materialization
                     materialization_count = metadata["records"].value
 
-                    partition_start = datetime.strptime(
-                        partition_key, "%Y-%m-%dT%H:%M:%S%z"
-                    )
+                    partition_start = datetime.fromisoformat(partition_key)
 
                     partition_end = (
                         partition_start
@@ -324,11 +330,11 @@ def build_powerschool_asset_sensor(
                             query=get_query_text(
                                 table=table_name,
                                 column=partition_column,
-                                start_value=partition_start.strftime(
-                                    "%Y-%m-%dT%H:%M:%S.%f"
-                                ),
-                                end_value=partition_end.strftime(
-                                    "%Y-%m-%dT%H:%M:%S.%f"
+                                start_value=partition_start.replace(
+                                    tzinfo=None
+                                ).isoformat(timespec="microseconds"),
+                                end_value=partition_end.replace(tzinfo=None).isoformat(
+                                    timespec="microseconds"
                                 ),
                             ),
                             prefetch_rows=2,
