@@ -381,56 +381,41 @@ locations:
                   secretKeyRef:
                     name: op-slack-api
                     key: credential
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE
-                valueFrom:
-                  secretKeyRef:
-                    name: op-illuminate-db
-                    key: database
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME
+              - name: ILLUMINATE_DB_DRIVERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: driver
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__HOST
+              - name: ILLUMINATE_DB_HOST
                 valueFrom:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: ip
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD
+              - name: ILLUMINATE_DB_DATABASE
                 valueFrom:
                   secretKeyRef:
                     name: op-illuminate-db
-                    key: password
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__PORT
-                valueFrom:
-                  secretKeyRef:
-                    name: op-illuminate-db
-                    key: port
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME
+                    key: database
+              - name: ILLUMINATE_DB_USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: username
+              - name: ILLUMINATE_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: password
+              # - name: ILLUMINATE_DB_PORT
+              #   valueFrom:
+              #     secretKeyRef:
+              #       name: op-illuminate-db
+              #       key: port
               - name: DESTINATION__BIGQUERY__CREDENTIALS
                 valueFrom:
                   secretKeyRef:
                     name: op-gcp-service-account-dlt
                     key: keyfile.json
-              # - name: DESTINATION__BIGQUERY__CREDENTIALS__CLIENT_EMAIL
-              #   valueFrom:
-              #     secretKeyRef:
-              #       name: op-gcp-service-account-dlt
-              #       key: username
-              # - name: DESTINATION__BIGQUERY__CREDENTIALS__PRIVATE_KEY
-              #   valueFrom:
-              #     secretKeyRef:
-              #       name: op-gcp-service-account-dlt
-              #       key: password
-              # - name: DESTINATION__BIGQUERY__CREDENTIALS__PROJECT_ID
-              #   valueFrom:
-              #     secretKeyRef:
-              #       name: op-gcp-service-account-dlt
-              #       key: project-id
         run_k8s_config:
           container_config:
             resources:
@@ -769,53 +754,38 @@ locations:
                   secretKeyRef:
                     name: op-slack-api
                     key: credential
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE
-                valueFrom:
-                  secretKeyRef:
-                    name: op-illuminate-db
-                    key: database
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME
+              - name: ILLUMINATE_DB_DRIVERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: driver
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__HOST
+              - name: ILLUMINATE_DB_HOST
                 valueFrom:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: ip
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD
+              - name: ILLUMINATE_DB_DATABASE
                 valueFrom:
                   secretKeyRef:
                     name: op-illuminate-db
-                    key: password
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__PORT
-                valueFrom:
-                  secretKeyRef:
-                    name: op-illuminate-db
-                    key: port
-              - name: SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME
+                    key: database
+              - name: ILLUMINATE_DB_USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: username
+              - name: ILLUMINATE_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: password
+              # - name: ILLUMINATE_DB_PORT
+              #   valueFrom:
+              #     secretKeyRef:
+              #       name: op-illuminate-db
+              #       key: port
               - name: DESTINATION__BIGQUERY__CREDENTIALS
                 valueFrom:
                   secretKeyRef:
                     name: op-gcp-service-account-dlt
                     key: keyfile.json
-              # - name: DESTINATION__BIGQUERY__CREDENTIALS__CLIENT_EMAIL
-              #   valueFrom:
-              #     secretKeyRef:
-              #       name: op-gcp-service-account-dlt
-              #       key: username
-              # - name: DESTINATION__BIGQUERY__CREDENTIALS__PRIVATE_KEY
-              #   valueFrom:
-              #     secretKeyRef:
-              #       name: op-gcp-service-account-dlt
-              #       key: password
-              # - name: DESTINATION__BIGQUERY__CREDENTIALS__PROJECT_ID
-              #   valueFrom:
-              #     secretKeyRef:
-              #       name: op-gcp-service-account-dlt
-              #       key: project-id
