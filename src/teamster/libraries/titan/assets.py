@@ -1,5 +1,4 @@
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from dagster import StaticPartitionsDefinition
 
@@ -12,14 +11,10 @@ def build_titan_sftp_asset(
     remote_file_regex: str,
     schema: dict,
     partition_start_date: str,
-    timezone: ZoneInfo,
     current_fiscal_year: FiscalYear,
 ):
     start_fy = FiscalYear(
-        datetime=datetime.strptime(partition_start_date, "%Y-%m-%d").replace(
-            tzinfo=timezone
-        ),
-        start_month=7,
+        datetime=datetime.strptime(partition_start_date, "%Y-%m-%d"), start_month=7
     )
 
     partition_keys = [
