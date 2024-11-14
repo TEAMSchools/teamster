@@ -41,6 +41,11 @@ locations:
                     items:
                       - key: service_account_gserviceaccount.json
                         path: gcloud_service_account_json
+                - secret:
+                    name: op-gcp-service-account-dlt
+                    items:
+                      - key: keyfile.json
+                        path: gcloud_teamster_dlt_keyfile.json
         server_k8s_config:
           container_config:
             resources:
