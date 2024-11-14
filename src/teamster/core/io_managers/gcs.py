@@ -2,6 +2,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 import fastavro
+from dagster import Any, InputContext, MultiPartitionKey, OutputContext
 from dagster._utils.backoff import backoff
 from dagster._utils.cached_method import cached_method
 from dagster_gcp.gcs import GCSPickleIOManager, PickledObjectGCSIOManager
@@ -9,7 +10,6 @@ from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyReq
 from google.cloud.storage import Bucket
 from upath import UPath
 
-from dagster import Any, InputContext, MultiPartitionKey, OutputContext
 from teamster.core.utils.classes import FiscalYear
 
 
