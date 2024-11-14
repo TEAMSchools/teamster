@@ -1,8 +1,10 @@
+from datetime import datetime
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import AssetKey, EnvVar, _check, build_resources
 from dagster_airbyte import AirbyteCloudResource
+from dateutil.relativedelta import relativedelta
 
 
 def test_resource():
@@ -23,12 +25,12 @@ def test_resource():
     for connection in connections:
         connection_id = connection["connectionId"]
 
-        last_updated = pendulum.today().subtract(days=1)
+        last_updated = datetime.now(ZoneInfo("UTC")) - relativedelta(days=1)
 
         params = urlencode(
             query={
                 "connectionId": connection_id,
-                "updatedAtStart": last_updated.format("YYYY-MM-DDTHH:mm:ss[Z]"),
+                "updatedAtStart": last_updated.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "status": "succeeded",
             }
         )

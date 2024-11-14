@@ -1,8 +1,9 @@
 from collections import defaultdict
+from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     MAX_RUNTIME_SECONDS_TAG,
     AssetKey,
@@ -18,6 +19,7 @@ from dagster import (
     define_asset_job,
     sensor,
 )
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import text
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
@@ -38,23 +40,23 @@ def get_query_text(
         query = (
             f"SELECT COUNT(*) FROM {table} "
             f"WHERE {column} >= "
-            f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+            f"TO_TIMESTAMP('{start_value}', '%Y-%m-%d\"T\"HH24:MI:SS.FF6')"
         )
     else:
         query = (
             f"SELECT COUNT(*) FROM {table} "
             f"WHERE {column} BETWEEN "
-            f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
-            f"TO_TIMESTAMP('{end_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
+            f"TO_TIMESTAMP('{start_value}', '%Y-%m-%d\"T\"HH24:MI:SS.FF6') AND "
+            f"TO_TIMESTAMP('{end_value}', '%Y-%m-%d\"T\"HH24:MI:SS.FF6')"
         )
 
     return text(query)
 
 
 def build_powerschool_asset_sensor(
-    code_location,
+    code_location: str,
+    execution_timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
-    execution_timezone,
     minimum_interval_seconds=None,
 ):
     jobs = []
@@ -87,7 +89,7 @@ def build_powerschool_asset_sensor(
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
     ) -> SensorResult | SkipReason:
-        now_timestamp = pendulum.now().timestamp()
+        now_timestamp = datetime.now(ZoneInfo("UTC")).timestamp()
 
         run_requests = []
         run_request_kwargs = []
@@ -158,9 +160,9 @@ def build_powerschool_asset_sensor(
                         ttype=float,
                     )
 
-                    timestamp_fmt = pendulum.from_timestamp(
+                    timestamp_fmt = datetime.fromtimestamp(
                         timestamp=timestamp, tz=execution_timezone
-                    ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")
 
                     [(modified_count,)] = _check.inst(
                         db_powerschool.execute_query(
@@ -270,9 +272,9 @@ def build_powerschool_asset_sensor(
                             ttype=float,
                         )
 
-                        timestamp_fmt = pendulum.from_timestamp(
+                        timestamp_fmt = datetime.fromtimestamp(
                             timestamp=timestamp, tz=execution_timezone
-                        ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+                        ).strftime("%Y-%m-%dT%H:%M:%S.%f")
 
                         [(modified_count,)] = _check.inst(
                             db_powerschool.execute_query(
@@ -306,26 +308,27 @@ def build_powerschool_asset_sensor(
                     # request run if partition count != latest materialization
                     materialization_count = metadata["records"].value
 
-                    partition_start = pendulum.from_format(
-                        string=partition_key, fmt="YYYY-MM-DDTHH:mm:ssZZ"
+                    partition_start = datetime.strptime(
+                        partition_key, "%Y-%m-%dT%H:%M:%S%z"
                     )
 
                     partition_end = (
-                        partition_start.add(**date_add_kwargs)
-                        .subtract(days=1)
-                        .end_of("day")
-                    )
+                        partition_start
+                        # trunk-ignore(pyright/reportArgumentType)
+                        + relativedelta(**date_add_kwargs)
+                        - relativedelta(days=1)
+                    ).replace(hour=23, minute=59, second=59, microsecond=999999)
 
                     [(partition_count,)] = _check.inst(
                         db_powerschool.execute_query(
                             query=get_query_text(
                                 table=table_name,
                                 column=partition_column,
-                                start_value=partition_start.format(
-                                    "YYYY-MM-DDTHH:mm:ss.SSSSSS"
+                                start_value=partition_start.strftime(
+                                    "%Y-%m-%dT%H:%M:%S.%f"
                                 ),
-                                end_value=partition_end.format(
-                                    "YYYY-MM-DDTHH:mm:ss.SSSSSS"
+                                end_value=partition_end.strftime(
+                                    "%Y-%m-%dT%H:%M:%S.%f"
                                 ),
                             ),
                             prefetch_rows=2,

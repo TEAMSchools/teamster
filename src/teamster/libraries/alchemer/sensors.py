@@ -1,7 +1,8 @@
 import json
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     AddDynamicPartitionsRequest,
     DynamicPartitionsDefinition,
@@ -11,6 +12,7 @@ from dagster import (
     _check,
     sensor,
 )
+from dateutil.relativedelta import relativedelta
 
 from teamster.libraries.alchemer.resources import AlchemerResource
 
@@ -24,7 +26,9 @@ def build_alchemer_survey_metadata_asset_sensor(code_location, survey):
         asset_selection=asset_selection,
     )
     def _sensor(context: SensorEvaluationContext, alchemer: AlchemerResource):
-        now = pendulum.now(tz="America/New_York").start_of("minute")
+        now = datetime.now(ZoneInfo("America/New_York")).replace(
+            second=0, microsecond=0
+        )
 
         cursor: dict = json.loads(context.cursor or "{}")
         latest_materialization_event = (
@@ -42,10 +46,8 @@ def build_alchemer_survey_metadata_asset_sensor(code_location, survey):
             context.log.info(msg=survey_obj["title"])
 
             survey_id = survey_obj["id"]
-            modified_on = pendulum.from_format(
-                string=survey_obj["modified_on"],
-                fmt="YYYY-MM-DD HH:mm:ss",
-                tz="America/New_York",
+            modified_on = datetime.strptime(
+                survey_obj["modified_on"], "%Y-%m-%d HH:mm:ss"
             )
 
             survey_cursor_timestamp = cursor.get(survey_id)
@@ -55,8 +57,8 @@ def build_alchemer_survey_metadata_asset_sensor(code_location, survey):
             if latest_materialization_event is None or survey_cursor_timestamp is None:
                 is_run_request = True
                 context.log.info("INITIAL RUN")
-            elif modified_on > pendulum.from_timestamp(
-                timestamp=survey_cursor_timestamp, tz="America/New_York"
+            elif modified_on > datetime.fromtimestamp(
+                timestamp=survey_cursor_timestamp, tz=ZoneInfo("America/New_York")
             ):
                 is_run_request = True
                 context.log.info(f"MODIFIED: {modified_on}")
@@ -106,8 +108,8 @@ def build_alchemer_survey_response_asset_sensor(
         available via the API can be upwards of 5 minutes.
         """
         now = (
-            pendulum.now(tz="America/New_York").subtract(minutes=15).start_of("minute")
-        )
+            datetime.now(ZoneInfo("America/New_York")) - relativedelta(minutes=15)
+        ).replace(second=0, microsecond=0)
 
         survey_response_partitions_def = _check.inst(
             survey_response.partitions_def, DynamicPartitionsDefinition
@@ -145,12 +147,12 @@ def build_alchemer_survey_response_asset_sensor(
             else:
                 survey_obj = alchemer._client.survey.get(id=survey_id)
 
-                date_submitted = pendulum.from_timestamp(
-                    timestamp=survey_cursor_timestamp, tz="America/New_York"
+                date_submitted = datetime.fromtimestamp(
+                    timestamp=survey_cursor_timestamp, tz=ZoneInfo("America/New_York")
                 )
 
                 survey_response_data = survey_obj.response.filter(
-                    "date_submitted", ">=", date_submitted.to_datetime_string()
+                    "date_submitted", ">=", date_submitted.isoformat()
                 ).list(params={"resultsperpage": 1, "page": 1})
 
                 if survey_response_data:

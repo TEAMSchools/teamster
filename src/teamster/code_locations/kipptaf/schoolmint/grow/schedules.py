@@ -20,7 +20,7 @@ from teamster.code_locations.kipptaf.schoolmint.grow.jobs import (
 
 schoolmint_grow_user_update_job_schedule = ScheduleDefinition(
     cron_schedule="0 3 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
     job=schoolmint_grow_user_update_job,
 )
 
@@ -36,7 +36,7 @@ schoolmint_grow_assignments_job_schedule = build_schedule_from_partitioned_job(
 @schedule(
     name=f"{schoolmint_grow_static_partition_asset_job.name}_schedule",
     cron_schedule="0 2 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
     job=schoolmint_grow_static_partition_asset_job,
 )
 def schoolmint_grow_static_partition_asset_job_schedule(
@@ -52,7 +52,7 @@ def schoolmint_grow_static_partition_asset_job_schedule(
 @schedule(
     name=f"{schoolmint_grow_observations_asset_job.name}_schedule",
     cron_schedule=["15 11 * * *", "15 13 * * *", "15 15 * * *"],
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
     job=schoolmint_grow_observations_asset_job,
 )
 def schoolmint_grow_observations_asset_job_schedule(

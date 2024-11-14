@@ -8,7 +8,7 @@ smartrecruiters_report_assets_schedule = ScheduleDefinition(
         name=f"{CODE_LOCATION}_smartrecruiters_report_asset_job", selection=assets
     ),
     cron_schedule="0 6 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 schedules = [
