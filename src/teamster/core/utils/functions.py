@@ -4,7 +4,6 @@ from typing import Mapping
 from zoneinfo import ZoneInfo
 
 from dagster import MultiPartitionKey, _check
-
 from teamster.core.utils.classes import FiscalYear
 
 
@@ -25,10 +24,10 @@ def parse_partition_key(partition_key, dimension=None):
     try:
         date_formats = iter(
             [
-                "%Y-%m-DDTHH:mm:ss.SSSSSSZ",
-                "%Y-%m-DDTHH:mm:ssZ",
-                "%Y-%m-DDTHH:mm:ss.SSSSSS[Z]",
-                "%Y-%m-DDTHH:mm:ss[Z]",
+                "%Y-%m-%dT%H:%M:%S.%f%z",
+                "%Y-%m-%dT%H:%M:%S%z",
+                "%Y-%m-%dT%H:%M:%S.%fZ",
+                "%Y-%m-%dT%H:%M:%SZ",
                 "%Y-%m-%d",
             ]
         )

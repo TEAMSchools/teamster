@@ -2,7 +2,6 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 import fastavro
-from dagster import Any, InputContext, MultiPartitionKey, OutputContext
 from dagster._utils.backoff import backoff
 from dagster._utils.cached_method import cached_method
 from dagster_gcp.gcs import GCSPickleIOManager, PickledObjectGCSIOManager
@@ -10,12 +9,13 @@ from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyReq
 from google.cloud.storage import Bucket
 from upath import UPath
 
+from dagster import Any, InputContext, MultiPartitionKey, OutputContext
 from teamster.core.utils.classes import FiscalYear
 
 
 class GCSUPathIOManager(PickledObjectGCSIOManager):
     def _parse_datetime_partition_value(self, partition_value: str):
-        datetime_formats = iter(["%Y-%m-%d", "%Y-%m-DDTHH:mm:ssZZ", "%m/%d/%Y"])
+        datetime_formats = iter(["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S%z", "%m/%d/%Y"])
         while True:
             try:
                 return datetime.strptime(partition_value, next(datetime_formats))
