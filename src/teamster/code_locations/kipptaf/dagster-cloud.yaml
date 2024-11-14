@@ -406,16 +406,11 @@ locations:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: password
-              # - name: ILLUMINATE_DB_PORT
+              # - name: DESTINATION__BIGQUERY__CREDENTIALS
               #   valueFrom:
               #     secretKeyRef:
-              #       name: op-illuminate-db
-              #       key: port
-              - name: DESTINATION__BIGQUERY__CREDENTIALS
-                valueFrom:
-                  secretKeyRef:
-                    name: op-gcp-service-account-dlt
-                    key: keyfile.json
+              #       name: op-gcp-service-account-dlt
+              #       key: keyfile.json
         run_k8s_config:
           container_config:
             resources:
@@ -779,13 +774,8 @@ locations:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: password
-              # - name: ILLUMINATE_DB_PORT
+              # - name: DESTINATION__BIGQUERY__CREDENTIALS
               #   valueFrom:
               #     secretKeyRef:
-              #       name: op-illuminate-db
-              #       key: port
-              - name: DESTINATION__BIGQUERY__CREDENTIALS
-                valueFrom:
-                  secretKeyRef:
-                    name: op-gcp-service-account-dlt
-                    key: keyfile.json
+              #       name: op-gcp-service-account-dlt
+              #       key: keyfile.json
