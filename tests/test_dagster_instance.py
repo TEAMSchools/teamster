@@ -1,7 +1,6 @@
 import re
 
 from dagster import DagsterInstance
-
 from teamster.code_locations.kipptaf._dbt.assets import dbt_assets
 
 

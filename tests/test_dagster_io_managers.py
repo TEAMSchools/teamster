@@ -2,6 +2,9 @@ import json
 import pathlib
 
 import py_avro_schema
+from dagster._core.events import HandledOutputData
+from pydantic import BaseModel
+
 from dagster import (
     AssetsDefinition,
     DailyPartitionsDefinition,
@@ -13,20 +16,17 @@ from dagster import (
     asset,
     materialize,
 )
-from dagster._core.events import HandledOutputData
-from pydantic import BaseModel
-
-from teamster.core.resources import get_io_manager_gcs_avro
-
-
-class TestSchema(BaseModel):
-    foo: str | None = None
+from teamster.core.resources import get_io_manager_gcs_avro, get_io_manager_gcs_file
 
 
 def build_test_asset_avro(
     name, partitions_def=None, output_schema=None, output_data=None
 ):
     if output_data is None:
+
+        class TestSchema(BaseModel):
+            foo: str | None = None
+
         output_data = [{"foo": "bar"}]
         output_schema = json.loads(py_avro_schema.generate(py_type=TestSchema))
 
@@ -45,7 +45,7 @@ def build_test_asset_file(name, partitions_def=None):
     @asset(
         key=["staging", "test", name],
         partitions_def=partitions_def,
-        io_manager_def=get_io_manager_gcs_avro(code_location="test", test=True),
+        io_manager_def=get_io_manager_gcs_file(code_location="test", test=True),
     )
     def _asset():
         path = pathlib.Path("/workspaces/teamster/env/data.avro")
@@ -206,8 +206,14 @@ def test_file_handle_asset_static_partition():
 
 
 def test_asset_handle_output_schema():
+    class TestSchema(BaseModel):
+        foo: str
+        spam: str
+
     asset_def = build_test_asset_avro(
-        name="test", output_data=[{"foo": "bar", "spam": "eggs"}]
+        name="test",
+        output_data=[{"foo": "bar", "spam": "eggs"}],
+        output_schema=json.loads(py_avro_schema.generate(py_type=TestSchema)),
     )
 
     result = materialize(assets=[asset_def])

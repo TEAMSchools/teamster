@@ -1,6 +1,7 @@
 def _test_definitions_validate(kwargs):
-    from dagster import __version__, instance_for_test
     from dagster._cli.workspace.cli_target import get_workspace_from_kwargs
+
+    from dagster import __version__, instance_for_test
 
     with instance_for_test() as instance:
         with get_workspace_from_kwargs(
