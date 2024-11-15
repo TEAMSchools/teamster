@@ -12,7 +12,7 @@ njsmart_powerschool = build_sftp_file_asset(
     avro_schema=NJSMART_POWERSCHOOL,
     partitions_def=DailyPartitionsDefinition(
         start_date="2023-05-08",
-        timezone=LOCAL_TIMEZONE.name,
+        timezone=str(LOCAL_TIMEZONE),
         fmt="%Y-%m-%d",
         end_offset=1,
     ),

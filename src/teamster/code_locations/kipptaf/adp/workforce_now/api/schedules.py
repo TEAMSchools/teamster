@@ -18,7 +18,7 @@ from teamster.code_locations.kipptaf.adp.workforce_now.api.jobs import (
 adp_wfn_worker_fields_update_schedule = ScheduleDefinition(
     job=adp_wfn_update_workers_job,
     cron_schedule="0 3 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 job = define_asset_job(
@@ -32,7 +32,7 @@ job = define_asset_job(
     name=f"{job.name}_schedule",
     job=job,
     cron_schedule="30 0 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 def adp_wfn_api_workers_asset_schedule(context: ScheduleEvaluationContext) -> Generator:
     partitions_def = _check.not_none(job.partitions_def)
@@ -43,7 +43,7 @@ def adp_wfn_api_workers_asset_schedule(context: ScheduleEvaluationContext) -> Ge
     for partition_key in partition_keys[-45:]:
         yield RunRequest(
             run_key=f"{context._schedule_name}_{partition_key}",
-            partition_key=partition_key.format(fmt="MM/DD/YYYY"),
+            partition_key=partition_key.format(fmt="%m/%d/%Y"),
         )
 
 
