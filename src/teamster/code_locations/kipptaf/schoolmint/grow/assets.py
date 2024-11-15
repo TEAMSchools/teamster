@@ -20,7 +20,7 @@ MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
     {
         "archived": STATIC_PARTITONS_DEF,
         "last_modified": DailyPartitionsDefinition(
-            start_date="2023-07-31", timezone=LOCAL_TIMEZONE.name, end_offset=1
+            start_date="2023-07-31", timezone=str(LOCAL_TIMEZONE), end_offset=1
         ),
     }
 )

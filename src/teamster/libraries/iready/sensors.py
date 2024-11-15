@@ -1,10 +1,11 @@
 import json
 import re
 from collections import defaultdict
+from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -24,8 +25,8 @@ from teamster.libraries.ssh.resources import SSHResource
 
 def build_iready_sftp_sensor(
     code_location: str,
+    timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
-    timezone,
     remote_dir_regex: str,
     current_fiscal_year: int,
     minimum_interval_seconds=None,
@@ -53,7 +54,7 @@ def build_iready_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_iready: SSHResource):
-        now_timestamp = pendulum.now(tz=timezone).timestamp()
+        now_timestamp = datetime.now(timezone).timestamp()
 
         run_request_kwargs = []
         run_requests = []

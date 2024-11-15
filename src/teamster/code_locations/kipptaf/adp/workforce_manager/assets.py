@@ -19,7 +19,7 @@ accrual_reporting_period_summary = build_adp_wfm_asset(
     symbolic_ids=["Today"],
     date_partitions_def=DailyPartitionsDefinition(
         start_date="2023-05-17",
-        timezone=LOCAL_TIMEZONE.name,
+        timezone=str(LOCAL_TIMEZONE),
         fmt="%Y-%m-%d",
         end_offset=1,
     ),
