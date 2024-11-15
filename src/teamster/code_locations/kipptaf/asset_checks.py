@@ -34,7 +34,7 @@ adp_wfn_freshness_checks = build_last_update_freshness_checks(
     assets=adp_wfn_asset_selection,
     lower_bound_delta=timedelta(minutes=45),
     deadline_cron="15 1 * * *",
-    timezone=LOCAL_TIMEZONE.name,
+    timezone=str(LOCAL_TIMEZONE),
 )
 
 freshness_checks = [

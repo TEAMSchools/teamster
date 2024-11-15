@@ -76,58 +76,6 @@ def test_ghseet_asset_key_rename():
     assert asset_keys_new == asset_keys_old
 
 
-def test_orjson():
-    import json
-    from datetime import date, datetime, timedelta
-    from decimal import Decimal
-
-    import orjson
-    from pendulum import Date, DateTime, Duration
-
-    class CustomJSONEncoder(json.JSONEncoder):
-        def default(self, o):
-            if isinstance(o, (timedelta, Decimal, bytes, Duration)):
-                return str(o)
-            elif isinstance(o, (DateTime, Date)):
-                return o.for_json()
-            elif isinstance(o, (datetime, date)):
-                return o.isoformat()
-            else:
-                return super().default(o)
-
-    def orjson_default(obj):
-        if isinstance(obj, (DateTime, Date)):
-            return obj.for_json()
-        else:
-            raise TypeError
-
-    obj = {
-        "timedelta": timedelta(days=1),
-        "Decimal": Decimal(1),
-        "bytes": b"foo",
-        "Duration": Duration(days=1),
-        "DateTime": DateTime(year=9999, month=12, day=31),
-        "Date": Date(year=9999, month=12, day=31),
-        "datetime": datetime(year=9999, month=12, day=31),
-        "date": date(year=9999, month=12, day=31),
-    }
-
-    stdlib_result = json.dumps(obj=obj, cls=CustomJSONEncoder)
-    orjson_result = orjson.dumps(obj, default=orjson_default).decode()
-
-    for k in obj.keys():
-        pattern = rf'"{k}":\s?"([^"]*)",?'
-
-        stdlib_match = re.search(pattern=pattern, string=stdlib_result)
-        orjson_match = re.search(pattern=pattern, string=orjson_result)
-
-        assert stdlib_match is not None
-        assert orjson_match is not None
-
-        assert stdlib_match.group(1) == orjson_match.group(1)
-        print(f"{k}: {stdlib_match.group(1)} == {orjson_match.group(1)}")
-
-
 def test_foo():
     from teamster.libraries.sftp.assets import compose_regex
 

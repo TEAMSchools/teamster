@@ -5,7 +5,7 @@ from teamster.libraries.dbt.schedules import build_dbt_code_version_schedule
 dbt_code_version_schedule = build_dbt_code_version_schedule(
     code_location=CODE_LOCATION,
     cron_schedule="*/10 * * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
     dbt_assets=dbt_assets,
 )
 

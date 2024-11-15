@@ -1,6 +1,7 @@
 import re
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     AddDynamicPartitionsRequest,
     AssetKey,
@@ -52,7 +53,7 @@ from teamster.libraries.ssh.resources import SSHResource
 def adp_payroll_sftp_sensor(
     context: SensorEvaluationContext, ssh_couchdrop: SSHResource
 ):
-    now = pendulum.now()
+    now = datetime.now(ZoneInfo("UTC"))
     run_requests = []
     dynamic_partitions_requests = []
 

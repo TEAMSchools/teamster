@@ -1,7 +1,7 @@
+from datetime import datetime
 from urllib.parse import urlparse
 
 import fastavro
-import pendulum
 from dagster import Any, InputContext, MultiPartitionKey, OutputContext
 from dagster._utils.backoff import backoff
 from dagster._utils.cached_method import cached_method
@@ -15,12 +15,10 @@ from teamster.core.utils.classes import FiscalYear
 
 class GCSUPathIOManager(PickledObjectGCSIOManager):
     def _parse_datetime_partition_value(self, partition_value: str):
-        datetime_formats = iter(["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ssZZ", "MM/DD/YYYY"])
+        datetime_formats = iter(["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S%z", "%m/%d/%Y"])
         while True:
             try:
-                return pendulum.from_format(
-                    string=partition_value, fmt=next(datetime_formats)
-                )
+                return datetime.strptime(partition_value, next(datetime_formats))
             except ValueError:
                 pass
 
@@ -31,13 +29,11 @@ class GCSUPathIOManager(PickledObjectGCSIOManager):
             datetime = self._parse_datetime_partition_value(partition_value)
             return "/".join(
                 [
-                    (
-                        "_dagster_partition_fiscal_year="
-                        + str(FiscalYear(datetime=datetime, start_month=7).fiscal_year)
-                    ),
-                    f"_dagster_partition_date={datetime.to_date_string()}",
-                    f"_dagster_partition_hour={datetime.format(fmt='HH')}",
-                    f"_dagster_partition_minute={datetime.format(fmt='mm')}",
+                    "_dagster_partition_fiscal_year="
+                    + str(FiscalYear(datetime=datetime, start_month=7).fiscal_year),
+                    f"_dagster_partition_date={datetime.date().isoformat()}",
+                    f"_dagster_partition_hour={datetime.strftime('%H')}",
+                    f"_dagster_partition_minute={datetime.strftime('%M')}",
                 ]
             )
         except StopIteration:

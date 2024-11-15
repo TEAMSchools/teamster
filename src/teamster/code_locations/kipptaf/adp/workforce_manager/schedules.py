@@ -39,7 +39,7 @@ adp_wfm_dynamic_partition_asset_job = define_asset_job(
 @schedule(
     name=f"{adp_wfm_dynamic_partition_asset_job.name}_schedule",
     cron_schedule="50 23 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
     job=define_asset_job(
         name=f"{CODE_LOCATION}_adp_wfm_dynamic_partition_asset_job",
         selection=adp_wfm_assets_dynamic,
