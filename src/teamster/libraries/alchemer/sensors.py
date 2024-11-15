@@ -45,9 +45,7 @@ def build_alchemer_survey_metadata_asset_sensor(code_location, survey):
             context.log.info(msg=survey_obj["title"])
 
             survey_id = survey_obj["id"]
-            modified_on = datetime.strptime(
-                survey_obj["modified_on"], "%Y-%m-%d HH:mm:ss"
-            )
+            modified_on = datetime.fromisoformat(survey_obj["modified_on"])
 
             survey_cursor_timestamp = cursor.get(survey_id)
 

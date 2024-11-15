@@ -14,7 +14,7 @@ def build_titan_sftp_asset(
     current_fiscal_year: FiscalYear,
 ):
     start_fy = FiscalYear(
-        datetime=datetime.strptime(partition_start_date, "%Y-%m-%d"), start_month=7
+        datetime=datetime.fromisoformat(partition_start_date), start_month=7
     )
 
     partition_keys = [

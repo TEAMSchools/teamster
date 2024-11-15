@@ -36,7 +36,7 @@ def build_schoolmint_grow_asset(
             archived_key = partition_key.keys_by_dimension["archived"]
             last_modified_key = partition_key.keys_by_dimension["last_modified"]
 
-            last_modified_datetime = datetime.strptime(last_modified_key, "%Y-%m-%d")
+            last_modified_datetime = datetime.fromisoformat(last_modified_key)
 
             last_modified_end = last_modified_datetime.replace(
                 hour=23, minute=59, second=59, microsecond=999999
