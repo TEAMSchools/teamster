@@ -1,6 +1,7 @@
 import json
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     RunRequest,
     SensorEvaluationContext,
@@ -18,7 +19,7 @@ job = define_asset_job(name=f"{CODE_LOCATION}_ldap_asset_job", selection=assets)
 
 @sensor(name=f"{job.name}_sensor", minimum_interval_seconds=(60 * 10), job=job)
 def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
-    now_timestamp = pendulum.now().timestamp()
+    now_timestamp = datetime.now(ZoneInfo("UTC")).timestamp()
 
     run_requests = []
     asset_selection = []
@@ -31,9 +32,9 @@ def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
         asset_metadata = asset.metadata_by_key[asset.key]
         search_filter = asset_metadata["search_filter"]
 
-        last_check_timestamp = pendulum.from_timestamp(
-            cursor.get(asset_identifier, 0)
-        ).format(fmt="YYYYMMDDHHmmss.SSSSSSZZ")
+        last_check_timestamp = datetime.fromtimestamp(
+            timestamp=cursor.get(asset_identifier, 0), tz=ZoneInfo("UTC")
+        ).strftime("%Y%m%d%H%M%S.%f%z")
         context.log.info(last_check_timestamp)
 
         ldap._connection.search(

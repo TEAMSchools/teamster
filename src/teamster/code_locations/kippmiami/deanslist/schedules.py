@@ -16,7 +16,7 @@ deanslist_static_partitions_assets_job_schedule = build_deanslist_job_schedule(
     selection=static_partitions_assets,
     partitions_def=DEANSLIST_STATIC_PARTITIONS_DEF,
     cron_schedule="0 0 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 deanslist_monthly_multi_partitions_assets_job_schedule = build_deanslist_job_schedule(
@@ -24,7 +24,7 @@ deanslist_monthly_multi_partitions_assets_job_schedule = build_deanslist_job_sch
     selection=monthly_multi_partitions_assets,
     partitions_def=DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF,
     cron_schedule="0 0 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 deanslist_fiscal_multi_partitions_assets_job_schedule = build_deanslist_job_schedule(
@@ -32,7 +32,7 @@ deanslist_fiscal_multi_partitions_assets_job_schedule = build_deanslist_job_sche
     selection=fiscal_multi_partitions_assets,
     partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
     cron_schedule="0 0 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 deanslist_midday_commlog_job_schedule = build_deanslist_job_schedule(
@@ -40,7 +40,7 @@ deanslist_midday_commlog_job_schedule = build_deanslist_job_schedule(
     selection=[AssetKey([CODE_LOCATION, "deanslist", "comm_log"])],
     partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
     cron_schedule="0 14 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 schedules = [

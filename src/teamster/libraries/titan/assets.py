@@ -1,4 +1,5 @@
-import pendulum
+from datetime import datetime
+
 from dagster import StaticPartitionsDefinition
 
 from teamster.core.utils.classes import FiscalYear
@@ -6,18 +7,14 @@ from teamster.libraries.sftp.assets import build_sftp_file_asset
 
 
 def build_titan_sftp_asset(
-    key,
-    remote_file_regex,
-    schema,
-    partition_start_date,
-    timezone,
-    current_fiscal_year,
+    key: list[str],
+    remote_file_regex: str,
+    schema: dict,
+    partition_start_date: str,
+    current_fiscal_year: FiscalYear,
 ):
     start_fy = FiscalYear(
-        datetime=pendulum.from_format(
-            string=partition_start_date, fmt="YYYY-MM-DD", tz=timezone
-        ),
-        start_month=7,
+        datetime=datetime.fromisoformat(partition_start_date), start_month=7
     )
 
     partition_keys = [
