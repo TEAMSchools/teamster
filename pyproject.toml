@@ -29,7 +29,6 @@ dependencies = [
   "py-avro-schema>=3.4.1",
   "pycryptodome>=3.19.0",
   "pypdf>=5.0.0",
-  "pypdf>=5.0.0",
   "python-dateutil>=2.9.0.post0",
   "scikit-learn>=1.4.0",
   "tableauserverclient>=0.25",
