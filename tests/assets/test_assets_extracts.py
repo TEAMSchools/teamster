@@ -1,6 +1,6 @@
 import random
+from datetime import datetime
 
-import pendulum
 from dagster import AssetsDefinition, DagsterInstance, MultiPartitionKey, materialize
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
@@ -67,10 +67,10 @@ def test_construct_query_schema():
 def test_format_file_name_default():
     from teamster.libraries.extracts.assets import format_file_name
 
-    now = pendulum.now(tz=LOCAL_TIMEZONE)
+    test_date = datetime(year=1987, month=11, day=5)
 
-    today_date_str = now.to_date_string()
-    now_timestamp_str = str(now.timestamp()).replace(".", "_")
+    today_date_str = test_date.date().isoformat()
+    now_timestamp_str = str(test_date.timestamp()).replace(".", "_")
 
     file_name = format_file_name(
         stem="foo_{today}_bar_{now}",
@@ -83,7 +83,7 @@ def test_format_file_name_default():
     print(now_timestamp_str)
     print(file_name)
 
-    assert file_name == f"foo_{today_date_str}_bar_{now_timestamp_str}.csv"
+    assert file_name == f"foo_1987-11-05_bar_{now_timestamp_str}.csv"
 
 
 def test_format_file_name_multi_partition():
@@ -92,14 +92,14 @@ def test_format_file_name_multi_partition():
 
     multi_partition_key = MultiPartitionKey({"group_code": group_code, "date": date})
 
-    now = pendulum.now(tz=LOCAL_TIMEZONE)
+    now = datetime.now(LOCAL_TIMEZONE)
 
-    today_date_str = now.to_date_string()
+    today_date_str = now.date().isoformat()
     now_timestamp_str = str(now.timestamp()).replace(".", "_")
 
     file_name = format_file_name(
-        file_stem="adp_payroll_{date}_{group_code}",
-        file_suffix="csv",
+        stem="adp_payroll_{date}_{group_code}",
+        suffix="csv",
         now=now_timestamp_str,
         today=today_date_str,
         **multi_partition_key.keys_by_dimension,

@@ -1,6 +1,7 @@
+import calendar
 import re
+from datetime import datetime
 
-import pendulum
 from dagster import (
     AssetExecutionContext,
     AssetsDefinition,
@@ -100,24 +101,28 @@ def build_deanslist_multi_partition_asset(
         partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
 
         date_partition_def = partitions_def.get_partitions_def_for_dimension("date")
-        date_partition_key = pendulum.from_format(
-            string=partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
+        date_partition_key = datetime.fromisoformat(
+            partition_key.keys_by_dimension["date"]
         )
 
         date_partition_key_fy = FiscalYear(datetime=date_partition_key, start_month=7)
 
         request_params = {
-            "UpdatedSince": date_partition_key.to_date_string(),
-            "StartDate": date_partition_key_fy.start.to_date_string(),
+            "UpdatedSince": date_partition_key.date().isoformat(),
+            "StartDate": date_partition_key_fy.start.isoformat(),
             **params,
         }
 
         if isinstance(date_partition_def, MonthlyPartitionsDefinition):
-            request_params["EndDate"] = date_partition_key.end_of(
-                "month"
-            ).to_date_string()
+            _, last_day = calendar.monthrange(
+                year=date_partition_key.year, month=date_partition_key.month
+            )
+
+            request_params["EndDate"] = (
+                date_partition_key.replace(day=last_day).date().isoformat()
+            )
         elif isinstance(date_partition_def, FiscalYearPartitionsDefinition):
-            request_params["EndDate"] = date_partition_key_fy.end.to_date_string()
+            request_params["EndDate"] = date_partition_key_fy.end.isoformat()
 
         total_count, data = deanslist.get(
             api_version=api_version,
@@ -161,8 +166,8 @@ def build_deanslist_paginated_multi_partition_asset(
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
 
-        date_partition_key = pendulum.from_format(
-            string=partition_key.keys_by_dimension["date"], fmt="YYYY-MM-DD"
+        date_partition_key = datetime.fromisoformat(
+            partition_key.keys_by_dimension["date"]
         )
 
         date_partition_key_fy = FiscalYear(datetime=date_partition_key, start_month=7)
@@ -172,9 +177,9 @@ def build_deanslist_paginated_multi_partition_asset(
             endpoint=endpoint,
             school_id=int(partition_key.keys_by_dimension["school"]),
             params={
-                "UpdatedSince": date_partition_key.to_date_string(),
-                "StartDate": date_partition_key_fy.start.to_date_string(),
-                "EndDate": date_partition_key_fy.end.to_date_string(),
+                "UpdatedSince": date_partition_key.date().isoformat(),
+                "StartDate": date_partition_key_fy.start.isoformat(),
+                "EndDate": date_partition_key_fy.end.isoformat(),
                 **params,
             },
         )

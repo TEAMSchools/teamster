@@ -14,7 +14,7 @@ def test_sync_schedule():
         connector_id="",
         connector_name="test",
         cron_schedule="0 0 * * *",
-        execution_timezone=LOCAL_TIMEZONE.name,
+        execution_timezone=str(LOCAL_TIMEZONE),
     )
 
     context = build_schedule_context()
@@ -32,7 +32,7 @@ def test_resync_schedule():
         connector_id="",
         connector_name="test",
         cron_schedule="0 0 * * *",
-        execution_timezone=LOCAL_TIMEZONE.name,
+        execution_timezone=str(LOCAL_TIMEZONE),
     )
 
     context = build_schedule_context()
