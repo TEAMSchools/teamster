@@ -1,7 +1,8 @@
 import json
+from datetime import datetime
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -22,10 +23,10 @@ ASSET_KEYS = [a.key for a in asset_specs]
 def airbyte_job_status_sensor(
     context: SensorEvaluationContext, airbyte: AirbyteCloudResource
 ):
-    now_timestamp = pendulum.now().timestamp()
+    now_timestamp = datetime.now(ZoneInfo("UTC")).timestamp()
 
     asset_events = []
-    cursor = json.loads(context.cursor or "{}")
+    cursor: dict = json.loads(context.cursor or "{}")
 
     connections = _check.not_none(
         airbyte.make_request(endpoint="/connections", method="GET")
@@ -38,12 +39,14 @@ def airbyte_job_status_sensor(
         context.log.info(connection["name"])
         connection_id = connection["connectionId"]
 
-        last_updated = pendulum.from_timestamp(timestamp=cursor.get(connection_id, 0))
+        last_updated = datetime.fromtimestamp(
+            timestamp=cursor.get(connection_id, 0), tz=ZoneInfo("UTC")
+        )
 
         params = urlencode(
             query={
                 "connectionId": connection_id,
-                "updatedAtStart": last_updated.format("YYYY-MM-DDTHH:mm:ss[Z]"),
+                "updatedAtStart": last_updated.isoformat(),
                 "status": "succeeded",
             }
         )
