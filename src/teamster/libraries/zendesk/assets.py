@@ -32,7 +32,7 @@ def build_ticket_metrics_archive(code_location, timezone, avro_schema):
     def _asset(context: AssetExecutionContext, zendesk: ZendeskResource):
         partition_key = _check.not_none(value=context.partition_key)
 
-        partition_key_datetime = datetime.strptime(partition_key, "")
+        partition_key_datetime = datetime.fromisoformat(partition_key)
 
         data_filepath = pathlib.Path("env/ticket_metrics_archive/data.avro")
         schema = parse_schema(schema=avro_schema)

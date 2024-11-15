@@ -101,8 +101,8 @@ def build_deanslist_multi_partition_asset(
         partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
 
         date_partition_def = partitions_def.get_partitions_def_for_dimension("date")
-        date_partition_key = datetime.strptime(
-            partition_key.keys_by_dimension["date"], "%Y-%m-%d"
+        date_partition_key = datetime.fromisoformat(
+            partition_key.keys_by_dimension["date"]
         )
 
         date_partition_key_fy = FiscalYear(datetime=date_partition_key, start_month=7)
@@ -166,8 +166,8 @@ def build_deanslist_paginated_multi_partition_asset(
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
 
-        date_partition_key = datetime.strptime(
-            partition_key.keys_by_dimension["date"], "%Y-%m-%d"
+        date_partition_key = datetime.fromisoformat(
+            partition_key.keys_by_dimension["date"]
         )
 
         date_partition_key_fy = FiscalYear(datetime=date_partition_key, start_month=7)
