@@ -34,7 +34,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as enr
             on st.sectionid = enr.cc_abs_sectionid
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
+            {{ ref("int_powerschool__student_enrollments") }} as co
             on enr.cc_studentid = co.studentid
             and enr.cc_dateenrolled between co.entrydate and co.exitdate
         group by st.teachernumber, enr.cc_yearid, enr.cc_academic_year, co.grade_level

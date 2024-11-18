@@ -414,7 +414,7 @@ with
                     false
                 )
             ) as is_es_grad,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_powerschool__student_enrollments") }}
         where rn_year = 1
         group by student_number
     ),

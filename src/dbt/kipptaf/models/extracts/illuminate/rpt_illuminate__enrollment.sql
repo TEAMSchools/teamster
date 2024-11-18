@@ -29,5 +29,5 @@ select
     null as `15 Session Type ID`,
     null as `16 Enrollment Entry Code`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("base_powerschool__student_enrollments") }}
+from {{ ref("int_powerschool__student_enrollments") }}
 where academic_year = {{ var("current_academic_year") }} and grade_level != 99

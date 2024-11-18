@@ -12,7 +12,7 @@ with
             lu.lesson_source,
             lu.lesson_id,
             lu.passed_or_not_passed_numeric,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_powerschool__student_enrollments") }} as co
         cross join unnest(['Reading', 'Math']) as `subject`
         inner join
             {{ ref("int_powerschool__calendar_week") }} as w

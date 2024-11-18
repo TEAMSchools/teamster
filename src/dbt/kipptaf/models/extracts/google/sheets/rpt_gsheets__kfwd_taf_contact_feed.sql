@@ -65,7 +65,7 @@ select
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("int_kippadb__enrollment_pivot") }} as e on r.contact_id = e.student
 left join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_powerschool__student_enrollments") }} as co
     on r.student_number = co.student_number
     and co.rn_undergrad = 1
     and co.grade_level != 99

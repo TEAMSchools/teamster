@@ -130,7 +130,7 @@ with
             case
                 when r.is_mastery then 1 when not r.is_mastery then 0
             end as is_mastery_int,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("int_powerschool__calendar_week") }} as w
             on co.academic_year = w.academic_year

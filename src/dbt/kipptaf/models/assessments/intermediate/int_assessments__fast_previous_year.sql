@@ -25,7 +25,7 @@ with
                 ),
                 4
             ) as fldoe_percentile_rank,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("stg_fldoe__fast") }} as pp
             on co.fleid = pp.student_id

@@ -44,7 +44,7 @@ select
 
     if(co.lep_status, 1, 0) as lep_status,
     if(co.is_self_contained, 1, 0) as is_pathways,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_powerschool__calendar_rollup") }} as d
     on co.schoolid = d.schoolid

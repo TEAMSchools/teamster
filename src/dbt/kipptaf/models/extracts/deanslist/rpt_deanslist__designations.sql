@@ -13,7 +13,7 @@ with
             if(gpa.gpa_term >= 3.5, 'Quarter GPA 3.5+', null) as is_quarter_gpa_35plus,
 
             if(att.ada < 0.9, 'Chronic Absence', null) as is_chronic_absentee,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_powerschool__student_enrollments") }} as co
         left join
             {{ ref("int_powerschool__gpa_term") }} as gpa
             on co.studentid = gpa.studentid
@@ -29,7 +29,7 @@ with
     )
 
 select co.student_number, co.academic_year, sp.specprog_name as designation_name,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on co.studentid = sp.studentid

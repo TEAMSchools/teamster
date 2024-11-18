@@ -55,7 +55,7 @@ select
     gc.potential_credits_cum,
     gc.core_cumulative_y1_gpa,
     gc.cumulative_y1_gpa_projected_s1_unweighted,
-from {{ ref("base_powerschool__student_enrollments") }} as sr
+from {{ ref("int_powerschool__student_enrollments") }} as sr
 left join
     {{ ref("stg_kippadb__contact") }} as ktc
     on sr.student_number = ktc.school_specific_id

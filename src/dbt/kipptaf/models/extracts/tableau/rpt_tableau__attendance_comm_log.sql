@@ -76,7 +76,7 @@ select
     row_number() over (
         partition by co.studentid, att.att_date order by cl.commlog_datetime desc
     ) as rn_date,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("stg_powerschool__attendance") }} as att
     on co.studentid = att.studentid

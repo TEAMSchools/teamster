@@ -37,7 +37,7 @@ select
     ps.overall_status as promo_status_overall,
 
     if(co.spedlep like 'SPED%', 'Has IEP', co.spedlep) as iep_status,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on co.academic_year = rt.academic_year

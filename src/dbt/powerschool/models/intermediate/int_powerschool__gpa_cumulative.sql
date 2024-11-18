@@ -77,7 +77,7 @@ with
             null as unweighted_grade_points,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
+            {{ ref("int_powerschool__student_enrollments") }} as co
             on fg.studentid = co.studentid
             and fg.yearid = co.yearid
             and co.rn_year = 1
@@ -125,7 +125,7 @@ with
             null as unweighted_grade_points,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
+            {{ ref("int_powerschool__student_enrollments") }} as co
             on fg.studentid = co.studentid
             and fg.yearid = co.yearid
             and co.rn_year = 1

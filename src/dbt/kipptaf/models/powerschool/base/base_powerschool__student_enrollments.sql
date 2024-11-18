@@ -1,5 +1,5 @@
 select
-    ar.* except (ar.spedlep, ar.lunch_status),
+    ar.* except (spedlep, lunch_status),
 
     sr.mail as advisor_email,
     sr.communication_business_mobile as advisor_phone,

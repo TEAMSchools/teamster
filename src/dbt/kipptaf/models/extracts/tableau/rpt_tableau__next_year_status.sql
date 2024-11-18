@@ -34,5 +34,5 @@ select
     replace(
         concat(co.street, '+', co.city, '+', co.state, '+', co.zip), ' ', '+'
     ) as gmaps_address,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 where co.rn_undergrad = 1 and co.enroll_status in (0, -1)

@@ -31,6 +31,7 @@ vars:
   pearson_schema: kippcamden_pearson
   powerschool_schema: kippcamden_powerschool
   titan_schema: kippcamden_titan
+  state_reporting_version: NJ
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models

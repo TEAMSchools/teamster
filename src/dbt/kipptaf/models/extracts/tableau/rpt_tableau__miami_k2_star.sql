@@ -124,7 +124,7 @@ select
     s.standard_percent_mastery,
     s.star_subject,
     s.rn_subject_round_star,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['BOY', 'MOY', 'EOY']) as administration_round
 left join

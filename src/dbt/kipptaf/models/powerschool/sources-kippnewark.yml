@@ -2,6 +2,9 @@ version: 2
 
 sources:
   - name: kippnewark_powerschool
+    schema:
+      "{% if env_var('DBT_DEV', '') == 'true' %}_dev_kippnewark_powerschool{% else
+      %}kippnewark_powerschool{% endif %}"
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         meta:

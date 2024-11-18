@@ -32,7 +32,7 @@ select
 
     null as `15 Session Type ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("base_powerschool__student_enrollments") }} as s
+from {{ ref("int_powerschool__student_enrollments") }} as s
 inner join
     {{ ref("base_powerschool__course_enrollments") }} as enr
     on s.studentid = enr.cc_studentid

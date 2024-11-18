@@ -27,7 +27,7 @@ with
             ) as is_advanced_math_student,
         from {{ ref("base_powerschool__course_enrollments") }} as ce
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
+            {{ ref("int_powerschool__student_enrollments") }} as co
             on ce.cc_studentid = co.studentid
             and ce.cc_academic_year = co.academic_year
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="co") }}
@@ -55,7 +55,7 @@ with
             co.grade_level + 1 as illuminate_grade_level_id,
 
             false as is_advanced_math,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_powerschool__student_enrollments") }} as co
         where co.region in ('Newark', 'Camden') and co.grade_level <= 4
     )
 

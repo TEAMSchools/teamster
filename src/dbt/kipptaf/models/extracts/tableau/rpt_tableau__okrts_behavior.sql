@@ -173,7 +173,7 @@ select
     count(distinct co.student_number) over (
         partition by co.schoolid, cw.week_start_monday
     ) as school_enrollment_by_week,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as cw
     on co.schoolid = cw.schoolid

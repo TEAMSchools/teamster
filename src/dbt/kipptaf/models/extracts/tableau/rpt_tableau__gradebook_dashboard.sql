@@ -23,7 +23,7 @@ with
             case when sp.studentid is not null then 1 end as is_counselingservices,
 
             case when sa.studentid is not null then 1 end as is_studentathlete,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_powerschool__student_enrollments") }} as co
         left join
             {{ ref("int_powerschool__spenrollments") }} as sp
             on co.studentid = sp.studentid

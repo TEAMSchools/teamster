@@ -7,7 +7,7 @@ with
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_powerschool__student_enrollments") }}
         where school_level = 'MS'
     ),
 
@@ -76,7 +76,7 @@ with
             if(sa.studentid is not null, 1, 0) as is_studentathlete,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as mem
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
+            {{ ref("int_powerschool__student_enrollments") }} as co
             on mem.studentid = co.studentid
             and mem.schoolid = co.schoolid
             and mem.calendardate between co.entrydate and co.exitdate
