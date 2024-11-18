@@ -112,6 +112,7 @@ class AvroGCSIOManager(GCSUPathIOManager):
         bucket_obj: Bucket = self.bucket_obj
 
         records, schema = obj
+        local_path = "env" / path
 
         if self.test:
             import json
@@ -121,10 +122,10 @@ class AvroGCSIOManager(GCSUPathIOManager):
             test_path.parent.mkdir(parents=True, exist_ok=True)
             json.dump(obj=records, fp=test_path.open("w"))
 
-        context.log.info(f"Writing records to {path}")
-        path.parent.mkdir(parents=True, exist_ok=True)
+        context.log.info(f"Writing records to {local_path}")
+        local_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with path.open(mode="wb") as fo:
+        with local_path.open(mode="wb") as fo:
             fastavro.writer(
                 fo=fo,
                 schema=fastavro.parse_schema(schema),
@@ -138,7 +139,7 @@ class AvroGCSIOManager(GCSUPathIOManager):
         backoff(
             fn=bucket_obj.blob(blob_name=str(path)).upload_from_filename,
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
-            kwargs={"filename": path},
+            kwargs={"filename": local_path},
         )
 
 
