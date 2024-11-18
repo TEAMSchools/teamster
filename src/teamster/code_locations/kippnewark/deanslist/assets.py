@@ -6,6 +6,7 @@ from dagster import (
     StaticPartitionsDefinition,
     config_from_files,
 )
+
 from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kippnewark.deanslist.schema import (
     ASSET_SCHEMA,
