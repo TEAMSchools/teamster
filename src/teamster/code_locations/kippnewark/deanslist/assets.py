@@ -6,7 +6,6 @@ from dagster import (
     StaticPartitionsDefinition,
     config_from_files,
 )
-
 from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kippnewark.deanslist.schema import (
     ASSET_SCHEMA,
@@ -90,6 +89,11 @@ behavior = build_deanslist_paginated_multi_partition_asset(
     api_version="v1",
     schema=BEHAVIOR_SCHEMA,
     partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {"resources": {"limits": {"memory": "3.5Gi"}}}
+        }
+    },
 )
 
 fiscal_multi_partitions_assets = [behavior, *fiscal_multi_partitions_assets]
