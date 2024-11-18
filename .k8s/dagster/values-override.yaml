@@ -57,14 +57,15 @@ workspace:
       nodeSelector:
         cloud.google.com/gke-spot: "true"
         cloud.google.com/compute-class: Balanced
-        # cloud.google.com/gke-placement-group: servers
-      terminationGracePeriodSeconds: 25
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
   # Branch deployments servers have a default TTL of 24 hours
   # The max code servers defaults to 25, and only applies to servers with TTL.
   serverTTL:
+    fullDeployments:
+      enabled: true
+      ttlSeconds: 21600 # 6 hours
     branchDeployments:
       ttlSeconds: 300
 
@@ -75,58 +76,54 @@ workspace:
   # minutes to load your Dagster definitions.
   serverProcessStartupTimeout: 300
 
-  # Specifies the timeout when creating a new Kubernetes deployment for a code server.
-  # If not set, defaults to 300 seconds.
-  deploymentStartupTimeout: 300
-
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ########################################################################################
-extraManifests:
-  # Useful for providing extra configuration -- e.g. RBAC/serviceAccount information,
-  # etc. -- for user workspace pods.
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-agent
-    spec:
-      maxUnavailable: 0
-      selector:
-        matchLabels:
-          component: agent
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kippcamden
-    spec:
-      maxUnavailable: 0
-      selector:
-        matchLabels:
-          location_name: kippcamden
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kippmiami
-    spec:
-      maxUnavailable: 0
-      selector:
-        matchLabels:
-          location_name: kippmiami
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kippnewark
-    spec:
-      maxUnavailable: 0
-      selector:
-        matchLabels:
-          location_name: kippnewark
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kipptaf
-    spec:
-      maxUnavailable: 0
-      selector:
-        matchLabels:
-          location_name: kipptaf
+# extraManifests:
+#   # Useful for providing extra configuration -- e.g. RBAC/serviceAccount information,
+#   # etc. -- for user workspace pods.
+#   - apiVersion: policy/v1
+#     kind: PodDisruptionBudget
+#     metadata:
+#       name: pdb-agent
+#     spec:
+#       minAvailable: 1
+#       selector:
+#         matchLabels:
+#           component: agent
+#   - apiVersion: policy/v1
+#     kind: PodDisruptionBudget
+#     metadata:
+#       name: pdb-kippcamden
+#     spec:
+#       minAvailable: 1
+#       selector:
+#         matchLabels:
+#           location_name: kippcamden
+#   - apiVersion: policy/v1
+#     kind: PodDisruptionBudget
+#     metadata:
+#       name: pdb-kippmiami
+#     spec:
+#       minAvailable: 1
+#       selector:
+#         matchLabels:
+#           location_name: kippmiami
+#   - apiVersion: policy/v1
+#     kind: PodDisruptionBudget
+#     metadata:
+#       name: pdb-kippnewark
+#     spec:
+#       minAvailable: 1
+#       selector:
+#         matchLabels:
+#           location_name: kippnewark
+#   - apiVersion: policy/v1
+#     kind: PodDisruptionBudget
+#     metadata:
+#       name: pdb-kipptaf
+#     spec:
+#       minAvailable: 1
+#       selector:
+#         matchLabels:
+#           location_name: kipptaf

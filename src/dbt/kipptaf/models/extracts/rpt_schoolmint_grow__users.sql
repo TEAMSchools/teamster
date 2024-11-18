@@ -85,6 +85,8 @@ with
             p.inactive,
             p.role_name,
 
+            sch.school_id,
+
             r.role_id,
 
             u.user_id,
@@ -97,8 +99,6 @@ with
             u.coach as coach_id_ws,
 
             um.user_id as coach_id,
-
-            sch.school_id,
 
             cou.tag_id as course_id,
 
@@ -116,6 +116,8 @@ with
                 else 'observees'
             end as group_type,
         from people as p
+        inner join
+            {{ ref("stg_schoolmint_grow__schools") }} as sch on p.school_name = sch.name
         inner join {{ ref("stg_schoolmint_grow__roles") }} as r on p.role_name = r.name
         left join
             {{ ref("stg_schoolmint_grow__users") }} as u
@@ -123,8 +125,6 @@ with
         left join
             {{ ref("stg_schoolmint_grow__users") }} as um
             on p.manager_internal_id = um.internal_id_int
-        left join
-            {{ ref("stg_schoolmint_grow__schools") }} as sch on p.school_name = sch.name
         left join
             {{ ref("stg_schoolmint_grow__generic_tags") }} as cou
             on p.course_name = cou.name

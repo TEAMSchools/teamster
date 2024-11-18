@@ -1,6 +1,7 @@
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import DynamicPartitionsDefinition, OpExecutionContext, Output, asset
 from requests.exceptions import HTTPError
 
@@ -30,7 +31,7 @@ def build_alchemer_assets(
         partitions_def=partitions_def,
         io_manager_key="io_manager_gcs_avro",
         group_name="alchemer",
-        compute_kind="python",
+        kinds={"python"},
     )
     def survey(context: OpExecutionContext, alchemer: AlchemerResource):
         survey = alchemer._client.survey.get(id=context.partition_key)
@@ -51,7 +52,7 @@ def build_alchemer_assets(
         partitions_def=partitions_def,
         io_manager_key="io_manager_gcs_avro",
         group_name="alchemer",
-        compute_kind="python",
+        kinds={"python"},
     )
     def survey_question(context: OpExecutionContext, alchemer: AlchemerResource):
         survey = alchemer._client.survey.get(id=context.partition_key)
@@ -74,10 +75,10 @@ def build_alchemer_assets(
         partitions_def=partitions_def,
         io_manager_key="io_manager_gcs_avro",
         group_name="alchemer",
-        compute_kind="python",
+        kinds={"python"},
     )
     def survey_campaign(context: OpExecutionContext, alchemer: AlchemerResource):
-        asset_name = context.assets_def.key[-1]
+        asset_name = context.asset_key.path[-1]
         context.log.debug(asset_name)
 
         survey = alchemer._client.survey.get(id=context.partition_key)
@@ -102,7 +103,7 @@ def build_alchemer_assets(
         ),
         io_manager_key="io_manager_gcs_avro",
         group_name="alchemer",
-        compute_kind="python",
+        kinds={"python"},
     )
     def survey_response(context: OpExecutionContext, alchemer: AlchemerResource):
         partition_key_split = context.partition_key.split("_")
@@ -118,9 +119,9 @@ def build_alchemer_assets(
 
         cursor_timestamp = float(partition_key_split[1])
 
-        date_submitted = pendulum.from_timestamp(
-            cursor_timestamp, tz="America/New_York"
-        ).to_datetime_string()
+        date_submitted = datetime.fromtimestamp(
+            timestamp=cursor_timestamp, tz=ZoneInfo("America/New_York")
+        ).isoformat()
 
         if cursor_timestamp == 0:
             survey_response_obj = survey.response
@@ -157,7 +158,7 @@ def build_alchemer_assets(
         partitions_def=partitions_def,
         io_manager_key="io_manager_gcs_avro",
         group_name="alchemer",
-        compute_kind="python",
+        kinds={"python"},
     )
     def survey_response_disqualified(
         context: OpExecutionContext, alchemer: AlchemerResource

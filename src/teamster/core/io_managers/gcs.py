@@ -1,7 +1,7 @@
+from datetime import datetime
 from urllib.parse import urlparse
 
 import fastavro
-import pendulum
 from dagster import Any, InputContext, MultiPartitionKey, OutputContext
 from dagster._utils.backoff import backoff
 from dagster._utils.cached_method import cached_method
@@ -15,12 +15,10 @@ from teamster.core.utils.classes import FiscalYear
 
 class GCSUPathIOManager(PickledObjectGCSIOManager):
     def _parse_datetime_partition_value(self, partition_value: str):
-        datetime_formats = iter(["YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ssZZ", "MM/DD/YYYY"])
+        datetime_formats = iter(["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S%z", "%m/%d/%Y"])
         while True:
             try:
-                return pendulum.from_format(
-                    string=partition_value, fmt=next(datetime_formats)
-                )
+                return datetime.strptime(partition_value, next(datetime_formats))
             except ValueError:
                 pass
 
@@ -31,13 +29,11 @@ class GCSUPathIOManager(PickledObjectGCSIOManager):
             datetime = self._parse_datetime_partition_value(partition_value)
             return "/".join(
                 [
-                    (
-                        "_dagster_partition_fiscal_year="
-                        + str(FiscalYear(datetime=datetime, start_month=7).fiscal_year)
-                    ),
-                    f"_dagster_partition_date={datetime.to_date_string()}",
-                    f"_dagster_partition_hour={datetime.format(fmt='HH')}",
-                    f"_dagster_partition_minute={datetime.format(fmt='mm')}",
+                    "_dagster_partition_fiscal_year="
+                    + str(FiscalYear(datetime=datetime, start_month=7).fiscal_year),
+                    f"_dagster_partition_date={datetime.date().isoformat()}",
+                    f"_dagster_partition_hour={datetime.strftime('%H')}",
+                    f"_dagster_partition_minute={datetime.strftime('%M')}",
                 ]
             )
         except StopIteration:
@@ -114,31 +110,36 @@ class AvroGCSIOManager(GCSUPathIOManager):
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
         bucket_obj: Bucket = self.bucket_obj
+
         records, schema = obj
+        local_path = "env" / path
 
         if self.test:
             import json
 
-            fp = "env/test" / path.with_suffix(".json")
+            test_path = "env/test" / path.with_suffix(".json")
 
-            fp.parent.mkdir(parents=True, exist_ok=True)
+            test_path.parent.mkdir(parents=True, exist_ok=True)
+            json.dump(obj=records, fp=test_path.open("w"))
 
-            json.dump(obj=records, fp=fp.open("w"))
+        context.log.info(f"Writing records to {local_path}")
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with local_path.open(mode="wb") as fo:
+            fastavro.writer(
+                fo=fo,
+                schema=fastavro.parse_schema(schema),
+                records=records,
+                codec="snappy",
+            )
 
         if self.path_exists(path):
             context.log.warning(f"Existing GCS key: {path}")
 
         backoff(
-            fn=fastavro.writer,
+            fn=bucket_obj.blob(blob_name=str(path)).upload_from_filename,
             retry_on=(TooManyRequests, Forbidden, ServiceUnavailable),
-            kwargs={
-                "fo": bucket_obj.blob(blob_name=str(path)).open(
-                    mode="wb", ignore_flush=True
-                ),
-                "schema": fastavro.parse_schema(schema),
-                "records": records,
-                "codec": "snappy",
-            },
+            kwargs={"filename": local_path},
         )
 
 

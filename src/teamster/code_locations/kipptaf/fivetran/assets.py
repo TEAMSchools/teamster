@@ -8,7 +8,12 @@ from teamster.code_locations.kipptaf import CODE_LOCATION
 config_dir = pathlib.Path(__file__).parent / "config"
 
 
-def build_fivetran_asset_specs(config_file: pathlib.Path, code_location):
+def build_fivetran_asset_specs(
+    config_file: pathlib.Path, code_location: str, kinds: list[str] | None = None
+):
+    if kinds is None:
+        kinds = []
+
     specs = []
 
     config = yaml.safe_load(config_file.read_text())
@@ -37,6 +42,7 @@ def build_fivetran_asset_specs(config_file: pathlib.Path, code_location):
                         "dataset_id": dataset_id,
                         "table_id": table,
                     },
+                    kinds={"fivetran", "bigquery", *kinds},
                 )
             )
 
@@ -52,19 +58,27 @@ coupa_assets = build_fivetran_asset_specs(
 )
 
 facebook_pages_assets = build_fivetran_asset_specs(
-    config_file=config_dir / "facebook_pages.yaml", code_location=CODE_LOCATION
+    config_file=config_dir / "facebook_pages.yaml",
+    code_location=CODE_LOCATION,
+    kinds=["facebook"],
 )
 
 illuminate_xmin_assets = build_fivetran_asset_specs(
-    config_file=config_dir / "illuminate_xmin.yaml", code_location=CODE_LOCATION
+    config_file=config_dir / "illuminate_xmin.yaml",
+    code_location=CODE_LOCATION,
+    kinds=["postgresql"],
 )
 
 illuminate_assets = build_fivetran_asset_specs(
-    config_file=config_dir / "illuminate.yaml", code_location=CODE_LOCATION
+    config_file=config_dir / "illuminate.yaml",
+    code_location=CODE_LOCATION,
+    kinds=["postgresql"],
 )
 
 instagram_business_assets = build_fivetran_asset_specs(
-    config_file=config_dir / "instagram_business.yaml", code_location=CODE_LOCATION
+    config_file=config_dir / "instagram_business.yaml",
+    code_location=CODE_LOCATION,
+    kinds=["instagram"],
 )
 
 asset_specs = [

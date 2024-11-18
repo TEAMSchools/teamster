@@ -1,7 +1,7 @@
 import json
 import re
+from datetime import datetime
 
-import pendulum
 from dagster import (
     RunRequest,
     SensorEvaluationContext,
@@ -23,7 +23,7 @@ job = define_asset_job(name=f"{CODE_LOCATION}_adp_wfn_sftp_asset_job", selection
 def adp_wfn_sftp_sensor(
     context: SensorEvaluationContext, ssh_adp_workforce_now: SSHResource
 ):
-    now = pendulum.now(tz=LOCAL_TIMEZONE)
+    now = datetime.now(LOCAL_TIMEZONE)
 
     run_requests = []
     cursor: dict = json.loads(context.cursor or "{}")

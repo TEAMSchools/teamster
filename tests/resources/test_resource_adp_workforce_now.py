@@ -28,7 +28,7 @@ def test_event_notification():
     print(r.json())
 
 
-def _test_get_worker(as_of_date: str, aoid: str | None = None):
+def _test_get_worker(aoid: str | None = None, as_of_date: str | None = None):
     params = {
         "asOfDate": as_of_date,
         "$select": ",".join(
@@ -72,7 +72,7 @@ def _test_get_worker(as_of_date: str, aoid: str | None = None):
 
 
 def test_get_worker():
-    _test_get_worker(as_of_date="01/29/2024", aoid="G3R8E9HV8QXW9AWE")
+    _test_get_worker(aoid="G3ASWDTVJ0WVY5R9")
 
 
 def test_get_worker_list():

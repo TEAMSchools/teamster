@@ -25,6 +25,7 @@ with
 
             os.id as overgrad_students_id,
             os.graduation_year as overgrad_students_graduation_year,
+            os.school__name as overgrad_students_school,
 
             concat(
                 os.assigned_counselor__last_name,

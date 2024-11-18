@@ -3,6 +3,7 @@ with
         select
             e._dbt_source_relation,
             e.academic_year,
+            e.academic_year_display,
             e.region,
             e.schoolid,
             e.school,
@@ -15,15 +16,14 @@ with
             e.is_out_of_district,
             e.gender,
             e.lunch_status,
+            e.gifted_and_talented,
             e.iep_status,
             e.is_504,
             e.lep_status,
             e.ms_attended,
             e.advisory,
-
-            case
-                e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
-            end as race_ethnicity,
+            e.race_ethnicity,
+            e.year_in_network,
 
             max(e.grade_level) over (
                 partition by e.student_number
@@ -105,6 +105,7 @@ with
         select
             s._dbt_source_relation,
             s.academic_year,
+            s.academic_year_display,
             s.region,
             s.schoolid,
             s.school,
@@ -117,8 +118,10 @@ with
             s.enroll_status,
             s.gender,
             s.lunch_status,
+            s.gifted_and_talented,
             s.ms_attended,
             s.advisory,
+            s.year_in_network,
 
             a.assessment_name,
             a.discipline,
@@ -219,7 +222,14 @@ with
     ),
 
     state_comps as (
-        select academic_year, test_name, test_code, region, city, `state`,
+        select
+            academic_year,
+            test_name,
+            test_code,
+            region,
+            city,
+            `state`,
+            'Spring' as season,
         from
             {{ ref("stg_assessments__state_test_comparison") }}
             pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
@@ -241,6 +251,7 @@ with
 
 select
     s.academic_year,
+    s.academic_year_display,
     s.region,
     s.schoolid,
     s.school,
@@ -253,12 +264,14 @@ select
     s.enroll_status,
     s.gender,
     s.lunch_status,
+    s.gifted_and_talented,
     s.race_ethnicity,
     s.lep_status,
     s.is_504,
     s.iep_status,
     s.ms_attended,
     s.advisory,
+    s.year_in_network,
     s.assessment_name,
     s.discipline,
     s.subject,
@@ -302,6 +315,7 @@ left join
     and s.assessment_name = c.test_name
     and s.test_code = c.test_code
     and s.region = c.region
+    and s.season = c.season
 left join
     goals as g
     on s.academic_year = g.academic_year
@@ -328,6 +342,7 @@ union all
 
 select
     academic_year,
+    academic_year_display,
     region,
     schoolid,
     school,
@@ -339,6 +354,7 @@ select
     enroll_status,
     gender,
     lunch_status,
+    gifted_and_talented,
     race_ethnicity,
     lep_status,
     is_504,

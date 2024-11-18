@@ -1,3 +1,10 @@
+with
+    magic_notes as (
+        select observation_id, string_agg(text, '; ') as magic_notes_text,
+        from {{ ref("stg_schoolmint_grow__observations__magic_notes") }}
+        group by observation_id
+    )
+
 select
     o.observation_id,
     o.rubric_id,
@@ -10,9 +17,7 @@ select
     o.observed_at_date_local,
     o.academic_year,
     o.is_published,
-
-    mn.text as magic_notes_text,
-
+    mn.magic_notes_text,
     s.name as school_name,
 
     gt.name as observation_type_name,
@@ -24,10 +29,9 @@ select
     safe_cast(ut.internal_id as int) as teacher_internal_id,
 
     safe_cast(uo.internal_id as int) as observer_internal_id,
+
 from {{ ref("stg_schoolmint_grow__observations") }} as o
-left join
-    {{ ref("stg_schoolmint_grow__observations__magic_notes") }} as mn
-    on o.observation_id = mn.observation_id
+left join magic_notes as mn on o.observation_id = mn.observation_id
 left join {{ ref("stg_schoolmint_grow__users") }} as ut on o.teacher_id = ut.user_id
 left join {{ ref("stg_schoolmint_grow__users") }} as uo on o.observer_id = uo.user_id
 left join

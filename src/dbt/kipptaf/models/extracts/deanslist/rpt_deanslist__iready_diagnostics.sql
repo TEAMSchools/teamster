@@ -23,6 +23,10 @@ with
             percent_progress_to_annual_stretch_growth_percent,
             rn_subj_round,
 
+            concat(
+                overall_relative_placement, ' (', overall_scale_score, ')'
+            ) as score_display,
+
             case
                 test_round
                 when 'BOY'
@@ -74,6 +78,7 @@ select
     overall_placement_display,
     percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
+    score_display,
 
     'Test Rounds' as `domain`,
 from diagnostic_results
@@ -97,6 +102,7 @@ select
     ir.overall_placement_display,
     ir.percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     ir.percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
+    ir.score_display,
 
     'YTD Growth' as `domain`,
 from diagnostic_results as ir

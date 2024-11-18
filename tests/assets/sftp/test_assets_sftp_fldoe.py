@@ -2,7 +2,7 @@ import random
 
 from dagster import materialize
 
-from teamster.code_locations.kippmiami.fldoe.assets import eoc, fast, fsa, science
+from teamster.code_locations.kippmiami.fldoe.assets import eoc, fast, fsa, fte, science
 from teamster.core.resources import SSH_COUCHDROP, get_io_manager_gcs_avro
 
 
@@ -54,3 +54,10 @@ def test_fldoe_eoc_kippmiami():
 
 def test_fldoe_science_kippmiami():
     _test_asset(asset=science)
+
+
+def test_fldoe_fte_kippmiami():
+    _test_asset(
+        asset=fte,
+        # partition_key="25|2",
+    )

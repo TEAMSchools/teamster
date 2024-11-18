@@ -2,8 +2,9 @@ with
     expanded_terms as (
         select
             academic_year,
-            name,
-            start_date,
+            `name`,
+            `start_date`,
+
             case
                 region
                 when 'KIPP Miami'
@@ -13,10 +14,10 @@ with
                 when 'KIPP Cooper Norcross Academy'
                 then 'Camden'
             end as region,
-            -- end_date contains test window end date
-            -- this needs continuous dates
+
+            /* end_date contains test window end date this needs continuous dates */
             coalesce(
-                lead(start_date, 1) over (
+                lead(`start_date`, 1) over (
                     partition by academic_year, region order by code asc
                 )
                 - 1,
@@ -28,21 +29,23 @@ with
 
 select
     co.academic_year,
+    co.academic_year_display,
     co.student_number,
-    co.lastfirst,
+    co.student_name,
     co.grade_level,
     co.region,
     co.school_name,
-    co.advisor_lastfirst as advisor_name,
+    co.advisory as advisor_name,
     co.lep_status,
-    co.spedlep as iep_status,
+    co.iep_status,
     co.school_level,
     co.gender,
     co.ethnicity,
     co.schoolid,
-    co.school_abbreviation,
+    co.school,
+    co.gifted_and_talented,
 
-    subj as subject,
+    subj as `subject`,
 
     w.week_start_monday,
     w.week_end_sunday,
@@ -97,10 +100,14 @@ select
         true,
         false
     ) as is_curterm,
-    concat(left(co.first_name, 1), '. ', co.last_name) as student_name_short,
+
+    concat(
+        left(co.student_first_name, 1), '. ', co.student_last_name
+    ) as student_name_short,
+
     dr.mid_on_grade_level_scale_score
     - dr.overall_scale_score as scale_pts_to_mid_on_grade_level,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_tableau__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as w
     on co.schoolid = w.schoolid
@@ -114,7 +121,7 @@ left join
     and co.region = rt.region
     and w.week_start_monday between rt.start_date and rt.end_date
 left join
-    {{ ref("stg_iready__personalized_instruction_by_lesson") }} as il
+    {{ ref("int_iready__instruction_by_lesson_union") }} as il
     on co.student_number = il.student_id
     and subj = il.subject
     and il.completion_date between w.week_start_monday and w.week_end_sunday
@@ -162,6 +169,5 @@ left join
     and cr.rn_credittype_year = 1
 where
     co.academic_year >= {{ var("current_academic_year") - 1 }}
-    and co.rn_year = 1
     and co.enroll_status = 0
     and co.grade_level <= 8

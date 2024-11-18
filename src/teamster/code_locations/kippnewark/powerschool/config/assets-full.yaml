@@ -63,10 +63,11 @@ assets:
     select_columns:
       - studentsdcid
       - c_504_status
-      - newark_enrollment_number
+      - cr_prevschoolname
       - infosnap_id
       - infosnap_opt_in
       - media_release
+      - newark_enrollment_number
       - rides_staff
   - asset_name: person
     partition_column: whenmodified

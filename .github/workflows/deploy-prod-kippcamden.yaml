@@ -16,7 +16,6 @@ on:
       - src/dbt/overgrad/**
       - src/dbt/pearson/**
       - src/dbt/powerschool/**
-      - src/dbt/teamster_utils/**
       - src/dbt/titan/**
       - src/teamster/code_locations/kippcamden/**
       - src/teamster/core/**
@@ -28,10 +27,14 @@ on:
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
   pull_request:
     paths:
+      - .github/workflows/dagster-cloud-deploy.yaml
+      - .github/workflows/deploy-prod-kippcamden.yaml
+      - Dockerfile
       - src/teamster/code_locations/kippcamden/**
       - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
@@ -42,6 +45,7 @@ on:
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
     types:

@@ -3,6 +3,7 @@ with
         select
             e._dbt_source_relation,
             e.academic_year,
+            e.academic_year_display,
             e.district,
             e.state,
             e.region,
@@ -104,6 +105,7 @@ with
 select
     s._dbt_source_relation,
     s.academic_year,
+    s.academic_year_display,
     s.district,
     s.region,
     s.state,
@@ -131,6 +133,7 @@ select
     s.expected_mclass_measure_name,
     s.expected_mclass_measure_standard,
     null as goal,
+    null as admin_benchmark,
 
     m.schedule_student_number,
     m.schedule_student_grade_level,
@@ -143,7 +146,6 @@ select
     m.hos,
 
     a.mclass_student_number,
-    a.assessment_type,
     a.mclass_assessment_grade,
     a.mclass_period,
     a.mclass_client_date,
@@ -165,6 +167,12 @@ select
 
     f.nj_student_tier,
     f.tutoring_nj,
+
+    coalesce(a.assessment_type, 'Benchmark') as assessment_type,
+
+    null as met_standard_goal,
+    null as met_overall_goal,
+    null as met_bm_goal,
 
     right(s.test_code, 1) as expected_round,
 
@@ -204,6 +212,7 @@ union all
 select
     _dbt_source_relation,
     academic_year,
+    academic_year_display,
     district,
     region,
     state,
@@ -231,6 +240,7 @@ select
     expected_mclass_measure_name,
     expected_mclass_measure_standard,
     goal,
+    admin_benchmark,
 
     schedule_student_number,
     schedule_student_grade_level,
@@ -243,7 +253,6 @@ select
     hos,
 
     mclass_student_number,
-    assessment_type,
     mclass_assessment_grade,
     mclass_period,
     mclass_client_date,
@@ -266,6 +275,13 @@ select
     nj_student_tier,
     tutoring_nj,
 
+    assessment_type,
+
+    met_standard_goal,
+    met_overall_goal,
+    met_bm_goal,
+
     expected_round,
     expected_grade_level,
+
 from {{ ref("rpt_tableau__dibels_pm_dashboard") }}

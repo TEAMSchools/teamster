@@ -80,6 +80,14 @@ with
             sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) as n_failing,
             sum(
                 if(
+                    y1_letter_grade_adjusted in ('F', 'F*')
+                    and credittype in ('ENG', 'MATH', 'SCI', 'SOC'),
+                    1,
+                    0
+                )
+            ) as n_failing_core,
+            sum(
+                if(
                     {# TODO: exclude credits if current year Y1 is stored #}
                     y1_letter_grade_adjusted not in ('F', 'F*'),
                     potential_credit_hours,
@@ -98,6 +106,7 @@ with
             fg.storecode,
             fg.enrolled_credit_hours,
             fg.n_failing,
+            fg.n_failing_core,
             fg.projected_credits_y1_term,
 
             coalesce(fg.projected_credits_y1_term, 0)
@@ -125,6 +134,106 @@ with
             iready_dr pivot (
                 max(most_recent_overall_relative_placement) for `subject`
                 in ('Reading' as iready_reading_recent, 'Math' as iready_math_recent)
+            )
+    ),
+
+    mclass as (
+        select
+            mclass_academic_year as academic_year,
+            mclass_student_number as student_number,
+            mclass_measure_standard_level,
+            mclass_measure_standard_level_int,
+            mclass_client_date,
+
+            row_number() over (
+                partition by mclass_academic_year, mclass_student_number
+                order by mclass_client_date desc
+            ) as rn_composite,
+        from {{ ref("int_amplify__all_assessments") }}
+        where assessment_type = 'Benchmark' and mclass_measure_name_code = 'Composite'
+    ),
+
+    star_results as (
+        select
+            student_display_id,
+            district_benchmark_category_level,
+
+            safe_cast(left(school_year, 4) as int) as academic_year,
+            case
+                when _dagster_partition_subject = 'SM'
+                then 'Math'
+                when _dagster_partition_subject = 'SR'
+                then 'Reading'
+                when _dagster_partition_subject = 'SEL'
+                then 'Early Literacy'
+            end as star_subject,
+            row_number() over (
+                partition by
+                    student_display_id,
+                    _dagster_partition_subject,
+                    school_year,
+                    screening_period_window_name
+                order by completed_date desc
+            ) as rn_subj_year,
+        from {{ ref("stg_renlearn__star") }}
+        where deactivation_reason is null
+    ),
+
+    star as (
+        select
+            student_display_id,
+            academic_year,
+            star_math,
+            star_reading,
+            star_early_literacy,
+        from
+            (
+                select
+                    s.student_display_id,
+                    s.academic_year,
+                    s.star_subject,
+                    s.district_benchmark_category_level,
+                from star_results as s
+                where s.rn_subj_year = 1
+            ) pivot (
+                max(district_benchmark_category_level) for star_subject in (
+                    'Math' as star_math,
+                    'Reading' as star_reading,
+                    'Early Literacy' as star_early_literacy
+                )
+            )
+    ),
+
+    fast_results as (
+        select
+            student_id,
+            academic_year,
+            assessment_subject,
+            administration_window,
+            achievement_level_int,
+
+            row_number() over (
+                partition by student_id, academic_year, assessment_subject
+                order by administration_window desc
+            ) as rn_subject_year,
+        from {{ ref("stg_fldoe__fast") }}
+    ),
+
+    fast as (
+        select student_id, academic_year, administration_window, fast_ela, fast_math,
+        from
+            (
+                select
+                    f.student_id,
+                    f.academic_year,
+                    f.assessment_subject,
+                    f.administration_window,
+                    f.achievement_level_int,
+                from fast_results as f
+                where f.rn_subject_year = 1
+            ) pivot (
+                max(achievement_level_int) for assessment_subject
+                in ('English Language Arts' as fast_ela, 'Mathematics' as fast_math)
             )
     ),
 
@@ -176,8 +285,19 @@ with
             ir.iready_math_recent,
 
             c.n_failing,
+            c.n_failing_core,
             c.projected_credits_y1_term,
             c.projected_credits_cum,
+
+            m.mclass_measure_standard_level as dibels_composite_level_recent_str,
+            m.mclass_measure_standard_level_int as dibels_composite_level_recent,
+
+            s.star_math as star_math_level_recent,
+            s.star_reading as star_reading_level_recent,
+            s.star_early_literacy as star_early_literacy_level_recent,
+
+            f.fast_ela as fast_ela_level_recent,
+            f.fast_math as fast_math_level_recent,
 
             case
                 when
@@ -201,13 +321,21 @@ with
                 when co.grade_level <= 8 and att.ada_term_running is null
                 then 'Off-Track'
                 /* Gr K */
-                when co.grade_level = 0 and att.ada_term_running < 0.75
+                when co.grade_level = 0 and att.ada_term_running < 0.80
                 then 'Off-Track'
                 /* Gr 1-2 */
-                when co.grade_level between 1 and 2 and att.ada_term_running < 0.80
+                when co.grade_level between 1 and 2 and att.ada_term_running < 0.85
                 then 'Off-Track'
                 /* Gr3-8 */
-                when co.grade_level between 3 and 8 and att.ada_term_running < 0.85
+                when
+                    co.grade_level between 3 and 8
+                    and co.region = 'Camden'
+                    and att.ada_term_running < 0.86
+                then 'Off-Track'
+                when
+                    co.grade_level between 3 and 8
+                    and co.region = 'Newark'
+                    and att.ada_term_running < 0.87
                 then 'Off-Track'
                 /* HS */
                 when
@@ -226,13 +354,21 @@ with
                 when co.grade_level <= 8 and att.ada_term_running is null
                 then 'Off-Track'
                 /* Gr K */
-                when co.grade_level = 0 and att.ada_term_running < 0.75
+                when co.grade_level = 0 and att.ada_term_running < 0.80
                 then 'Off-Track'
                 /* Gr 1-2 */
-                when co.grade_level between 1 and 2 and att.ada_term_running < 0.80
+                when co.grade_level between 1 and 2 and att.ada_term_running < 0.85
                 then 'Off-Track'
                 /* Gr3-8 */
-                when co.grade_level between 3 and 8 and att.ada_term_running < 0.85
+                when
+                    co.grade_level between 3 and 8
+                    and co.region = 'Camden'
+                    and att.ada_term_running < 0.86
+                then 'Off-Track'
+                when
+                    co.grade_level between 3 and 8
+                    and co.region = 'Newark'
+                    and att.ada_term_running < 0.87
                 then 'Off-Track'
                 /* HS */
                 when
@@ -247,20 +383,29 @@ with
             end as attendance_status_hs_detail,
 
             case
-                /* Gr1-2 */
+                /* GrK-1 NJ */
                 when
-                    co.grade_level between 1 and 2
+                    co.grade_level <= 1
+                    and coalesce(m.mclass_measure_standard_level_int, 0) <= 1
+                then 'Off-Track'
+                /* Gr2 NJ */
+                when
+                    co.grade_level = 2
                     and coalesce(ir.iready_reading_recent, '')
                     in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
                 then 'Off-Track'
                 /* Gr3-8 */
                 when
                     co.grade_level between 3 and 8
-                    and coalesce(ir.iready_reading_recent, '')
-                    in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
-                    and coalesce(ir.iready_math_recent, '')
-                    in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
+                    and (
+                        coalesce(ir.iready_reading_recent, '')
+                        in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
+                        and coalesce(ir.iready_math_recent, '')
+                        in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
+                    )
+                    or c.n_failing_core >= 2
                 then 'Off-Track'
+
                 /* HS */
                 when co.grade_level = 9 and c.projected_credits_cum < 25
                 then 'Off-Track'
@@ -291,6 +436,17 @@ with
             on co.student_number = ir.student_id
             and co.academic_year = ir.academic_year_int
         left join
+            mclass as m
+            on co.academic_year = m.academic_year
+            and co.student_number = m.student_number
+            and m.rn_composite = 1
+        left join
+            star as s
+            on co.student_number = s.student_display_id
+            and co.academic_year = s.academic_year
+        left join
+            fast as f on co.fleid = f.student_id and co.academic_year = f.academic_year
+        left join
             {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
             on co.students_dcid = nj.studentsdcid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
@@ -313,20 +469,28 @@ select
     iready_reading_recent,
     iready_math_recent,
     n_failing,
+    n_failing_core,
     projected_credits_cum,
     projected_credits_y1_term,
+    dibels_composite_level_recent_str,
+    dibels_composite_level_recent,
+    star_math_level_recent,
+    star_reading_level_recent,
+    star_early_literacy_level_recent,
+    fast_ela_level_recent,
+    fast_math_level_recent,
     attendance_status,
     attendance_status_hs_detail,
     academic_status,
     exemption,
 
     case
-        when grade_level = 0
-        then attendance_status
         when
-            grade_level between 1 and 8
+            grade_level <= 8
             and academic_status = 'Off-Track'
             and attendance_status = 'Off-Track'
+        then 'Off-Track'
+        when grade_level between 5 and 8 and n_failing_core >= 2
         then 'Off-Track'
         when
             grade_level >= 9

@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: edplan
-    schema: "{{ var('edplan_schema', 'edplan') }}"
+    schema: "{{ var('edplan_schema', env_var('DBT_DEV_EDPLAN_SCHEMA', 'edplan')) }}"
     database: "{{ var('edplan_database', target.database) }}"
     tables:
       - name: src_edplan__njsmart_powerschool_archive

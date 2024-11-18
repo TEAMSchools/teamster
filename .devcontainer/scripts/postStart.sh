@@ -11,9 +11,3 @@ sudo /usr/local/py-utils/bin/pdm self update
 
 # update trunk
 trunk upgrade -y --no-progress
-
-# update dbt cloud cli
-# sudo python -m pip install --upgrade dbt
-
-# set default kubectl context
-kubectl config set-context --current --namespace=dagster-cloud

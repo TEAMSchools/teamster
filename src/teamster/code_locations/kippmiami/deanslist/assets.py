@@ -1,5 +1,4 @@
 import pathlib
-import re
 
 from dagster import (
     MonthlyPartitionsDefinition,
@@ -9,10 +8,14 @@ from dagster import (
 )
 
 from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kippmiami.deanslist.schema import ASSET_SCHEMA
+from teamster.code_locations.kippmiami.deanslist.schema import (
+    ASSET_SCHEMA,
+    BEHAVIOR_SCHEMA,
+)
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.deanslist.assets import (
     build_deanslist_multi_partition_asset,
+    build_deanslist_paginated_multi_partition_asset,
     build_deanslist_static_partition_asset,
 )
 
@@ -21,7 +24,7 @@ DEANSLIST_STATIC_PARTITIONS_DEF = StaticPartitionsDefinition(["472", "525"])
 DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
     partitions_defs={
         "date": MonthlyPartitionsDefinition(
-            start_date="2018-07-01", timezone=LOCAL_TIMEZONE.name, end_offset=1
+            start_date="2018-07-01", timezone=str(LOCAL_TIMEZONE), end_offset=1
         ),
         "school": DEANSLIST_STATIC_PARTITIONS_DEF,
     }
@@ -32,7 +35,7 @@ DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
         "date": FiscalYearPartitionsDefinition(
             start_date="2018-07-01",
             start_month=7,
-            timezone=LOCAL_TIMEZONE.name,
+            timezone=str(LOCAL_TIMEZONE),
             end_offset=1,
         ),
         "school": DEANSLIST_STATIC_PARTITIONS_DEF,
@@ -43,11 +46,7 @@ config_dir = pathlib.Path(__file__).parent / "config"
 
 static_partitions_assets = [
     build_deanslist_static_partition_asset(
-        asset_key=[
-            CODE_LOCATION,
-            "deanslist",
-            re.sub(pattern=r"\W", repl="_", string=e["endpoint"]),
-        ],
+        code_location=CODE_LOCATION,
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_STATIC_PARTITIONS_DEF,
         **e,
@@ -59,11 +58,8 @@ static_partitions_assets = [
 
 monthly_multi_partitions_assets = [
     build_deanslist_multi_partition_asset(
-        asset_key=[
-            CODE_LOCATION,
-            "deanslist",
-            re.sub(pattern=r"\W", repl="_", string=e["endpoint"]),
-        ],
+        code_location=CODE_LOCATION,
+        api_version="v1",
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF,
         **e,
@@ -75,11 +71,8 @@ monthly_multi_partitions_assets = [
 
 fiscal_multi_partitions_assets = [
     build_deanslist_multi_partition_asset(
-        asset_key=[
-            CODE_LOCATION,
-            "deanslist",
-            re.sub(pattern=r"\W", repl="_", string=e["endpoint"]),
-        ],
+        code_location=CODE_LOCATION,
+        api_version="v1",
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
         **e,
@@ -88,6 +81,16 @@ fiscal_multi_partitions_assets = [
         "endpoints"
     ]
 ]
+
+behavior = build_deanslist_paginated_multi_partition_asset(
+    code_location=CODE_LOCATION,
+    endpoint="behavior",
+    api_version="v1",
+    schema=BEHAVIOR_SCHEMA,
+    partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
+)
+
+fiscal_multi_partitions_assets = [behavior, *fiscal_multi_partitions_assets]
 
 assets = [
     *static_partitions_assets,

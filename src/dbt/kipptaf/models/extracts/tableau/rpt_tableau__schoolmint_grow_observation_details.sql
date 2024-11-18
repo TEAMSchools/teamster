@@ -10,6 +10,18 @@ with
         group by employee_number
     ),
 
+    recent_leave as (
+        select distinct
+            srh.employee_number, t.academic_year, t.code, true as recent_leave,
+        from {{ ref("base_people__staff_roster_history") }} as srh
+        inner join
+            {{ ref("stg_reporting__terms") }} as t
+            on assignment_status_effective_date
+            between date_sub(t.lockbox_date, interval 6 week) and t.lockbox_date
+            and t.type = 'PMS'
+            and (assignment_status = 'Leave' or assignment_status_lag = 'Leave')
+    ),
+
     tracks as (
         select
             o.observation_id,
@@ -61,6 +73,9 @@ select
     t.name as tracking_rubric,
     t.academic_year as tracking_academic_year,
     t.is_current,
+    t.start_date,
+    t.end_date,
+    t.lockbox_date,
 
     os.final_score,
     os.final_tier,
@@ -100,17 +115,33 @@ select
 
     regexp_replace(od.measurement_comments, r'<[^>]+>', '') as measurement_comments,
 
+    /* round eligibility for PM
+    1: TiRs, Miami, Prior TiR (New Lead), New to KIPP
+    2+3: Active six weeks prior to lockbox date */
     case
-        when srh.business_unit_home_name = 'KIPP Miami'
+        when r.recent_leave
+        then false
+        when
+            t.code = 'PM1'
+            and (
+                srh.job_title = 'Teacher in Residence'
+                or tir.prior_year_tir
+                or srh.business_unit_home_name = 'KIPP Miami'
+                or srh.worker_original_hire_date
+                between '{{ var("current_academic_year") }}-04-01' and date_sub(
+                    t.lockbox_date, interval 6 week
+                )
+            )
         then true
-        when srh.job_title = 'Teacher in Residence'
-        then true
-        when srh.worker_original_hire_date >= '{{ var("current_academic_year") }}-04-01'
-        then true
-        when tir.prior_year_tir is true
+        when
+            t.code in ('PM2', 'PM3')
+            and (
+                srh.worker_original_hire_date
+                <= date_sub(t.lockbox_date, interval 6 week)
+            )
         then true
         else false
-    end as boy_eligible,
+    end as pm_round_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as t
@@ -145,6 +176,11 @@ left join
     on srh.powerschool_teacher_number = tgl.teachernumber
     and t.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
+left join
+    recent_leave as r
+    on srh.employee_number = r.employee_number
+    and t.academic_year = r.academic_year
+    and t.code = r.code
 where
     (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
     and srh.assignment_status = 'Active'
@@ -171,6 +207,9 @@ select
     null as tracking_rubric,
     null as tracking_academic_year,
     false as is_current,
+    null as start_date,
+    null as end_date,
+    null as lockbox_date,
 
     os.final_score,
     os.final_tier,
@@ -211,7 +250,7 @@ select
 
     regexp_replace(od.measurement_comments, r'<[^>]+>', '') as measurement_comments,
 
-    null as boy_eligible,
+    null as pm_round_eligible,
 from {{ ref("base_people__staff_roster_history") }} as srh
 inner join
     {{ ref("int_performance_management__observation_details") }} as od

@@ -1,7 +1,8 @@
 {%- snapshot snapshot_people__employee_numbers -%}
+
     {{
         config(
-            target_schema="kipptaf_people",
+            target_schema=generate_schema_name("people"),
             unique_key="surrogate_key",
             strategy="check",
             check_cols="all",
@@ -22,4 +23,5 @@
             )
         }} as surrogate_key,
     from {{ ref("stg_people__employee_numbers") }}
+
 {%- endsnapshot -%}

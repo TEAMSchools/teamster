@@ -34,7 +34,9 @@ with
                 'Effort (Pride)',
                 'Accountability (Purpose, Courage)',
                 'Accountability (Empowerment)',
-                'Teamwork (Community)'
+                'Teamwork (Community)',
+                'Written Reminders',
+                'Big Reminders'
             )
             and behavior_date >= '{{ var("current_academic_year") - 1 }}-07-01'
     ),
@@ -165,6 +167,8 @@ select
     if(
         co.is_self_contained, 'Self-contained', 'Not self-contained'
     ) as self_contained_status,
+
+    extract(month from cw.week_start_monday) as behavior_month,
 
     count(distinct co.student_number) over (
         partition by co.schoolid, cw.week_start_monday

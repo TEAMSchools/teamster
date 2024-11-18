@@ -18,25 +18,22 @@ with
     iready_lessons as (
         select
             student_id,
-            subject,
+            `subject`,
+
             count(distinct lesson_id) as total_lessons,
             sum(passed_or_not_passed_numeric) as lessons_passed,
-        from {{ ref("stg_iready__personalized_instruction_by_lesson") }}
+        from {{ ref("stg_iready__instruction_by_lesson") }}
         where
-            completion_date in (
-                select date_value,
-                from
-                    unnest(
-                        generate_date_array(
-                            date_sub(
-                                date_trunc(current_date('America/New_York'), week),
-                                interval 1 week
-                            ),
-                            last_day(current_date('America/New_York'), week)
-                        )
-                    ) as date_value
+            completion_date in unnest(
+                generate_date_array(
+                    date_sub(
+                        date_trunc(current_date('{{ var("local_timezone") }}'), week),
+                        interval 1 week
+                    ),
+                    last_day(current_date('{{ var("local_timezone") }}'), week)
+                )
             )
-        group by student_id, subject
+        group by student_id, `subject`
     ),
 
     pre_filter_qaf as (
@@ -55,21 +52,9 @@ with
 
     scale_crosswalk as (
         select
-            2022 as academic_year,
             administration_window,
-            'FAST' as source_system,
-            'FL' as destination_system,
-        from unnest(['PM1', 'PM2']) as administration_window
-        union all
-        select
-            2022 as academic_year,
-            'PM3' as administration_window,
-            'FAST_NEW' as source_system,
-            'FL' as destination_system,
-        union all
-        select
             academic_year,
-            administration_window,
+
             'FAST_NEW' as source_system,
             'FL' as destination_system,
         from
@@ -77,6 +62,24 @@ with
                 generate_array(2023, {{ var("current_academic_year") }})
             ) as academic_year
         cross join unnest(['PM1', 'PM2', 'PM3']) as administration_window
+
+        union all
+
+        select
+            administration_window,
+
+            2022 as academic_year,
+            'FAST' as source_system,
+            'FL' as destination_system,
+        from unnest(['PM1', 'PM2']) as administration_window
+
+        union all
+
+        select
+            'PM3' as administration_window,
+            2022 as academic_year,
+            'FAST_NEW' as source_system,
+            'FL' as destination_system,
     ),
 
     prev_pm3 as (
@@ -90,6 +93,7 @@ with
             i.sublevel_number as prev_pm3_sublevel_number,
 
             f.academic_year + 1 as academic_year_next,
+
             round(
                 rank() over (
                     partition by
@@ -176,15 +180,25 @@ select
     ft.achievement_level,
     ft.scale_score,
     ft.scale_score_prev,
+    ft.sublevel_name as fast_sublevel_name,
+    ft.sublevel_number as fast_sublevel_number,
+    ft.scale_for_growth as fast_scale_for_growth,
+    ft.scale_for_proficiency as fast_scale_for_proficiency,
+    ft.points_to_growth as fast_scale_points_to_growth,
+    ft.points_to_proficiency as fast_scale_points_to_proficiency,
+    ft.achievement_level_int as fast_level_int,
 
     p.prev_pm3_scale,
     p.prev_pm3_level_int,
     p.prev_pm3_sublevel_name,
     p.prev_pm3_sublevel_number,
     p.fldoe_percentile_rank,
-
-    cwf.sublevel_name as fast_sublevel_name,
-    cwf.sublevel_number as fast_sublevel_number,
+    p.scale_for_growth as scale_for_growth_prev_pm3,
+    p.sublevel_for_growth as sublevel_for_growth_prev_pm3,
+    p.sublevel_number_for_growth as sublevel_number_for_growth_prev_pm3,
+    p.scale_for_proficiency as scale_for_proficiency_prev_pm3,
+    p.scale_points_to_growth_pm3,
+    p.scale_points_to_proficiency_pm3,
 
     fs.standard as standard_domain,
     fs.performance as mastery_indicator,
@@ -192,11 +206,13 @@ select
 
     sf.territory,
 
-    if(fte.is_enrolled_fte2 and fte.is_enrolled_fte3, true, false) as is_enrolled_fte,
+    coalesce(sf.nj_student_tier, 'Unbucketed') as student_tier,
 
     round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
 
-    case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
+    if(fte.is_enrolled_fte2 and fte.is_enrolled_fte3, true, false) as is_enrolled_fte,
+
+    if(p.fldoe_percentile_rank < .255, true, false) as is_low_25,
 
     if(
         not co.is_retained_year
@@ -207,19 +223,19 @@ select
         0
     ) as gr3_retention_flag,
 
-    if(p.fldoe_percentile_rank < .255, true, false) as is_low_25,
+    case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
 
     case
         when
             p.prev_pm3_scale is not null
-            and cwf.sublevel_number > p.prev_pm3_sublevel_number
+            and ft.sublevel_number > p.prev_pm3_sublevel_number
         then true
-        when p.prev_pm3_scale is not null and cwf.sublevel_number = 8
+        when p.prev_pm3_scale is not null and ft.sublevel_number = 8
         then true
         when
             p.prev_pm3_scale is not null
             and p.prev_pm3_sublevel_number in (6, 7)
-            and p.prev_pm3_sublevel_number = cwf.sublevel_number
+            and p.prev_pm3_sublevel_number = ft.sublevel_number
             and ft.scale_score > p.prev_pm3_scale
         then true
         when p.prev_pm3_scale is not null
@@ -234,6 +250,11 @@ select
             administration_window
         order by fs.standard asc
     ) as rn_test_fast,
+
+    row_number() over (
+        partition by co.student_number, co.academic_year, subj.fast_subject
+        order by administration_window desc
+    ) as rn_year_fast,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['PM1', 'PM2', 'PM3']) as administration_window
@@ -264,27 +285,17 @@ left join
     and subj.iready_subject = dr.subject
     and dr.baseline_diagnostic_y_n = 'Y'
 left join
-    {{ ref("stg_fldoe__fast") }} as ft
+    {{ ref("int_fldoe__all_assessments") }} as ft
     on co.fleid = ft.student_id
     and co.academic_year = ft.academic_year
     and subj.fast_subject = ft.assessment_subject
     and administration_window = ft.administration_window
+    and ft.assessment_name = 'FAST'
 left join
-    prev_pm3 as p
-    on co.fleid = p.student_id
-    and co.academic_year = p.academic_year_next
+    {{ ref("int_assessments__fast_previous_year") }} as p
+    on co.student_number = p.student_number
+    and co.academic_year = p.academic_year
     and subj.fast_subject = p.assessment_subject
-left join
-    scale_crosswalk as sc
-    on ft.academic_year = sc.academic_year
-    and ft.administration_window = sc.administration_window
-left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cwf
-    on ft.assessment_subject = cwf.test_name
-    and ft.assessment_grade = cwf.grade_level
-    and ft.scale_score between cwf.scale_low and cwf.scale_high
-    and sc.source_system = cwf.source_system
-    and sc.destination_system = cwf.destination_system
 left join
     {{ ref("int_fldoe__fast_standard_performance_unpivot") }} as fs
     on co.fleid = fs.student_id

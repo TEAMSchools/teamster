@@ -15,12 +15,13 @@ asset_key = [CODE_LOCATION, "adp", "workforce_now", "workers"]
     key=asset_key,
     io_manager_key="io_manager_gcs_avro",
     group_name="adp_workforce_now",
-    compute_kind="python",
+    kinds={"python"},
+    op_tags={"dagster/concurrency_key": "adp_wfn_api"},
     check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     partitions_def=DailyPartitionsDefinition(
         start_date="01/01/2021",
         fmt="%m/%d/%Y",
-        timezone=LOCAL_TIMEZONE.name,
+        timezone=str(LOCAL_TIMEZONE),
         end_offset=14,
     ),
 )

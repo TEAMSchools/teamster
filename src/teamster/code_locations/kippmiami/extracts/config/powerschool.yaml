@@ -1,0 +1,31 @@
+assets:
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippmiami_extracts
+          name: rpt_powerschool__autocomm_teachers
+    file_config:
+      stem: powerschool_autocomm_teachers_accounts
+      suffix: txt
+      format:
+        delimiter: "\t"
+        header: False
+    destination_config:
+      name: couchdrop
+      path: teamster-kippmiami/couchdrop/powerschool
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippmiami_extracts
+          name: rpt_powerschool__autocomm_students
+    file_config:
+      stem: powerschool_autocomm_students
+      suffix: txt
+      format:
+        delimiter: "\t"
+        header: False
+    destination_config:
+      name: couchdrop
+      path: teamster-kippmiami/couchdrop/powerschool

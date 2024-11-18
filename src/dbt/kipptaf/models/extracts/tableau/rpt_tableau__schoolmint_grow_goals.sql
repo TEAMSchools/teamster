@@ -16,6 +16,8 @@ select
     rt.code as tracking_code,
     rt.name as tracking_rubric,
     rt.academic_year as tracking_academic_year,
+    rt.start_date,
+    rt.end_date,
     rt.is_current,
 
     m.goal_code,

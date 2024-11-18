@@ -42,12 +42,13 @@ assets:
       cron_schedule: 0 6 * * *
   - name: KIPP Forward Data Suite
     deps:
+      - [kipptaf, extracts, rpt_gsheets__kfwd_rem_roster]
+      - [kipptaf, tableau, rpt_tableau__kfwd_career_launch_survey]
       - [kipptaf, tableau, rpt_tableau__kfwd_contact_notes]
       - [kipptaf, tableau, rpt_tableau__kfwd_dashboard]
       - [kipptaf, tableau, rpt_tableau__kfwd_persistence]
       - [kipptaf, tableau, rpt_tableau__kfwd_spi]
       - [kipptaf, tableau, rpt_tableau__kfwd_verification]
-      # - [kipptaf, tableau, rpt_tableau__kfwd_career_launch_survey]
     metadata:
       id: ad72c094-ad35-48f4-86a0-9d2e5b53f59a
       cron_schedule:
@@ -136,15 +137,16 @@ assets:
       - [kipptaf, tableau, rpt_tableau__sight_words_dashboard]
     metadata:
       id: bef17623-af5e-4a18-9e05-7a8f4e6951bf
-      # cron_schedule: 0 5 * * *
+      cron_schedule: 0 5 * * *
   - name: Teacher Development Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__teacher_development]
     metadata:
       id: 8977a813-36c8-48df-8a61-479f374ae78a
       cron_schedule:
-        - 0 6 * * *
-        - 30 16 * * *
+        - 0 12 * * *
+        - 0 14 * * *
+        - 0 16 * * *
   - name: Gradebook and GPA Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__gradebook_audit]
@@ -181,36 +183,61 @@ assets:
     metadata:
       id: 2de24a25-5e9b-4fcd-8c07-307d0ea57660
       cron_schedule: 0 5 * * *
+  - name: State Testing Accommodations Tracker
+    deps:
+      - [kipptaf, tableau, rpt_tableau__state_testing_accomodations]
+    metadata:
+      id: aca88e07-170f-4d1a-9a4f-a3816463ab27
+      cron_schedule: 0 2 * * *
+  - name: Promotional Status Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__promo_status]
+    metadata:
+      id: 5698ccc2-b952-4123-878b-48166b686b16
+      cron_schedule: 0 1 * * *
+  - name: Stipend and Bonus Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__stipend_and_bonus_app]
+    metadata:
+      id: 35484db7-cd5b-4834-828a-5bfc645a09c6
+  - name: Number of School Days Between Two Dates
+    deps:
+      - [kipptaf, tableau, rpt_tableau__powerschool_calendar_day]
+    metadata:
+      id: fdd90889-8efb-4254-b892-bad96a7d131f
+      cron_schedule: 0 20 * * 0
+  - name: Content Team Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__teacher_development]
+    metadata:
+      id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1
+      cron_schedule: 0 6 * * *
+  - name: Leadership Development
+    deps:
+      - [kipptaf, tableau, rpt_tableau__leadership_development]
+    metadata:
+      id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
+      cron_schedule: 0 * * * *
+  - name: KIPP Miami FAST & i-Ready Analysis
+    deps:
+      - [kipptaf, tableau, rpt_tableau__miami_fast]
+      - [kipptaf, tableau, rpt_tableau__miami_k2_iready]
+      - [kipptaf, tableau, rpt_tableau__miami_k2_star]
+    metadata:
+      id: 9a4decae-3707-468f-8098-d3f625d770eb
+      cron_schedule: 0 2 * * *
   # - name: Coaching Conversation Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
   #   metadata:
   #     id: db88d328-0d54-4dac-8003-6197841e1432
-  # - name: KIPP Miami FAST & i-Ready Analysis
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__miami_fast]
-  #     - [kipptaf, tableau, rpt_tableau__miami_k2_iready]
-  #     - [kipptaf, tableau, rpt_tableau__miami_k2_star]
-  #   metadata:
-  #     id: 9a4decae-3707-468f-8098-d3f625d770eb
   # - name: Master Renewal Tracking Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__staff_performance_compliance_history]
   #   metadata:
   #     id: 1b363885-e6b2-4396-afff-ece0f8c6c77a
-  # - name: Promotional Status Dashboard
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__promo_status]
-  #   metadata:
-  #     id: 5698ccc2-b952-4123-878b-48166b686b16
-  # - name: State Testing Accommodations Tracker
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__state_testing_accomodations]
-  #   metadata:
-  #     id: aca88e07-170f-4d1a-9a4f-a3816463ab27
   # - name: Survey Dashboard
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__survey_responses]
   #   metadata:
   #     id: b11542a2-6780-4feb-a1dd-534ffe724faf
-  # prospects_import - Daily 4:00 AM America/Los_Angeles

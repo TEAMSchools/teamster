@@ -10,19 +10,17 @@ from dagster import (
     schedule,
 )
 
-from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.schoolmint.grow.assets import (
-    assignments,
-    observations,
-    schoolmint_grow_static_partition_assets,
-)
+from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.schoolmint.grow.assets import assignments
 from teamster.code_locations.kipptaf.schoolmint.grow.jobs import (
+    schoolmint_grow_observations_asset_job,
+    schoolmint_grow_static_partition_asset_job,
     schoolmint_grow_user_update_job,
 )
 
 schoolmint_grow_user_update_job_schedule = ScheduleDefinition(
     cron_schedule="0 3 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
     job=schoolmint_grow_user_update_job,
 )
 
@@ -30,21 +28,15 @@ schoolmint_grow_assignments_job_schedule = build_schedule_from_partitioned_job(
     job=define_asset_job(
         name=f"{assignments.key.to_python_identifier()}_job", selection=[assignments]
     ),
-    hour_of_day=0,
+    hour_of_day=5,
     minute_of_hour=0,
-)
-
-
-schoolmint_grow_static_partition_asset_job = define_asset_job(
-    name=f"{CODE_LOCATION}__schoolmint__grow__static_partition_asset_job",
-    selection=schoolmint_grow_static_partition_assets,
 )
 
 
 @schedule(
     name=f"{schoolmint_grow_static_partition_asset_job.name}_schedule",
-    cron_schedule="0 0 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    cron_schedule="0 2 * * *",
+    execution_timezone=str(LOCAL_TIMEZONE),
     job=schoolmint_grow_static_partition_asset_job,
 )
 def schoolmint_grow_static_partition_asset_job_schedule(
@@ -57,17 +49,10 @@ def schoolmint_grow_static_partition_asset_job_schedule(
         )
 
 
-schoolmint_grow_observations_asset_job = define_asset_job(
-    name=f"{observations.key.to_python_identifier()}_job",
-    selection=[observations],
-    partitions_def=observations.partitions_def,
-)
-
-
 @schedule(
     name=f"{schoolmint_grow_observations_asset_job.name}_schedule",
-    cron_schedule=["0 0 * * *", "0 14 * * *", "45 15 * * *"],
-    execution_timezone=LOCAL_TIMEZONE.name,
+    cron_schedule=["15 11 * * *", "15 13 * * *", "15 15 * * *"],
+    execution_timezone=str(LOCAL_TIMEZONE),
     job=schoolmint_grow_observations_asset_job,
 )
 def schoolmint_grow_observations_asset_job_schedule(

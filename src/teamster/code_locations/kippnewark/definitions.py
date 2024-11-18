@@ -11,9 +11,9 @@ from teamster.code_locations.kippnewark import (
     DBT_PROJECT,
     _dbt,
     couchdrop,
-    datagun,
     deanslist,
     edplan,
+    extracts,
     iready,
     overgrad,
     pearson,
@@ -44,7 +44,7 @@ defs = Definitions(
     assets=load_assets_from_modules(
         modules=[
             _dbt,
-            datagun,
+            extracts,
             deanslist,
             edplan,
             iready,
@@ -56,7 +56,7 @@ defs = Definitions(
         ]
     ),
     schedules=[
-        *datagun.schedules,
+        *extracts.schedules,
         *deanslist.schedules,
         *overgrad.schedules,
         *powerschool.schedules,
@@ -70,7 +70,7 @@ defs = Definitions(
         *titan.sensors,
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
-            asset_selection=AssetSelection.all(),
+            target=AssetSelection.all(),
         ),
     ],
     resources={

@@ -9,7 +9,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     Nothing,
 )
-from dagster._core.definitions.tags import StorageKindTagSet
+from dagster._core.definitions.tags import build_kind_tag
 from dagster_dbt import DagsterDbtTranslator
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_MANIFEST_METADATA_KEY,
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 def build_dbt_multi_asset_deps(
     *,
     manifest: Mapping[str, Any],
-    dagster_dbt_translator: "DagsterDbtTranslator",
+    dagster_dbt_translator: DagsterDbtTranslator,
     select: str,
     exclude: str,
     project: "DbtProject | None" = None,
@@ -131,18 +131,18 @@ def build_dbt_multi_asset_deps(
 def build_dbt_multi_asset_args(
     *,
     manifest: Mapping[str, Any],
-    dagster_dbt_translator: "DagsterDbtTranslator",
+    dagster_dbt_translator: DagsterDbtTranslator,
     select: str,
     exclude: str,
     io_manager_key: str | None = None,
-    project: "DbtProject|None" = None,
+    project: "DbtProject | None" = None,
 ) -> tuple[
     Sequence[AssetDep],
     dict[str, AssetOut],
     dict[str, set[AssetKey]],
     Sequence[AssetCheckSpec],
 ]:
-    """Forked from dagster_dbt.asset_decorator.build_dbt_multi_asset_args"""
+    """Forked from dagster_dbt.asset_utils.build_dbt_multi_asset_args"""
     from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
 
     deps: set[AssetDep] = set()
@@ -231,11 +231,8 @@ def build_dbt_multi_asset_args(
                 }
             ),
             tags={
-                **(
-                    StorageKindTagSet(storage_kind=dbt_adapter_type)
-                    if dbt_adapter_type
-                    else {}
-                ),
+                **build_kind_tag("dbt"),
+                **(build_kind_tag(dbt_adapter_type) if dbt_adapter_type else {}),
                 **dagster_dbt_translator.get_tags(dbt_resource_props),
             },
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),

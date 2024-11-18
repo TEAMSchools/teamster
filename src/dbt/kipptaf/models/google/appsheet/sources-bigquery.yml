@@ -12,22 +12,24 @@ sources:
               - google
               - appsheet
               - illuminate_assessments_extension
-      - name: src_leadership_development_active_users
+      - name: src_leadership_development__active_users
+        identifier: src_leadership_development_active_users
         meta:
           dagster:
             asset_key:
               - kipptaf
               - google
               - appsheet
-              - src_leadership_development_active_users
-      - name: src_leadership_development_output
+              - src_leadership_development__active_users
+      - name: src_leadership_development__output
+        identifier: src_leadership_development_output
         meta:
           dagster:
             asset_key:
               - kipptaf
               - google
               - appsheet
-              - src_leadership_development_output
+              - src_leadership_development__output
       - name: src_seat_tracker__log_archive
         meta:
           dagster:
@@ -60,3 +62,11 @@ sources:
               - google
               - appsheet
               - src_teacher_development__observation_details_archive
+      - name: src_stipend_bonus_app__output
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - src_stipend_bonus_app__output

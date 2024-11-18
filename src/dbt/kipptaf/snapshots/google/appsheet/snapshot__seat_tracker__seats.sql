@@ -2,10 +2,10 @@
 
     {{
         config(
-            target_schema="kipptaf_appsheet",
+            target_schema=generate_schema_name("appsheet"),
             strategy="timestamp",
             updated_at="edited_at",
-            unique_key="concat(academic_year, '_', staffing_model_id)",
+            unique_key="surrogate_key",
         )
     }}
 

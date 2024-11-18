@@ -8,7 +8,7 @@ with
             if(count(manager_rating_moy) >= 4, 1, 0) as moy_manager_complete,
             if(count(rating_eoy) >= 4, 1, 0) as eoy_self_complete,
             if(count(manager_rating_eoy) >= 4, 1, 0) as eoy_manager_complete,
-        from {{ ref("stg_leadership_development_output") }}
+        from {{ ref("stg_leadership_development__output") }}
         group by employee_number, academic_year
     ),
 
@@ -20,7 +20,6 @@ with
     )
 
 select
-
     o.employee_number,
     o.academic_year,
     o.assignment_id,
@@ -54,15 +53,15 @@ select
     r.sam_account_name,
     r.job_title,
     r.business_unit_home_name as entity,
-    r.home_work_location_name as location,
+    r.home_work_location_name as `location`,
     r.department_home_name as department,
     r.report_to_preferred_name_lastfirst as manager,
     r.report_to_sam_account_name,
     r.assignment_status,
 
-from {{ ref("stg_leadership_development_output") }} as o
+from {{ ref("stg_leadership_development__output") }} as o
 left join
-    {{ ref("stg_leadership_development_active_users") }} as a
+    {{ ref("stg_leadership_development__active_users") }} as a
     on o.employee_number = a.employee_number
 left join metrics_lookup as m on o.metric_id = m.metric_id
 left join

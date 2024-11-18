@@ -2,7 +2,7 @@
 
     {{
         config(
-            target_schema="kipptaf_iready",
+            target_schema=generate_schema_name("iready"),
             unique_key="surrogate_key",
             strategy="check",
             check_cols=[

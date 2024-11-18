@@ -6,9 +6,9 @@ with
             s.region,
             s.schoolid as school_id,
             s.student_number,
-            s.student_name,
-            s.student_first_name,
-            s.student_last_name,
+            s.lastfirst as student_name,
+            s.first_name as student_first_name,
+            s.last_name as student_last_name,
 
             c.mclass_period,
             c.mclass_measure_standard_level as composite_level,
@@ -35,7 +35,7 @@ with
                 when 'Well Below Benchmark'
                 then 'Not Met'
             end as composite_expectations,
-        from {{ ref("int_tableau__student_enrollments") }} as s
+        from {{ ref("base_powerschool__student_enrollments") }} as s
         inner join
             {{ ref("int_amplify__all_assessments") }} as c
             on s.academic_year = c.mclass_academic_year

@@ -1,6 +1,16 @@
 from pydantic import BaseModel, Field
 
 
+class FTE(BaseModel):
+    school_number: str | None = None
+    student_id: str | None = None
+    florida_student_id: str | None = None
+    student_name: str | None = None
+    grade: str | None = None
+    fte_capped: str | None = None
+    fte_uncapped: str | None = None
+
+
 class FLDOECore(BaseModel):
     date_taken: str | None = None
     english_language_learner_ell_status: str | None = None
@@ -101,6 +111,7 @@ class FAST(FLDOECore):
     grade_8_fast_mathematics_percentile_rank: str | int | None = None
     grade_8_fast_mathematics_scale_score: str | int | None = None
 
+    # trunk-ignore-begin(pyright/reportGeneralTypeIssues)
     field_1_ela_reading: str | None = Field(
         default=None, alias="1_reading_prose_and_poetry_performance"
     )
@@ -175,6 +186,7 @@ class FAST(FLDOECore):
         default=None,
         alias="4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
     )
+    # trunk-ignore-end(pyright/reportGeneralTypeIssues)
 
 
 class EOC(FLDOECore):
@@ -183,6 +195,7 @@ class EOC(FLDOECore):
     civics_eoc_achievement_level: str | None = None
     civics_eoc_scale_score: str | None = None
 
+    # trunk-ignore-begin(pyright/reportGeneralTypeIssues)
     field_1_civics: str | None = Field(
         default=None, alias="1_origins_and_purposes_of_law_and_government_performance"
     )
@@ -206,6 +219,7 @@ class EOC(FLDOECore):
     field_3_algebra_i: str | None = Field(
         None, alias="3_non_linear_relationships_performance"
     )
+    # trunk-ignore-end(pyright/reportGeneralTypeIssues)
 
 
 class Science(FLDOECore):
@@ -214,12 +228,14 @@ class Science(FLDOECore):
     grade_8_science_achievement_level: str | None = None
     grade_8_science_scale_score: int | None = None
 
+    # trunk-ignore-begin(pyright/reportGeneralTypeIssues)
     field_1_science: str | None = Field(None, alias="1_nature_of_science_performance")
     field_2_science: str | None = Field(
         None, alias="2_earth_and_space_science_performance"
     )
     field_3_science: str | None = Field(None, alias="3_physical_science_performance")
     field_4_science: str | None = Field(None, alias="4_life_science_performance")
+    # trunk-ignore-end(pyright/reportGeneralTypeIssues)
 
 
 class FSA(BaseModel):

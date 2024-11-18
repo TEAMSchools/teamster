@@ -79,6 +79,7 @@ class SchoolMintGrowResource(ConfigurableResource):
             }
         else:
             data = []
+            len_data = 0
 
             response = {
                 "count": 0,
@@ -94,9 +95,16 @@ class SchoolMintGrowResource(ConfigurableResource):
                 ).json()
 
                 count = response_json["count"]
-                data.extend(response_json.get("data", []))
+
+                try:
+                    data.extend(response_json["data"])
+                except KeyError as e:
+                    self._log.exception(msg=e)
+                    break
 
                 len_data = len(data)
+
+                self._log.debug(f"{len_data}/{count} records")
 
                 if len_data >= count:
                     break

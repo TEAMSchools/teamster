@@ -1,6 +1,6 @@
 import pathlib
+from datetime import datetime
 
-import pendulum
 from dagster import (
     AssetExecutionContext,
     MonthlyPartitionsDefinition,
@@ -8,8 +8,8 @@ from dagster import (
     _check,
     asset,
 )
+from dateutil.relativedelta import relativedelta
 from fastavro import block_reader, parse_schema, writer
-from pendulum.datetime import DateTime
 from zenpy.lib.api_objects import BaseObject  # type: ignore
 from zenpy.lib.exception import RecordNotFoundException  # type: ignore
 from zenpy.lib.generator import SearchExportResultGenerator  # type: ignore
@@ -22,25 +22,23 @@ def build_ticket_metrics_archive(code_location, timezone, avro_schema):
         key=[code_location, "zendesk", "ticket_metrics_archive"],
         io_manager_key="io_manager_gcs_file",
         partitions_def=MonthlyPartitionsDefinition(
-            start_date=pendulum.datetime(2011, 7, 1),
-            end_date=pendulum.datetime(2023, 6, 30),
+            start_date=datetime(year=2011, month=7, day=1),
+            end_date=datetime(year=2023, month=6, day=30),
             timezone=timezone,
         ),
         group_name="zendesk",
-        compute_kind="python",
+        kinds={"python"},
     )
     def _asset(context: AssetExecutionContext, zendesk: ZendeskResource):
         partition_key = _check.not_none(value=context.partition_key)
 
-        partition_key_datetime = _check.inst(
-            pendulum.parse(text=partition_key), DateTime
-        )
+        partition_key_datetime = datetime.fromisoformat(partition_key)
 
         data_filepath = pathlib.Path("env/ticket_metrics_archive/data.avro")
         schema = parse_schema(schema=avro_schema)
 
-        start_date = partition_key_datetime.subtract(seconds=1)
-        end_date = partition_key_datetime.add(months=1)
+        start_date = partition_key_datetime - relativedelta(seconds=1)
+        end_date = partition_key_datetime + relativedelta(months=1)
 
         context.log.info(
             f"Searching closed tickets: updated>{start_date} updated<{end_date}"

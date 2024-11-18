@@ -1,6 +1,6 @@
 import pathlib
+from datetime import datetime
 
-import pendulum
 from dagster import MonthlyPartitionsDefinition, config_from_files
 
 from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
@@ -35,9 +35,9 @@ powerschool_table_assets_transaction_date = [
         code_location=CODE_LOCATION,
         table_name=a["asset_name"],
         partitions_def=FiscalYearPartitionsDefinition(
-            start_date=pendulum.datetime(year=2016, month=7, day=1),
+            start_date=datetime(year=2016, month=7, day=1),
             start_month=7,
-            timezone=LOCAL_TIMEZONE.name,
+            timezone=str(LOCAL_TIMEZONE),
             fmt="%Y-%m-%dT%H:%M:%S%z",
         ),
         partition_column="transaction_date",
@@ -62,8 +62,8 @@ powerschool_table_assets_gradebook_monthly = [
         code_location=CODE_LOCATION,
         table_name=a["asset_name"],
         partitions_def=MonthlyPartitionsDefinition(
-            start_date=pendulum.datetime(year=2016, month=7, day=1),
-            timezone=LOCAL_TIMEZONE.name,
+            start_date=datetime(year=2016, month=7, day=1),
+            timezone=str(LOCAL_TIMEZONE),
             fmt="%Y-%m-%dT%H:%M:%S%z",
             end_offset=1,
         ),

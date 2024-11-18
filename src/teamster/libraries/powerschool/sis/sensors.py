@@ -1,8 +1,9 @@
 from collections import defaultdict
+from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     MAX_RUNTIME_SECONDS_TAG,
     AssetKey,
@@ -18,12 +19,13 @@ from dagster import (
     define_asset_job,
     sensor,
 )
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import text
-from sshtunnel import HandlerSSHTunnelForwarderError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
+from teamster.libraries.ssh.sshtunnel.errors import BaseSSHTunnelForwarderError
 
 
 def get_query_text(
@@ -52,9 +54,9 @@ def get_query_text(
 
 
 def build_powerschool_asset_sensor(
-    code_location,
+    code_location: str,
+    execution_timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
-    execution_timezone,
     minimum_interval_seconds=None,
 ):
     jobs = []
@@ -87,7 +89,7 @@ def build_powerschool_asset_sensor(
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
     ) -> SensorResult | SkipReason:
-        now_timestamp = pendulum.now().timestamp()
+        now_timestamp = datetime.now(ZoneInfo("UTC")).timestamp()
 
         run_requests = []
         run_request_kwargs = []
@@ -100,11 +102,12 @@ def build_powerschool_asset_sensor(
 
         try:
             ssh_tunnel.start()
-        except HandlerSSHTunnelForwarderError as e:
+        except BaseSSHTunnelForwarderError as e:
             ssh_tunnel.stop(force=True)
+            e_str = str(e)
 
-            if "An error occurred while opening tunnels." in e.args:
-                return SkipReason(str(e))
+            if "Could not establish session to SSH gateway" in e_str:
+                return SkipReason(e_str)
             else:
                 raise e
         except Exception as e:
@@ -157,9 +160,13 @@ def build_powerschool_asset_sensor(
                         ttype=float,
                     )
 
-                    timestamp_fmt = pendulum.from_timestamp(
-                        timestamp=timestamp, tz=execution_timezone
-                    ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+                    timestamp_fmt = (
+                        datetime.fromtimestamp(
+                            timestamp=timestamp, tz=execution_timezone
+                        )
+                        .replace(tzinfo=None)
+                        .isoformat(timespec="microseconds")
+                    )
 
                     [(modified_count,)] = _check.inst(
                         db_powerschool.execute_query(
@@ -269,9 +276,13 @@ def build_powerschool_asset_sensor(
                             ttype=float,
                         )
 
-                        timestamp_fmt = pendulum.from_timestamp(
-                            timestamp=timestamp, tz=execution_timezone
-                        ).format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+                        timestamp_fmt = (
+                            datetime.fromtimestamp(
+                                timestamp=timestamp, tz=execution_timezone
+                            )
+                            .replace(tzinfo=None)
+                            .isoformat(timespec="microseconds")
+                        )
 
                         [(modified_count,)] = _check.inst(
                             db_powerschool.execute_query(
@@ -305,26 +316,25 @@ def build_powerschool_asset_sensor(
                     # request run if partition count != latest materialization
                     materialization_count = metadata["records"].value
 
-                    partition_start = pendulum.from_format(
-                        string=partition_key, fmt="YYYY-MM-DDTHH:mm:ssZZ"
-                    )
+                    partition_start = datetime.fromisoformat(partition_key)
 
                     partition_end = (
-                        partition_start.add(**date_add_kwargs)
-                        .subtract(days=1)
-                        .end_of("day")
-                    )
+                        partition_start
+                        # trunk-ignore(pyright/reportArgumentType)
+                        + relativedelta(**date_add_kwargs)
+                        - relativedelta(days=1)
+                    ).replace(hour=23, minute=59, second=59, microsecond=999999)
 
                     [(partition_count,)] = _check.inst(
                         db_powerschool.execute_query(
                             query=get_query_text(
                                 table=table_name,
                                 column=partition_column,
-                                start_value=partition_start.format(
-                                    "YYYY-MM-DDTHH:mm:ss.SSSSSS"
-                                ),
-                                end_value=partition_end.format(
-                                    "YYYY-MM-DDTHH:mm:ss.SSSSSS"
+                                start_value=partition_start.replace(
+                                    tzinfo=None
+                                ).isoformat(timespec="microseconds"),
+                                end_value=partition_end.replace(tzinfo=None).isoformat(
+                                    timespec="microseconds"
                                 ),
                             ),
                             prefetch_rows=2,
@@ -363,7 +373,7 @@ def build_powerschool_asset_sensor(
                     job_name=job_name,
                     partition_key=parition_key,
                     asset_selection=[g["asset_key"] for g in group],
-                    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
+                    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
                 )
             )
 

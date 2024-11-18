@@ -36,7 +36,7 @@ def build_amplify_dds_report_asset(
         key=asset_key,
         io_manager_key="io_manager_gcs_avro",
         group_name="amplify",
-        compute_kind="python",
+        kinds={"python"},
         partitions_def=partitions_def,
         metadata=report_kwargs,
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
@@ -44,8 +44,8 @@ def build_amplify_dds_report_asset(
     def _asset(context: AssetExecutionContext, dds: DibelsDataSystemResource):
         partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
 
-        date_partition_key = datetime.strptime(
-            partition_key.keys_by_dimension["date"], "%Y-%m-%d"
+        date_partition_key = datetime.fromisoformat(
+            partition_key.keys_by_dimension["date"]
         )
 
         if report == "DataFarming":

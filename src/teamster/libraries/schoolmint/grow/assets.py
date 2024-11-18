@@ -1,4 +1,5 @@
-import pendulum
+from datetime import datetime, timedelta
+
 from dagster import (
     AssetExecutionContext,
     AssetsDefinition,
@@ -24,7 +25,7 @@ def build_schoolmint_grow_asset(
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
         group_name="schoolmint",
-        compute_kind="python",
+        kinds={"python"},
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
         op_tags=op_tags,
     )
@@ -35,12 +36,15 @@ def build_schoolmint_grow_asset(
             archived_key = partition_key.keys_by_dimension["archived"]
             last_modified_key = partition_key.keys_by_dimension["last_modified"]
 
-            last_modified_datetime = pendulum.from_format(
-                string=last_modified_key, fmt="YYYY-MM-DD"
-            )
+            last_modified_datetime = datetime.fromisoformat(last_modified_key)
 
-            last_modified_end = last_modified_datetime.end_of("day").timestamp()
-            last_modified_start = last_modified_datetime.subtract(days=1).timestamp()
+            last_modified_end = last_modified_datetime.replace(
+                hour=23, minute=59, second=59, microsecond=999999
+            ).timestamp()
+
+            last_modified_start = (
+                last_modified_datetime - timedelta(days=1)
+            ).timestamp()
 
             last_modified_def = (
                 context.assets_def.partitions_def.get_partitions_def_for_dimension(

@@ -10,14 +10,16 @@ from teamster.code_locations.kipptaf._google.forms.assets import (
 )
 
 job = define_asset_job(
-    name=f"{CODE_LOCATION}_google_forms_asset_job", selection=[form, responses]
+    name=f"{CODE_LOCATION}__google__forms__asset_job",
+    # trunk-ignore(pyright/reportArgumentType)
+    selection=[form, responses],
 )
 
 
 @schedule(
     name=f"{job.name}_schedule",
     cron_schedule="0 0 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
     job=job,
 )
 def google_forms_asset_job_schedule(context: ScheduleEvaluationContext) -> Generator:
