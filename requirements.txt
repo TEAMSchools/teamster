@@ -138,7 +138,7 @@ scipy==1.14.1
 setuptools==75.5.0
 shellingham==1.5.4
 six==1.16.0
-slack-sdk==3.33.3
+slack-sdk==3.33.4
 soupsieve==2.6
 sqlalchemy==2.0.36
 sqlglot[rs]==25.30.0
