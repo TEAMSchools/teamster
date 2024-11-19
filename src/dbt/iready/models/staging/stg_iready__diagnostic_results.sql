@@ -6,9 +6,11 @@ with
                 annual_typical_growth_measure,
                 completion_date,
                 `grouping`,
+                measurement_and_data_scale_score,
                 mid_on_grade_level_scale_score,
                 most_recent_diagnostic_y_n,
                 most_recent_diagnostic_ytd_y_n,
+                number_and_operations_scale_score,
                 percentile,
                 `start_date`,
                 student_grade,
@@ -32,21 +34,25 @@ with
                 annual_stretch_growth_measure.long_value,
                 cast(annual_stretch_growth_measure.double_value as int)
             ) as annual_stretch_growth_measure,
-
             coalesce(
                 annual_typical_growth_measure.long_value,
                 cast(annual_typical_growth_measure.double_value as int)
             ) as annual_typical_growth_measure,
-
             coalesce(
                 `grouping`.long_value, cast(`grouping`.double_value as int)
             ) as `grouping`,
-
+            coalesce(
+                measurement_and_data_scale_score.long_value,
+                cast(measurement_and_data_scale_score.double_value as int)
+            ) as measurement_and_data_scale_score,
             coalesce(
                 mid_on_grade_level_scale_score.long_value,
                 cast(mid_on_grade_level_scale_score.double_value as int)
             ) as mid_on_grade_level_scale_score,
-
+            coalesce(
+                number_and_operations_scale_score.long_value,
+                cast(number_and_operations_scale_score.double_value as int)
+            ) as number_and_operations_scale_score,
             coalesce(
                 percentile.long_value, cast(percentile.double_value as int)
             ) as percentile,
