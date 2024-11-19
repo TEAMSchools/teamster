@@ -3,7 +3,7 @@
 
 agate==1.9.1
 aiohappyeyeballs==2.4.3
-aiohttp==3.11.2
+aiohttp==3.11.5
 aiosignal==1.3.1
 alembic==1.14.0
 annotated-types==0.7.0
@@ -72,7 +72,7 @@ google-resumable-media==2.7.2
 googleapis-common-protos[grpc]==1.66.0
 greenlet==3.1.1; (platform_machine == "win32" or platform_machine == "WIN32" or platform_machine == "AMD64" or platform_machine == "amd64" or platform_machine == "x86_64" or platform_machine == "ppc64le" or platform_machine == "aarch64") and python_version < "3.13"
 grpc-google-iam-v1==0.13.1
-grpcio==1.67.1
+grpcio==1.68.0
 grpcio-health-checking==1.62.3
 grpcio-status==1.62.3
 gspread==6.1.4
@@ -137,7 +137,7 @@ pycryptodome==3.21.0
 pydantic==2.9.2
 pydantic-core==2.23.4
 pygments==2.18.0
-pyjwt[crypto]==2.9.0
+pyjwt[crypto]==2.10.0
 pynacl==1.5.0
 pyparsing==3.2.0; python_version > "3.0"
 pypdf==5.1.0
@@ -164,14 +164,14 @@ setuptools==75.5.0
 shellingham==1.5.4
 simplejson==3.19.3
 six==1.16.0
-slack-sdk==3.33.3
+slack-sdk==3.33.4
 sling==1.2.22
 sling-linux-amd64==1.2.22
 smmap==5.0.1
 soupsieve==2.6
 sqlalchemy==2.0.36
-sqlglot[rs]==25.30.0
-sqlglotrs==0.2.13
+sqlglot[rs]==25.31.4
+sqlglotrs==0.2.14
 sqlparse==0.5.2
 sshtunnel==0.4.0
 structlog==24.4.0
@@ -186,8 +186,8 @@ tomlkit==0.13.2
 toposort==1.10
 tqdm==4.67.0
 typeguard==4.4.1
-typer==0.13.0
-types-setuptools==75.3.0.20241112
+typer==0.13.1
+types-setuptools==75.5.0.20241121
 typing-extensions==4.12.2
 tzdata==2024.2
 universal-pathlib==0.2.5; python_version >= "3.12"
@@ -198,5 +198,5 @@ wcwidth==0.2.13
 websocket-client==1.8.0
 wheel==0.45.0
 win-precise-time==1.4.2; os_name == "nt"
-yarl==1.17.1
+yarl==1.17.2
 zipp==3.21.0
