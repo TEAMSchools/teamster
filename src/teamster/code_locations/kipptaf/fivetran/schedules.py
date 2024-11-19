@@ -40,7 +40,7 @@ coupa_start_sync_schedule = build_fivetran_start_sync_schedule(
     code_location=CODE_LOCATION,
     connector_id="bellows_curliness",
     connector_name="coupa",
-    cron_schedule="30 2 * * *",
+    cron_schedule="00 2 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
