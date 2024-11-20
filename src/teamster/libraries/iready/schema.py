@@ -106,8 +106,6 @@ class DiagnosticResults(IReadyBaseModel):
     algebra_and_algebraic_thinking_placement: str | None = None
     algebra_and_algebraic_thinking_relative_placement: str | None = None
     algebra_and_algebraic_thinking_scale_score: int | None = None
-    annual_stretch_growth_measure: int | float | None = None
-    annual_typical_growth_measure: int | float | None = None
     baseline_diagnostic_y_n: str | None = None
     completion_date: str | None = None
     comprehension_informational_text_placement: str | None = None
@@ -125,7 +123,6 @@ class DiagnosticResults(IReadyBaseModel):
     geometry_placement: str | None = None
     geometry_relative_placement: str | None = None
     geometry_scale_score: int | None = None
-    grouping: int | float | None = None
     high_frequency_words_placement: str | None = None
     high_frequency_words_relative_placement: str | None = None
     high_frequency_words_scale_score: float | None = None
@@ -133,19 +130,15 @@ class DiagnosticResults(IReadyBaseModel):
     lexile_range: str | None = None
     measurement_and_data_placement: str | None = None
     measurement_and_data_relative_placement: str | None = None
-    measurement_and_data_scale_score: int | None = None
-    mid_on_grade_level_scale_score: int | float | None = None
     most_recent_diagnostic_y_n: str | None = None
     most_recent_diagnostic_ytd_y_n: str | None = None
     number_and_operations_placement: str | None = None
     number_and_operations_relative_placement: str | None = None
-    number_and_operations_scale_score: int | None = None
     overall_placement: str | None = None
     overall_relative_placement: str | None = None
     overall_scale_score: int | None = None
     percent_progress_to_annual_stretch_growth_percent: float | None = None
     percent_progress_to_annual_typical_growth_percent: float | None = None
-    percentile: int | float | None = None
     phonics_placement: str | None = None
     phonics_relative_placement: str | None = None
     phonics_scale_score: float | None = None
@@ -170,6 +163,14 @@ class DiagnosticResults(IReadyBaseModel):
     vocabulary_placement: str | None = None
     vocabulary_relative_placement: str | None = None
     vocabulary_scale_score: int | None = None
+
+    annual_stretch_growth_measure: int | float | None = None
+    annual_typical_growth_measure: int | float | None = None
+    grouping: int | float | None = None
+    percentile: int | float | None = None
+    measurement_and_data_scale_score: int | float | None = None
+    mid_on_grade_level_scale_score: int | float | None = None
+    number_and_operations_scale_score: int | float | None = None
 
 
 class InstructionalUsage(IReadyBaseModel):
