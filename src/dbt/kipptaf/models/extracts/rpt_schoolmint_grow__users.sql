@@ -77,6 +77,7 @@ with
                 sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
             )
             >= '{{ var("current_academic_year") - 1 }}-07-01'
+            and sr.employee_number = 401175
     ),
 
     roster as (
@@ -175,11 +176,10 @@ with
 
 select *,
 from surrogate_keys
-where (
+where
     /* create */
     (inactive = 0 and user_id is null)
     /* archive */
     or (inactive = 1 and user_id is not null and archived_at is null)
     /* update/reactivate */
-    or inactive = 0)
-    and user_internal_id = 401175
+    or inactive = 0
