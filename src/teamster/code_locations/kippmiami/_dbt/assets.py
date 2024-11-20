@@ -16,13 +16,13 @@ dbt_assets = build_dbt_assets(
     dagster_dbt_translator=dagster_dbt_translator,
     exclude="tag:stage_external_sources",
     name=f"{CODE_LOCATION}_dbt_assets",
-    op_tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {"requests": {"cpu": "1500m"}, "limits": {"cpu": "1500m"}}
-            }
-        }
-    },
+    # op_tags={
+    #     "dagster-k8s/config": {
+    #         "container_config": {
+    #             "resources": {"requests": {"cpu": "1500m"}, "limits": {"cpu": "1500m"}}
+    #         }
+    #     }
+    # },
 )
 
 external_source_dbt_assets = build_dbt_external_source_assets(
@@ -30,13 +30,13 @@ external_source_dbt_assets = build_dbt_external_source_assets(
     dagster_dbt_translator=dagster_dbt_translator,
     select="tag:stage_external_sources",
     name=f"{CODE_LOCATION}_external_source_dbt_assets",
-    op_tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {"requests": {"cpu": "750m"}, "limits": {"cpu": "750m"}}
-            }
-        }
-    },
+    # op_tags={
+    #     "dagster-k8s/config": {
+    #         "container_config": {
+    #             "resources": {"requests": {"cpu": "750m"}, "limits": {"cpu": "750m"}}
+    #         }
+    #     }
+    # },
 )
 
 assets = [
