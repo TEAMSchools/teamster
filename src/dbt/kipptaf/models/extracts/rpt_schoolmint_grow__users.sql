@@ -33,6 +33,8 @@ with
                         or contains_substr(sr.job_title, 'Director')
                     )
                 then 'Sub Admin'
+                when sr.job_title = 'Achievement Director'
+                then 'Sub Admin'
                 when
                     sr.home_department_name = 'Special Education'
                     and contains_substr(sr.job_title, 'Director')
@@ -173,10 +175,11 @@ with
 
 select *,
 from surrogate_keys
-where
+where (
     /* create */
     (inactive = 0 and user_id is null)
     /* archive */
     or (inactive = 1 and user_id is not null and archived_at is null)
     /* update/reactivate */
-    or inactive = 0
+    or inactive = 0)
+    and user_internal_id = 401175
