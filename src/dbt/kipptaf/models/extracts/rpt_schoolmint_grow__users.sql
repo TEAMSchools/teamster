@@ -77,7 +77,6 @@ with
                 sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
             )
             >= '{{ var("current_academic_year") - 1 }}-07-01'
-            and sr.employee_number = 401175
     ),
 
     roster as (
