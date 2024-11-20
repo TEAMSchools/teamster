@@ -65,7 +65,7 @@ workspace:
   serverTTL:
     fullDeployments:
       enabled: true
-      ttlSeconds: 21600 # 6 hours
+      ttlSeconds: 3600 # 1 hour
     branchDeployments:
       ttlSeconds: 300
 
