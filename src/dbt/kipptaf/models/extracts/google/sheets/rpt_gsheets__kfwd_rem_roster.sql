@@ -159,6 +159,10 @@ select
         true,
         false
     ) as is_enrolled_bool,
+
+    r.contact_most_recent_college_enrollment_name,
+    r.contact_most_recent_college_enrollment_status,
+    r.contact_currently_enrolled_school,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
