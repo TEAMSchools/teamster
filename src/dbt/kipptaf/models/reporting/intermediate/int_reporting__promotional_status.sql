@@ -121,6 +121,41 @@ with
             and {{ union_dataset_join_clause(left_alias="fg", right_alias="gc") }}
     ),
 
+    star as (
+        select
+            student_display_id,
+            academic_year,
+            star_discipline,
+            state_benchmark_category_level,
+            state_benchmark_category_name,
+        from {{ ref("int_renlearn__star_rollup") }}
+        where rn_subj_year = 1
+    ),
+
+    fast as (
+        select
+            s.student_number,
+
+            f.academic_year,
+            f.discipline,
+            f.achievement_level_int,
+            f.achievement_level,
+            f.administration_window,
+
+            row_number() over (
+                partition by f.student_id, f.academic_year, f.discipline
+                order by f.administration_window desc
+            ) as rn_fast_year,
+        from {{ ref("stg_fldoe__fast") }} as f
+        inner join
+            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
+            on f.student_id = suf.fleid
+        inner join
+            {{ ref("stg_powerschool__students") }} as s
+            on suf.studentsdcid = s.dcid
+            and {{ union_dataset_join_clause(left_alias="suf", right_alias="s") }}
+    ),
+
     metric_union_sid as (
         select
             'Attendance' as discipline,
@@ -202,6 +237,20 @@ with
             i.most_recent_overall_relative_placement_int as metric,
             i.most_recent_overall_relative_placement as metric_display,
         from {{ ref("base_iready__diagnostic_results") }} as i
+        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name
+
+        union all
+
+        select
+            'Academics' as discipline,
+            concat('Star ', s.star_discipline) as subject,
+
+            student_display_id as student_number,
+            academic_year,
+            term_name,
+            state_benchmark_category_level as metric,
+            state_benchmark_category_name as metric_display,
+        from star as s
         cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name
     ),
 
