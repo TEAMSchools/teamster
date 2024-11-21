@@ -7,7 +7,7 @@ with
             score,
             grade_assessed,
 
-            concat('psat', score_type) as score_type,
+            concat('psat_', score_type) as score_type,
         from
             {{ ref("stg_illuminate__psat") }} unpivot (
                 score for score_type in (

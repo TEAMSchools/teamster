@@ -1,10 +1,33 @@
 with
-    college_assessments as (
+    student_id_crosswalk as (
+        select distinct
+            e._dbt_source_relation,
+            e.studentid,
+            e.students_dcid,
+            e.student_number,
+            e.state_studentnumber,
+            e.fleid,
+            e.infosnap_id,
+
+            a.contact_id,
+
+            i.student_id as illuminate_id,
+        from {{ ref("base_powerschool__student_enrollments") }} as e
+        left join
+            {{ ref("int_kippadb__roster") }} as a on e.student_number = a.student_number
+        left join
+            {{ ref("stg_illuminate__students") }} as i
+            on e.student_number = i.local_student_id
+        where e.grade_level between 9 and 12 and e.rn_year = 1
+    ),
+
+    int_college_assessments as (
         select
             contact,
             test_type as scope,
             date as test_date,
             score as scale_score,
+            score_type,
 
             'Official' as test_type,
 
@@ -65,6 +88,7 @@ with
 
             test_date,
             score as scale_score,
+            score_type,
 
             'Official' as test_type,
 
@@ -74,21 +98,23 @@ with
 
             case
                 score_type
-                when 'total_score'
+                when 'psat_total_score'
                 then 'Composite'
-                when 'reading_test_score'
+                when 'psat_reading_test_score'
                 then 'Reading'
-                when 'math_test_score'
+                when 'psat_math_test_score'
                 then 'Math Test'
-                when 'math_section_score'
+                when 'psat_math_section_score'
                 then 'Math'
-                when 'eb_read_write_section_score'
+                when 'psat_eb_read_write_section_score'
                 then 'Writing and Language Test'
             end as subject_area,
             case
-                when score_type in ('eb_read_write_section_score', 'reading_test_score')
+                when
+                    score_type
+                    in ('psat_eb_read_write_section_score', 'psat_reading_test_score')
                 then 'ENG'
-                when score_type in ('math_test_score', 'math_section_score')
+                when score_type in ('psat_math_test_score', 'psat_math_section_score')
                 then 'MATH'
                 else 'NA'
             end as course_discipline,
@@ -97,14 +123,27 @@ with
         from {{ ref("int_illuminate__psat_unpivot") }}
         where
             score_type in (
-                'eb_read_write_section_score',
-                'math_section_score',
-                'math_test_score',
-                'reading_test_score',
-                'total_score'
+                'psat_eb_read_write_section_score',
+                'psat_math_section_score',
+                'psat_math_test_score',
+                'psat_reading_test_score',
+                'psat_total_score'
             )
     )
 
-select *
-from college_assessments
-where scope = 'PSAT'
+select
+    c.test_academic_year,
+    c.contact,
+    c.test_type,
+    c.scope,
+    c.score_type,
+    c.subject_area,
+    c.course_discipline,
+    c.administration_round,
+    c.test_date,
+    c.scale_score,
+
+    s.student_number,
+from int_college_assessments as c
+left join student_id_crosswalk as s on c.contact = s.contact_id
+where c.scope != 'PSAT'
