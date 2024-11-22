@@ -1,13 +1,13 @@
 select
-    id,
-    contact,
-    date,
+    u.id,
+    u.contact,
+    u.date,
     score_type,
     score,
-    test_type,
+    u.test_type,
     if(
-        test_type = 'Advanced Placement',
-        subject,
+        u.test_type = 'Advanced Placement',
+        u.subject,
         array_to_string(
             array(
                 select
@@ -20,7 +20,7 @@ select
                         then 'Subscore'
                         else initcap(component)
                     end,
-                from unnest(split(score_type, '_')) as component
+                from unnest(split(u.score_type, '_')) as component
                 where
                     component not in (
                         'act', 'sat', 'ap', 'pre', '2016', 'critical', 'score', 'psat'
@@ -31,8 +31,10 @@ select
     ) as test_subject,
 
     row_number() over (
-        partition by contact, score_type order by score desc
+        partition by u.contact, u.score_type order by u.score desc
     ) as rn_highest,
+
+    i.school_specific_id,
 from
     {{ ref("stg_kippadb__standardized_test") }} unpivot (
         score for score_type in (
@@ -72,6 +74,7 @@ from
             sat_writing
         )
     ) as u
+inner join {{ ref("stg_kippadb__contact") }} as i on u.contact = i.salesforce_id
 where
-    not scoring_irregularity
-    and test_type in ('ACT', 'Advanced Placement', 'PSAT', 'SAT')
+    not u.scoring_irregularity
+    and u.test_type in ('ACT', 'Advanced Placement', 'PSAT', 'SAT')
