@@ -150,8 +150,7 @@ select
     scale_score,
 
     row_number() over (
-        partition by student_number, scope, subject_areaorder by scale_score desc
+        partition by student_number, scope, subject_area order by scale_score desc
     ) as rn_highest,
 
-order by scale_score as rn_highest,
 from college_assessments
