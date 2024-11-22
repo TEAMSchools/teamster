@@ -2,20 +2,18 @@ with
     students as (
         select
             e._dbt_source_relation,
-            e.dcid as students_dcid,
-            e.id as studentid,
+            e.students_dcid,
+            e.studentid,
             e.student_number,
             e.state_studentnumber,
+            e.contact_id as kippadb_contact_id,
             e.grade_level,
+            e.cohort,
 
             discipline,
 
-            adb.contact_id as kippadb_contact_id,
-        from {{ ref("stg_powerschool__students") }} as e
+        from {{ ref("int_tableau__student_enrollments") }} as e
         cross join unnest(['Math', 'ELA']) as discipline
-        left join
-            {{ ref("int_kippadb__roster") }} as adb
-            on e.student_number = adb.student_number
         where e.grade_level between 9 and 12
     ),
 
@@ -59,94 +57,6 @@ with
         where b.name = 'NJGPA'
     ),
 
-    act_sat_official as (
-        select
-            contact,
-            test_type,
-
-            case
-                when score_type in ('act_reading', 'sat_reading_test_score', 'sat_ebrw')
-                then 'ELA'
-                when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
-                then 'Math'
-            end as discipline,
-
-            case
-                when score_type in ('act_reading', 'act_math') and score >= 17
-                then true
-                when score_type = 'sat_reading_test_score' and score >= 23
-                then true
-                when score_type = 'sat_math_test_score' and score >= 22
-                then true
-                when score_type = 'sat_math' and score >= 440
-                then true
-                when score_type = 'sat_ebrw' and score >= 450
-                then true
-                else false
-            end as met_pathway_requirement,
-        from {{ ref("int_kippadb__standardized_test_unpivot") }}
-        where
-            rn_highest = 1
-            and score_type in (
-                'act_reading',
-                'act_math',
-                'sat_math_test_score',
-                'sat_math',
-                'sat_reading_test_score',
-                'sat_ebrw'
-            )
-    ),
-
-    act_sat_pivot as (
-        select contact, discipline, act, sat,
-        from
-            act_sat_official
-            pivot (max(met_pathway_requirement) for test_type in ('ACT', 'SAT'))
-    ),
-
-    psat10_official as (
-        select
-            safe_cast(local_student_id as int) as local_student_id,
-
-            if(
-                score_type
-                in ('psat10_eb_read_write_section_score', 'psat10_reading_test_score'),
-                'ELA',
-                'Math'
-            ) as discipline,
-
-            case
-                when
-                    score_type
-                    in ('psat10_reading_test_score', 'psat10_math_test_score')
-                    and score >= 21
-                then true
-                when
-                    score_type in (
-                        'psat10_math_section_score',
-                        'psat10_eb_read_write_section_score'
-                    )
-                    and score >= 420
-                then true
-                else false
-            end as met_pathway_requirement,
-        from {{ ref("int_illuminate__psat_unpivot") }}
-        where
-            rn_highest = 1
-            and score_type in (
-                'psat10_eb_read_write_section_score',
-                'psat10_math_test_score',
-                'psat10_math_section_score',
-                'psat10_reading_test_score'
-            )
-    ),
-
-    psat10_rollup as (
-        select local_student_id, discipline, max(met_pathway_requirement) as psat10,
-        from psat10_official
-        group by local_student_id, discipline
-    ),
-
     njgpa as (
         select
             s._dbt_source_relation,
@@ -186,6 +96,20 @@ with
             max(testscalescore) as testscalescore,
         from njgpa
         group by _dbt_source_relation, state_studentnumber, discipline
+    ),
+
+    college_assessment_scores as (
+        select s.student_number, s.test_type, s.discipline, s.score_type, s.scale_score,
+
+        from {{ ref("int_assessments__college_assessments_official") }} as s
+
+        left join
+            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
+            on s.test_academic_year = c.academic_year
+            and s.score_type = c.subject
+
+        where s.rn_highest = 1 and s.subject_area != 'Composite'
+
     ),
 
     test_scores as (
