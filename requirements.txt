@@ -21,7 +21,7 @@ cramjam==2.9.0
 croniter==3.0.4
 cryptography==43.0.3
 daff==1.3.46
-dagster==1.9.2
+dagster==1.9.3
 dagster-airbyte==0.25.2
 dagster-cloud==1.9.2
 dagster-cloud-cli==1.9.2
