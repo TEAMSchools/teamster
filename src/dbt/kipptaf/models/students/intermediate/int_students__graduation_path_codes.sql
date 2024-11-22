@@ -14,7 +14,7 @@ with
 
         from {{ ref("int_tableau__student_enrollments") }} as e
         cross join unnest(['Math', 'ELA']) as discipline
-        where e.grade_level between 9 and 12
+        where e.grade_level between 8 and 12
     ),
 
     transfer_scores as (
@@ -99,18 +99,36 @@ with
     ),
 
     college_assessment_scores as (
-        select s.student_number, s.test_type, s.discipline, s.score_type, s.scale_score,
+        select
+            e.student_number,
+            e.cohort,
+            e.discipline,
 
-        from {{ ref("int_assessments__college_assessments_official") }} as s
+            s.test_type,
+            s.scope,
+            s.score_type,
+            s.subject_area,
+            s.scale_score,
 
-        left join
-            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
-            on s.test_academic_year = c.academic_year
+            c.cutoff,
+        from students as e
+        inner join
+            {{ ref("int_assessments__college_assessments_official") }} as s
+            on e.discipline = s.discipline
+            and e.student_number = s.student_number
+        inner join
+            {{ ref("int_reporting__promotional_status") }} as c
+            on e.cohort = c.cohort
+            and e.discipline = c.discipline
             and s.score_type = c.subject
-
         where s.rn_highest = 1 and s.subject_area != 'Composite'
+    )
 
-    ),
+select *
+from
+    college_assessment_scores
+
+    /*,
 
     test_scores as (
         select
@@ -182,3 +200,5 @@ left join
     and r.discipline = u.discipline
     and {{ union_dataset_join_clause(left_alias="r", right_alias="u") }}
     and u.value_type = 'Graduation Pathway'
+*/
+    
