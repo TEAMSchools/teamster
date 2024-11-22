@@ -1,29 +1,7 @@
 with
-    student_id_crosswalk as (
-        select distinct
-            e._dbt_source_relation,
-            e.studentid,
-            e.students_dcid,
-            e.student_number,
-            e.state_studentnumber,
-            e.fleid,
-            e.infosnap_id,
-
-            a.contact_id,
-
-            i.student_id as illuminate_id,
-        from {{ ref("base_powerschool__student_enrollments") }} as e
-        left join
-            {{ ref("int_kippadb__roster") }} as a on e.student_number = a.student_number
-        left join
-            {{ ref("stg_illuminate__students") }} as i
-            on e.student_number = i.local_student_id
-        where e.grade_level between 9 and 12 and e.rn_year = 1
-    ),
-
     int_college_assessments as (
         select
-            contact,
+            school_specific_id as student_number,
             test_type as scope,
             date as test_date,
             score as scale_score,
@@ -82,7 +60,7 @@ with
         union all
 
         select
-            safe_cast(local_student_id as string) as contact,
+            cast(local_student_id as numeric) as student_number,
 
             'PSAT' as scope,
 
@@ -132,18 +110,14 @@ with
     )
 
 select
-    c.test_academic_year,
-    c.contact,
-    c.test_type,
-    c.scope,
-    c.score_type,
-    c.subject_area,
-    c.course_discipline,
-    c.administration_round,
-    c.test_date,
-    c.scale_score,
-
-    s.student_number,
-from int_college_assessments as c
-left join student_id_crosswalk as s on c.contact = s.contact_id
-where c.scope != 'PSAT'
+    test_academic_year,
+    student_number,
+    test_type,
+    scope,
+    score_type,
+    subject_area,
+    course_discipline,
+    administration_round,
+    test_date,
+    scale_score,
+from int_college_assessments
