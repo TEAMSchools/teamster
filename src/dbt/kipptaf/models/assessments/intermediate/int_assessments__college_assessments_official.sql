@@ -12,6 +12,17 @@ select
     ) as administration_round,
 
     case
+        when
+            score_type
+            in ('act_reading', 'act_english', 'sat_reading_test_score', 'sat_ebrw')
+        then 'ELA'
+        when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
+        then 'Math'
+        when score_type = 'act_science'
+        then 'Science'
+    end as discipline,
+
+    case
         score_type
         when 'sat_total_score'
         then 'Composite'
@@ -21,6 +32,7 @@ select
         then 'Math Test'
         else test_subject
     end as subject_area,
+
     case
         when
             score_type
@@ -64,6 +76,15 @@ select
     concat(
         format_date('%b', test_date), ' ', format_date('%g', test_date)
     ) as administration_round,
+
+    case
+        when
+            score_type
+            in ('psat10_eb_read_write_section_score', 'psat10_reading_test_score')
+        then 'ELA'
+        when score_type in ('psat_math_section_score', 'psat_math_test_score')
+        then 'Math'
+    end as discipline,
 
     case
         score_type
