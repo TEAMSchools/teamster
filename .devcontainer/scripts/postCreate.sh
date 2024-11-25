@@ -6,13 +6,11 @@ git config pull.rebase false # merge
 # update/install apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install \
-    bash-completion &&
+  sudo apt-get -y --no-install-recommends install bash-completion &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
 mkdir -p ./env
-mkdir -p /home/vscode/.dbt
 sudo mkdir -p /etc/secret-volume
 
 # inject 1Password secrets into .env
@@ -53,25 +51,28 @@ op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
   --out-file=env/dbt_cloud.yml &&
   sudo mv -f env/dbt_cloud.yml /home/vscode/.dbt/dbt_cloud.yml
 
+# install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh || true
+
 # install pdm dependencies
-pdm install --frozen-lockfile
+uv sync --frozen
 
 # prepare dbt projects
-pdm run dagster-dbt project prepare-and-package \
+uv run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kippcamden/__init__.py
-pdm run dagster-dbt project prepare-and-package \
+uv run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kippmiami/__init__.py
-pdm run dagster-dbt project prepare-and-package \
+uv run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kippnewark/__init__.py
-pdm run dagster-dbt project prepare-and-package \
+uv run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kipptaf/__init__.py
 
 # install dbt deps for packages
-pdm run dbt deanslist deps
-pdm run dbt edplan deps
-pdm run dbt iready deps
-pdm run dbt overgrad deps
-pdm run dbt pearson deps
-pdm run dbt powerschool deps
-pdm run dbt renlearn deps
-pdm run dbt titan deps
+# uv run dbt deanslist deps
+# uv run dbt edplan deps
+# uv run dbt iready deps
+# uv run dbt overgrad deps
+# uv run dbt pearson deps
+# uv run dbt powerschool deps
+# uv run dbt renlearn deps
+# uv run dbt titan deps
