@@ -36,7 +36,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["dagster-webserver", "pytest"]
+dev = ["dagster-webserver", "pytest", "datamodel-code-generator"]
 
 [build-system]
 requires = ["hatchling"]
@@ -49,9 +49,7 @@ packages = ["src/teamster"]
 project_name = "teamster"
 
 [tool.pdm.scripts]
-clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, coverage, and Python artifacts" }
 dagster-dev = { shell = "bash .pdm/scripts/dagster-dev.sh", help = "Validate Dagster imports and configs" }
-dbt = { shell = "bash .pdm/scripts/dbt.sh" }
 dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
 json2py = { shell = "bash .pdm/scripts/json2py.sh" }
 op-inject = { shell = "op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env" }
