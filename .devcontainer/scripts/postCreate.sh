@@ -54,7 +54,7 @@ op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
 # install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh || true
 
-# install pdm dependencies
+# install dependencies
 uv sync --frozen
 
 # prepare dbt projects
@@ -68,11 +68,11 @@ uv run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kipptaf/__init__.py
 
 # install dbt deps for packages
-# uv run dbt deanslist deps
-# uv run dbt edplan deps
-# uv run dbt iready deps
-# uv run dbt overgrad deps
-# uv run dbt pearson deps
-# uv run dbt powerschool deps
-# uv run dbt renlearn deps
-# uv run dbt titan deps
+uv run dbt deps --project-dir=src/dbt/deanslist
+uv run dbt deps --project-dir=src/dbt/edplan
+uv run dbt deps --project-dir=src/dbt/iready
+uv run dbt deps --project-dir=src/dbt/overgrad
+uv run dbt deps --project-dir=src/dbt/pearson
+uv run dbt deps --project-dir=src/dbt/powerschool
+uv run dbt deps --project-dir=src/dbt/renlearn
+uv run dbt deps --project-dir=src/dbt/titan
