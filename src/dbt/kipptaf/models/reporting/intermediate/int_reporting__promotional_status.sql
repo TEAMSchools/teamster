@@ -252,6 +252,20 @@ with
             state_benchmark_category_name as metric_display,
         from star as s
         cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name
+
+        union all
+
+        select
+            'Academics' as discipline,
+            concat('FAST ', discipline) as subject,
+
+            student_number,
+            academic_year,
+            term_name,
+            achievement_level_int as metric,
+            achievement_level as metric_display,
+        from fast as s
+        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name
     ),
 
     identifiers as (
@@ -356,6 +370,10 @@ with
             `is_on_track_DIBELS Benchmark` as is_on_track_dibels,
             `is_on_track_Core Fs` as is_on_track_core_f,
             `is_on_track_Projected Credits` as is_on_track_projected_credits,
+            `is_on_track_Star ELA` as is_on_track_star_ela,
+            `is_on_track_Star Math` as is_on_track_star_math,
+            `is_on_track_FAST ELA` as is_on_track_fast_ela,
+            `is_on_track_FAST Math` as is_on_track_fast_math,
 
             cast(`metric_display_ADA` as float64) as ada_running,
             cast(
@@ -370,6 +388,10 @@ with
             cast(
                 `metric_display_DIBELS Benchmark` as string
             ) as dibels_composite_recent,
+            cast(`metric_display_Star ELA` as string) as star_ela_achievement_level,
+            cast(`metric_display_Star Math` as string) as star_math_achievement_level,
+            cast(`metric_display_FAST ELA` as string) as fast_ela_achievement_level,
+            cast(`metric_display_FAST Math` as string) as fast_math_achievement_level,
         from
             identifiers pivot (
                 max(metric_display) as metric_display,
@@ -380,7 +402,11 @@ with
                     'i-Ready Math',
                     'DIBELS Benchmark',
                     'Core Fs',
-                    'Projected Credits'
+                    'Projected Credits',
+                    'Star ELA',
+                    'Star Math',
+                    'FAST ELA',
+                    'FAST Math'
                 )
             )
     ),
@@ -402,6 +428,10 @@ with
             iready_reading_orp_recent,
             iready_math_orp_recent,
             dibels_composite_recent,
+            star_ela_achievement_level,
+            star_math_achievement_level,
+            fast_ela_achievement_level,
+            fast_math_achievement_level,
 
             case
                 /* NJ grades k-1 */
@@ -466,6 +496,10 @@ select
     s.iready_reading_orp_recent,
     s.iready_math_orp_recent,
     s.dibels_composite_recent,
+    s.star_ela_achievement_level,
+    s.star_math_achievement_level,
+    s.fast_ela_achievement_level,
+    s.fast_math_achievement_level,
 
     s.academic_status,
     s.attendance_status,
@@ -512,3 +546,4 @@ left join
     on s.academic_year = hs.academic_year
     and s.region = hs.region
     and s.grade_level = hs.grade_level
+where s.region = 'Miami'
