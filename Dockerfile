@@ -5,9 +5,6 @@ FROM python:"${PYTHON_VERSION}"-slim
 
 ARG CODE_LOCATION
 
-# set shell to bash
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
 # set container envs
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -16,27 +13,23 @@ ENV PATH=/app/.venv/bin:"${PATH}"
 # set workdir
 WORKDIR /app
 
-# install uv & create venv
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install "uv==0.5.0" --no-cache-dir \
-    && uv venv
+# Install dependencies
+RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
+    --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --compile-bytecode --no-editable
 
-# install dependencies
-COPY pyproject.toml requirements.txt overrides.txt ./
-RUN --mount=type=cache,target=/root/.cache/pip \
-    uv pip install \
-    -r requirements.txt \
-    --override overrides.txt \
-    --no-cache-dir
+# Copy the project into the image
+COPY . /app
 
-# install python project
-COPY src/teamster/ ./src/teamster/
-RUN uv pip install \
-    -e . \
-    --override overrides.txt \
-    --no-cache-dir
+# Sync the project
+RUN --mount=from=ghcr.io/astral-sh/uv,source=/uv,target=/bin/uv \
+    --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    uv sync --frozen --no-editable
 
 # install dbt project
-COPY src/dbt/ ./src/dbt/
 RUN dagster-dbt project prepare-and-package \
     --file src/teamster/code_locations/"${CODE_LOCATION}"/__init__.py
