@@ -3,10 +3,14 @@
 # specify how to reconcile divergent branches
 git config pull.rebase false # merge
 
+# add gcloud gpg key
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg || true
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+
 # update/install apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install bash-completion &&
+  sudo apt-get -y --no-install-recommends install bash-completion google-cloud-cli &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
