@@ -22,7 +22,7 @@ with
             *,
 
             regexp_extract(
-                _dbt_source_relation, r'(\w+)_communication'
+                _dbt_source_relation, r'__(\w+)_communication'
             ) as source_relation_type,
         from union_relations
     ),

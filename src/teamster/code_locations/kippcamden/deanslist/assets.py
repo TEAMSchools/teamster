@@ -26,7 +26,7 @@ DEANSLIST_STATIC_PARTITIONS_DEF = StaticPartitionsDefinition(
 DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
     partitions_defs={
         "date": MonthlyPartitionsDefinition(
-            start_date="2016-07-01", timezone=LOCAL_TIMEZONE.name, end_offset=1
+            start_date="2016-07-01", timezone=str(LOCAL_TIMEZONE), end_offset=1
         ),
         "school": DEANSLIST_STATIC_PARTITIONS_DEF,
     }
@@ -37,7 +37,7 @@ DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
         "date": FiscalYearPartitionsDefinition(
             start_date="2016-07-01",
             start_month=7,
-            timezone=LOCAL_TIMEZONE.name,
+            timezone=str(LOCAL_TIMEZONE),
             end_offset=1,
         ),
         "school": DEANSLIST_STATIC_PARTITIONS_DEF,
@@ -90,6 +90,11 @@ behavior = build_deanslist_paginated_multi_partition_asset(
     api_version="v1",
     schema=BEHAVIOR_SCHEMA,
     partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {"resources": {"limits": {"memory": "5.0Gi"}}}
+        }
+    },
 )
 
 fiscal_multi_partitions_assets = [behavior, *fiscal_multi_partitions_assets]

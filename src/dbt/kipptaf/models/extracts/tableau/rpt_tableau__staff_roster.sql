@@ -66,6 +66,11 @@ select
     null as reports_to_name,
     null as gender,
     null as grades_taught_custom,
+
+    lc.school_leader_mail,
+    lc.school_leader_preferred_name_lastfirst,
+    lc.dso_mail,
+    lc.dso_preferred_name_lastfirst,
 from {{ ref("base_people__staff_roster") }} as b
 left join
     {{ ref("int_people__years_experience") }} as ye
@@ -76,3 +81,6 @@ left join
     on b.powerschool_teacher_number = tgl.teachernumber
     and tgl.academic_year = {{ var("current_academic_year") }}
     and tgl.grade_level_rank = 1
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as lc
+    on b.home_work_location_name = lc.home_work_location_name

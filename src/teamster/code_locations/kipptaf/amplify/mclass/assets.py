@@ -7,7 +7,7 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.amplify.mclass.assets import build_mclass_asset
 
 PARTITIONS_DEF = FiscalYearPartitionsDefinition(
-    start_date="2022-07-01", timezone=LOCAL_TIMEZONE.name, start_month=7
+    start_date="2022-07-01", timezone=str(LOCAL_TIMEZONE), start_month=7
 )
 
 DYD_PAYLOAD = {
