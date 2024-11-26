@@ -195,5 +195,8 @@ select
         then '<2.00'
     end as hs_gpa_bands,
 from {{ ref("int_kippadb__roster") }} as r
-left join {{ ref("base_kippadb__application") }} as a on r.contact_id = a.applicant
+left join
+    {{ ref("base_kippadb__application") }} as a
+    on r.contact_id = a.applicant
+    and a.rn_application_school = 1
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
