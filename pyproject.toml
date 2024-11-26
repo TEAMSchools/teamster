@@ -5,6 +5,8 @@ description = ""
 authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.12,<3.13"
 dependencies = [
   "dagster>=1.9,<1.10",
   "dagster-airbyte",
@@ -34,22 +36,22 @@ dependencies = [
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
 ]
-requires-python = ">=3.12,<3.13"
-license = { text = "GPL-3.0-or-later" }
+
+[dependency-groups]
+dev = ["dagster-webserver", "pytest", "datamodel-code-generator"]
 
 [build-system]
-requires = ["pdm-pep517>=1.0.0"]
-build-backend = "pdm.pep517.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.pdm.dev-dependencies]
-dev = ["pytest>=7.4.3", "datamodel-code-generator>=0.25.4", "dagster-webserver"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/teamster"]
+
+[tool.dagster]
+project_name = "teamster"
 
 [tool.pdm.scripts]
-_.env_file = "env/.env"
-post_install = { shell = "pdm export --prod -o requirements.txt --no-hashes" }
-clean = { shell = "bash .pdm/scripts/clean.sh", help = "Remove all build, test, coverage, and Python artifacts" }
 dagster-dev = { shell = "bash .pdm/scripts/dagster-dev.sh", help = "Validate Dagster imports and configs" }
-dbt = { shell = "bash .pdm/scripts/dbt.sh" }
 dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
 json2py = { shell = "bash .pdm/scripts/json2py.sh" }
 op-inject = { shell = "op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env" }
