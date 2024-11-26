@@ -39,8 +39,16 @@ select
     null as application_submission_status,
     null as matriculation_decision,
 
+    if(e.status = 'Graduated', true, false) as is_graduated,
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
     if(e.id = ei.ugrad_enrollment_id, true, false) as is_ugrad_enrollment,
+    if(
+        e.status in ('Attending', 'Graduated')
+        and a.id = ei.ecc_account_id
+        and r.ktc_cohort <= {{ var("current_academic_year") - 7 }},
+        true,
+        false
+    ) as is_continuing_completing,
 
     if(ei.ecc_account_name = ei.ugrad_account_name, 1, 0) as is_same_school,
 
@@ -148,8 +156,10 @@ select
     a.application_submission_status,
     a.matriculation_decision,
 
+    false as is_graduated,
     null as is_ecc_enrollment,
     null as is_ugrad_enrollment,
+    null as is_continuing_completing,
     null as is_same_school,
     null as is_4yr_grad_int,
     null as is_6yr_grad_int,
