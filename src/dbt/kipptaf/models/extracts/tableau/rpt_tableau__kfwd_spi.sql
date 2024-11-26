@@ -55,19 +55,19 @@ select
     case
         when
             e.school = ei.ecc_account_id
-            and r.ktc_cohort <= {{ var("current_academic_year") - 5 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
             and e.status = 'Graduated'
             and e.actual_end_date <= date(r.ktc_cohort + 4, 08, 31)
         then 1
         when
             e.school = ei.ecc_account_id
-            and r.ktc_cohort <= {{ var("current_academic_year") - 5 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
             and e.status = 'Graduated'
             and e.actual_end_date > date(r.ktc_cohort + 4, 08, 31)
         then 0
         when
             e.school = ei.ecc_account_id
-            and r.ktc_cohort <= {{ var("current_academic_year") - 5 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
             and e.status != 'Graduated'
             and e.actual_end_date is not null
         then 0
@@ -76,23 +76,34 @@ select
     case
         when
             e.school = ei.ecc_account_id
-            and r.ktc_cohort <= {{ var("current_academic_year") - 7 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 6 }}
             and e.status = 'Graduated'
             and e.actual_end_date <= date(r.ktc_cohort + 6, 08, 31)
         then 1
         when
             e.school = ei.ecc_account_id
-            and r.ktc_cohort <= {{ var("current_academic_year") - 7 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 6 }}
             and e.status = 'Graduated'
             and e.actual_end_date > date(r.ktc_cohort + 6, 08, 31)
         then 0
         when
             e.school = ei.ecc_account_id
-            and r.ktc_cohort <= {{ var("current_academic_year") - 7 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 6 }}
             and e.status != 'Graduated'
             and e.actual_end_date is not null
         then 0
     end as is_6yr_grad_int,
+
+    case
+        when
+            r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
+            and e.status = 'Graduated'
+        then 1
+        when
+            r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
+            and e.status != 'Graduated'
+        then 0
+    end as is_grad_ever_any,
 
     case
         when r.contact_college_match_display_gpa >= 3.50
@@ -169,6 +180,7 @@ select
     null as is_same_school,
     null as is_4yr_grad_int,
     null as is_6yr_grad_int,
+    null as is_grad_ever_any,
 
     case
         when r.contact_college_match_display_gpa >= 3.50
