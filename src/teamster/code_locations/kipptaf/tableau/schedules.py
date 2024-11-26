@@ -5,7 +5,7 @@ from teamster.libraries.tableau.schedules import build_tableau_workbook_stats_sc
 tableau_workbook_stats_asset_job_schedule = build_tableau_workbook_stats_schedule(
     asset_def=workbook_stats,
     cron_schedule="0 1 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 schedules = [

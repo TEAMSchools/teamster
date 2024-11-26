@@ -24,7 +24,7 @@ DEANSLIST_STATIC_PARTITIONS_DEF = StaticPartitionsDefinition(["472", "525"])
 DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
     partitions_defs={
         "date": MonthlyPartitionsDefinition(
-            start_date="2018-07-01", timezone=LOCAL_TIMEZONE.name, end_offset=1
+            start_date="2018-07-01", timezone=str(LOCAL_TIMEZONE), end_offset=1
         ),
         "school": DEANSLIST_STATIC_PARTITIONS_DEF,
     }
@@ -35,7 +35,7 @@ DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
         "date": FiscalYearPartitionsDefinition(
             start_date="2018-07-01",
             start_month=7,
-            timezone=LOCAL_TIMEZONE.name,
+            timezone=str(LOCAL_TIMEZONE),
             end_offset=1,
         ),
         "school": DEANSLIST_STATIC_PARTITIONS_DEF,

@@ -33,6 +33,8 @@ with
                         or contains_substr(sr.job_title, 'Director')
                     )
                 then 'Sub Admin'
+                when sr.job_title = 'Achievement Director'
+                then 'Sub Admin'
                 when
                     sr.home_department_name = 'Special Education'
                     and contains_substr(sr.job_title, 'Director')

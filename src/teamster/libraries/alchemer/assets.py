@@ -1,6 +1,7 @@
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import DynamicPartitionsDefinition, OpExecutionContext, Output, asset
 from requests.exceptions import HTTPError
 
@@ -118,9 +119,9 @@ def build_alchemer_assets(
 
         cursor_timestamp = float(partition_key_split[1])
 
-        date_submitted = pendulum.from_timestamp(
-            cursor_timestamp, tz="America/New_York"
-        ).to_datetime_string()
+        date_submitted = datetime.fromtimestamp(
+            timestamp=cursor_timestamp, tz=ZoneInfo("America/New_York")
+        ).isoformat()
 
         if cursor_timestamp == 0:
             survey_response_obj = survey.response
