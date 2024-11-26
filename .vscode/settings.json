@@ -43,5 +43,8 @@
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "dbt.enableNewLineagePanel": true
+  "dbt.enableNewLineagePanel": true,
+  "[python]": {
+    "editor.defaultFormatter": "trunk.io"
+  }
 }
