@@ -102,14 +102,6 @@ def test_asset_deanslist_homework_kippnewark():
     _test_asset(assets=monthly_multi_partitions_assets, asset_name="homework")
 
 
-def test_asset_deanslist_incidents_kippnewark():
-    from teamster.code_locations.kippnewark.deanslist.assets import (
-        monthly_multi_partitions_assets,
-    )
-
-    _test_asset(assets=monthly_multi_partitions_assets, asset_name="incidents")
-
-
 def test_asset_deanslist_comm_log_kippnewark():
     from teamster.code_locations.kippnewark.deanslist.assets import (
         fiscal_multi_partitions_assets,
@@ -182,14 +174,6 @@ def test_asset_deanslist_homework_kippcamden():
     _test_asset(assets=monthly_multi_partitions_assets, asset_name="homework")
 
 
-def test_asset_deanslist_incidents_kippcamden():
-    from teamster.code_locations.kippcamden.deanslist.assets import (
-        monthly_multi_partitions_assets,
-    )
-
-    _test_asset(assets=monthly_multi_partitions_assets, asset_name="incidents")
-
-
 def test_asset_deanslist_comm_log_kippcamden():
     from teamster.code_locations.kippcamden.deanslist.assets import (
         fiscal_multi_partitions_assets,
@@ -260,14 +244,6 @@ def test_asset_deanslist_homework_kippmiami():
     )
 
     _test_asset(assets=monthly_multi_partitions_assets, asset_name="homework")
-
-
-def test_asset_deanslist_incidents_kippmiami():
-    from teamster.code_locations.kippmiami.deanslist.assets import (
-        monthly_multi_partitions_assets,
-    )
-
-    _test_asset(assets=monthly_multi_partitions_assets, asset_name="incidents")
 
 
 def test_asset_deanslist_comm_log_kippmiami():
@@ -343,4 +319,40 @@ def test_asset_deanslist_behavior_kippnewark():
         assets=fiscal_multi_partitions_assets,
         asset_name="behavior",
         partition_key="2024-07-01|124",
+    )
+
+
+def test_asset_deanslist_incidents_kippcamden():
+    from teamster.code_locations.kippcamden.deanslist.assets import (
+        monthly_multi_partitions_assets,
+    )
+
+    _test_asset(
+        assets=monthly_multi_partitions_assets,
+        asset_name="incidents",
+        partition_key="2024-11-01|473",
+    )
+
+
+def test_asset_deanslist_incidents_kippmiami():
+    from teamster.code_locations.kippmiami.deanslist.assets import (
+        monthly_multi_partitions_assets,
+    )
+
+    _test_asset(
+        assets=monthly_multi_partitions_assets,
+        asset_name="incidents",
+        partition_key="2024-11-01|472",
+    )
+
+
+def test_asset_deanslist_incidents_kippnewark():
+    from teamster.code_locations.kippnewark.deanslist.assets import (
+        monthly_multi_partitions_assets,
+    )
+
+    _test_asset(
+        assets=monthly_multi_partitions_assets,
+        asset_name="incidents",
+        partition_key="2024-11-01|124",
     )
