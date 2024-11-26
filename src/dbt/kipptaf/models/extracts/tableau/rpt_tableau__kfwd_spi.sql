@@ -55,16 +55,19 @@ select
     case
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 5 }}
             and e.status = 'Graduated'
             and e.actual_end_date <= date(r.ktc_cohort + 4, 08, 31)
         then 1
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 5 }}
             and e.status = 'Graduated'
             and e.actual_end_date > date(r.ktc_cohort + 4, 08, 31)
         then 0
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 5 }}
             and e.status != 'Graduated'
             and e.actual_end_date is not null
         then 0
@@ -73,16 +76,19 @@ select
     case
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 7 }}
             and e.status = 'Graduated'
             and e.actual_end_date <= date(r.ktc_cohort + 6, 08, 31)
         then 1
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 7 }}
             and e.status = 'Graduated'
             and e.actual_end_date > date(r.ktc_cohort + 6, 08, 31)
         then 0
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 7 }}
             and e.status != 'Graduated'
             and e.actual_end_date is not null
         then 0
