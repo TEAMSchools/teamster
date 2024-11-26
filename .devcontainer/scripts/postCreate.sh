@@ -3,16 +3,18 @@
 # specify how to reconcile divergent branches
 git config pull.rebase false # merge
 
+# add gcloud gpg key
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg || true
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+
 # update/install apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install \
-    bash-completion &&
+  sudo apt-get -y --no-install-recommends install bash-completion google-cloud-cli &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
 mkdir -p ./env
-mkdir -p /home/vscode/.dbt
 sudo mkdir -p /etc/secret-volume
 
 # inject 1Password secrets into .env
@@ -53,25 +55,28 @@ op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
   --out-file=env/dbt_cloud.yml &&
   sudo mv -f env/dbt_cloud.yml /home/vscode/.dbt/dbt_cloud.yml
 
-# install pdm dependencies
-pdm install --frozen-lockfile
+# install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh || true
+
+# install dependencies
+uv sync --frozen
 
 # prepare dbt projects
-pdm run dagster-dbt project prepare-and-package \
+uv run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kippcamden/__init__.py
-pdm run dagster-dbt project prepare-and-package \
+uv run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kippmiami/__init__.py
-pdm run dagster-dbt project prepare-and-package \
+uv run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kippnewark/__init__.py
-pdm run dagster-dbt project prepare-and-package \
+uv run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kipptaf/__init__.py
 
 # install dbt deps for packages
-pdm run dbt deanslist deps
-pdm run dbt edplan deps
-pdm run dbt iready deps
-pdm run dbt overgrad deps
-pdm run dbt pearson deps
-pdm run dbt powerschool deps
-pdm run dbt renlearn deps
-pdm run dbt titan deps
+uv run dbt deps --project-dir=src/dbt/deanslist
+uv run dbt deps --project-dir=src/dbt/edplan
+uv run dbt deps --project-dir=src/dbt/iready
+uv run dbt deps --project-dir=src/dbt/overgrad
+uv run dbt deps --project-dir=src/dbt/pearson
+uv run dbt deps --project-dir=src/dbt/powerschool
+uv run dbt deps --project-dir=src/dbt/renlearn
+uv run dbt deps --project-dir=src/dbt/titan
