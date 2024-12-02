@@ -92,10 +92,8 @@ with
 
             case
                 when
-                    score_type in (
-                        'psat10_eb_read_write_section_score',
-                        'psat10_reading_test_score'
-                    )
+                    score_type
+                    in ('psat_eb_read_write_section_score', 'psat_reading_test_score')
                 then 'ELA'
                 when score_type in ('psat_math_section_score', 'psat_math_test_score')
                 then 'Math'
