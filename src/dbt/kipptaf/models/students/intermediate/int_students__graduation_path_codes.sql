@@ -118,12 +118,13 @@ with
             {{ ref("int_assessments__college_assessments_official") }} as s
             on e.discipline = s.discipline
             and e.student_number = s.student_number
+            and s.rn_highest = 1
+            and s.subject_area != 'Composite'
         inner join
             {{ ref("stg_reporting__promo_status_cutoffs") }} as c
             on e.cohort = c.cohort
             and e.discipline = c.discipline
             and s.score_type = c.subject
-        where s.rn_highest = 1 and s.subject_area != 'Composite'
     )
 
 select *
