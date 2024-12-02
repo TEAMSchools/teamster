@@ -98,6 +98,8 @@ models:
       tableau:
         +schema: tableau
         +materialized: view
+    facebook:
+      +enabled: false
     finance:
       +schema: finance
       staging:
@@ -123,6 +125,7 @@ models:
           archive:
             +enabled: false
     instagram:
+      +enabled: false
       business:
         +schema: instagram_business
     iready:

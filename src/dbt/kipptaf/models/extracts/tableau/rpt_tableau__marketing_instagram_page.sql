@@ -1,3 +1,5 @@
+{{ config(enabled=false) }}
+
 select
     ui.id,
     ui.`date`,
