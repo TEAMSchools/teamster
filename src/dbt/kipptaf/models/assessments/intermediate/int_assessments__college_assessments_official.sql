@@ -1,7 +1,7 @@
 with
     college_assessments as (
         select
-            school_specific_id as student_number,
+            student_number,
             test_type as scope,
             date as test_date,
             score as scale_score,
@@ -147,6 +147,7 @@ select
     test_date,
     scale_score,
 
+    -- this rn doesnt account for which version of the psat was taken
     row_number() over (
         partition by student_number, scope, subject_area order by scale_score desc
     ) as rn_highest,
