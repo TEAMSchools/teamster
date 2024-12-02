@@ -169,7 +169,7 @@ with
             and a.mclass_measure_standard_score is not null
     ),
 
-    met_overall_goal_calculation_g1 as (
+    met_overall_goal_calculation_modified as (
         select
             academic_year,
             student_number,
@@ -195,7 +195,7 @@ with
         group by all
     ),
 
-    met_overall_bm_calculation_g1 as (
+    met_overall_bm_calculation_modified as (
         select
             academic_year,
             student_number,
@@ -210,7 +210,7 @@ with
             if(max(psf) or (max(cls) and max(wrc)), true, false) as met_bm_benchmark,
 
         from
-            met_overall_goal_or_bm_g1 pivot (
+            met_overall_goal_or_bm_modified pivot (
                 max(met_admin_benchmark)
                 for expected_mclass_measure_standard in (
                     'Phonemic Awareness (PSF)' as psf,
@@ -305,11 +305,23 @@ select
             and s.expected_test = 'BOY->MOY'
             and s.expected_round in ('3', '4')
             and a.mclass_measure_standard_score is not null
-        then g1.met_overall_goal
+        then mod.met_overall_goal
         when
             s.grade_level = '1'
             and s.expected_test = 'BOY->MOY'
             and s.expected_round in ('3', '4')
+            and a.mclass_measure_standard_score is null
+        then null
+        when
+            s.grade_level = '0'
+            and s.expected_test = 'BOY->MOY'
+            and s.expected_round = '4'
+            and a.mclass_measure_standard_score is not null
+        then mod.met_overall_goal
+        when
+            s.grade_level = '0'
+            and s.expected_test = 'BOY->MOY'
+            and s.expected_round = '4'
             and a.mclass_measure_standard_score is null
         then null
         when a.mclass_measure_standard_score is null
@@ -324,11 +336,23 @@ select
             and s.expected_test = 'BOY->MOY'
             and s.expected_round in ('3', '4')
             and a.mclass_measure_standard_score is not null
-        then bm1.met_bm_benchmark
+        then bm_mod.met_bm_benchmark
         when
             s.grade_level = '1'
             and s.expected_test = 'BOY->MOY'
             and s.expected_round in ('3', '4')
+            and a.mclass_measure_standard_score is null
+        then null
+        when
+            s.grade_level = '0'
+            and s.expected_test = 'BOY->MOY'
+            and s.expected_round = '4'
+            and a.mclass_measure_standard_score is not null
+        then bm_mod.met_bm_benchmark
+        when
+            s.grade_level = '0'
+            and s.expected_test = 'BOY->MOY'
+            and s.expected_round = '4'
             and a.mclass_measure_standard_score is null
         then null
         when a.mclass_measure_standard_score is null
@@ -353,17 +377,17 @@ left join
     and a.mclass_client_date between s.start_date and s.end_date
     and a.assessment_type = 'PM'
 left join
-    met_overall_goal_calculation_g1 as g1
-    on s.academic_year = g1.academic_year
-    and s.student_number = g1.student_number
-    and s.expected_test = g1.expected_test
-    and s.expected_round = g1.expected_round
+    met_overall_goal_calculation_modified as mod
+    on s.academic_year = mod.academic_year
+    and s.student_number = mod.student_number
+    and s.expected_test = mod.expected_test
+    and s.expected_round = mod.expected_round
 left join
-    met_overall_bm_calculation_g1 as bm1
-    on s.academic_year = bm1.academic_year
-    and s.student_number = bm1.student_number
-    and s.expected_test = bm1.expected_test
-    and s.expected_round = bm1.expected_round
+    met_overall_bm_calculation_modified as bm_mod
+    on s.academic_year = bm_mod.academic_year
+    and s.student_number = bm_mod.student_number
+    and s.expected_test = bm_mod.expected_test
+    and s.expected_round = bm_mod.expected_round
 left join
     {{ ref("int_reporting__student_filters") }} as f
     on s.academic_year = f.academic_year
