@@ -59,8 +59,10 @@ select
         /* see everything, edit teammate and seat status fields (recruiters)*/
         when
             sr.home_department_name = 'Recruitment'
-            and (contains_substr(sr.job_title, 'Recruiter')
-            or contains_substr(sr.job_title, 'Manager'))
+            and (
+                contains_substr(sr.job_title, 'Recruiter')
+                or contains_substr(sr.job_title, 'Manager')
+            )
         then 5
         /* see school, edit teammate fields (name in position, gutcheck, nonrenewal)*/
         when
