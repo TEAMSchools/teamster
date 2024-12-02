@@ -159,7 +159,6 @@ with
             on e.cohort = c.cohort
             and e.discipline = c.discipline
             and s.score_type = c.subject
-        group by all
     ),
 
     college_assessment_scores_pivot as (
