@@ -131,7 +131,7 @@ def get_isolation_forest(df: pandas.DataFrame):
     group_name="performance_management",
     partitions_def=MultiPartitionsDefinition(
         {
-            "academic_year": StaticPartitionsDefinition(["2023"]),
+            "academic_year": StaticPartitionsDefinition(["2023", "2024"]),
             "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
         }
     ),
