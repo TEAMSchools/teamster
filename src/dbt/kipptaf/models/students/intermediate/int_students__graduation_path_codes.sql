@@ -14,7 +14,7 @@ with
 
         from {{ ref("int_tableau__student_enrollments") }} as e
         cross join unnest(['Math', 'ELA']) as discipline
-        where e.grade_level between 8 and 12
+        where e.grade_level between 9 and 12
     ),
 
     transfer_scores as (

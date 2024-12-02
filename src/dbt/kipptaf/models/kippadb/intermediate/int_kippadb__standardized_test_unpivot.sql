@@ -34,7 +34,7 @@ select
         partition by u.contact, u.score_type order by u.score desc
     ) as rn_highest,
 
-    i.school_specific_id,
+    i.school_specific_id as student_number,
 from
     {{ ref("stg_kippadb__standardized_test") }} unpivot (
         score for score_type in (
