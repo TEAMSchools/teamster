@@ -65,7 +65,7 @@ jobs:
       - name: Prepare
         run: |
           runner=${{ matrix.runner }}
-          echo "PLATFORM_PAIR=${runner//-/\//}" >> "${GITHUB_ENV}"
+          echo "PLATFORM_PAIR=${runner//-//}" >> "${GITHUB_ENV}"
 
       # https://github.com/actions/checkout
       - uses: actions/checkout@v4
