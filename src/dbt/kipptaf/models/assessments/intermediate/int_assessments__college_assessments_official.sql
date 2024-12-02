@@ -148,6 +148,8 @@ select
     scale_score,
 
     -- this rn doesnt account for which version of the psat was taken
+    -- dont ever change this to partition on discipline or you will lose the section
+    -- vs score rows (XX vs XXX scores)
     row_number() over (
         partition by student_number, scope, subject_area order by scale_score desc
     ) as rn_highest,

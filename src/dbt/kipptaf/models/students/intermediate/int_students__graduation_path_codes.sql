@@ -116,6 +116,8 @@ with
             c.sf_standardized_test,
             c.cutoff,
 
+            if(s.scale_score >= c.cutoff, true, false) as met_pathway_requirement,
+
         from students as e
         inner join
             {{ ref("int_assessments__college_assessments_official") }} as s
@@ -128,11 +130,18 @@ with
             on e.cohort = c.cohort
             and e.discipline = c.discipline
             and s.score_type = c.subject
+    ),
+
+    act_sat_psat_pivot as (
+        select student_number, discipline, act, sat,
+        from
+            college_assessment_scores
+            pivot (max(met_pathway_requirement) for scope in ('ACT', 'SAT', 'PSAT'))
     )
 
 select *
 from
-    college_assessment_scores
+    act_sat_psat_pivot
 
     /*,
 
