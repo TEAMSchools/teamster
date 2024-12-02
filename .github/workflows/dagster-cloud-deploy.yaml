@@ -98,7 +98,7 @@ jobs:
         uses: docker/build-push-action@v6
         if: steps.prerun.outputs.result != 'skip'
         with:
-          context: .
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }}
           cache-from: type=gha
