@@ -135,7 +135,7 @@ with
             )
     ),
 
-    met_overall_goal_or_bm_g1 as (
+    met_overall_goal_or_bm_modified as (
         select
             s.academic_year,
             s.student_number,
@@ -165,7 +165,7 @@ with
             and a.mclass_client_date between s.start_date and s.end_date
             and a.assessment_type = 'PM'
         where
-            s.goal_filter in ('1BOY->MOY3', '1BOY->MOY4')
+            s.goal_filter in ('1BOY->MOY3', '1BOY->MOY4', '0BOY->MOY4')
             and a.mclass_measure_standard_score is not null
     ),
 
@@ -184,7 +184,7 @@ with
             if(max(psf) or (max(cls) and max(wrc)), true, false) as met_overall_goal,
 
         from
-            met_overall_goal_or_bm_g1 pivot (
+            met_overall_goal_or_bm_modified pivot (
                 max(met_overall_goal)
                 for expected_mclass_measure_standard in (
                     'Phonemic Awareness (PSF)' as psf,
