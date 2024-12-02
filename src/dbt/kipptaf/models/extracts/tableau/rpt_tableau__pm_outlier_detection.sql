@@ -1,6 +1,6 @@
 with
     score_dates as (
-        select
+        select distinct
             od.observer_employee_number,
             od.academic_year,
             od.form_term as reporting_term,
@@ -54,7 +54,7 @@ with
             on od.academic_year = rt.academic_year
             and od.form_term = rt.code
             and rt.type in ('PM', 'PMS')
-            and rt.name = 'Coach ETR'
+            and (rt.name = 'Coach ETR' or rt.name = 'Coach Scores')
     ),
 
     score_aggs as (
@@ -78,7 +78,8 @@ with
             and obs.observed_at_timestamp
             between srh.work_assignment_start_timestamp
             and srh.work_assignment_end_timestamp
-            and obs.rubric_name = 'Coach ETR'
+            and obs.rubric_name
+            in ('Coach ETR', 'Coach ETR and Reflection: Part 1 - Scores')
         group by
             obs.employee_number,
             obs.observer_employee_number,
