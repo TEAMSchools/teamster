@@ -2,6 +2,8 @@ version: 2
 
 sources:
   - name: facebook_pages
+    config:
+      enabled: false
     tables:
       - name: daily_page_metrics_total
       - name: lifetime_post_metrics_total
