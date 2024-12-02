@@ -112,7 +112,10 @@ with
             s.subject_area,
             s.scale_score,
 
+            c.`domain`,
+            c.sf_standardized_test,
             c.cutoff,
+
         from students as e
         inner join
             {{ ref("int_assessments__college_assessments_official") }} as s
