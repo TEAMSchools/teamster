@@ -117,7 +117,7 @@ with
             on e.discipline = s.discipline
             and e.student_number = s.student_number
         inner join
-            {{ ref("int_reporting__promotional_status") }} as c
+            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
             on e.cohort = c.cohort
             and e.discipline = c.discipline
             and s.score_type = c.subject
