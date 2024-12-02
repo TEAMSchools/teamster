@@ -1,6 +1,5 @@
 # https://github.com/dagster-io/dagster-cloud-hybrid-quickstart
 # https://github.com/dagster-io/dagster-cloud-action
-# https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
 
 name: Dagster Cloud Hybrid Deployment
 
@@ -29,8 +28,7 @@ env:
     inputs.code-location }}
   DAGSTER_CLOUD_YAML_PATH:
     src/teamster/code_locations/${{ inputs.code-location }}/dagster-cloud.yaml
-  IMAGE_TAG:
-    ${{ inputs.code-location }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+  IMAGE_TAG: ${{ inputs.code-location }}-${{ github.sha }}-${{ github.run_id }}
 
 permissions:
   id-token: write
@@ -38,7 +36,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  prerun:
+  dagster-cloud-deploy:
     runs-on: ubuntu-latest
     outputs:
       result: ${{ steps.prerun.outputs.result }}
@@ -50,25 +48,10 @@ jobs:
         id: prerun
         uses: dagster-io/dagster-cloud-action/actions/utils/prerun@main
 
-  build:
-    needs:
-      - prerun
-    runs-on: ubuntu-latest
-    if: needs.prerun.outputs.result != 'skip'
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
-    steps:
-      - name: Prepare
-        run: |
-          platform=${{ matrix.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> "${GITHUB_ENV}"
-
       # https://github.com/actions/checkout
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        if: steps.prerun.outputs.result != 'skip'
         with:
           ref: ${{ github.head_ref }}
 
@@ -76,6 +59,7 @@ jobs:
       - name: Authenticate to Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
+        if: steps.prerun.outputs.result != 'skip'
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           workload_identity_provider:
@@ -85,119 +69,47 @@ jobs:
       # https://github.com/google-github-actions/setup-gcloud
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        if: steps.prerun.outputs.result != 'skip'
 
       - name: gcloud auth configure-docker
+        if: steps.prerun.outputs.result != 'skip'
         run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev
 
       # https://github.com/docker/metadata-action
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
+        if: steps.prerun.outputs.result != 'skip'
         with:
           images: ${{ env.REGISTRY_IMAGE }}
 
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        if: steps.prerun.outputs.result != 'skip'
 
       # https://github.com/docker/build-push-action
-      - name: Build and push by digest
+      - name: Build and upload Docker image
         id: build
         uses: docker/build-push-action@v6
+        if: steps.prerun.outputs.result != 'skip'
         with:
           context: .
-          cache-from: type=gha,scope=build-${{ env.PLATFORM_PAIR }}
-          cache-to: type=gha,mode=max,scope=build-${{ env.PLATFORM_PAIR }}
-          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             PYTHON_VERSION=${{ inputs.python-version }}
             CODE_LOCATION=${{ inputs.code-location }}
-          outputs:
-            type=image,name=${{ env.REGISTRY_IMAGE
-            }},push-by-digest=true,name-canonical=true,push=true
-
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
-
-      # https://github.com/actions/upload-artifact
-      - name: Upload digest
-        uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ env.PLATFORM_PAIR }}
-          path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
-
-  merge:
-    runs-on: ubuntu-latest
-    needs:
-      - prerun
-      - build
-    if: needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
-    steps:
-      # https://github.com/actions/download-artifact
-      - name: Download digests
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp/digests
-          pattern: digests-*
-          merge-multiple: true
-
-      # https://github.com/google-github-actions/auth
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          project_id: ${{ vars.GCP_PROJECT_ID }}
-          workload_identity_provider:
-            projects/${{ vars.GCP_PROJECT_NUMBER
-            }}/locations/global/workloadIdentityPools/github/providers/teamster
-
-      # https://github.com/google-github-actions/setup-gcloud
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: gcloud auth configure-docker
-        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev
-
-      # https://github.com/docker/setup-buildx-action
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Create manifest list and push
-        working-directory: /tmp/digests
-        run: |
-          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }} $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
-
-      - name: Inspect image
-        run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ env.IMAGE_TAG }}
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs:
-      - prerun
-      - build
-      - merge
-    if: github.actor != 'dependabot[bot]'
-    steps:
-      # https://github.com/actions/checkout
-      - name: Checkout
-        uses: actions/checkout@v4
-        if: needs.prerun.outputs.result != 'skip'
-        with:
-          ref: ${{ github.head_ref }}
 
       # Validate dagster_cloud.yaml and the connection to dagster.cloud
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Validate configuration
         id: ci-validate
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main
-        if: needs.prerun.outputs.result != 'skip'
+        if: steps.prerun.outputs.result != 'skip'
         with:
           command:
             ci check --project-dir ${{ env.DAGSTER_PROJECT_DIR }} --dagster-cloud-yaml-path ${{
@@ -209,7 +121,7 @@ jobs:
       - name: Initialize build session
         id: ci-init
         uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@main
-        if: needs.prerun.outputs.result != 'skip'
+        if: steps.prerun.outputs.result != 'skip'
         with:
           project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
           dagster_cloud_yaml_path: ${{ env.DAGSTER_CLOUD_YAML_PATH }}
@@ -221,7 +133,7 @@ jobs:
       - name: Update build session with image tag
         id: ci-set-build-output
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main
-        if: needs.prerun.outputs.result != 'skip'
+        if: steps.prerun.outputs.result != 'skip'
         with:
           command:
             ci set-build-output --location-name=${{ inputs.code-location }} --image-tag=${{
@@ -232,7 +144,7 @@ jobs:
       - name: Deploy to Dagster Cloud
         id: ci-deploy
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main
-        if: needs.prerun.outputs.result != 'skip'
+        if: steps.prerun.outputs.result != 'skip'
         with:
           command: ci deploy
 
@@ -242,7 +154,7 @@ jobs:
       - name: Update PR comment for branch deployments
         id: ci-notify
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main
-        if: needs.prerun.outputs.result != 'skip' && always()
+        if: steps.prerun.outputs.result != 'skip' && always()
         with:
           command: ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}
 
@@ -251,6 +163,6 @@ jobs:
       - name: Generate a summary
         id: ci-summary
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main
-        if: needs.prerun.outputs.result != 'skip' && always()
+        if: steps.prerun.outputs.result != 'skip' && always()
         with:
           command: ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY
