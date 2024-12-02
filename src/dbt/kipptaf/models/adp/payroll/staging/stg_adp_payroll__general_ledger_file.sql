@@ -8,7 +8,6 @@ select
     debit,
     credit,
     memo,
-    glentry_classid as gl_entry_class_id,
     gldimfunction as gl_dim_function,
     gldimdonor_restriction as gl_dim_donor_restriction,
     position_id,
@@ -24,6 +23,9 @@ select
     coalesce(
         file_number.long_value, cast(file_number.double_value as int)
     ) as file_number,
+    coalesce(
+        glentry_classid.long_value, cast(glentry_classid.double_value as int)
+    ) as gl_entry_class_id,
     coalesce(
         glentry_projectid.long_value, cast(glentry_projectid.double_value as int)
     ) as gl_entry_project_id,
