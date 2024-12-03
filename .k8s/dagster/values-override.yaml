@@ -31,8 +31,10 @@ dagsterCloudAgent:
   resources:
     requests:
       cpu: 250m
+      memory: 0.5Gi
     limits:
       cpu: 500m
+      memory: 1.0Gi
   nodeSelector:
     cloud.google.com/compute-class: Balanced
     cloud.google.com/gke-spot: "true"
@@ -46,8 +48,10 @@ workspace:
   resources:
     requests:
       cpu: 250m
+      memory: 0.5Gi
     limits:
       cpu: 500m
+      memory: 1.0Gi
 
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
@@ -56,8 +60,10 @@ workspace:
       resources:
         requests:
           cpu: 250m
+          memory: 0.5Gi
         limits:
           cpu: 500m
+          memory: 1.0Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
@@ -72,8 +78,10 @@ workspace:
       resources:
         requests:
           cpu: 250m
+          memory: 0.5Gi
         limits:
           cpu: 500m
+          memory: 1.0Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
