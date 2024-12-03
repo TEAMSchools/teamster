@@ -33,7 +33,7 @@ select
     null as so_tier,
 from {{ ref("int_performance_management__observations") }} as s
 inner join
-    {{ ref("base_people__staff_roster_history") }} as sr
+    {{ ref("int_people__staff_roster_history") }} as sr
     on s.employee_number = sr.employee_number
     and s.eval_date
     between sr.work_assignment_start_date and sr.work_assignment_end_date

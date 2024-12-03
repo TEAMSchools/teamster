@@ -71,7 +71,7 @@ select
     lc.school_leader_preferred_name_lastfirst,
     lc.dso_mail,
     lc.dso_preferred_name_lastfirst,
-from {{ ref("base_people__staff_roster") }} as b
+from {{ ref("int_people__staff_roster") }} as b
 left join
     {{ ref("int_people__years_experience") }} as ye
     on b.employee_number = ye.employee_number

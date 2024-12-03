@@ -90,7 +90,7 @@ select
         concat(c.department_home_name, ', Grade ', g.max_grade_level),
         c.department_home_name
     ) as department_grade,
-from {{ ref("base_people__staff_roster") }} as c
+from {{ ref("int_people__staff_roster") }} as c
 left join elementary_grade as g on c.powerschool_teacher_number = g.teachernumber
 {#- left join
     itr_pivot as i

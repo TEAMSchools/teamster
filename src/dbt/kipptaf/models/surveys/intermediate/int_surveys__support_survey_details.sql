@@ -64,7 +64,7 @@ inner join
     and ri.survey_response_id = fr.response_id
     and fr.item_abbreviation != 'respondent_name'
 inner join
-    {{ ref("base_people__staff_roster_history") }} as eh
+    {{ ref("int_people__staff_roster_history") }} as eh
     on ri.respondent_df_employee_number = eh.employee_number
     and ri.date_submitted
     between eh.work_assignment_start_timestamp and eh.work_assignment_end_timestamp
@@ -114,7 +114,7 @@ inner join
     on sda.question_shortname = fi.abbreviation
     and fi.form_id = '1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI'
 left join
-    {{ ref("base_people__staff_roster_history") }} as eh
+    {{ ref("int_people__staff_roster_history") }} as eh
     on sda.respondent_df_employee_number = eh.employee_number
     and sda.date_submitted
     between eh.work_assignment_start_timestamp and eh.work_assignment_end_timestamp

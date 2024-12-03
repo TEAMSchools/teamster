@@ -1,7 +1,7 @@
 with
     tir_previous as (
         select srh.employee_number, true as prior_year_tir,
-        from {{ ref("base_people__staff_roster_history") }} as srh
+        from {{ ref("int_people__staff_roster_history") }} as srh
         where
             srh.work_assignment_start_date
             >= '{{ var("current_academic_year") - 1 }}-07-01'
@@ -13,7 +13,7 @@ with
     recent_leave as (
         select distinct
             srh.employee_number, t.academic_year, t.code, true as recent_leave,
-        from {{ ref("base_people__staff_roster_history") }} as srh
+        from {{ ref("int_people__staff_roster_history") }} as srh
         inner join
             {{ ref("stg_reporting__terms") }} as t
             on assignment_status_effective_date
@@ -142,7 +142,7 @@ select
         then true
         else false
     end as pm_round_eligible,
-from {{ ref("base_people__staff_roster_history") }} as srh
+from {{ ref("int_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as t
     on srh.business_unit_home_name = t.region
@@ -165,10 +165,10 @@ left join
     and od.observed_at between t.start_date and t.end_date
 left join tracks as tr on od.observation_id = tr.observation_id
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on srh.employee_number = sr.employee_number
 left join
-    {{ ref("base_people__staff_roster") }} as sro
+    {{ ref("int_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
 left join tir_previous as tir on srh.employee_number = tir.employee_number
 left join
@@ -251,7 +251,7 @@ select
     regexp_replace(od.measurement_comments, r'<[^>]+>', '') as measurement_comments,
 
     null as pm_round_eligible,
-from {{ ref("base_people__staff_roster_history") }} as srh
+from {{ ref("int_people__staff_roster_history") }} as srh
 inner join
     {{ ref("int_performance_management__observation_details") }} as od
     on srh.employee_number = od.employee_number
@@ -263,10 +263,10 @@ left join
     on srh.employee_number = os.employee_number
     and od.academic_year = os.academic_year
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on srh.employee_number = sr.employee_number
 left join
-    {{ ref("base_people__staff_roster") }} as sro
+    {{ ref("int_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl

@@ -21,5 +21,5 @@ from
         )
     }} as pb
 inner join
-    {{ ref("base_people__staff_roster") }} as cw
+    {{ ref("int_people__staff_roster") }} as cw
     on pb.employee_number = cw.employee_number

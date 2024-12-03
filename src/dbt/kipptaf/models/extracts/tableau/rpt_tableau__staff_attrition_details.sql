@@ -31,7 +31,7 @@ with
     denom as (
         select distinct
             d.academic_year, d.attrition_date, d.effective_date, srh.employee_number,
-        from {{ ref("base_people__staff_roster_history") }} as srh
+        from {{ ref("int_people__staff_roster_history") }} as srh
         inner join
             dates as d
             on (
@@ -73,7 +73,7 @@ with
             ) as is_attrition,
         from denom as dc
         inner join
-            {{ ref("base_people__staff_roster_history") }} as srh
+            {{ ref("int_people__staff_roster_history") }} as srh
             on dc.employee_number = srh.employee_number
             and dc.attrition_date
             between srh.work_assignment_start_date and srh.work_assignment_end_date
@@ -111,7 +111,7 @@ with
             ) as is_attrition,
         from denom as dc
         inner join
-            {{ ref("base_people__staff_roster_history") }} as srh
+            {{ ref("int_people__staff_roster_history") }} as srh
             on dc.employee_number = srh.employee_number
             and dc.attrition_date
             between srh.work_assignment_start_date and srh.work_assignment_end_date
@@ -189,7 +189,7 @@ with
             + cat.years_teaching_at_kipp as total_years_teaching,
         from core_attrition_table as cat
         inner join
-            {{ ref("base_people__staff_roster_history") }} as srh
+            {{ ref("int_people__staff_roster_history") }} as srh
             /* where you worked on 4/30 is the reporting data */
             on cat.effective_date
             between srh.work_assignment_start_date and srh.work_assignment_end_date
@@ -268,7 +268,7 @@ with
             + cat.years_teaching_at_kipp as total_years_teaching,
         from core_attrition_table as cat
         inner join
-            {{ ref("base_people__staff_roster_history") }} as srh
+            {{ ref("int_people__staff_roster_history") }} as srh
             /* where you worked on 4/30 is the reporting data */
             on cat.effective_date
             between srh.work_assignment_start_date and srh.work_assignment_end_date

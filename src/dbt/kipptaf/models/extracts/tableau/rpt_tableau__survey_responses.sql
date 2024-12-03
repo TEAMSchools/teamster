@@ -40,7 +40,7 @@ select
     regexp_replace(sr.question_title, r'<[^>]*>', '') as question_title,
 from {{ ref("int_surveys__survey_responses") }} as sr
 left join
-    {{ ref("base_people__staff_roster_history") }} as eh
+    {{ ref("int_people__staff_roster_history") }} as eh
     on sr.respondent_email = eh.google_email
     and sr.date_submitted
     between eh.work_assignment_start_timestamp and eh.work_assignment_end_timestamp

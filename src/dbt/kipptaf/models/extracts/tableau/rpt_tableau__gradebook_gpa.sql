@@ -498,7 +498,7 @@ left join
     and s.yearid = ce.yearid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
 left join
-    {{ ref("base_people__staff_roster") }} as r
+    {{ ref("int_people__staff_roster") }} as r
     on ce.teacher_number = r.powerschool_teacher_number
 left join
     y1_historical as y1h

@@ -16,7 +16,7 @@ select
         then concat('Teacher PM - ', sr.business_unit_assigned_code)
         else 'Annual Adjustment'
     end as salary_rule,
-from {{ ref("base_people__staff_roster") }} as sr
+from {{ ref("int_people__staff_roster") }} as sr
 left join
     {{ ref("stg_people__salary_scale") }} as pss
     on sr.job_title = pss.job_title

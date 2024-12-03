@@ -105,13 +105,13 @@ inner join
     not in ('respondent_employee_number', 'subject_employee_number')
     and ri.rn_cur = 1
 inner join
-    {{ ref("base_people__staff_roster_history") }} as reh
+    {{ ref("int_people__staff_roster_history") }} as reh
     on ri.respondent_df_employee_number = reh.employee_number
     and ri.date_submitted
     between reh.work_assignment_start_timestamp and reh.work_assignment_end_timestamp
     and reh.assignment_status not in ('Terminated', 'Deceased')
 inner join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on ri.subject_df_employee_number = sr.employee_number
 
 union all
@@ -168,10 +168,10 @@ inner join
     on sda.question_shortname = fi.abbreviation
     and fi.form_id = '1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0'
 inner join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on sda.subject_df_employee_number = sr.employee_number
 left join
-    {{ ref("base_people__staff_roster_history") }} as reh
+    {{ ref("int_people__staff_roster_history") }} as reh
     on sda.respondent_df_employee_number = reh.employee_number
     and sda.date_submitted
     between reh.work_assignment_start_timestamp and reh.work_assignment_end_timestamp

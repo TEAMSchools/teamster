@@ -49,10 +49,6 @@ def build_fivetran_asset_specs(
     return specs
 
 
-adp_workforce_now_assets = build_fivetran_asset_specs(
-    config_file=config_dir / "adp_workforce_now.yaml", code_location=CODE_LOCATION
-)
-
 coupa_assets = build_fivetran_asset_specs(
     config_file=config_dir / "coupa.yaml", code_location=CODE_LOCATION
 )
@@ -70,7 +66,6 @@ illuminate_assets = build_fivetran_asset_specs(
 )
 
 asset_specs = [
-    *adp_workforce_now_assets,
     *coupa_assets,
     *illuminate_xmin_assets,
     *illuminate_assets,

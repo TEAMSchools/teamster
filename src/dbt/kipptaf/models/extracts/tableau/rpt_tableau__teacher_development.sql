@@ -230,7 +230,7 @@ select
     date_trunc(td.observed_at, week(monday)) as week_start,
 from observations_td_union as td
 left join
-    {{ ref("base_people__staff_roster_history") }} as srh
+    {{ ref("int_people__staff_roster_history") }} as srh
     on td.employee_number = srh.employee_number
     and td.observed_at
     between srh.work_assignment_start_date and srh.work_assignment_end_date
@@ -244,7 +244,7 @@ left join
     on td.employee_number = os.employee_number
     and td.academic_year = os.academic_year
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on td.observer_employee_number = sr.employee_number
 left join
     pm_scores as pm

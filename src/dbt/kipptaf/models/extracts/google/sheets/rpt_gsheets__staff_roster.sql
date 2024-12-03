@@ -39,4 +39,4 @@ select
     legal_name_family_name || ', ' || legal_name_given_name as legal_name,
 
     communication_person_mobile as mobile_number,
-from {{ ref("base_people__staff_roster") }}
+from {{ ref("int_people__staff_roster") }}

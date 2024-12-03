@@ -196,19 +196,19 @@ select
     ) as respondent_user_principal_name,
 from response_clean as rc
 left join
-    {{ ref("base_people__staff_roster") }} as resp
+    {{ ref("int_people__staff_roster") }} as resp
     on rc.respondent_employee_number = resp.employee_number
 left join
-    {{ ref("base_people__staff_roster_history") }} as reh
+    {{ ref("int_people__staff_roster_history") }} as reh
     on resp.worker_id = reh.worker_id
     and rc.campaign_link_close_date
     between reh.work_assignment_start_timestamp and reh.work_assignment_end_timestamp
     and reh.primary_indicator
 left join
-    {{ ref("base_people__staff_roster") }} as subj
+    {{ ref("int_people__staff_roster") }} as subj
     on rc.subject_employee_number = subj.employee_number
 left join
-    {{ ref("base_people__staff_roster_history") }} as seh
+    {{ ref("int_people__staff_roster_history") }} as seh
     on subj.worker_id = seh.worker_id
     and rc.campaign_link_close_date
     between seh.work_assignment_start_timestamp and seh.work_assignment_end_timestamp

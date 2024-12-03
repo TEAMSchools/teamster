@@ -59,10 +59,10 @@ select
         when sr.job_title = 'Teacher in Residence'
         then 'Teacher Development'
     end as feedback_group,
-from {{ ref("base_people__staff_roster") }} as sr
+from {{ ref("int_people__staff_roster") }} as sr
 /* manager information */
 left join
-    {{ ref("base_people__staff_roster") }} as sr2
+    {{ ref("int_people__staff_roster") }} as sr2
     on sr2.employee_number = sr.report_to_employee_number
 left join
     {{ ref("stg_people__campus_crosswalk") }} as cc

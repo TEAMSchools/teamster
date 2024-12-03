@@ -128,9 +128,9 @@ select
         else 0
     end as present_status,
 from {{ ref("stg_adp_workforce_manager__time_details") }} as td
-left join {{ ref("base_people__staff_roster") }} as sr on td.worker_id = sr.worker_id
+left join {{ ref("int_people__staff_roster") }} as sr on td.worker_id = sr.worker_id
 left join
-    {{ ref("base_people__staff_roster") }} as sl
+    {{ ref("int_people__staff_roster") }} as sl
     on sr.home_work_location_name = sl.home_work_location_name
     and sl.job_title = 'School Leader'
     and sl.assignment_status != 'Terminated'

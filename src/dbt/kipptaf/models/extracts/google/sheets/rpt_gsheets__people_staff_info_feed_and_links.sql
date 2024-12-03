@@ -116,4 +116,4 @@ select
         ' ',
         '+'
     ) as staff_info_update_personal_link,
-from {{ ref("base_people__staff_roster") }}
+from {{ ref("int_people__staff_roster") }}

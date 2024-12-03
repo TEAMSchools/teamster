@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: base_people__staff_roster
+  - name: int_people__staff_roster
     columns:
       - name: employee_number
         data_tests:

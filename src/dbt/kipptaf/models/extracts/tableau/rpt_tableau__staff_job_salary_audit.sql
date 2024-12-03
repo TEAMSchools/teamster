@@ -42,9 +42,9 @@ select
     row_number() over (
         partition by h.employee_number order by h.work_assignment_start_date desc
     ) as rn_curr,
-from {{ ref("base_people__staff_roster_history") }} as h
+from {{ ref("int_people__staff_roster_history") }} as h
 inner join
-    {{ ref("base_people__staff_roster") }} as r
+    {{ ref("int_people__staff_roster") }} as r
     on (h.employee_number = r.employee_number)
 where
     h.job_title is not null

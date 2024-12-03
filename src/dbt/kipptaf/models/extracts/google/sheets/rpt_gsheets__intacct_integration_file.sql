@@ -46,7 +46,7 @@ left join
     {{ ref("stg_finance__payroll_code_mapping") }} as cm
     on gl.gl_entry_project_id = cm.old_project_id_alt_nj
 left join
-    {{ ref("base_people__staff_roster_history") }} as srh
+    {{ ref("int_people__staff_roster_history") }} as srh
     on gl.position_id = srh.position_id
     and gl.date between srh.work_assignment_start_date and srh.work_assignment_end_date
     and srh.primary_indicator

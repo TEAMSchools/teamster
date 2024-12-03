@@ -39,12 +39,12 @@ left join
     {{ ref("int_performance_management__observation_details") }} as od
     on o.observation_id = od.observation_id
 left join
-    {{ ref("base_people__staff_roster_history") }} as srh
+    {{ ref("int_people__staff_roster_history") }} as srh
     on o.employee_number = srh.employee_number
     and o.observed_at
     between srh.work_assignment_start_date and srh.work_assignment_end_date
     and srh.assignment_status = 'Active'
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on o.observer_employee_number = sr.employee_number
 where o.observation_type_abbreviation = 'LD' and od.row_score is not null
