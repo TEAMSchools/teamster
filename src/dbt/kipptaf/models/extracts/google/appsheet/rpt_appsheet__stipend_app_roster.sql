@@ -5,7 +5,7 @@ with
             sr1.department_home_name,
             sr1.preferred_name_lastfirst,
             sr1.employee_number as ktaf_approver,
-        from {{ ref("base_people__staff_roster") }} as sr1
+        from {{ ref("int_people__staff_roster") }} as sr1
         where
             (
                 sr1.job_title like '%Chief%Officer'
@@ -33,9 +33,9 @@ with
                 ),
                 null
             ) as ktaf_approver,
-        from {{ ref("base_people__staff_roster") }} as sr1
+        from {{ ref("int_people__staff_roster") }} as sr1
         left join
-            {{ ref("base_people__staff_roster") }} as sr2
+            {{ ref("int_people__staff_roster") }} as sr2
             on sr1.report_to_employee_number = sr2.employee_number
         where
             sr1.business_unit_home_code = 'KIPP_TAF'
@@ -115,9 +115,9 @@ with
                 then 'School'
             end as route,
             coalesce(cc.name, sr.home_work_location_name) as campus,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         left join
-            {{ ref("base_people__staff_roster") }} as sr2
+            {{ ref("int_people__staff_roster") }} as sr2
             on sr.report_to_employee_number = sr2.employee_number
         left join
             {{ ref("stg_people__campus_crosswalk") }} as cc

@@ -66,7 +66,7 @@ with
             on seu.students_dcid = nj.studentsdcid
             and {{ union_dataset_join_clause(left_alias="seu", right_alias="nj") }}
         left join
-            {{ ref("base_people__staff_roster") }} as sr
+            {{ ref("int_people__staff_roster") }} as sr
             on seu.advisor_teachernumber = sr.powerschool_teacher_number
         left join
             {{ ref("stg_people__student_logins") }} as sl

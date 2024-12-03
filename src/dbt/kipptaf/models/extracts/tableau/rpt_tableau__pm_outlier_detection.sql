@@ -73,7 +73,7 @@ with
             avg(obs.observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }} as obs
         inner join
-            {{ ref("base_people__staff_roster_history") }} as srh
+            {{ ref("int_people__staff_roster_history") }} as srh
             on obs.employee_number = srh.employee_number
             and obs.observed_at_timestamp
             between srh.work_assignment_start_timestamp
@@ -155,7 +155,7 @@ select
     if(sd.tree_outlier_global = -1, 'outlier', 'not outlier') as tree_global,
 from score_dates as sd
 inner join
-    {{ ref("base_people__staff_roster_history") }} as srh
+    {{ ref("int_people__staff_roster_history") }} as srh
     on sd.observer_employee_number = srh.employee_number
     and sd.end_date_timestamp
     between srh.work_assignment_start_timestamp and srh.work_assignment_end_timestamp

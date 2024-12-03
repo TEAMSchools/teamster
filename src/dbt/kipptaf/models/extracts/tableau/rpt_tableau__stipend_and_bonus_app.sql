@@ -39,8 +39,8 @@ left join
     {{ ref("rpt_appsheet__stipend_app_roster") }} as r
     on o.employee_number = r.employee_number
 left join
-    {{ ref("base_people__staff_roster") }} as r1
+    {{ ref("int_people__staff_roster") }} as r1
     on o.first_approver_employee_number = r1.employee_number
 left join
-    {{ ref("base_people__staff_roster") }} as r2
+    {{ ref("int_people__staff_roster") }} as r2
     on o.second_approver_employee_number = r2.employee_number

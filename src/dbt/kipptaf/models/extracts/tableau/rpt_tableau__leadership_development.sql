@@ -69,4 +69,4 @@ left join
     on o.employee_number = c.employee_number
     and o.academic_year = c.academic_year
 left join
-    {{ ref("base_people__staff_roster") }} as r on o.employee_number = r.employee_number
+    {{ ref("int_people__staff_roster") }} as r on o.employee_number = r.employee_number

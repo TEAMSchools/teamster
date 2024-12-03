@@ -36,7 +36,7 @@ with
                 partition by employee_number
                 order by assignment_status_effective_date asc
             ) as rn_employee_status_date_asc,
-        from {{ ref("base_people__staff_roster_history") }}
+        from {{ ref("int_people__staff_roster_history") }}
     ),
 
     with_end_date as (

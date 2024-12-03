@@ -34,7 +34,7 @@ select
     p.final_score as pm4_overall_score,
 
     tgl.grade_level as primary_grade_level_taught,
-from {{ ref("base_people__staff_roster") }} as b
+from {{ ref("int_people__staff_roster") }} as b
 left join
     {{ ref("int_people__expected_next_year_salary") }} as s
     on b.employee_number = s.employee_number

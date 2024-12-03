@@ -89,7 +89,7 @@ with
                 date(9999, 12, 31)
             ) as most_recent_termination_date,
             coalesce(t.termination_reason, r.assignment_status_reason) as status_reason,
-        from {{ ref("base_people__staff_roster") }} as r
+        from {{ ref("int_people__staff_roster") }} as r
         left join
             {{ ref("int_people__years_experience") }} as y
             on r.employee_number = y.employee_number
@@ -174,7 +174,7 @@ with
                     date(9999, 12, 31)
                 ) as date
             ) as assignment_status_effective_date_end,
-        from {{ ref("base_people__staff_roster_history") }}
+        from {{ ref("int_people__staff_roster_history") }}
         where primary_indicator
     ),
 
@@ -282,5 +282,5 @@ select
     / 365.25 as years_experience_total,
 from with_dates as wd
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on wd.employee_number = sr.employee_number

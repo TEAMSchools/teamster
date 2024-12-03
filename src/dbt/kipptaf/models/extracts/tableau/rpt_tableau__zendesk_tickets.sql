@@ -88,12 +88,12 @@ left join
 left join
     original_value as oa on t.id = oa.ticket_id and oa.event_field_name = 'assignee_id'
 left join
-    {{ ref("base_people__staff_roster") }} as sx
+    {{ ref("int_people__staff_roster") }} as sx
     on lower(s.email) = lower(sx.user_principal_name)
 left join
-    {{ ref("base_people__staff_roster") }} as c
+    {{ ref("int_people__staff_roster") }} as c
     on lower(a.email) = lower(c.user_principal_name)
 left join
-    {{ ref("base_people__staff_roster") }} as oad
+    {{ ref("int_people__staff_roster") }} as oad
     on oa.field_value = lower(oad.user_principal_name)
 where t.status != 'deleted'

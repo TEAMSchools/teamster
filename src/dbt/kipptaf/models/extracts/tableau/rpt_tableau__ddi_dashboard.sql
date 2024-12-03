@@ -514,7 +514,7 @@ select
     null as is_passed_iready_4plus_math_int,
 from {{ ref("int_performance_management__observation_details") }} as o
 inner join
-    {{ ref("base_people__staff_roster") }} as r on o.employee_number = r.employee_number
+    {{ ref("int_people__staff_roster") }} as r on o.employee_number = r.employee_number
 left join
     {{ ref("int_powerschool__teachers") }} as t
     on r.powerschool_teacher_number = t.teachernumber

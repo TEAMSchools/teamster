@@ -28,7 +28,7 @@ inner join
     and s.rn_year = 1
     and s.grade_level in (7, 8)
 inner join
-    {{ ref("base_people__staff_roster") }} as p
+    {{ ref("int_people__staff_roster") }} as p
     on cc.teachernumber = p.powerschool_teacher_number
 where
     cc.cc_academic_year = {{ var("current_academic_year") }}

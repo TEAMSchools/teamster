@@ -63,14 +63,14 @@ select
         s.worker_rehire_date, s.worker_original_hire_date
     ) as most_recent_hire_date,
     if(s.ethnicity_long_name = 'Hispanic or Latino', true, false) as is_hispanic,
-from {{ ref("base_people__staff_roster") }} as s
+from {{ ref("int_people__staff_roster") }} as s
 inner join
     years as y
     on y.effective_date between s.worker_original_hire_date and coalesce(
         s.worker_termination_date, date(9999, 12, 31)
     )
 left join
-    {{ ref("base_people__staff_roster_history") }} as e
+    {{ ref("int_people__staff_roster_history") }} as e
     on s.employee_number = e.employee_number
     and y.effective_date
     between e.work_assignment_start_date and e.work_assignment_end_date

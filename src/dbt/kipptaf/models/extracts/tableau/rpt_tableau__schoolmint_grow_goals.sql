@@ -32,7 +32,7 @@ select
     tgl.grade_level as grade_taught,
 
     if(a.assignment_id is not null, 1, 0) as is_assigned,
-from {{ ref("base_people__staff_roster_history") }} as srh
+from {{ ref("int_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on srh.business_unit_home_name = rt.region
