@@ -60,7 +60,7 @@ jobs:
         runner:
           - linux-amd64
           - linux-arm64
-    runs-on: ${{ matrix.runner }}
+    runs-on: teamschools-${{ matrix.runner }}
     steps:
       - name: Prepare
         run: |
