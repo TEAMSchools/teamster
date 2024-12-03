@@ -78,9 +78,8 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
-          workload_identity_provider:
-            projects/${{ vars.GCP_PROJECT_NUMBER
-            }}/locations/global/workloadIdentityPools/github/providers/teamster
+          workload_identity_provider: |
+            projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/teamster
 
       # https://github.com/google-github-actions/setup-gcloud
       - name: Set up Cloud SDK
@@ -113,9 +112,8 @@ jobs:
           build-args: |
             PYTHON_VERSION=${{ inputs.python-version }}
             CODE_LOCATION=${{ inputs.code-location }}
-          outputs:
-            type=image,name=${{ env.REGISTRY_IMAGE
-            }},push-by-digest=true,name-canonical=true,push=true
+          outputs: |
+            type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
         run: |
@@ -153,9 +151,8 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
-          workload_identity_provider:
-            projects/${{ vars.GCP_PROJECT_NUMBER
-            }}/locations/global/workloadIdentityPools/github/providers/teamster
+          workload_identity_provider: |
+            projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/teamster
 
       # https://github.com/google-github-actions/setup-gcloud
       - name: Set up Cloud SDK
@@ -199,9 +196,8 @@ jobs:
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main
         if: needs.prerun.outputs.result != 'skip'
         with:
-          command:
-            ci check --project-dir ${{ env.DAGSTER_PROJECT_DIR }} --dagster-cloud-yaml-path ${{
-            env.DAGSTER_CLOUD_YAML_PATH }}
+          command: |
+            ci check --project-dir ${{ env.DAGSTER_PROJECT_DIR }} --dagster-cloud-yaml-path ${{ env.DAGSTER_CLOUD_YAML_PATH }}
 
       # Parse dagster_cloud.yaml, detect if this is branch deployment and initialize
       # the build session
@@ -223,9 +219,8 @@ jobs:
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main
         if: needs.prerun.outputs.result != 'skip'
         with:
-          command:
-            ci set-build-output --location-name=${{ inputs.code-location }} --image-tag=${{
-            env.IMAGE_TAG }}
+          command: |
+            ci set-build-output --location-name=${{ inputs.code-location }} --image-tag=${{ env.IMAGE_TAG }}
 
       # Deploy all code locations in this build session to Dagster Cloud
       # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
