@@ -1,3 +1,7 @@
+import pathlib
+
+import fastavro
+import fastavro.types
 import yaml
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from pydantic import PrivateAttr
@@ -99,15 +103,34 @@ class DeansListResource(ConfigurableResource):
         school_id: int,
         params: dict,
         page_size: int = 250000,
+        avro_schema: fastavro.types.Schema | None = None,
         *args,
         **kwargs,
     ):
         page: int = 1
         total_pages: int = 2
         total_count: int = 0
-        data: list[dict] = []
+        all_data: list[dict] = []
+
+        data_filepath = pathlib.Path(
+            f"env/deanslist/{endpoint}/{params["UpdatedSince"]}/{school_id}/data.avro"
+        ).absolute()
 
         url = self._get_url(*args, api_version=api_version, endpoint=endpoint)
+
+        if avro_schema is not None:
+            data_filepath.parent.mkdir(parents=True, exist_ok=True)
+
+            with data_filepath.open("wb") as fo:
+                fastavro.writer(
+                    fo=fo,
+                    schema=avro_schema,
+                    records=[],
+                    codec="snappy",
+                    strict_allow_default=True,
+                )
+
+        fo = data_filepath.open("a+b")
 
         while page <= total_pages:
             params.update({"page_size": page_size, "page": page})
@@ -118,8 +141,24 @@ class DeansListResource(ConfigurableResource):
 
             total_count = response_json["total_count"]
             total_pages = response_json["total_pages"]
-            data.extend(response_json["data"])
+            data = response_json["data"]
+
+            if avro_schema is not None:
+                fastavro.writer(
+                    fo=fo,
+                    schema=avro_schema,
+                    records=data,
+                    codec="snappy",
+                    strict_allow_default=True,
+                )
+            else:
+                all_data.extend(data)
 
             page += 1
 
-        return int(total_count), data
+        fo.close()
+
+        if avro_schema is not None:
+            return int(total_count), data_filepath
+        else:
+            return int(total_count), all_data
