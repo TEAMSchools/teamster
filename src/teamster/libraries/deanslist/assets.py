@@ -143,7 +143,7 @@ def build_deanslist_paginated_multi_partition_asset(
     code_location: str,
     endpoint: str,
     api_version: str,
-    schema,
+    schema: dict,
     partitions_def: MultiPartitionsDefinition,
     op_tags: dict | None = None,
     params: dict | None = None,
@@ -151,17 +151,14 @@ def build_deanslist_paginated_multi_partition_asset(
     if params is None:
         params = {}
 
-    asset_key = [code_location, "deanslist", "behavior"]
-
     @asset(
-        key=asset_key,
+        key=[code_location, "deanslist", "behavior"],
         metadata=params,
-        io_manager_key="io_manager_gcs_avro",
+        io_manager_key="io_manager_gcs_file",
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="deanslist",
         kinds={"python"},
-        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
         partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
@@ -172,9 +169,10 @@ def build_deanslist_paginated_multi_partition_asset(
 
         date_partition_key_fy = FiscalYear(datetime=date_partition_key, start_month=7)
 
-        total_count, data = deanslist.list(
+        total_count, data_filepath = deanslist.list(
             api_version=api_version,
             endpoint=endpoint,
+            avro_schema=schema,
             school_id=int(partition_key.keys_by_dimension["school"]),
             params={
                 "UpdatedSince": date_partition_key.date().isoformat(),
@@ -184,9 +182,6 @@ def build_deanslist_paginated_multi_partition_asset(
             },
         )
 
-        yield Output(value=(data, schema), metadata={"records": total_count})
-        yield check_avro_schema_valid(
-            asset_key=context.asset_key, records=data, schema=schema
-        )
+        yield Output(value=data_filepath, metadata={"records": total_count})
 
     return _asset
