@@ -24,6 +24,7 @@ select
     wa.primary_indicator,
     wa.management_position_indicator,
     wa.assignment_status__status_code__name,
+    wa.assignment_status__effective_date,
     wa.home_work_location__name_code__name,
     wa.worker_type_code__name,
     wa.wage_law_coverage__wage_law_name_code__name,
