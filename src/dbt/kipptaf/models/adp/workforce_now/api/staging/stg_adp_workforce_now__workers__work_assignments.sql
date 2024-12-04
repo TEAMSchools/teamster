@@ -280,6 +280,10 @@ select
         assignment_status__status_code__short_name
     ) as assignment_status__status_code__name,
     coalesce(
+        assignment_status__reason_code__long_name,
+        assignment_status__reason_code__short_name
+    ) as assignment_status__reason_code__name,
+    coalesce(
         wage_law_coverage__coverage_code__long_name,
         wage_law_coverage__coverage_code__short_name
     ) as wage_law_coverage__coverage_code__name,
