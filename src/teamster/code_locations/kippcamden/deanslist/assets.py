@@ -95,7 +95,7 @@ behavior = build_deanslist_paginated_multi_partition_asset(
     #         "container_config": {
     #             "resources": {
     #                 "requests": {"memory": "0.5Gi"},
-    #                 "limits": {"memory": "6.0Gi"},
+    #                 "limits": {"memory": "6.5Gi"},
     #             }
     #         }
     #     }
