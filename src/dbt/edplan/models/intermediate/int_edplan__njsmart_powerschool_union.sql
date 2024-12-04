@@ -42,6 +42,6 @@ select
 
     row_number() over (
         partition by student_number, fiscal_year
-        order by _dbt_source_relation desc, effective_date desc
+        order by effective_date desc, _dbt_source_relation desc
     ) as rn_student_year_desc,
 from union_relations
