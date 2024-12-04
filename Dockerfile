@@ -15,11 +15,10 @@ ENV UV_COMPILE_BYTECODE=1
 WORKDIR /app
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
-COPY uv.lock /app/uv.lock
+COPY uv.lock pyproject.toml /app/
 
 # Install dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
-    # --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-dev --no-install-project --no-editable
 
 # Copy the project into the image
@@ -27,7 +26,6 @@ COPY src/ /app/src/
 
 # Sync the project
 RUN --mount=type=cache,target=/root/.cache/uv \
-    # --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-dev --no-editable
 
 # install dbt project
