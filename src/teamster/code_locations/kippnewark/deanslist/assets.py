@@ -94,7 +94,7 @@ behavior = build_deanslist_paginated_multi_partition_asset(
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m"},
+                    "requests": {"cpu": "250m", "memory": "0.5Gi"},
                     "limits": {"cpu": "1250m", "memory": "4.0Gi"},
                 }
             }
