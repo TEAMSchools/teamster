@@ -220,9 +220,9 @@ datamodel-code-generator==0.26.3 \
 db-dtypes==1.3.1 \
     --hash=sha256:a058f05dab100891f3e76a7a3db9ad0f107f18dd3d1bdd13680749a2f07eae77 \
     --hash=sha256:fbc9d1740d94aaf2b5ae24601cfc875a69b4635bb9d049e3c3036e9f10203af8
-dbt-adapters==1.7.0 \
-    --hash=sha256:ad3392794ed0504e2082e19b3e447701982af1ab28b91f829bb3feb986bd1b29 \
-    --hash=sha256:f192294112d5722c6a0981a104f7a9f57548aeeefe31b0b9d5708493f74a09f5
+dbt-adapters==1.10.3 \
+    --hash=sha256:34196c757de404dcdc5e6180da3718f7df6eba28ceac82a7bf84923efde4fa5b \
+    --hash=sha256:87eb67cfbcccd065c901367a0c106e884e36cf9b0c4b0789fef3d8efe672aee2
 dbt-bigquery==1.8.3 \
     --hash=sha256:cc3240af407676fc5452b9a8273e70b73578c5aaa940d1c5afe9744c869df69a \
     --hash=sha256:f618637a6b7ec83e3bb81fe110bfcf3e0544eeb197a5637fa96ceddd5631eaa6
