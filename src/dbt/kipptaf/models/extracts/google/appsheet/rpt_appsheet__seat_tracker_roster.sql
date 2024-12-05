@@ -89,6 +89,11 @@ select
             contains_substr(sr.job_title, 'Managing Director')
             and sr.home_department_name in ('Operations', 'School Support')
         then 2
+        when
+            contains_substr(sr.job_title, 'Director')
+            and sr.home_department_name in ('Operations', 'School Support')
+            and sr.home_work_location_name like '%Room%'
+        then 2
         when contains_substr(sr.job_title, 'Head of Schools')
         then 2
         /* see nothing */
