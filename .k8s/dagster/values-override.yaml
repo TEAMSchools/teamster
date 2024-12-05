@@ -56,14 +56,16 @@ workspace:
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
   runK8sConfig:
+    # Autopilot clusters enforce higher minimum values for the resource requests of
+    # extended duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
     containerConfig:
       resources:
         requests:
-          cpu: 250m
-          memory: 0.5Gi
-        limits:
           cpu: 500m
-          memory: 1.0Gi
+          memory: 2.0Gi
+        limits:
+          cpu: 750m
+          memory: 2.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"

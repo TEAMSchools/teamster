@@ -106,7 +106,7 @@ assets:
         container_config:
           resources:
             requests:
-              memory: 2.5Gi
+              memory: 0.5Gi
             limits:
               memory: 2.5Gi
   - asset_name: cc
