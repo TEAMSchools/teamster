@@ -5,8 +5,8 @@ select
     s.school_name,
     s.grade_level,
 
-    p.preferred_name_given_name as teacher_first,
-    p.preferred_name_family_name as teacher_last,
+    p.given_name as teacher_first,
+    p.family_name_1 as teacher_last,
 
     regexp_replace(s.first_name, r'\W', '') as student_first,
     regexp_replace(s.last_name, r'\W', '') as student_last,
@@ -19,7 +19,7 @@ select
     || '.'
     || cc.sections_section_number
     || ' - '
-    || p.preferred_name_family_name as class_name,
+    || p.family_name_1 as class_name,
 from {{ ref("base_powerschool__course_enrollments") }} as cc
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as s

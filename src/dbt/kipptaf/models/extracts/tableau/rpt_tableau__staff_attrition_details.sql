@@ -35,15 +35,15 @@ with
         inner join
             dates as d
             on (
-                srh.work_assignment_start_date <= d.denominator_start_date
-                and srh.work_assignment_end_date >= d.effective_date
+                srh.effective_date_start <= d.denominator_start_date
+                and srh.effective_date_end >= d.effective_date
             )
             or (
-                srh.work_assignment_start_date
+                srh.effective_date_start
                 between d.denominator_start_date and d.effective_date
             )
             or (
-                srh.work_assignment_end_date
+                srh.effective_date_end
                 between d.denominator_start_date and d.effective_date
             )
         where
@@ -76,7 +76,7 @@ with
             {{ ref("int_people__staff_roster_history") }} as srh
             on dc.employee_number = srh.employee_number
             and dc.attrition_date
-            between srh.work_assignment_start_date and srh.work_assignment_end_date
+            between srh.effective_date_start and srh.effective_date_end
             and srh.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
     ),
 
@@ -114,7 +114,7 @@ with
             {{ ref("int_people__staff_roster_history") }} as srh
             on dc.employee_number = srh.employee_number
             and dc.attrition_date
-            between srh.work_assignment_start_date and srh.work_assignment_end_date
+            between srh.effective_date_start and srh.effective_date_end
             and srh.assignment_status in ('Terminated', 'Deceased')
         left join
             active_next_year as an
@@ -163,16 +163,16 @@ with
             cat.is_attrition,
             cat.year_at_kipp,
             cat.termination_reason,
-            srh.preferred_name_lastfirst,
-            srh.business_unit_home_name,
+            srh.formatted_name,
+            srh.home_business_unit_name,
             srh.home_work_location_name,
             srh.home_work_location_abbreviation,
             srh.home_work_location_grade_band,
-            srh.department_home_name,
+            srh.home_department_name,
             srh.job_title,
-            srh.base_remuneration_annual_rate_amount_amount_value,
+            srh.base_remuneration_annual_rate_amount,
             srh.additional_remuneration_rate_amount_value,
-            srh.report_to_employee_number,
+            srh.reports_to_employee_number,
             srh.report_to_preferred_name_lastfirst,
             srh.gender_identity,
             srh.race_ethnicity_reporting,
@@ -192,7 +192,7 @@ with
             {{ ref("int_people__staff_roster_history") }} as srh
             /* where you worked on 4/30 is the reporting data */
             on cat.effective_date
-            between srh.work_assignment_start_date and srh.work_assignment_end_date
+            between srh.effective_date_start and srh.effective_date_end
             and cat.employee_number = srh.employee_number
             and srh.job_title != 'Intern'
             and srh.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
@@ -210,16 +210,16 @@ with
             is_attrition,
             year_at_kipp,
             termination_reason,
-            preferred_name_lastfirst,
-            business_unit_home_name,
+            formatted_name,
+            home_business_unit_name,
             home_work_location_name,
             home_work_location_abbreviation,
             home_work_location_grade_band,
-            department_home_name,
+            home_department_name,
             job_title,
-            base_remuneration_annual_rate_amount_amount_value,
+            base_remuneration_annual_rate_amount,
             additional_remuneration_rate_amount_value,
-            report_to_employee_number,
+            reports_to_employee_number,
             report_to_preferred_name_lastfirst,
             gender_identity,
             race_ethnicity_reporting,
@@ -241,16 +241,16 @@ with
             cat.is_attrition,
             cat.year_at_kipp,
             cat.termination_reason,
-            srh.preferred_name_lastfirst,
-            srh.business_unit_home_name,
+            srh.formatted_name,
+            srh.home_business_unit_name,
             srh.home_work_location_name,
             srh.home_work_location_abbreviation,
             srh.home_work_location_grade_band,
-            srh.department_home_name,
+            srh.home_department_name,
             srh.job_title,
-            srh.base_remuneration_annual_rate_amount_amount_value,
+            srh.base_remuneration_annual_rate_amount,
             srh.additional_remuneration_rate_amount_value,
-            srh.report_to_employee_number,
+            srh.reports_to_employee_number,
             srh.report_to_preferred_name_lastfirst,
             srh.gender_identity,
             srh.race_ethnicity_reporting,
@@ -271,7 +271,7 @@ with
             {{ ref("int_people__staff_roster_history") }} as srh
             /* where you worked on 4/30 is the reporting data */
             on cat.effective_date
-            between srh.work_assignment_start_date and srh.work_assignment_end_date
+            between srh.effective_date_start and srh.effective_date_end
             and cat.employee_number = srh.employee_number
             and srh.job_title != 'Intern'
             and srh.assignment_status in ('Terminated', 'Deceased')
@@ -294,16 +294,16 @@ with
             is_attrition,
             year_at_kipp,
             termination_reason,
-            preferred_name_lastfirst,
-            business_unit_home_name,
+            formatted_name,
+            home_business_unit_name,
             home_work_location_name,
             home_work_location_abbreviation,
             home_work_location_grade_band,
-            department_home_name,
+            home_department_name,
             job_title,
-            base_remuneration_annual_rate_amount_amount_value,
+            base_remuneration_annual_rate_amount,
             additional_remuneration_rate_amount_value,
-            report_to_employee_number,
+            reports_to_employee_number,
             report_to_preferred_name_lastfirst,
             gender_identity,
             race_ethnicity_reporting,
@@ -335,7 +335,7 @@ select distinct
     l.is_attrition,
     l.year_at_kipp,
     l.termination_reason,
-    l.preferred_name_lastfirst,
+    l.formatted_name as preferred_name_lastfirst,
     l.business_unit_home_name,
     l.home_work_location_name,
     l.home_work_location_abbreviation,

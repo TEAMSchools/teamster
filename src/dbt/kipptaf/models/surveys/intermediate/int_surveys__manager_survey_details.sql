@@ -78,14 +78,14 @@ select
 
     if(safe_cast(fr.text_value as integer) is null, 1, 0) as is_open_ended,
 
-    reh.preferred_name_lastfirst as respondent_preferred_name,
+    reh.formatted_name as respondent_preferred_name,
     reh.race_ethnicity_reporting as respondent_race_ethnicity_reporting,
     reh.gender_identity as respondent_gender,
 
-    sr.preferred_name_lastfirst as subject_preferred_name,
+    sr.formatted_name as subject_preferred_name,
     sr.management_position_indicator as is_manager,
-    sr.department_home_name as subject_department_name,
-    sr.business_unit_home_name as subject_legal_entity_name,
+    sr.home_department_name as subject_department_name,
+    sr.home_business_unit_name as subject_legal_entity_name,
     sr.report_to_preferred_name_lastfirst as subject_manager_name,
     sr.job_title as subject_primary_job,
     sr.home_work_location_name as subject_primary_site,
@@ -108,7 +108,7 @@ inner join
     {{ ref("int_people__staff_roster_history") }} as reh
     on ri.respondent_df_employee_number = reh.employee_number
     and ri.date_submitted
-    between reh.work_assignment_start_timestamp and reh.work_assignment_end_timestamp
+    between reh.effective_date_start_timestamp and reh.work_assignment_end_timestamp
     and reh.assignment_status not in ('Terminated', 'Deceased')
 inner join
     {{ ref("int_people__staff_roster") }} as sr
@@ -144,14 +144,14 @@ select
 
     if(sda.answer_value is null, 1, 0) as is_open_ended,
 
-    reh.preferred_name_lastfirst as respondent_preferred_name,
+    reh.formatted_name as respondent_preferred_name,
     reh.race_ethnicity_reporting as respondent_race_ethnicity_reporting,
     reh.gender_identity as respondent_gender,
 
-    sr.preferred_name_lastfirst as subject_preferred_name,
+    sr.formatted_name as subject_preferred_name,
     sr.management_position_indicator as is_manager,
-    sr.department_home_name as subject_department_name,
-    sr.business_unit_home_name as subject_legal_entity_name,
+    sr.home_department_name as subject_department_name,
+    sr.home_business_unit_name as subject_legal_entity_name,
     sr.report_to_preferred_name_lastfirst as subject_manager_name,
     sr.job_title as subject_primary_job,
     sr.home_work_location_name as subject_primary_site,
@@ -174,5 +174,5 @@ left join
     {{ ref("int_people__staff_roster_history") }} as reh
     on sda.respondent_df_employee_number = reh.employee_number
     and sda.date_submitted
-    between reh.work_assignment_start_timestamp and reh.work_assignment_end_timestamp
+    between reh.effective_date_start_timestamp and reh.work_assignment_end_timestamp
     and reh.assignment_status not in ('Terminated', 'Deceased')

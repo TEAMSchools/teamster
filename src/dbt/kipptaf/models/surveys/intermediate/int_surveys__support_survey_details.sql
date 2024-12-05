@@ -48,10 +48,10 @@ select
 
     if(safe_cast(fr.text_value as integer) is null, 1, 0) as is_open_ended,
 
-    eh.preferred_name_lastfirst,
+    eh.formatted_name,
     eh.management_position_indicator as is_manager,
-    eh.department_home_name as respondent_department_name,
-    eh.business_unit_home_name as respondent_legal_entity_name,
+    eh.home_department_name as respondent_department_name,
+    eh.home_business_unit_name as respondent_legal_entity_name,
     eh.report_to_preferred_name_lastfirst as respondent_manager_name,
     eh.job_title as respondent_primary_job,
     eh.home_work_location_name as respondent_primary_site,
@@ -67,7 +67,7 @@ inner join
     {{ ref("int_people__staff_roster_history") }} as eh
     on ri.respondent_df_employee_number = eh.employee_number
     and ri.date_submitted
-    between eh.work_assignment_start_timestamp and eh.work_assignment_end_timestamp
+    between eh.effective_date_start_timestamp and eh.work_assignment_end_timestamp
     and eh.assignment_status not in ('Terminated', 'Deceased')
 
 union all
@@ -99,10 +99,10 @@ select
 
     if(sda.answer_value is null, 1, 0) as is_open_ended,
 
-    eh.preferred_name_lastfirst,
+    eh.formatted_name,
     eh.management_position_indicator as is_manager,
-    eh.department_home_name as respondent_department_name,
-    eh.business_unit_home_name as respondent_legal_entity_name,
+    eh.home_department_name as respondent_department_name,
+    eh.home_business_unit_name as respondent_legal_entity_name,
     eh.report_to_preferred_name_lastfirst as respondent_manager_name,
     eh.job_title as respondent_primary_job,
     eh.home_work_location_name as respondent_primary_site,
@@ -117,5 +117,5 @@ left join
     {{ ref("int_people__staff_roster_history") }} as eh
     on sda.respondent_df_employee_number = eh.employee_number
     and sda.date_submitted
-    between eh.work_assignment_start_timestamp and eh.work_assignment_end_timestamp
+    between eh.effective_date_start_timestamp and eh.work_assignment_end_timestamp
     and eh.assignment_status not in ('Terminated', 'Deceased')

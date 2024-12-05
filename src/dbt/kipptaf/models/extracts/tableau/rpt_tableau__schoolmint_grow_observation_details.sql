@@ -3,8 +3,7 @@ with
         select srh.employee_number, true as prior_year_tir,
         from {{ ref("int_people__staff_roster_history") }} as srh
         where
-            srh.work_assignment_start_date
-            >= '{{ var("current_academic_year") - 1 }}-07-01'
+            srh.effective_date_start >= '{{ var("current_academic_year") - 1 }}-07-01'
             and srh.assignment_status = 'Active'
             and srh.job_title = 'Teacher in Residence'
         group by employee_number
@@ -56,11 +55,11 @@ with
 /* tracking for current year */
 select
     srh.employee_number,
-    srh.preferred_name_lastfirst as teammate,
-    srh.business_unit_home_name as entity,
+    srh.formatted_name as teammate,
+    srh.home_business_unit_name as entity,
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
-    srh.department_home_name as department,
+    srh.home_department_name as department,
     srh.job_title,
     srh.report_to_preferred_name_lastfirst as manager,
     srh.worker_original_hire_date,
@@ -104,7 +103,7 @@ select
     tr.student_habits_track,
     tr.number_of_kids,
     sr.assignment_status as current_assignment_status,
-    sro.preferred_name_lastfirst as observer_name,
+    sro.formatted_name as observer_name,
 
     tgl.grade_level as grade_taught,
 
@@ -126,7 +125,7 @@ select
             and (
                 srh.job_title = 'Teacher in Residence'
                 or tir.prior_year_tir
-                or srh.business_unit_home_name = 'KIPP Miami'
+                or srh.home_business_unit_name = 'KIPP Miami'
                 or srh.worker_original_hire_date
                 between '{{ var("current_academic_year") }}-04-01' and date_sub(
                     t.lockbox_date, interval 6 week
@@ -145,12 +144,10 @@ select
 from {{ ref("int_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as t
-    on srh.business_unit_home_name = t.region
+    on srh.home_business_unit_name = t.region
     and (
-        t.start_date
-        between srh.work_assignment_start_date and srh.work_assignment_end_date
-        or t.end_date
-        between srh.work_assignment_start_date and srh.work_assignment_end_date
+        t.start_date between srh.effective_date_start and srh.effective_date_end
+        or t.end_date between srh.effective_date_start and srh.effective_date_end
     )
     and t.type in ('PMS', 'PMC', 'TR', 'O3', 'WT')
     and t.academic_year = {{ var("current_academic_year") }}
@@ -190,11 +187,11 @@ union all
 /* actual responses from past years*/
 select
     srh.employee_number,
-    srh.preferred_name_lastfirst as teammate,
-    srh.business_unit_home_name as entity,
+    srh.formatted_name as teammate,
+    srh.home_business_unit_name as entity,
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
-    srh.department_home_name as department,
+    srh.home_department_name as department,
     srh.job_title,
     srh.report_to_preferred_name_lastfirst as manager,
     srh.worker_original_hire_date,
@@ -239,7 +236,7 @@ select
     null as number_of_kids,
 
     sr.assignment_status as current_assignment_status,
-    sro.preferred_name_lastfirst as observer_name,
+    sro.formatted_name as observer_name,
 
     tgl.grade_level as grade_taught,
 
@@ -255,8 +252,7 @@ from {{ ref("int_people__staff_roster_history") }} as srh
 inner join
     {{ ref("int_performance_management__observation_details") }} as od
     on srh.employee_number = od.employee_number
-    and od.observed_at
-    between srh.work_assignment_start_date and srh.work_assignment_end_date
+    and od.observed_at between srh.effective_date_start and srh.effective_date_end
     and srh.assignment_status = 'Active'
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
