@@ -146,17 +146,17 @@ select
     rc.respondent_salesforce_id,
     rc.rn_survey_response_campaign_desc,
 
-    resp.preferred_name_lastfirst as respondent_preferred_name_lastfirst,
+    resp.formatted_name as respondent_preferred_name_lastfirst,
     resp.worker_id as respondent_adp_worker_id,
     resp.mail as respondent_mail,
     resp.sam_account_name as respondent_sam_account_name,
 
-    reh.business_unit_home_name as respondent_business_unit,
+    reh.home_business_unit_name as respondent_business_unit,
     reh.home_work_location_name as respondent_work_location,
-    reh.department_home_name as respondent_department,
+    reh.home_department_name as respondent_department,
     reh.job_title as respondent_job_title,
     reh.assignment_status as respondent_assignment_status,
-    reh.report_to_employee_number as respondent_report_to_employee_number,
+    reh.reports_to_employee_number as respondent_report_to_employee_number,
     reh.home_work_location_powerschool_school_id
     as respondent_work_location_powerschool_school_id,
     reh.home_work_location_grade_band as respondent_work_location_grade_band,
@@ -166,17 +166,17 @@ select
     reh.report_to_user_principal_name as respondent_report_to_user_principal_name,
     reh.report_to_sam_account_name as respondent_report_to_sam_account_name,
 
-    subj.preferred_name_lastfirst as subject_preferred_name_lastfirst,
+    subj.formatted_name as subject_preferred_name_lastfirst,
     subj.worker_id as subject_adp_worker_id,
     subj.user_principal_name as subject_user_principal_name,
     subj.mail as subject_mail,
     subj.sam_account_name as subject_sam_account_name,
 
-    seh.business_unit_home_name as subject_business_unit,
+    seh.home_business_unit_name as subject_business_unit,
     seh.home_work_location_name as subject_work_location,
-    seh.department_home_name as subject_department,
+    seh.home_department_name as subject_department,
     seh.job_title as subject_job_title,
-    seh.report_to_employee_number as subject_report_to_employee_number,
+    seh.reports_to_employee_number as subject_report_to_employee_number,
     seh.home_work_location_powerschool_school_id
     as subject_work_location_powerschool_school_id,
     seh.home_work_location_grade_band as subject_work_location_grade_band,
@@ -188,7 +188,7 @@ select
 
     coalesce(
         rc.respondent_is_manager,
-        if(rc.respondent_employee_number = seh.report_to_employee_number, true, false)
+        if(rc.respondent_employee_number = seh.reports_to_employee_number, true, false)
     ) as is_manager,
 
     coalesce(
@@ -202,7 +202,7 @@ left join
     {{ ref("int_people__staff_roster_history") }} as reh
     on resp.worker_id = reh.worker_id
     and rc.campaign_link_close_date
-    between reh.work_assignment_start_timestamp and reh.work_assignment_end_timestamp
+    between reh.effective_date_start_timestamp and reh.work_assignment_end_timestamp
     and reh.primary_indicator
 left join
     {{ ref("int_people__staff_roster") }} as subj
@@ -211,5 +211,5 @@ left join
     {{ ref("int_people__staff_roster_history") }} as seh
     on subj.worker_id = seh.worker_id
     and rc.campaign_link_close_date
-    between seh.work_assignment_start_timestamp and seh.work_assignment_end_timestamp
+    between seh.effective_date_start_timestamp and seh.work_assignment_end_timestamp
     and seh.primary_indicator

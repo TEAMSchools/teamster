@@ -50,14 +50,14 @@ with
 select
     c.employee_number as df_employee_number,
     if(c.is_prestart, 'Pre-Start', c.assignment_status) as `status`,
-    c.preferred_name_lastfirst as preferred_name,
+    c.formatted_name as preferred_name,
     c.home_work_location_name as primary_site,
     c.job_title as primary_job,
-    c.department_home_name as primary_on_site_department,
+    c.home_department_name as primary_on_site_department,
     c.mail,
     c.google_email,
     c.worker_original_hire_date as original_hire_date,
-    c.business_unit_home_name as entity,
+    c.home_business_unit_name as entity,
 
     null as pm1,
     null as pm2,
@@ -86,9 +86,9 @@ select
     i.anything_else_oe,
     #}
     if(
-        c.department_home_name = 'Elementary' and g.max_grade_level is not null,
-        concat(c.department_home_name, ', Grade ', g.max_grade_level),
-        c.department_home_name
+        c.home_department_name = 'Elementary' and g.max_grade_level is not null,
+        concat(c.home_department_name, ', Grade ', g.max_grade_level),
+        c.home_department_name
     ) as department_grade,
 from {{ ref("int_people__staff_roster") }} as c
 left join elementary_grade as g on c.powerschool_teacher_number = g.teachernumber

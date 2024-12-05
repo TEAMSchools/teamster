@@ -44,9 +44,9 @@ select
     td.hours,
 
     sr.employee_number as df_employee_number,
-    sr.preferred_name_lastfirst as preferred_name,
+    sr.formatted_name as preferred_name,
     sr.assignment_status as employee_status,
-    sr.business_unit_home_name as legal_entity_current,
+    sr.home_business_unit_name as legal_entity_current,
     sr.home_work_location_name as location_current,
     sr.home_work_location_reporting_name as site_name_clean,
     sr.home_work_location_abbreviation as site_abbreviation,
@@ -156,11 +156,11 @@ where
     and td.transaction_type not in ('Historical Correction', 'Worked Holiday Edit')
     and (
         (
-            sr.business_unit_home_name != 'KIPP Miami'
+            sr.home_business_unit_name != 'KIPP Miami'
             and td.transaction_apply_date >= '{{ var("current_academic_year") }}-08-12'
         )
         or (
-            sr.business_unit_home_name = 'KIPP Miami'
+            sr.home_business_unit_name = 'KIPP Miami'
             and td.transaction_apply_date >= '{{ var("current_academic_year") }}-10-31'
         )
     )

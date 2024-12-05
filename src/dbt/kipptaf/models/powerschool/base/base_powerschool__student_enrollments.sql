@@ -46,7 +46,7 @@ with
             nj.gifted_and_talented,
 
             sr.mail as advisor_email,
-            sr.communication_business_mobile as advisor_phone,
+            sr.work_cell as advisor_phone,
 
             sl.username as student_web_id,
             sl.default_password as student_web_password,

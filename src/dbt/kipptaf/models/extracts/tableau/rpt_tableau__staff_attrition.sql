@@ -55,8 +55,8 @@ with
             r.worker_id,
             r.position_id,
             r.assignment_status,
-            r.preferred_name_given_name,
-            r.preferred_name_family_name,
+            r.given_name,
+            r.family_name_1,
             r.ethnicity_long_name,
             r.gender_long_name,
             r.worker_original_hire_date,
@@ -157,8 +157,8 @@ with
     worker_history_clean as (
         select
             employee_number,
-            business_unit_home_name,
-            department_home_name,
+            home_business_unit_name,
+            home_department_name,
             home_work_location_name,
             job_title,
             safe_cast(
@@ -182,9 +182,9 @@ with
         select
             rys.*,
 
-            w.business_unit_home_name,
+            w.home_business_unit_name,
             w.home_work_location_name,
-            w.department_home_name,
+            w.home_department_name,
             w.job_title,
 
             lead(rys.academic_year_exitdate, 1) over (
@@ -211,8 +211,8 @@ with
 
 select
     wd.employee_number as df_employee_number,
-    wd.preferred_name_given_name as preferred_first_name,
-    wd.preferred_name_family_name as preferred_last_name,
+    wd.given_name as preferred_first_name,
+    wd.family_name_1 as preferred_last_name,
     wd.ethnicity_long_name as primary_ethnicity,
     wd.gender_long_name as gender_reporting,
     wd.academic_year,
@@ -247,7 +247,7 @@ select
     if(wd.attrition_exitdate <= wd.attrition_date, 1.0, 0.0) as is_attrition,
 
     coalesce(
-        wd.business_unit_home_name, sr.business_unit_home_name
+        wd.home_business_unit_name, sr.home_business_unit_name
     ) as legal_entity_name,
 
     coalesce(
@@ -262,7 +262,7 @@ select
     ) as primary_site_reporting_schoolid,
 
     coalesce(
-        wd.department_home_name, sr.department_home_name
+        wd.home_department_name, sr.home_department_name
     ) as primary_on_site_department,
 
     coalesce(wd.job_title, sr.job_title) as primary_job,

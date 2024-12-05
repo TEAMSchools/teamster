@@ -16,16 +16,16 @@ with
 select
     s.employee_number,
     s.worker_id as adp_associate_id,
-    s.preferred_name_given_name as preferred_first_name,
-    s.preferred_name_family_name as preferred_last_name,
+    s.given_name as preferred_first_name,
+    s.family_name_1 as preferred_last_name,
     s.legal_name_given_name as legal_first_name,
     s.legal_name_family_name as legal_last_name,
     s.assignment_status as current_status,
     s.worker_termination_date as termination_date,
-    s.business_unit_home_name as current_legal_entity,
+    s.home_business_unit_name as current_legal_entity,
     s.home_work_location_name as current_location,
     s.job_title as current_role,
-    s.department_home_name as current_dept,
+    s.home_department_name as current_dept,
     s.race_ethnicity_reporting,
     s.gender_identity as gender,
     s.sam_account_name as samaccountname,
@@ -41,13 +41,13 @@ select
 
     y.academic_year,
 
-    e.business_unit_home_name as historic_legal_entity,
+    e.home_business_unit_name as historic_legal_entity,
     e.home_work_location_name as historic_location,
     e.job_title as historic_role,
-    e.department_home_name as historic_dept,
-    e.base_remuneration_annual_rate_amount_amount_value as historic_salary,
-    e.work_assignment_start_date,
-    e.work_assignment_end_date,
+    e.home_department_name as historic_dept,
+    e.base_remuneration_annual_rate_amount as historic_salary,
+    e.effective_date_start,
+    e.effective_date_end,
     e.assignment_status as historic_position_status,
 
     pm.final_score as overall_score,
@@ -72,8 +72,7 @@ inner join
 left join
     {{ ref("int_people__staff_roster_history") }} as e
     on s.employee_number = e.employee_number
-    and y.effective_date
-    between e.work_assignment_start_date and e.work_assignment_end_date
+    and y.effective_date between e.effective_date_start and e.effective_date_end
     and e.primary_indicator
     and e.job_title is not null
 left join

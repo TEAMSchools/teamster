@@ -11,9 +11,9 @@ select
     s.status_detail,
     s.staffing_model_id,
 
-    srr.preferred_name_lastfirst as recruiter,
+    srr.formatted_name as recruiter,
     srr.report_to_preferred_name_lastfirst as recruiter_manager,
-    srt.preferred_name_lastfirst as teammate,
+    srt.formatted_name as teammate,
 
     if(s.staffing_status = 'Open', 1, 0) as `open`,
     if(s.status_detail in ('New Hire', 'Transfer In'), 1, 0) as new_hire,

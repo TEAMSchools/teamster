@@ -13,10 +13,10 @@ select
     sr.rn,
 
     eh.employee_number,
-    eh.preferred_name_lastfirst as respondent_name,
+    eh.formatted_name as respondent_name,
     eh.management_position_indicator as is_manager,
-    eh.department_home_name as department,
-    eh.business_unit_home_name as legal_entity,
+    eh.home_department_name as department,
+    eh.home_business_unit_name as legal_entity,
     eh.report_to_preferred_name_lastfirst as manager,
     eh.job_title,
     eh.home_work_location_name as `location`,
@@ -43,7 +43,7 @@ left join
     {{ ref("int_people__staff_roster_history") }} as eh
     on sr.respondent_email = eh.google_email
     and sr.date_submitted
-    between eh.work_assignment_start_timestamp and eh.work_assignment_end_timestamp
+    between eh.effective_date_start_timestamp and eh.work_assignment_end_timestamp
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on eh.powerschool_teacher_number = tgl.teachernumber

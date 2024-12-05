@@ -44,6 +44,5 @@ left join
     on o.observation_id = od.observation_id
 left join archive_average_scores as av on o.observation_id = av.observation_id
 left join
-    {{ ref("int_people__staff_roster") }} as sr
-    on o.observer_name = sr.preferred_name_lastfirst
+    {{ ref("int_people__staff_roster") }} as sr on o.observer_name = sr.formatted_name
 where od.row_score is not null

@@ -1,17 +1,15 @@
 -- trunk-ignore(sqlfluff/ST06)
 select
     worker_id as associate_id,
-    preferred_name_given_name as preferred_first_name,
-    preferred_name_family_name as preferred_last_name,
+    given_name as preferred_first_name,
+    family_name_1 as preferred_last_name,
 
-    preferred_name_family_name
-    || ', '
-    || preferred_name_given_name as preferred_lastfirst,
+    family_name_1 || ', ' || given_name as preferred_lastfirst,
 
     home_work_location_name as `location`,
     home_work_location_name as location_custom,
-    department_home_name as department,
-    department_home_name as subject_dept_custom,
+    home_department_name as department,
+    home_department_name as subject_dept_custom,
     job_title,
     job_title as job_title_custom,
 
@@ -30,8 +28,8 @@ select
 
     work_assignment_actual_start_date as position_start_date,
     employee_number as df_employee_number,
-    report_to_employee_number as manager_df_employee_number,
-    business_unit_home_name as legal_entity_name,
+    reports_to_employee_number as manager_df_employee_number,
+    home_business_unit_name as legal_entity_name,
     user_principal_name as userprincipalname,
     payroll_file_number as file_number,
     position_id,

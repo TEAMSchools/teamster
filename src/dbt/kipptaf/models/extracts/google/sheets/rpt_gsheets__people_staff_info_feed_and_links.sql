@@ -2,10 +2,10 @@
 select
     employee_number,
     status_value,
-    business_unit_assigned_name as business_unit,
+    assigned_business_unit_name as business_unit,
 
-    coalesce(preferred_name_given_name, legal_name_given_name) as first_name,
-    coalesce(preferred_name_family_name, legal_name_family_name) as last_name,
+    coalesce(given_name, legal_name_given_name) as first_name,
+    coalesce(family_name_1, legal_name_family_name) as last_name,
 
     home_work_location_name as work_location,
     job_title,
@@ -13,9 +13,9 @@ select
     communication_business_email as business_email,
 
     concat(
-        coalesce(preferred_name_given_name, legal_name_given_name),
+        coalesce(given_name, legal_name_given_name),
         ' ',
-        coalesce(preferred_name_family_name, legal_name_family_name),
+        coalesce(family_name_1, legal_name_family_name),
         ' - ',
         home_work_location_name,
         ' (',
@@ -48,9 +48,9 @@ select
             '?usp=pp_url',
             /* Name + ID */
             '&entry.1744062351=',
-            coalesce(preferred_name_given_name, legal_name_given_name),
+            coalesce(given_name, legal_name_given_name),
             ' ',
-            coalesce(preferred_name_family_name, legal_name_family_name),
+            coalesce(family_name_1, legal_name_family_name),
             ' - ',
             coalesce(home_work_location_name, ''),
             ' (',

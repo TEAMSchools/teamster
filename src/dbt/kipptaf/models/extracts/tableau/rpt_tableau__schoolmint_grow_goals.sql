@@ -1,10 +1,10 @@
 select
     srh.employee_number,
-    srh.preferred_name_lastfirst as teammate,
-    srh.business_unit_home_name as entity,
+    srh.formatted_name as teammate,
+    srh.home_business_unit_name as entity,
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
-    srh.department_home_name as department,
+    srh.home_department_name as department,
     srh.job_title,
     srh.report_to_preferred_name_lastfirst as manager,
     srh.worker_original_hire_date,
@@ -35,12 +35,10 @@ select
 from {{ ref("int_people__staff_roster_history") }} as srh
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on srh.business_unit_home_name = rt.region
+    on srh.home_business_unit_name = rt.region
     and (
-        rt.start_date
-        between srh.work_assignment_start_date and srh.work_assignment_end_date
-        or rt.end_date
-        between srh.work_assignment_start_date and srh.work_assignment_end_date
+        rt.start_date between srh.effective_date_start and srh.effective_date_end
+        or rt.end_date between srh.effective_date_start and srh.effective_date_end
     )
     and rt.type = 'MG'
     and rt.academic_year = {{ var("current_academic_year") }}
