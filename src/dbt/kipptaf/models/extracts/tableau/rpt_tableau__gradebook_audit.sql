@@ -287,7 +287,8 @@ with
             if(
                 region = 'Miami'
                 and assignment_category_code = 'W'
-                and category_quarter_percent_grade is null,
+                and category_quarter_percent_grade is null
+                and is_quarter_end_date_range,
                 true,
                 false
             ) as qt_effort_grade_missing,
