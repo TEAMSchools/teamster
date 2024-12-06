@@ -184,9 +184,9 @@ dagster-cloud==1.9.3 \
 dagster-cloud-cli==1.9.3 \
     --hash=sha256:64c965972276f5d3b32aef36d758e9a1b48ed0905c0bd0238471b209d7d14d26 \
     --hash=sha256:9d4ade93d0f4438e01d9780f2a0d51becbec06fe6aad07b41042bf79cc8747a9
-dagster-dbt==0.25.3 \
-    --hash=sha256:ba4797a0dd64cb1bb3b1366b9c1cc10b53a73131c43ba512d3c5f80c8ddcf02c \
-    --hash=sha256:c7db9478acf1632c314f4591f9572e179501d5a91469ad19bca4e2cc7a60309e
+dagster-dbt==0.25.4 \
+    --hash=sha256:1f9afef4a75240c4adac7d950c3e7b73b475b31b6577e9d29403f517edfb4bf0 \
+    --hash=sha256:21be5576f05ed49f113200ea2735cede084094f85cf023b4db69b3d13fcd1f9b
 dagster-fivetran==0.25.3 \
     --hash=sha256:a68e72696fd9dec126446c63b24b080c00b5bfc8f54fd3ac44743753b99a3de7 \
     --hash=sha256:a77aee1422fd3388b7ca24313cf1c100c02c2b5c2a310d3195d61eb734d8cb4b
