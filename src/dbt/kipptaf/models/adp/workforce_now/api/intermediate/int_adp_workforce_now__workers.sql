@@ -21,6 +21,7 @@ select
     w.race_ethnicity_reporting,
     w.is_prestart,
 
+    wa.item_id,
     wa.position_id,
     wa.job_title,
     wa.primary_indicator,
@@ -53,9 +54,13 @@ select
     ou.organizational_unit__home__business_unit__name,
     ou.organizational_unit__home__department__name,
 
-    rt.reports_to_worker_id__id_value,
+    rt.reports_to_associate_oid,
 
     w.person__family_name_1 || ', ' || w.person__given_name as person__formatted_name,
+
+    rtw.person__family_name_1
+    || ', '
+    || rtw.person__given_name as reports_to_formatted_name,
 from {{ ref("stg_adp_workforce_now__workers") }} as w
 inner join
     {{ ref("stg_adp_workforce_now__workers__work_assignments") }} as wa
@@ -84,3 +89,8 @@ left join
     and wa.item_id = rt.item_id
     and rt.effective_date_start
     between wa.effective_date_start and wa.effective_date_end
+left join
+    {{ ref("stg_adp_workforce_now__workers") }} as rtw
+    on rt.reports_to_associate_oid = rtw.associate_oid
+    and rt.effective_date_start
+    between rtw.effective_date_start and rtw.effective_date_end

@@ -12,7 +12,7 @@ select
 
     r.given_name as preferred_first_name,
     r.family_name_1 as preferred_last_name,
-    r.report_to_preferred_name_lastfirst as manager_name,
+    r.reports_to_formatted_name as manager_name,
     r.home_business_unit_name as legal_entity_name,
     r.home_work_location_name as primary_site,
     r.assignment_status as current_status,

@@ -55,7 +55,7 @@ select
     r.home_business_unit_name as entity,
     r.home_work_location_name as `location`,
     r.home_department_name as department,
-    r.report_to_preferred_name_lastfirst as manager,
+    r.reports_to_formatted_name as manager,
     r.report_to_sam_account_name,
     r.assignment_status,
 

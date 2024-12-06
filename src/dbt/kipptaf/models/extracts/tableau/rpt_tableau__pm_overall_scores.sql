@@ -13,7 +13,7 @@ select
     sr.home_work_location_powerschool_school_id,
     sr.home_department_name as department,
     sr.job_title,
-    sr.report_to_preferred_name_lastfirst as manager,
+    sr.reports_to_formatted_name as manager,
     sr.worker_original_hire_date,
     sr.assignment_status,
     sr.gender_identity,

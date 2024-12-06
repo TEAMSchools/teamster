@@ -9,7 +9,7 @@ select
     sr.home_business_unit_name as legal_entity,
     sr.home_work_location_region as region,
     sr.reports_to_employee_number as manager_employee_number,
-    sr.report_to_preferred_name_lastfirst as manager_name,
+    sr.reports_to_formatted_name as manager_name,
 
     sr2.google_email as manager_google,
     sr2.user_principal_name as manager_email,
