@@ -3,7 +3,7 @@ select
     wa.item_id,
     wa.effective_date_start,
     wa.effective_date_end,
-    wa.effective_date_timestamp,
+    wa.effective_date_start_timestamp,
     wa.is_current_record,
 
     ou.typecode.codevalue as type_code__code_value,
@@ -28,7 +28,7 @@ select
     wa.item_id,
     wa.effective_date_start,
     wa.effective_date_end,
-    wa.effective_date_timestamp,
+    wa.effective_date_start_timestamp,
     wa.is_current_record,
 
     ou.typecode.codevalue as type_code__code_value,

@@ -54,18 +54,18 @@ select
 
     og.field_value as original_group,
 
-    sx.department_home_name as submitter_dept,
+    sx.home_department_name as submitter_dept,
     sx.job_title as submitter_job,
     sx.home_work_location_name as submitter_site,
-    sx.business_unit_home_name as submitter_entity,
+    sx.home_business_unit_name as submitter_entity,
 
     c.job_title as assignee_primary_job,
     c.home_work_location_name as assignee_primary_site,
-    c.business_unit_home_name as assignee_legal_entity,
+    c.home_business_unit_name as assignee_legal_entity,
 
-    oad.preferred_name_lastfirst as original_assignee,
+    oad.formatted_name as original_assignee,
     oad.job_title as orig_assignee_job,
-    oad.department_home_name as orig_assignee_dept,
+    oad.home_department_name as orig_assignee_dept,
 
     {{ date_diff_weekday("gu.max_created_at", "t.created_at") }}
     as weekdays_created_to_last_group,
@@ -88,12 +88,12 @@ left join
 left join
     original_value as oa on t.id = oa.ticket_id and oa.event_field_name = 'assignee_id'
 left join
-    {{ ref("base_people__staff_roster") }} as sx
+    {{ ref("int_people__staff_roster") }} as sx
     on lower(s.email) = lower(sx.user_principal_name)
 left join
-    {{ ref("base_people__staff_roster") }} as c
+    {{ ref("int_people__staff_roster") }} as c
     on lower(a.email) = lower(c.user_principal_name)
 left join
-    {{ ref("base_people__staff_roster") }} as oad
+    {{ ref("int_people__staff_roster") }} as oad
     on oa.field_value = lower(oad.user_principal_name)
 where t.status != 'deleted'
