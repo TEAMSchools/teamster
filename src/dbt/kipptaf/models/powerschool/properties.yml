@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: base_powerschool__student_enrollments
+  - name: int_powerschool__student_enrollments
     description: |
       This view is a complete enrollment history of all students with enrollments in PowerSchool.
       The exception to this are students with the same entry and exit dates in PowerSchool ("no-show" students who never attended a KTAF school) and students with an "inactive" enrollment status in PowerSchool (primarily used for duplicate records).

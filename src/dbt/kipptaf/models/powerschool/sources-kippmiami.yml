@@ -2,6 +2,9 @@ version: 2
 
 sources:
   - name: kippmiami_powerschool
+    schema:
+      "{% if env_var('DBT_DEV', '') == 'true' %}_dev_kippmiami_powerschool{% else
+      %}kippmiami_powerschool{% endif %}"
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         meta:
@@ -483,14 +486,14 @@ sources:
               - kippmiami
               - powerschool
               - base_powerschool__sections
-      - name: base_powerschool__student_enrollments
+      - name: int_powerschool__student_enrollments
         meta:
           dagster:
             group: powerschool
             asset_key:
               - kippmiami
               - powerschool
-              - base_powerschool__student_enrollments
+              - int_powerschool__student_enrollments
       - name: int_powerschool__advisory
         meta:
           dagster:

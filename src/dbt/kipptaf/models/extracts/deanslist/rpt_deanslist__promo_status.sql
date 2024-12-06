@@ -32,7 +32,7 @@ select
     ) as dibels_composite_recent,
     coalesce(p.iready_reading_recent, '(No Data)') as iready_reading_recent,
     coalesce(p.iready_math_recent, '(No Data)') as iready_math_recent,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
 left join
     {{ ref("int_powerschool__gpa_cumulative") }} as cum

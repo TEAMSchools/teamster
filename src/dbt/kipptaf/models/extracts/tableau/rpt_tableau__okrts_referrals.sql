@@ -7,7 +7,7 @@ with
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_powerschool__student_enrollments") }}
         where school_level = 'MS'
     ),
 
@@ -194,7 +194,7 @@ select
             order by dlp.is_suspension desc
         )
     ) as rn_incident,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 left join
     {{ ref("base_powerschool__course_enrollments") }} as hr
     on co.studentid = hr.cc_studentid

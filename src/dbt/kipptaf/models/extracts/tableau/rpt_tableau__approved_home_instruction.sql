@@ -17,7 +17,7 @@ select
     if(
         sp.exit_date < current_date('{{ var("local_timezone") }}'), 'Expired', 'Current'
     ) as hi_status,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on co.studentid = sp.studentid
