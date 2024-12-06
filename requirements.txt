@@ -175,9 +175,9 @@ daff==1.3.46 \
 dagster==1.9.3 \
     --hash=sha256:17bb6bd7381c35c89ef19db0e0f371ec170da9c296be12d96a9752a2d223d104 \
     --hash=sha256:a5e3a8eccaa6c5b402ba28de1e535f8df930cf2c664a5a4899f3abc5d7e9385d
-dagster-airbyte==0.25.3 \
-    --hash=sha256:03a7409ddc7dc4840a8d7a71f4869216b24c166a7117c455a702ad4136c781ab \
-    --hash=sha256:8db4d046ece6623c1902e36858c7c94ac9e49a76b92b821c59ca1d426e9800b8
+dagster-airbyte==0.25.4 \
+    --hash=sha256:21f5acef05eab975c693618f79cd077d5251e4f3a7530fb6580a9a715c5b3e1f \
+    --hash=sha256:54b6f9e24db7a48165922d7cddf442e4d421b5e5d21c9862e4d4fa5d5e399bcf
 dagster-cloud==1.9.3 \
     --hash=sha256:486fb033a67ee3e1cd4e83b45fc06588b2bca1f0f11841a853b8f9b6c067cd64 \
     --hash=sha256:b6f0283df59bff893b5534d77bfcb05cd49adb8336e25a879d45f8c92afba9c4
