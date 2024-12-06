@@ -190,9 +190,9 @@ dagster-dbt==0.25.3 \
 dagster-fivetran==0.25.3 \
     --hash=sha256:a68e72696fd9dec126446c63b24b080c00b5bfc8f54fd3ac44743753b99a3de7 \
     --hash=sha256:a77aee1422fd3388b7ca24313cf1c100c02c2b5c2a310d3195d61eb734d8cb4b
-dagster-gcp==0.25.3 \
-    --hash=sha256:4c4a81b8747485d3542c10c5f5e880b6e9b657bfd087f3d0c4d69b91b50199d5 \
-    --hash=sha256:b2f506f8f9cd9c89384fd63ae11cdbffa13d4b259714f9ad6903047ff00fbedd
+dagster-gcp==0.25.4 \
+    --hash=sha256:c82ea381afd737e63cc379a1e44e2b8bfa5a884de9d8965197e15bbb68f37626 \
+    --hash=sha256:f2a055cad301ea37a2f09fc440d7d8dc2c5c53e77d208d24eba30fbd656fc549
 dagster-graphql==1.9.3 \
     --hash=sha256:39d37dd85474eeda1129816082af812d7b1db48b3522ffb73a12f7b637c789a4 \
     --hash=sha256:94b27b320930ee0a1e9be478016092abc8c3fd4c1e2fa03fc4ff23ee5d5c88ef
