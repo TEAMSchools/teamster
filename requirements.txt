@@ -208,9 +208,9 @@ dagster-pipes==1.9.3 \
 dagster-slack==0.25.3 \
     --hash=sha256:69ac75b3693cfd6c06ef2b42ce37a8dea0c21a6ca36d78a2d99d23f7d560ad92 \
     --hash=sha256:8bdbdad45dd0a0fa19746c08a600850e8a500b6b19340d3df3baa2d28cfa876f
-dagster-ssh==0.25.3 \
-    --hash=sha256:aee2f3fff0a3810ceedc7e8f1955f0d8152a61df292dd2ef0253dbfced15e00a \
-    --hash=sha256:fdb5c9af77dae0a663d0392b1be7e68e51975384d77ccde2f109124bbfeb7d76
+dagster-ssh==0.25.4 \
+    --hash=sha256:306241e2528add2f5e496776a669c4c27987c2b436adce584bbe0fa5911d014f \
+    --hash=sha256:c97795641297000cb77d5b710188d633d939d53d79dadf04033380ea37e76f11
 dagster-webserver==1.9.3 \
     --hash=sha256:3061cdd647718bb92e168bb25f222dd2c5d339db49c43c0ba351ceb700753a12 \
     --hash=sha256:ad4b0be9b35e5b2004de73f07df69d14f3fab53a6b001e00436af4955e449c3b
