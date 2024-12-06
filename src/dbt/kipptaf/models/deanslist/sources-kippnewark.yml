@@ -2,6 +2,10 @@ version: 2
 
 sources:
   - name: kippnewark_deanslist
+    schema: |
+      {% if env_var('DBT_DEV', '') == 'true' -%}_dev_kippnewark_deanslist
+      {%- else -%}kippnewark_deanslist
+      {%- endif %}
     tables:
       - name: stg_deanslist__behavior
         meta:
@@ -139,3 +143,11 @@ sources:
               - kippnewark
               - deanslist
               - stg_deanslist__dff_stats
+      - name: stg_deanslist__incidents__attachments
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippnewark
+              - deanslist
+              - stg_deanslist__incidents__attachments
