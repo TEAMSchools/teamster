@@ -211,9 +211,9 @@ dagster-slack==0.25.3 \
 dagster-ssh==0.25.3 \
     --hash=sha256:aee2f3fff0a3810ceedc7e8f1955f0d8152a61df292dd2ef0253dbfced15e00a \
     --hash=sha256:fdb5c9af77dae0a663d0392b1be7e68e51975384d77ccde2f109124bbfeb7d76
-dagster-webserver==1.9.3 \
-    --hash=sha256:3061cdd647718bb92e168bb25f222dd2c5d339db49c43c0ba351ceb700753a12 \
-    --hash=sha256:ad4b0be9b35e5b2004de73f07df69d14f3fab53a6b001e00436af4955e449c3b
+dagster-webserver==1.9.4 \
+    --hash=sha256:a18e208caaf3418137be83657a9329f6a99c0e4e307ecd74bdc790cf9a520111 \
+    --hash=sha256:a514f7000604249c54dc38f8e34ffc84c8997bf2f9b3b2e3ba6bbb4cb794d254
 datamodel-code-generator==0.26.3 \
     --hash=sha256:b58e0800eb6448e1d1df02f4586207c1e3631c4a188531d154b00b3cf2f95fd8 \
     --hash=sha256:f1f8f1cef14f138fa239f987d4640837bb68d53c5f08d8673a7bde275b929fd8
