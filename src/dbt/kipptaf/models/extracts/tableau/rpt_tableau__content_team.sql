@@ -30,7 +30,7 @@ select
     srh.worker_original_hire_date,
     srh.assignment_status,
     srh.sam_account_name,
-    srh.report_to_sam_account_name,
+    srh.reports_to_sam_account_name as report_to_sam_account_name,
     sr.formatted_name as observer_name,
     -- trunk-ignore(sqlfluff/LT01) 
     date_trunc(o.observed_at, week(monday)) as week_start,

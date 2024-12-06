@@ -269,6 +269,16 @@ with
 select
     *,
 
+    (
+        select sum(ar.rate.amountvalue), from unnest(additional_remunerations) as ar
+    ) as additional_remunerations__rate__amount_value__sum,
+
+    (
+        select coalesce(wg.groupcode.longname, wg.groupcode.shortname),
+        from unnest(worker_groups) as wg
+        where wg.namecode.codevalue = 'Benefits Eligibility Class'
+    ) as benefits_eligibility_class__group_code__name,
+
     coalesce(
         home_work_location__name_code__long_name,
         home_work_location__name_code__short_name

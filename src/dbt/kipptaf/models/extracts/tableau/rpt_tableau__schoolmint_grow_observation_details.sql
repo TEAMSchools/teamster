@@ -65,7 +65,7 @@ select
     srh.worker_original_hire_date,
     srh.assignment_status,
     srh.sam_account_name,
-    srh.report_to_sam_account_name,
+    srh.reports_to_sam_account_name as report_to_sam_account_name,
 
     t.type as tracking_type,
     t.code as tracking_code,
@@ -197,7 +197,7 @@ select
     srh.worker_original_hire_date,
     srh.assignment_status,
     srh.sam_account_name,
-    srh.report_to_sam_account_name,
+    srh.reports_to_sam_account_name as report_to_sam_account_name,
 
     null as tracking_type,
     null as tracking_code,

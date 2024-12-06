@@ -476,7 +476,7 @@ select
     null as homeroom_section,
     null as homeroom_teachernumber,
 
-    r.report_to_user_principal_name as homeroom_teacher_name,
+    r.reports_to_user_principal_name as homeroom_teacher_name,
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
 

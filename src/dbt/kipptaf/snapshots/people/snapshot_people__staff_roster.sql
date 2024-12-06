@@ -4,7 +4,7 @@
         config(
             enabled=false,
             target_schema=generate_schema_name("people"),
-            unique_key="work_assignment_id",
+            unique_key="item_id",
             strategy="check",
             check_cols="all",
         )

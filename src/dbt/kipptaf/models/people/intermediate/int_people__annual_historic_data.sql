@@ -1,4 +1,4 @@
-{{ config(materialized="view") }}
+{{- config(materialized="view") -}}
 
 with
     years as (
@@ -18,8 +18,8 @@ select
     s.worker_id as adp_associate_id,
     s.given_name as preferred_first_name,
     s.family_name_1 as preferred_last_name,
-    s.legal_name_given_name as legal_first_name,
-    s.legal_name_family_name as legal_last_name,
+    s.legal_given_name as legal_first_name,
+    s.legal_family_name as legal_last_name,
     s.assignment_status as current_status,
     s.worker_termination_date as termination_date,
     s.home_business_unit_name as current_legal_entity,
@@ -30,7 +30,7 @@ select
     s.gender_identity as gender,
     s.sam_account_name as samaccountname,
     s.reports_to_formatted_name as current_manager,
-    s.report_to_sam_account_name as manager_samaccountname,
+    s.reports_to_sam_account_name as manager_samaccountname,
     s.position_id as current_position_id,
     s.payroll_group_code,
     s.payroll_file_number,
@@ -62,7 +62,8 @@ select
     coalesce(
         s.worker_rehire_date, s.worker_original_hire_date
     ) as most_recent_hire_date,
-    if(s.ethnicity_long_name = 'Hispanic or Latino', true, false) as is_hispanic,
+
+    if(s.ethnicity_code = 'Hispanic or Latino', true, false) as is_hispanic,
 from {{ ref("int_people__staff_roster") }} as s
 inner join
     years as y
