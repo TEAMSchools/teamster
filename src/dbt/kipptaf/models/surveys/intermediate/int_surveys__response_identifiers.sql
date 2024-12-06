@@ -162,8 +162,8 @@ select
     reh.home_work_location_grade_band as respondent_work_location_grade_band,
     reh.reports_to_formatted_name as respondent_report_to_preferred_name_lastfirst,
     reh.report_to_mail as respondent_report_to_mail,
-    reh.report_to_user_principal_name as respondent_report_to_user_principal_name,
-    reh.report_to_sam_account_name as respondent_report_to_sam_account_name,
+    reh.reports_to_user_principal_name as respondent_report_to_user_principal_name,
+    reh.reports_to_sam_account_name as respondent_report_to_sam_account_name,
 
     subj.formatted_name as subject_preferred_name_lastfirst,
     subj.worker_id as subject_adp_worker_id,
@@ -181,8 +181,8 @@ select
     seh.home_work_location_grade_band as subject_work_location_grade_band,
     seh.reports_to_formatted_name as subject_report_to_preferred_name_lastfirst,
     seh.report_to_mail as subject_report_to_mail,
-    seh.report_to_user_principal_name as subject_report_to_user_principal_name,
-    seh.report_to_sam_account_name as subject_report_to_sam_account_name,
+    seh.reports_to_user_principal_name as subject_report_to_user_principal_name,
+    seh.reports_to_sam_account_name as subject_report_to_sam_account_name,
 
     coalesce(
         rc.respondent_is_manager,

@@ -8,7 +8,7 @@ select
     h.assignment_status_reason as job_change_reason,
     h.base_remuneration_annual_rate_amount as annual_salary,
     h.assignment_status_reason as compensation_change_reason,
-    h.work_assignment__fivetran_active,
+    h.is_current_record as work_assignment__fivetran_active,
 
     r.given_name as preferred_first_name,
     r.family_name_1 as preferred_last_name,
@@ -44,6 +44,5 @@ select
     ) as rn_curr,
 from {{ ref("int_people__staff_roster_history") }} as h
 inner join
-    {{ ref("int_people__staff_roster") }} as r
-    on (h.employee_number = r.employee_number)
+    {{ ref("int_people__staff_roster") }} as r on h.employee_number = r.employee_number
 where h.job_title is not null or h.base_remuneration_annual_rate_amount is not null

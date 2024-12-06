@@ -10,7 +10,7 @@ select
     srh.worker_original_hire_date,
     srh.assignment_status,
     srh.sam_account_name,
-    srh.report_to_sam_account_name,
+    srh.reports_to_sam_account_name as report_to_sam_account_name,
 
     rt.type as tracking_type,
     rt.code as tracking_code,

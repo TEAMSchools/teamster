@@ -56,7 +56,7 @@ select
     r.home_work_location_name as `location`,
     r.home_department_name as department,
     r.reports_to_formatted_name as manager,
-    r.report_to_sam_account_name,
+    r.reports_to_sam_account_name as report_to_sam_account_name,
     r.assignment_status,
 
 from {{ ref("stg_leadership_development__output") }} as o

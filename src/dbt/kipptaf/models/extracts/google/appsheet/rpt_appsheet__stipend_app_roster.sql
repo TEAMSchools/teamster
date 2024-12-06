@@ -204,7 +204,7 @@ select
     r.position_id,
     r.job_title,
     r.home_work_location_name,
-    r.department_home_name,
+    r.home_department_name as department_home_name,
     r.formatted_name as preferred_name_lastfirst,
     r.user_principal_name,
     r.google_email,

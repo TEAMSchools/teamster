@@ -93,9 +93,9 @@ select
     sr.gender_identity as subject_gender,
 
     lower(sr.sam_account_name) as subject_samaccountname,
-    lower(sr.report_to_sam_account_name) as subject_manager_samaccountname,
+    lower(sr.reports_to_sam_account_name) as subject_manager_samaccountname,
     lower(sr.user_principal_name) as subject_userprincipalname,
-    lower(sr.report_to_user_principal_name) as subject_manager_userprincipalname,
+    lower(sr.reports_to_user_principal_name) as subject_manager_userprincipalname,
 from deduped_ri as ri
 inner join
     {{ ref("base_google_forms__form_responses") }} as fr
@@ -159,9 +159,9 @@ select
     sr.gender_identity as subject_gender,
 
     lower(sr.sam_account_name) as subject_samaccountname,
-    lower(sr.report_to_sam_account_name) as subject_manager_samaccountname,
+    lower(sr.reports_to_sam_account_name) as subject_manager_samaccountname,
     lower(sr.user_principal_name) as subject_userprincipalname,
-    lower(sr.report_to_user_principal_name) as subject_manager_userprincipalname,
+    lower(sr.reports_to_user_principal_name) as subject_manager_userprincipalname,
 from {{ ref("stg_surveys__manager_survey_detail_archive") }} as sda
 inner join
     {{ ref("stg_google_forms__form_items_extension") }} as fi

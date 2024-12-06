@@ -56,7 +56,7 @@ select
     sr.worker_termination_date as termination_date,
     sr.sam_account_name as staff_samaccountname,
     sr.reports_to_formatted_name as manager_name,
-    sr.report_to_sam_account_name as manager_samaccountname,
+    sr.reports_to_sam_account_name as manager_samaccountname,
 
     sl.sam_account_name as sl_samaccountname,
 
