@@ -6,7 +6,7 @@ select
     srh.home_work_location_grade_band as grade_band,
     srh.home_department_name as department,
     srh.job_title,
-    srh.report_to_preferred_name_lastfirst as manager,
+    srh.reports_to_formatted_name as manager,
     srh.worker_original_hire_date,
     srh.assignment_status,
     srh.sam_account_name,

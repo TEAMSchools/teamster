@@ -68,7 +68,7 @@ with
             srh.job_title,
             srh.home_work_location_name,
             srh.formatted_name,
-            srh.report_to_preferred_name_lastfirst,
+            srh.reports_to_formatted_name,
 
             avg(obs.observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }} as obs
@@ -89,7 +89,7 @@ with
             srh.job_title,
             srh.home_work_location_name,
             srh.formatted_name,
-            srh.report_to_preferred_name_lastfirst
+            srh.reports_to_formatted_name
     )
 
 select
@@ -137,14 +137,14 @@ select
     srh.home_department_name as observer_department,
     srh.job_title as observer_job_title,
     srh.home_work_location_name as observer_location,
-    srh.report_to_preferred_name_lastfirst as observer_manager,
+    srh.reports_to_formatted_name as observer_manager,
 
     sa.employee_number as teacher_employee_number,
     sa.formatted_name as teacher_name,
     sa.home_department_name as teacher_department,
     sa.job_title as teacher_job_title,
     sa.home_work_location_name as teacher_location,
-    sa.report_to_preferred_name_lastfirst as teacher_manager,
+    sa.reports_to_formatted_name as teacher_manager,
     sa.overall_score as teacher_overall_score,
 
     if(sd.is_iqr_outlier_current, 'outlier', 'not outlier') as iqr_current,

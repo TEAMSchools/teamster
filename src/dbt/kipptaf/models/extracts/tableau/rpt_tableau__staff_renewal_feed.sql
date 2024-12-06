@@ -20,7 +20,7 @@ select
     b.mail,
     b.user_principal_name as userprincipalname,
     b.reports_to_employee_number as manager_df_employee_number,
-    b.report_to_preferred_name_lastfirst as manager_name,
+    b.reports_to_formatted_name as manager_name,
     b.report_to_mail as manager_mail,
     b.race_ethnicity_reporting,
     b.gender_identity,

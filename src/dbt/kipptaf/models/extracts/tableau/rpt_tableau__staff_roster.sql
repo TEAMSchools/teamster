@@ -34,7 +34,7 @@ select
     b.user_principal_name as userprincipalname,
     b.reports_to_employee_number as manager_df_employee_number,
     b.report_to_worker_id as manager_custom_assoc_id,
-    b.report_to_preferred_name_lastfirst as manager_name,
+    b.reports_to_formatted_name as manager_name,
     b.report_to_mail as manager_mail,
     b.race_ethnicity,
     b.is_hispanic,

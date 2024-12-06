@@ -160,8 +160,7 @@ select
     reh.home_work_location_powerschool_school_id
     as respondent_work_location_powerschool_school_id,
     reh.home_work_location_grade_band as respondent_work_location_grade_band,
-    reh.report_to_preferred_name_lastfirst
-    as respondent_report_to_preferred_name_lastfirst,
+    reh.reports_to_formatted_name as respondent_report_to_preferred_name_lastfirst,
     reh.report_to_mail as respondent_report_to_mail,
     reh.report_to_user_principal_name as respondent_report_to_user_principal_name,
     reh.report_to_sam_account_name as respondent_report_to_sam_account_name,
@@ -180,8 +179,7 @@ select
     seh.home_work_location_powerschool_school_id
     as subject_work_location_powerschool_school_id,
     seh.home_work_location_grade_band as subject_work_location_grade_band,
-    seh.report_to_preferred_name_lastfirst
-    as subject_report_to_preferred_name_lastfirst,
+    seh.reports_to_formatted_name as subject_report_to_preferred_name_lastfirst,
     seh.report_to_mail as subject_report_to_mail,
     seh.report_to_user_principal_name as subject_report_to_user_principal_name,
     seh.report_to_sam_account_name as subject_report_to_sam_account_name,

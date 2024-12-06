@@ -19,7 +19,7 @@ with
     other_chiefs as (
         select
             sr1.home_department_name,
-            sr1.report_to_preferred_name_lastfirst,
+            sr1.reports_to_formatted_name,
             coalesce(
                 max(
                     case
@@ -44,7 +44,7 @@ with
             and sr1.home_department_name <> 'Executive'
             and sr1.home_department_name
             not in (select dc.home_department_name, from department_chiefs as dc)
-        group by sr1.home_department_name, sr1.report_to_preferred_name_lastfirst
+        group by sr1.home_department_name, sr1.reports_to_formatted_name
     ),
 
     /* combining all departments to one KTAF list of departments

@@ -13,10 +13,6 @@ with
             wa.payrollfilenumber as payroll_file_number,
             wa.payrollgroupcode as payroll_group_code,
             wa.payrollschedulegroupid as payroll_schedule_group_id,
-            wa.hiredate as hire_date,
-            wa.actualstartdate as actual_start_date,
-            wa.senioritydate as seniority_date,
-            wa.terminationdate as termination_date,
             wa.primaryindicator as primary_indicator,
             wa.managementpositionindicator as management_position_indicator,
             wa.voluntaryindicator as voluntary_indicator,
@@ -182,6 +178,11 @@ with
             wa.workergroups as worker_groups,
 
             /* transformations */
+            date(wa.hiredate) as hire_date,
+            date(wa.actualstartdate) as actual_start_date,
+            date(wa.senioritydate) as seniority_date,
+            date(wa.terminationdate) as termination_date,
+
             cast(
                 wa.baseremuneration.annualrateamount.amountvalue as numeric
             ) as base_remuneration__annual_rate_amount__amount_value,

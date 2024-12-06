@@ -12,7 +12,7 @@ select
     s.staffing_model_id,
 
     srr.formatted_name as recruiter,
-    srr.report_to_preferred_name_lastfirst as recruiter_manager,
+    srr.reports_to_formatted_name as recruiter_manager,
     srt.formatted_name as teammate,
 
     if(s.staffing_status = 'Open', 1, 0) as `open`,

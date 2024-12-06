@@ -29,7 +29,7 @@ select
     s.race_ethnicity_reporting,
     s.gender_identity as gender,
     s.sam_account_name as samaccountname,
-    s.report_to_preferred_name_lastfirst as current_manager,
+    s.reports_to_formatted_name as current_manager,
     s.report_to_sam_account_name as manager_samaccountname,
     s.position_id as current_position_id,
     s.payroll_group_code,
