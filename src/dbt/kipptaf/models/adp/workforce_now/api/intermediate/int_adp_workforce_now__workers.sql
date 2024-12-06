@@ -2,7 +2,8 @@ select
     w.associate_oid,
     w.effective_date_start,
     w.effective_date_end,
-    w.effective_date_timestamp,
+    w.effective_date_start_timestamp,
+    w.effective_date_end_timestamp,
     w.is_current_record,
     w.worker_id__id_value,
     w.worker_dates__original_hire_date,
@@ -54,7 +55,7 @@ select
     ou.organizational_unit__home__business_unit__name,
     ou.organizational_unit__home__department__name,
 
-    rt.reports_to_associate_oid,
+    rt.reports_to_worker_id__id_value,
 
     w.person__family_name_1 || ', ' || w.person__given_name as person__formatted_name,
 
