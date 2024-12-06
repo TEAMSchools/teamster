@@ -205,9 +205,9 @@ dagster-pandas==0.25.3 \
 dagster-pipes==1.9.3 \
     --hash=sha256:34ce67a7af35a29cfb20f95101b4b4c42a73f497b48c693d8d746de40a61ab5e \
     --hash=sha256:b83cafe3f0f8b75709355cde00a5578b7a4d8dbf1de1f3725365f618b200ef43
-dagster-slack==0.25.3 \
-    --hash=sha256:69ac75b3693cfd6c06ef2b42ce37a8dea0c21a6ca36d78a2d99d23f7d560ad92 \
-    --hash=sha256:8bdbdad45dd0a0fa19746c08a600850e8a500b6b19340d3df3baa2d28cfa876f
+dagster-slack==0.25.4 \
+    --hash=sha256:23ac4298a7fd7cb71d86254e122702e8496fe38b9ca9bc9b7dd4d225caac4389 \
+    --hash=sha256:6fc0514b490adfc528c2d94dfe7fa88f16c2f0fc3665bf51721f087f61277e63
 dagster-ssh==0.25.3 \
     --hash=sha256:aee2f3fff0a3810ceedc7e8f1955f0d8152a61df292dd2ef0253dbfced15e00a \
     --hash=sha256:fdb5c9af77dae0a663d0392b1be7e68e51975384d77ccde2f109124bbfeb7d76
