@@ -78,7 +78,7 @@ left join
     {{ ref("int_people__staff_roster_history") }} as srh
     on sr.respondent_email = srh.google_email
     and sr.date_submitted
-    between srh.effective_date_start_timestamp and srh.work_assignment_end_timestamp
+    between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
 left join
     {{ ref("base_powerschool__student_enrollments") }} as se1
     on sr.respondent_email = se1.student_email_google

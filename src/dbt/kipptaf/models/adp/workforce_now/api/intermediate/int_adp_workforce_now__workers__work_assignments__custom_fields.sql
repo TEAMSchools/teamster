@@ -5,7 +5,7 @@ with
             item_id,
             effective_date_start,
             effective_date_end,
-            effective_date_timestamp,
+            effective_date_start_timestamp,
             is_current_record,
             custom_field_group__code_fields,
             custom_field_group__date_fields,
@@ -22,7 +22,7 @@ with
             wa.item_id,
             wa.effective_date_start,
             wa.effective_date_end,
-            wa.effective_date_timestamp,
+            wa.effective_date_start_timestamp,
             wa.is_current_record,
 
             cfg.itemid as custom_field_item_id,
@@ -41,7 +41,7 @@ select
     wa.item_id,
     wa.effective_date_start,
     wa.effective_date_end,
-    wa.effective_date_timestamp,
+    wa.effective_date_start_timestamp,
     wa.is_current_record,
 
     cfg.itemid as custom_field_item_id,
@@ -69,7 +69,7 @@ select
     wa.item_id,
     wa.effective_date_start,
     wa.effective_date_end,
-    wa.effective_date_timestamp,
+    wa.effective_date_start_timestamp,
     wa.is_current_record,
 
     cfg.itemid as custom_field_item_id,
@@ -98,7 +98,7 @@ select
     wa.item_id,
     wa.effective_date_start,
     wa.effective_date_end,
-    wa.effective_date_timestamp,
+    wa.effective_date_start_timestamp,
     wa.is_current_record,
 
     cfg.itemid as custom_field_item_id,
@@ -127,7 +127,7 @@ select
     wa.item_id,
     wa.effective_date_start,
     wa.effective_date_end,
-    wa.effective_date_timestamp,
+    wa.effective_date_start_timestamp,
     wa.is_current_record,
 
     cfg.itemid as custom_field_item_id,
@@ -156,7 +156,7 @@ select
     wa.item_id,
     wa.effective_date_start,
     wa.effective_date_end,
-    wa.effective_date_timestamp,
+    wa.effective_date_start_timestamp,
     wa.is_current_record,
 
     cfg.itemid as custom_field_item_id,
@@ -184,7 +184,7 @@ select
     mcf.item_id,
     mcf.effective_date_start,
     mcf.effective_date_end,
-    mcf.effective_date_timestamp,
+    mcf.effective_date_start_timestamp,
     mcf.is_current_record,
     mcf.custom_field_item_id,
     mcf.name_code__code_value,

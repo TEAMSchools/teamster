@@ -108,7 +108,7 @@ inner join
     {{ ref("int_people__staff_roster_history") }} as reh
     on ri.respondent_df_employee_number = reh.employee_number
     and ri.date_submitted
-    between reh.effective_date_start_timestamp and reh.work_assignment_end_timestamp
+    between reh.effective_date_start_timestamp and reh.effective_date_end_timestamp
     and reh.assignment_status not in ('Terminated', 'Deceased')
 inner join
     {{ ref("int_people__staff_roster") }} as sr
@@ -174,5 +174,5 @@ left join
     {{ ref("int_people__staff_roster_history") }} as reh
     on sda.respondent_df_employee_number = reh.employee_number
     and sda.date_submitted
-    between reh.effective_date_start_timestamp and reh.work_assignment_end_timestamp
+    between reh.effective_date_start_timestamp and reh.effective_date_end_timestamp
     and reh.assignment_status not in ('Terminated', 'Deceased')

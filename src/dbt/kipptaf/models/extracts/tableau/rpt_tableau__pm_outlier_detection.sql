@@ -77,7 +77,7 @@ with
             on obs.employee_number = srh.employee_number
             and obs.observed_at_timestamp
             between srh.effective_date_start_timestamp
-            and srh.work_assignment_end_timestamp
+            and srh.effective_date_end_timestamp
             and obs.rubric_name
             in ('Coach ETR', 'Coach ETR and Reflection: Part 1 - Scores')
         group by
@@ -158,7 +158,7 @@ inner join
     {{ ref("int_people__staff_roster_history") }} as srh
     on sd.observer_employee_number = srh.employee_number
     and sd.end_date_timestamp
-    between srh.effective_date_start_timestamp and srh.work_assignment_end_timestamp
+    between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
 inner join
     score_aggs as sa
     on sd.observer_employee_number = sa.observer_employee_number

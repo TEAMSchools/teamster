@@ -4,7 +4,7 @@ with
             w.associate_oid,
             w.effective_date_start,
             w.effective_date_end,
-            w.effective_date_timestamp,
+            w.effective_date_start_timestamp,
             w.is_current_record,
 
             wa.itemid as item_id,

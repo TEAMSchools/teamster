@@ -350,7 +350,7 @@ with
                     interval 1 day
                 ),
                 interval 1 millisecond
-            ) as effective_date_timestamp,
+            ) as effective_date_start_timestamp,
 
             lag(worker_status.statuscode.codevalue, 1) over (
                 partition by associate_oid order by effective_date_start asc
@@ -398,6 +398,18 @@ select
         then 'Bi/Multiracial'
         else person__race_code__long_name
     end as race_ethnicity_reporting,
+
+    if(
+        effective_date_end = '9999-12-31',
+        timestamp('9999-12-31 23:59:59'),
+        timestamp_sub(
+            timestamp_add(
+                timestamp(effective_date_end, '{{ var("local_timezone") }}'),
+                interval 1 day
+            ),
+            interval 1 millisecond
+        )
+    ) as effective_date_end_timestamp,
 
     if(
         worker_status__status_code__code_value = 'Active'
