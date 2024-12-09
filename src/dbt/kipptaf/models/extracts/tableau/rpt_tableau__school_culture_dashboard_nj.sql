@@ -81,7 +81,7 @@ select
             )
         )
     ) as week_of,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 left join
     {{ ref("stg_deanslist__incidents") }} as dli
     on co.student_number = dli.student_school_id
