@@ -13,6 +13,9 @@ sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends install bash-completion google-cloud-cli &&
   sudo rm -rf /var/lib/apt/lists/*
 
+# auth gcloud
+gcloud auth login --enable-gdrive-access --update-adc
+
 # create env folder
 mkdir -p ./env
 sudo mkdir -p /etc/secret-volume
