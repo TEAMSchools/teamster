@@ -803,7 +803,7 @@ class NJGPA(BaseModel):
     homeless_primary_nighttime_residence: float | None = None
     homeless: str | None = None
     homelessprimarynighttimeresidence: float | None = None
-    humanreaderorhumansigner: str | None = None
+    humanreaderorhumansigner: float | None = None
     humansignerfortestdirections: str | None = None
     iepexemptfrompassing: str | None = None
     largeprint: str | None = None
@@ -916,7 +916,7 @@ class NJGPA(BaseModel):
     unit3onlineteststartdatetime: str | None = None
     unit3totaltestitems: float | None = None
     voidscorecode: str | None = None
-    voidscorereason: str | None = None
+    voidscorereason: float | None = None
     white: str | None = None
     wordprediction: str | None = None
     wordtoworddictionaryenglishnativelanguage: str | None = None
