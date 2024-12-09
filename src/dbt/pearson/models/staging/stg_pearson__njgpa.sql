@@ -1,5 +1,3 @@
-{%- set src_njgpa = source("pearson", "src_pearson__njgpa") -%}
-
 select
     statestudentidentifier,
     localstudentidentifier,
@@ -39,21 +37,23 @@ select
 
     coalesce(
         testcsemprobablerange.double_value,
-        cast(testcsemprobablerange.string_value as numeric)
+        safe_cast(trim(testcsemprobablerange.string_value) as numeric)
     ) as testcsemprobablerange,
     coalesce(
-        testreadingcsem.double_value, cast(testreadingcsem.string_value as numeric)
+        testreadingcsem.double_value,
+        safe_cast(trim(testreadingcsem.string_value) as numeric)
     ) as testreadingcsem,
     coalesce(
         testreadingscalescore.double_value,
-        cast(testreadingscalescore.string_value as numeric)
+        safe_cast(trim(testreadingscalescore.string_value) as numeric)
     ) as testreadingscalescore,
     coalesce(
-        testwritingcsem.double_value, cast(testwritingcsem.string_value as numeric)
+        testwritingcsem.double_value,
+        safe_cast(trim(testwritingcsem.string_value) as numeric)
     ) as testwritingcsem,
     coalesce(
         testwritingscalescore.double_value,
-        cast(testwritingscalescore.string_value as numeric)
+        safe_cast(trim(testwritingscalescore.string_value) as numeric)
     ) as testwritingscalescore,
 
     if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
@@ -71,5 +71,5 @@ select
         when 1
         then 'Not Yet Graduation Ready'
     end as testperformancelevel_text,
-from {{ src_njgpa }}
+from {{ source("pearson", "src_pearson__njgpa") }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'
