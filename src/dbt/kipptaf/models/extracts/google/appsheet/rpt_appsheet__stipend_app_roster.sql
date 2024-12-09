@@ -2,49 +2,49 @@ with
     /* departments with chiefs */
     department_chiefs as (
         select
-            sr1.department_home_name,
-            sr1.preferred_name_lastfirst,
+            sr1.home_department_name,
+            sr1.formatted_name,
             sr1.employee_number as ktaf_approver,
-        from {{ ref("base_people__staff_roster") }} as sr1
+        from {{ ref("int_people__staff_roster") }} as sr1
         where
             (
                 sr1.job_title like '%Chief%Officer'
                 or sr1.job_title like '%Chief%Strategist%'
             )
-            and sr1.department_home_name <> 'Executive'
+            and sr1.home_department_name <> 'Executive'
             and sr1.assignment_status in ('Active', 'Leave')
     ),
 
     /* chiefs/presidents above departments without chiefs*/
     other_chiefs as (
         select
-            sr1.department_home_name,
-            sr1.report_to_preferred_name_lastfirst,
+            sr1.home_department_name,
+            sr1.reports_to_formatted_name,
             coalesce(
                 max(
                     case
                         when sr2.job_title like '%Chief%Officer%'
-                        then sr1.report_to_employee_number
+                        then sr1.reports_to_employee_number
                         when sr2.job_title like '%Chief%Strategist%'
-                        then sr1.report_to_employee_number
+                        then sr1.reports_to_employee_number
                         when sr2.job_title like '%President%'
-                        then sr1.report_to_employee_number
+                        then sr1.reports_to_employee_number
                     end
                 ),
                 null
             ) as ktaf_approver,
-        from {{ ref("base_people__staff_roster") }} as sr1
+        from {{ ref("int_people__staff_roster") }} as sr1
         left join
-            {{ ref("base_people__staff_roster") }} as sr2
-            on sr1.report_to_employee_number = sr2.employee_number
+            {{ ref("int_people__staff_roster") }} as sr2
+            on sr1.reports_to_employee_number = sr2.employee_number
         where
-            sr1.business_unit_home_code = 'KIPP_TAF'
+            sr1.home_business_unit_code = 'KIPP_TAF'
             and sr1.assignment_status in ('Active', 'Leave')
             and (sr2.job_title like '%Chief%' or sr2.job_title like '%President%')
-            and sr1.department_home_name <> 'Executive'
-            and sr1.department_home_name
-            not in (select dc.department_home_name, from department_chiefs as dc)
-        group by sr1.department_home_name, sr1.report_to_preferred_name_lastfirst
+            and sr1.home_department_name <> 'Executive'
+            and sr1.home_department_name
+            not in (select dc.home_department_name, from department_chiefs as dc)
+        group by sr1.home_department_name, sr1.reports_to_formatted_name
     ),
 
     /* combining all departments to one KTAF list of departments
@@ -67,18 +67,18 @@ with
             sr.position_id,
             sr.job_title,
             sr.home_work_location_name,
-            sr.department_home_name,
-            sr.preferred_name_lastfirst,
+            sr.home_department_name,
+            sr.formatted_name,
             sr.user_principal_name,
             sr.google_email,
             sr.mail,
             sr.assignment_status,
-            sr.business_unit_home_name,
-            sr.business_unit_home_code,
+            sr.home_business_unit_name,
+            sr.home_business_unit_code,
             sr.worker_termination_date,
-            sr.report_to_employee_number as manager_employee_number,
+            sr.reports_to_employee_number as manager_employee_number,
 
-            sr2.report_to_employee_number as grandmanager_employee_number,
+            sr2.reports_to_employee_number as grandmanager_employee_number,
 
             lc.dso_employee_number,
             lc.sl_employee_number,
@@ -95,7 +95,7 @@ with
             case
 
                 /* KTAF teammate with KTAF manager*/
-                when sr.business_unit_home_code = 'KIPP_TAF'
+                when sr.home_business_unit_code = 'KIPP_TAF'
                 then 'KTAF'
                 /* Non-KTAF teammate with non-school location*/
                 when
@@ -103,7 +103,7 @@ with
                         sr.home_work_location_name like '%Room%'
                         or sr.home_work_location_name like '%Campus%'
                     )
-                    and sr.business_unit_home_code <> 'KIPP_TAF'
+                    and sr.home_business_unit_code <> 'KIPP_TAF'
                 then 'MDO'
                 /* School-based teammate*/
                 when
@@ -111,14 +111,14 @@ with
                         sr.home_work_location_name not like '%Room%'
                         or sr.home_work_location_name not like '%Campus%'
                     )
-                    and sr.business_unit_home_code <> 'KIPP_TAF'
+                    and sr.home_business_unit_code <> 'KIPP_TAF'
                 then 'School'
             end as route,
             coalesce(cc.name, sr.home_work_location_name) as campus,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         left join
-            {{ ref("base_people__staff_roster") }} as sr2
-            on sr.report_to_employee_number = sr2.employee_number
+            {{ ref("int_people__staff_roster") }} as sr2
+            on sr.reports_to_employee_number = sr2.employee_number
         left join
             {{ ref("stg_people__campus_crosswalk") }} as cc
             on sr.home_work_location_name = cc.location_name
@@ -126,7 +126,7 @@ with
             {{ ref("int_people__leadership_crosswalk") }} as lc
             on sr.home_work_location_name = lc.home_work_location_name
         left join
-            ktaf_approvers as k on sr.department_home_name = k.department_home_name
+            ktaf_approvers as k on sr.home_department_name = k.home_department_name
 
     ),
 
@@ -140,14 +140,14 @@ with
             r.position_id,
             r.job_title,
             r.home_work_location_name,
-            r.department_home_name,
-            r.preferred_name_lastfirst,
+            r.home_department_name,
+            r.formatted_name,
             r.user_principal_name,
             r.google_email,
             r.mail,
             r.assignment_status,
-            r.business_unit_home_name,
-            r.business_unit_home_code,
+            r.home_business_unit_name,
+            r.home_business_unit_code,
             r.worker_termination_date,
             r.route,
             r.campus,
@@ -161,10 +161,10 @@ with
             r.ktaf_approver,
             case
                 /* School-based non-operations teammate*/
-                when r.route = 'School' and r.department_home_name <> 'Operations'
+                when r.route = 'School' and r.home_department_name <> 'Operations'
                 then r.sl_employee_number
                 /* School-based operations teammate*/
-                when r.route = 'School' and r.department_home_name = 'Operations'
+                when r.route = 'School' and r.home_department_name = 'Operations'
                 then
                     coalesce(
                         r.dso_employee_number,
@@ -180,10 +180,10 @@ with
             end as first_approver_employee_number,
             case
                 /* School-based non-operations teammate*/
-                when r.route = 'School' and r.department_home_name <> 'Operations'
+                when r.route = 'School' and r.home_department_name <> 'Operations'
                 then r.head_of_school_employee_number
                 /* School-based operations teammate*/
-                when r.route = 'School' and r.department_home_name = 'Operations'
+                when r.route = 'School' and r.home_department_name = 'Operations'
                 then coalesce(r.mdso_employee_number, r.mdo_employee_number)
                 /* Non-KTAF teammate with non-school location*/
                 when r.route = 'MDO'
@@ -204,14 +204,14 @@ select
     r.position_id,
     r.job_title,
     r.home_work_location_name,
-    r.department_home_name,
-    r.preferred_name_lastfirst,
+    r.home_department_name as department_home_name,
+    r.formatted_name as preferred_name_lastfirst,
     r.user_principal_name,
     r.google_email,
     r.mail,
     r.assignment_status,
-    r.business_unit_home_name,
-    r.business_unit_home_code,
+    r.home_business_unit_name as business_unit_home_name,
+    r.home_business_unit_code as business_unit_home_code,
     r.worker_termination_date,
     r.route,
     r.campus,
