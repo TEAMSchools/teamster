@@ -30,6 +30,9 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/schools/"
             format: AVRO
             enable_logical_types: true
+            connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
         meta:
           dagster:
             group: schoolmint
