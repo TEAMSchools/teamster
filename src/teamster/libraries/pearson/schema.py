@@ -800,6 +800,7 @@ class NJGPA(BaseModel):
     gradelevelwhenassessed: int | None = None
     hispanicorlatinoethnicity: str | None = None
     home_language: str | None = None
+    homeless_primary_nighttime_residence: float | None = None
     homeless: str | None = None
     homelessprimarynighttimeresidence: float | None = None
     humanreaderorhumansigner: str | None = None
@@ -877,7 +878,6 @@ class NJGPA(BaseModel):
     testadministration: str | None = None
     testattemptednessflag: str | None = None
     testcode: str | None = None
-    testcsemprobablerange: float | None = None
     testcsemprobablerangeifnotattempted: str | None = None
     testingdistrictcode: int | None = None
     testingdistrictname: str | None = None
@@ -886,17 +886,13 @@ class NJGPA(BaseModel):
     testingschoolname: str | None = None
     testperformancelevel: float | None = None
     testperformancelevelifnotattempted: str | None = None
-    testreadingcsem: float | None = None
     testreadingcsemifnotattempted: str | None = None
-    testreadingscalescore: float | None = None
     testreadingscalescoreifnotattempted: str | None = None
     testscalescore: float | None = None
     testscalescoreifnotattempted: str | None = None
     testscorecomplete: float | None = None
     teststatus: str | None = None
-    testwritingcsem: float | None = None
     testwritingcsemifnotattempted: str | None = None
-    testwritingscalescore: float | None = None
     testwritingscalescoreifnotattempted: str | None = None
     texttospeech: float | None = None
     timeofday: str | None = None
@@ -927,6 +923,11 @@ class NJGPA(BaseModel):
 
     staffmemberidentifier: int | float | None = None
     testadministrator: int | float | None = None
+    testcsemprobablerange: float | str | None = None
+    testreadingcsem: float | str | None = None
+    testreadingscalescore: float | str | None = None
+    testwritingcsem: float | str | None = None
+    testwritingscalescore: float | str | None = None
 
 
 class StudentListReport(BaseModel):
