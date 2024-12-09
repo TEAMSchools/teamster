@@ -84,8 +84,7 @@ models:
         +materialized: table
     dayforce:
       +schema: dayforce
-      staging:
-        +materialized: table
+      +materialized: table
     deanslist:
       +schema: deanslist
     edplan:
