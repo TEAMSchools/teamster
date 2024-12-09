@@ -20,25 +20,23 @@ def main() -> None:
     if args.command == "help":
         subprocess.run(args=["/workspaces/teamster/.venv/bin/dbt", "-h"])
     elif args.command == "sxs":
-        subprocess.run(
-            args=[
-                "/workspaces/teamster/.venv/bin/dbt",
-                "run-operation",
-                "--project-dir",
-                f"src/dbt/{args.project}",
-                "stage_external_sources",
-                "--vars",
-                "ext_full_refresh: true",
-                "--args",
-                f"select: {args.select}",
-            ]
-        )
+        run_args = [
+            "/workspaces/teamster/.venv/bin/dbt",
+            "run-operation",
+            "stage_external_sources",
+            f"--project-dir=src/dbt/{args.project}",
+            "--vars=ext_full_refresh: true",
+        ]
+
+        if args.select:
+            run_args.extend(["--args", " ".join(["select:", *args.select])])
+
+        subprocess.run(args=run_args)
     else:
         run_args = [
             "/workspaces/teamster/.venv/bin/dbt",
             args.command,
-            "--project-dir",
-            f"src/dbt/{args.project}",
+            f"--project-dir=src/dbt/{args.project}",
         ]
 
         if args.select:

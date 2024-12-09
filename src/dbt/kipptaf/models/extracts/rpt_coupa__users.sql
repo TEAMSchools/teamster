@@ -189,7 +189,8 @@ with
             on au.employee_number = x.employee_number
         left join
             {{ source("coupa", "src_coupa__address_name_crosswalk") }} as anc
-            on au.home_work_location_name = anc.adp_home_work_location_name
+            on coalesce(x.home_work_location_name, au.home_work_location_name)
+            = anc.adp_home_work_location_name
         left join
             {{ source("coupa", "address") }} as a
             on anc.coupa_address_name = a.name
