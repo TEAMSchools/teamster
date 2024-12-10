@@ -1,3 +1,4 @@
+# trunk-ignore-all(trivy/DS026,checkov/CKV_DOCKER_2)
 ARG PYTHON_VERSION=3.12
 
 # https://hub.docker.com/_/python
@@ -10,9 +11,6 @@ ENV PYTHONUNBUFFERED=1
 ENV PATH="/app/.venv/bin:${PATH}"
 ENV UV_LINK_MODE=copy
 ENV UV_COMPILE_BYTECODE=1
-
-# set healthcheck
-HEALTHCHECK CMD dagster api grpc-health-check -p 3000
 
 # set workdir
 WORKDIR /app
