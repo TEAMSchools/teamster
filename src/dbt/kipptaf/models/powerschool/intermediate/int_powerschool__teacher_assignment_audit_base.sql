@@ -30,6 +30,8 @@ select
     asg.avg_expected_scored_percent
     as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
+    sec.terms_yearid + 1990 as academic_year,
+
 from {{ ref("int_powerschool__calendar_week") }} as c
 left join
     {{ ref("base_powerschool__sections") }} as sec
