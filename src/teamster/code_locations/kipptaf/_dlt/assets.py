@@ -41,10 +41,14 @@ class CustomDagsterDltTranslator(DagsterDltTranslator):
             return [AssetKey(f"{resource.source_name}_{pipe.name}")]
 
         return [
-            self.code_location,
-            resource.source_name,
-            resource.explicit_args["schema"],
-            resource.explicit_args["table"],
+            AssetKey(
+                [
+                    self.code_location,
+                    resource.source_name,
+                    resource.explicit_args["schema"],
+                    resource.explicit_args["table"],
+                ]
+            )
         ]
 
 
