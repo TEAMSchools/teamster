@@ -3,6 +3,7 @@
 select
     sec._dbt_source_relation,
     sec.sections_id as sectionid,
+    sec.sections_schoolid as schoolid,
     sec.teachernumber as teacher_number,
     sec.terms_yearid as yearid,
 
