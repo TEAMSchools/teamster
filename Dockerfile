@@ -35,7 +35,7 @@ RUN dagster-dbt project prepare-and-package \
 # Create a custom user with UID 1234 and GID 1234
 RUN groupadd -g 1234 teamster \
     && useradd -m -u 1234 -g teamster teamster \
-    && chown -r 1234:1234 /app
+    && chown -R 1234:1234 /app
 
 # Switch to the custom user
 USER 1234:1234
