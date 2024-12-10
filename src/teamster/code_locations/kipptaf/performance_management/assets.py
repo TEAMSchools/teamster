@@ -131,7 +131,7 @@ def get_isolation_forest(df: pandas.DataFrame):
     group_name="performance_management",
     partitions_def=MultiPartitionsDefinition(
         {
-            "academic_year": StaticPartitionsDefinition(["2023"]),
+            "academic_year": StaticPartitionsDefinition(["2023", "2024"]),
             "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
         }
     ),
@@ -157,23 +157,30 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
         table=dataset_ref.table("rpt_python__manager_pm_averages")
     )
 
-    df_global = rows.to_dataframe()
+    df_global: pandas.DataFrame = rows.to_dataframe()
 
     df_global.dropna(inplace=True)
     df_global.reset_index(inplace=True, drop=True)
 
     # subset current year/term
-    df_current: pandas.DataFrame = df_global[
-        (
-            df_global["academic_year"]
-            == int(partition_key.keys_by_dimension["academic_year"])
-        )
-        & (df_global["form_term"] == partition_key.keys_by_dimension["term"])
-    ]
+    df_current = _check.inst(
+        obj=df_global[
+            (
+                df_global["academic_year"]
+                == int(partition_key.keys_by_dimension["academic_year"])
+            )
+            & (df_global["form_term"] == partition_key.keys_by_dimension["term"])
+        ],
+        ttype=pandas.DataFrame,
+    )
 
     # exit if no data for partition
     if df_current.shape[0] == 0:
-        return Output(value=([], OUTLIER_DETECTION_SCHEMA), metadata={"records": 0})
+        yield Output(value=([], OUTLIER_DETECTION_SCHEMA), metadata={"records": 0})
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=[{}], schema=OUTLIER_DETECTION_SCHEMA
+        )
+        return
 
     df_current.reset_index(inplace=True, drop=True)
 

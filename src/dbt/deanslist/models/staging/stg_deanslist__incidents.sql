@@ -29,6 +29,7 @@ select
     actions,
     custom_fields,
     penalties,
+    attachments,
 
     /* transformations */
     nullif(addlreqs, '') as addl_reqs,

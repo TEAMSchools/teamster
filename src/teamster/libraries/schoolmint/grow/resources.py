@@ -108,6 +108,8 @@ class SchoolMintGrowResource(ConfigurableResource):
 
                 if len_data >= count:
                     break
+                elif len_data == 0 and count > 0:
+                    raise Exception("API returned an incomplete response")
                 else:
                     params["skip"] += params["limit"]
 
