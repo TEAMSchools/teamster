@@ -1,7 +1,7 @@
 {{- config(materialized="table") -}}
 
 with
-    term as ( -- NEED TO CHANGE THIS TO USE THE WEEK TABLE SO CAN GET THE CORRECT START/END DATES AND BRING WEEK NUMBER.... OR ADD WEEK CALENDAR TO THIS!
+    term as (
         select
             t._dbt_source_relation,
             t.schoolid,
@@ -30,7 +30,7 @@ with
             and t.schoolid = tb.schoolid
             and {{ union_dataset_join_clause(left_alias="t", right_alias="tb") }}
             and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
-        where t.isyearrec = 1
+        where t.isyearrec = 1 and t.yearid = {{ var("current_academic_year") - 1990 }}
     ),
 
     student_roster as (
@@ -153,6 +153,149 @@ with
                 'SEM22106G1',  -- Advisory
                 'SEM22106S1'  -- Not in SY24-25 yet
             )
+    ),
+
+    category_grades as (
+        select
+            _dbt_source_relation,
+            yearid,
+            schoolid,
+            studentid,
+            course_number,
+            sectionid,
+            storecode_type as category_name_code,
+            storecode as category_quarter_code,
+            percent_grade as category_quarter_percent_grade,
+
+            concat('Q', storecode_order) as term,
+
+            round(
+                avg(percent_grade) over (
+                    partition by _dbt_source_relation, yearid, studentid, storecode
+                ),
+                2
+            ) as category_quarter_average_all_courses,
+        from {{ ref("int_powerschool__category_grades") }}
+        where
+            yearid = {{ var("current_academic_year") - 1990 }}
+            and not is_dropped_section
+            and storecode_type in ('W', 'F', 'S')
+            and termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    ),
+
+    quarter_grades as (
+        select
+            _dbt_source_relation,
+            studentid,
+            yearid,
+            schoolid,
+            course_number,
+            sectionid,
+            termid,
+            storecode,
+            term_percent_grade_adjusted as quarter_course_percent_grade_that_matters,
+            term_grade_points as quarter_course_grade_points_that_matters,
+            citizenship as quarter_citizenship,
+            comment_value as quarter_comment_value,
+        from {{ ref("base_powerschool__final_grades") }}
+        where
+            academic_year = {{ var("current_academic_year") }}
+            and not is_dropped_section
+            and termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    ),
+
+    roster as (
+        select
+            s._dbt_source_relation,
+            s.academic_year,
+            s.academic_year_display,
+            s.yearid,
+            s.region,
+            s.school_level,
+            s.schoolid,
+            s.school,
+            s.studentid,
+            s.student_number,
+            s.student_name,
+            s.grade_level,
+            s.salesforce_id,
+            s.ktc_cohort,
+            s.enroll_status,
+            s.cohort,
+            s.gender,
+            s.ethnicity,
+            s.advisory,
+            s.hos,
+            s.region_school_level,
+            s.year_in_school,
+            s.year_in_network,
+            s.rn_undergrad,
+            s.is_out_of_district,
+            s.is_pathways,
+            s.is_retained_year,
+            s.is_retained_ever,
+            s.lunch_status,
+            s.gifted_and_talented,
+            s.iep_status,
+            s.lep_status,
+            s.is_504,
+            s.is_counseling_services,
+            s.is_student_athlete,
+            s.ada,
+            s.`quarter`,
+            s.semester,
+            s.quarter_start_date,
+            s.quarter_end_date,
+            s.cal_quarter_end_date,
+            s.is_current_quarter,
+            s.is_quarter_end_date_range,
+
+            ce.sectionid,
+            ce.sections_dcid,
+            ce.section_number,
+            ce.external_expression,
+            ce.date_enrolled,
+            ce.credit_type,
+            ce.course_number,
+            ce.course_name,
+            ce.exclude_from_gpa,
+            ce.teacher_number,
+            ce.teacher_name,
+            ce.tutoring_nj,
+            ce.nj_student_tier,
+            ce.is_ap_course,
+
+            r.sam_account_name as tableau_username,
+
+            ge.week_number,
+            ge.assignment_category_name,
+            ge.assignment_category_code,
+            ge.assignment_category_term,
+            ge.expectation,
+            ge.notes,
+
+            if(s.ada >= 0.80, true, false) as ada_above_or_at_80,
+
+            if(
+                s.grade_level < 9, ce.section_number, ce.external_expression
+            ) as section_or_period,
+
+        from student_roster as s
+        left join
+            course_enrollments as ce
+            on s.studentid = ce.studentid
+            and s.yearid = ce.yearid
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
+        left join
+            {{ ref("base_people__staff_roster") }} as r
+            on ce.teacher_number = r.powerschool_teacher_number
+        left join
+            {{ ref("stg_reporting__gradebook_expectations") }} as ge
+            on s.academic_year = ge.academic_year
+            and s.region = ge.region
+            and s.quarter = ge.quarter
+            and s.school_level = ge.school_level
+            and ge.academic_year = {{ var("current_academic_year") }}
     )
 
 select
@@ -198,43 +341,54 @@ select
     s.cal_quarter_end_date,
     s.is_current_quarter,
     s.is_quarter_end_date_range,
+    s.ada_above_or_at_80,
+    s.section_or_period,
 
-    ce.sectionid,
-    ce.sections_dcid,
-    ce.section_number,
-    ce.external_expression,
-    ce.date_enrolled,
-    ce.credit_type,
-    ce.course_number,
-    ce.course_name,
-    ce.exclude_from_gpa,
-    ce.teacher_number,
-    ce.teacher_name,
-    ce.tutoring_nj,
-    ce.nj_student_tier,
-    ce.is_ap_course,
+    s.week_number,
+    s.assignment_category_name,
+    s.assignment_category_code,
+    s.assignment_category_term,
+    s.expectation,
+    s.notes,
 
-    r.sam_account_name as tableau_username,
+    s.sectionid,
+    s.sections_dcid,
+    s.section_number,
+    s.external_expression,
+    s.date_enrolled,
+    s.credit_type,
+    s.course_number,
+    s.course_name,
+    s.exclude_from_gpa,
+    s.teacher_number,
+    s.teacher_name,
+    s.tutoring_nj,
+    s.nj_student_tier,
+    s.is_ap_course,
+    s.tableau_username,
 
-    if(s.ada >= 0.80, true, false) as ada_above_or_at_80,
+    c.category_quarter_percent_grade,
+    c.category_quarter_average_all_courses,
 
-    if(
-        s.grade_level < 9, ce.section_number, ce.external_expression
-    ) as section_or_period,
+    qg.quarter_course_percent_grade_that_matters,
+    qg.quarter_course_grade_points_that_matters,
+    qg.quarter_citizenship,
+    qg.quarter_comment_value,
 
-from student_roster as s
+from roster as s
 left join
-    course_enrollments as ce
-    on s.studentid = ce.studentid
-    and s.yearid = ce.yearid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
+    category_grades as c
+    on s.studentid = c.studentid
+    and s.yearid = c.yearid
+    and s.quarter = c.term
+    and s.sectionid = c.sectionid
+    and s.assignment_category_code = c.category_name_code
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
 left join
-    {{ ref("base_people__staff_roster") }} as r
-    on ce.teacher_number = r.powerschool_teacher_number
-/*left join
-    {{ ref("stg_reporting__gradebook_expectations") }} as ge
-    on s.academic_year = ge.academic_year
-    and s.region = ge.region
-    and s.quarter = ge.quarter
-    and s.school_level = ge.school_level*/
+    quarter_grades as qg
+    on s.studentid = qg.studentid
+    and s.yearid = qg.yearid
+    and s.quarter = qg.storecode
+    and s.sectionid = qg.sectionid
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="qg") }}
 where s.quarter_start_date <= current_date('America/New_York')
