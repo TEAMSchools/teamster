@@ -31,6 +31,15 @@ select
     as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     sec.terms_yearid + 1990 as academic_year,
+    case
+        regexp_extract(sec._dbt_source_relation, r'(kipp\w+)_')
+        when 'kippmiami'
+        then 'Miami'
+        when 'kippcamden'
+        then 'Camden'
+        when 'kippnewark'
+        then 'Newark'
+    end as region,
 
 from {{ ref("int_powerschool__calendar_week") }} as c
 left join
