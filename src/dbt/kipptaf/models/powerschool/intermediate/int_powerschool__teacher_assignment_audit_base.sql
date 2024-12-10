@@ -8,6 +8,7 @@ select
 
     c.semester,
     c.quarter,
+    c.school_level,
     c.week_number_quarter,
     c.week_start_monday,
     c.week_end_sunday,
