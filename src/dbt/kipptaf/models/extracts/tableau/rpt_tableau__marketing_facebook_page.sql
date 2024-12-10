@@ -1,3 +1,5 @@
+{{ config(enabled=false) }}
+
 select
     page_id,
     page_fans,

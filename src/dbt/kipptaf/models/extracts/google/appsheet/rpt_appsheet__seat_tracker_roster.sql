@@ -59,7 +59,10 @@ select
         /* see everything, edit teammate and seat status fields (recruiters)*/
         when
             sr.home_department_name = 'Recruitment'
-            and contains_substr(sr.job_title, 'Recruiter')
+            and (
+                contains_substr(sr.job_title, 'Recruiter')
+                or contains_substr(sr.job_title, 'Manager')
+            )
         then 5
         /* see school, edit teammate fields (name in position, gutcheck, nonrenewal)*/
         when
@@ -85,6 +88,11 @@ select
         when
             contains_substr(sr.job_title, 'Managing Director')
             and sr.home_department_name in ('Operations', 'School Support')
+        then 2
+        when
+            contains_substr(sr.job_title, 'Director')
+            and sr.home_department_name in ('Operations', 'School Support')
+            and sr.home_work_location_name like '%Room%'
         then 2
         when contains_substr(sr.job_title, 'Head of Schools')
         then 2

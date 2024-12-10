@@ -120,4 +120,8 @@ select
     if(
         is_submitted and is_certificate and is_accepted, true, false
     ) as is_accepted_certificate,
+    row_number() over (
+        partition by applicant, school
+        order by is_matriculated desc, is_accepted desc, is_submitted desc
+    ) as rn_application_school,
 from app_acct
