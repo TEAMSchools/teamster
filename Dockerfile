@@ -1,3 +1,5 @@
+# trunk-ignore-all(trivy/DS026,checkov/CKV_DOCKER_2)
+
 ARG PYTHON_VERSION=3.12
 
 # https://hub.docker.com/_/python
