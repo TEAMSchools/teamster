@@ -12,17 +12,40 @@ from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.sources.sql_database import sql_database
 
+from teamster.code_locations.kipptaf import CODE_LOCATION
+
 
 class CustomDagsterDltTranslator(DagsterDltTranslator):
+    def __init__(self, code_location: str):
+        self.code_location = code_location
+        return super().__init__()
+
     def get_asset_key(self, resource):
         return AssetKey(
             [
+                self.code_location,
                 "dlt",
                 resource.source_name,
                 resource.explicit_args["schema"],
                 resource.explicit_args["table"],
             ]
         )
+
+    def get_deps_asset_keys(self, resource):
+        if resource.is_transformer:
+            pipe = resource._pipe
+
+            while pipe.has_parent:
+                pipe = pipe.parent
+
+            return [AssetKey(f"{resource.source_name}_{pipe.name}")]
+
+        return [
+            self.code_location,
+            resource.source_name,
+            resource.explicit_args["schema"],
+            resource.explicit_args["table"],
+        ]
 
 
 def build_dlt_assets(
@@ -46,7 +69,7 @@ def build_dlt_assets(
             dataset_name=f"dagster_dlt_{pipeline_name}_{schema}",
             progress="log",
         ),
-        dagster_dlt_translator=CustomDagsterDltTranslator(),
+        dagster_dlt_translator=CustomDagsterDltTranslator(CODE_LOCATION),
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
         yield from dlt.run(
