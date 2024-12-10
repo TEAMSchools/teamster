@@ -1,3 +1,4 @@
+# flake8: noqa
 import os
 from typing import Any
 
@@ -7,6 +8,7 @@ import sqlalchemy as sa
 from dlt.common import pendulum
 from dlt.sources.credentials import ConnectionStringCredentials
 from dlt.sources.sql_database import Table, sql_database, sql_table
+from sqlalchemy.sql.sqltypes import TypeEngine
 
 
 def load_select_tables_from_database() -> None:
@@ -125,12 +127,13 @@ def select_columns() -> None:
         full_refresh=True,
     )
 
-    def table_adapter(table: Table) -> None:
+    def table_adapter(table: Table) -> Table:
         print(table.name)
         if table.name == "family":
             # this is SqlAlchemy table. _columns are writable
             # let's drop updated column
-            table._columns.remove(table.columns["updated"])
+            table._columns.remove(table.columns["updated"])  # type: ignore
+        return table
 
     family = sql_table(
         credentials="mysql+pymysql://rfamro@mysql-rfam-public.ebi.ac.uk:4497/Rfam",
@@ -188,11 +191,12 @@ def my_sql_via_pyarrow() -> None:
         dataset_name="rfam_data_arrow_4",
     )
 
-    def _double_as_decimal_adapter(table: sa.Table) -> None:
+    def _double_as_decimal_adapter(table: sa.Table) -> sa.Table:
         """Return double as double, not decimals, only works if you are using sqlalchemy 2.0"""
         for column in table.columns.values():
             if hasattr(sa, "Double") and isinstance(column.type, sa.Double):
                 column.type.asdecimal = False
+        return table
 
     sql_alchemy_source = sql_database(
         "mysql+pymysql://rfamro@mysql-rfam-public.ebi.ac.uk:4497/Rfam?&binary_prefix=true",
@@ -238,6 +242,7 @@ def create_unsw_flow() -> None:
 
 def test_connectorx_speed() -> None:
     """Uses unsw_flow dataset (~2mln rows, 25+ columns) to test connectorx speed"""
+    import os
 
     # from dlt.destinations import filesystem
 
@@ -278,11 +283,12 @@ def test_pandas_backend_verbatim_decimals() -> None:
         dataset_name="rfam_data_pandas_2",
     )
 
-    def _double_as_decimal_adapter(table: sa.Table) -> None:
+    def _double_as_decimal_adapter(table: sa.Table) -> sa.Table:
         """Emits decimals instead of floats."""
         for column in table.columns.values():
             if isinstance(column.type, sa.Float):
                 column.type.asdecimal = True
+        return table
 
     sql_alchemy_source = sql_database(
         "mysql+pymysql://rfamro@mysql-rfam-public.ebi.ac.uk:4497/Rfam?&binary_prefix=true",
