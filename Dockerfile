@@ -11,6 +11,9 @@ ENV PATH="/app/.venv/bin:${PATH}"
 ENV UV_LINK_MODE=copy
 ENV UV_COMPILE_BYTECODE=1
 
+# set workdir
+WORKDIR /app
+
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
 COPY uv.lock pyproject.toml /app/
 
@@ -30,8 +33,8 @@ RUN dagster-dbt project prepare-and-package \
     --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
 
 # Create a custom user with UID 1234 and GID 1234
-RUN groupadd -g 1234 customgroup \
-    && useradd -m -u 1234 -g customgroup customuser \
+RUN groupadd -g 1234 teamster \
+    && useradd -m -u 1234 -g customgroup teamster \
     && chown -r 1234:1234 /app
 
 # Switch to the custom user
