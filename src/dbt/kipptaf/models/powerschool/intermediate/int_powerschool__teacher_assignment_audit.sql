@@ -1,3 +1,5 @@
+{{- config(materialized="table") -}}
+
 with
     assignments as (
         select

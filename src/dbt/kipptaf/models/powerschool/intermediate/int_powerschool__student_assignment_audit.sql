@@ -1,3 +1,5 @@
+{{- config(materialized="table") -}}
+
 with
     students_assignments as (
         select
