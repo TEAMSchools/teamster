@@ -1,7 +1,7 @@
 {{- config(materialized="table") -}}
 
 with
-    term as (
+    term as ( -- NEED TO CHANGE THIS TO USE THE WEEK TABLE SO CAN GET THE CORRECT START/END DATES AND BRING WEEK NUMBER.... OR ADD WEEK CALENDAR TO THIS!
         select
             t._dbt_source_relation,
             t.schoolid,
@@ -231,4 +231,10 @@ left join
 left join
     {{ ref("base_people__staff_roster") }} as r
     on ce.teacher_number = r.powerschool_teacher_number
+/*left join
+    {{ ref("stg_reporting__gradebook_expectations") }} as ge
+    on s.academic_year = ge.academic_year
+    and s.region = ge.region
+    and s.quarter = ge.quarter
+    and s.school_level = ge.school_level*/
 where s.quarter_start_date <= current_date('America/New_York')
