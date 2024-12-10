@@ -156,6 +156,8 @@ models:
       +schema: powerschool
     powerschool_enrollment:
       +schema: powerschool_enrollment
+    qa:
+      +schema: qa
     renlearn:
       +schema: renlearn
     reporting:
