@@ -156,6 +156,8 @@ models:
       +schema: powerschool
     powerschool_enrollment:
       +schema: powerschool_enrollment
+    qa:
+      +schema: qa
     renlearn:
       +schema: renlearn
     reporting:
@@ -174,6 +176,7 @@ models:
       +schema: surveys
       +materialized: table
     tableau:
+      +enabled: false
       +schema: tableau
       staging:
         +materialized: table

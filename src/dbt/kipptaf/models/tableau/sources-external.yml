@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: tableau
     schema: kipptaf_tableau
+    config:
+      enabled: false
     tags:
       - stage_external_sources
     tables:
