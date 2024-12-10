@@ -88,7 +88,7 @@ with
                 then 1
                 else 0
             end as race_eth_flag,
-        from {{ ref("base_powerschool__student_enrollments") }} as se
+        from {{ ref("int_powerschool__student_enrollments") }} as se
         left join
             {{ ref("stg_powerschool__fte") }} as fte
             on se.schoolid = fte.schoolid

@@ -24,7 +24,7 @@ with
 
     abs_count as (
         select co.student_number, co.academic_year, count(att.att_date) as n_absences,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("stg_powerschool__attendance") }} as att
             on co.studentid = att.studentid
@@ -61,7 +61,7 @@ select
     null as followup_close_notes,
     null as followup_outstanding,
     null as homeroom,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 inner join
     abs_count as ac
     on ac.student_number = co.student_number
