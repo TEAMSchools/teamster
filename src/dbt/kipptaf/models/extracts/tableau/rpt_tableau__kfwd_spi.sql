@@ -42,14 +42,20 @@ select
     if(e.status = 'Graduated', true, false) as is_graduated,
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
     if(e.id = ei.ugrad_enrollment_id, true, false) as is_ugrad_enrollment,
-    if(
-        e.status in ('Attending', 'Graduated')
-        and r.ktc_cohort
-        between {{ var("current_academic_year") - 5 }}
-        and {{ var("current_academic_year") }},
-        true,
-        false
-    ) as is_continuing_completing,
+    case
+        when
+            e.status in ('Attending', 'Graduated')
+            and r.ktc_cohort
+            between {{ var("current_academic_year") - 5 }}
+            and {{ var("current_academic_year") }}
+        then true
+        when
+            e.status not in ('Attending', 'Graduated')
+            and r.ktc_cohort
+            between {{ var("current_academic_year") - 5 }}
+            and {{ var("current_academic_year") }}
+        then false
+    end as is_continuing_completing,
 
     if(ei.ecc_account_name = ei.ugrad_account_name, 1, 0) as is_same_school,
 
