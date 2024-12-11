@@ -4,7 +4,7 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.6.5
+      ref: v1.6.6
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
@@ -23,13 +23,13 @@ lint:
     - ruff@0.8.2
     - shellcheck@0.10.0
     - shfmt@3.6.0
-    - sqlfluff@3.2.5
+    - sqlfluff@3.3.0
     - sqlfmt@0.24.0
     - svgo@3.3.2
     - taplo@0.9.3
     - terrascan@1.19.1
-    - trivy@0.56.2
-    - trufflehog@3.85.0
+    - trivy@0.58.0
+    - trufflehog@3.86.0
     - yamllint@1.35.1
   disabled:
     - black
@@ -69,7 +69,7 @@ lint:
 runtimes:
   enabled:
     - go@1.21.0
-    - node@18.12.1
+    - node@18.20.5
     - python@3.10.8
 actions:
   enabled:
