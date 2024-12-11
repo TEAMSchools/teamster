@@ -19,7 +19,7 @@ njgpa = build_sftp_file_asset(
     remote_dir_regex=rf"{remote_dir_regex_prefix}/njgpa",
     remote_file_regex=(
         r"pc(?P<administration>[a-z]+)"
-        r"(?P<fiscal_year>\d+)_NJ-\d+-\d+_\w+GPA\w+\.csv"
+        r"(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+GPA\w+\.csv"
     ),
     avro_schema=NJGPA_SCHEMA,
     ssh_resource_key=ssh_resource_key,
@@ -38,7 +38,7 @@ student_list_report = build_sftp_file_asset(
     ),
     remote_file_regex=(
         r"StudentListReport_(?P<administration_fiscal_year>[A-za-z]+\d+)"
-        r"_\d+_\d+-\d+-\d+\.csv"
+        r"(_\d+_|\s-\s)\d+-\d+-\d+(T\w+\.\d+\+\d+)?\.csv"
     ),
     avro_schema=STUDENT_LIST_REPORT_SCHEMA,
     ssh_resource_key=ssh_resource_key,
