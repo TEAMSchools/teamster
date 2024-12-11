@@ -75,3 +75,17 @@ sources:
               - kipptaf
               - reporting
               - promo_status_cutoffs
+      - name: src_reporting__gradebook_flags
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
+            sheet_range: src_reporting__gradebook_flags
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - reporting
+              - gradebook_flags
