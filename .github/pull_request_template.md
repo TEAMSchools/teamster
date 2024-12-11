@@ -12,6 +12,9 @@
 - [ ] Ensure you are using the `union_dataset_join_clause()` macro for queries that employ any
       models using these datasets: `deanslist` `edplan` `iready` `overgrad` `pearson` `powerschool`
       `renlearn` `titan`
+- [ ] If you are adding a new external source, run:
+
+      dbt run-operation stage_external_sources --vars "ext_full_refresh: true"
 
   **If this is a same-day request, please flag that in our Slack channel!**
 
