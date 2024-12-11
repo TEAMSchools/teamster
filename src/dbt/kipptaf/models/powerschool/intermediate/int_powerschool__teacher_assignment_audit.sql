@@ -49,44 +49,6 @@ with
                 order by c.week_number_quarter asc
             ) as assignment_count_section_quarter_category_running_week,
 
-            sum(c.n_expected) over (
-                partition by
-                    c._dbt_source_relation,
-                    c.sectionid,
-                    c.quarter,
-                    c.week_number_quarter,
-                    c.assignment_category_code
-            ) as total_expected_section_quarter_week_category,
-
-            sum(c.n_expected_scored) over (
-                partition by
-                    c._dbt_source_relation,
-                    c.sectionid,
-                    c.quarter,
-                    c.week_number_quarter,
-                    c.assignment_category_code
-            ) as total_expected_scored_section_quarter_week_category,
-
-            sum(c.n_expected) over (
-                partition by
-                    c._dbt_source_relation,
-                    c.teacher_number,
-                    c.schoolid,
-                    c.quarter,
-                    c.week_number_quarter,
-                    c.assignment_category_code
-            ) as total_expected_teacher_school_quarter_week_category,
-
-            sum(c.n_expected_scored) over (
-                partition by
-                    c._dbt_source_relation,
-                    c.teacher_number,
-                    c.schoolid,
-                    c.quarter,
-                    c.week_number_quarter,
-                    c.assignment_category_code
-            ) as total_expected_scored_teacher_school_quarter_week_category,
-
         from {{ ref("int_powerschool__teacher_assignment_audit_base") }} as c
         inner join
             {{ ref("stg_reporting__gradebook_expectations") }} as ge
@@ -126,18 +88,6 @@ select
 
     assignment_count_section_quarter_category_running_week
     as teacher_running_total_assign_by_cat,
-    total_expected_scored_teacher_school_quarter_week_category
-    as total_expected_actual_graded_assignments_by_cat_qt_audit_week_all_courses,
-    total_expected_teacher_school_quarter_week_category
-    as total_expected_graded_assignments_by_cat_qt_audit_week_all_courses,
-    total_expected_scored_section_quarter_week_category
-    as total_expected_actual_graded_assignments_by_course_cat_qt_audit_week,
-    total_expected_section_quarter_week_category
-    as total_expected_graded_assignments_by_course_cat_qt_audit_week,
-    n_expected_scored
-    as total_expected_actual_graded_assignments_by_course_assign_id_qt_audit_week,
-    n_expected as total_expected_graded_assignments_by_course_assign_id_qt_audit_week,
-
     if(assignmentid is not null, 1, 0) as teacher_assign_count,
 
     if(
@@ -170,18 +120,6 @@ select
     ) as f_assign_max_score_not_10,
 
     if(
-        total_missing_section_quarter = 0, true, false
-    ) as qt_teacher_no_missing_assignments,
-
-    if(
-        assignment_category_code = 'S'
-        and n_expected >= 1
-        and total_totalpointvalue_section_quarter < 200,
-        true,
-        false
-    ) as qt_teacher_s_total_less_200,
-
-    if(
         assignment_category_code = 'S'
         and n_expected = 1
         and total_totalpointvalue_section_quarter > 200,
@@ -189,23 +127,4 @@ select
         false
     ) as qt_teacher_s_total_greater_200,
 
-    round(
-        safe_divide(
-            total_expected_scored_teacher_school_quarter_week_category,
-            total_expected_teacher_school_quarter_week_category
-        ),
-        2
-    ) as percent_graded_completion_by_cat_qt_audit_week_all_courses,
-
-    round(
-        safe_divide(
-            total_expected_scored_section_quarter_week_category,
-            total_expected_section_quarter_week_category
-        ),
-        2
-    ) as percent_graded_completion_by_cat_qt_audit_week,
-
-    round(
-        safe_divide(n_expected_scored, n_expected), 2
-    ) as percent_graded_completion_by_assign_id_qt_audit_week,
 from assignments
