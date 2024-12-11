@@ -39,24 +39,35 @@ select
     null as application_submission_status,
     null as matriculation_decision,
 
+    if(e.status = 'Graduated', true, false) as is_graduated,
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
     if(e.id = ei.ugrad_enrollment_id, true, false) as is_ugrad_enrollment,
+    if(
+        e.status in ('Attending', 'Graduated')
+        and a.id = ei.ecc_account_id
+        and r.ktc_cohort <= {{ var("current_academic_year") - 7 }},
+        true,
+        false
+    ) as is_continuing_completing,
 
     if(ei.ecc_account_name = ei.ugrad_account_name, 1, 0) as is_same_school,
 
     case
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
             and e.status = 'Graduated'
             and e.actual_end_date <= date(r.ktc_cohort + 4, 08, 31)
         then 1
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
             and e.status = 'Graduated'
             and e.actual_end_date > date(r.ktc_cohort + 4, 08, 31)
         then 0
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
             and e.status != 'Graduated'
             and e.actual_end_date is not null
         then 0
@@ -65,20 +76,34 @@ select
     case
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 6 }}
             and e.status = 'Graduated'
             and e.actual_end_date <= date(r.ktc_cohort + 6, 08, 31)
         then 1
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 6 }}
             and e.status = 'Graduated'
             and e.actual_end_date > date(r.ktc_cohort + 6, 08, 31)
         then 0
         when
             e.school = ei.ecc_account_id
+            and r.ktc_cohort <= {{ var("current_academic_year") - 6 }}
             and e.status != 'Graduated'
             and e.actual_end_date is not null
         then 0
     end as is_6yr_grad_int,
+
+    case
+        when
+            r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
+            and e.status = 'Graduated'
+        then 1
+        when
+            r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
+            and e.status != 'Graduated'
+        then 0
+    end as is_grad_ever_any,
 
     case
         when r.contact_college_match_display_gpa >= 3.50
@@ -148,11 +173,14 @@ select
     a.application_submission_status,
     a.matriculation_decision,
 
+    false as is_graduated,
     null as is_ecc_enrollment,
     null as is_ugrad_enrollment,
+    null as is_continuing_completing,
     null as is_same_school,
     null as is_4yr_grad_int,
     null as is_6yr_grad_int,
+    null as is_grad_ever_any,
 
     case
         when r.contact_college_match_display_gpa >= 3.50
@@ -167,5 +195,8 @@ select
         then '<2.00'
     end as hs_gpa_bands,
 from {{ ref("int_kippadb__roster") }} as r
-left join {{ ref("base_kippadb__application") }} as a on r.contact_id = a.applicant
+left join
+    {{ ref("base_kippadb__application") }} as a
+    on r.contact_id = a.applicant
+    and a.rn_application_school = 1
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student

@@ -90,11 +90,6 @@ behavior = build_deanslist_paginated_multi_partition_asset(
     api_version="v1",
     schema=BEHAVIOR_SCHEMA,
     partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
-    op_tags={
-        "dagster-k8s/config": {
-            "container_config": {"resources": {"limits": {"memory": "5.0Gi"}}}
-        }
-    },
 )
 
 fiscal_multi_partitions_assets = [behavior, *fiscal_multi_partitions_assets]

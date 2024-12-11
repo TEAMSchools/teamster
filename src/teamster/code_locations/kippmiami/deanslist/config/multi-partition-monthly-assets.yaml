@@ -6,3 +6,4 @@ endpoints:
     params:
       IncludeDeleted: Y
       cf: Y
+      attachments: Y
