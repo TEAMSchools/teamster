@@ -1,3 +1,4 @@
+# trunk-ignore-all(trivy/DS026,checkov/CKV_DOCKER_2)
 ARG PYTHON_VERSION=3.12
 
 # https://hub.docker.com/_/python
@@ -31,3 +32,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # install dbt project
 RUN dagster-dbt project prepare-and-package \
     --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
+
+# Create a custom user with UID 1234 and GID 1234
+RUN groupadd -g 1234 teamster \
+    && useradd -m -u 1234 -g teamster teamster \
+    && chown -R 1234:1234 /app
+
+# Switch to the custom user
+USER 1234:1234
