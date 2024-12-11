@@ -27,7 +27,8 @@ def main() -> None:
             "--force-optional",
             "--use-standard-collections",
             "--use-union-operator",
-        ]
+        ],
+        shell=True,
     )
 
 

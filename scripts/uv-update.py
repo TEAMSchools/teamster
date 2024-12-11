@@ -14,7 +14,7 @@ def main() -> None:
     ]
 
     for cmd in commands:
-        subprocess.run(args=cmd.split(sep=" "))
+        subprocess.run(args=cmd.split(sep=" "), shell=True)
 
 
 if __name__ == "__main__":

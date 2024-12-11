@@ -18,7 +18,7 @@ def main() -> None:
     # print(args)
 
     if args.command == "help":
-        subprocess.run(args=["/workspaces/teamster/.venv/bin/dbt", "-h"])
+        subprocess.run(args=["/workspaces/teamster/.venv/bin/dbt", "-h"], shell=True)
     elif args.command == "sxs":
         run_args = [
             "/workspaces/teamster/.venv/bin/dbt",
@@ -31,7 +31,7 @@ def main() -> None:
         if args.select:
             run_args.extend(["--args", " ".join(["select:", *args.select])])
 
-        subprocess.run(args=run_args)
+        subprocess.run(args=run_args, shell=True)
     else:
         run_args = [
             "/workspaces/teamster/.venv/bin/dbt",
@@ -42,7 +42,7 @@ def main() -> None:
         if args.select:
             run_args.extend(["--select", *args.select])
 
-        subprocess.run(args=run_args)
+        subprocess.run(args=run_args, shell=True)
 
 
 if __name__ == "__main__":
