@@ -448,6 +448,7 @@ select
 
     if(ood.dcid is not null, ood.specprog_name, sch.name) as reporting_school_name,
 
+    {# TODO: remove OD? will need to filter on is_out_of_district downstream #}
     if(ood.dcid is not null, 'OD', sch.school_level) as school_level,
 from with_boy_status_window as enr
 inner join

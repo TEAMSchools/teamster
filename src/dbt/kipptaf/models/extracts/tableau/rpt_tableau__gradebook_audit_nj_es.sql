@@ -20,7 +20,6 @@ with
             ethnicity,
             advisory,
             hos,
-            region_school_level,
             year_in_school,
             year_in_network,
             rn_undergrad,
@@ -37,7 +36,7 @@ with
             is_student_athlete,
             ada,
             ada_above_or_at_80,
-            quarter,
+            `quarter`,
             semester,
             quarter_start_date,
             quarter_end_date,
@@ -76,13 +75,15 @@ with
             academic_year = {{ var("current_academic_year") }}
             and enroll_status = 0
             and roster_type = 'Local'
-            and quarter != 'Y1'
-            and region_school_level in ('CamdenES', 'NewarkES')
+            and school_level = 'ES'
+            and region in ('Camden', 'Newark')
+            and `quarter` != 'Y1'
     ),
 
     audits_es_nj as (
         select
             *,
+
             if(
                 is_quarter_end_date_range
                 and grade_level < 5

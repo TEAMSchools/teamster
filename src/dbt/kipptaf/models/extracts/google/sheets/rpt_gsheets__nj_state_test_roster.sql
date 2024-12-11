@@ -120,7 +120,7 @@ from roster
 where
     academic_year = {{ var("current_academic_year") }}
     and rn_year = 1
+    and not is_out_of_district
     and test_code is not null
     and (grade_level between 3 and 9 or grade_level = 11)
     and region != 'Miami'
-    and school_level != 'OD'
