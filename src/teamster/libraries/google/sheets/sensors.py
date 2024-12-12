@@ -4,6 +4,7 @@ from itertools import groupby
 
 from dagster import (
     AssetMaterialization,
+    AssetSpec,
     SensorEvaluationContext,
     SensorResult,
     _check,
@@ -18,16 +19,18 @@ def build_google_sheets_asset_sensor(
     code_location: str, minimum_interval_seconds: int, asset_specs: list
 ):
     @sensor(
-        name=f"{code_location}_google_sheets_asset_sensor",
+        name=f"{code_location}__google__sheets__asset_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, gsheets: GoogleSheetsResource):
+        def get_sheet_id(asset_spec: AssetSpec):
+            return asset_spec.metadata["sheet_id"]
+
         cursor: dict = json.loads(context.cursor or "{}")
         asset_events: list = []
 
-        # TODO: add asset event for newly created specs
         for sheet_id, group in groupby(
-            iterable=asset_specs, key=lambda x: x.metadata["sheet_id"]
+            iterable=sorted(asset_specs, key=get_sheet_id), key=get_sheet_id
         ):
             asset_keys = [g.key for g in group]
 
