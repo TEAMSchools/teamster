@@ -279,6 +279,7 @@ select
     gc.is_4yr_ba_grad_int,
     gc.is_5yr_ba_grad_int,
     gc.is_6yr_ba_grad_int,
+    gc.is_7yr_ba_grad_int,
     gc.is_2yr_aa_grad_int,
     gc.is_3yr_aa_grad_int,
     gc.is_4yr_aa_grad_int,
