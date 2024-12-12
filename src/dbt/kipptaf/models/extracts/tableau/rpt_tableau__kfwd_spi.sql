@@ -1,9 +1,3 @@
-with
-    enrollment as (
-        select *, if(status = 'Graduated', true, false) as is_graduated,
-        from {{ ref("stg_kippadb__enrollment") }}
-    )
-
 select
     r.contact_id,
     r.lastfirst as student_name,
@@ -21,7 +15,6 @@ select
     e.start_date,
     e.actual_end_date,
     e.account_type,
-    e.is_graduated,
 
     ei.ugrad_status,
     ei.hs_account_name,
@@ -37,15 +30,14 @@ select
     a.billing_state as school_state,
     a.name as school_name,
     a.hbcu,
-    a.id as account_id,
 
     'Enrollments' as `data_source`,
 
-    cast(null as string) as match_type,
-    cast(null as string) as application_admission_type,
-    cast(null as string) as application_status,
-    cast(null as string) as application_submission_status,
-    cast(null as string) as matriculation_decision,
+    null as match_type,
+    null as application_admission_type,
+    null as application_status,
+    null as application_submission_status,
+    null as matriculation_decision,
 
     if(e.status = 'Graduated', true, false) as is_graduated,
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
@@ -132,17 +124,9 @@ select
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
-
-    if(
-        r.ktc_cohort <= {{ var("current_academic_year") }} - 4, true, false
-    ) as is_grad_eligible_cohort,
-
-    row_number() over (
-        partition by r.contact_id, a.id order by is_graduated desc
-    ) as rn_student_school,
 from {{ ref("int_kippadb__roster") }} as r
 inner join
-    enrollment as e
+    {{ ref("stg_kippadb__enrollment") }} as e
     on r.contact_id = e.student
     and e.status != 'Did Not Enroll'
 left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
@@ -169,7 +153,6 @@ select
     null as actual_end_date,
 
     a.account_type,
-    false as is_graduated,
 
     null as ugrad_status,
 
@@ -187,7 +170,6 @@ select
     a.account_billing_state as school_state,
     a.account_name as school_name,
     a.hbcu,
-    a.id as account_id,
 
     'Applications' as `data_source`,
 
@@ -218,11 +200,6 @@ select
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
-
-    if(
-        r.ktc_cohort <= {{ var("current_academic_year") }} - 4, true, false
-    ) as is_grad_eligible_cohort,
-    1 as rn_student_school,
 from {{ ref("int_kippadb__roster") }} as r
 left join
     {{ ref("base_kippadb__application") }} as a
