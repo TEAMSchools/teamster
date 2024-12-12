@@ -367,6 +367,8 @@ select
     s.is_ap_course,
     s.tableau_username,
 
+    w.school_week_start_date_lead as audit_due_date,
+
     c.category_quarter_percent_grade,
     c.category_quarter_average_all_courses,
 
@@ -376,6 +378,12 @@ select
     qg.quarter_comment_value,
 
 from roster as s
+left join
+    {{ ref("int_powerschool__calendar_week") }} as w
+    on s.schoolid = w.schoolid
+    and s.yearid = yearid
+    and w.week_end_date between s.quarter_start_date and s.quarter_end_date
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
 left join
     category_grades as c
     on s.studentid = c.studentid

@@ -1,44 +1,78 @@
 {{- config(materialized="table") -}}
 
 with
-    grades_and_assignments as (
+    assignment_student as (
         select
             f._dbt_source_relation,
             f.academic_year,
             f.academic_year_display,
             f.region,
             f.school_level,
+            f.region_school_level,
             f.schoolid,
             f.school,
+
             f.studentid,
             f.student_number,
             f.student_name,
             f.grade_level,
+            f.salesforce_id,
+            f.ktc_cohort,
+            f.cohort,
+            f.gender,
+            f.ethnicity,
             f.advisory,
-            f.region_school_level,
+            f.hos,
+            f.year_in_school,
+            f.year_in_network,
+            f.rn_undergrad,
+            f.is_out_of_district,
+            f.is_pathways,
+            f.is_retained_year,
+            f.is_retained_ever,
+            f.lunch_status,
+            f.gifted_and_talented,
+            f.iep_status,
+            f.lep_status,
+            f.is_504,
+            f.is_counseling_services,
+            f.is_student_athlete,
             f.ada,
-            f.`quarter`,
+            f.ada_above_or_at_80,
+            f.tutoring_nj,
+            f.nj_student_tier,
+            f.date_enrolled,
+
             f.semester,
+            f.`quarter`,
+            f.week_number,
             f.quarter_start_date,
             f.quarter_end_date,
             f.cal_quarter_end_date,
             f.is_current_quarter,
             f.is_quarter_end_date_range,
-            f.ada_above_or_at_80,
-            f.section_or_period,
+            f.audit_due_date,
+
+            f.assignment_category_name,
+            f.assignment_category_code,
+            f.assignment_category_term,
             f.expectation,
+            f.notes,
             f.sectionid,
             f.sections_dcid,
             f.section_number,
             f.external_expression,
-            f.date_enrolled,
+            f.section_or_period,
             f.credit_type,
             f.course_number,
             f.course_name,
             f.exclude_from_gpa,
+            f.is_ap_course,
+
             f.teacher_number,
             f.teacher_name,
-            f.is_ap_course,
+            f.tableau_username,
+
             f.category_quarter_percent_grade,
             f.category_quarter_average_all_courses,
             f.quarter_course_percent_grade_that_matters,
@@ -46,18 +80,11 @@ with
             f.quarter_citizenship,
             f.quarter_comment_value,
 
-            t.week_number_quarter,
-            t.week_start_monday,
-            t.week_end_sunday,
-            t.school_week_start_date_lead,
-            t.assignment_category_code,
-            t.assignment_category_name,
-            t.assignment_category_term,
-            t.assignmentid,
-            t.assignment_name,
-            t.duedate,
-            t.scoretype,
-            t.totalpointvalue,
+            t.assignmentid as teacher_assign_id,
+            t.assignment_name as teacher_assign_name,
+            t.duedate as teacher_assign_due_date,
+            t.scoretype as teacher_assign_score_type  ,
+            t.totalpointvalue as teacher_assign_max_score,
             t.n_students,
             t.n_late,
             t.n_exempt,
@@ -67,18 +94,14 @@ with
             t.teacher_assign_count,
             t.teacher_running_total_assign_by_cat,
             t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
-            t.qt_teacher_s_total_greater_200,
-            t.w_assign_max_score_not_10,
-            t.f_assign_max_score_not_10,
-            t.w_expected_assign_count_not_met,
-            t.f_expected_assign_count_not_met,
-            t.s_expected_assign_count_not_met,
 
-            s.scorepoints,
-            s.isexempt,
-            s.islate,
-            s.ismissing,
+            s.raw_score,
+            s.score_entered,
             s.assign_final_score_percent,
+            s.is_exempt,
+            s.is_late,
+            s.is_missing,
+            
             s.assign_null_score,
             s.assign_score_above_max,
             s.assign_exempt_with_score,
@@ -87,10 +110,8 @@ with
             s.assign_w_missing_score_not_5,
             s.assign_f_missing_score_not_5,
             s.assign_s_score_less_50p,
-
-            -- TODO: historical grades have letter grades on this field, so maybe we
-            -- can split it for old grades and new grades?
-            safe_cast(s.actualscoreentered as numeric) as actualscoreentered,
+            s.assign_s_ms_score_not_conversion_chart_options,
+            s.assign_s_hs_score_not_conversion_chart_options,
 
         from {{ ref("int_tableau__gradebook_audit_roster") }} as f
         inner join
@@ -109,7 +130,7 @@ with
             and t.assignmentid = s.assignmentid
             and {{ union_dataset_join_clause(left_alias="t", right_alias="s") }}
     ),
-
+/*
     audits as (
         select
             *,
@@ -227,29 +248,10 @@ with
                 false
             ) as qt_effort_grade_missing,
 
-            if(
-                isexempt = 0
-                and school_level = 'MS'
-                and assignment_category_code = 'S'
-                and (assign_final_score_percent)
-                not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100),
-                true,
-                false
-            ) as assign_s_ms_score_not_conversion_chart_options,
 
-            if(
-                isexempt = 0
-                and school_level = 'HS'
-                and assignment_category_code = 'S'
-                and not is_ap_course
-                and (assign_final_score_percent)
-                not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100),
-                true,
-                false
-            ) as assign_s_hs_score_not_conversion_chart_options,
 
         from grades_and_assignments
-    )
+    )*/
 
 select distinct
     _dbt_source_relation,

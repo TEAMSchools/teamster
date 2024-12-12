@@ -30,6 +30,8 @@ with
             s.scorepoints as raw_score,
             s.actualscoreentered,
 
+            if(ce.ap_course_subject is not null, true, false) as is_ap_course,
+
             if(s.islate = 0 or s.islate is null, false, true) as islate,
             if(s.isexempt = 0 or s.isexempt is null, false, true) as isexempt,
             if(s.ismissing = 0 or s.ismissing is null, false, true) as ismissing,
@@ -142,9 +144,32 @@ select
     score_entered,
     assign_final_score_percent,
 
-    if(isexempt, 1, 0) as isexempt,
-    if(islate, 1, 0) as islate,
-    if(ismissing, 1, 0) as ismissing,
+    if(isexempt, 1, 0) as is_exempt,
+    if(islate, 1, 0) as is_late,
+    if(ismissing, 1, 0) as is_missing,
+
+    if(
+        not isexempt
+        and school_level = 'MS'
+        and assignment_category_code = 'S'
+        and assign_final_score_percent is not null
+        and assign_final_score_percent
+        not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100),
+        true,
+        false
+    ) as assign_s_ms_score_not_conversion_chart_options,
+
+    if(
+        not isexempt
+        and school_level = 'HS'
+        and assignment_category_code = 'S'
+        and not is_ap_course
+        and assign_final_score_percent is not null
+        and assign_final_score_percent
+        not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100),
+        true,
+        false
+    ) as assign_s_hs_score_not_conversion_chart_options,
 
     if(raw_score > totalpointvalue, true, false) as assign_score_above_max,
 
