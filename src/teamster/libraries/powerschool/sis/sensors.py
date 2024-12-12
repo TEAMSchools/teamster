@@ -83,6 +83,8 @@ def build_powerschool_asset_sensor(
 
             if "Could not establish session to SSH gateway" in e_str:
                 return SkipReason(e_str)
+            # tunnel can sometimes get stuck open
+            # pod requires reset, handled by pod TTL
             elif "An error occurred while opening tunnels." in e_str:
                 return SkipReason(e_str)
             else:
