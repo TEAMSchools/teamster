@@ -23,6 +23,13 @@ select
     ) as is_6yr_ba_grad_int,
 
     if(
+        ei.ba_status = 'Graduated'
+        and ei.ba_actual_end_date <= date((c.ktc_cohort + 7), 08, 31),
+        1,
+        0
+    ) as is_7yr_ba_grad_int,
+
+    if(
         ei.aa_status = 'Graduated'
         and ei.aa_actual_end_date <= date((c.ktc_cohort + 2), 08, 31),
         1,
