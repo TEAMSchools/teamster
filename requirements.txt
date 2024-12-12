@@ -312,9 +312,9 @@ giturlparse==0.12.0 \
 google-api-core==2.24.0 \
     --hash=sha256:10d82ac0fca69c82a25b3efdeefccf6f28e02ebb97925a8cce8edbfe379929d9 \
     --hash=sha256:e255640547a597a4da010876d333208ddac417d60add22b6851a0c66a831fcaf
-google-api-python-client==2.154.0 \
-    --hash=sha256:1b420062e03bfcaa1c79e2e00a612d29a6a934151ceb3d272fe150a656dc8f17 \
-    --hash=sha256:a521bbbb2ec0ba9d6f307cdd64ed6e21eeac372d1bd7493a4ab5022941f784ad
+google-api-python-client==2.155.0 \
+    --hash=sha256:25529f89f0d13abcf3c05c089c423fb2858ac16e0b3727543393468d0d7af67c \
+    --hash=sha256:83fe9b5aa4160899079d7c93a37be306546a17e6686e2549bcc9584f1a229747
 google-auth==2.36.0 \
     --hash=sha256:51a15d47028b66fd36e5c64a82d2d57480075bccc7da37cde257fc94177a61fb \
     --hash=sha256:545e9618f2df0bcbb7dcbc45a546485b1212624716975a1ea5ae8149ce769ab1
