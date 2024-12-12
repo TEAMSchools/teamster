@@ -40,8 +40,9 @@ dagsterCloudAgent:
     cloud.google.com/gke-spot: "true"
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
-  securityContext:
-    runAsNonRoot: true
+  # securityContext:
+  #   runAsNonRoot: true
+  #   allowPrivilegeEscalation: false
 
 ########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
@@ -57,8 +58,9 @@ workspace:
       cpu: 500m
       memory: 1.0Gi
 
-    securityContext:
-      runAsNonRoot: true
+    # securityContext:
+    #   runAsNonRoot: true
+    #   allowPrivilegeEscalation: false
 
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
