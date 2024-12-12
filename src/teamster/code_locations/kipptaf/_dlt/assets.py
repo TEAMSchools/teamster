@@ -53,6 +53,7 @@ class CustomDagsterDltTranslator(DagsterDltTranslator):
 
 
 def build_dlt_assets(
+    code_location: str,
     credentials,
     schema: str,
     table_names: list[str],
@@ -60,7 +61,7 @@ def build_dlt_assets(
     destination: str,
 ):
     @dlt_assets(
-        name=f"dlt__{pipeline_name}__{schema}",
+        name=f"{code_location}__dlt__{pipeline_name}__{schema}",
         dlt_source=sql_database(
             credentials=credentials,
             schema=schema,
@@ -70,10 +71,10 @@ def build_dlt_assets(
         dlt_pipeline=pipeline(
             pipeline_name=pipeline_name,
             destination=destination,
-            dataset_name=f"dagster_dlt_{pipeline_name}_{schema}",
+            dataset_name=f"dagster_{code_location}_dlt_{pipeline_name}_{schema}",
             progress="log",
         ),
-        dagster_dlt_translator=CustomDagsterDltTranslator(CODE_LOCATION),
+        dagster_dlt_translator=CustomDagsterDltTranslator(code_location),
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
         yield from dlt.run(
@@ -102,6 +103,7 @@ config_file = pathlib.Path(__file__).parent / "config" / "illuminate.yaml"
 
 assets = [
     build_dlt_assets(
+        code_location=CODE_LOCATION,
         credentials=illuminate_credentials,
         pipeline_name="illuminate",
         destination="bigquery",
