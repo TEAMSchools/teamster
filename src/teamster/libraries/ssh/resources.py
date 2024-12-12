@@ -20,20 +20,21 @@ class SSHResource(DagsterSSHResource):
         if not self.allow_host_key_change:
             self.log.warning(
                 (
-                    "Remote Identification Change is not verified. "
-                    "This won't protect against Man-In-The-Middle attacks"
+                    "Remote Identification Change is not verified. This won't protect "
+                    "against Man-In-The-Middle attacks"
                 )
             )
             client.load_system_host_keys()
 
         if self.no_host_key_check:
             self.log.warning(
-                (
-                    "No Host Key Verification. "
-                    "This won't protect against Man-In-The-Middle attacks"
+                msg=(
+                    "No Host Key Verification. This won't protect against "
+                    "Man-In-The-Middle attacks"
                 )
             )
             # Default is RejectPolicy
+            # trunk-ignore(bandit/B507)
             client.set_missing_host_key_policy(AutoAddPolicy())
 
         if self.password and self.password.strip():
