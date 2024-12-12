@@ -3,16 +3,13 @@ import pathlib
 
 import yaml
 from dagster import AssetExecutionContext, AssetKey, EnvVar, _check
-from dagster_embedded_elt.dlt import (
-    DagsterDltResource,
-    DagsterDltTranslator,
-    dlt_assets,
-)
+from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.sources.sql_database import remove_nullability_adapter, sql_database
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf._dlt.asset_decorator import dlt_assets
 
 
 class CustomDagsterDltTranslator(DagsterDltTranslator):
@@ -73,6 +70,7 @@ def build_dlt_assets(
         name=f"{code_location}__dlt__{pipeline_name}__{schema}__{table_name}",
         group_name=pipeline_name,
         dagster_dlt_translator=CustomDagsterDltTranslator(code_location),
+        op_tags={"dagster/concurrency_key": f"dlt_{pipeline_name}_{code_location}"},
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
         yield from dlt.run(
