@@ -25,13 +25,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Copy the project into the image
 COPY src/ /app/src/
 
-# Install dbt project
-RUN dagster-dbt project prepare-and-package \
---file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
-
 # Sync the project
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-editable
+    uv sync --frozen --no-dev
+
+# Install dbt project
+RUN dagster-dbt project prepare-and-package \
+    --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
 
 # Create a custom user with UID 1234 and GID 1234
 RUN groupadd -g 1234 teamster \
