@@ -14,11 +14,11 @@ with
             c.week_start_monday,
             c.week_end_sunday,
             c.school_week_start_date_lead,
-            c.assignmentid,
-            c.assignment_name,
-            c.duedate,
-            c.scoretype,
-            c.totalpointvalue,
+            c.teacher_assign_id,
+            c.teacher_assign_name,
+            c.teacher_assign_due_date,
+            c.teacher_assign_score_type,
+            c.teacher_assign_max_score,
             c.n_students,
             c.n_late,
             c.n_exempt,
@@ -32,7 +32,7 @@ with
             ge.assignment_category_term,
             ge.expectation,
 
-            sum(c.totalpointvalue) over (
+            sum(c.teacher_assign_max_score) over (
                 partition by c._dbt_source_relation, c.sectionid, c.quarter
             ) as total_totalpointvalue_section_quarter,
 
@@ -40,7 +40,7 @@ with
                 partition by c._dbt_source_relation, c.sectionid, c.quarter
             ) as total_missing_section_quarter,
 
-            count(c.assignmentid) over (
+            count(c.teacher_assign_id) over (
                 partition by
                     c._dbt_source_relation,
                     c.sectionid,
@@ -73,11 +73,11 @@ select
     assignment_category_name,
     assignment_category_term,
     expectation,
-    assignmentid,
-    assignment_name,
-    scoretype,
-    totalpointvalue,
-    duedate,
+    teacher_assign_id,
+    teacher_assign_name,
+    teacher_assign_score_type,
+    teacher_assign_max_score,
+    teacher_assign_due_date,
     n_students,
     n_late,
     n_exempt,
@@ -88,7 +88,7 @@ select
 
     assignment_count_section_quarter_category_running_week
     as teacher_running_total_assign_by_cat,
-    if(assignmentid is not null, 1, 0) as teacher_assign_count,
+    if(teacher_assign_id is not null, 1, 0) as teacher_assign_count,
 
     if(
         assignment_category_code = 'W'
@@ -112,11 +112,11 @@ select
     ) as s_expected_assign_count_not_met,
 
     if(
-        assignment_category_code = 'W' and totalpointvalue != 10, true, false
+        assignment_category_code = 'W' and teacher_assign_max_score != 10, true, false
     ) as w_assign_max_score_not_10,
 
     if(
-        assignment_category_code = 'F' and totalpointvalue != 10, true, false
+        assignment_category_code = 'F' and teacher_assign_max_score != 10, true, false
     ) as f_assign_max_score_not_10,
 
     if(
