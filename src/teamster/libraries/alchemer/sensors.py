@@ -135,7 +135,10 @@ def build_alchemer_survey_response_asset_sensor(
                 run_config = {
                     "execution": {
                         "config": {
-                            "resources": {"limits": {"cpu": "500m", "memory": "4.0Gi"}}
+                            "resources": {
+                                "requests": {"cpu": "250m", "memory": "0.5Gi"},
+                                "limits": {"cpu": "500m", "memory": "4.0Gi"},
+                            }
                         }
                     }
                 }

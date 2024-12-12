@@ -2,9 +2,10 @@ version: 2
 
 sources:
   - name: amplify
-    schema:
-      "{% if env_var('DBT_DEV', '') == 'true' %}_dev_kipptaf_amplify{% else %}kipptaf_amplify{%
-      endif %}"
+    schema: |
+      {% if env_var('DBT_DEV', '') == 'true' -%}_dev_kipptaf_amplify
+      {%- else -%}kipptaf_amplify
+      {%- endif %}
     tags:
       - stage_external_sources
     tables:

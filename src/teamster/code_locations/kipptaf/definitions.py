@@ -75,7 +75,6 @@ defs = Definitions(
         *ldap.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
-        *tableau.schedules,
     ],
     sensors=[
         *_google.sensors,

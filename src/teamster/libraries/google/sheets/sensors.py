@@ -25,6 +25,7 @@ def build_google_sheets_asset_sensor(
         cursor: dict = json.loads(context.cursor or "{}")
         asset_events: list = []
 
+        # TODO: add asset event for newly created specs
         for sheet_id, group in groupby(
             iterable=asset_specs, key=lambda x: x.metadata["sheet_id"]
         ):
