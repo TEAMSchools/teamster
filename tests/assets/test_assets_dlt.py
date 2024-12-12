@@ -2,7 +2,7 @@ from dagster import TextMetadataValue, _check, materialize
 from dagster._core.events import StepMaterializationData
 from dagster_embedded_elt.dlt import DagsterDltResource
 
-from teamster.code_locations.kipptaf._dlt.assets import assets
+from teamster.code_locations.kipptaf._dlt import assets
 
 
 def _test_dlt_assets(assets, selection):
