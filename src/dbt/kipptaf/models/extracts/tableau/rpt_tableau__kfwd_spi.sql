@@ -42,13 +42,20 @@ select
     if(e.status = 'Graduated', true, false) as is_graduated,
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
     if(e.id = ei.ugrad_enrollment_id, true, false) as is_ugrad_enrollment,
-    if(
-        e.status in ('Attending', 'Graduated')
-        and a.id = ei.ecc_account_id
-        and r.ktc_cohort <= {{ var("current_academic_year") - 7 }},
-        true,
-        false
-    ) as is_continuing_completing,
+    case
+        when
+            e.status in ('Attending', 'Graduated')
+            and r.ktc_cohort
+            between {{ var("current_academic_year") - 5 }}
+            and {{ var("current_academic_year") }}
+        then true
+        when
+            e.status not in ('Attending', 'Graduated')
+            and r.ktc_cohort
+            between {{ var("current_academic_year") - 5 }}
+            and {{ var("current_academic_year") }}
+        then false
+    end as is_continuing_completing,
 
     if(ei.ecc_account_name = ei.ugrad_account_name, 1, 0) as is_same_school,
 
@@ -121,7 +128,6 @@ from {{ ref("int_kippadb__roster") }} as r
 inner join
     {{ ref("stg_kippadb__enrollment") }} as e
     on r.contact_id = e.student
-    and e.pursuing_degree_type in ("Bachelor's (4-year)", "Associate's (2 year)")
     and e.status != 'Did Not Enroll'
 left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
