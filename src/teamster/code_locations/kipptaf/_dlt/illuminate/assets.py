@@ -61,7 +61,7 @@ def build_dlt_assets(
     code_location: str,
     credentials,
     schema: str,
-    table_names: list[str],
+    table_name: str,
     pipeline_name: str,
     destination: str,
 ):
@@ -69,13 +69,13 @@ def build_dlt_assets(
     dlt_source = sql_database.with_args(name=pipeline_name)(
         credentials=credentials,
         schema=schema,
-        table_names=table_names,
+        table_names=[table_name],
         defer_table_reflect=True,
         table_adapter_callback=remove_nullability_adapter,
     )
 
     @dlt_assets(
-        name=f"{code_location}__dlt__{pipeline_name}__{schema}",
+        name=f"{code_location}__dlt__{pipeline_name}__{schema}__{table_name}",
         dlt_source=dlt_source,
         dlt_pipeline=pipeline(
             pipeline_name=pipeline_name,
@@ -115,7 +115,7 @@ assets = [
         pipeline_name="illuminate",
         destination="bigquery",
         schema=a["schema"],
-        table_names=[t],
+        table_name=t,
     )
     for a in yaml.safe_load(config_file.read_text())["assets"]
     for t in a["table_names"]
