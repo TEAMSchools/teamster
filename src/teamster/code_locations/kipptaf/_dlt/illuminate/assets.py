@@ -27,7 +27,7 @@ class CustomDagsterDltTranslator(DagsterDltTranslator):
                 "dlt",
                 resource.source_name,
                 resource.explicit_args["schema"],
-                *resource.explicit_args["table"],
+                resource.explicit_args["table"],
             ]
         )
 
@@ -46,7 +46,7 @@ class CustomDagsterDltTranslator(DagsterDltTranslator):
                     self.code_location,
                     resource.source_name,
                     resource.explicit_args["schema"],
-                    *resource.explicit_args["table"],
+                    resource.explicit_args["table"],
                 ]
             )
         ]
