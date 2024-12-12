@@ -98,6 +98,8 @@ models:
       tableau:
         +schema: tableau
         +materialized: view
+    facebook:
+      +enabled: false
     finance:
       +schema: finance
       staging:
@@ -123,6 +125,7 @@ models:
           archive:
             +enabled: false
     instagram:
+      +enabled: false
       business:
         +schema: instagram_business
     iready:
@@ -153,6 +156,8 @@ models:
       +schema: powerschool
     powerschool_enrollment:
       +schema: powerschool_enrollment
+    qa:
+      +schema: qa
     renlearn:
       +schema: renlearn
     reporting:
@@ -171,6 +176,7 @@ models:
       +schema: surveys
       +materialized: table
     tableau:
+      +enabled: false
       +schema: tableau
       staging:
         +materialized: table

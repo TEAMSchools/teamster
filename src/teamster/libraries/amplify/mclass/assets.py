@@ -1,6 +1,6 @@
 from io import StringIO
 
-from dagster import AssetExecutionContext, Output, asset
+from dagster import MAX_RUNTIME_SECONDS_TAG, AssetExecutionContext, Output, asset
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
@@ -12,7 +12,7 @@ from teamster.core.asset_checks import (
 from teamster.libraries.amplify.mclass.resources import MClassResource
 
 
-def build_mclass_asset(asset_key, dyd_payload, partitions_def, schema, op_tags=None):
+def build_mclass_asset(asset_key, dyd_payload, partitions_def, schema):
     @asset(
         key=asset_key,
         metadata={"dyd_payload": dyd_payload},
@@ -20,7 +20,7 @@ def build_mclass_asset(asset_key, dyd_payload, partitions_def, schema, op_tags=N
         partitions_def=partitions_def,
         group_name="amplify",
         kinds={"python"},
-        op_tags=op_tags,
+        op_tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: AssetExecutionContext, mclass: MClassResource):

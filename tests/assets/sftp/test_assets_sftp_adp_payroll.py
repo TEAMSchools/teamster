@@ -47,6 +47,9 @@ def _test_asset(asset, partition_key=None, instance=None):
 
 
 def test_adp_payroll_general_ledger_file_kipptaf():
+    date_key = "20241130"
+    group_code_key = "47S"
+
     partitions_def = _check.inst(
         obj=general_ledger_file.partitions_def, ttype=MultiPartitionsDefinition
     )
@@ -60,9 +63,11 @@ def test_adp_payroll_general_ledger_file_kipptaf():
 
     with instance_for_test() as instance:
         instance.add_dynamic_partitions(
-            partitions_def_name=partitions_def_name, partition_keys=["20240731"]
+            partitions_def_name=partitions_def_name, partition_keys=[date_key]
         )
 
         _test_asset(
-            asset=general_ledger_file, instance=instance, partition_key="20240731|2Z3"
+            asset=general_ledger_file,
+            instance=instance,
+            partition_key=f"{date_key}|{group_code_key}",
         )

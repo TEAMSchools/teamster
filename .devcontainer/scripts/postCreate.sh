@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# specify how to reconcile divergent branches
-git config pull.rebase false # merge
+git config pull.rebase false # specify how to reconcile divergent branches (merge)
+git config push.autoSetupRemote true
 
 # add gcloud gpg key
 curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg || true
@@ -12,6 +12,9 @@ sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
   sudo apt-get -y --no-install-recommends install bash-completion google-cloud-cli &&
   sudo rm -rf /var/lib/apt/lists/*
+
+# auth gcloud
+gcloud auth login --enable-gdrive-access --update-adc
 
 # create env folder
 mkdir -p ./env
