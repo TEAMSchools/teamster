@@ -18,10 +18,8 @@ with
             c.week_end_sunday,
             c.school_week_start_date_lead,
 
-            ge.assignment_category_code,
-            ge.assignment_category_term,
-            ge.expectation,
-
+            a.category_code as assignment_category_code,
+            a.category_name as assignment_category_name,
             a.assignmentid,
             a.name as assignment_name,
             a.duedate,
@@ -29,12 +27,25 @@ with
             a.totalpointvalue,
             a.category_name,
 
-            s.scorepoints,
+            s.scorepoints as raw_score,
             s.actualscoreentered,
 
             if(s.islate = 0 or s.islate is null, false, true) as islate,
             if(s.isexempt = 0 or s.isexempt is null, false, true) as isexempt,
             if(s.ismissing = 0 or s.ismissing is null, false, true) as ismissing,
+
+            if(
+                a.scoretype = 'POINTS',
+                s.scorepoints,
+                safe_cast(s.actualscoreentered as numeric)
+            ) as score_entered,
+
+            if(
+                a.scoretype = 'POINTS',
+                round(safe_divide(s.scorepoints, a.totalpointvalue) * 100, 2),
+                safe_cast(s.actualscoreentered as numeric)
+            ) as assign_final_score_percent,
+
         from {{ ref("base_powerschool__course_enrollments") }} as ce
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
@@ -46,13 +57,6 @@ with
             and ce.cc_yearid = c.yearid
             and c.week_end_date between ce.cc_dateenrolled and ce.cc_dateleft
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="c") }}
-        inner join
-            {{ ref("stg_reporting__gradebook_expectations") }} as ge
-            on c.academic_year = ge.academic_year
-            and c.quarter = ge.quarter
-            and c.week_number_quarter = ge.week_number
-            and c.region = ge.region
-            and sch.school_level = ge.school_level
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on ce.sections_dcid = a.sectionsdcid
@@ -60,7 +64,6 @@ with
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="a") }}
             and a.duedate between c.week_start_date and c.week_end_date
             and {{ union_dataset_join_clause(left_alias="c", right_alias="a") }}
-            and ge.assignment_category_name = a.category_name
             and a.iscountedinfinalgrade = 1
             and a.scoretype in ('POINTS', 'PERCENT')
         left join
@@ -104,7 +107,7 @@ with
                 '73252SEM72250G4'
             )
             /* exclude F & S categories for iReady courses */
-            and concat(ce.cc_course_number, ge.assignment_category_code) not in (
+            and concat(ce.cc_course_number, a.category_code) not in (
                 'SEM72005G1F',
                 'SEM72005G2F',
                 'SEM72005G3F',
@@ -129,68 +132,62 @@ select
     school_week_start_date_lead,
     school_level,
     assignment_category_code,
-    category_name,
-    assignment_category_term,
+    assignment_category_name,
     assignmentid,
     assignment_name,
     duedate,
     scoretype,
     totalpointvalue,
-    actualscoreentered,
-    scorepoints,
-
-    round(
-        safe_divide(scorepoints, totalpointvalue) * 100, 2
-    ) as assign_final_score_percent,
+    raw_score,
+    score_entered,
+    assign_final_score_percent,
 
     if(isexempt, 1, 0) as isexempt,
     if(islate, 1, 0) as islate,
     if(ismissing, 1, 0) as ismissing,
 
-    if(scorepoints > totalpointvalue, true, false) as assign_score_above_max,
+    if(raw_score > totalpointvalue, true, false) as assign_score_above_max,
 
     if(
         assignmentid is not null and not isexempt, true, false
     ) as assign_expected_to_be_scored,
 
     if(
-        assignmentid is not null and scorepoints is not null and not isexempt,
-        true,
-        false
+        assignmentid is not null and raw_score is not null and not isexempt, true, false
     ) as assign_scored,
 
     if(
-        assignmentid is not null and scorepoints is null and not isexempt, true, false
+        assignmentid is not null and raw_score is null and not isexempt, true, false
     ) as assign_null_score,
 
     if(
         assignmentid is not null
         and not isexempt
-        and ((not ismissing and scorepoints is not null) or scorepoints is not null),
+        and ((not ismissing and raw_score is not null) or raw_score is not null),
         true,
         false
     ) as assign_expected_with_score,
 
-    if(isexempt and scorepoints > 0, true, false) as assign_exempt_with_score,
+    if(isexempt and raw_score > 0, true, false) as assign_exempt_with_score,
 
     if(
-        assignment_category_code = 'W' and scorepoints < 5, true, false
+        assignment_category_code = 'W' and raw_score < 5, true, false
     ) as assign_w_score_less_5,
 
     if(
-        assignment_category_code = 'F' and scorepoints < 5, true, false
+        assignment_category_code = 'F' and raw_score < 5, true, false
     ) as assign_f_score_less_5,
 
     if(
-        assignment_category_code = 'W' and ismissing and scorepoints != 5, true, false
+        assignment_category_code = 'W' and ismissing and raw_score != 5, true, false
     ) as assign_w_missing_score_not_5,
 
     if(
-        assignment_category_code = 'F' and ismissing and scorepoints != 5, true, false
+        assignment_category_code = 'F' and ismissing and raw_score != 5, true, false
     ) as assign_f_missing_score_not_5,
 
     if(
-        assignment_category_code = 'S' and scorepoints < (totalpointvalue / 2),
+        assignment_category_code = 'S' and raw_score < (totalpointvalue / 2),
         true,
         false
     ) as assign_s_score_less_50p,
