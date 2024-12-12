@@ -27,9 +27,9 @@ COPY src/ /app/src/
 
 # Sync the project
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-editable
+    uv sync --frozen --no-dev
 
-# install dbt project
+# Install dbt project
 RUN dagster-dbt project prepare-and-package \
     --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
 

@@ -29,7 +29,7 @@ lint:
     - taplo@0.9.3
     - terrascan@1.19.1
     - trivy@0.58.0
-    - trufflehog@3.86.0
+    - trufflehog@3.86.1
     - yamllint@1.35.1
   disabled:
     - black
