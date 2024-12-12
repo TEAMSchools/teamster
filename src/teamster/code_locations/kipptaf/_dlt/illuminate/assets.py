@@ -32,29 +32,17 @@ class CustomDagsterDltTranslator(DagsterDltTranslator):
         )
 
     def get_deps_asset_keys(self, resource):
-        if resource.is_transformer:
-            pipe = resource._pipe
-
-            while pipe.has_parent:
-                pipe = pipe.parent
-
-            return [AssetKey(f"{resource.source_name}_{pipe.name}")]
-
-        return [
-            AssetKey(
-                [
-                    self.code_location,
-                    resource.source_name,
-                    resource.explicit_args["schema"],
-                    resource.explicit_args["table"],
-                ]
-            )
-        ]
+        return []
 
     def get_tags(self, resource):
         return {
-            "dagster/concurrency_key": f"dlt_{resource.source_name}_{self.code_location}"
+            "dagster/concurrency_key": (
+                f"dlt_{resource.source_name}_{self.code_location}"
+            )
         }
+
+    def get_kinds(self, resource, destination):
+        return {"dlt", "postgresql", destination.destination_name}
 
 
 def build_dlt_assets(
@@ -75,7 +63,6 @@ def build_dlt_assets(
     )
 
     @dlt_assets(
-        name=f"{code_location}__dlt__{pipeline_name}__{schema}__{table_name}",
         dlt_source=dlt_source,
         dlt_pipeline=pipeline(
             pipeline_name=pipeline_name,
@@ -83,6 +70,8 @@ def build_dlt_assets(
             dataset_name=f"dagster_{code_location}_dlt_{pipeline_name}_{schema}",
             progress="log",
         ),
+        name=f"{code_location}__dlt__{pipeline_name}__{schema}__{table_name}",
+        group_name=pipeline_name,
         dagster_dlt_translator=CustomDagsterDltTranslator(code_location),
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
