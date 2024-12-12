@@ -41,6 +41,11 @@ locations:
                     items:
                       - key: service_account_gserviceaccount.json
                         path: gcloud_service_account_json
+                - secret:
+                    name: op-gcp-service-account-dlt
+                    items:
+                      - key: keyfile.json
+                        path: gcloud_teamster_dlt_keyfile.json
         server_k8s_config:
           container_config:
             env:
@@ -374,6 +379,31 @@ locations:
                   secretKeyRef:
                     name: op-slack-api
                     key: credential
+              - name: ILLUMINATE_DB_DRIVERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: driver
+              - name: ILLUMINATE_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: ip
+              - name: ILLUMINATE_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: database
+              - name: ILLUMINATE_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: username
+              - name: ILLUMINATE_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: password
         run_k8s_config:
           container_config:
             env:
@@ -707,3 +737,28 @@ locations:
                   secretKeyRef:
                     name: op-slack-api
                     key: credential
+              - name: ILLUMINATE_DB_DRIVERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: driver
+              - name: ILLUMINATE_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: ip
+              - name: ILLUMINATE_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: database
+              - name: ILLUMINATE_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: username
+              - name: ILLUMINATE_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: password
