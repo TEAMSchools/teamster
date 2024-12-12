@@ -20,37 +20,12 @@ from dagster import (
     sensor,
 )
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import text
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.utils import get_query_text
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.ssh.sshtunnel.errors import BaseSSHTunnelForwarderError
-
-
-def get_query_text(
-    table: str,
-    column: str | None,
-    start_value: str | None = None,
-    end_value: str | None = None,
-):
-    if column is None:
-        query = f"SELECT COUNT(*) FROM {table}"
-    elif end_value is None:
-        query = (
-            f"SELECT COUNT(*) FROM {table} "
-            f"WHERE {column} >= "
-            f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
-        )
-    else:
-        query = (
-            f"SELECT COUNT(*) FROM {table} "
-            f"WHERE {column} BETWEEN "
-            f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
-            f"TO_TIMESTAMP('{end_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
-        )
-
-    return text(query)
 
 
 def build_powerschool_asset_sensor(
@@ -62,7 +37,7 @@ def build_powerschool_asset_sensor(
     jobs = []
     keys_by_partitions_def = defaultdict(set[AssetKey])
 
-    base_job_name = f"{code_location}_powerschool_sis_asset_job"
+    base_job_name = f"{code_location}__powerschool__sis__asset_job"
 
     asset_keys = [a.key for a in asset_selection]
 
@@ -107,6 +82,10 @@ def build_powerschool_asset_sensor(
             e_str = str(e)
 
             if "Could not establish session to SSH gateway" in e_str:
+                return SkipReason(e_str)
+            # tunnel can sometimes get stuck open
+            # pod requires reset, handled by pod TTL
+            elif "An error occurred while opening tunnels." in e_str:
                 return SkipReason(e_str)
             else:
                 raise e

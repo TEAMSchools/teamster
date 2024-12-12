@@ -15,8 +15,6 @@ select
     sr.sam_account_name as tableau_username,
     sr.reports_to_sam_account_name as tableau_manager_username,
 
-    lx.mdo_employee_number,
-
     /* future feeds from other data sources*/
     null as itr_response,
     null as certification_renewal_status,
@@ -39,6 +37,10 @@ select
             in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
         then 'New Jersey'
         when sr.home_business_unit_name = 'KIPP Miami'
+        then 'Miami'
+        when
+            sr.home_work_location_name = 'Room 11'
+            and sr.job_title = 'Managing Director of Operations'
         then 'Miami'
         else 'CMO'
     end as region_state,
@@ -104,9 +106,6 @@ inner join
     {{ ref("stg_people__location_crosswalk") }} as lc
     on sr.home_work_location_name = lc.name
 left join
-    {{ ref("int_people__leadership_crosswalk") }} as lx
-    on sr.home_work_location_name = lx.home_work_location_name
-left join
     {{ ref("stg_people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.location_name
 left join
@@ -134,7 +133,6 @@ select
     null as worker_termination_date,
     null as tableau_username,
     null as tableau_manager_username,
-    null as mdo_employee_number,
     null as itr_response,
     null as certification_renewal_status,
     null as last_performance_management_score,
@@ -164,7 +162,6 @@ select
     null as worker_termination_date,
     null as tableau_username,
     null as tableau_manager_username,
-    null as mdo_employee_number,
     null as itr_response,
     null as certification_renewal_status,
     null as last_performance_management_score,
@@ -194,7 +191,6 @@ select
     null as worker_termination_date,
     null as tableau_username,
     null as tableau_manager_username,
-    null as mdo_employee_number,
     null as itr_response,
     null as certification_renewal_status,
     null as last_performance_management_score,
@@ -224,7 +220,6 @@ select
     null as worker_termination_date,
     null as tableau_username,
     null as tableau_manager_username,
-    null as mdo_employee_number,
     null as itr_response,
     null as certification_renewal_status,
     null as last_performance_management_score,
