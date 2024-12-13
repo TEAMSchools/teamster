@@ -112,7 +112,9 @@ with
     attachments as (
         select
             incident_id,
-            string_agg(concat(entity_name, ' (', date(file_posted_at__date), ')'), '; ')
+            string_agg(
+                concat(entity_name, ' (', date(file_posted_at__date), ')'), '; '
+            ) as attachments,
         from {{ ref("stg_deanslist__incidents__attachments") }}
         where
             entity_name in (
@@ -180,6 +182,8 @@ select
     ar.att_discrepancy_count,
 
     ms.ms_attended,
+
+    ats.attachments,
 
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
