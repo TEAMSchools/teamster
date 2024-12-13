@@ -87,7 +87,7 @@ def build_dlt_assets(
         defer_table_reflect=True,
         table_adapter_callback=remove_nullability_adapter,
         query_adapter_callback=query_adapter_callback,
-        chunk_size=100000,
+        chunk_size=500000,
     ).parallelize()
 
     @dlt_assets(
