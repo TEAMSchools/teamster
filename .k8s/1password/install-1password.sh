@@ -12,7 +12,7 @@ helm show values 1password/connect >.k8s/1password/values.yaml
 
 helm upgrade \
   --install connect 1password/connect \
-  --set-file connect.credentials=/etc/secret-volume/op_credentials_json \
+  --set-file connect.credentials=1password-credentials.json \
   --set operator.token.value="${OP_CONNECT_TOKEN}" \
   --namespace dagster-cloud \
   -f .k8s/1password/values-override.yaml
