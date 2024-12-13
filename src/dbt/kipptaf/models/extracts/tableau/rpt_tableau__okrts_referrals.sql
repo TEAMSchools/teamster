@@ -95,17 +95,33 @@ with
         select
             rs.student_id as student_number,
             rs.dl_incident_id as incident_id,
+            rs.dl_penalty_id as penalty_id,
 
             lc.powerschool_school_id as schoolid,
 
             row_number() over (
-                partition by rs.student_id, rs.dl_incident_id, lc.powerschool_school_id
+                partition by rs.student_id, rs.dl_penalty_id, lc.powerschool_school_id
                 order by rs.consequence desc
-            ) as rn_incident,
+            ) as rn_penalty,
         from {{ ref("stg_deanslist__reconcile_suspensions") }} as rs
         inner join
             {{ ref("stg_people__location_crosswalk") }} as lc
             on rs.school_name = lc.name
+    ),
+
+    attachments as (
+        select
+            incident_id,
+            string_agg(concat(entity_name, ' (', date(file_posted_at__date), ')'), '; ')
+        from {{ ref("stg_deanslist__incidents__attachments") }}
+        where
+            entity_name in (
+                'KIPP Miami Suspension Letter',
+                'Short-Term OSS (no further investigation)',
+                'OSS Long-Term Suspension',
+                'OSS Suspended Next Day'
+            )
+        group by all
     )
 
 select
@@ -136,6 +152,7 @@ select
 
     dli.incident_id,
     dli.create_ts_date,
+    dli.return_date_date as return_date,
     dli.category,
     dli.reported_details,
     dli.admin_summary,
@@ -286,13 +303,14 @@ left join
 left join
     suspension_reconciliation_rollup as sr
     on co.student_number = sr.student_number
-    and dli.incident_id = sr.incident_id
+    and dlp.incident_penalty_id = sr.penalty_id
     and co.schoolid = sr.schoolid
-    and sr.rn_incident = 1
+    and sr.rn_penalty = 1
 left join
     ms_grad_sub as ms
     on co.student_number = ms.student_number
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ms") }}
     and ms.rn = 1
+left join attachments as ats on dli.incident_id = ats.incident_id
 where
     co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99
