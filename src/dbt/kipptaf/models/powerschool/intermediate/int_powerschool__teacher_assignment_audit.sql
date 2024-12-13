@@ -4,6 +4,7 @@ with
     assignments as (
         select
             c._dbt_source_relation,
+            c.region,
             c.sectionid,
             c.schoolid,
             c.teacher_number,
@@ -61,6 +62,7 @@ with
 
 select
     _dbt_source_relation,
+    region,
     sectionid,
     teacher_number,
     `quarter`,
@@ -126,5 +128,13 @@ select
         true,
         false
     ) as qt_teacher_s_total_greater_200,
+
+    if(
+        region = 'Miami'
+        and assignment_category_code = 'S'
+        and teacher_assign_max_score > 100,
+        true,
+        false
+    ) as s_max_score_greater_100,
 
 from assignments
