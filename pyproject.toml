@@ -19,7 +19,7 @@ dependencies = [
   "dagster-ssh",
   "dagster-embedded-elt",
   "dbt-bigquery>=1.8,<1.9",
-  "dbt-core>=1.8,<1.9",
+  "dbt-core>=1.8,<1.10",
   "beautifulsoup4>=4.12.2",
   "cmake>=3.28.1",
   "cramjam>=2.7.0",
