@@ -189,7 +189,10 @@ with
     ),
 
     student_course_nj_ms_hs as (
-        
+        -- note for charlie if this is moved out of int_tableau: i dont have a way to
+        -- dedup this otherwise because the FROM table uses categories, and for this
+        -- flag tagging, categories are not used, just the course rows themselves.
+        -- open to suggestions on how to dedup without distinct, tho!
         select distinct
             _dbt_source_relation,
             academic_year,
@@ -243,7 +246,11 @@ with
     ),
 
     student_course_fl_ms as (
-        select
+        -- note for charlie if this is moved out of int_tableau: i dont have a way to
+        -- dedup this otherwise because the FROM table uses categories, and for this
+        -- flag tagging, categories are not used, just the course rows themselves.
+        -- open to suggestions on how to dedup without distinct, tho!
+        select distinct
             _dbt_source_relation,
             academic_year,
             academic_year_display,
@@ -266,9 +273,6 @@ with
             is_quarter_end_date_range,
             audit_due_date,
 
-            assignment_category_name,
-            assignment_category_code,
-            assignment_category_term,
             sectionid,
             credit_type,
             course_number,
@@ -317,7 +321,11 @@ with
     ),
 
     student_course_fl_es as (
-        select
+        -- note for charlie if this is moved out of int_tableau: i dont have a way to
+        -- dedup this otherwise because the FROM table uses categories, and for this
+        -- flag tagging, categories are not used, just the course rows themselves.
+        -- open to suggestions on how to dedup without distinct, tho!
+        select distinct
             _dbt_source_relation,
             academic_year,
             academic_year_display,
@@ -340,9 +348,6 @@ with
             is_quarter_end_date_range,
             audit_due_date,
 
-            assignment_category_name,
-            assignment_category_code,
-            assignment_category_term,
             sectionid,
             credit_type,
             course_number,
@@ -419,7 +424,11 @@ with
     ),
 
     student as (
-        select
+        -- note for charlie if this is moved out of int_tableau: i dont have a way to
+        -- dedup this otherwise because the FROM table uses categories, and for this
+        -- flag tagging, categories are not used, just the course rows themselves.
+        -- open to suggestions on how to dedup without distinct, tho!
+        select distinct
             _dbt_source_relation,
             academic_year,
             academic_year_display,
@@ -443,9 +452,6 @@ with
             is_quarter_end_date_range,
             audit_due_date,
 
-            '' as assignment_category_name,
-            '' as assignment_category_code,
-            '' as assignment_category_term,
             sectionid,
             credit_type,
             course_number,
@@ -556,6 +562,7 @@ with
             f.teacher_number,
             f.teacher_name,
 
+            t.teacher_assign_id,
             t.qt_teacher_s_total_greater_200,
             t.f_assign_max_score_not_10,
             t.s_max_score_greater_100,
@@ -862,9 +869,9 @@ select
     is_quarter_end_date_range,
     audit_due_date,
 
-    assignment_category_name,
-    assignment_category_code,
-    assignment_category_term,
+    null as assignment_category_name,
+    null as assignment_category_code,
+    null as assignment_category_term,
     sectionid,
     null as sections_dcid,
     null as section_number,
@@ -948,9 +955,9 @@ select
     is_quarter_end_date_range,
     audit_due_date,
 
-    assignment_category_name,
-    assignment_category_code,
-    assignment_category_term,
+    null as assignment_category_name,
+    null as assignment_category_code,
+    null as assignment_category_term,
     sectionid,
     null as sections_dcid,
     null as section_number,
@@ -1038,9 +1045,9 @@ select
     is_quarter_end_date_range,
     audit_due_date,
 
-    assignment_category_name,
-    assignment_category_code,
-    assignment_category_term,
+    null as assignment_category_name,
+    null as assignment_category_code,
+    null as assignment_category_term,
     sectionid,
     null as sections_dcid,
     null as section_number,
@@ -1114,8 +1121,8 @@ select
     schoolid,
     school,
 
-    student_number,
-    grade_level,
+    null as student_number,
+    null as grade_level,
     null as ada,
     null as ada_above_or_at_80,
     cast(null as date) as date_enrolled,
