@@ -605,7 +605,7 @@ left join
     and not apps.transfer_application
     and apps.rn_app_enr = 1
 left join {{ ref("int_kippadb__app_rollup") }} as ar on c.contact_id = ar.applicant
-left join {{ ref("int_kippadb__grad_calcs") }} as gc on c.contact_id = gc.contact_id
+left join {{ ref("int_kippadb__grad_calcs") }} as gc on c.contact_id = gc.student
 left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cnr
     on c.contact_id = cnr.contact_id
