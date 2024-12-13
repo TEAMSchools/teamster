@@ -35,6 +35,11 @@ class IlluminateDagsterDltTranslator(DagsterDltTranslator):
         return {"dlt", "postgresql", destination.destination_name}
 
 
+def filter_date_taken_callback(query: Select, table: TableClause):
+    """date_taken is a postgres infinity date type, breaks psycopg"""
+    return query.where(table.c.date_taken <= date(year=9999, month=12, day=31))
+
+
 def build_illuminate_dlt_assets(
     code_location: str,
     schema: str,
@@ -46,10 +51,6 @@ def build_illuminate_dlt_assets(
         op_tags = {}
 
     op_tags.update({"dagster/concurrency_key": f"dlt_illuminate_{code_location}"})
-
-    def filter_date_taken_callback(query: Select, table: TableClause):
-        """date_taken is a postgres infinity date type, breaks psycopg"""
-        return query.where(table.c.date_taken <= date(year=9999, month=12, day=31))
 
     # trunk-ignore(pyright/reportArgumentType)
     dlt_source = sql_database.with_args(name="illuminate")(
