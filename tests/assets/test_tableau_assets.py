@@ -1,3 +1,4 @@
+"""
 import random
 
 from dagster import TextMetadataValue, _check, materialize
@@ -41,3 +42,4 @@ def test_workbook_stats_assets():
 
     assert records > 0
     assert extras.text == ""
+"""

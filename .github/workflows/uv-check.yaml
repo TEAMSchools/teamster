@@ -25,5 +25,11 @@ jobs:
       - name: Install Python 3.12
         run: uv python install 3.12
 
-      - name: Install dependencies
-        run: uv sync --frozen --no-dev --no-install-project --no-editable
+      - name: Export uv lock to requirements.txt
+        run: uv export --output-file requirements.txt
+
+      - name: Setup uv venv
+        run: uv venv
+
+      - name: Install requirements.txt
+        run: uv pip install -r requirements.txt --no-cache-dir
