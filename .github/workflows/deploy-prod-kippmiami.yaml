@@ -1,5 +1,7 @@
 name: kippmiami
 
+permissions: {}
+
 on:
   workflow_dispatch: null
   push:
@@ -9,7 +11,7 @@ on:
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kippmiami.yaml
       - Dockerfile
-      - requirements.txt
+      - uv.lock
       - src/dbt/deanslist/**
       - src/dbt/iready/**
       - src/dbt/kippmiami/**
