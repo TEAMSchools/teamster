@@ -48,12 +48,8 @@ def build_illuminate_dlt_assets(
     op_tags.update({"dagster/concurrency_key": f"dlt_illuminate_{code_location}"})
 
     def filter_date_taken_callback(query: Select, table: TableClause):
+        """date_taken is a postgres infinity date type, breaks psycopg"""
         return query.where(table.c.date_taken <= date(year=9999, month=12, day=31))
-
-    if filter_date_taken:
-        query_adapter_callback = filter_date_taken_callback
-    else:
-        query_adapter_callback = None
 
     # trunk-ignore(pyright/reportArgumentType)
     dlt_source = sql_database.with_args(name="illuminate")(
@@ -73,17 +69,21 @@ def build_illuminate_dlt_assets(
         defer_table_reflect=True,
         backend="pyarrow",
         table_adapter_callback=remove_nullability_adapter,
-        query_adapter_callback=query_adapter_callback,
+        query_adapter_callback=(
+            filter_date_taken_callback if filter_date_taken else None
+        ),
     ).parallelize()
+
+    dlt_pipeline = pipeline(
+        pipeline_name="illuminate",
+        destination="bigquery",
+        dataset_name=f"dagster_{code_location}_dlt_illuminate_{schema}",
+        progress=LogCollector(dump_system_stats=False),
+    )
 
     @dlt_assets(
         dlt_source=dlt_source,
-        dlt_pipeline=pipeline(
-            pipeline_name="illuminate",
-            destination="bigquery",
-            dataset_name=f"dagster_{code_location}_dlt_illuminate_{schema}",
-            progress=LogCollector(dump_system_stats=False),
-        ),
+        dlt_pipeline=dlt_pipeline,
         name=f"{code_location}__dlt__illuminate__{schema}__{table_name}",
         group_name="illuminate",
         dagster_dlt_translator=IlluminateDagsterDltTranslator(code_location),
