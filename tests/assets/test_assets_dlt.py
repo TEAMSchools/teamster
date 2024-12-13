@@ -31,5 +31,5 @@ def _test_dlt_assets(assets, selection):
 
 def test_dlt_illuminate_codes():
     _test_dlt_assets(
-        assets=assets, selection=["kipptaf/dlt/sql_database/codes/dna_scopes"]
+        assets=assets, selection=["kipptaf/dlt/illuminate/codes/dna_scopes"]
     )

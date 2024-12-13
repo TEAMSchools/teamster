@@ -26,7 +26,6 @@
     "*.toml": "toml"
   },
   "files.exclude": {
-    "**/.git": false,
     "**/.trunk/*actions/": true,
     "**/.trunk/*logs/": true,
     "**/.trunk/*notifications/": true,
