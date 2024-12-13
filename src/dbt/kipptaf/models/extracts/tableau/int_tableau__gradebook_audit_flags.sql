@@ -509,7 +509,6 @@ with
             f.teacher_name,
 
             t.teacher_assign_id,
-
             t.w_assign_max_score_not_10,
             t.f_assign_max_score_not_10,
             t.s_max_score_greater_100,
@@ -564,8 +563,9 @@ with
 
             t.teacher_assign_id,
             t.qt_teacher_s_total_greater_200,
-            t.f_assign_max_score_not_10,
-            t.s_max_score_greater_100,
+            t.w_expected_assign_count_not_met,
+            t.f_expected_assign_count_not_met,
+            t.s_expected_assign_count_not_met,
 
             'class_category' as cte_grouping,
 
@@ -1194,6 +1194,96 @@ from
             w_assign_max_score_not_10,
             f_assign_max_score_not_10,
             s_max_score_greater_100
+        )
+    )
+where audit_flag_value
+
+union all
+
+select
+    _dbt_source_relation,
+    academic_year,
+    academic_year_display,
+    region,
+    school_level,
+    region_school_level,
+    schoolid,
+    school,
+
+    null as student_number,
+    null as grade_level,
+    null as ada,
+    null as ada_above_or_at_80,
+    cast(null as date) as date_enrolled,
+
+    semester,
+    `quarter`,
+    week_number,
+    quarter_start_date,
+    quarter_end_date,
+    cal_quarter_end_date,
+    is_current_quarter,
+    is_quarter_end_date_range,
+    audit_due_date,
+
+    assignment_category_name,
+    assignment_category_code,
+    assignment_category_term,
+    sectionid,
+    null as sections_dcid,
+    null as section_number,
+    '' as external_expression,
+    null as section_or_period,
+    credit_type,
+    course_number,
+    course_name,
+    exclude_from_gpa,
+    null as is_ap_course,
+
+    teacher_number,
+    teacher_name,
+
+    null ascategory_quarter_percent_grade,
+    null ascategory_quarter_average_all_courses,
+    null asquarter_course_percent_grade_that_matters,
+    null as quarter_course_grade_points_that_matters,
+    null asquarter_citizenship,
+    null asquarter_comment_value,
+
+    teacher_assign_id,
+    '' as teacher_assign_name,
+    cast(null as date) as teacher_assign_due_date,
+    '' as teacher_assign_score_type,
+    null as teacher_assign_max_score,
+    null as n_students,
+    null as n_late,
+    null as n_exempt,
+    null as n_missing,
+    null as n_expected,
+    null as n_expected_scored,
+    null as teacher_assign_count,
+    null as teacher_running_total_assign_by_cat,
+    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
+    null as raw_score,
+    null as score_entered,
+    null as assign_final_score_percent,
+    null as is_exempt,
+    null as is_late,
+    null as is_missing,
+    cte_grouping,
+
+    audit_flag_name,
+
+    if(audit_flag_value, 1, 0) as audit_flag_value,
+
+from
+    class_category unpivot (
+        audit_flag_value for audit_flag_name in (
+            qt_teacher_s_total_greater_200,
+            w_expected_assign_count_not_met,
+            f_expected_assign_count_not_met,
+            s_expected_assign_count_not_met
         )
     )
 where audit_flag_value
