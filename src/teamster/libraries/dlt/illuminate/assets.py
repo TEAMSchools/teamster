@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import date
 
 from dagster import AssetExecutionContext, AssetKey, EnvVar, _check
@@ -56,8 +57,8 @@ def build_illuminate_dlt_assets(
         exclude_columns = []
 
     def table_adapter_callback(table: Table) -> Table:
-        for column in exclude_columns:
-            table._columns.remove(table.columns[column])
+        # for column in exclude_columns:
+        #     table._columns.remove(table.columns[column])
 
         return remove_nullability_adapter(table)
 
@@ -85,6 +86,8 @@ def build_illuminate_dlt_assets(
             filter_date_taken_callback if filter_date_taken else None
         ),
     ).parallelize()
+
+    os.environ["DESTINATION__BIGQUERY__AUTODETECT_SCHEMA"] = "true"
 
     dlt_pipeline = pipeline(
         pipeline_name="illuminate",
