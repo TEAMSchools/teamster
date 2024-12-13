@@ -21,6 +21,8 @@ assets:
     tables:
       - table_name: agg_student_responses
         filter_date_taken: true
+        op_tags:
+          dagster/priority: "-1"
       - table_name: agg_student_responses_group
         op_tags:
           dagster/priority: "-1"
@@ -39,6 +41,8 @@ assets:
       - table_name: reporting_groups
       - table_name: students_assessments
         filter_date_taken: true
+        op_tags:
+          dagster/priority: "-1"
   - schema: national_assessments
     tables:
       - table_name: aptest_2019
