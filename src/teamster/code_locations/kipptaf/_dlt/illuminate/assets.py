@@ -7,6 +7,7 @@ from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.sources.sql_database import remove_nullability_adapter, sql_database
+from sqlalchemy.sql import Select, TableClause
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf._dlt.asset_decorator import dlt_assets
@@ -49,7 +50,34 @@ def build_dlt_assets(
     table_name: str,
     pipeline_name: str,
     destination: str,
+    op_tags: dict[str, object] | None = None,
+    filter_date_taken: bool = False,
 ):
+    if op_tags is None:
+        op_tags = {}
+
+    op_tags.update(
+        {
+            "dagster/concurrency_key": f"dlt_{pipeline_name}_{code_location}",
+            "dagster-k8s/config": {
+                "container_config": {
+                    "resources": {
+                        "requests": {"cpu": "250m"},
+                        "limits": {"cpu": "500m"},
+                    }
+                }
+            },
+        },
+    )
+
+    def filter_date_taken_callback(query: Select, table: TableClause):
+        return query.where(table.c.date_taken <= "9999-12-31")
+
+    if filter_date_taken:
+        query_adapter_callback = filter_date_taken_callback
+    else:
+        query_adapter_callback = None
+
     # trunk-ignore(pyright/reportArgumentType)
     dlt_source = sql_database.with_args(name=pipeline_name)(
         credentials=credentials,
@@ -57,6 +85,7 @@ def build_dlt_assets(
         table_names=[table_name],
         defer_table_reflect=True,
         table_adapter_callback=remove_nullability_adapter,
+        query_adapter_callback=query_adapter_callback,
     )
 
     @dlt_assets(
@@ -70,7 +99,7 @@ def build_dlt_assets(
         name=f"{code_location}__dlt__{pipeline_name}__{schema}__{table_name}",
         group_name=pipeline_name,
         dagster_dlt_translator=CustomDagsterDltTranslator(code_location),
-        op_tags={"dagster/concurrency_key": f"dlt_{pipeline_name}_{code_location}"},
+        op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
         yield from dlt.run(
@@ -102,8 +131,8 @@ assets = [
         pipeline_name="illuminate",
         destination="bigquery",
         schema=a["schema"],
-        table_name=t,
+        **t,
     )
     for a in yaml.safe_load(config_file.read_text())["assets"]
-    for t in a["table_names"]
+    for t in a["tables"]
 ]
