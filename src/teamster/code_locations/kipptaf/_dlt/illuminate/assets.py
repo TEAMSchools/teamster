@@ -1,5 +1,6 @@
 import json
 import pathlib
+from datetime import date
 
 import yaml
 from dagster import AssetExecutionContext, AssetKey, EnvVar, _check
@@ -71,7 +72,7 @@ def build_dlt_assets(
     )
 
     def filter_date_taken_callback(query: Select, table: TableClause):
-        return query.where(table.c.date_taken <= "9999-12-31")
+        return query.where(table.c.date_taken <= date(year=9999, month=12, day=31))
 
     if filter_date_taken:
         query_adapter_callback = filter_date_taken_callback
