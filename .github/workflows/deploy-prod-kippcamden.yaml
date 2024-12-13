@@ -1,5 +1,10 @@
 name: kippcamden
 
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
 on:
   workflow_dispatch: null
   push:
@@ -9,7 +14,7 @@ on:
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kippcamden.yaml
       - Dockerfile
-      - requirements.txt
+      - uv.lock
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
       - src/dbt/kippcamden/**
