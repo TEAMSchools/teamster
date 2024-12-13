@@ -476,7 +476,10 @@ with
     ),
 
     class_category_assignment as (
-        select
+        -- note for charlie if this is moved out of int_tableau: need the distinct
+        -- because the FROM table has student-level data but for this i need it at the
+        -- teacher level
+        select distinct
             f._dbt_source_relation,
             f.academic_year,
             f.academic_year_display,
@@ -526,7 +529,10 @@ with
     ),
 
     class_category as (
-        select
+        -- note for charlie if this is moved out of int_tableau: need the distinct
+        -- because the FROM table has student-level data but for this i need it at the
+        -- teacher level
+        select distinct
             f._dbt_source_relation,
             f.academic_year,
             f.academic_year_display,
@@ -535,9 +541,6 @@ with
             f.region_school_level,
             f.schoolid,
             f.school,
-
-            f.student_number,
-            f.grade_level,
 
             f.semester,
             f.`quarter`,
@@ -886,8 +889,8 @@ select
     teacher_number,
     teacher_name,
 
-    null ascategory_quarter_percent_grade,
-    null ascategory_quarter_average_all_courses,
+    null as category_quarter_percent_grade,
+    null as category_quarter_average_all_courses,
     quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
     '' as quarter_citizenship,
@@ -972,8 +975,8 @@ select
     teacher_number,
     teacher_name,
 
-    null ascategory_quarter_percent_grade,
-    null ascategory_quarter_average_all_courses,
+    null as category_quarter_percent_grade,
+    null as category_quarter_average_all_courses,
     quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
     quarter_citizenship,
@@ -1062,8 +1065,8 @@ select
     teacher_number,
     teacher_name,
 
-    null ascategory_quarter_percent_grade,
-    null ascategory_quarter_average_all_courses,
+    null as category_quarter_percent_grade,
+    null as category_quarter_average_all_courses,
     quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
     quarter_citizenship,
@@ -1154,12 +1157,12 @@ select
     teacher_number,
     teacher_name,
 
-    null ascategory_quarter_percent_grade,
-    null ascategory_quarter_average_all_courses,
-    null asquarter_course_percent_grade_that_matters,
+    null as category_quarter_percent_grade,
+    null as category_quarter_average_all_courses,
+    null as quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
-    null asquarter_citizenship,
-    null asquarter_comment_value,
+    null as quarter_citizenship,
+    null as quarter_comment_value,
 
     teacher_assign_id,
     '' as teacher_assign_name,
@@ -1243,12 +1246,12 @@ select
     teacher_number,
     teacher_name,
 
-    null ascategory_quarter_percent_grade,
-    null ascategory_quarter_average_all_courses,
-    null asquarter_course_percent_grade_that_matters,
+    null as category_quarter_percent_grade,
+    null as category_quarter_average_all_courses,
+    null as quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
-    null asquarter_citizenship,
-    null asquarter_comment_value,
+    null as quarter_citizenship,
+    null as quarter_comment_value,
 
     teacher_assign_id,
     '' as teacher_assign_name,
