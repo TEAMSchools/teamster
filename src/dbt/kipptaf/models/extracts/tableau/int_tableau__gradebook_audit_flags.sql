@@ -291,6 +291,7 @@ with
             teacher_number,
             teacher_name,
             quarter_course_percent_grade_that_matters,
+            quarter_citizenship,
             quarter_comment_value,
 
             'student_course' as cte_grouping,
@@ -328,6 +329,113 @@ with
         where region = 'Miami' and school_level != 'ES'
     ),
 
+    student_course_fl_es as (
+        -- note for charlie if this is moved out of int_tableau: i dont have a way to
+        -- dedup this otherwise because the
+        -- from table uses categories, and for this flag tagging, categories are not
+        -- used, just the course rows themselves. open to suggestions on how to dedup
+        -- without distinct, tho!
+        select distinct
+            _dbt_source_relation,
+            academic_year,
+            academic_year_display,
+            region,
+            school_level,
+            region_school_level,
+            schoolid,
+            school,
+
+            student_number,
+            grade_level,
+
+            semester,
+            `quarter`,
+            week_number,
+            quarter_start_date,
+            quarter_end_date,
+            cal_quarter_end_date,
+            is_current_quarter,
+            is_quarter_end_date_range,
+            audit_due_date,
+
+            assignment_category_name,
+            assignment_category_code,
+            assignment_category_term,
+            sectionid,
+            credit_type,
+            course_number,
+            course_name,
+            exclude_from_gpa,
+
+            teacher_number,
+            teacher_name,
+            quarter_course_percent_grade_that_matters,
+            quarter_citizenship,
+            quarter_comment_value,
+
+            'student_course' as cte_grouping,
+
+            case
+                when not is_quarter_end_date_range
+                then false
+                when
+                    grade_level = 0
+                    and course_name = 'HR'
+                    and quarter_citizenship is null
+                then true
+                else false
+            end as qt_kg_conduct_code_missing,
+
+            if(
+                is_quarter_end_date_range
+                and grade_level = 0
+                and course_name != 'HR'
+                and quarter_citizenship is not null,
+                true,
+                false
+            ) as qt_kg_conduct_code_not_hr,
+
+            if(
+                is_quarter_end_date_range
+                and grade_level = 0
+                and course_name = 'HR'
+                and quarter_citizenship is not null
+                and quarter_citizenship not in ('E', 'G', 'S', 'M'),
+                true,
+                false
+            ) as qt_kg_conduct_code_incorrect,
+
+            if(
+                quarter_course_percent_grade_that_matters > 100, true, false
+            ) as qt_percent_grade_greater_100,
+
+            if(
+                is_quarter_end_date_range and quarter_comment_value is null, true, false
+            ) as qt_comment_missing,
+
+            if(
+                is_quarter_end_date_range
+                and grade_level != 0
+                and course_name != 'HR'
+                and quarter_citizenship is null,
+                true,
+                false
+            ) as qt_g1_g8_conduct_code_missing,
+
+            if(
+                is_quarter_end_date_range
+                and grade_level != 0
+                and course_name != 'HR'
+                and quarter_citizenship is not null
+                and quarter_citizenship not in ('A', 'B', 'C', 'D', 'E', 'F'),
+                true,
+                false
+            ) as qt_g1_g8_conduct_code_incorrect,
+
+        from {{ ref("int_tableau__gradebook_audit_roster") }}
+        where region = 'Miami' and school_level = 'ES'
+    ),
+
     student as (
         select
             _dbt_source_relation,
@@ -341,6 +449,7 @@ with
 
             student_number,
             grade_level,
+            ada_above_or_at_80,
 
             semester,
             `quarter`,
@@ -376,57 +485,62 @@ with
 
         from {{ ref("int_tableau__gradebook_audit_roster") }}
         where school_level != 'ES'
-    )
-/*
-    audits as (
+    ),
+
+    class_category_assignment as (
         select
-            *,
+            f._dbt_source_relation,
+            f.academic_year,
+            f.academic_year_display,
+            f.region,
+            f.school_level,
+            f.region_school_level,
+            f.schoolid,
+            f.school,
 
-           case
-                when region != 'Miami'
-                then false
-                when not is_quarter_end_date_range
-                then false
-                when
-                    grade_level = 0
-                    and course_name = 'HR'
-                    and quarter_citizenship is null
-                then true
-                else false
-            end as qt_kg_conduct_code_missing,
+            f.student_number,
+            f.grade_level,
 
-            if(
-                region = 'Miami'
-                and is_quarter_end_date_range
-                and grade_level = 0
-                and course_name != 'HR'
-                and quarter_citizenship is not null,
-                true,
-                false
-            ) as qt_kg_conduct_code_not_hr,
+            f.semester,
+            f.`quarter`,
+            f.week_number,
+            f.quarter_start_date,
+            f.quarter_end_date,
+            f.cal_quarter_end_date,
+            f.is_current_quarter,
+            f.is_quarter_end_date_range,
+            f.audit_due_date,
 
-             if(
-                region = 'Miami'
-                and is_quarter_end_date_range
-                and grade_level = 0
-                and course_name = 'HR'
-                and quarter_citizenship is not null
-                and quarter_citizenship not in ('E', 'G', 'S', 'M'),
-                true,
-                false
-            ) as qt_kg_conduct_code_incorrect,
+            f.assignment_category_name,
+            f.assignment_category_code,
+            f.assignment_category_term,
+            f.sectionid,
+            f.credit_type,
+            f.course_number,
+            f.course_name,
+            f.exclude_from_gpa,
 
-            if(
-                region = 'Miami'
-                and grade_level < 5
-                and is_quarter_end_date_range
-                and quarter_comment_value is null,
-                true,
-                false
-            ) as qt_comment_missing,
+            f.teacher_number,
+            f.teacher_name,
 
-        from grades_and_assignments
-    )*/
+            t.teacher_assign_id,
+
+            t.w_assign_max_score_not_10,
+            t.f_assign_max_score_not_10,
+            t.s_max_score_greater_100,
+
+            'class_category_assignment' as cte_grouping,
+
+        from {{ ref("int_tableau__gradebook_audit_roster") }} as f
+        inner join
+            {{ ref("int_powerschool__teacher_assignment_audit") }} as t
+            on f.sectionid = t.sectionid
+            and f.quarter = t.quarter
+            and f.week_number = t.week_number_quarter
+            and f.assignment_category_code = t.assignment_category_code
+            and {{ union_dataset_join_clause(left_alias="f", right_alias="t") }}
+    )
+
 select
     _dbt_source_relation,
     academic_year,
@@ -469,7 +583,6 @@ select
 
     teacher_number,
     teacher_name,
-    '' as tableau_username,
 
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
@@ -566,7 +679,6 @@ select
 
     teacher_number,
     teacher_name,
-    '' as tableau_username,
 
     category_quarter_percent_grade,
     category_quarter_average_all_courses,
@@ -651,7 +763,6 @@ select
 
     teacher_number,
     teacher_name,
-    '' as tableau_username,
 
     category_quarter_percent_grade,
     category_quarter_average_all_courses,
@@ -736,7 +847,6 @@ select
 
     teacher_number,
     teacher_name,
-    '' as tableau_username,
 
     null ascategory_quarter_percent_grade,
     null ascategory_quarter_average_all_courses,
@@ -823,13 +933,12 @@ select
 
     teacher_number,
     teacher_name,
-    '' as tableau_username,
 
     null ascategory_quarter_percent_grade,
     null ascategory_quarter_average_all_courses,
     quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
-    '' as quarter_citizenship,
+    quarter_citizenship,
     quarter_comment_value,
 
     null as teacher_assign_id,
@@ -866,6 +975,187 @@ from
             qt_grade_70_comment_missing,
             qt_g1_g8_conduct_code_missing,
             qt_g1_g8_conduct_code_incorrect
+        )
+    )
+where audit_flag_value
+
+union all
+
+select
+    _dbt_source_relation,
+    academic_year,
+    academic_year_display,
+    region,
+    school_level,
+    region_school_level,
+    schoolid,
+    school,
+
+    student_number,
+    grade_level,
+    null as ada,
+    null as ada_above_or_at_80,
+    cast(null as date) as date_enrolled,
+
+    semester,
+    `quarter`,
+    week_number,
+    quarter_start_date,
+    quarter_end_date,
+    cal_quarter_end_date,
+    is_current_quarter,
+    is_quarter_end_date_range,
+    audit_due_date,
+
+    assignment_category_name,
+    assignment_category_code,
+    assignment_category_term,
+    sectionid,
+    null as sections_dcid,
+    null as section_number,
+    '' as external_expression,
+    null as section_or_period,
+    credit_type,
+    course_number,
+    course_name,
+    exclude_from_gpa,
+    null as is_ap_course,
+
+    teacher_number,
+    teacher_name,
+
+    null ascategory_quarter_percent_grade,
+    null ascategory_quarter_average_all_courses,
+    quarter_course_percent_grade_that_matters,
+    null as quarter_course_grade_points_that_matters,
+    quarter_citizenship,
+    quarter_comment_value,
+
+    null as teacher_assign_id,
+    '' as teacher_assign_name,
+    cast(null as date) as teacher_assign_due_date,
+    '' as teacher_assign_score_type,
+    null as teacher_assign_max_score,
+    null as n_students,
+    null as n_late,
+    null as n_exempt,
+    null as n_missing,
+    null as n_expected,
+    null as n_expected_scored,
+    null as teacher_assign_count,
+    null as teacher_running_total_assign_by_cat,
+    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
+    null as raw_score,
+    null as score_entered,
+    null as assign_final_score_percent,
+    null as is_exempt,
+    null as is_late,
+    null as is_missing,
+    cte_grouping,
+
+    audit_flag_name,
+
+    if(audit_flag_value, 1, 0) as audit_flag_value,
+
+from
+    student_course_fl_es unpivot (
+        audit_flag_value for audit_flag_name in (
+            qt_percent_grade_greater_100,
+            qt_comment_missing,
+            qt_g1_g8_conduct_code_missing,
+            qt_g1_g8_conduct_code_incorrect,
+            qt_kg_conduct_code_missing,
+            qt_kg_conduct_code_not_hr,
+            qt_kg_conduct_code_incorrect
+        )
+    )
+where audit_flag_value
+union all
+
+select
+    _dbt_source_relation,
+    academic_year,
+    academic_year_display,
+    region,
+    school_level,
+    region_school_level,
+    schoolid,
+    school,
+
+    student_number,
+    grade_level,
+    null as ada,
+    null as ada_above_or_at_80,
+    cast(null as date) as date_enrolled,
+
+    semester,
+    `quarter`,
+    week_number,
+    quarter_start_date,
+    quarter_end_date,
+    cal_quarter_end_date,
+    is_current_quarter,
+    is_quarter_end_date_range,
+    audit_due_date,
+
+    assignment_category_name,
+    assignment_category_code,
+    assignment_category_term,
+    sectionid,
+    null as sections_dcid,
+    null as section_number,
+    '' as external_expression,
+    null as section_or_period,
+    credit_type,
+    course_number,
+    course_name,
+    exclude_from_gpa,
+    null as is_ap_course,
+
+    teacher_number,
+    teacher_name,
+
+    null ascategory_quarter_percent_grade,
+    null ascategory_quarter_average_all_courses,
+    null asquarter_course_percent_grade_that_matters,
+    null as quarter_course_grade_points_that_matters,
+    null asquarter_citizenship,
+    null asquarter_comment_value,
+
+    teacher_assign_id,
+    '' as teacher_assign_name,
+    cast(null as date) as teacher_assign_due_date,
+    '' as teacher_assign_score_type,
+    null as teacher_assign_max_score,
+    null as n_students,
+    null as n_late,
+    null as n_exempt,
+    null as n_missing,
+    null as n_expected,
+    null as n_expected_scored,
+    null as teacher_assign_count,
+    null as teacher_running_total_assign_by_cat,
+    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
+    null as raw_score,
+    null as score_entered,
+    null as assign_final_score_percent,
+    null as is_exempt,
+    null as is_late,
+    null as is_missing,
+    cte_grouping,
+
+    audit_flag_name,
+
+    if(audit_flag_value, 1, 0) as audit_flag_value,
+
+from
+    class_category_assignment unpivot (
+        audit_flag_value for audit_flag_name in (
+            w_assign_max_score_not_10,
+            f_assign_max_score_not_10,
+            s_max_score_greater_100
         )
     )
 where audit_flag_value
