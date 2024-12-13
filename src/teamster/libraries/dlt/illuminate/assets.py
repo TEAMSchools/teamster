@@ -9,7 +9,6 @@ from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
 from dlt.sources.sql_database import remove_nullability_adapter, sql_database
 from sqlalchemy.sql import Select, TableClause
-from sqlalchemy.sql.schema import Table
 
 from teamster.libraries.dlt.asset_decorator import dlt_assets
 
@@ -47,20 +46,10 @@ def build_illuminate_dlt_assets(
     schema: str,
     table_name: str,
     filter_date_taken: bool = False,
-    exclude_columns: list[str] | None = None,
     op_tags: dict[str, object] | None = None,
 ):
     if op_tags is None:
         op_tags = {}
-
-    if exclude_columns is None:
-        exclude_columns = []
-
-    def table_adapter_callback(table: Table) -> Table:
-        # for column in exclude_columns:
-        #     table._columns.remove(table.columns[column])
-
-        return remove_nullability_adapter(table)
 
     op_tags.update({"dagster/concurrency_key": f"dlt_illuminate_{code_location}"})
 
@@ -81,12 +70,13 @@ def build_illuminate_dlt_assets(
         table_names=[table_name],
         defer_table_reflect=True,
         backend="pyarrow",
-        table_adapter_callback=table_adapter_callback,
+        table_adapter_callback=remove_nullability_adapter,
         query_adapter_callback=(
             filter_date_taken_callback if filter_date_taken else None
         ),
     ).parallelize()
 
+    # bigquery cannot load data type 'json' from 'parquet' files
     os.environ["DESTINATION__BIGQUERY__AUTODETECT_SCHEMA"] = "true"
 
     dlt_pipeline = pipeline(

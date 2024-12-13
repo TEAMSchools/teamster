@@ -11,8 +11,6 @@ assets:
     tables:
       - table_name: grade_levels
       - table_name: sessions
-        exclude_columns:
-          - elementary_grade_levels
       - table_name: student_session_aff
       - table_name: students
       - table_name: users
@@ -37,8 +35,6 @@ assets:
       - table_name: assessments_reporting_groups
       - table_name: field_standards
       - table_name: fields
-        exclude_columns:
-          - sort_order
       - table_name: fields_reporting_groups
       - table_name: performance_band_sets
       - table_name: performance_bands
@@ -60,8 +56,6 @@ assets:
   - schema: dna_repositories
     tables:
       - table_name: fields
-        exclude_columns:
-          - values
       - table_name: repositories
       - table_name: repository_grade_levels
       - table_name: repository_365
