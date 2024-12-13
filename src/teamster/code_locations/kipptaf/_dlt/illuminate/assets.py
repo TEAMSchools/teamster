@@ -64,7 +64,7 @@ def build_dlt_assets(
                 "container_config": {
                     "resources": {
                         "requests": {"cpu": "250m"},
-                        "limits": {"cpu": "750m"},
+                        "limits": {"cpu": "1000m"},
                     }
                 }
             },
@@ -87,7 +87,7 @@ def build_dlt_assets(
         defer_table_reflect=True,
         table_adapter_callback=remove_nullability_adapter,
         query_adapter_callback=query_adapter_callback,
-    )
+    ).parallelize()
 
     @dlt_assets(
         dlt_source=dlt_source,
