@@ -15,8 +15,9 @@ with
             ) as score_measurement_shortname,
         from {{ ref("int_performance_management__observation_details") }}
         where
-            rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+            rubric_name in ('Coach ETR', 'Coach ETR and Reflection: Part 1 - Scores')
             and row_score is not null
+            and academic_year >= 2023
     ),
 
     pivots as (
@@ -95,7 +96,9 @@ with
 
             avg(observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }}
-        where rubric_name = 'Coaching Tool: Coach ETR and Reflection'
+        where
+            rubric_name in ('Coach ETR', 'Coach ETR and Reflection: Part 1 - Scores')
+            and academic_year >= 2023
         group by observer_employee_number, academic_year, term_code
     )
 

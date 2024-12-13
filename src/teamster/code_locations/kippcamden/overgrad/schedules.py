@@ -13,7 +13,7 @@ overgrad_asset_schedule = ScheduleDefinition(
     name=f"{CODE_LOCATION}__overgrad__asset_schedule",
     target=[admissions, custom_fields, followings, schools, students],
     cron_schedule=["0 1 * * *", "0 15 * * *"],
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 schedules = [

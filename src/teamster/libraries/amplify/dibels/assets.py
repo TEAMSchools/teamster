@@ -44,8 +44,8 @@ def build_amplify_dds_report_asset(
     def _asset(context: AssetExecutionContext, dds: DibelsDataSystemResource):
         partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
 
-        date_partition_key = datetime.strptime(
-            partition_key.keys_by_dimension["date"], "%Y-%m-%d"
+        date_partition_key = datetime.fromisoformat(
+            partition_key.keys_by_dimension["date"]
         )
 
         if report == "DataFarming":

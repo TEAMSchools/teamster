@@ -9,7 +9,7 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.amplify.dibels.assets import build_amplify_dds_report_asset
 
 date_partitions_def = FiscalYearPartitionsDefinition(
-    start_date="2024-07-01", start_month=7, timezone=LOCAL_TIMEZONE.name
+    start_date="2024-07-01", start_month=7, timezone=str(LOCAL_TIMEZONE)
 )
 
 data_farming = build_amplify_dds_report_asset(

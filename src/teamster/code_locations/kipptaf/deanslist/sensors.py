@@ -1,7 +1,7 @@
 import json
 import re
+from datetime import datetime
 
-import pendulum
 from dagster import (
     RunRequest,
     SensorEvaluationContext,
@@ -16,13 +16,13 @@ from teamster.code_locations.kipptaf.deanslist import assets
 from teamster.libraries.ssh.resources import SSHResource
 
 job = define_asset_job(
-    name=f"{CODE_LOCATION}_deanslist_sftp_asset_job", selection=assets
+    name=f"{CODE_LOCATION}__deanslist__sftp_asset_job", selection=assets
 )
 
 
 @sensor(name=f"{job.name}_sensor", minimum_interval_seconds=(60 * 10), job=job)
 def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHResource):
-    now = pendulum.now(tz=LOCAL_TIMEZONE)
+    now = datetime.now(LOCAL_TIMEZONE)
 
     run_requests = []
     asset_selection = []

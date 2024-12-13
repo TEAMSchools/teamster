@@ -44,54 +44,7 @@
     "editor.defaultFormatter": "vscode.json-language-features"
   },
   "dbt.enableNewLineagePanel": true,
-  "dbt.deferConfigPerProject": {
-    "src/dbt/deanslist": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/deanslist/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/edplan": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/edplan/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/iready": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/iready/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/kippcamden": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/kippcamden/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/kippmiami": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/kippmiami/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/kippnewark": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/kippnewark/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/kipptaf": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/kipptaf/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/overgrad": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/overgrad/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/pearson": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/pearson/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/powerschool": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/powerschool/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/renlearn": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/renlearn/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/titan": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/titan/target",
-      "manifestPathType": "local"
-    }
+  "[python]": {
+    "editor.defaultFormatter": "trunk.io"
   }
 }

@@ -57,4 +57,7 @@ def test_fldoe_science_kippmiami():
 
 
 def test_fldoe_fte_kippmiami():
-    _test_asset(asset=fte)
+    _test_asset(
+        asset=fte,
+        # partition_key="25|2",
+    )
