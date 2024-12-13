@@ -1,5 +1,4 @@
 import json
-import os
 import pathlib
 from datetime import date
 
@@ -86,6 +85,7 @@ def build_dlt_assets(
         schema=schema,
         table_names=[table_name],
         defer_table_reflect=True,
+        backend="pyarrow",
         table_adapter_callback=remove_nullability_adapter,
         query_adapter_callback=query_adapter_callback,
     ).parallelize()
@@ -104,8 +104,6 @@ def build_dlt_assets(
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
-        os.environ["EXTRACT__WORKERS"] = "10"
-
         yield from dlt.run(
             context=context,
             credentials=json.load(
