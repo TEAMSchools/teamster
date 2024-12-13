@@ -11,7 +11,7 @@
     "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
     "PYTHONDONTWRITEBYTECODE": "1",
     "TRUNK_TELEMETRY": "off",
-    "UV_ENV_FILE": "env/.env",
+    "UV_ENV_FILE": "/workspaces/teamster/env/.env",
     "UV_LINK_MODE": "copy",
     "UV_RESOLUTION": "highest"
   },
