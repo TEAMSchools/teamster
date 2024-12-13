@@ -6,7 +6,7 @@ from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
-from dlt.sources.sql_database import sql_database
+from dlt.sources.sql_database import remove_nullability_adapter, sql_database
 from sqlalchemy.sql import Select, TableClause
 from sqlalchemy.sql.schema import Table
 
@@ -55,17 +55,13 @@ def build_illuminate_dlt_assets(
     if exclude_columns is None:
         exclude_columns = []
 
-    op_tags.update({"dagster/concurrency_key": f"dlt_illuminate_{code_location}"})
-
     def table_adapter_callback(table: Table) -> Table:
-        for col in table.columns:
-            # skip columns
-            if col.name in exclude_columns:
-                del col
-            # subqueries may not have nullable attr
-            elif hasattr(col, "nullable"):
-                col.nullable = None
-        return table
+        for column in exclude_columns:
+            table._columns.remove(table.columns[column])
+
+        return remove_nullability_adapter(table)
+
+    op_tags.update({"dagster/concurrency_key": f"dlt_illuminate_{code_location}"})
 
     # trunk-ignore(pyright/reportArgumentType)
     dlt_source = sql_database.with_args(name="illuminate")(
