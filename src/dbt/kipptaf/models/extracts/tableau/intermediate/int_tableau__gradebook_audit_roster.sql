@@ -401,4 +401,5 @@ left join
     and s.`quarter` = qg.storecode
     and s.sectionid = qg.sectionid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="qg") }}
-where s.quarter_start_date <= current_date('America/New_York')
+where
+    s.quarter_start_date <= current_date('America/New_York') and s.sectionid is not null
