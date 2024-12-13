@@ -14,7 +14,7 @@ from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf._dlt.asset_decorator import dlt_assets
 
 
-class CustomDagsterDltTranslator(DagsterDltTranslator):
+class IlluminateDagsterDltTranslator(DagsterDltTranslator):
     def __init__(self, code_location: str):
         self.code_location = code_location
         return super().__init__()
@@ -33,18 +33,11 @@ class CustomDagsterDltTranslator(DagsterDltTranslator):
     def get_deps_asset_keys(self, resource):
         return []
 
-    def get_tags(self, resource):
-        return {
-            "dagster/concurrency_key": (
-                f"dlt_{resource.source_name}_{self.code_location}"
-            )
-        }
-
     def get_kinds(self, resource, destination):
         return {"dlt", "postgresql", destination.destination_name}
 
 
-def build_dlt_assets(
+def build_illuminate_dlt_assets(
     code_location: str,
     credentials,
     schema: str,
@@ -71,13 +64,13 @@ def build_dlt_assets(
         },
     )
 
-    def filter_date_taken_callback(query: Select, table: TableClause):
-        return query.where(table.c.date_taken <= date(year=9999, month=12, day=31))
+    # def filter_date_taken_callback(query: Select, table: TableClause):
+    #     return query.where(table.c.date_taken <= date(year=9999, month=12, day=31))
 
-    if filter_date_taken:
-        query_adapter_callback = filter_date_taken_callback
-    else:
-        query_adapter_callback = None
+    # if filter_date_taken:
+    #     query_adapter_callback = filter_date_taken_callback
+    # else:
+    #     query_adapter_callback = None
 
     # trunk-ignore(pyright/reportArgumentType)
     dlt_source = sql_database.with_args(name=pipeline_name)(
@@ -87,7 +80,7 @@ def build_dlt_assets(
         defer_table_reflect=True,
         backend="pyarrow",
         table_adapter_callback=remove_nullability_adapter,
-        query_adapter_callback=query_adapter_callback,
+        # query_adapter_callback=query_adapter_callback,
     ).parallelize()
 
     @dlt_assets(
@@ -100,7 +93,7 @@ def build_dlt_assets(
         ),
         name=f"{code_location}__dlt__{pipeline_name}__{schema}__{table_name}",
         group_name=pipeline_name,
-        dagster_dlt_translator=CustomDagsterDltTranslator(code_location),
+        dagster_dlt_translator=IlluminateDagsterDltTranslator(code_location),
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
@@ -117,7 +110,7 @@ def build_dlt_assets(
 config_file = pathlib.Path(__file__).parent / "config" / "illuminate.yaml"
 
 assets = [
-    build_dlt_assets(
+    build_illuminate_dlt_assets(
         code_location=CODE_LOCATION,
         credentials=ConnectionStringCredentials(
             {
