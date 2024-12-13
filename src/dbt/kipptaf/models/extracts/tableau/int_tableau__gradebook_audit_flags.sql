@@ -14,6 +14,7 @@ with
 
             f.student_number,
             f.grade_level,
+            f.date_enrolled,
 
             f.semester,
             f.`quarter`,
@@ -31,14 +32,17 @@ with
             f.expectation,
             f.notes,
             f.sectionid,
+            f.credit_type,
             f.course_number,
             f.course_name,
+            f.exclude_from_gpa,
             f.is_ap_course,
 
             f.teacher_number,
             f.teacher_name,
 
             t.teacher_assign_id,
+            t.teacher_assign_due_date,
 
             s.raw_score,
             s.score_entered,
@@ -58,11 +62,14 @@ with
             s.assign_s_ms_score_not_conversion_chart_options,
             s.assign_s_hs_score_not_conversion_chart_options,
 
+            'assignment_student' as cte_grouping,
+
         from {{ ref("int_tableau__gradebook_audit_roster") }} as f
         inner join
             {{ ref("int_powerschool__teacher_assignment_audit") }} as t
             on f.sectionid = t.sectionid
             and f.quarter = t.quarter
+            and f.week_number = t.week_number_quarter
             and f.assignment_category_code = t.assignment_category_code
             and {{ union_dataset_join_clause(left_alias="f", right_alias="t") }}
         inner join
@@ -73,6 +80,7 @@ with
             and {{ union_dataset_join_clause(left_alias="f", right_alias="s") }}
             and t.week_number_quarter = s.week_number_quarter
             and t.teacher_assign_id = s.assignmentid
+            and t.assignment_category_code = s.assignment_category_code
             and {{ union_dataset_join_clause(left_alias="t", right_alias="s") }}
     )
 /*
@@ -207,35 +215,10 @@ select
     schoolid,
     school,
 
-    studentid,
     student_number,
-    student_name,
     grade_level,
-    salesforce_id,
-    ktc_cohort,
-    cohort,
-    gender,
-    ethnicity,
-    advisory,
-    hos,
-    year_in_school,
-    year_in_network,
-    rn_undergrad,
-    is_out_of_district,
-    is_pathways,
-    is_retained_year,
-    is_retained_ever,
-    lunch_status,
-    gifted_and_talented,
-    iep_status,
-    lep_status,
-    is_504,
-    is_counseling_services,
-    is_student_athlete,
-    ada,
-    ada_above_or_at_80,
-    tutoring_nj,
-    nj_student_tier,
+    null as ada,
+    null as ada_above_or_at_80,
     date_enrolled,
 
     semester,
@@ -254,10 +237,10 @@ select
     expectation,
     notes,
     sectionid,
-    sections_dcid,
-    section_number,
-    external_expression,
-    section_or_period,
+    null as sections_dcid,
+    null as section_number,
+    '' as external_expression,
+    null as section_or_period,
     credit_type,
     course_number,
     course_name,
@@ -266,29 +249,29 @@ select
 
     teacher_number,
     teacher_name,
-    tableau_username,
+    '' as tableau_username,
 
-    category_quarter_percent_grade,
-    category_quarter_average_all_courses,
-    quarter_course_percent_grade_that_matters,
-    quarter_course_grade_points_that_matters,
-    quarter_citizenship,
-    quarter_comment_value,
+    null as category_quarter_percent_grade,
+    null as category_quarter_average_all_courses,
+    null as quarter_course_percent_grade_that_matters,
+    null as quarter_course_grade_points_that_matters,
+    '' as quarter_citizenship,
+    '' as quarter_comment_value,
 
     teacher_assign_id,
-    teacher_assign_name,
+    '' as teacher_assign_name,
     teacher_assign_due_date,
-    teacher_assign_score_type,
-    teacher_assign_max_score,
-    n_students,
-    n_late,
-    n_exempt,
-    n_missing,
-    n_expected,
-    n_expected_scored,
-    teacher_assign_count,
-    teacher_running_total_assign_by_cat,
-    teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    '' as teacher_assign_score_type,
+    null as teacher_assign_max_score,
+    null as n_students,
+    null as n_late,
+    null as n_exempt,
+    null as n_missing,
+    null as n_expected,
+    null as n_expected_scored,
+    null as teacher_assign_count,
+    null as teacher_running_total_assign_by_cat,
+    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     raw_score,
     score_entered,
@@ -296,10 +279,9 @@ select
     is_exempt,
     is_late,
     is_missing,
+    cte_grouping,
 
     audit_flag_name,
-
-    'assignment_student' as cte_grouping,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 
