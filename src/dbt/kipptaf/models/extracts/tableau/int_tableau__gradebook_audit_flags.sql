@@ -136,7 +136,6 @@ with
 
         from {{ ref("int_tableau__gradebook_audit_roster") }}
         where assignment_category_code = 'W' and school_level != 'ES'
-
     ),
 
     student_course_category_effort as (
@@ -190,11 +189,6 @@ with
     ),
 
     student_course_nj_ms_hs as (
-        -- note for charlie if this is moved out of int_tableau: i dont have a way to
-        -- dedup this otherwise because the
-        -- from table uses categories, and for this flag tagging, categories are not
-        -- used, just the course rows themselves. open to suggestions on how to dedup
-        -- without distinct, tho!
         select distinct
             _dbt_source_relation,
             academic_year,
@@ -218,9 +212,6 @@ with
             is_quarter_end_date_range,
             audit_due_date,
 
-            assignment_category_name,
-            assignment_category_code,
-            assignment_category_term,
             sectionid,
             credit_type,
             course_number,
@@ -251,12 +242,7 @@ with
     ),
 
     student_course_fl_ms as (
-        -- note for charlie if this is moved out of int_tableau: i dont have a way to
-        -- dedup this otherwise because the
-        -- from table uses categories, and for this flag tagging, categories are not
-        -- used, just the course rows themselves. open to suggestions on how to dedup
-        -- without distinct, tho!
-        select distinct
+        select
             _dbt_source_relation,
             academic_year,
             academic_year_display,
@@ -330,12 +316,8 @@ with
     ),
 
     student_course_fl_es as (
-        -- note for charlie if this is moved out of int_tableau: i dont have a way to
-        -- dedup this otherwise because the
-        -- from table uses categories, and for this flag tagging, categories are not
-        -- used, just the course rows themselves. open to suggestions on how to dedup
-        -- without distinct, tho!
-        select distinct
+
+        select
             _dbt_source_relation,
             academic_year,
             academic_year_display,
@@ -498,9 +480,6 @@ with
             f.schoolid,
             f.school,
 
-            f.student_number,
-            f.grade_level,
-
             f.semester,
             f.`quarter`,
             f.week_number,
@@ -530,6 +509,58 @@ with
             t.s_max_score_greater_100,
 
             'class_category_assignment' as cte_grouping,
+
+        from {{ ref("int_tableau__gradebook_audit_roster") }} as f
+        inner join
+            {{ ref("int_powerschool__teacher_assignment_audit") }} as t
+            on f.sectionid = t.sectionid
+            and f.quarter = t.quarter
+            and f.week_number = t.week_number_quarter
+            and f.assignment_category_code = t.assignment_category_code
+            and {{ union_dataset_join_clause(left_alias="f", right_alias="t") }}
+    ),
+
+    class_category as (
+        select
+            f._dbt_source_relation,
+            f.academic_year,
+            f.academic_year_display,
+            f.region,
+            f.school_level,
+            f.region_school_level,
+            f.schoolid,
+            f.school,
+
+            f.student_number,
+            f.grade_level,
+
+            f.semester,
+            f.`quarter`,
+            f.week_number,
+            f.quarter_start_date,
+            f.quarter_end_date,
+            f.cal_quarter_end_date,
+            f.is_current_quarter,
+            f.is_quarter_end_date_range,
+            f.audit_due_date,
+
+            f.assignment_category_name,
+            f.assignment_category_code,
+            f.assignment_category_term,
+            f.sectionid,
+            f.credit_type,
+            f.course_number,
+            f.course_name,
+            f.exclude_from_gpa,
+
+            f.teacher_number,
+            f.teacher_name,
+
+            t.qt_teacher_s_total_greater_200,
+            t.f_assign_max_score_not_10,
+            t.s_max_score_greater_100,
+
+            'class_category' as cte_grouping,
 
         from {{ ref("int_tableau__gradebook_audit_roster") }} as f
         inner join
