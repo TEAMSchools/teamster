@@ -16,7 +16,7 @@ select
     c.school_week_start_date_lead as audit_due_date,
 
     a.category_code as assignment_category_code,
-    a.assignmentid teacher_assign_id,
+    a.assignmentid as teacher_assign_id,
     a.name as teacher_assign_name,
     a.duedate as teacher_assign_due_date,
     a.scoretype as teacher_assign_score_type,
