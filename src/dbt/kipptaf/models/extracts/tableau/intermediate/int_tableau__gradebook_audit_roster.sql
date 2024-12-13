@@ -380,15 +380,17 @@ select
 from roster as s
 left join
     {{ ref("int_powerschool__calendar_week") }} as w
-    on s.schoolid = w.schoolid
-    and s.yearid = yearid
-    and w.week_end_date between s.quarter_start_date and s.quarter_end_date
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
+    on s.academic_year = w.academic_year
+    and s.`quarter` = w.quarter
+    and s.week_number = w.week_number_quarter
+    and s.school_level = w.school_level
+    and s.schoolid = w.schoolid
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="w") }}
 left join
     category_grades as c
     on s.studentid = c.studentid
     and s.yearid = c.yearid
-    and s.quarter = c.term
+    and s.`quarter` = c.term
     and s.sectionid = c.sectionid
     and s.assignment_category_code = c.category_name_code
     and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
@@ -396,7 +398,7 @@ left join
     quarter_grades as qg
     on s.studentid = qg.studentid
     and s.yearid = qg.yearid
-    and s.quarter = qg.storecode
+    and s.`quarter` = qg.storecode
     and s.sectionid = qg.sectionid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="qg") }}
 where s.quarter_start_date <= current_date('America/New_York')
