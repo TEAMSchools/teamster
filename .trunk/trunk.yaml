@@ -42,6 +42,12 @@ lint:
         - sqlfluff
         - sqlfmt
     - paths:
+        - src/teamster/libraries/dlt_sources/**
+      linters:
+        - pyright
+        - sqlfluff
+        - sqlfmt
+    - paths:
         - src/dbt/**
       linters:
         - actionlint
@@ -52,6 +58,7 @@ lint:
         - markdownlint
         - osv-scanner
         - oxipng
+        - pyright
         - ruff
         - shellcheck
         - shfmt
