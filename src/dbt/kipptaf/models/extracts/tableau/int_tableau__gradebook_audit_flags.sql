@@ -95,7 +95,6 @@ with
 
             student_number,
             grade_level,
-            ada_above_or_at_80,
 
             semester,
             `quarter`,
@@ -136,7 +135,60 @@ with
             ) as w_grade_inflation,
 
         from {{ ref("int_tableau__gradebook_audit_roster") }}
-        where assignment_category_code = 'W'
+        where assignment_category_code = 'W' and school_level != 'ES'
+    ),
+
+    student as (
+
+        select
+            _dbt_source_relation,
+            academic_year,
+            academic_year_display,
+            region,
+            school_level,
+            region_school_level,
+            schoolid,
+            school,
+
+            student_number,
+            grade_level,
+
+            semester,
+            `quarter`,
+            week_number,
+            quarter_start_date,
+            quarter_end_date,
+            cal_quarter_end_date,
+            is_current_quarter,
+            is_quarter_end_date_range,
+            audit_due_date,
+
+            '' as assignment_category_name,
+            '' as assignment_category_code,
+            '' as assignment_category_term,
+            sectionid,
+            credit_type,
+            course_number,
+            course_name,
+            exclude_from_gpa,
+
+            teacher_number,
+            teacher_name,
+            category_quarter_percent_grade,
+            category_quarter_average_all_courses,
+
+            'student_course_category' as cte_grouping,
+
+            if(
+                grade_level > 4
+                and ada_above_or_at_80
+                and quarter_course_grade_points_that_matters < 2.0,
+                true,
+                false
+            ) as qt_student_is_ada_80_plus_gpa_less_2,
+
+        from {{ ref("int_tableau__gradebook_audit_roster") }}
+        where school_level != 'ES'
     )
 /*
     audits as (
@@ -226,16 +278,6 @@ with
             if(
                 quarter_course_percent_grade_that_matters > 100, true, false
             ) as qt_percent_grade_greater_100,
-
-            if(
-                grade_level > 4
-                and ada_above_or_at_80
-                and quarter_course_grade_points_that_matters < 2.0,
-                true,
-                false
-            ) as qt_student_is_ada_80_plus_gpa_less_2,
-
-
 
             if(
                 region = 'Miami'
@@ -343,4 +385,89 @@ from
             assign_s_hs_score_not_conversion_chart_options
         )
     )
+where audit_flag_value
+
+union all
+
+select
+    _dbt_source_relation,
+    academic_year,
+    academic_year_display,
+    region,
+    school_level,
+    region_school_level,
+    schoolid,
+    school,
+
+    student_number,
+    grade_level,
+    null as ada,
+    null as ada_above_or_at_80,
+    cast(null as date) as date_enrolled,
+
+    semester,
+    `quarter`,
+    week_number,
+    quarter_start_date,
+    quarter_end_date,
+    cal_quarter_end_date,
+    is_current_quarter,
+    is_quarter_end_date_range,
+    audit_due_date,
+
+    assignment_category_name,
+    assignment_category_code,
+    assignment_category_term,
+    sectionid,
+    null as sections_dcid,
+    null as section_number,
+    '' as external_expression,
+    null as section_or_period,
+    credit_type,
+    course_number,
+    course_name,
+    exclude_from_gpa,
+    null as is_ap_course,
+
+    teacher_number,
+    teacher_name,
+    '' as tableau_username,
+
+    null as category_quarter_percent_grade,
+    null as category_quarter_average_all_courses,
+    null as quarter_course_percent_grade_that_matters,
+    null as quarter_course_grade_points_that_matters,
+    '' as quarter_citizenship,
+    '' as quarter_comment_value,
+
+    null as teacher_assign_id,
+    '' as teacher_assign_name,
+    cast(null as date) as teacher_assign_due_date,
+    '' as teacher_assign_score_type,
+    null as teacher_assign_max_score,
+    null as n_students,
+    null as n_late,
+    null as n_exempt,
+    null as n_missing,
+    null as n_expected,
+    null as n_expected_scored,
+    null as teacher_assign_count,
+    null as teacher_running_total_assign_by_cat,
+    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
+    null as raw_score,
+    null as score_entered,
+    null as assign_final_score_percent,
+    null as is_exempt,
+    null as is_late,
+    null as is_missing,
+    cte_grouping,
+
+    audit_flag_name,
+
+    if(audit_flag_value, 1, 0) as audit_flag_value,
+
+from
+    student_course_category
+    unpivot (audit_flag_value for audit_flag_name in (w_grade_inflation))
 where audit_flag_value
