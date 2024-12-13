@@ -25,6 +25,7 @@ on:
       - src/teamster/libraries/datagun/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/schema.py
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/fivetran/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**
