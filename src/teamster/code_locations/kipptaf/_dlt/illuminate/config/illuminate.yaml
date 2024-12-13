@@ -1,89 +1,95 @@
 assets:
   - schema: codes
-    table_names:
-      - dna_scopes
-      - dna_subject_areas
+    tables:
+      - table_name: dna_scopes
+      - table_name: dna_subject_areas
   - schema: groups
-    table_names:
-      - group_student_aff
-      - groups
+    tables:
+      - table_name: group_student_aff
+      - table_name: groups
   - schema: public
-    table_names:
-      - grade_levels
-      - sessions
-      - student_session_aff
-      - students
-      - users
+    tables:
+      - table_name: grade_levels
+      - table_name: sessions
+      - table_name: student_session_aff
+      - table_name: students
+      - table_name: users
   - schema: standards
-    table_names:
-      - standards
-      - subjects
+    tables:
+      - table_name: standards
+      - table_name: subjects
   - schema: dna_assessments
-    table_names:
-      - agg_student_responses
-      - agg_student_responses_group
-      - agg_student_responses_standard
-      - agg_students_assessments_scores
-      - students_assessments_archive
-      - assessment_grade_levels
-      - assessment_standards
-      - assessments
-      - assessments_reporting_groups
-      - field_standards
-      - fields
-      - fields_reporting_groups
-      - performance_band_sets
-      - performance_bands
-      - reporting_groups
-      - students_assessments
-      - tags
+    tables:
+      - table_name: agg_student_responses
+        filter_date_taken: true
+      - table_name: agg_student_responses_group
+        op_tags:
+          dagster/priority: "-1"
+      - table_name: agg_student_responses_standard
+        op_tags:
+          dagster/priority: "-1"
+      - table_name: agg_students_assessments_scores
+      - table_name: students_assessments_archive
+      - table_name: assessment_grade_levels
+      - table_name: assessment_standards
+      - table_name: assessments
+      - table_name: assessments_reporting_groups
+      - table_name: field_standards
+      - table_name: fields
+      - table_name: fields_reporting_groups
+      - table_name: performance_band_sets
+      - table_name: performance_bands
+      - table_name: reporting_groups
+      - table_name: students_assessments
+        filter_date_taken: true
+      - table_name: tags
   - schema: national_assessments
-    table_names:
-      - aptest_2019
-      - aptest_2020
-      - aptest_2021
-      - aptest_2022
-      - aptest_2023
-      - aptest_2024
-      - psat_2023
-      - psat_2024
+    tables:
+      - table_name: aptest_2019
+      - table_name: aptest_2020
+      - table_name: aptest_2021
+      - table_name: aptest_2022
+      - table_name: aptest_2023
+      - table_name: aptest_2024
+      - table_name: psat_2023
+      - table_name: psat_2024
   - schema: dna_repositories
-    table_names:
-      - fields
-      - repositories
-      - repository_grade_levels
-      - repository_365
-      - repository_413
-      - repository_425
-      - repository_426
-      - repository_427
-      - repository_428
-      - repository_429
-      - repository_430
-      - repository_431
-      - repository_432
-      - repository_433
-      - repository_434
-      - repository_435
-      - repository_436
-      - repository_437
-      - repository_438
-      - repository_439
-      - repository_440
-      - repository_441
-      - repository_442
-      - repository_443
-      - repository_444
-      - repository_445
-      - repository_446
-      - repository_447
-      - repository_448
-      - repository_449
-      - repository_450
-      - repository_451
-      - repository_452
-      - repository_453
-      - repository_454
-      - repository_455
-      - repository_456
-      - repository_457
+    tables:
+      - table_name: fields
+      - table_name: repositories
+      - table_name: repository_grade_levels
+      - table_name: repository_365
+      - table_name: repository_413
+      - table_name: repository_425
+      - table_name: repository_426
+      - table_name: repository_427
+      - table_name: repository_428
+      - table_name: repository_429
+      - table_name: repository_430
+      - table_name: repository_431
+      - table_name: repository_432
+      - table_name: repository_433
+      - table_name: repository_434
+      - table_name: repository_435
+      - table_name: repository_436
+      - table_name: repository_437
+      - table_name: repository_438
+      - table_name: repository_439
+      - table_name: repository_440
+      - table_name: repository_441
+      - table_name: repository_442
+      - table_name: repository_443
+      - table_name: repository_444
+      - table_name: repository_445
+      - table_name: repository_446
+      - table_name: repository_447
+      - table_name: repository_448
+      - table_name: repository_449
+      - table_name: repository_450
+      - table_name: repository_451
+      - table_name: repository_452
+      - table_name: repository_453
+      - table_name: repository_454
+      - table_name: repository_455
+      - table_name: repository_456
+      - table_name: repository_457
