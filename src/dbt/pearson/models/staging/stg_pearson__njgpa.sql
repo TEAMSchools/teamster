@@ -1,83 +1,60 @@
-{%- set src_njgpa = source("pearson", "src_pearson__njgpa") -%}
-
 select
-    {{
-        dbt_utils.star(
-            from=src_njgpa,
-            except=[
-                "staffmemberidentifier",
-                "testadministrator",
-                "filler10",
-                "filler11",
-                "filler12",
-                "filler13",
-                "filler14",
-                "filler15",
-                "filler16",
-                "filler17",
-                "filler18",
-                "filler19",
-                "filler2",
-                "filler20",
-                "filler21",
-                "filler22",
-                "filler23",
-                "filler24",
-                "filler25",
-                "filler26",
-                "filler3",
-                "filler4",
-                "filler5",
-                "filler6",
-                "filler7",
-                "filler8",
-                "fillerfield_1",
-                "fillerfield_10",
-                "fillerfield_11",
-                "fillerfield_12",
-                "fillerfield_13",
-                "fillerfield_14",
-                "fillerfield_15",
-                "fillerfield_2",
-                "fillerfield_3",
-                "fillerfield_4",
-                "fillerfield_5",
-                "fillerfield_6",
-                "fillerfield_7",
-                "fillerfield_8",
-                "fillerfield_9",
-                "fillerfield",
-                "filler33",
-                "filler39",
-                "filler35",
-                "filler34",
-                "filler30",
-                "filler32",
-                "filler38",
-                "filler29",
-                "filler37",
-                "filler28",
-                "filler27",
-                "filler36",
-                "filler31",
-            ],
-        )
-    }},
+    statestudentidentifier,
+    localstudentidentifier,
 
-    cast(
-        coalesce(
-            staffmemberidentifier.long_value, staffmemberidentifier.double_value
-        ) as int
-    ) as staffmemberidentifier,
-    cast(
-        coalesce(testadministrator.long_value, testadministrator.double_value) as int
-    ) as testadministrator,
+    assessmentgrade,
+    assessmentyear,
+    `period`,
+    `subject`,
+    testcode,
+    testperformancelevel,
+    testscalescore,
+    testscorecomplete,
+
+    studentwithdisabilities,
+    englishlearnerel,
+    hispanicorlatinoethnicity,
+    americanindianoralaskanative,
+    asian,
+    blackorafricanamerican,
+    nativehawaiianorotherpacificislander,
+    white,
+    twoormoreraces,
+
+    'NJGPA' as assessment_name,
 
     cast(left(assessmentyear, 4) as int) as academic_year,
 
     cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
-    'NJGPA' as assessment_name,
+    coalesce(
+        staffmemberidentifier.long_value,
+        cast(staffmemberidentifier.double_value as int)
+    ) as staffmemberidentifier,
+    coalesce(
+        testadministrator.long_value, cast(testadministrator.double_value as int)
+    ) as testadministrator,
+
+    coalesce(
+        testcsemprobablerange.double_value,
+        safe_cast(trim(testcsemprobablerange.string_value) as numeric)
+    ) as testcsemprobablerange,
+    coalesce(
+        testreadingcsem.double_value,
+        safe_cast(trim(testreadingcsem.string_value) as numeric)
+    ) as testreadingcsem,
+    coalesce(
+        testreadingscalescore.double_value,
+        safe_cast(trim(testreadingscalescore.string_value) as numeric)
+    ) as testreadingscalescore,
+    coalesce(
+        testwritingcsem.double_value,
+        safe_cast(trim(testwritingcsem.string_value) as numeric)
+    ) as testwritingcsem,
+    coalesce(
+        testwritingscalescore.double_value,
+        safe_cast(trim(testwritingscalescore.string_value) as numeric)
+    ) as testwritingscalescore,
 
     if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
 
@@ -94,5 +71,5 @@ select
         when 1
         then 'Not Yet Graduation Ready'
     end as testperformancelevel_text,
-from {{ src_njgpa }}
+from {{ source("pearson", "src_pearson__njgpa") }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'

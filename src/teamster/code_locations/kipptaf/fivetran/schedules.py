@@ -9,7 +9,7 @@ adp_workforce_now_start_resync_schedule = build_fivetran_start_resync_schedule(
     connector_id="sameness_cunning",
     connector_name="adp_workforce_now",
     cron_schedule="30 0 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 adp_workforce_now_start_sync_schedule = build_fivetran_start_sync_schedule(
@@ -17,7 +17,7 @@ adp_workforce_now_start_sync_schedule = build_fivetran_start_sync_schedule(
     connector_id="sameness_cunning",
     connector_name="adp_workforce_now",
     cron_schedule="0 4-23 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 illuminate_start_sync_schedule = build_fivetran_start_sync_schedule(
@@ -25,7 +25,7 @@ illuminate_start_sync_schedule = build_fivetran_start_sync_schedule(
     connector_id="jinx_credulous",
     connector_name="illuminate",
     cron_schedule="5 * * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 illuminate_xmin_start_sync_schedule = build_fivetran_start_sync_schedule(
@@ -33,38 +33,20 @@ illuminate_xmin_start_sync_schedule = build_fivetran_start_sync_schedule(
     connector_id="genuine_describing",
     connector_name="illuminate_xmin",
     cron_schedule="0 * * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 coupa_start_sync_schedule = build_fivetran_start_sync_schedule(
     code_location=CODE_LOCATION,
     connector_id="bellows_curliness",
     connector_name="coupa",
-    cron_schedule="30 2 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
-)
-
-facebook_pages_start_sync_schedule = build_fivetran_start_sync_schedule(
-    code_location=CODE_LOCATION,
-    connector_id="regency_carrying",
-    connector_name="facebook_pages",
-    cron_schedule="0 6 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
-)
-
-instagram_business_start_sync_schedule = build_fivetran_start_sync_schedule(
-    code_location=CODE_LOCATION,
-    connector_id="muskiness_cumulative",
-    connector_name="instagram_business",
-    cron_schedule="0 6 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    cron_schedule="00 2 * * *",
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 schedules = [
     adp_workforce_now_start_resync_schedule,
     coupa_start_sync_schedule,
-    facebook_pages_start_sync_schedule,
     illuminate_start_sync_schedule,
     illuminate_xmin_start_sync_schedule,
-    instagram_business_start_sync_schedule,
 ]

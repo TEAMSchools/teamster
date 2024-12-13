@@ -1,7 +1,8 @@
 import re
+from datetime import datetime
 from typing import Mapping
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import MultiPartitionKey, _check
 
 from teamster.core.utils.classes import FiscalYear
@@ -24,23 +25,25 @@ def parse_partition_key(partition_key, dimension=None):
     try:
         date_formats = iter(
             [
-                "YYYY-MM-DDTHH:mm:ss.SSSSSSZ",
-                "YYYY-MM-DDTHH:mm:ssZ",
-                "YYYY-MM-DDTHH:mm:ss.SSSSSS[Z]",
-                "YYYY-MM-DDTHH:mm:ss[Z]",
-                "YYYY-MM-DD",
+                "%Y-%m-%dT%H:%M:%S.%f%z",
+                "%Y-%m-%dT%H:%M:%S%z",
+                "%Y-%m-%dT%H:%M:%S.%fZ",
+                "%Y-%m-%dT%H:%M:%SZ",
+                "%Y-%m-%d",
             ]
         )
 
         while True:
             try:
-                partition_key_parsed = pendulum.from_format(
-                    string=partition_key, fmt=next(date_formats)
+                partition_key_parsed = datetime.strptime(
+                    partition_key, next(date_formats)
                 )
 
                 # save resync file with current timestamp
-                if partition_key_parsed == pendulum.from_timestamp(0):
-                    partition_key_parsed = pendulum.now()
+                if partition_key_parsed == datetime.fromtimestamp(
+                    timestamp=0, tz=ZoneInfo("UTC")
+                ):
+                    partition_key_parsed = datetime.now(ZoneInfo("UTC"))
 
                 break
             except ValueError:
@@ -50,9 +53,9 @@ def parse_partition_key(partition_key, dimension=None):
 
         return [
             f"_dagster_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
-            f"_dagster_partition_date={partition_key_parsed.to_date_string()}",
-            f"_dagster_partition_hour={partition_key_parsed.format('HH')}",
-            f"_dagster_partition_minute={partition_key_parsed.format('mm')}",
+            f"_dagster_partition_date={partition_key_parsed.date().isoformat()}",
+            f"_dagster_partition_hour={partition_key_parsed.strftime('%H')}",
+            f"_dagster_partition_minute={partition_key_parsed.strftime('%M')}",
         ]
     except StopIteration:
         if dimension is not None:

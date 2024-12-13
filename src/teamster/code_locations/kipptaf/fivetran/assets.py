@@ -57,12 +57,6 @@ coupa_assets = build_fivetran_asset_specs(
     config_file=config_dir / "coupa.yaml", code_location=CODE_LOCATION
 )
 
-facebook_pages_assets = build_fivetran_asset_specs(
-    config_file=config_dir / "facebook_pages.yaml",
-    code_location=CODE_LOCATION,
-    kinds=["facebook"],
-)
-
 illuminate_xmin_assets = build_fivetran_asset_specs(
     config_file=config_dir / "illuminate_xmin.yaml",
     code_location=CODE_LOCATION,
@@ -75,17 +69,9 @@ illuminate_assets = build_fivetran_asset_specs(
     kinds=["postgresql"],
 )
 
-instagram_business_assets = build_fivetran_asset_specs(
-    config_file=config_dir / "instagram_business.yaml",
-    code_location=CODE_LOCATION,
-    kinds=["instagram"],
-)
-
 asset_specs = [
     *adp_workforce_now_assets,
     *coupa_assets,
-    *facebook_pages_assets,
     *illuminate_xmin_assets,
     *illuminate_assets,
-    *instagram_business_assets,
 ]

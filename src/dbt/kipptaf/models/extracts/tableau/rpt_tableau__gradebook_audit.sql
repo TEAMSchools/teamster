@@ -127,7 +127,7 @@ with
 
             if(
                 current_date('{{ var("local_timezone") }}')
-                between (f.quarter_end_date - 10) and (f.quarter_end_date + 14),
+                between (f.quarter_end_date - 4) and (f.quarter_end_date + 14),
                 true,
                 false
             ) as is_quarter_end_date_range,
@@ -287,7 +287,8 @@ with
             if(
                 region = 'Miami'
                 and assignment_category_code = 'W'
-                and category_quarter_percent_grade is null,
+                and category_quarter_percent_grade is null
+                and is_quarter_end_date_range,
                 true,
                 false
             ) as qt_effort_grade_missing,

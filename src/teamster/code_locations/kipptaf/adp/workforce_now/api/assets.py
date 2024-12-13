@@ -21,7 +21,7 @@ asset_key = [CODE_LOCATION, "adp", "workforce_now", "workers"]
     partitions_def=DailyPartitionsDefinition(
         start_date="01/01/2021",
         fmt="%m/%d/%Y",
-        timezone=LOCAL_TIMEZONE.name,
+        timezone=str(LOCAL_TIMEZONE),
         end_offset=14,
     ),
 )

@@ -18,7 +18,7 @@ ssh_resource_key = "ssh_renlearn"
 slugify_cols = False
 
 start_date_partition = FiscalYearPartitionsDefinition(
-    start_date="2023-07-01", timezone=LOCAL_TIMEZONE.name, start_month=7
+    start_date="2023-07-01", timezone=str(LOCAL_TIMEZONE), start_month=7
 )
 
 accelerated_reader = build_sftp_archive_asset(

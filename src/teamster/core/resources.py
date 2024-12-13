@@ -1,3 +1,5 @@
+import os
+
 from dagster import EnvVar
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
@@ -71,12 +73,19 @@ SSH_TITAN = SSHResource(
 
 
 def get_io_manager_gcs_pickle(code_location):
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+        code_location = "test"
+
     return GCSIOManager(
         gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{code_location}", object_type="pickle"
     )
 
 
 def get_io_manager_gcs_avro(code_location, test=False):
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+        code_location = "test"
+        test = True
+
     return GCSIOManager(
         gcs=GCS_RESOURCE,
         gcs_bucket=f"teamster-{code_location}",
@@ -85,9 +94,16 @@ def get_io_manager_gcs_avro(code_location, test=False):
     )
 
 
-def get_io_manager_gcs_file(code_location):
+def get_io_manager_gcs_file(code_location, test=False):
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+        code_location = "test"
+        test = True
+
     return GCSIOManager(
-        gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{code_location}", object_type="file"
+        gcs=GCS_RESOURCE,
+        gcs_bucket=f"teamster-{code_location}",
+        object_type="file",
+        test=test,
     )
 
 

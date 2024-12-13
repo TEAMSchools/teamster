@@ -74,11 +74,22 @@ with
                 then 'Comprehension'
                 else substr(measure, strpos(measure, '(') + 1, 3)
             end as mclass_measure_name_code,
+
         from {{ src_pss }}
     )
 
 select
     *,
+
+    case
+        regexp_extract(cast(student_primary_id as string), r'^\d')
+        when '1'
+        then 'Newark'
+        when '2'
+        then 'Camden'
+        when '3'
+        then 'Miami'
+    end as region,
 
     case
         mclass_measure_name_code

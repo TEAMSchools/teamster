@@ -8,13 +8,13 @@ from teamster.libraries.amplify.dibels.schedules import build_amplify_dibels_sch
 amplify_dibels_data_farming_asset_job_schedule = build_amplify_dibels_schedule(
     asset=data_farming,
     cron_schedule="0 4 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 amplify_dibels_progress_export_asset_job_schedule = build_amplify_dibels_schedule(
     asset=progress_export,
     cron_schedule="0 4 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 schedules = [

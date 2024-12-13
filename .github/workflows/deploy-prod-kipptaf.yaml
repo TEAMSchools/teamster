@@ -1,5 +1,10 @@
 name: kipptaf
 
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
 on:
   workflow_dispatch: null
   push:
@@ -9,7 +14,7 @@ on:
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kipptaf.yaml
       - Dockerfile
-      - requirements.txt
+      - uv.lock
       - src/dbt/kipptaf/**
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**

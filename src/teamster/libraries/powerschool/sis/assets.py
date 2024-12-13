@@ -1,8 +1,9 @@
 import hashlib
 import pathlib
+from datetime import datetime
 from io import BufferedReader
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     AssetExecutionContext,
     AssetsDefinition,
@@ -12,6 +13,7 @@ from dagster import (
     _check,
     asset,
 )
+from dateutil.relativedelta import relativedelta
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 from sshtunnel import HandlerSSHTunnelForwarderError
@@ -69,7 +71,11 @@ def build_powerschool_table_asset(
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
     ):
-        hour_timestamp = pendulum.now().start_of("hour").timestamp()
+        hour_timestamp = (
+            datetime.now(ZoneInfo("UTC"))
+            .replace(minute=0, second=0, microsecond=0)
+            .timestamp()
+        )
 
         first_partition_key = (
             partitions_def.get_first_partition_key()
@@ -82,11 +88,11 @@ def build_powerschool_table_asset(
         elif context.partition_key == first_partition_key:
             constructed_where = ""
         else:
-            partition_start = pendulum.from_format(
-                string=context.partition_key, fmt="YYYY-MM-DDTHH:mm:ssZZ"
-            )
+            partition_start = datetime.fromisoformat(context.partition_key)
 
-            partition_start_fmt = partition_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+            partition_start_fmt = partition_start.replace(tzinfo=None).isoformat(
+                timespec="microseconds"
+            )
 
             if isinstance(partitions_def, FiscalYearPartitionsDefinition):
                 date_add_kwargs = {"years": 1}
@@ -96,10 +102,15 @@ def build_powerschool_table_asset(
                 date_add_kwargs = {}
 
             partition_end_fmt = (
-                partition_start.add(**date_add_kwargs)
-                .subtract(days=1)
-                .end_of("day")
-                .format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+                (
+                    partition_start
+                    # trunk-ignore(pyright/reportArgumentType)
+                    + relativedelta(**date_add_kwargs)
+                    - relativedelta(days=1)
+                )
+                .replace(hour=23, minute=59, second=59, microsecond=999999)
+                .replace(tzinfo=None)
+                .isoformat(timespec="microseconds")
             )
 
             constructed_where = (
