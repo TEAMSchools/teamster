@@ -35,22 +35,34 @@ class IlluminateDagsterDltTranslator(DagsterDltTranslator):
         return {"dlt", "postgresql", destination.destination_name}
 
 
-def filter_date_taken_callback(query: Select, table: TableClause):
-    """date_taken is a postgres infinity date type, breaks psycopg"""
-    return query.where(table.c.date_taken <= date(year=9999, month=12, day=31))
-
-
 def build_illuminate_dlt_assets(
     code_location: str,
     schema: str,
     table_name: str,
     filter_date_taken: bool = False,
+    exclude_columns: list[str] | None = None,
     op_tags: dict[str, object] | None = None,
 ):
     if op_tags is None:
         op_tags = {}
 
     op_tags.update({"dagster/concurrency_key": f"dlt_illuminate_{code_location}"})
+
+    if filter_date_taken:
+
+        def filter_date_taken_callback(query: Select, table: TableClause):
+            """date_taken is a postgres infinity date type, breaks psycopg"""
+            return query.where(table.c.date_taken <= date(year=9999, month=12, day=31))
+
+        query_adapter_callback = filter_date_taken_callback
+    elif exclude_columns:
+
+        def exclude_columns_callback(query: Select, table: TableClause):
+            return query.select(*[c for c in table.c if c.name not in exclude_columns])
+
+        query_adapter_callback = exclude_columns_callback
+    else:
+        query_adapter_callback = None
 
     # trunk-ignore(pyright/reportArgumentType)
     dlt_source = sql_database.with_args(name="illuminate")(
@@ -70,9 +82,7 @@ def build_illuminate_dlt_assets(
         defer_table_reflect=True,
         backend="pyarrow",
         table_adapter_callback=remove_nullability_adapter,
-        query_adapter_callback=(
-            filter_date_taken_callback if filter_date_taken else None
-        ),
+        query_adapter_callback=query_adapter_callback,
     ).parallelize()
 
     dlt_pipeline = pipeline(
