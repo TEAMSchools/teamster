@@ -64,7 +64,7 @@ def build_dlt_assets(
                 "container_config": {
                     "resources": {
                         "requests": {"cpu": "250m"},
-                        "limits": {"cpu": "500m"},
+                        "limits": {"cpu": "750m"},
                     }
                 }
             },
