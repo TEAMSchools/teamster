@@ -189,6 +189,7 @@ with
     ),
 
     student_course_nj_ms_hs as (
+        
         select distinct
             _dbt_source_relation,
             academic_year,
@@ -316,7 +317,6 @@ with
     ),
 
     student_course_fl_es as (
-
         select
             _dbt_source_relation,
             academic_year,
