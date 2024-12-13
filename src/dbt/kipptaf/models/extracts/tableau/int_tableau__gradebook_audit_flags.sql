@@ -29,8 +29,6 @@ with
             f.assignment_category_name,
             f.assignment_category_code,
             f.assignment_category_term,
-            f.expectation,
-            f.notes,
             f.sectionid,
             f.credit_type,
             f.course_number,
@@ -82,6 +80,63 @@ with
             and t.teacher_assign_id = s.assignmentid
             and t.assignment_category_code = s.assignment_category_code
             and {{ union_dataset_join_clause(left_alias="t", right_alias="s") }}
+    ),
+
+    student_course_category as (
+        select
+            _dbt_source_relation,
+            academic_year,
+            academic_year_display,
+            region,
+            school_level,
+            region_school_level,
+            schoolid,
+            school,
+
+            student_number,
+            grade_level,
+            ada_above_or_at_80,
+
+            semester,
+            `quarter`,
+            week_number,
+            quarter_start_date,
+            quarter_end_date,
+            cal_quarter_end_date,
+            is_current_quarter,
+            is_quarter_end_date_range,
+            audit_due_date,
+
+            assignment_category_name,
+            assignment_category_code,
+            assignment_category_term,
+            sectionid,
+            credit_type,
+            course_number,
+            course_name,
+            exclude_from_gpa,
+
+            teacher_number,
+            teacher_name,
+            category_quarter_percent_grade,
+            category_quarter_average_all_courses,
+
+            'student_course_category' as cte_grouping,
+
+            if(
+                assignment_category_code = 'W'
+                and grade_level > 4
+                and abs(
+                    round(category_quarter_average_all_courses, 2)
+                    - round(category_quarter_percent_grade, 2)
+                )
+                >= 30,
+                true,
+                false
+            ) as w_grade_inflation,
+
+        from {{ ref("int_tableau__gradebook_audit_roster") }}
+        where assignment_category_code = 'W'
     )
 /*
     audits as (
@@ -180,17 +235,7 @@ with
                 false
             ) as qt_student_is_ada_80_plus_gpa_less_2,
 
-            if(
-                assignment_category_code = 'W'
-                and grade_level > 4
-                and abs(
-                    round(category_quarter_average_all_courses, 2)
-                    - round(category_quarter_percent_grade, 2)
-                )
-                >= 30,
-                true,
-                false
-            ) as w_grade_inflation,
+
 
             if(
                 region = 'Miami'
@@ -234,8 +279,6 @@ select
     assignment_category_name,
     assignment_category_code,
     assignment_category_term,
-    expectation,
-    notes,
     sectionid,
     null as sections_dcid,
     null as section_number,
