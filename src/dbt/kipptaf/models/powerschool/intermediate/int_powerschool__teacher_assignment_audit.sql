@@ -50,6 +50,7 @@ with
             ) as assignment_count_section_quarter_category_running_week,
 
         from {{ ref("int_powerschool__teacher_assignment_audit_base") }} as c
+        where c.yearid = {{ var("current_academic_year") - 1990 }}
 
     )
 

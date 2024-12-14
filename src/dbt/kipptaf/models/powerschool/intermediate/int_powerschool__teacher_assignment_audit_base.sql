@@ -103,4 +103,4 @@ where
         'SEM72005G3S',
         'SEM72005G4S'
     )
-    and sec.terms_firstday >= '{{ var("current_academic_year") }}-07-01'
+    and sec.terms_firstday = '{{ var("current_academic_year") }}-07-01'
