@@ -1,12 +1,6 @@
 {{- config(materialized="table") -}}
 
 select
-    sec._dbt_source_relation,
-    sec.sections_id as sectionid,
-    sec.sections_schoolid as schoolid,
-    sec.teachernumber as teacher_number,
-    sec.terms_yearid as yearid,
-
     c.semester,
     c.quarter,
     c.school_level,
@@ -15,7 +9,19 @@ select
     c.week_end_sunday,
     c.school_week_start_date_lead as audit_due_date,
 
-    a.category_code as assignment_category_code,
+    ge.region,
+    ge.academic_year,
+    ge.assignment_category_code,
+    ge.assignment_category_name,
+    ge.assignment_category_term,
+    ge.expectation,
+
+    sec._dbt_source_relation,
+    sec.sections_id as sectionid,
+    sec.sections_schoolid as schoolid,
+    sec.teachernumber as teacher_number,
+    sec.terms_yearid as yearid,
+
     a.assignmentid as teacher_assign_id,
     a.name as teacher_assign_name,
     a.duedate as teacher_assign_due_date,
@@ -31,18 +37,14 @@ select
     asg.avg_expected_scored_percent
     as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-    sec.terms_yearid + 1990 as academic_year,
-    case
-        regexp_extract(sec._dbt_source_relation, r'(kipp\w+)_')
-        when 'kippmiami'
-        then 'Miami'
-        when 'kippcamden'
-        then 'Camden'
-        when 'kippnewark'
-        then 'Newark'
-    end as region,
-
 from {{ ref("int_powerschool__calendar_week") }} as c
+inner join
+    {{ ref("stg_reporting__gradebook_expectations") }} as ge
+    on c.academic_year = ge.academic_year
+    and c.region = ge.region
+    and c.quarter = ge.quarter
+    and c.week_number_quarter = ge.week_number
+    and c.school_level = ge.school_level
 left join
     {{ ref("base_powerschool__sections") }} as sec
     on c.schoolid = sec.sections_schoolid
@@ -83,6 +85,7 @@ left join
     {{ ref("int_powerschool__gradebook_assignments") }} as a
     on sec.sections_dcid = a.sectionsdcid
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
+    and ge.assignment_category_name = a.category_name
     and a.duedate between c.week_start_monday and c.week_end_sunday
 left join
     {{ ref("int_powerschool__assignment_score_rollup") }} as asg
