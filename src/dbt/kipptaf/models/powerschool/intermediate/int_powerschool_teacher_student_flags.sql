@@ -41,5 +41,6 @@ left join
     and t.sectionid = a.sectionid
     and t.assignment_category_code = a.assignment_category_code
     and t.teacher_assign_id = a.teacher_assign_id
-    and a.cte_grouping = 'assignment_student'*/
+    and a.cte_grouping = 'assignment_student'
+    */
     
