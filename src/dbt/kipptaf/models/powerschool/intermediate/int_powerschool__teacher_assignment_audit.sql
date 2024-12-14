@@ -15,6 +15,10 @@ with
             c.week_start_monday,
             c.week_end_sunday,
             c.audit_due_date,
+            c.assignment_category_code,
+            c.assignment_category_name,
+            c.assignment_category_term,
+            c.expectation,
             c.teacher_assign_id,
             c.teacher_assign_name,
             c.teacher_assign_due_date,
@@ -27,11 +31,6 @@ with
             c.n_expected,
             c.n_expected_scored,
             c.teacher_avg_score_for_assign_per_class_section_and_assign_id,
-
-            ge.assignment_category_code,
-            ge.assignment_category_name,
-            ge.assignment_category_term,
-            ge.expectation,
 
             sum(c.teacher_assign_max_score) over (
                 partition by c._dbt_source_relation, c.sectionid, c.quarter
@@ -51,13 +50,7 @@ with
             ) as assignment_count_section_quarter_category_running_week,
 
         from {{ ref("int_powerschool__teacher_assignment_audit_base") }} as c
-        inner join
-            {{ ref("stg_reporting__gradebook_expectations") }} as ge
-            on c.academic_year = ge.academic_year
-            and c.region = ge.region
-            and c.quarter = ge.quarter
-            and c.week_number_quarter = ge.week_number
-            and c.school_level = ge.school_level
+
     )
 
 select
