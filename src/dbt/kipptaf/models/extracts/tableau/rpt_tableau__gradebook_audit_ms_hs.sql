@@ -129,11 +129,7 @@ with
             and t.school_level != 'ES'
     )
 
-select *
-from
-    teacher_student_assignments
-
-    /*
+select
     r.*,
 
     t.teacher_assign_id,
@@ -168,5 +164,3 @@ left join
     and r.assignment_category_code = a.assignment_category_code
     and a.school_level = 'HS'
 where r.region_school_level in ('CamdenHS', 'NewarkHS')
-*/
-    
