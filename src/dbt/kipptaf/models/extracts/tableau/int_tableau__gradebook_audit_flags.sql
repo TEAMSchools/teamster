@@ -564,7 +564,6 @@ with
             f.teacher_number,
             f.teacher_name,
 
-            t.teacher_assign_id,
             t.qt_teacher_s_total_greater_200,
             t.w_expected_assign_count_not_met,
             t.f_expected_assign_count_not_met,
@@ -1339,7 +1338,7 @@ select
     null as quarter_citizenship,
     null as quarter_comment_value,
 
-    teacher_assign_id,
+    null as teacher_assign_id,
     '' as teacher_assign_name,
     cast(null as date) as teacher_assign_due_date,
     '' as teacher_assign_score_type,
