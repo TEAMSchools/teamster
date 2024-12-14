@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import date
 
 from dagster import AssetExecutionContext, AssetKey, EnvVar, _check
@@ -74,6 +75,9 @@ def build_illuminate_dlt_assets(
             filter_date_taken_callback if filter_date_taken else None
         ),
     ).parallelize()
+
+    # bigquery cannot load data type 'json' from 'parquet' files
+    os.environ["DESTINATION__BIGQUERY__AUTODETECT_SCHEMA"] = "true"
 
     dlt_pipeline = pipeline(
         pipeline_name="illuminate",
