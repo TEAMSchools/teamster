@@ -109,6 +109,7 @@ select
     t.n_expected,
     t.n_expected_scored,
     t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
 from roster_assignment_student as r
 left join
     {{ ref("int_powerschool__teacher_assignment_audit_base") }} as t
