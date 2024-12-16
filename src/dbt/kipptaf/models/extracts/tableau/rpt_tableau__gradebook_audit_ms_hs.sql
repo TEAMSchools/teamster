@@ -208,7 +208,7 @@ with
         where r.school_level != 'ES'
     )
 
-select
+select distinct
     r._dbt_source_relation,
     r.academic_year,
     r.academic_year_display,
