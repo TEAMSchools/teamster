@@ -8,8 +8,22 @@ with
             t.schoolid,
 
             t.sectionid,
+
             t.assignment_category_code,
             t.teacher_assign_id,
+            t.teacher_assign_name,
+            t.teacher_assign_due_date,
+            t.teacher_assign_score_type,
+            t.teacher_assign_max_score,
+
+            t.n_students,
+            t.n_late,
+            t.n_exempt,
+            t.n_missing,
+            t.n_expected,
+            t.n_expected_scored,
+
+            t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
             f.audit_category,
             f.audit_flag_name,
@@ -32,12 +46,26 @@ select
     t.schoolid,
 
     t.sectionid,
+
     t.assignment_category_code,
     t.teacher_assign_id,
+    t.teacher_assign_name,
+    t.teacher_assign_due_date,
+    t.teacher_assign_score_type,
+    t.teacher_assign_max_score,
 
-    t.audit_category,
-    t.audit_flag_name as expected_audit_flag_name,
-    t.cte_grouping,
+    t.n_students,
+    t.n_late,
+    t.n_exempt,
+    t.n_missing,
+    t.n_expected,
+    t.n_expected_scored,
+
+    t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
+    f.audit_category,
+    f.audit_flag_name,
+    f.cte_grouping,
 
     a.student_number,
     a.raw_score,

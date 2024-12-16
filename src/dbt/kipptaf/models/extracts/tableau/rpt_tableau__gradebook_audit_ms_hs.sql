@@ -84,6 +84,7 @@ with
             f.audit_category,
             f.audit_flag_name,
             f.cte_grouping,
+
         from {{ ref("int_tableau__gradebook_audit_roster") }} as r
         left join
             {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -91,12 +92,10 @@ with
             and r.school_level = f.school_level
             and r.assignment_category_code = f.code
             and f.cte_grouping = 'assignment_student'
-        where r.school_level = 'HS'
+        where r.school_level != 'ES'
     )
 
 select
-    r.*,
-
     t.teacher_assign_id,
     t.teacher_assign_name,
     t.teacher_assign_due_date,
@@ -110,22 +109,24 @@ select
     t.n_expected_scored,
     t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-from roster_assignment_student as r
-left join
-    {{ ref("int_powerschool__teacher_assignment_audit_base") }} as t
-    on r.academic_year = t.academic_year
-    and r.quarter = t.quarter
-    and r.week_number = t.week_number_quarter
-    and r.schoolid = t.schoolid
-    and r.assignment_category_code = t.assignment_category_code
-    and t.school_level = 'HS'
+    a.student_number,
+    a.raw_score,
+    a.score_entered,
+    a.assign_final_score_percent,
+    a.is_exempt,
+    a.is_late,
+    a.is_missing,
+
+    a.audit_flag_name,
+    a.audit_flag_value,
+
+from {{ ref("int_powerschool__teacher_assignment_audit_base") }} as t
 left join
     {{ ref("int_tableau__gradebook_audit_flags") }} as a
-    on r.quarter = a.quarter
-    and r.week_number = a.week_number
-    and r.schoolid = a.schoolid
-    and r.student_number = a.student_number
-    and r.sectionid = a.sectionid
-    and r.assignment_category_code = a.assignment_category_code
-    and a.school_level = 'HS'
-where r.region_school_level in ('CamdenHS', 'NewarkHS')
+    on t.quarter = a.quarter
+    and t.week_number_quarter = a.week_number
+    and t.schoolid = a.schoolid
+    and t.sectionid = a.sectionid
+    and t.assignment_category_code = a.assignment_category_code
+    and t.teacher_assign_id = a.teacher_assign_id
+    and a.cte_grouping = 'assignment_student'
