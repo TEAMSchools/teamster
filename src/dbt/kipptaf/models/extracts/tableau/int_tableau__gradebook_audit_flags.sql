@@ -24,6 +24,8 @@ with
             f.cal_quarter_end_date,
             f.is_current_quarter,
             f.is_quarter_end_date_range,
+            f.audit_start_date,
+            f.audit_end_date,
             f.audit_due_date,
 
             f.assignment_category_name,
@@ -104,6 +106,8 @@ with
             cal_quarter_end_date,
             is_current_quarter,
             is_quarter_end_date_range,
+            audit_start_date,
+            audit_end_date,
             audit_due_date,
 
             assignment_category_name,
@@ -160,6 +164,8 @@ with
             cal_quarter_end_date,
             is_current_quarter,
             is_quarter_end_date_range,
+            audit_start_date,
+            audit_end_date,
             audit_due_date,
 
             assignment_category_name,
@@ -214,6 +220,8 @@ with
             cal_quarter_end_date,
             is_current_quarter,
             is_quarter_end_date_range,
+            audit_start_date,
+            audit_end_date,
             audit_due_date,
 
             sectionid,
@@ -271,6 +279,8 @@ with
             cal_quarter_end_date,
             is_current_quarter,
             is_quarter_end_date_range,
+            audit_start_date,
+            audit_end_date,
             audit_due_date,
 
             sectionid,
@@ -346,6 +356,8 @@ with
             cal_quarter_end_date,
             is_current_quarter,
             is_quarter_end_date_range,
+            audit_start_date,
+            audit_end_date,
             audit_due_date,
 
             sectionid,
@@ -450,6 +462,8 @@ with
             cal_quarter_end_date,
             is_current_quarter,
             is_quarter_end_date_range,
+            audit_start_date,
+            audit_end_date,
             audit_due_date,
 
             sectionid,
@@ -497,6 +511,8 @@ with
             f.cal_quarter_end_date,
             f.is_current_quarter,
             f.is_quarter_end_date_range,
+            audit_start_date,
+            audit_end_date,
             f.audit_due_date,
 
             f.assignment_category_name,
@@ -550,6 +566,8 @@ with
             f.cal_quarter_end_date,
             f.is_current_quarter,
             f.is_quarter_end_date_range,
+            f.audit_start_date,
+            f.audit_end_date,
             f.audit_due_date,
 
             f.assignment_category_name,
@@ -605,6 +623,8 @@ select
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     r.assignment_category_name,
@@ -709,6 +729,8 @@ select
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     r.assignment_category_name,
@@ -801,6 +823,8 @@ select
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     r.assignment_category_name,
@@ -893,6 +917,8 @@ select
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     null as assignment_category_name,
@@ -987,6 +1013,8 @@ select
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     null as assignment_category_name,
@@ -1085,6 +1113,8 @@ select
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     null as assignment_category_name,
@@ -1186,6 +1216,8 @@ select
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     null as assignment_category_name,
@@ -1279,6 +1311,8 @@ select
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     r.assignment_category_name,
@@ -1376,6 +1410,8 @@ select
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     r.assignment_category_name,
