@@ -22,6 +22,7 @@ select
     sec.teachernumber as teacher_number,
     sec.terms_yearid as yearid,
 
+    a.assignmentsectionid,
     a.assignmentid as teacher_assign_id,
     a.name as teacher_assign_name,
     a.duedate as teacher_assign_due_date,
