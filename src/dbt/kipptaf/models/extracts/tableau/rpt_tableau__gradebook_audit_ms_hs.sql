@@ -1,5 +1,5 @@
 with
-    roster as (
+    assignment_student_roster as (
         select distinct
             r._dbt_source_relation,
             r.academic_year,
@@ -83,6 +83,20 @@ with
 
             f.audit_category,
 
+            t.teacher_assign_id,
+            t.teacher_assign_name,
+            t.teacher_assign_due_date,
+            t.teacher_assign_score_type,
+            t.teacher_assign_max_score,
+            t.n_students,
+            t.n_late,
+            t.n_exempt,
+            t.n_missing,
+            t.n_expected,
+            t.n_expected_scored,
+            t.teacher_running_total_assign_by_cat,
+            t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
         from {{ ref("int_tableau__gradebook_audit_roster") }} as r
         left join
             {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -90,37 +104,14 @@ with
             and r.school_level = f.school_level
             and r.assignment_category_code = f.code
             and f.cte_grouping = 'assignment_student'
+        left join
+            {{ ref("int_powerschool__teacher_assignment_audit_base") }} as t
+            on r.quarter = t.quarter
+            and r.week_number = t.week_number_quarter
+            and r.assignment_category_code = t.assignment_category_code
+            and r.sectionid = t.sectionid
+            and {{ union_dataset_join_clause(left_alias="r", right_alias="t") }}
         where r.school_level != 'ES'
-    ),
-
-    assignment_student_flags as (
-        select
-            t.assignment_category_code,
-            t.teacher_assign_id,
-
-            a.student_number,
-            a.raw_score,
-            a.score_entered,
-            a.assign_final_score_percent,
-            a.is_exempt,
-            a.is_late,
-            a.is_missing,
-
-            a.audit_category,
-            a.audit_flag_name,
-            a.audit_flag_value,
-
-        from {{ ref("int_powerschool__teacher_assignment_audit_base") }} as t
-        inner join
-            {{ ref("int_tableau__gradebook_audit_flags") }} as a
-            on t.quarter = a.quarter
-            and t.week_number_quarter = a.week_number
-            and t.schoolid = a.schoolid
-            and t.sectionid = a.sectionid
-            and t.assignment_category_code = a.assignment_category_code
-            and t.teacher_assign_id = a.teacher_assign_id
-            and a.cte_grouping = 'assignment_student'
-        where t.school_level != 'ES'
     )
 
 select
@@ -206,26 +197,38 @@ select
 
     r.audit_category,
 
-    t.teacher_assign_id,
-    t.teacher_assign_name,
-    t.teacher_assign_due_date,
-    t.teacher_assign_score_type,
-    t.teacher_assign_max_score,
-    t.n_students,
-    t.n_late,
-    t.n_exempt,
-    t.n_missing,
-    t.n_expected,
-    t.n_expected_scored,
-    t.teacher_running_total_assign_by_cat,
-    t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    r.teacher_assign_id,
+    r.teacher_assign_name,
+    r.teacher_assign_due_date,
+    r.teacher_assign_score_type,
+    r.teacher_assign_max_score,
+    r.n_students,
+    r.n_late,
+    r.n_exempt,
+    r.n_missing,
+    r.n_expected,
+    r.n_expected_scored,
+    r.teacher_running_total_assign_by_cat,
+    r.teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-from roster as r
+    a.raw_score,
+    a.score_entered,
+    a.assign_final_score_percent,
+    a.is_exempt,
+    a.is_late,
+    a.is_missing,
+
+    a.audit_flag_name,
+    a.audit_flag_value,
+
+from assignment_student_roster as r
 left join
-    {{ ref("int_powerschool__teacher_assignment_audit_base") }} as t
-    on r.quarter = t.quarter
-    and r.week_number = t.week_number_quarter
-    and r.sectionid = t.sectionid
-    and {{ union_dataset_join_clause(left_alias="r", right_alias="t") }}
-    -- left join assignment_student_flags as f on
-    
+    {{ ref("int_tableau__gradebook_audit_flags") }} as a
+    on r.quarter = a.quarter
+    and r.week_number = a.week_number
+    and r.teacher_assign_id = a.teacher_assign_id
+    and r.assignment_category_code = a.assignment_category_code
+    and r.sectionid = a.sectionid
+    and r.student_number = a.student_number
+    and {{ union_dataset_join_clause(left_alias="r", right_alias="a") }}
+    and a.cte_grouping = 'assignment_student'
