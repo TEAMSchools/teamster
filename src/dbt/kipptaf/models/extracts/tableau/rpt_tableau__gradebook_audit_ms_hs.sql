@@ -1,4 +1,4 @@
-with
+/*with
     roster_assignment_student as (
         select
             r._dbt_source_relation,
@@ -93,8 +93,7 @@ with
             and r.assignment_category_code = f.code
             and f.cte_grouping = 'assignment_student'
         where r.school_level != 'ES'
-    )
-
+    )*/
 select
     t.teacher_assign_id,
     t.teacher_assign_name,
