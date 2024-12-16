@@ -51,12 +51,12 @@ defs = Definitions(
         *load_assets_from_modules(
             modules=[
                 _dbt,
+                _dlt,
                 _google,
                 adp,
                 amplify,
-                extracts,
                 deanslist,
-                _dlt,
+                extracts,
                 ldap,
                 overgrad,
                 performance_management,
@@ -69,6 +69,7 @@ defs = Definitions(
     ],
     asset_checks=asset_checks.freshness_checks,
     schedules=[
+        *_dlt.schedules,
         *_google.schedules,
         *adp.schedules,
         *airbyte.schedules,
