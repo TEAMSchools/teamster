@@ -30,6 +30,7 @@ with
             c.n_missing,
             c.n_expected,
             c.n_expected_scored,
+            c.teacher_running_total_assign_by_cat,
             c.teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
             sum(c.teacher_assign_max_score) over (
@@ -39,15 +40,6 @@ with
             sum(c.n_missing) over (
                 partition by c._dbt_source_relation, c.sectionid, c.quarter
             ) as total_missing_section_quarter,
-
-            count(c.teacher_assign_id) over (
-                partition by
-                    c._dbt_source_relation,
-                    c.sectionid,
-                    c.quarter,
-                    c.assignment_category_code
-                order by c.week_number_quarter asc
-            ) as assignment_count_section_quarter_category_running_week,
 
         from {{ ref("int_powerschool__teacher_assignment_audit_base") }} as c
         where c.yearid = {{ var("current_academic_year") - 1990 }}
@@ -80,29 +72,28 @@ select
     n_missing,
     n_expected,
     n_expected_scored,
+    teacher_running_total_assign_by_cat,
     teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-    assignment_count_section_quarter_category_running_week
-    as teacher_running_total_assign_by_cat,
     if(teacher_assign_id is not null, 1, 0) as teacher_assign_count,
 
     if(
         assignment_category_code = 'W'
-        and assignment_count_section_quarter_category_running_week < expectation,
+        and teacher_running_total_assign_by_cat < expectation,
         true,
         false
     ) as w_expected_assign_count_not_met,
 
     if(
         assignment_category_code = 'F'
-        and assignment_count_section_quarter_category_running_week < expectation,
+        and teacher_running_total_assign_by_cat < expectation,
         true,
         false
     ) as f_expected_assign_count_not_met,
 
     if(
         assignment_category_code = 'S'
-        and assignment_count_section_quarter_category_running_week < expectation,
+        and teacher_running_total_assign_by_cat < expectation,
         true,
         false
     ) as s_expected_assign_count_not_met,

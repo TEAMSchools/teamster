@@ -37,6 +37,15 @@ select
     asg.avg_expected_scored_percent
     as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
+    count(a.assignmentid) over (
+        partition by
+            sec._dbt_source_relation,
+            sec.sections_id,
+            c.quarter,
+            ge.assignment_category_code
+        order by c.week_number_quarter asc
+    ) as teacher_running_total_assign_by_cat,
+
 from {{ ref("int_powerschool__calendar_week") }} as c
 inner join
     {{ ref("stg_reporting__gradebook_expectations") }} as ge
