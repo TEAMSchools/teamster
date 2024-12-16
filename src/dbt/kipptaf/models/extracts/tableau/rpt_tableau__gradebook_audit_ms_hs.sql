@@ -354,4 +354,123 @@ left join
     and a.audit_flag_name = 'w_grade_inflation'
 where r.assignment_category_code = 'W'
 
+union all
 
+select distinct
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.region,
+    r.school_level,
+    r.region_school_level,
+    r.schoolid,
+    r.school,
+
+    r.studentid,
+    r.student_number,
+    r.student_name,
+    r.grade_level,
+    r.salesforce_id,
+    r.ktc_cohort,
+    r.enroll_status,
+    r.cohort,
+    r.gender,
+    r.ethnicity,
+    r.advisory,
+    r.hos,
+    r.year_in_school,
+    r.year_in_network,
+    r.rn_undergrad,
+    r.is_out_of_district,
+    r.is_pathways,
+    r.is_retained_year,
+    r.is_retained_ever,
+    r.lunch_status,
+    r.gifted_and_talented,
+    r.iep_status,
+    r.lep_status,
+    r.is_504,
+    r.is_counseling_services,
+    r.is_student_athlete,
+    r.tutoring_nj,
+    r.nj_student_tier,
+    r.ada,
+    r.ada_above_or_at_80,
+    r.date_enrolled,
+
+    r.`quarter`,
+    r.semester,
+    r.week_number,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.cal_quarter_end_date,
+    r.is_current_quarter,
+    r.is_quarter_end_date_range,
+    r.audit_due_date,
+
+    r.assignment_category_name,
+    r.assignment_category_code,
+    r.assignment_category_term,
+    r.expectation,
+    r.notes,
+
+    r.section_or_period,
+    r.sectionid,
+    r.sections_dcid,
+    r.section_number,
+    r.external_expression,
+    r.credit_type,
+    r.course_number,
+    r.course_name,
+    r.exclude_from_gpa,
+    r.is_ap_course,
+
+    r.teacher_number,
+    r.teacher_name,
+    r.tableau_username,
+
+    r.category_quarter_percent_grade,
+    r.category_quarter_average_all_courses,
+
+    r.quarter_course_percent_grade_that_matters,
+    r.quarter_course_grade_points_that_matters,
+    r.quarter_citizenship,
+    r.quarter_comment_value,
+
+    r.audit_category,
+
+    null as teacher_assign_id,
+    '' as teacher_assign_name,
+    cast(null as date) as teacher_assign_due_date,
+    '' as teacher_assign_score_type,
+    null as teacher_assign_max_score,
+    null as n_students,
+    null as n_late,
+    null as n_exempt,
+    null as n_missing,
+    null as n_expected,
+    null as n_expected_scored,
+    null as teacher_running_total_assign_by_cat,
+    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
+    null as raw_score,
+    null as score_entered,
+    null as assign_final_score_percent,
+    null as is_exempt,
+    null as is_late,
+    null as is_missing,
+
+    a.audit_flag_name,
+    a.audit_flag_value,
+
+from roster as r
+left join
+    {{ ref("int_tableau__gradebook_audit_flags") }} as a
+    on r.quarter = a.quarter
+    and r.week_number = a.week_number
+    and r.`quarter` = a.`quarter`
+    and r.sectionid = a.sectionid
+    and r.student_number = a.student_number
+    and {{ union_dataset_join_clause(left_alias="r", right_alias="a") }}
+    and a.audit_flag_name = 'qt_effort_grade_missing'
+where r.assignment_category_code = 'W'
