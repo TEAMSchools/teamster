@@ -50,6 +50,8 @@ with
             r.cal_quarter_end_date,
             r.is_current_quarter,
             r.is_quarter_end_date_range,
+            r.audit_start_date,
+            r.audit_end_date,
             r.audit_due_date,
 
             r.assignment_category_name,
@@ -165,6 +167,8 @@ with
             r.cal_quarter_end_date,
             r.is_current_quarter,
             r.is_quarter_end_date_range,
+            r.audit_start_date,
+            r.audit_end_date,
             r.audit_due_date,
 
             '' as assignment_category_name,
@@ -258,6 +262,8 @@ select distinct
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     r.assignment_category_name,
@@ -380,6 +386,8 @@ select distinct
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     r.assignment_category_name,
@@ -502,6 +510,8 @@ select distinct
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     r.assignment_category_name,
@@ -624,6 +634,8 @@ select distinct
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     '' as assignment_category_name,
@@ -745,6 +757,8 @@ select distinct
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     '' as assignment_category_name,
@@ -866,6 +880,8 @@ select distinct
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     r.assignment_category_name,
@@ -988,6 +1004,8 @@ select distinct
     r.cal_quarter_end_date,
     r.is_current_quarter,
     r.is_quarter_end_date_range,
+    r.audit_start_date,
+    r.audit_end_date,
     r.audit_due_date,
 
     r.assignment_category_name,
