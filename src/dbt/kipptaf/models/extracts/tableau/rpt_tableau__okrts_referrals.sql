@@ -100,9 +100,9 @@ with
             lc.powerschool_school_id as schoolid,
 
             row_number() over (
-                partition by rs.student_id, rs.dl_penalty_id, lc.powerschool_school_id
+                partition by rs.student_id, rs.dl_incident_id, lc.powerschool_school_id
                 order by rs.consequence desc
-            ) as rn_penalty,
+            ) as rn_incident,
         from {{ ref("stg_deanslist__reconcile_suspensions") }} as rs
         inner join
             {{ ref("stg_people__location_crosswalk") }} as lc
@@ -307,9 +307,9 @@ left join
 left join
     suspension_reconciliation_rollup as sr
     on co.student_number = sr.student_number
-    and dlp.incident_penalty_id = sr.penalty_id
+    and dlp.incident_id = sr.incident_id
     and co.schoolid = sr.schoolid
-    and sr.rn_penalty = 1
+    and sr.rn_incident = 1
 left join
     ms_grad_sub as ms
     on co.student_number = ms.student_number
