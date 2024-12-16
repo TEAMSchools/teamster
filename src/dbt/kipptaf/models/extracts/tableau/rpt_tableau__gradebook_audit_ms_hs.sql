@@ -95,6 +95,7 @@
         where r.school_level != 'ES'
     )*/
 select
+    t.assignment_category_code,
     t.teacher_assign_id,
     t.teacher_assign_name,
     t.teacher_assign_due_date,
@@ -120,7 +121,7 @@ select
     a.audit_flag_value,
 
 from {{ ref("int_powerschool__teacher_assignment_audit_base") }} as t
-left join
+inner join
     {{ ref("int_tableau__gradebook_audit_flags") }} as a
     on t.quarter = a.quarter
     and t.week_number_quarter = a.week_number
