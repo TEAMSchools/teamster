@@ -367,6 +367,8 @@ select
     s.is_ap_course,
     s.tableau_username,
 
+    w.week_start_monday as audit_start_date,
+    w.week_end_sunday as audit_end_date,
     w.school_week_start_date_lead as audit_due_date,
 
     c.category_quarter_percent_grade,
