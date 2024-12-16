@@ -1,3 +1,5 @@
+{{- config(materialized="table") -}}
+
 with
     roster_categories as (
         select distinct
