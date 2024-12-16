@@ -1,3 +1,5 @@
+{{- config(enabled=false) -}}
+
 with
     union_relations as (
         {{
