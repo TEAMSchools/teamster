@@ -582,47 +582,47 @@ with
     )
 
 select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    region,
-    school_level,
-    region_school_level,
-    schoolid,
-    school,
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.region,
+    r.school_level,
+    r.region_school_level,
+    r.schoolid,
+    r.school,
 
-    student_number,
-    grade_level,
+    r.student_number,
+    r.grade_level,
     null as ada,
     null as ada_above_or_at_80,
     date_enrolled,
 
-    semester,
-    `quarter`,
-    week_number,
-    quarter_start_date,
-    quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
-    is_quarter_end_date_range,
-    audit_due_date,
+    r.semester,
+    r.`quarter`,
+    r.week_number,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.cal_quarter_end_date,
+    r.is_current_quarter,
+    r.is_quarter_end_date_range,
+    r.audit_due_date,
 
-    assignment_category_name,
-    assignment_category_code,
-    assignment_category_term,
-    sectionid,
+    r.assignment_category_name,
+    r.assignment_category_code,
+    r.assignment_category_term,
+    r.sectionid,
     null as sections_dcid,
     null as section_number,
     '' as external_expression,
     null as section_or_period,
-    credit_type,
-    course_number,
-    course_name,
-    exclude_from_gpa,
-    is_ap_course,
+    r.credit_type,
+    r.course_number,
+    r.course_name,
+    r.exclude_from_gpa,
+    r.is_ap_course,
 
-    teacher_number,
-    teacher_name,
+    r.teacher_number,
+    r.teacher_name,
 
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
@@ -631,9 +631,9 @@ select
     '' as quarter_citizenship,
     '' as quarter_comment_value,
 
-    teacher_assign_id,
+    r.teacher_assign_id,
     '' as teacher_assign_name,
-    teacher_assign_due_date,
+    r.teacher_assign_due_date,
     '' as teacher_assign_score_type,
     null as teacher_assign_max_score,
     null as n_students,
@@ -646,15 +646,17 @@ select
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-    raw_score,
-    score_entered,
-    assign_final_score_percent,
-    is_exempt,
-    is_late,
-    is_missing,
-    cte_grouping,
+    r.raw_score,
+    r.score_entered,
+    r.assign_final_score_percent,
+    r.is_exempt,
+    r.is_late,
+    r.is_missing,
+    r.cte_grouping,
 
-    audit_flag_name,
+    r.audit_flag_name,
+
+    f.audit_category,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 
@@ -672,56 +674,62 @@ from
             assign_s_ms_score_not_conversion_chart_options,
             assign_s_hs_score_not_conversion_chart_options
         )
-    )
+    ) as r
+left join
+    {{ ref("stg_reporting__gradebook_flags") }} as f
+    on r.region = f.region
+    and r.school_level = f.school_level
+    and r.assignment_category_code = f.code
+    and r.audit_flag_name = f.audit_flag_name
 where audit_flag_value
 
 union all
 
 select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    region,
-    school_level,
-    region_school_level,
-    schoolid,
-    school,
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.region,
+    r.school_level,
+    r.region_school_level,
+    r.schoolid,
+    r.school,
 
-    student_number,
-    grade_level,
+    r.student_number,
+    r.grade_level,
     null as ada,
     null as ada_above_or_at_80,
     cast(null as date) as date_enrolled,
 
-    semester,
-    `quarter`,
-    week_number,
-    quarter_start_date,
-    quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
-    is_quarter_end_date_range,
-    audit_due_date,
+    r.semester,
+    r.`quarter`,
+    r.week_number,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.cal_quarter_end_date,
+    r.is_current_quarter,
+    r.is_quarter_end_date_range,
+    r.audit_due_date,
 
-    assignment_category_name,
-    assignment_category_code,
-    assignment_category_term,
-    sectionid,
+    r.assignment_category_name,
+    r.assignment_category_code,
+    r.assignment_category_term,
+    r.sectionid,
     null as sections_dcid,
     null as section_number,
     '' as external_expression,
     null as section_or_period,
-    credit_type,
-    course_number,
-    course_name,
-    exclude_from_gpa,
+    r.credit_type,
+    r.course_number,
+    r.course_name,
+    r.exclude_from_gpa,
     null as is_ap_course,
 
-    teacher_number,
-    teacher_name,
+    r.teacher_number,
+    r.teacher_name,
 
-    category_quarter_percent_grade,
-    category_quarter_average_all_courses,
+    r.category_quarter_percent_grade,
+    r.category_quarter_average_all_courses,
     null as quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
     '' as quarter_citizenship,
@@ -748,64 +756,72 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
-    cte_grouping,
+    r.cte_grouping,
 
-    audit_flag_name,
+    r.audit_flag_name,
+
+    f.audit_category,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 
 from
     student_course_category_inflation
-    unpivot (audit_flag_value for audit_flag_name in (w_grade_inflation))
+    unpivot (audit_flag_value for audit_flag_name in (w_grade_inflation)) as r
+left join
+    {{ ref("stg_reporting__gradebook_flags") }} as f
+    on r.region = f.region
+    and r.school_level = f.school_level
+    and r.assignment_category_code = f.code
+    and r.audit_flag_name = f.audit_flag_name
 where audit_flag_value
 
 union all
 
 select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    region,
-    school_level,
-    region_school_level,
-    schoolid,
-    school,
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.region,
+    r.school_level,
+    r.region_school_level,
+    r.schoolid,
+    r.school,
 
-    student_number,
-    grade_level,
+    r.student_number,
+    r.grade_level,
     null as ada,
     null as ada_above_or_at_80,
     cast(null as date) as date_enrolled,
 
-    semester,
-    `quarter`,
-    week_number,
-    quarter_start_date,
-    quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
-    is_quarter_end_date_range,
-    audit_due_date,
+    r.semester,
+    r.`quarter`,
+    r.week_number,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.cal_quarter_end_date,
+    r.is_current_quarter,
+    r.is_quarter_end_date_range,
+    r.audit_due_date,
 
-    assignment_category_name,
-    assignment_category_code,
-    assignment_category_term,
-    sectionid,
+    r.assignment_category_name,
+    r.assignment_category_code,
+    r.assignment_category_term,
+    r.sectionid,
     null as sections_dcid,
     null as section_number,
     '' as external_expression,
     null as section_or_period,
-    credit_type,
-    course_number,
-    course_name,
-    exclude_from_gpa,
+    r.credit_type,
+    r.course_number,
+    r.course_name,
+    r.exclude_from_gpa,
     null as is_ap_course,
 
-    teacher_number,
-    teacher_name,
+    r.teacher_number,
+    r.teacher_name,
 
-    category_quarter_percent_grade,
-    category_quarter_average_all_courses,
+    r.category_quarter_percent_grade,
+    r.category_quarter_average_all_courses,
     null as quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
     '' as quarter_citizenship,
@@ -832,68 +848,76 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
-    cte_grouping,
+    r.cte_grouping,
 
-    audit_flag_name,
+    r.audit_flag_name,
+
+    f.audit_category,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 
 from
     student_course_category_effort
-    unpivot (audit_flag_value for audit_flag_name in (qt_effort_grade_missing))
+    unpivot (audit_flag_value for audit_flag_name in (qt_effort_grade_missing)) as r
+left join
+    {{ ref("stg_reporting__gradebook_flags") }} as f
+    on r.region = f.region
+    and r.school_level = f.school_level
+    and r.assignment_category_code = f.code
+    and r.audit_flag_name = f.audit_flag_name
 where audit_flag_value
 
 union all
 
 select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    region,
-    school_level,
-    region_school_level,
-    schoolid,
-    school,
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.region,
+    r.school_level,
+    r.region_school_level,
+    r.schoolid,
+    r.school,
 
-    student_number,
-    grade_level,
+    r.student_number,
+    r.grade_level,
     null as ada,
     null as ada_above_or_at_80,
     cast(null as date) as date_enrolled,
 
-    semester,
-    `quarter`,
-    week_number,
-    quarter_start_date,
-    quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
-    is_quarter_end_date_range,
-    audit_due_date,
+    r.semester,
+    r.`quarter`,
+    r.week_number,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.cal_quarter_end_date,
+    r.is_current_quarter,
+    r.is_quarter_end_date_range,
+    r.audit_due_date,
 
     null as assignment_category_name,
     null as assignment_category_code,
     null as assignment_category_term,
-    sectionid,
+    r.sectionid,
     null as sections_dcid,
     null as section_number,
     '' as external_expression,
     null as section_or_period,
-    credit_type,
-    course_number,
-    course_name,
-    exclude_from_gpa,
+    r.credit_type,
+    r.course_number,
+    r.course_name,
+    r.exclude_from_gpa,
     null as is_ap_course,
 
-    teacher_number,
-    teacher_name,
+    r.teacher_number,
+    r.teacher_name,
 
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
-    quarter_course_percent_grade_that_matters,
+    r.quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
     '' as quarter_citizenship,
-    quarter_comment_value,
+    r.quarter_comment_value,
 
     null as teacher_assign_id,
     '' as teacher_assign_name,
@@ -916,9 +940,11 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
-    cte_grouping,
+    r.cte_grouping,
 
-    audit_flag_name,
+    r.audit_flag_name,
+
+    f.audit_category,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 
@@ -926,60 +952,66 @@ from
     student_course_nj_ms_hs unpivot (
         audit_flag_value for audit_flag_name
         in (qt_percent_grade_greater_100, qt_grade_70_comment_missing)
-    )
+    ) as r
+left join
+    {{ ref("stg_reporting__gradebook_flags") }} as f
+    on r.region = f.region
+    and r.school_level = f.school_level
+    and r.`quarter` = f.code
+    and r.audit_flag_name = f.audit_flag_name
 where audit_flag_value
 
 union all
 
 select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    region,
-    school_level,
-    region_school_level,
-    schoolid,
-    school,
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.region,
+    r.school_level,
+    r.region_school_level,
+    r.schoolid,
+    r.school,
 
-    student_number,
-    grade_level,
+    r.student_number,
+    r.grade_level,
     null as ada,
     null as ada_above_or_at_80,
     cast(null as date) as date_enrolled,
 
-    semester,
-    `quarter`,
-    week_number,
-    quarter_start_date,
-    quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
-    is_quarter_end_date_range,
-    audit_due_date,
+    r.semester,
+    r.`quarter`,
+    r.week_number,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.cal_quarter_end_date,
+    r.is_current_quarter,
+    r.is_quarter_end_date_range,
+    r.audit_due_date,
 
     null as assignment_category_name,
     null as assignment_category_code,
     null as assignment_category_term,
-    sectionid,
+    r.sectionid,
     null as sections_dcid,
     null as section_number,
     '' as external_expression,
     null as section_or_period,
-    credit_type,
-    course_number,
-    course_name,
-    exclude_from_gpa,
+    r.credit_type,
+    r.course_number,
+    r.course_name,
+    r.exclude_from_gpa,
     null as is_ap_course,
 
-    teacher_number,
-    teacher_name,
+    r.teacher_number,
+    r.teacher_name,
 
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
-    quarter_course_percent_grade_that_matters,
+    r.quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
-    quarter_citizenship,
-    quarter_comment_value,
+    r.quarter_citizenship,
+    r.quarter_comment_value,
 
     null as teacher_assign_id,
     '' as teacher_assign_name,
@@ -1002,9 +1034,11 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
-    cte_grouping,
+    r.cte_grouping,
 
-    audit_flag_name,
+    r.audit_flag_name,
+
+    f.audit_category,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 
@@ -1016,60 +1050,66 @@ from
             qt_g1_g8_conduct_code_missing,
             qt_g1_g8_conduct_code_incorrect
         )
-    )
+    ) as r
+left join
+    {{ ref("stg_reporting__gradebook_flags") }} as f
+    on r.region = f.region
+    and r.school_level = f.school_level
+    and r.`quarter` = f.code
+    and r.audit_flag_name = f.audit_flag_name
 where audit_flag_value
 
 union all
 
 select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    region,
-    school_level,
-    region_school_level,
-    schoolid,
-    school,
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.region,
+    r.school_level,
+    r.region_school_level,
+    r.schoolid,
+    r.school,
 
-    student_number,
-    grade_level,
+    r.student_number,
+    r.grade_level,
     null as ada,
     null as ada_above_or_at_80,
     cast(null as date) as date_enrolled,
 
-    semester,
-    `quarter`,
-    week_number,
-    quarter_start_date,
-    quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
-    is_quarter_end_date_range,
-    audit_due_date,
+    r.semester,
+    r.`quarter`,
+    r.week_number,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.cal_quarter_end_date,
+    r.is_current_quarter,
+    r.is_quarter_end_date_range,
+    r.audit_due_date,
 
     null as assignment_category_name,
     null as assignment_category_code,
     null as assignment_category_term,
-    sectionid,
+    r.sectionid,
     null as sections_dcid,
     null as section_number,
     '' as external_expression,
     null as section_or_period,
-    credit_type,
-    course_number,
-    course_name,
-    exclude_from_gpa,
+    r.credit_type,
+    r.course_number,
+    r.course_name,
+    r.exclude_from_gpa,
     null as is_ap_course,
 
-    teacher_number,
-    teacher_name,
+    r.teacher_number,
+    r.teacher_name,
 
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
-    quarter_course_percent_grade_that_matters,
+    r.quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
-    quarter_citizenship,
-    quarter_comment_value,
+    r.quarter_citizenship,
+    r.quarter_comment_value,
 
     null as teacher_assign_id,
     '' as teacher_assign_name,
@@ -1092,9 +1132,11 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
-    cte_grouping,
+    r.cte_grouping,
 
-    audit_flag_name,
+    r.audit_flag_name,
+
+    f.audit_category,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 
@@ -1109,58 +1151,64 @@ from
             qt_kg_conduct_code_not_hr,
             qt_kg_conduct_code_incorrect
         )
-    )
+    ) as r
+left join
+    {{ ref("stg_reporting__gradebook_flags") }} as f
+    on r.region = f.region
+    and r.school_level = f.school_level
+    and r.`quarter` = f.code
+    and r.audit_flag_name = f.audit_flag_name
 where audit_flag_value
 
 union all
 
 select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    region,
-    school_level,
-    region_school_level,
-    schoolid,
-    school,
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.region,
+    r.school_level,
+    r.region_school_level,
+    r.schoolid,
+    r.school,
 
-    student_number,
-    grade_level,
+    r.student_number,
+    r.grade_level,
     null as ada,
-    ada_above_or_at_80,
+    r.ada_above_or_at_80,
     cast(null as date) as date_enrolled,
 
-    semester,
-    `quarter`,
-    week_number,
-    quarter_start_date,
-    quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
-    is_quarter_end_date_range,
-    audit_due_date,
+    r.semester,
+    r.`quarter`,
+    r.week_number,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.cal_quarter_end_date,
+    r.is_current_quarter,
+    r.is_quarter_end_date_range,
+    r.audit_due_date,
 
     null as assignment_category_name,
     null as assignment_category_code,
     null as assignment_category_term,
-    sectionid,
+    r.sectionid,
     null as sections_dcid,
     null as section_number,
     '' as external_expression,
     null as section_or_period,
-    credit_type,
-    course_number,
-    course_name,
-    exclude_from_gpa,
+    r.credit_type,
+    r.course_number,
+    r.course_name,
+    r.exclude_from_gpa,
     null as is_ap_course,
 
-    teacher_number,
-    teacher_name,
+    r.teacher_number,
+    r.teacher_name,
 
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
-    quarter_course_percent_grade_that_matters,
-    quarter_course_grade_points_that_matters,
+    r.quarter_course_percent_grade_that_matters,
+    r.quarter_course_grade_points_that_matters,
     null as quarter_citizenship,
     null as quarter_comment_value,
 
@@ -1185,29 +1233,37 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
-    cte_grouping,
+    r.cte_grouping,
 
-    audit_flag_name,
+    r.audit_flag_name,
+
+    f.audit_category,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 
 from
     student unpivot (
         audit_flag_value for audit_flag_name in (qt_student_is_ada_80_plus_gpa_less_2)
-    )
+    ) as r
+left join
+    {{ ref("stg_reporting__gradebook_flags") }} as f
+    on r.region = f.region
+    and r.school_level = f.school_level
+    and r.`quarter` = f.code
+    and r.audit_flag_name = f.audit_flag_name
 where audit_flag_value
 
 union all
 
 select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    region,
-    school_level,
-    region_school_level,
-    schoolid,
-    school,
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.region,
+    r.school_level,
+    r.region_school_level,
+    r.schoolid,
+    r.school,
 
     null as student_number,
     null as grade_level,
@@ -1215,32 +1271,32 @@ select
     null as ada_above_or_at_80,
     cast(null as date) as date_enrolled,
 
-    semester,
-    `quarter`,
-    week_number,
-    quarter_start_date,
-    quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
-    is_quarter_end_date_range,
-    audit_due_date,
+    r.semester,
+    r.`quarter`,
+    r.week_number,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.cal_quarter_end_date,
+    r.is_current_quarter,
+    r.is_quarter_end_date_range,
+    r.audit_due_date,
 
-    assignment_category_name,
-    assignment_category_code,
-    assignment_category_term,
-    sectionid,
+    r.assignment_category_name,
+    r.assignment_category_code,
+    r.assignment_category_term,
+    r.sectionid,
     null as sections_dcid,
     null as section_number,
     '' as external_expression,
     null as section_or_period,
-    credit_type,
-    course_number,
-    course_name,
-    exclude_from_gpa,
+    r.credit_type,
+    r.course_number,
+    r.course_name,
+    r.exclude_from_gpa,
     null as is_ap_course,
 
-    teacher_number,
-    teacher_name,
+    r.teacher_number,
+    r.teacher_name,
 
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
@@ -1249,7 +1305,7 @@ select
     null as quarter_citizenship,
     null as quarter_comment_value,
 
-    teacher_assign_id,
+    r.teacher_assign_id,
     '' as teacher_assign_name,
     cast(null as date) as teacher_assign_due_date,
     '' as teacher_assign_score_type,
@@ -1270,9 +1326,11 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
-    cte_grouping,
+    r.cte_grouping,
 
-    audit_flag_name,
+    r.audit_flag_name,
+
+    f.audit_category,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 
@@ -1283,20 +1341,26 @@ from
             f_assign_max_score_not_10,
             s_max_score_greater_100
         )
-    )
+    ) as r
+left join
+    {{ ref("stg_reporting__gradebook_flags") }} as f
+    on r.region = f.region
+    and r.school_level = f.school_level
+    and r.assignment_category_code = f.code
+    and r.audit_flag_name = f.audit_flag_name
 where audit_flag_value
 
 union all
 
 select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    region,
-    school_level,
-    region_school_level,
-    schoolid,
-    school,
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.region,
+    r.school_level,
+    r.region_school_level,
+    r.schoolid,
+    r.school,
 
     null as student_number,
     null as grade_level,
@@ -1304,32 +1368,32 @@ select
     null as ada_above_or_at_80,
     cast(null as date) as date_enrolled,
 
-    semester,
-    `quarter`,
-    week_number,
-    quarter_start_date,
-    quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
-    is_quarter_end_date_range,
-    audit_due_date,
+    r.semester,
+    r.`quarter`,
+    r.week_number,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.cal_quarter_end_date,
+    r.is_current_quarter,
+    r.is_quarter_end_date_range,
+    r.audit_due_date,
 
-    assignment_category_name,
-    assignment_category_code,
-    assignment_category_term,
-    sectionid,
+    r.assignment_category_name,
+    r.assignment_category_code,
+    r.assignment_category_term,
+    r.sectionid,
     null as sections_dcid,
     null as section_number,
     '' as external_expression,
     null as section_or_period,
-    credit_type,
-    course_number,
-    course_name,
-    exclude_from_gpa,
+    r.credit_type,
+    r.course_number,
+    r.course_name,
+    r.exclude_from_gpa,
     null as is_ap_course,
 
-    teacher_number,
-    teacher_name,
+    r.teacher_number,
+    r.teacher_name,
 
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
@@ -1359,9 +1423,11 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
-    cte_grouping,
+    r.cte_grouping,
 
-    audit_flag_name,
+    r.audit_flag_name,
+
+    f.audit_category,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 
@@ -1373,5 +1439,11 @@ from
             f_expected_assign_count_not_met,
             s_expected_assign_count_not_met
         )
-    )
+    ) as r
+left join
+    {{ ref("stg_reporting__gradebook_flags") }} as f
+    on r.region = f.region
+    and r.school_level = f.school_level
+    and r.assignment_category_code = f.code
+    and r.audit_flag_name = f.audit_flag_name
 where audit_flag_value

@@ -1,6 +1,6 @@
-/*with
+with
     roster_assignment_student as (
-        select
+        select distinct
             r._dbt_source_relation,
             r.academic_year,
             r.academic_year_display,
@@ -83,7 +83,6 @@
 
             f.audit_category,
             f.audit_flag_name,
-            f.cte_grouping,
 
         from {{ ref("int_tableau__gradebook_audit_roster") }} as r
         left join
@@ -130,3 +129,4 @@ inner join
     and t.assignment_category_code = a.assignment_category_code
     and t.teacher_assign_id = a.teacher_assign_id
     and a.cte_grouping = 'assignment_student'
+where t.school_level != 'ES'
