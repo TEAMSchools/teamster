@@ -111,6 +111,7 @@ with
 
     attachments as (
         select
+            'Suspension Letter' as type,
             incident_id,
             string_agg(
                 concat(entity_name, ' (', date(file_posted_at__date), ')'), '; '
@@ -123,6 +124,17 @@ with
                 'OSS Long-Term Suspension',
                 'OSS Suspended Next Day'
             )
+        group by all
+
+        union all
+        select
+            'Upload' as type,
+            incident_id,
+            string_agg(
+                concat(public_filename, ' (', date(file_posted_at__date), ')'), '; '
+            ) as attachments,
+        from {{ ref("stg_deanslist__incidents__attachments") }}
+        where attachment_type = 'UPLOAD'
         group by all
     )
 
@@ -183,7 +195,8 @@ select
 
     ms.ms_attended,
 
-    ats.attachments,
+    if(ats.type = 'Suspension Letter', ats.attachments, null) as attachments,
+    if(ats.type = 'Upload', ats.attachments, null) as attachments_uploaded,
 
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
