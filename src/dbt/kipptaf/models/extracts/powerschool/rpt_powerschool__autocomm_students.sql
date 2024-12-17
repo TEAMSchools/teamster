@@ -19,36 +19,36 @@ with
             )
     )
 
--- trunk-ignore(sqlfluff/ST06)
 select
     se.student_number,
     se.student_web_id,
-
-    if(
-        s.student_web_password is not null, null, se.student_web_password
-    ) as student_web_password,
-
     se.advisory_name as team,
     se.lunch_status as eligibility_name,
     se.lunch_balance as total_balance,
     se.advisor_lastfirst as home_room,
-
-    if(
-        s.student_web_password is not null, null, se.student_web_password
-    ) as web_password,
+    se.student_email_google as u_studentsuserfields__studentemail,
 
     g.s_nj_stu_x__graduation_pathway_math,
     g.s_nj_stu_x__graduation_pathway_ela,
 
-    format_date('%m/%d/%Y', de.district_entry_date) as district_entry_date,
-    format_date('%m/%d/%Y', de.district_entry_date) as school_entry_date,
-
     se.student_web_id || '.fam' as web_id,
     se.academic_year + (13 - se.grade_level) as graduation_year,
+
+    regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
+
+    format_date('%m/%d/%Y', de.district_entry_date) as district_entry_date,
+    format_date('%m/%d/%Y', de.district_entry_date) as school_entry_date,
 
     if(se.enroll_status = 0, 1, 0) as student_allowwebaccess,
     if(se.enroll_status = 0, 1, 0) as allowwebaccess,
     if(se.is_retained_year, 1, 0) as retained_tf,
+
+    if(
+        s.student_web_password is not null, null, se.student_web_password
+    ) as student_web_password,
+    if(
+        s.student_web_password is not null, null, se.student_web_password
+    ) as web_password,
 
     case
         when se.grade_level in (0, 5, 9)
@@ -62,8 +62,6 @@ select
         when se.grade_level = 4
         then 'E'
     end as track,
-
-    regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
 from {{ ref("base_powerschool__student_enrollments") }} as se
 left join
     {{ ref("stg_powerschool__students") }} as s
