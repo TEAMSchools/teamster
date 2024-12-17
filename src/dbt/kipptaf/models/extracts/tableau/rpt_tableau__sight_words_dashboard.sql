@@ -36,10 +36,10 @@ inner join
     and rt.type = 'RT'
     and rt.school_id = 0
 inner join
-    {{ ref("stg_illuminate__repository_fields") }} as f
+    {{ ref("stg_illuminate__dna_repositories__repository_fields") }} as f
     on r.repository_id = f.repository_id
 inner join
-    {{ ref("stg_illuminate__repository_grade_levels") }} as g
+    {{ ref("stg_illuminate__dna_repositories__repository_grade_levels") }} as g
     on r.repository_id = g.repository_id
 inner join
     {{ ref("int_tableau__student_enrollments") }} as co
@@ -103,10 +103,10 @@ inner join
     and rt.type = 'RT'
     and rt.school_id = 0
 inner join
-    {{ ref("stg_illuminate__repository_fields") }} as f
+    {{ ref("stg_illuminate__dna_repositories__repository_fields") }} as f
     on r.repository_id = f.repository_id
 inner join
-    {{ ref("stg_illuminate__repository_grade_levels") }} as g
+    {{ ref("stg_illuminate__dna_repositories__repository_grade_levels") }} as g
     on r.repository_id = g.repository_id
 inner join
     {{ ref("int_tableau__student_enrollments") }} as co
