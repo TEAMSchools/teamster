@@ -320,8 +320,8 @@ select distinct
     a.is_late,
     a.is_missing,
 
-    a.audit_flag_name,
-    a.audit_flag_value,
+    coalesce(a.audit_flag_name, 'no_flag') as audit_flag_name,
+    coalesce(a.audit_flag_value, 0) as audit_flag_value,
 
 from roster_categories as r
 left join
@@ -444,8 +444,8 @@ select distinct
     null as is_late,
     null as is_missing,
 
-    a.audit_flag_name,
-    a.audit_flag_value,
+    coalesce(a.audit_flag_name, 'no_flag') as audit_flag_name,
+    coalesce(a.audit_flag_value, 0) as audit_flag_value,
 
 from roster_categories as r
 left join
@@ -568,8 +568,8 @@ select distinct
     null as is_late,
     null as is_missing,
 
-    a.audit_flag_name,
-    a.audit_flag_value,
+    coalesce(a.audit_flag_name, 'no_flag') as audit_flag_name,
+    coalesce(a.audit_flag_value, 0) as audit_flag_value,
 
 from roster_categories as r
 left join
@@ -692,8 +692,8 @@ select distinct
     null as is_late,
     null as is_missing,
 
-    a.audit_flag_name,
-    a.audit_flag_value,
+    coalesce(a.audit_flag_name, 'no_flag') as audit_flag_name,
+    coalesce(a.audit_flag_value, 0) as audit_flag_value,
 
 from roster_quarters as r
 left join
@@ -815,8 +815,8 @@ select distinct
     null as is_late,
     null as is_missing,
 
-    a.audit_flag_name,
-    a.audit_flag_value,
+    coalesce(a.audit_flag_name, 'no_flag') as audit_flag_name,
+    coalesce(a.audit_flag_value, 0) as audit_flag_value,
 
 from roster_quarters as r
 left join
@@ -938,8 +938,8 @@ select distinct
     null as is_late,
     null as is_missing,
 
-    a.audit_flag_name,
-    a.audit_flag_value,
+    coalesce(a.audit_flag_name, 'no_flag') as audit_flag_name,
+    coalesce(a.audit_flag_value, 0) as audit_flag_value,
 
 from roster_categories as r
 left join
@@ -1061,8 +1061,8 @@ select distinct
     null as is_late,
     null as is_missing,
 
-    a.audit_flag_name,
-    a.audit_flag_value,
+    coalesce(a.audit_flag_name, 'no_flag') as audit_flag_name,
+    coalesce(a.audit_flag_value, 0) as audit_flag_value,
 
 from roster_categories as r
 left join
