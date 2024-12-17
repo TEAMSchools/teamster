@@ -34,10 +34,10 @@ select
     se.student_web_id || '.fam' as web_id,
     se.academic_year + (13 - se.grade_level) as graduation_year,
 
-    regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
-
     format_date('%m/%d/%Y', de.district_entry_date) as district_entry_date,
     format_date('%m/%d/%Y', de.district_entry_date) as school_entry_date,
+
+    regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
 
     if(se.enroll_status = 0, 1, 0) as student_allowwebaccess,
     if(se.enroll_status = 0, 1, 0) as allowwebaccess,
