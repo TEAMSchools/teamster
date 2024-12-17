@@ -8,7 +8,7 @@ with
 
             concat('psat10_', score_type) as score_type,
         from
-            {{ ref("stg_illuminate__psat") }} unpivot (
+            {{ ref("stg_illuminate__national_assessments__psat") }} unpivot (
                 score for score_type in (
                     advanced_math_subscore,
                     command_evidence_subscore,
