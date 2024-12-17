@@ -949,7 +949,6 @@ left join
     and r.assignment_category_code = a.assignment_category_code
     and r.teacher_assign_id = a.teacher_assign_id
     and r.sectionid = a.sectionid
-    and r.student_number = a.student_number
     and r.audit_category = a.audit_category
     and {{ union_dataset_join_clause(left_alias="r", right_alias="a") }}
     and a.cte_grouping = 'class_category_assignment'
@@ -1072,7 +1071,6 @@ left join
     and r.week_number = a.week_number
     and r.assignment_category_code = a.assignment_category_code
     and r.sectionid = a.sectionid
-    and r.student_number = a.student_number
     and r.audit_category = a.audit_category
     and {{ union_dataset_join_clause(left_alias="r", right_alias="a") }}
     and a.cte_grouping = 'class_category'
