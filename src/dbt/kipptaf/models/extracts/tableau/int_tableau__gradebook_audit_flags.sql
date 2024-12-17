@@ -477,7 +477,7 @@ with
             quarter_course_percent_grade_that_matters,
             quarter_course_grade_points_that_matters,
 
-            'student_course_category' as cte_grouping,
+            'student' as cte_grouping,
 
             if(
                 ada_above_or_at_80 and quarter_course_grade_points_that_matters < 2.0,
