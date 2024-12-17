@@ -100,6 +100,7 @@ def build_illuminate_dlt_assets(
             credentials=json.load(
                 fp=open(file="/etc/secret-volume/gcloud_teamster_dlt_keyfile.json")
             ),
+            write_disposition="replace",
         )
 
     return _assets
