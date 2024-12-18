@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: kippmiami_deanslist
     schema: |
-      {% if env_var('DBT_DEV', '') == 'true' -%}_dev_kippmiami_deanslist
+      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kippmiami_deanslist
       {%- else -%}kippmiami_deanslist
       {%- endif %}
     tables:
