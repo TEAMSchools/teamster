@@ -289,7 +289,7 @@ def build_powerschool_sis_asset_schedule(
                         )
                         continue
 
-        ssh_tunnel.stop()
+        ssh_tunnel.stop(force=True)
 
         item_getter = itemgetter("partitions_def", "partition_key")
 
