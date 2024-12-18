@@ -22,7 +22,10 @@
     {%- endif -%}
 {%- endif -%}
 
-{% if is_incremental() %}
+{% if env_var("DBT_DEV", "") == "true" %}
+    select student_number, username, default_password, google_email,
+    from kipptaf_people.stg_people__student_logins
+{% elif is_incremental() %}
     with
         components as (
             select
