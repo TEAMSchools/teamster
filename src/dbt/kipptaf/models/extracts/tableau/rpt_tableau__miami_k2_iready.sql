@@ -42,7 +42,7 @@ select
     regexp_replace(
         left(up.domain_name, length(up.domain_name) - 19), '_', ' '
     ) as domain_name,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['BOY', 'MOY', 'EOY']) as ar
 left join

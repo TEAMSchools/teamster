@@ -48,7 +48,7 @@ left join
     on cast(u.dl_user_id as string) = cf.approver_name
     and {{ union_dataset_join_clause(left_alias="u", right_alias="cf") }}
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_powerschool__student_enrollments") }} as co
     on dli.student_school_id = co.student_number
     and dli.create_ts_academic_year = co.academic_year
     and {{ union_dataset_join_clause(left_alias="dli", right_alias="co") }}

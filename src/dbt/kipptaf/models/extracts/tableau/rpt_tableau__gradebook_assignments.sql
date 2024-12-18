@@ -39,7 +39,7 @@ select
     s.ismissing,
 from {{ ref("base_powerschool__course_enrollments") }} as enr
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_powerschool__student_enrollments") }} as co
     on enr.cc_studentid = co.studentid
     and enr.cc_yearid = co.yearid
     and {{ union_dataset_join_clause(left_alias="enr", right_alias="co") }}
@@ -104,7 +104,7 @@ select
     s.ismissing,
 from {{ ref("base_powerschool__course_enrollments") }} as enr
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_powerschool__student_enrollments") }} as co
     on enr.cc_studentid = co.studentid
     and enr.cc_yearid = co.yearid
     and {{ union_dataset_join_clause(left_alias="enr", right_alias="co") }}

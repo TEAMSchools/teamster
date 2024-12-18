@@ -38,7 +38,7 @@ select
         co.contact_2_phone_work
     ) as contact_2_phone,
     concat(co.academic_year, '-', co.academic_year + 1) as last_kipp_academic_year,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 left join {{ ref("int_kippadb__roster") }} as r on co.student_number = r.student_number
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
 where

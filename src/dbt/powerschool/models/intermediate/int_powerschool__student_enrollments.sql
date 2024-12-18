@@ -352,7 +352,6 @@ select
     sch.abbreviation as school_abbreviation,
 
     scf.spedlep,
-    scf.lep_status,
     scf.is_homeless,
 
     adv.advisory_name,
@@ -432,13 +431,7 @@ select
     scw.pickup_3_phone_work,
     scw.pickup_3_relationship,
 
-    case
-        when enr.grade_level = 99
-        then enr.cohort_graduated
-        when enr.grade_level >= 9
-        then enr.cohort_secondary
-        else enr.cohort_primary
-    end as cohort,
+    coalesce(suf.is_504, false) as is_504,
 
     coalesce(sp.is_self_contained, false) as is_self_contained,
 
@@ -449,6 +442,57 @@ select
     if(ood.dcid is not null, ood.specprog_name, sch.name) as reporting_school_name,
 
     if(ood.dcid is not null, 'OD', sch.school_level) as school_level,
+
+    case
+        when enr.grade_level = 99
+        then enr.cohort_graduated
+        when enr.grade_level >= 9
+        then enr.cohort_secondary
+        else enr.cohort_primary
+    end as cohort,
+
+    {% if var("state_reporting_version") == "NJ" %}
+        nj.districtcoderesident,
+        nj.referral_date,
+        nj.parental_consent_eval_date,
+        nj.eligibility_determ_date,
+        nj.initial_iep_meeting_date,
+        nj.parent_consent_intial_iep_date,
+        nj.annual_iep_review_meeting_date,
+        nj.reevaluation_date,
+        nj.parent_consent_obtain_code,
+        nj.initial_process_delay_reason,
+        nj.special_education_placement,
+        nj.time_in_regular_program,
+        nj.early_intervention_yn,
+        nj.determined_ineligible_yn,
+        nj.counseling_services_yn,
+        nj.occupational_therapy_serv_yn,
+        nj.physical_therapy_services_yn,
+        nj.speech_lang_theapy_services_yn,
+        nj.other_related_services_yn,
+        nj.lepbegindate,
+        nj.lependdate,
+        nj.gifted_and_talented,
+
+        suf.newark_enrollment_number,
+        suf.infosnap_id,
+        suf.infosnap_opt_in,
+        suf.media_release,
+        suf.rides_staff,
+
+        case
+            when nj.lepbegindate is null
+            then false
+            when nj.lependdate < enr.entrydate
+            then false
+            when nj.lepbegindate <= enr.exitdate
+            then true
+            else false
+        end as lep_status,
+    {% elif var("state_reporting_version") == "FL" %}
+        suf.fleid, suf.infosnap_id, suf.media_release, scf.lep_status,
+    {% endif %}
 from with_boy_status_window as enr
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on enr.schoolid = sch.school_number
@@ -473,3 +517,11 @@ left join
     on enr.studentid = ood.studentid
     and enr.exitdate between ood.enter_date and ood.exit_date
     and ood.is_out_of_district
+left join
+    {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
+    on enr.students_dcid = suf.studentsdcid
+{% if var("state_reporting_version") == "NJ" %}
+    left join
+        {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
+        on enr.students_dcid = nj.studentsdcid
+{% endif %}
