@@ -24,6 +24,7 @@
 {% if env_var("DBT_DEV", "") == "true" %}
     select employee_number, adp_associate_id, adp_associate_id_legacy, is_active,
     from kipptaf_people.stg_people__employee_numbers
+    where is_active
 {% elif is_incremental() %}
     with
         workers as (
