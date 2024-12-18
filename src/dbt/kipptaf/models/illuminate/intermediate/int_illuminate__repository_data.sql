@@ -1,7 +1,7 @@
 {{- config(materialized="view") -}}
 
 {% set relations = dbt_utils.get_relations_by_prefix(
-    schema="kipptaf_illuminate",
+    schema=generate_schema_name("illuminate"),
     prefix="stg_illuminate__dna_repositories__repository_",
     exclude="stg_illuminate__dna_repositories__repository_%s",
 ) %}
@@ -9,7 +9,7 @@
 with
     union_relations as (
         {% for relation in relations %}
-            select *,
+            select repository_id, repository_row_id, student_id, field_name, `value`,
             from {{ relation }}
             {% if not loop.last %}
                 union all
@@ -18,7 +18,11 @@ with
     )
 
 select
-    ur.*,
+    ur.repository_id,
+    ur.repository_row_id,
+    ur.student_id,
+    ur.field_name,
+    ur.value,
 
     r.title,
     r.scope,
