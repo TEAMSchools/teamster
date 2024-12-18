@@ -50,13 +50,13 @@ op inject -f --in-file=.devcontainer/tpl/id_rsa_egencia.tpl \
   --out-file=env/id_rsa_egencia &&
   sudo mv -f env/id_rsa_egencia /etc/secret-volume/id_rsa_egencia
 
-op inject -f --in-file=.devcontainer/tpl/op_credentials_json.tpl \
-  --out-file=env/op_credentials_json &&
-  sudo mv -f env/op_credentials_json /etc/secret-volume/op_credentials_json
-
 op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
   --out-file=env/dbt_cloud.yml &&
   sudo mv -f env/dbt_cloud.yml /home/vscode/.dbt/dbt_cloud.yml
+
+op inject -f --in-file=.devcontainer/tpl/gcloud_teamster_dlt_keyfile.json.tpl \
+  --out-file=env/gcloud_teamster_dlt_keyfile.json &&
+  sudo mv -f env/gcloud_teamster_dlt_keyfile.json /etc/secret-volume/gcloud_teamster_dlt_keyfile.json
 
 # install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh || true
