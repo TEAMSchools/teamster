@@ -14,7 +14,8 @@ def main() -> None:
     ]
 
     for cmd in commands:
-        subprocess.run(args=cmd.split(sep=" "), shell=True)
+        # trunk-ignore(bandit/B603)
+        subprocess.run(args=cmd.split(sep=" "))
 
 
 if __name__ == "__main__":
