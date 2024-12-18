@@ -339,7 +339,7 @@ def build_powerschool_asset_sensor(
                         )
                         continue
 
-        ssh_tunnel.stop()
+        ssh_tunnel.stop(force=True)
 
         item_getter = itemgetter("job_name", "partition_key")
 
