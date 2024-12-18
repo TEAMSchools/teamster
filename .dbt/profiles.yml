@@ -5,7 +5,7 @@ dev:
       type: bigquery
       method: oauth
       project: teamster-332318
-      schema: _dev
+      schema: z_dev
 
 kippnewark:
   target: kippnewark
@@ -14,7 +14,7 @@ kippnewark:
       type: bigquery
       method: oauth
       project: teamster-332318
-      schema: _dev_kippnewark
+      schema: z_dev_kippnewark
       # schema: kippnewark
 
 kippcamden:
@@ -24,7 +24,7 @@ kippcamden:
       type: bigquery
       method: oauth
       project: teamster-332318
-      schema: _dev_kippcamden
+      schema: z_dev_kippcamden
       # schema: kippcamden
 
 kippmiami:
@@ -34,7 +34,7 @@ kippmiami:
       type: bigquery
       method: oauth
       project: teamster-332318
-      schema: _dev_kippmiami
+      schema: z_dev_kippmiami
       # schema: kippmiami
 
 kipptaf:
@@ -44,7 +44,7 @@ kipptaf:
       type: bigquery
       method: oauth
       project: teamster-332318
-      schema: _dev_kipptaf
+      schema: z_dev_kipptaf
       # schema: kipptaf
 
 integration_tests:
@@ -54,4 +54,4 @@ integration_tests:
       type: bigquery
       method: oauth
       project: teamster-332318
-      schema: _dev
+      schema: z_dev
