@@ -78,24 +78,24 @@ select
 
     if(safe_cast(fr.text_value as integer) is null, 1, 0) as is_open_ended,
 
-    reh.preferred_name_lastfirst as respondent_preferred_name,
+    reh.formatted_name as respondent_preferred_name,
     reh.race_ethnicity_reporting as respondent_race_ethnicity_reporting,
     reh.gender_identity as respondent_gender,
 
-    sr.preferred_name_lastfirst as subject_preferred_name,
+    sr.formatted_name as subject_preferred_name,
     sr.management_position_indicator as is_manager,
-    sr.department_home_name as subject_department_name,
-    sr.business_unit_home_name as subject_legal_entity_name,
-    sr.report_to_preferred_name_lastfirst as subject_manager_name,
+    sr.home_department_name as subject_department_name,
+    sr.home_business_unit_name as subject_legal_entity_name,
+    sr.reports_to_formatted_name as subject_manager_name,
     sr.job_title as subject_primary_job,
     sr.home_work_location_name as subject_primary_site,
     sr.race_ethnicity_reporting as subject_race_ethnicity_reporting,
     sr.gender_identity as subject_gender,
 
     lower(sr.sam_account_name) as subject_samaccountname,
-    lower(sr.report_to_sam_account_name) as subject_manager_samaccountname,
+    lower(sr.reports_to_sam_account_name) as subject_manager_samaccountname,
     lower(sr.user_principal_name) as subject_userprincipalname,
-    lower(sr.report_to_user_principal_name) as subject_manager_userprincipalname,
+    lower(sr.reports_to_user_principal_name) as subject_manager_userprincipalname,
 from deduped_ri as ri
 inner join
     {{ ref("base_google_forms__form_responses") }} as fr
@@ -105,13 +105,13 @@ inner join
     not in ('respondent_employee_number', 'subject_employee_number')
     and ri.rn_cur = 1
 inner join
-    {{ ref("base_people__staff_roster_history") }} as reh
+    {{ ref("int_people__staff_roster_history") }} as reh
     on ri.respondent_df_employee_number = reh.employee_number
     and ri.date_submitted
-    between reh.work_assignment_start_timestamp and reh.work_assignment_end_timestamp
+    between reh.effective_date_start_timestamp and reh.effective_date_end_timestamp
     and reh.assignment_status not in ('Terminated', 'Deceased')
 inner join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on ri.subject_df_employee_number = sr.employee_number
 
 union all
@@ -144,35 +144,35 @@ select
 
     if(sda.answer_value is null, 1, 0) as is_open_ended,
 
-    reh.preferred_name_lastfirst as respondent_preferred_name,
+    reh.formatted_name as respondent_preferred_name,
     reh.race_ethnicity_reporting as respondent_race_ethnicity_reporting,
     reh.gender_identity as respondent_gender,
 
-    sr.preferred_name_lastfirst as subject_preferred_name,
+    sr.formatted_name as subject_preferred_name,
     sr.management_position_indicator as is_manager,
-    sr.department_home_name as subject_department_name,
-    sr.business_unit_home_name as subject_legal_entity_name,
-    sr.report_to_preferred_name_lastfirst as subject_manager_name,
+    sr.home_department_name as subject_department_name,
+    sr.home_business_unit_name as subject_legal_entity_name,
+    sr.reports_to_formatted_name as subject_manager_name,
     sr.job_title as subject_primary_job,
     sr.home_work_location_name as subject_primary_site,
     sr.race_ethnicity_reporting as subject_race_ethnicity_reporting,
     sr.gender_identity as subject_gender,
 
     lower(sr.sam_account_name) as subject_samaccountname,
-    lower(sr.report_to_sam_account_name) as subject_manager_samaccountname,
+    lower(sr.reports_to_sam_account_name) as subject_manager_samaccountname,
     lower(sr.user_principal_name) as subject_userprincipalname,
-    lower(sr.report_to_user_principal_name) as subject_manager_userprincipalname,
+    lower(sr.reports_to_user_principal_name) as subject_manager_userprincipalname,
 from {{ ref("stg_surveys__manager_survey_detail_archive") }} as sda
 inner join
     {{ ref("stg_google_forms__form_items_extension") }} as fi
     on sda.question_shortname = fi.abbreviation
     and fi.form_id = '1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0'
 inner join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on sda.subject_df_employee_number = sr.employee_number
 left join
-    {{ ref("base_people__staff_roster_history") }} as reh
+    {{ ref("int_people__staff_roster_history") }} as reh
     on sda.respondent_df_employee_number = reh.employee_number
     and sda.date_submitted
-    between reh.work_assignment_start_timestamp and reh.work_assignment_end_timestamp
+    between reh.effective_date_start_timestamp and reh.effective_date_end_timestamp
     and reh.assignment_status not in ('Terminated', 'Deceased')

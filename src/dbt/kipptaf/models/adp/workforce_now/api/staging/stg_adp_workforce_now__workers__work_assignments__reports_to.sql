@@ -3,7 +3,7 @@ select
     wa.item_id,
     wa.effective_date_start,
     wa.effective_date_end,
-    wa.effective_date_timestamp,
+    wa.effective_date_start_timestamp,
     wa.is_current_record,
 
     rt.associateoid as reports_to_associate_oid,
