@@ -1,7 +1,5 @@
 import hashlib
 import pathlib
-import subprocess
-import time
 from datetime import datetime
 from io import BufferedReader
 from zoneinfo import ZoneInfo
@@ -21,6 +19,7 @@ from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.utils import open_ssh_tunnel
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -129,35 +128,21 @@ def build_powerschool_table_asset(
         )
 
         context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
-        p = subprocess.Popen(
-            args=[
-                "sshpass",
-                "-f/etc/secret-volume/powerschool_ssh_password.txt",
-                "ssh",
-                ssh_powerschool.remote_host,
-                f"-p{ssh_powerschool.remote_port}",
-                f"-l{ssh_powerschool.username}",
-                f"-L1521:{ssh_powerschool.tunnel_remote_host}:1521",
-                "-oHostKeyAlgorithms=+ssh-rsa",
-                "-oStrictHostKeyChecking=accept-new",
-                "-N",
-            ],
-        )
+        ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
 
-        time.sleep(5.0)
-
-        file_path = _check.inst(
-            obj=db_powerschool.execute_query(
-                query=sql,
-                output_format="avro",
-                batch_size=partition_size,
-                prefetch_rows=prefetch_rows,
-                array_size=array_size,
-            ),
-            ttype=pathlib.Path,
-        )
-
-        p.kill()
+        try:
+            file_path = _check.inst(
+                obj=db_powerschool.execute_query(
+                    query=sql,
+                    output_format="avro",
+                    batch_size=partition_size,
+                    prefetch_rows=prefetch_rows,
+                    array_size=array_size,
+                ),
+                ttype=pathlib.Path,
+            )
+        finally:
+            ssh_tunnel.kill()
 
         with file_path.open(mode="rb") as f:
             num_records = sum(block.num_records for block in block_reader(f))
