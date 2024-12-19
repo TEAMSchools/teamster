@@ -1,6 +1,7 @@
 import hashlib
 import pathlib
 import subprocess
+import time
 from datetime import datetime
 from io import BufferedReader
 from zoneinfo import ZoneInfo
@@ -141,6 +142,8 @@ def build_powerschool_table_asset(
                     "-N",
                 ]
             )
+
+            time.sleep(1.0)
 
             file_path = _check.inst(
                 obj=db_powerschool.execute_query(

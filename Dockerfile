@@ -11,9 +11,9 @@ ENV PATH="/app/.venv/bin:${PATH}"
 ENV UV_LINK_MODE=copy
 ENV UV_COMPILE_BYTECODE=1
 
-# trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssh-client sshpass \
+    && apt-get install -y --no-install-recommends \
+        openssh-client=1:9.2p1-2+deb12u3 sshpass=1.09-1* \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
