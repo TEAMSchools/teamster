@@ -42,6 +42,7 @@ on:
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kipptaf.yaml
       - Dockerfile
+      - uv.lock
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**
       - src/teamster/libraries/adp/**
@@ -51,6 +52,7 @@ on:
       - src/teamster/libraries/datagun/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/schema.py
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/fivetran/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**
