@@ -1,4 +1,5 @@
 import subprocess
+import time
 from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
@@ -62,6 +63,8 @@ def build_powerschool_sis_asset_schedule(
                     "-N",
                 ]
             )
+
+            time.sleep(1.0)
 
             for asset in asset_selection:
                 asset_key_identifier = asset.key.to_python_identifier()
