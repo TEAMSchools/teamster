@@ -142,7 +142,8 @@ def build_powerschool_table_asset(
                 ssh_powerschool.username,
                 "-L",
                 f"1521:{ssh_powerschool.tunnel_remote_host}:1521",
-                "-oHostKeyAlgorithms=+ssh-rsa",
+                "-o",
+                "HostKeyAlgorithms=+ssh-rsa",
                 "-N",
             ]
             context.log.debug(msg=str(popen_args))
