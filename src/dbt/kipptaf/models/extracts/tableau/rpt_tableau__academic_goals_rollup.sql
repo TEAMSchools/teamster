@@ -215,7 +215,7 @@ with
                 then true
                 else false
             end as is_bucket2_eligible,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_powerschool__student_enrollments") }} as co
         cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
         inner join
@@ -293,7 +293,7 @@ with
 
             if(ir.scale_score is not null, 1, 0) as is_tested_int,
             if(ir.is_approaching_int = 1, true, false) as is_bucket2_eligible,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_powerschool__student_enrollments") }} as co
         cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
         inner join

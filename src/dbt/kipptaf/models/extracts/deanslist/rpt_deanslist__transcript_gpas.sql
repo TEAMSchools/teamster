@@ -51,7 +51,7 @@ select
 
     sg.cumulative_y1_gpa as `GPA_Y1_weighted`,
     sg.cumulative_y1_gpa_unweighted as `GPA_Y1_unweighted`,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__gpa_cumulative") }} as sg
     on co.studentid = sg.studentid

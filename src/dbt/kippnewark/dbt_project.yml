@@ -33,6 +33,7 @@ vars:
   overgrad_schema: kippnewark_overgrad
   renlearn_schema: kippnj_renlearn
   titan_schema: kippnewark_titan
+  state_reporting_version: NJ
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
