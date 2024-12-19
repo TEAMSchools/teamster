@@ -143,7 +143,7 @@ def build_powerschool_table_asset(
                 ]
             )
 
-            time.sleep(2.0)
+            time.sleep(5.0)
 
             file_path = _check.inst(
                 obj=db_powerschool.execute_query(
