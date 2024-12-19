@@ -15,10 +15,8 @@ def main() -> None:
     parser.add_argument("select", nargs="*")
 
     args = parser.parse_args()
-    # print(args)
 
     if args.command == "help":
-        # trunk-ignore(bandit/B603)
         subprocess.run(args=["/workspaces/teamster/.venv/bin/dbt", "-h"])
     elif args.command == "sxs":
         run_args = [
@@ -32,7 +30,6 @@ def main() -> None:
         if args.select:
             run_args.extend(["--args", " ".join(["select:", *args.select])])
 
-        # trunk-ignore(bandit/B603)
         subprocess.run(args=run_args)
     else:
         run_args = [
@@ -44,7 +41,6 @@ def main() -> None:
         if args.select:
             run_args.extend(["--select", *args.select])
 
-        # trunk-ignore(bandit/B603)
         subprocess.run(args=run_args)
 
 
