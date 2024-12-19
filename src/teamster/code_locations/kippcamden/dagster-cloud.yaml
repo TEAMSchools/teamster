@@ -30,7 +30,7 @@ locations:
                     name: op-ps-ssh-kippcamden
                     items:
                       - key: password
-                        path: /etc/secret-volume/powerschool_ssh_password.txt
+                        path: powerschool_ssh_password.txt
         server_k8s_config:
           container_config:
             env:
