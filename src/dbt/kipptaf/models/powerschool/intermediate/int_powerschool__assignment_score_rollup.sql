@@ -1,4 +1,28 @@
 with
+    -- note for charlie: the cte below was added because powerschool automatically
+    -- assigns assignments to students when they join a class, even if the assignments
+    -- were due WAY before they even started attending that class. i added this CTE so
+    -- that i can filter student assignments that are not valid due to course
+    -- enrollment date vs assignment due date. the student_assignment_audit view
+    -- already does this, but since this view does all of the n counts, i need these n
+    -- counts from the teacher perspective to match the eligible assignments from the
+    -- student perspective, otherwise, teachers are currently incorrectly being marked
+    -- as "not complete" for assignments graded needed, which then will make a school
+    -- never have 100% of teacher gradebooks "complete." i recognize this is not very
+    -- elegant, but it seems to be doing the job.
+    exempt_students as (
+        select
+            _dbt_source_relation,
+            students_dcid,
+            cc_studentid as studentid,
+            cc_sectionid as sectionid,
+            sections_dcid,
+            cc_dateenrolled,
+
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where cc_academic_year = {{ var("current_academic_year") }} and cc_sectionid > 0
+    ),
+
     scores as (
         select
             a._dbt_source_relation,
@@ -30,6 +54,13 @@ with
             {{ ref("stg_powerschool__assignmentscore") }} as s
             on a.assignmentsectionid = s.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
+        left join
+            exempt_students as e
+            on a.sectionsdcid = e.sections_dcid
+            and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+            and s.studentsdcid = e.students_dcid
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="e") }}
+        where e.cc_dateenrolled <= a.duedate
     ),
 
     school_course_exceptions as (
