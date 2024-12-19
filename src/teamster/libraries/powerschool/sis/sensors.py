@@ -1,4 +1,5 @@
 import subprocess
+import time
 from collections import defaultdict
 from datetime import datetime
 from itertools import groupby
@@ -88,6 +89,8 @@ def build_powerschool_asset_sensor(
                 "-N",
             ],
         )
+
+        time.sleep(1.0)
 
         try:
             for asset in asset_selection:
