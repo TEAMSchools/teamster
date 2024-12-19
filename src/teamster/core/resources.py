@@ -55,7 +55,6 @@ SSH_POWERSCHOOL = SSHResource(
     remote_host=EnvVar("PS_SSH_HOST"),
     remote_port=EnvVar("PS_SSH_PORT"),
     username=EnvVar("PS_SSH_USERNAME"),
-    password=EnvVar("PS_SSH_PASSWORD"),
     tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
 )
 
@@ -131,6 +130,5 @@ def get_ssh_powerschool_resource(code_location: str):
         remote_host=EnvVar(f"PS_SSH_HOST_{code_location}"),
         remote_port=EnvVar(f"PS_SSH_PORT_{code_location}"),
         username=EnvVar(f"PS_SSH_USERNAME_{code_location}"),
-        password=EnvVar(f"PS_SSH_PASSWORD_{code_location}"),
         tunnel_remote_host=EnvVar(f"PS_SSH_REMOTE_BIND_HOST_{code_location}"),
     )
