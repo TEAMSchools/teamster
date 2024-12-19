@@ -22,8 +22,6 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 
-# from sshtunnel import HandlerSSHTunnelForwarderError
-
 
 def hash_bytestr_iter(bytesiter, hasher):
     for block in bytesiter:
@@ -129,13 +127,7 @@ def build_powerschool_table_asset(
             .where(text(constructed_where))
         )
 
-        # ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
-
         try:
-            #     ssh_tunnel.start()
-            #     context.log.debug(msg=ssh_tunnel.tunnel_is_up)
-            #     if not ssh_tunnel.tunnel_is_up:
-            #         raise HandlerSSHTunnelForwarderError
             popen_instance = subprocess.Popen(
                 args=[
                     "sshpass",
@@ -161,7 +153,6 @@ def build_powerschool_table_asset(
                 ttype=pathlib.Path,
             )
         finally:
-            # ssh_tunnel.stop(force=True)
             # trunk-ignore(pyright/reportPossiblyUnboundVariable)
             popen_instance.kill()
 
