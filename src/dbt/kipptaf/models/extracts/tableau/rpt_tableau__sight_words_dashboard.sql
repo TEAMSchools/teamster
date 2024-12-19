@@ -8,7 +8,9 @@ with
             rt.name as term_name,
             rt.academic_year,
 
-            f.label as sight_word,
+            f.label,
+
+            g.grade_level,
         from {{ ref("int_illuminate__repositories") }} as r
         inner join
             {{ ref("stg_reporting__terms") }} as rt
@@ -28,7 +30,7 @@ select
     swq.repository_id,
     swq.title,
     swq.date_administered,
-    swq.name as term_name,
+    swq.term_name,
     swq.academic_year,
     swq.label as sight_word,
 
@@ -80,7 +82,7 @@ select
     swq.repository_id,
     swq.title,
     swq.date_administered,
-    swq.name as term_name,
+    swq.term_name,
     swq.academic_year,
     swq.label as sight_word,
 
