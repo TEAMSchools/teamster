@@ -20,6 +20,7 @@ from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
 from teamster.libraries.powerschool.sis.utils import get_query_text
 from teamster.libraries.ssh.resources import SSHResource
+from teamster.libraries.ssh.sshtunnel.errors import BaseSSHTunnelForwarderError
 
 
 def build_powerschool_sis_asset_schedule(
@@ -51,6 +52,17 @@ def build_powerschool_sis_asset_schedule(
 
         try:
             ssh_tunnel.start()
+        except BaseSSHTunnelForwarderError as e:
+            ssh_tunnel.stop(force=True)
+            e_str = str(e)
+
+            # tunnel can sometimes get stuck open
+            # pod requires reset, handled by pod TTL
+            if "An error occurred while opening tunnels." in e_str:
+                context.log.exception(msg=e)
+                pass
+            else:
+                raise e
         except Exception as e:
             ssh_tunnel.stop(force=True)
             raise e
