@@ -129,24 +129,35 @@ def build_powerschool_table_asset(
         )
 
         context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
-        with subprocess.Popen(
-            args=f"sshpass -f /etc/secret-volume/powerschool_ssh_password.txt ssh {ssh_powerschool.remote_host} -p {ssh_powerschool.remote_port} -l {ssh_powerschool.username} -L 1521:{ssh_powerschool.tunnel_remote_host}:1521 -o HostKeyAlgorithms=+ssh-rsa -N",
-            shell=True,
-        ) as p:
-            time.sleep(5.0)
+        p = subprocess.Popen(
+            args=[
+                "sshpass",
+                "-f/etc/secret-volume/powerschool_ssh_password.txt",
+                "ssh",
+                ssh_powerschool.remote_host,
+                f"-p{ssh_powerschool.remote_port}",
+                f"-l{ssh_powerschool.username}",
+                f"-L1521:{ssh_powerschool.tunnel_remote_host}:1521",
+                "-oHostKeyAlgorithms=+ssh-rsa",
+                "-oStrictHostKeyChecking=accept-new",
+                "-N",
+            ],
+        )
 
-            file_path = _check.inst(
-                obj=db_powerschool.execute_query(
-                    query=sql,
-                    output_format="avro",
-                    batch_size=partition_size,
-                    prefetch_rows=prefetch_rows,
-                    array_size=array_size,
-                ),
-                ttype=pathlib.Path,
-            )
+        time.sleep(5.0)
 
-            p.kill()
+        file_path = _check.inst(
+            obj=db_powerschool.execute_query(
+                query=sql,
+                output_format="avro",
+                batch_size=partition_size,
+                prefetch_rows=prefetch_rows,
+                array_size=array_size,
+            ),
+            ttype=pathlib.Path,
+        )
+
+        p.kill()
 
         with file_path.open(mode="rb") as f:
             num_records = sum(block.num_records for block in block_reader(f))
