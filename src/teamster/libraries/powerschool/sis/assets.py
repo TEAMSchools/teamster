@@ -130,22 +130,31 @@ def build_powerschool_table_asset(
 
         try:
             context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
-            popen_instance = subprocess.Popen(
-                args=[
-                    "sshpass",
-                    "-f/etc/secret-volume/powerschool_ssh_password.txt",
-                    "ssh",
-                    ssh_powerschool.remote_host,
-                    f"-p{ssh_powerschool.remote_port}",
-                    f"-l{ssh_powerschool.username}",
-                    f"-L1521:{ssh_powerschool.tunnel_remote_host}:1521",
-                    "-oHostKeyAlgorithms=+ssh-rsa",
-                    "-N",
-                ],
+            popen_args = [
+                "sshpass",
+                "-f",
+                "/etc/secret-volume/powerschool_ssh_password.txt",
+                "ssh",
+                ssh_powerschool.remote_host,
+                "-p",
+                ssh_powerschool.remote_port,
+                "-l",
+                ssh_powerschool.username,
+                "-L",
+                f"1521:{ssh_powerschool.tunnel_remote_host}:1521",
+                "-oHostKeyAlgorithms=+ssh-rsa",
+                "-N",
+            ]
+            context.log.debug(msg=str(popen_args))
+            process = subprocess.Popen(
+                args=popen_args,
                 shell=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
             )
 
-            time.sleep(5.0)
+            time.sleep(2.0)
 
             file_path = _check.inst(
                 obj=db_powerschool.execute_query(
@@ -159,7 +168,7 @@ def build_powerschool_table_asset(
             )
         finally:
             # trunk-ignore(pyright/reportPossiblyUnboundVariable)
-            popen_instance.kill()
+            process.kill()
 
         with file_path.open(mode="rb") as f:
             num_records = sum(block.num_records for block in block_reader(f))
