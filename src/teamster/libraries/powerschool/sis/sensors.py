@@ -86,7 +86,8 @@ def build_powerschool_asset_sensor(
             # tunnel can sometimes get stuck open
             # pod requires reset, handled by pod TTL
             elif "An error occurred while opening tunnels." in e_str:
-                return SkipReason(e_str)
+                context.log.exception(msg=e)
+                pass
             else:
                 raise e
         except Exception as e:
