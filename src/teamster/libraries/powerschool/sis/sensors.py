@@ -1,3 +1,4 @@
+import subprocess
 from collections import defaultdict
 from datetime import datetime
 from itertools import groupby
@@ -23,7 +24,7 @@ from dateutil.relativedelta import relativedelta
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
-from teamster.libraries.powerschool.sis.utils import get_query_text, open_ssh_tunnel
+from teamster.libraries.powerschool.sis.utils import get_query_text
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -73,7 +74,20 @@ def build_powerschool_asset_sensor(
         )
 
         context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
-        ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
+        ssh_tunnel = subprocess.Popen(
+            args=[
+                "sshpass",
+                "-f/etc/secret-volume/powerschool_ssh_password.txt",
+                "ssh",
+                ssh_powerschool.remote_host,
+                f"-p{ssh_powerschool.remote_port}",
+                f"-l{ssh_powerschool.username}",
+                f"-L1521:{ssh_powerschool.tunnel_remote_host}:1521",
+                "-oHostKeyAlgorithms=+ssh-rsa",
+                "-oStrictHostKeyChecking=accept-new",
+                "-N",
+            ],
+        )
 
         try:
             for asset in asset_selection:
