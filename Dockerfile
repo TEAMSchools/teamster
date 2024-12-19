@@ -20,28 +20,28 @@ RUN apt-get update \
 # set workdir
 WORKDIR /app
 
-# Create a custom user with UID 1234 and GID 1234
-RUN groupadd -g 1234 teamster \
-    && useradd -m -u 1234 -g teamster teamster \
-    && chown -R 1234:1234 /app
-
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
 COPY uv.lock pyproject.toml /app/
 
 # Install dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project --no-editable
+uv sync --frozen --no-dev --no-install-project --no-editable
 
 # Copy the project into the image
 COPY src/ /app/src/
 
 # Sync the project
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-editable
+uv sync --frozen --no-dev --no-editable
 
 # Install dbt project
 RUN dagster-dbt project prepare-and-package \
-    --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
+--file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
+
+# Create a custom user with UID 1234 and GID 1234
+RUN groupadd -g 1234 teamster \
+    && useradd -m -u 1234 -g teamster teamster \
+    && chown -R 1234:1234 /app
 
 # Switch to the custom user
 USER 1234:1234
