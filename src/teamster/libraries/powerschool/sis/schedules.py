@@ -50,6 +50,7 @@ def build_powerschool_sis_asset_schedule(
         )
 
         try:
+            context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
             popen_instance = subprocess.Popen(
                 args=[
                     "sshpass",
@@ -61,7 +62,8 @@ def build_powerschool_sis_asset_schedule(
                     f"-L1521:{ssh_powerschool.tunnel_remote_host}:1521",
                     "-oHostKeyAlgorithms=+ssh-rsa",
                     "-N",
-                ]
+                ],
+                shell=True,
             )
 
             time.sleep(5.0)
