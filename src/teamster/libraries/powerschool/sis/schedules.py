@@ -64,7 +64,7 @@ def build_powerschool_sis_asset_schedule(
                 ]
             )
 
-            time.sleep(1.0)
+            time.sleep(2.0)
 
             for asset in asset_selection:
                 asset_key_identifier = asset.key.to_python_identifier()
