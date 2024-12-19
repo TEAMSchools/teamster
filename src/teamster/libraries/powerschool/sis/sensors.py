@@ -1,5 +1,3 @@
-import subprocess
-import time
 from collections import defaultdict
 from datetime import datetime
 from itertools import groupby
@@ -25,7 +23,7 @@ from dateutil.relativedelta import relativedelta
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
-from teamster.libraries.powerschool.sis.utils import get_query_text
+from teamster.libraries.powerschool.sis.utils import get_query_text, open_ssh_tunnel
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -74,25 +72,10 @@ def build_powerschool_asset_sensor(
             context.instance.get_latest_materialization_events(asset_keys)
         )
 
+        context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
+        ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
+
         try:
-            context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
-            popen_instance = subprocess.Popen(
-                args=[
-                    "sshpass",
-                    "-f/etc/secret-volume/powerschool_ssh_password.txt",
-                    "ssh",
-                    ssh_powerschool.remote_host,
-                    f"-p{ssh_powerschool.remote_port}",
-                    f"-l{ssh_powerschool.username}",
-                    f"-L1521:{ssh_powerschool.tunnel_remote_host}:1521",
-                    "-oHostKeyAlgorithms=+ssh-rsa",
-                    "-N",
-                ],
-                shell=True,
-            )
-
-            time.sleep(5.0)
-
             for asset in asset_selection:
                 asset_key_identifier = asset.key.to_python_identifier()
                 metadata = asset.metadata_by_key[asset.key]
@@ -344,8 +327,7 @@ def build_powerschool_asset_sensor(
                             )
                             continue
         finally:
-            # trunk-ignore(pyright/reportPossiblyUnboundVariable)
-            popen_instance.kill()
+            ssh_tunnel.kill()
 
         item_getter = itemgetter("job_name", "partition_key")
 
