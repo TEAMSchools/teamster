@@ -1,4 +1,3 @@
-# trunk-ignore-all(trivy/DS026,checkov/CKV_DOCKER_2)
 ARG PYTHON_VERSION=3.12
 
 # https://hub.docker.com/_/python
@@ -11,6 +10,12 @@ ENV PYTHONUNBUFFERED=1
 ENV PATH="/app/.venv/bin:${PATH}"
 ENV UV_LINK_MODE=copy
 ENV UV_COMPILE_BYTECODE=1
+
+# trunk-ignore(hadolint/DL3008)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssh-client \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # set workdir
 WORKDIR /app
