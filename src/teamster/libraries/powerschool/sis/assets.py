@@ -130,22 +130,7 @@ def build_powerschool_table_asset(
 
         context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
         with subprocess.Popen(
-            args=[
-                "sshpass",
-                "-f",
-                "/etc/secret-volume/powerschool_ssh_password.txt",
-                "ssh",
-                ssh_powerschool.remote_host,
-                "-p",
-                ssh_powerschool.remote_port,
-                "-l",
-                _check.not_none(value=ssh_powerschool.username),
-                "-L",
-                f"1521:{ssh_powerschool.tunnel_remote_host}:1521",
-                "-o",
-                "HostKeyAlgorithms=+ssh-rsa",
-                "-N",
-            ],
+            args=f"sshpass -f /etc/secret-volume/powerschool_ssh_password.txt ssh {ssh_powerschool.remote_host} -p {ssh_powerschool.remote_port} -l {ssh_powerschool.username} -L 1521:{ssh_powerschool.tunnel_remote_host}:1521 -o HostKeyAlgorithms=+ssh-rsa -N",
             shell=True,
         ) as p:
             time.sleep(5.0)
