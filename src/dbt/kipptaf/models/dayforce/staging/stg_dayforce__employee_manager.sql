@@ -4,7 +4,9 @@ with
         select
             employee_reference_code,
             manager_employee_number,
+
             parse_date('%m/%d/%Y', manager_effective_start) as manager_effective_start,
+
             coalesce(
                 parse_date('%m/%d/%Y', manager_effective_end), '2020-12-31'
             ) as manager_effective_end,
@@ -25,6 +27,7 @@ with
     with_next as (
         select
             *,
+
             lead(manager_effective_start, 1) over (
                 partition by employee_reference_code
                 order by manager_effective_start asc
@@ -36,6 +39,7 @@ select
     employee_reference_code as employee_number,
     manager_employee_number,
     manager_effective_start as manager_effective_start_date,
+
     coalesce(
         date_sub(manager_effective_start_next, interval 1 day), '2020-12-31'
     ) as manager_effective_end_date,

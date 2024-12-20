@@ -4,7 +4,7 @@ with
             w.associate_oid,
             w.effective_date_start,
             w.effective_date_end,
-            w.effective_date_timestamp,
+            w.effective_date_start_timestamp,
             w.is_current_record,
 
             wa.itemid as item_id,
@@ -13,10 +13,6 @@ with
             wa.payrollfilenumber as payroll_file_number,
             wa.payrollgroupcode as payroll_group_code,
             wa.payrollschedulegroupid as payroll_schedule_group_id,
-            wa.hiredate as hire_date,
-            wa.actualstartdate as actual_start_date,
-            wa.senioritydate as seniority_date,
-            wa.terminationdate as termination_date,
             wa.primaryindicator as primary_indicator,
             wa.managementpositionindicator as management_position_indicator,
             wa.voluntaryindicator as voluntary_indicator,
@@ -182,6 +178,11 @@ with
             wa.workergroups as worker_groups,
 
             /* transformations */
+            date(wa.hiredate) as hire_date,
+            date(wa.actualstartdate) as actual_start_date,
+            date(wa.senioritydate) as seniority_date,
+            date(wa.terminationdate) as termination_date,
+
             cast(
                 wa.baseremuneration.annualrateamount.amountvalue as numeric
             ) as base_remuneration__annual_rate_amount__amount_value,
@@ -268,6 +269,16 @@ with
 select
     *,
 
+    (
+        select sum(ar.rate.amountvalue), from unnest(additional_remunerations) as ar
+    ) as additional_remunerations__rate__amount_value__sum,
+
+    (
+        select coalesce(wg.groupcode.longname, wg.groupcode.shortname),
+        from unnest(worker_groups) as wg
+        where wg.namecode.codevalue = 'Benefits Eligibility Class'
+    ) as benefits_eligibility_class__group_code__name,
+
     coalesce(
         home_work_location__name_code__long_name,
         home_work_location__name_code__short_name
@@ -279,6 +290,10 @@ select
         assignment_status__status_code__long_name,
         assignment_status__status_code__short_name
     ) as assignment_status__status_code__name,
+    coalesce(
+        assignment_status__reason_code__long_name,
+        assignment_status__reason_code__short_name
+    ) as assignment_status__reason_code__name,
     coalesce(
         wage_law_coverage__coverage_code__long_name,
         wage_law_coverage__coverage_code__short_name
