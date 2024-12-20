@@ -40,6 +40,7 @@ on:
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kippcamden.yaml
       - Dockerfile
+      - uv.lock
       - src/teamster/code_locations/kippcamden/**
       - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
