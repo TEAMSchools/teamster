@@ -13,7 +13,7 @@ select
     f.iready_proficiency_eoy as iready_eoy_previous_year,
 from {{ ref("int_reporting__student_filters") }} as f
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_powerschool__student_enrollments") }} as co
     on f.student_number = co.student_number
     and f.academic_year = co.academic_year
     and co.rn_year = 1

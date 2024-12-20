@@ -11,7 +11,7 @@ with
             b.notes,
 
             cast(left(b.behavior, length(b.behavior) - 5) as int) as cs_hours,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_powerschool__student_enrollments") }} as co
         left join
             {{ ref("stg_deanslist__behavior") }} as b
             on (
