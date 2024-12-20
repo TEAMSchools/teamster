@@ -42,6 +42,7 @@ class Behavior(BaseModel):
     DLSchoolID: str | None = None
     DLStudentID: str | None = None
     DLUserID: str | None = None
+    ExpireTime: str | None = None
     is_deleted: bool | None = None
     Notes: str | None = None
     PointValue: str | None = None
@@ -61,6 +62,8 @@ class Behavior(BaseModel):
     StudentLastName: str | None = None
     StudentMiddleName: str | None = None
     StudentSchoolID: str | None = None
+    TimeIn: str | None = None
+    TimeOut: str | None = None
     Weight: str | None = None
 
 
