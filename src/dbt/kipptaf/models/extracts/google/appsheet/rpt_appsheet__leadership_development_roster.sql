@@ -27,11 +27,11 @@ select
         'CMO and Other Leaders'
     ) as route,
     if(
-        contains_substr(job_title, "Leader")
-        or contains_substr(job_title, "Head")
-        or contains_substr(job_title, "Director")
-        or contains_substr(job_title, "Chief")
-        or contains_substr(job_title, "Controller"),
+        contains_substr(job_title, 'Leader')
+        or contains_substr(job_title, 'Head')
+        or contains_substr(job_title, 'Director')
+        or contains_substr(job_title, 'Chief')
+        or contains_substr(job_title, 'Controller'),
         true,
         false
     ) as default_include,
