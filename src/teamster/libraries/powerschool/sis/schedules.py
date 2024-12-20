@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
+from typing import Mapping
 from zoneinfo import ZoneInfo
 
 from dagster import (
@@ -9,10 +10,9 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     DagsterEventType,
-    EventLogEntry,
     EventRecordsFilter,
+    MetadataValue,
     MonthlyPartitionsDefinition,
-    PartitionsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
     _check,
@@ -26,266 +26,182 @@ from teamster.libraries.powerschool.sis.utils import get_query_text, open_ssh_tu
 from teamster.libraries.ssh.resources import SSHResource
 
 
-def get_asset_metadata(asset: AssetsDefinition):
-    asset_key = asset.key
-
-    asset_key_identifier = asset_key.to_python_identifier()
-    metadata = asset.metadata_by_key[asset_key]
-
-    table_name = metadata["table_name"]
-    partition_column = metadata["partition_column"]
-
-
-def bar_nonpartitioned(
-    asset: AssetsDefinition,
-    latest_materialization_event: EventLogEntry | None,
-    context: ScheduleEvaluationContext,
-    run_request_kwargs: list[dict],
-    execution_timezone: ZoneInfo,
-    db_powerschool: PowerSchoolODBCResource,
+def get_datetime_from_metadata(
+    metadata: Mapping[str, MetadataValue], execution_timezone: ZoneInfo
 ):
-    latest_materialization_event = latest_materialization_events.get(asset_key)
+    timestamp = _check.inst(
+        obj=metadata["latest_materialization_timestamp"].value, ttype=float
+    )
 
-    # request run if asset never materialized
-    if latest_materialization_event is None:
-        context.log.info(msg=f"{asset_key_identifier} never materialized")
-        run_request_kwargs.append(
-            {"asset_key": asset_key, "partitions_def": "", "partition_key": ""}
-        )
-        continue
+    return (
+        datetime.fromtimestamp(timestamp=timestamp, tz=execution_timezone)
+        .replace(tzinfo=None)
+        .isoformat(timespec="microseconds")
+    )
 
-    metadata = _check.not_none(
-        value=latest_materialization_event.asset_materialization
-    ).metadata
 
-    materialization_count = metadata["records"].value
-
-    # request run if table modified count > 0
-    if partition_column is not None:
-        timestamp = _check.inst(
-            obj=metadata["latest_materialization_timestamp"].value, ttype=float
-        )
-
-        timestamp_fmt = (
-            datetime.fromtimestamp(timestamp=timestamp, tz=execution_timezone)
-            .replace(tzinfo=None)
-            .isoformat(timespec="microseconds")
-        )
-
-        [(modified_count,)] = _check.inst(
-            db_powerschool.execute_query(
-                query=get_query_text(
-                    table=table_name,
-                    column=partition_column,
-                    start_value=timestamp_fmt,
-                ),
-                prefetch_rows=2,
-                array_size=1,
-            ),
-            list,
-        )
-
-        if modified_count > 0:
-            context.log.info(
-                msg=f"{asset_key_identifier}\n" f"modified count: {modified_count}"
-            )
-            run_request_kwargs.append(
-                {"asset_key": asset_key, "partitions_def": "", "partition_key": ""}
-            )
-            continue
-
-    # request run if table count doesn't match latest materialization
-    [(table_count,)] = _check.inst(
+def get_count(
+    db_powerschool: PowerSchoolODBCResource,
+    table: str,
+    column: str | None = None,
+    start_value: str | None = None,
+    end_value: str | None = None,
+) -> int:
+    [(count,)] = _check.inst(
         db_powerschool.execute_query(
-            query=get_query_text(table=table_name, column=None),
+            query=get_query_text(
+                table=table, column=column, start_value=start_value, end_value=end_value
+            ),
             prefetch_rows=2,
             array_size=1,
         ),
         list,
     )
 
+    return count
+
+
+def foo_nonpartitioned(
+    asset_key: AssetKey,
+    asset_key_identifier: str,
+    table_name: str,
+    partition_column: str,
+    context: ScheduleEvaluationContext,
+    execution_timezone: ZoneInfo,
+    db_powerschool: PowerSchoolODBCResource,
+    materialization_metadata: Mapping[str, MetadataValue],
+) -> dict | None:
+    # request run if table modified count > 0
+    if partition_column is not None:
+        modified_count = get_count(
+            db_powerschool=db_powerschool,
+            table=table_name,
+            column=partition_column,
+            start_value=get_datetime_from_metadata(
+                metadata=materialization_metadata, execution_timezone=execution_timezone
+            ),
+        )
+
+        if modified_count > 0:
+            context.log.info(
+                msg=f"{asset_key_identifier}\nmodified count: {modified_count}"
+            )
+            return {"asset_key": asset_key, "partitions_def": "", "partition_key": ""}
+
+    # request run if table count doesn't match latest materialization
+    # catches deleted records
+    table_count = get_count(db_powerschool=db_powerschool, table=table_name)
+    materialization_count = materialization_metadata["records"].value
+
     if table_count != materialization_count:
         context.log.info(
             msg=(
                 f"{asset_key_identifier}\n"
-                f"PS count ({table_count}) != "
-                f"DB count ({materialization_count})"
+                f"PS count ({table_count}) != DB count ({materialization_count})"
             )
         )
-        run_request_kwargs.append(
-            {"asset_key": asset_key, "partitions_def": "", "partition_key": ""}
-        )
-        continue
+        return {"asset_key": asset_key, "partitions_def": "", "partition_key": ""}
+    else:
+        return None
 
 
-def bar_partitioned(
-    asset: AssetsDefinition,
-    partitions_def: PartitionsDefinition,
+def foo_partitioned(
+    asset_key: AssetKey,
+    asset_key_identifier: str,
+    table_name: str,
+    partition_column: str,
     context: ScheduleEvaluationContext,
-    run_request_kwargs: list[dict],
     execution_timezone: ZoneInfo,
     db_powerschool: PowerSchoolODBCResource,
-):
-    first_partition_key = partitions_def.get_first_partition_key()
-    last_partition_key = partitions_def.get_last_partition_key()
-    partition_keys = partitions_def.get_partition_keys()
-    partitions_def_identifier = partitions_def.get_serializable_unique_identifier()
+    partition_key: str,
+    partitions_def_identifier: str,
+    first_partition_key: str,
+    last_partition_key: str,
+    date_add_kwargs: dict,
+) -> dict | None:
+    event_record = context.instance.get_event_records(
+        event_records_filter=EventRecordsFilter(
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=asset_key,
+            asset_partitions=[partition_key],
+        ),
+        limit=1,
+    )
 
-    if isinstance(partitions_def, FiscalYearPartitionsDefinition):
-        date_add_kwargs = {"years": 1}
-    elif isinstance(partitions_def, MonthlyPartitionsDefinition):
-        date_add_kwargs = {"months": 1}
-        partition_keys = partition_keys[-12:]  # limit to 12 months
+    # request run if partition never materialized
+    if not event_record:
+        context.log.info(msg=f"{asset_key_identifier} never materialized")
+        return {
+            "asset_key": asset_key,
+            "partitions_def": partitions_def_identifier,
+            "partition_key": partition_key,
+        }
     else:
-        date_add_kwargs = {}
+        materialization_metadata = _check.not_none(
+            value=event_record[0].asset_materialization
+        ).metadata
 
-    for partition_key in partition_keys:
-        event_record = context.instance.get_event_records(
-            event_records_filter=EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
-                asset_partitions=[partition_key],
+    # skip first partition
+    if partition_key == first_partition_key:
+        return None
+    # request run if last partition modified count > 0
+    elif partition_key == last_partition_key:
+        modified_count = get_count(
+            db_powerschool=db_powerschool,
+            table=table_name,
+            column=partition_column,
+            start_value=get_datetime_from_metadata(
+                metadata=materialization_metadata, execution_timezone=execution_timezone
             ),
-            limit=1,
         )
 
-        # request run if partition never materialized
-        if not event_record:
-            context.log.info(msg=f"{asset_key_identifier} never materialized")
-            run_request_kwargs.append(
-                {
-                    "asset_key": asset_key,
-                    "partitions_def": partitions_def_identifier,
-                    "partition_key": partition_key,
-                }
-            )
-            continue
-
-        metadata = _check.not_none(value=event_record[0].asset_materialization).metadata
-
-        # skip first partition
-        # TODO: handle checking for null values in partition key
-        if partition_key == first_partition_key:
-            continue
-
-        # request run if last partition modified count > 0
-        if partition_key == last_partition_key:
-            timestamp = _check.inst(
-                obj=metadata["latest_materialization_timestamp"].value,
-                ttype=float,
-            )
-
-            timestamp_fmt = (
-                datetime.fromtimestamp(timestamp=timestamp, tz=execution_timezone)
-                .replace(tzinfo=None)
-                .isoformat(timespec="microseconds")
-            )
-
-            [(modified_count,)] = _check.inst(
-                db_powerschool.execute_query(
-                    query=get_query_text(
-                        table=table_name,
-                        column=partition_column,
-                        start_value=timestamp_fmt,
-                    ),
-                    prefetch_rows=2,
-                    array_size=1,
-                ),
-                list,
-            )
-
-            if modified_count > 0:
-                context.log.info(
-                    msg=(
-                        f"{asset_key_identifier}\n{partition_key}\n"
-                        f"modified count: {modified_count}"
-                    )
-                )
-                run_request_kwargs.append(
-                    {
-                        "asset_key": asset_key,
-                        "partitions_def": partitions_def_identifier,
-                        "partition_key": partition_key,
-                    }
-                )
-                continue
-
-        # request run if partition count != latest materialization
-        materialization_count = metadata["records"].value
-
-        partition_start = datetime.fromisoformat(partition_key)
-
-        partition_end = (
-            partition_start
-            # trunk-ignore(pyright/reportArgumentType)
-            + relativedelta(**date_add_kwargs)
-            - relativedelta(days=1)
-        ).replace(hour=23, minute=59, second=59, microsecond=999999)
-
-        [(partition_count,)] = _check.inst(
-            db_powerschool.execute_query(
-                query=get_query_text(
-                    table=table_name,
-                    column=partition_column,
-                    start_value=partition_start.replace(tzinfo=None).isoformat(
-                        timespec="microseconds"
-                    ),
-                    end_value=partition_end.replace(tzinfo=None).isoformat(
-                        timespec="microseconds"
-                    ),
-                ),
-                prefetch_rows=2,
-                array_size=1,
-            ),
-            list,
-        )
-
-        if partition_count > 0 and partition_count != materialization_count:
+        if modified_count > 0:
             context.log.info(
                 msg=(
                     f"{asset_key_identifier}\n{partition_key}\n"
-                    f"PS count ({partition_count}) "
-                    f"!= DB count ({materialization_count})"
+                    f"modified count: {modified_count}"
                 )
             )
-            run_request_kwargs.append(
-                {
-                    "asset_key": asset_key,
-                    "partitions_def": partitions_def_identifier,
-                    "partition_key": partition_key,
-                }
+            return {
+                "asset_key": asset_key,
+                "partitions_def": partitions_def_identifier,
+                "partition_key": partition_key,
+            }
+
+    # request run if partition count != latest materialization
+    # catches deleted records
+    partition_start = datetime.fromisoformat(partition_key)
+
+    partition_end = (
+        partition_start + relativedelta(**date_add_kwargs) - relativedelta(days=1)
+    ).replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    partition_count = get_count(
+        db_powerschool=db_powerschool,
+        table=table_name,
+        column=partition_column,
+        start_value=partition_start.replace(tzinfo=None).isoformat(
+            timespec="microseconds"
+        ),
+        end_value=partition_end.replace(tzinfo=None).isoformat(timespec="microseconds"),
+    )
+
+    materialization_count = materialization_metadata["records"].value
+
+    if partition_count > 0 and partition_count != materialization_count:
+        context.log.info(
+            msg=(
+                f"{asset_key_identifier}\n{partition_key}\n"
+                f"PS count ({partition_count}) != DB count ({materialization_count})"
             )
-            continue
-
-
-def foo(
-    asset: AssetsDefinition,
-    latest_materialization_events: dict[AssetKey, EventLogEntry],
-    context: ScheduleEvaluationContext,
-    run_request_kwargs: list[dict],
-    execution_timezone: ZoneInfo,
-    db_powerschool: PowerSchoolODBCResource,
-):
-    # non-partitioned assets
-    if asset.partitions_def is None:
-        bar_nonpartitioned(
-            asset=asset,
-            latest_materialization_event=latest_materialization_events.get(asset.key),
-            context=context,
-            run_request_kwargs=run_request_kwargs,
-            execution_timezone=execution_timezone,
-            db_powerschool=db_powerschool,
         )
-    # partitioned assets
+        return {
+            "asset_key": asset_key,
+            "partitions_def": partitions_def_identifier,
+            "partition_key": partition_key,
+        }
     else:
-        bar_partitioned(
-            asset=asset,
-            partitions_def=asset.partitions_def,
-            context=context,
-            run_request_kwargs=run_request_kwargs,
-            execution_timezone=execution_timezone,
-            db_powerschool=db_powerschool,
-        )
+        return None
 
 
 def build_powerschool_sis_asset_schedule(
@@ -307,7 +223,7 @@ def build_powerschool_sis_asset_schedule(
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
     ):
-        run_request_kwargs = []
+        run_request_kwargs_list: list[dict | None] = []
 
         latest_materialization_events = (
             context.instance.get_latest_materialization_events(asset_keys)
@@ -320,251 +236,75 @@ def build_powerschool_sis_asset_schedule(
 
         try:
             for asset in asset_selection:
-                asset_key_identifier = asset.key.to_python_identifier()
-                metadata = asset.metadata_by_key[asset.key]
-
-                table_name = metadata["table_name"]
-                partition_column = metadata["partition_column"]
+                asset_metadata = asset.metadata_by_key[asset.key]
 
                 # non-partitioned assets
                 if asset.partitions_def is None:
                     latest_materialization_event = latest_materialization_events.get(
                         asset.key
                     )
-
                     # request run if asset never materialized
                     if latest_materialization_event is None:
                         context.log.info(
-                            msg=f"{asset_key_identifier} never materialized"
+                            msg=f"{asset.key.to_python_identifier()} never materialized"
                         )
-                        run_request_kwargs.append(
-                            {
-                                "asset_key": asset.key,
-                                "partitions_def": "",
-                                "partition_key": "",
-                            }
-                        )
-                        continue
-
-                    metadata = _check.not_none(
-                        value=latest_materialization_event.asset_materialization
-                    ).metadata
-
-                    materialization_count = metadata["records"].value
-
-                    # request run if table modified count > 0
-                    if partition_column is not None:
-                        timestamp = _check.inst(
-                            obj=metadata["latest_materialization_timestamp"].value,
-                            ttype=float,
+                        run_request_kwargs = {
+                            "asset_key": asset.key,
+                            "partitions_def": "",
+                            "partition_key": "",
+                        }
+                    else:
+                        run_request_kwargs = foo_nonpartitioned(
+                            asset_key=asset.key,
+                            asset_key_identifier=asset.key.to_python_identifier(),
+                            table_name=asset_metadata["table_name"],
+                            partition_column=asset_metadata["partition_column"],
+                            context=context,
+                            execution_timezone=execution_timezone,
+                            db_powerschool=db_powerschool,
+                            materialization_metadata=_check.not_none(
+                                latest_materialization_event.asset_materialization
+                            ).metadata,
                         )
 
-                        timestamp_fmt = (
-                            datetime.fromtimestamp(
-                                timestamp=timestamp, tz=execution_timezone
-                            )
-                            .replace(tzinfo=None)
-                            .isoformat(timespec="microseconds")
-                        )
-
-                        [(modified_count,)] = _check.inst(
-                            db_powerschool.execute_query(
-                                query=get_query_text(
-                                    table=table_name,
-                                    column=partition_column,
-                                    start_value=timestamp_fmt,
-                                ),
-                                prefetch_rows=2,
-                                array_size=1,
-                            ),
-                            list,
-                        )
-
-                        if modified_count > 0:
-                            context.log.info(
-                                msg=(
-                                    f"{asset_key_identifier}\n"
-                                    f"modified count: {modified_count}"
-                                )
-                            )
-                            run_request_kwargs.append(
-                                {
-                                    "asset_key": asset.key,
-                                    "partitions_def": "",
-                                    "partition_key": "",
-                                }
-                            )
-                            continue
-
-                    # request run if table count doesn't match latest materialization
-                    [(table_count,)] = _check.inst(
-                        db_powerschool.execute_query(
-                            query=get_query_text(table=table_name, column=None),
-                            prefetch_rows=2,
-                            array_size=1,
-                        ),
-                        list,
-                    )
-
-                    if table_count != materialization_count:
-                        context.log.info(
-                            msg=(
-                                f"{asset_key_identifier}\n"
-                                f"PS count ({table_count}) != "
-                                f"DB count ({materialization_count})"
-                            )
-                        )
-                        run_request_kwargs.append(
-                            {
-                                "asset_key": asset.key,
-                                "partitions_def": "",
-                                "partition_key": "",
-                            }
-                        )
-                        continue
+                    run_request_kwargs_list.append(run_request_kwargs)
                 # partitioned assets
                 else:
-                    first_partition_key = asset.partitions_def.get_first_partition_key()
-                    last_partition_key = asset.partitions_def.get_last_partition_key()
-                    partition_keys = asset.partitions_def.get_partition_keys()
-                    partitions_def_identifier = (
-                        asset.partitions_def.get_serializable_unique_identifier()
-                    )
+                    partitions_def = asset.partitions_def
 
-                    if isinstance(asset.partitions_def, FiscalYearPartitionsDefinition):
+                    partition_keys = partitions_def.get_partition_keys()
+
+                    if isinstance(partitions_def, FiscalYearPartitionsDefinition):
                         date_add_kwargs = {"years": 1}
-                    elif isinstance(asset.partitions_def, MonthlyPartitionsDefinition):
+                    elif isinstance(partitions_def, MonthlyPartitionsDefinition):
                         date_add_kwargs = {"months": 1}
                         partition_keys = partition_keys[-12:]  # limit to 12 months
                     else:
                         date_add_kwargs = {}
 
                     for partition_key in partition_keys:
-                        event_record = context.instance.get_event_records(
-                            event_records_filter=EventRecordsFilter(
-                                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                                asset_key=asset.key,
-                                asset_partitions=[partition_key],
+                        run_request_kwargs = foo_partitioned(
+                            asset_key=asset.key,
+                            asset_key_identifier=asset.key.to_python_identifier(),
+                            table_name=asset_metadata["table_name"],
+                            partition_column=asset_metadata["partition_column"],
+                            context=context,
+                            execution_timezone=execution_timezone,
+                            db_powerschool=db_powerschool,
+                            partition_key=partition_key,
+                            partitions_def_identifier=(
+                                partitions_def.get_serializable_unique_identifier()
                             ),
-                            limit=1,
+                            first_partition_key=_check.not_none(
+                                value=partitions_def.get_first_partition_key()
+                            ),
+                            last_partition_key=_check.not_none(
+                                value=partitions_def.get_last_partition_key()
+                            ),
+                            date_add_kwargs=date_add_kwargs,
                         )
 
-                        # request run if partition never materialized
-                        if not event_record:
-                            context.log.info(
-                                msg=f"{asset_key_identifier} never materialized"
-                            )
-                            run_request_kwargs.append(
-                                {
-                                    "asset_key": asset.key,
-                                    "partitions_def": partitions_def_identifier,
-                                    "partition_key": partition_key,
-                                }
-                            )
-                            continue
-
-                        metadata = _check.not_none(
-                            value=event_record[0].asset_materialization
-                        ).metadata
-
-                        # skip first partition
-                        # TODO: handle checking for null values in partition key
-                        if partition_key == first_partition_key:
-                            continue
-
-                        # request run if last partition modified count > 0
-                        if partition_key == last_partition_key:
-                            timestamp = _check.inst(
-                                obj=metadata["latest_materialization_timestamp"].value,
-                                ttype=float,
-                            )
-
-                            timestamp_fmt = (
-                                datetime.fromtimestamp(
-                                    timestamp=timestamp, tz=execution_timezone
-                                )
-                                .replace(tzinfo=None)
-                                .isoformat(timespec="microseconds")
-                            )
-
-                            [(modified_count,)] = _check.inst(
-                                db_powerschool.execute_query(
-                                    query=get_query_text(
-                                        table=table_name,
-                                        column=partition_column,
-                                        start_value=timestamp_fmt,
-                                    ),
-                                    prefetch_rows=2,
-                                    array_size=1,
-                                ),
-                                list,
-                            )
-
-                            if modified_count > 0:
-                                context.log.info(
-                                    msg=(
-                                        f"{asset_key_identifier}\n{partition_key}\n"
-                                        f"modified count: {modified_count}"
-                                    )
-                                )
-                                run_request_kwargs.append(
-                                    {
-                                        "asset_key": asset.key,
-                                        "partitions_def": partitions_def_identifier,
-                                        "partition_key": partition_key,
-                                    }
-                                )
-                                continue
-
-                        # request run if partition count != latest materialization
-                        materialization_count = metadata["records"].value
-
-                        partition_start = datetime.fromisoformat(partition_key)
-
-                        partition_end = (
-                            partition_start
-                            # trunk-ignore(pyright/reportArgumentType)
-                            + relativedelta(**date_add_kwargs)
-                            - relativedelta(days=1)
-                        ).replace(hour=23, minute=59, second=59, microsecond=999999)
-
-                        [(partition_count,)] = _check.inst(
-                            db_powerschool.execute_query(
-                                query=get_query_text(
-                                    table=table_name,
-                                    column=partition_column,
-                                    start_value=partition_start.replace(
-                                        tzinfo=None
-                                    ).isoformat(timespec="microseconds"),
-                                    end_value=partition_end.replace(
-                                        tzinfo=None
-                                    ).isoformat(timespec="microseconds"),
-                                ),
-                                prefetch_rows=2,
-                                array_size=1,
-                            ),
-                            list,
-                        )
-
-                        if (
-                            partition_count > 0
-                            and partition_count != materialization_count
-                        ):
-                            context.log.info(
-                                msg=(
-                                    f"{asset_key_identifier}\n{partition_key}\n"
-                                    f"PS count ({partition_count}) "
-                                    f"!= DB count ({materialization_count})"
-                                )
-                            )
-                            run_request_kwargs.append(
-                                {
-                                    "asset_key": asset.key,
-                                    "partitions_def": partitions_def_identifier,
-                                    "partition_key": partition_key,
-                                }
-                            )
-                            continue
+                        run_request_kwargs_list.append(run_request_kwargs)
         except Exception as e:
             context.log.exception(msg=e)
             raise e
@@ -572,9 +312,13 @@ def build_powerschool_sis_asset_schedule(
             ssh_tunnel.kill()
 
         item_getter = itemgetter("partitions_def", "partition_key")
+        run_request_kwargs_filtered = [
+            k for k in run_request_kwargs_list if k is not None
+        ]
 
         for (partitions_def, partition_key), group in groupby(
-            iterable=sorted(run_request_kwargs, key=item_getter), key=item_getter
+            iterable=sorted(run_request_kwargs_filtered, key=item_getter),
+            key=item_getter,
         ):
             yield RunRequest(
                 run_key=f"{partitions_def}_{partition_key}",
