@@ -1,6 +1,6 @@
 select
     employee_number,
-    preferred_name_lastfirst,
+    formatted_name,
     home_work_location_name as location,
     home_business_unit_name as entity,
     home_department_name as department,
@@ -8,6 +8,33 @@ select
     job_title,
     google_email,
     reports_to_google_email,
+    if(
+        job_title in (
+            'Assistant School Leader',
+            'Assistant School Leader, SPED',
+            'Assistant School Leader, School Culture',
+            'School Leader',
+            'School Leader in Residence',
+            'Head of Schools',
+            'Head of Schools in Residence',
+            'Director School Operations',
+            'Director Campus Operations',
+            'Fellow School Operations Director',
+            'Managing Director of School Operations',
+            'Associate Director of School Operations'
+        ),
+        job_title,
+        'CMO and Other Leaders'
+    ) as route,
+    if(
+        contains_substr(job_title, "Leader")
+        or contains_substr(job_title, "Head")
+        or contains_substr(job_title, "Director")
+        or contains_substr(job_title, "Chief")
+        or contains_substr(job_title, "Controller"),
+        true,
+        false
+    ) as default_include,
     case
         when
             home_department_name
