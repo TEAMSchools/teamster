@@ -1,4 +1,3 @@
-import subprocess
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -25,7 +24,7 @@ from dateutil.relativedelta import relativedelta
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
-from teamster.libraries.powerschool.sis.utils import get_query_text
+from teamster.libraries.powerschool.sis.utils import get_query_text, open_ssh_tunnel
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -75,20 +74,7 @@ def build_powerschool_asset_sensor(
         )
 
         context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
-        ssh_tunnel = subprocess.Popen(
-            args=[
-                "sshpass",
-                "-f/etc/secret-volume/powerschool_ssh_password.txt",
-                "ssh",
-                ssh_powerschool.remote_host,
-                f"-p{ssh_powerschool.remote_port}",
-                f"-l{ssh_powerschool.username}",
-                f"-L1521:{ssh_powerschool.tunnel_remote_host}:1521",
-                "-oHostKeyAlgorithms=+ssh-rsa",
-                "-oStrictHostKeyChecking=accept-new",
-                "-N",
-            ],
-        )
+        ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
 
         time.sleep(1.0)
 
@@ -343,6 +329,9 @@ def build_powerschool_asset_sensor(
                                 }
                             )
                             continue
+        except Exception as e:
+            context.log.exception(msg=e)
+            raise e
         finally:
             ssh_tunnel.kill()
 
