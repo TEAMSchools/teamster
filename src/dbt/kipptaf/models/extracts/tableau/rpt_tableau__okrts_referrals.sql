@@ -250,6 +250,33 @@ select
         sum(if(dlp.is_suspension, 1, 0)) over (
             partition by co.academic_year, co.student_number
         )
+        = 1,
+        1,
+        0
+    ) as is_suspended_y1_one_int,
+
+    if(
+        sum(if(st.suspension_type = 'OSS', 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        = 1,
+        1,
+        0
+    ) as is_suspended_y1_oss_one_int,
+
+    if(
+        sum(if(st.suspension_type = 'ISS', 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        = 1,
+        1,
+        0
+    ) as is_suspended_y1_iss_one_int,
+
+    if(
+        sum(if(dlp.is_suspension, 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
         > 1,
         1,
         0
