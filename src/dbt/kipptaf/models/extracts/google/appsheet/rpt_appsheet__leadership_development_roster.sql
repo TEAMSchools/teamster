@@ -42,5 +42,5 @@ select
         then 3
         else 1
     end as permission_level,
-from {{ ref("int_people__staff_roster") }} as sr
-where sr.assignment_status in ('Active', 'Leave')
+from {{ ref("int_people__staff_roster") }}
+where assignment_status in ('Active', 'Leave')
