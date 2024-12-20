@@ -1,5 +1,7 @@
 import hashlib
 import pathlib
+import subprocess
+import time
 from datetime import datetime
 from io import BufferedReader
 from zoneinfo import ZoneInfo
@@ -16,7 +18,6 @@ from dagster import (
 from dateutil.relativedelta import relativedelta
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
-from sshtunnel import HandlerSSHTunnelForwarderError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
@@ -127,15 +128,25 @@ def build_powerschool_table_asset(
             .where(text(constructed_where))
         )
 
-        ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
+        context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
+        ssh_tunnel = subprocess.Popen(
+            args=[
+                "sshpass",
+                "-f/etc/secret-volume/powerschool_ssh_password.txt",
+                "ssh",
+                ssh_powerschool.remote_host,
+                f"-p{ssh_powerschool.remote_port}",
+                f"-l{ssh_powerschool.username}",
+                f"-L1521:{ssh_powerschool.tunnel_remote_host}:1521",
+                "-oHostKeyAlgorithms=+ssh-rsa",
+                "-oStrictHostKeyChecking=accept-new",
+                "-N",
+            ],
+        )
+
+        time.sleep(1.0)
 
         try:
-            ssh_tunnel.start()
-
-            context.log.debug(msg=ssh_tunnel.tunnel_is_up)
-            if not ssh_tunnel.tunnel_is_up:
-                raise HandlerSSHTunnelForwarderError
-
             file_path = _check.inst(
                 obj=db_powerschool.execute_query(
                     query=sql,
@@ -147,7 +158,7 @@ def build_powerschool_table_asset(
                 ttype=pathlib.Path,
             )
         finally:
-            ssh_tunnel.stop(force=True)
+            ssh_tunnel.kill()
 
         with file_path.open(mode="rb") as f:
             num_records = sum(block.num_records for block in block_reader(f))
