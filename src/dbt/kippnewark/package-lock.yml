@@ -8,7 +8,7 @@ packages:
   - local: ../renlearn
   - local: ../titan
   - package: dbt-labs/dbt_external_tables
-    version: 0.9.0
+    version: 0.11.1
   - package: dbt-labs/dbt_utils
     version: 1.3.0
-sha1_hash: 6cce58ea5f384fc7dc41d808f3a3e18cf4b24231
+sha1_hash: 28e59ee8a4de9cfea7d6f357266608637e7a2e83
