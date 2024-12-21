@@ -29,7 +29,13 @@ def open_ssh_tunnel(ssh_resource: SSHResource):
             stdout = ssh_tunnel.stdout.readline()
             ssh_resource.log.debug(msg=stdout)
 
-            if stdout == b"A secure connection to your server has been established.\n":
+            if stdout in [
+                (
+                    f"Warning: Permanently added '[{ssh_resource.remote_host}]:"
+                    f"{ssh_resource.remote_port}' (RSA) to the list of known hosts.\r\n"
+                ).encode(),
+                b"A secure connection to your server has been established.\n",
+            ]:
                 continue
             elif stdout == b"To disconnect, simply close this window.\n":
                 break
