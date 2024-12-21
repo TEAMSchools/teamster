@@ -1,4 +1,3 @@
-import time
 from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
@@ -50,8 +49,6 @@ def build_powerschool_sis_asset_schedule(
 
         context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
         ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
-
-        time.sleep(1.0)
 
         try:
             for asset in asset_selection:

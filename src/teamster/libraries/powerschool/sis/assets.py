@@ -1,6 +1,5 @@
 import hashlib
 import pathlib
-import time
 from datetime import datetime
 from io import BufferedReader
 from zoneinfo import ZoneInfo
@@ -130,8 +129,6 @@ def build_powerschool_table_asset(
 
         context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
         ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
-
-        time.sleep(1.0)
 
         try:
             file_path = _check.inst(
