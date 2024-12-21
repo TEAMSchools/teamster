@@ -6,7 +6,7 @@ from teamster.libraries.ssh.resources import SSHResource
 
 
 def open_ssh_tunnel(ssh_resource: SSHResource):
-    return subprocess.Popen(
+    ssh_tunnel = subprocess.Popen(
         args=[
             "sshpass",
             "-f/etc/secret-volume/powerschool_ssh_password.txt",
@@ -17,9 +17,27 @@ def open_ssh_tunnel(ssh_resource: SSHResource):
             f"-L1521:{ssh_resource.tunnel_remote_host}:1521",
             "-oHostKeyAlgorithms=+ssh-rsa",
             "-oStrictHostKeyChecking=accept-new",
+            "-oConnectTimeout=10",
             "-N",
         ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     )
+
+    while True:
+        if ssh_tunnel.stdout is not None:
+            stdout = ssh_tunnel.stdout.readline()
+            ssh_resource.log.debug(msg=stdout)
+
+            if stdout == b"A secure connection to your server has been established.\n":
+                continue
+            elif stdout == b"To disconnect, simply close this window.\n":
+                break
+            else:
+                ssh_tunnel.kill()
+                raise Exception(stdout)
+
+    return ssh_tunnel
 
 
 def get_query_text(
