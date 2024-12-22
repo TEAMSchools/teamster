@@ -1,4 +1,10 @@
-from dagster import RunRequest, ScheduleEvaluationContext, define_asset_job, schedule
+from dagster import (
+    MAX_RUNTIME_SECONDS_TAG,
+    RunRequest,
+    ScheduleEvaluationContext,
+    define_asset_job,
+    schedule,
+)
 
 from teamster.code_locations.kipptaf import (
     CODE_LOCATION,
@@ -19,7 +25,10 @@ mclass_asset_job = define_asset_job(
     job=mclass_asset_job,
 )
 def mclass_asset_job_schedule(context: ScheduleEvaluationContext):
-    yield RunRequest(partition_key=CURRENT_FISCAL_YEAR.start.isoformat())
+    yield RunRequest(
+        partition_key=CURRENT_FISCAL_YEAR.start.isoformat(),
+        tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
+    )
 
 
 schedules = [
