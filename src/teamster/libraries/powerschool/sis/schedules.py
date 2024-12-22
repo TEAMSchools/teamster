@@ -50,6 +50,12 @@ def build_powerschool_sis_asset_schedule(
         ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
 
         try:
+            connection = db_powerschool.connect()
+        except Exception as e:
+            ssh_tunnel.kill()
+            raise e
+
+        try:
             for asset in asset_selection:
                 asset_key_identifier = asset.key.to_python_identifier()
                 metadata = asset.metadata_by_key[asset.key]
@@ -100,6 +106,7 @@ def build_powerschool_sis_asset_schedule(
 
                         [(modified_count,)] = _check.inst(
                             db_powerschool.execute_query(
+                                connection=connection,
                                 query=get_query_text(
                                     table=table_name,
                                     column=partition_column,
@@ -130,6 +137,7 @@ def build_powerschool_sis_asset_schedule(
                     # request run if table count doesn't match latest materialization
                     [(table_count,)] = _check.inst(
                         db_powerschool.execute_query(
+                            connection=connection,
                             query=get_query_text(table=table_name, column=None),
                             prefetch_rows=2,
                             array_size=1,
@@ -218,6 +226,7 @@ def build_powerschool_sis_asset_schedule(
 
                             [(modified_count,)] = _check.inst(
                                 db_powerschool.execute_query(
+                                    connection=connection,
                                     query=get_query_text(
                                         table=table_name,
                                         column=partition_column,
@@ -246,8 +255,6 @@ def build_powerschool_sis_asset_schedule(
                                 continue
 
                         # request run if partition count != latest materialization
-                        materialization_count = metadata["records"].value
-
                         partition_start = datetime.fromisoformat(partition_key)
 
                         partition_end = (
@@ -257,23 +264,29 @@ def build_powerschool_sis_asset_schedule(
                             - relativedelta(days=1)
                         ).replace(hour=23, minute=59, second=59, microsecond=999999)
 
+                        start_value = partition_start.replace(tzinfo=None).isoformat(
+                            timespec="microseconds"
+                        )
+                        end_value = partition_end.replace(tzinfo=None).isoformat(
+                            timespec="microseconds"
+                        )
+
                         [(partition_count,)] = _check.inst(
                             db_powerschool.execute_query(
+                                connection=connection,
                                 query=get_query_text(
                                     table=table_name,
                                     column=partition_column,
-                                    start_value=partition_start.replace(
-                                        tzinfo=None
-                                    ).isoformat(timespec="microseconds"),
-                                    end_value=partition_end.replace(
-                                        tzinfo=None
-                                    ).isoformat(timespec="microseconds"),
+                                    start_value=start_value,
+                                    end_value=end_value,
                                 ),
                                 prefetch_rows=2,
                                 array_size=1,
                             ),
                             list,
                         )
+
+                        materialization_count = metadata["records"].value
 
                         if (
                             partition_count > 0
@@ -298,6 +311,7 @@ def build_powerschool_sis_asset_schedule(
             context.log.exception(msg=e)
             raise e
         finally:
+            connection.close()
             ssh_tunnel.kill()
 
         item_getter = itemgetter("partitions_def", "partition_key")
