@@ -44,13 +44,13 @@ select
         then 1.0
         else 0.0
     end as is_attrition,
-from {{ ref("base_powerschool__student_enrollments") }} as y1
+from {{ ref("int_powerschool__student_enrollments") }} as y1
 inner join
     {{ ref("stg_powerschool__students") }} as s
     on y1.student_number = s.student_number
     and {{ union_dataset_join_clause(left_alias="y1", right_alias="s") }}
 left join
-    {{ ref("base_powerschool__student_enrollments") }} as y2
+    {{ ref("int_powerschool__student_enrollments") }} as y2
     on y1.student_number = y2.student_number
     and y1.academic_year = (y2.academic_year - 1)
     and date(y2.academic_year, 10, 1) between y2.entrydate and y2.exitdate

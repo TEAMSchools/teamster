@@ -111,7 +111,7 @@ with
             round(avg(ada.ada), 2) as criteria,
         from {{ ref("int_powerschool__ada") }} as ada
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
+            {{ ref("int_powerschool__student_enrollments") }} as co
             on ada.studentid = co.studentid
             and ada.yearid = co.yearid
             and co.region = 'Miami'
@@ -131,7 +131,7 @@ with
             round(avg(ada.ada), 2) as criteria,
         from {{ ref("int_powerschool__ada") }} as ada
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
+            {{ ref("int_powerschool__student_enrollments") }} as co
             on ada.studentid = co.studentid
             and ada.yearid = co.yearid
             and co.region = 'Miami'
@@ -148,7 +148,7 @@ with
             round(avg(ada.ada), 2) as criteria,
         from {{ ref("int_powerschool__ada") }} as ada
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
+            {{ ref("int_powerschool__student_enrollments") }} as co
             on ada.studentid = co.studentid
             and ada.yearid = co.yearid
             and co.region = 'Miami'

@@ -52,7 +52,7 @@ with
             if(
                 co.grade_level >= 9, enr.courses_credittype, asr.subject_area
             ) as filter_join,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
             on co.student_number = asr.powerschool_student_number

@@ -2,6 +2,9 @@ version: 2
 
 sources:
   - name: kippnewark_powerschool
+    schema:
+      "{% if env_var('DBT_DEV', '') == 'true' %}_dev_kippnewark_powerschool{% else
+      %}kippnewark_powerschool{% endif %}"
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         meta:
@@ -515,14 +518,14 @@ sources:
               - kippnewark
               - powerschool
               - base_powerschool__sections
-      - name: base_powerschool__student_enrollments
+      - name: int_powerschool__student_enrollments
         meta:
           dagster:
             group: powerschool
             asset_key:
               - kippnewark
               - powerschool
-              - base_powerschool__student_enrollments
+              - int_powerschool__student_enrollments
       - name: int_powerschool__advisory
         meta:
           dagster:
