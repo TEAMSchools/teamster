@@ -131,8 +131,15 @@ def build_powerschool_table_asset(
         ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
 
         try:
+            connection = db_powerschool.connect()
+        except Exception as e:
+            ssh_tunnel.kill()
+            raise e
+
+        try:
             file_path = _check.inst(
                 obj=db_powerschool.execute_query(
+                    connection=connection,
                     query=sql,
                     output_format="avro",
                     batch_size=partition_size,
@@ -142,6 +149,7 @@ def build_powerschool_table_asset(
                 ttype=pathlib.Path,
             )
         finally:
+            connection.close()
             ssh_tunnel.kill()
 
         with file_path.open(mode="rb") as f:
