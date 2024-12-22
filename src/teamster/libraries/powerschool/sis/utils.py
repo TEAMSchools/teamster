@@ -1,4 +1,5 @@
 import subprocess
+import time
 
 from sqlalchemy import text
 
@@ -42,6 +43,8 @@ def open_ssh_tunnel(ssh_resource: SSHResource):
             else:
                 ssh_tunnel.kill()
                 raise Exception(stdout)
+
+    time.sleep(1.0)
 
     return ssh_tunnel
 

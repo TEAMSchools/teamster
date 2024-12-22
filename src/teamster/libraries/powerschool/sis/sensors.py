@@ -7,9 +7,8 @@ from zoneinfo import ZoneInfo
 from dagster import (
     MAX_RUNTIME_SECONDS_TAG,
     AssetKey,
+    AssetRecordsFilter,
     AssetsDefinition,
-    DagsterEventType,
-    EventRecordsFilter,
     MonthlyPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
@@ -201,17 +200,15 @@ def build_powerschool_asset_sensor(
                         date_add_kwargs = {}
 
                     for partition_key in partition_keys:
-                        event_record = context.instance.get_event_records(
-                            event_records_filter=EventRecordsFilter(
-                                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                                asset_key=asset.key,
-                                asset_partitions=[partition_key],
+                        event_records = context.instance.fetch_materializations(
+                            records_filter=AssetRecordsFilter(
+                                asset_key=asset.key, asset_partitions=[partition_key]
                             ),
                             limit=1,
                         )
 
                         # request run if partition never materialized
-                        if not event_record:
+                        if not event_records:
                             context.log.info(
                                 msg=f"{asset_key_identifier} never materialized"
                             )
@@ -225,7 +222,7 @@ def build_powerschool_asset_sensor(
                             continue
 
                         metadata = _check.not_none(
-                            value=event_record[0].asset_materialization
+                            value=event_records.records[0].asset_materialization
                         ).metadata
 
                         # skip first partition
