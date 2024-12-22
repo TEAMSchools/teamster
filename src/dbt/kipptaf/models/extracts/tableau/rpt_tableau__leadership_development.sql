@@ -49,14 +49,14 @@ select
     c.eoy_self_complete,
     c.eoy_manager_complete,
 
-    r.preferred_name_lastfirst,
+    r.formatted_name as preferred_name_lastfirst,
     r.sam_account_name,
     r.job_title,
-    r.business_unit_home_name as entity,
+    r.home_business_unit_name as entity,
     r.home_work_location_name as `location`,
-    r.department_home_name as department,
-    r.report_to_preferred_name_lastfirst as manager,
-    r.report_to_sam_account_name,
+    r.home_department_name as department,
+    r.reports_to_formatted_name as manager,
+    r.reports_to_sam_account_name as report_to_sam_account_name,
     r.assignment_status,
 
 from {{ ref("stg_leadership_development__output") }} as o
@@ -69,4 +69,4 @@ left join
     on o.employee_number = c.employee_number
     and o.academic_year = c.academic_year
 left join
-    {{ ref("base_people__staff_roster") }} as r on o.employee_number = r.employee_number
+    {{ ref("int_people__staff_roster") }} as r on o.employee_number = r.employee_number
