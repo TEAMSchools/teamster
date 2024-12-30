@@ -19,6 +19,7 @@ from dagster import (
     sensor,
 )
 from dateutil.relativedelta import relativedelta
+from oracledb.exceptions import DatabaseError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
@@ -336,6 +337,13 @@ def build_powerschool_asset_sensor(
                                 }
                             )
                             continue
+        except DatabaseError as e:
+            e_str = str(e)
+
+            if "DPY-4011" in e_str:
+                return SkipReason(e_str)
+            else:
+                raise e
         except Exception as e:
             context.log.exception(msg=e)
             raise e
