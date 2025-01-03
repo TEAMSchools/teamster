@@ -1,49 +1,58 @@
 assets:
-  - dataset_config:
-      table_id: rpt_clever__enrollments
-      dataset_id: kipptaf_extracts
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__enrollments
+          schema: kipptaf_extracts
     file_config:
       stem: enrollments
       suffix: csv
-    destination_config:
-      name: clever
-  - dataset_config:
-      table_id: rpt_clever__teachers
-      dataset_id: kipptaf_extracts
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__teachers
+          schema: kipptaf_extracts
     file_config:
       stem: teachers
       suffix: csv
-    destination_config:
-      name: clever
-  - dataset_config:
-      table_id: rpt_clever__students
-      dataset_id: kipptaf_extracts
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__students
+          schema: kipptaf_extracts
     file_config:
       stem: students
       suffix: csv
-    destination_config:
-      name: clever
-  - dataset_config:
-      table_id: rpt_clever__staff
-      dataset_id: kipptaf_extracts
+      format:
+        header_replacements:
+          ext__gifted_status: ext.gifted_status
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__staff
+          schema: kipptaf_extracts
     file_config:
       stem: staff
       suffix: csv
-    destination_config:
-      name: clever
-  - dataset_config:
-      table_id: rpt_clever__sections
-      dataset_id: kipptaf_extracts
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__sections
+          schema: kipptaf_extracts
     file_config:
       stem: sections
       suffix: csv
-    destination_config:
-      name: clever
-  - dataset_config:
-      table_id: rpt_clever__schools
-      dataset_id: kipptaf_extracts
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__schools
+          schema: kipptaf_extracts
     file_config:
       stem: schools
       suffix: csv
-    destination_config:
-      name: clever
