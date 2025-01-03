@@ -44,7 +44,7 @@ select
     gpa.cumulative_y1_gpa_unweighted as gpa,
 
     round(ada.ada, 2) as previous_year_ada,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_powerschool__student_enrollments") }} as co
 left join
     fast_pivot as fp
     on co.fleid = fp.fleid

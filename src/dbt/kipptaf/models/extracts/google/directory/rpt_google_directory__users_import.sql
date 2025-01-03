@@ -1,22 +1,20 @@
 with
     students as (
         select
-            se.first_name as `givenName`,
-            se.last_name as `familyName`,
-            se.student_email_google as `primaryEmail`,
-            se.school_name,
-            se.is_out_of_district,
+            first_name as `givenName`,
+            last_name as `familyName`,
+            student_email_google as `primaryEmail`,
+            school_name,
+            is_out_of_district,
 
-            concat(
-                'group-students-', lower(se.region), '@teamstudents.org'
-            ) as `groupKey`,
+            concat('group-students-', lower(region), '@teamstudents.org') as `groupKey`,
 
-            to_hex(sha1(se.student_web_password)) as `password`,
+            to_hex(sha1(student_web_password)) as `password`,
 
-            if(se.grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
-            if(se.enroll_status = 0, false, true) as `suspended`,
-        from {{ ref("base_powerschool__student_enrollments") }} as se
-        where se.rn_all = 1 and se.student_email_google is not null
+            if(grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
+            if(enroll_status = 0, false, true) as `suspended`,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where rn_all = 1 and student_email_google is not null
     ),
 
     with_google as (
