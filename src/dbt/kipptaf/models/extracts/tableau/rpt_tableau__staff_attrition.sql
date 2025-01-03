@@ -1,18 +1,22 @@
 with
+    years as (
+        select academic_year, academic_year + 1 as next_academic_year,
+        from
+            unnest(
+                generate_array(2002, {{ var("current_academic_year") }})
+            ) as academic_year
+    ),
+
     dates as (
         select
-            extract(year from date_day) as academic_year,
-            extract(year from date_day) + 1 as next_academic_year,
+            *,
 
-            date(extract(year from date_day), 7, 1) as default_entry_date,
-            date((extract(year from date_day) + 1), 6, 30) as default_exit_date,
-
-            date(extract(year from date_day), 9, 1) as denominator_start_date,
-            date((extract(year from date_day) + 1), 8, 31) as attrition_date,
-
-            date((extract(year from date_day) + 1), 4, 30) as effective_date,
-        from {{ ref("utils__date_spine") }}
-        where extract(month from date_day) = 7 and extract(day from date_day) = 1
+            date(academic_year, 7, 1) as default_entry_date,
+            date(academic_year, 9, 1) as denominator_start_date,
+            date(next_academic_year, 4, 30) as effective_date,
+            date(next_academic_year, 6, 30) as default_exit_date,
+            date(next_academic_year, 8, 31) as attrition_date,
+        from years
     ),
 
     terminations as (
