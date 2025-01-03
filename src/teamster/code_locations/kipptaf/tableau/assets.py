@@ -3,6 +3,7 @@ import pathlib
 from dagster import config_from_files
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.tableau.schema import VIEW_COUNT_PER_VIEW
 from teamster.libraries.sftp.assets import build_sftp_folder_asset
 from teamster.libraries.tableau.assets import build_tableau_workbook_refresh_asset
 
@@ -20,11 +21,13 @@ workbook_refresh_assets = [
     for a in config_assets
 ]
 
-traffic_to_views = build_sftp_folder_asset(
-    asset_key=[CODE_LOCATION, "tableau", "traffic_to_views"],
-    remote_dir_regex=r"/data-team/kipptaf/tableau/traffic_to_views",
-    remote_file_regex=r"tableau_usage_\d+\.csv",
-    avro_schema=...,
+view_count_per_view = build_sftp_folder_asset(
+    asset_key=[CODE_LOCATION, "tableau", "view_count_per_view"],
+    remote_dir_regex=r"/data-team/kipptaf/tableau/view_count_per_view",
+    remote_file_regex=r".+\.csv",
+    file_sep="\t",
+    file_encoding="utf-16",
+    avro_schema=VIEW_COUNT_PER_VIEW,
     ssh_resource_key="ssh_couchdrop",
 )
 
