@@ -13,6 +13,7 @@ def main() -> None:
     parser.add_argument("command")
     parser.add_argument("project")
     parser.add_argument("select", nargs="*")
+    parser.add_argument("--full-refresh", action="store_true")
 
     args = parser.parse_args()
 
@@ -40,6 +41,9 @@ def main() -> None:
 
         if args.select:
             run_args.extend(["--select", *args.select])
+
+        if args.full_refresh:
+            run_args.append("--full-refresh")
 
         subprocess.run(args=run_args)
 
