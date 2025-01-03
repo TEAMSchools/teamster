@@ -173,6 +173,6 @@ def test_pearson_student_list_report_kippnewark():
 
 
 def test_tableau_traffic_to_views_kipptaf():
-    from teamster.code_locations.kipptaf.tableau.assets import traffic_to_views
+    from teamster.code_locations.kipptaf.tableau.assets import view_count_per_view
 
-    _test_asset(asset=traffic_to_views)
+    _test_asset(asset=view_count_per_view)

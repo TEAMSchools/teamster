@@ -44,10 +44,19 @@ def compose_regex(
         return regexp
 
 
-def extract_csv_to_dict(
-    local_filepath: str, slugify_cols: bool, slugify_replacements: list[list[str]]
+def convert_file_to_dict(
+    local_filepath: str,
+    sep: str,
+    encoding: str,
+    slugify_cols: bool,
+    slugify_replacements: list[list[str]] | None = None,
 ):
-    df = read_csv(filepath_or_buffer=local_filepath, low_memory=False)
+    if slugify_replacements is None:
+        slugify_replacements = []
+
+    df = read_csv(
+        filepath_or_buffer=local_filepath, sep=sep, encoding=encoding, low_memory=False
+    )
 
     df.replace({nan: None}, inplace=True)
 
@@ -81,12 +90,14 @@ def build_sftp_file_asset(
     remote_file_regex: str,
     ssh_resource_key: str,
     avro_schema,
-    slugify_cols: bool = True,
     partitions_def=None,
     automation_condition=None,
     group_name: str | None = None,
     pdf_row_pattern: str | None = None,
     exclude_dirs: list[str] | None = None,
+    file_sep: str = ",",
+    file_encoding: str = "utf-8",
+    slugify_cols: bool = True,
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
@@ -96,9 +107,6 @@ def build_sftp_file_asset(
 
     if exclude_dirs is None:
         exclude_dirs = []
-
-    if slugify_replacements is None:
-        slugify_replacements = []
 
     @asset(
         key=asset_key,
@@ -209,8 +217,10 @@ def build_sftp_file_asset(
                 pdf_row_pattern=_check.not_none(value=pdf_row_pattern),
             )
         else:
-            records, (n_rows, _) = extract_csv_to_dict(
+            records, (n_rows, _) = convert_file_to_dict(
                 local_filepath=local_filepath,
+                sep=file_sep,
+                encoding=file_encoding,
                 slugify_cols=slugify_cols,
                 slugify_replacements=slugify_replacements,
             )
@@ -234,9 +244,11 @@ def build_sftp_archive_asset(
     ssh_resource_key: str,
     avro_schema,
     partitions_def=None,
-    slugify_cols: bool = True,
     group_name: str | None = None,
     exclude_dirs: list[str] | None = None,
+    slugify_cols: bool = True,
+    file_sep: str = ",",
+    file_encoding: str = "utf-8",
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
@@ -246,9 +258,6 @@ def build_sftp_archive_asset(
 
     if exclude_dirs is None:
         exclude_dirs = []
-
-    if slugify_replacements is None:
-        slugify_replacements = []
 
     @asset(
         key=asset_key,
@@ -357,8 +366,10 @@ def build_sftp_archive_asset(
             context.log.warning(msg=f"File is empty: {local_filepath}")
             records, n_rows = ([{}], 0)
         else:
-            records, (n_rows, _) = extract_csv_to_dict(
+            records, (n_rows, _) = convert_file_to_dict(
                 local_filepath=local_filepath,
+                sep=file_sep,
+                encoding=file_encoding,
                 slugify_cols=slugify_cols,
                 slugify_replacements=slugify_replacements,
             )
@@ -381,9 +392,11 @@ def build_sftp_folder_asset(
     ssh_resource_key: str,
     avro_schema,
     partitions_def=None,
-    slugify_cols: bool = True,
     group_name: str | None = None,
     exclude_dirs: list[str] | None = None,
+    slugify_cols: bool = True,
+    file_sep: str = ",",
+    file_encoding: str = "utf-8",
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
@@ -393,9 +406,6 @@ def build_sftp_folder_asset(
 
     if exclude_dirs is None:
         exclude_dirs = []
-
-    if slugify_replacements is None:
-        slugify_replacements = []
 
     @asset(
         key=asset_key,
@@ -466,8 +476,10 @@ def build_sftp_folder_asset(
                 context.log.warning(msg=f"File is empty: {local_filepath}")
                 continue
 
-            records, (n_rows, _) = extract_csv_to_dict(
+            records, (n_rows, _) = convert_file_to_dict(
                 local_filepath=local_filepath,
+                sep=file_sep,
+                encoding=file_encoding,
                 slugify_cols=slugify_cols,
                 slugify_replacements=slugify_replacements,
             )
