@@ -18,7 +18,8 @@ select
 
     entrydate as `10 Program Start Date`,
     exitdate as `11 Program End Date`,
-    academic_year as `12 Academic Year`,
+
+    concat(academic_year, '-', (academic_year + 1)) as `12 Academic Year`,
 
     null as `13 Program Eligibility Code`,
     null as `14 Program Exit Code`,
@@ -53,7 +54,8 @@ select
 
     entrydate as `10 Program Start Date`,
     exitdate as `11 Program End Date`,
-    academic_year as `12 Academic Year`,
+
+    concat(academic_year, '-', (academic_year + 1)) as `12 Academic Year`,
 
     null as `13 Program Eligibility Code`,
     null as `14 Program Exit Code`,
