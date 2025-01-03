@@ -66,18 +66,28 @@ def transform_data(
             json.dumps(obj=data, cls=CustomJSONEncoder).encode(file_encoding)
         )
     elif file_suffix in ["csv", "txt", "tsv"]:
+        field_names = data[0].keys()
         write_header = file_format.pop("header", True)
+        header_replacements = file_format.pop("header_replacements", {})
 
         f = StringIO()
 
-        dict_writer = DictWriter(f=f, fieldnames=data[0].keys(), **file_format)
+        dict_writer = DictWriter(f=f, fieldnames=field_names, **file_format)
 
-        if write_header:
+        if not write_header:
+            pass
+        elif header_replacements:
+            dict_writer.writerow(
+                {k: header_replacements.get(k, k) for k in field_names}
+            )
+        else:
             dict_writer.writeheader()
 
         dict_writer.writerows(data)
 
         transformed_data = f.getvalue().encode(file_encoding)
+
+        f.close()
     else:
         raise Exception(f"Invalid {file_suffix=}")
 
@@ -294,7 +304,7 @@ def build_bigquery_extract_sftp_asset(
         )
 
         # execute bq extract job
-        bq_client = next(context.resources.db_bigquery)
+        bq_client: BigQueryClient = next(context.resources.db_bigquery)
 
         dataset_ref = DatasetReference(project=bq_client.project, dataset_id=dataset_id)
 
