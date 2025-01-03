@@ -4,12 +4,18 @@ with
     attrition_dates as (
         select
             date_day,
+
             {{
                 date_to_fiscal_year(
                     date_field="date_day", start_month=10, year_source="start"
                 )
             }} as attrition_year,
-        from {{ ref("utils__date_spine") }}
+        from
+            unnest(
+                generate_date_array(
+                    '2002-07-01', date({{ var("current_academic_year") + 1 }}, 6, 30)
+                )
+            ) as date_day
     )
 
 select
