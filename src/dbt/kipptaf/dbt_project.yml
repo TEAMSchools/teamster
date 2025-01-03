@@ -88,6 +88,8 @@ models:
     extracts:
       +schema: extracts
       +materialized: table
+      clever:
+        +materialized: view
       deanslist:
         +materialized: view
       google:
