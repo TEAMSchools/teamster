@@ -38,9 +38,7 @@ select
     if(sr.lep_status, 'Y', 'N') as ell_status,
     if(sr.spedlep in ('SPED', 'SPED SPEECH'), 'Y', 'N') as iep_status,
     if(sr.region = 'Miami', sr.fleid, sr.state_studentnumber) as state_id,
-    if(
-        sr.grade_level = 0, 'Kindergarten', safe_cast(sr.grade_level as string)
-    ) as grade,
+    if(sr.grade_level = 0, 'Kindergarten', cast(sr.grade_level as string)) as grade,
 
     if(
         sc.person_type in ('mother', 'father', 'contact1', 'contact2'),
