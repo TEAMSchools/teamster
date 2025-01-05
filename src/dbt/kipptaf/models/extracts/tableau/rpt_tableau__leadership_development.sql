@@ -6,6 +6,7 @@ with
             o.metric_id,
             o.assignment_id,
             o.active_assignment,
+            o.notes_boy,
             column_name,
             column_value,
             case
@@ -85,7 +86,6 @@ select
     m.region,
     m.bucket,
     m.type,
-    m.description,
     m.fiscal_year,
 
     c.round_completion,
@@ -99,6 +99,10 @@ select
     r.report_to_preferred_name_lastfirst as manager,
     r.report_to_sam_account_name,
     r.assignment_status,
+
+    case
+        when m.bucket = 'Goals' then p.notes_boy else m.description
+    end as description,
 
 from pivot as p
 left join
