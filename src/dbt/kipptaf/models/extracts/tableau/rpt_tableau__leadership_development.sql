@@ -61,7 +61,7 @@ with
         from pivot
         group by employee_number, academic_year, column_name
     ),
-    
+
     metrics_lookup as (
         select distinct
             m.metric_id, m.region, m.bucket, m.type, m.description, m.fiscal_year,
