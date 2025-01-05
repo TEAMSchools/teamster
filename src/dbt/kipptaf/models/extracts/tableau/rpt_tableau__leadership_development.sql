@@ -100,9 +100,7 @@ select
     r.report_to_sam_account_name,
     r.assignment_status,
 
-    case
-        when m.bucket = 'Goals' then p.notes_boy else m.description
-    end as description,
+    case when m.bucket = 'Goals' then p.notes_boy else m.description end as description,
 
 from pivot as p
 left join
