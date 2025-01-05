@@ -7,7 +7,15 @@ with
             o.assignment_id,
             o.active_assignment,
             column_name,
-            column_value
+            column_value,
+            case
+                when contains_substr(column_name, 'boy')
+                then 'BOY'
+                when contains_substr(column_name, 'moy')
+                then 'MOY'
+                when contains_substr(column_name, 'eoy')
+                then 'EOY'
+            end as term,
         from
             {{ ref("stg_leadership_development__output") }} as o,
             unnest(
@@ -35,9 +43,25 @@ with
                     )
                 ]
             ) as pivot
-
     ),
 
+    completion as (
+        select
+            employee_number,
+            academic_year,
+            column_name,
+            count(column_value) as count_done,
+            case
+                when column_name = 'notes_boy' and count(column_value) >= 2
+                then 1
+                when count(column_value) >= 4
+                then 1
+                else 0
+            end as round_completion,
+        from pivot
+        group by employee_number, academic_year, column_name
+    ),
+    
     metrics_lookup as (
         select distinct
             m.metric_id, m.region, m.bucket, m.type, m.description, m.fiscal_year,
@@ -62,6 +86,8 @@ select
     m.description,
     m.fiscal_year,
 
+    c.round_completion,
+
     r.preferred_name_lastfirst,
     r.sam_account_name,
     r.job_title,
@@ -72,19 +98,15 @@ select
     r.report_to_sam_account_name,
     r.assignment_status,
 
-    case
-        when contains_substr(column_name, 'boy')
-        then 'BOY'
-        when contains_substr(column_name, 'moy')
-        then 'MOY'
-        when contains_substr(column_name, 'eoy')
-        then 'EOY'
-    end as term
-
 from pivot as p
 left join
     {{ ref("stg_leadership_development__active_users") }} as a
     on p.employee_number = a.employee_number
+left join
+    completion as c
+    on p.employee_number = c.employee_number
+    and p.academic_year = c.academic_year
+    and p.column_name = c.column_name
 left join metrics_lookup as m on p.metric_id = m.metric_id
 left join
     {{ ref("base_people__staff_roster") }} as r on p.employee_number = r.employee_number
