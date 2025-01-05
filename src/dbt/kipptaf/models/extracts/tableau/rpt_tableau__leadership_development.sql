@@ -49,6 +49,7 @@ with
         select
             employee_number,
             academic_year,
+            term,
             column_name,
             count(column_value) as count_done,
             case
@@ -59,7 +60,7 @@ with
                 else 0
             end as round_completion,
         from pivot
-        group by employee_number, academic_year, column_name
+        group by employee_number, academic_year, term, column_name
     ),
 
     metrics_lookup as (
@@ -72,6 +73,7 @@ with
 select
     p.employee_number,
     p.academic_year,
+    p.term,
     p.assignment_id,
     p.active_assignment,
     p.column_name,
