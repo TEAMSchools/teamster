@@ -111,7 +111,7 @@ with
             'Official' as test_type,
 
             concat(
-                format_date('%b', date), ' ', format_date('%g', date)
+                format_date('%b', date), ' ', format_date('%y', date)
             ) as administration_round,
 
             case
@@ -172,7 +172,7 @@ with
             'Official' as test_type,
 
             concat(
-                format_date('%b', test_date), ' ', format_date('%g', test_date)
+                format_date('%b', test_date), ' ', format_date('%y', test_date)
             ) as administration_round,
 
             case
