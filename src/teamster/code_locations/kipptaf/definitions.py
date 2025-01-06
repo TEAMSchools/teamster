@@ -18,6 +18,7 @@ from teamster.code_locations.kipptaf import (
     airbyte,
     amplify,
     asset_checks,
+    couchdrop,
     deanslist,
     extracts,
     fivetran,
@@ -83,6 +84,7 @@ defs = Definitions(
     sensors=[
         *_google.sensors,
         *adp.sensors,
+        *couchdrop.sensors,
         *deanslist.sensors,
         *fivetran.sensors,
         build_sensor_for_freshness_checks(
