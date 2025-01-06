@@ -106,14 +106,8 @@ with
 
     psat10_official as (
         select
-            safe_cast(local_student_id as int) as local_student_id,
-
-            if(
-                score_type
-                in ('psat10_eb_read_write_section_score', 'psat10_reading_test_score'),
-                'ELA',
-                'Math'
-            ) as discipline,
+            local_student_id,
+            discipline,
 
             case
                 when

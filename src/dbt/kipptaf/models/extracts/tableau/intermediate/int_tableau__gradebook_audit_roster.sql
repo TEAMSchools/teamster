@@ -1,38 +1,6 @@
 {{- config(materialized="table") -}}
 
 with
-    term as (
-        select
-            t._dbt_source_relation,
-            t.schoolid,
-            t.yearid,
-
-            tb.storecode,
-            tb.date1 as term_start_date,
-            tb.date2 as term_end_date,
-
-            if(
-                current_date('America/New_York') between tb.date1 and tb.date2,
-                true,
-                false
-            ) as is_current_term,
-
-            case
-                when tb.storecode in ('Q1', 'Q2')
-                then 'S1'
-                when tb.storecode in ('Q3', 'Q4')
-                then 'S2'
-            end as semester,
-        from {{ ref("stg_powerschool__terms") }} as t
-        inner join
-            {{ ref("stg_powerschool__termbins") }} as tb
-            on t.id = tb.termid
-            and t.schoolid = tb.schoolid
-            and {{ union_dataset_join_clause(left_alias="t", right_alias="tb") }}
-            and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
-        where t.isyearrec = 1 and t.yearid = {{ var("current_academic_year") - 1990 }}
-    ),
-
     student_roster as (
         select
             enr._dbt_source_relation,
@@ -68,45 +36,30 @@ with
             enr.ktc_cohort,
             enr.is_counseling_services,
             enr.is_student_athlete,
+            enr.hos,
+            enr.region_school_level,
+            enr.ada,
 
-            term.storecode as `quarter`,
-            term.term_start_date as quarter_start_date,
-            term.term_end_date as quarter_end_date,
-            term.term_end_date as cal_quarter_end_date,
-            term.is_current_term as is_current_quarter,
-            term.semester,
+            tb.storecode as `quarter`,
+            tb.term_start_date as quarter_start_date,
+            tb.term_end_date as quarter_end_date,
+            tb.term_end_date as cal_quarter_end_date,
+            tb.is_current_term as is_current_quarter,
+            tb.is_quarter_end_date_range,
+            tb.semester,
 
-            hos.head_of_school_preferred_name_lastfirst as hos,
-
-            concat(enr.region, enr.school_level) as region_school_level,
-
-            round(ada.ada, 3) as ada,
-
-            if(
-                current_date('America/New_York')
-                between (term.term_end_date - 3) and (term.term_start_date + 14),
-                true,
-                false
-            ) as is_quarter_end_date_range,
-
+            if(enr.ada >= 0.80, true, false) as ada_above_or_at_80,
         from {{ ref("int_tableau__student_enrollments") }} as enr
         inner join
-            term
-            on enr.schoolid = term.schoolid
-            and enr.yearid = term.yearid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="term") }}
-        left join
-            {{ ref("int_people__leadership_crosswalk") }} as hos
-            on enr.schoolid = hos.home_work_location_powerschool_school_id
-        left join
-            {{ ref("int_powerschool__ada") }} as ada
-            on enr.studentid = ada.studentid
-            and enr.yearid = ada.yearid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="ada") }}
+            {{ ref("stg_powerschool__termbins") }} as tb
+            on enr.schoolid = tb.schoolid
+            and enr.yearid = tb.yearid
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="tb") }}
+            and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
         where
-            not enr.is_out_of_district
+            enr.academic_year = {{ var("current_academic_year") }}
             and enr.enroll_status = 0
-            and enr.academic_year = {{ var("current_academic_year") }}
+            and not enr.is_out_of_district
     ),
 
     course_enrollments as (
@@ -126,11 +79,10 @@ with
             m.courses_excludefromgpa as exclude_from_gpa,
             m.teachernumber as teacher_number,
             m.teacher_lastfirst as teacher_name,
+            m.is_ap_course,
 
             f.tutoring_nj,
             f.nj_student_tier,
-
-            if(m.ap_course_subject is not null, true, false) as is_ap_course,
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
             {{ ref("int_reporting__student_filters") }} as f
@@ -242,13 +194,14 @@ with
             s.is_counseling_services,
             s.is_student_athlete,
             s.ada,
-            s.`quarter`,
+            s.quarter,
             s.semester,
             s.quarter_start_date,
             s.quarter_end_date,
             s.cal_quarter_end_date,
             s.is_current_quarter,
             s.is_quarter_end_date_range,
+            s.ada_above_or_at_80,
 
             ce.sectionid,
             ce.sections_dcid,
@@ -274,12 +227,9 @@ with
             ge.expectation,
             ge.notes,
 
-            if(s.ada >= 0.80, true, false) as ada_above_or_at_80,
-
             if(
-                s.grade_level < 9, ce.section_number, ce.external_expression
+                s.grade_level <= 8, ce.section_number, ce.external_expression
             ) as section_or_period,
-
         from student_roster as s
         left join
             course_enrollments as ce
@@ -291,11 +241,10 @@ with
             on ce.teacher_number = r.powerschool_teacher_number
         left join
             {{ ref("stg_reporting__gradebook_expectations") }} as ge
-            on s.academic_year = ge.academic_year
-            and s.region = ge.region
-            and s.quarter = ge.quarter
+            on s.region = ge.region
             and s.school_level = ge.school_level
-            and ge.academic_year = {{ var("current_academic_year") }}
+            and s.academic_year = ge.academic_year
+            and s.quarter = ge.quarter
     )
 
 select
@@ -378,12 +327,11 @@ select
     qg.quarter_course_grade_points_that_matters,
     qg.quarter_citizenship,
     qg.quarter_comment_value,
-
 from roster as s
 left join
     {{ ref("int_powerschool__calendar_week") }} as w
     on s.academic_year = w.academic_year
-    and s.`quarter` = w.quarter
+    and s.quarter = w.quarter
     and s.week_number = w.week_number_quarter
     and s.school_level = w.school_level
     and s.schoolid = w.schoolid
@@ -392,7 +340,7 @@ left join
     category_grades as c
     on s.studentid = c.studentid
     and s.yearid = c.yearid
-    and s.`quarter` = c.term
+    and s.quarter = c.term
     and s.sectionid = c.sectionid
     and s.assignment_category_code = c.category_name_code
     and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
@@ -400,8 +348,9 @@ left join
     quarter_grades as qg
     on s.studentid = qg.studentid
     and s.yearid = qg.yearid
-    and s.`quarter` = qg.storecode
+    and s.quarter = qg.storecode
     and s.sectionid = qg.sectionid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="qg") }}
 where
-    s.quarter_start_date <= current_date('America/New_York') and s.sectionid is not null
+    s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
+    and s.sectionid is not null

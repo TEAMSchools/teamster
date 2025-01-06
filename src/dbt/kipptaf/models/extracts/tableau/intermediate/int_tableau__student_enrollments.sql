@@ -62,13 +62,19 @@ select
 
     hr.sections_section_number as team,
 
+    hos.head_of_school_preferred_name_lastfirst as hos,
+
     'KTAF' as district,
+
+    concat(e.region, e.school_level) as region_school_level,
 
     coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
 
     cast(e.academic_year as string)
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
+
+    round(ada.ada, 3) as ada,
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
 
@@ -140,4 +146,12 @@ left join
     and not hr.is_dropped_section
     and hr.courses_credittype = 'HR'
     and hr.rn_course_number_year = 1
+left join
+    {{ ref("int_powerschool__ada") }} as ada
+    on e.studentid = ada.studentid
+    and e.yearid = ada.yearid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="ada") }}
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on e.schoolid = hos.home_work_location_powerschool_school_id
 where e.rn_year = 1 and e.schoolid != 999999

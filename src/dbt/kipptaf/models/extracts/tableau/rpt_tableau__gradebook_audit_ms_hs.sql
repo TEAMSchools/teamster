@@ -100,7 +100,6 @@ with
             t.n_expected_scored,
             t.teacher_running_total_assign_by_cat,
             t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
-
         from {{ ref("int_tableau__gradebook_audit_roster") }} as r
         left join
             {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -109,7 +108,7 @@ with
             and r.assignment_category_code = f.code
             and f.cte_grouping not in ('student_course', 'student')
         left join
-            {{ ref("int_powerschool__teacher_assignment_audit_base") }} as t
+            {{ ref("int_tableau__teacher_assignment_audit_base") }} as t
             on r.quarter = t.quarter
             and r.week_number = t.week_number_quarter
             and r.assignment_category_code = t.assignment_category_code
@@ -203,7 +202,6 @@ with
             r.quarter_comment_value,
 
             f.audit_category,
-
         from {{ ref("int_tableau__gradebook_audit_roster") }} as r
         left join
             {{ ref("stg_reporting__gradebook_flags") }} as f
