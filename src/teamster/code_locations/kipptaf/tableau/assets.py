@@ -32,5 +32,6 @@ view_count_per_view = build_sftp_folder_asset(
 )
 
 assets = [
+    view_count_per_view,
     *workbook_refresh_assets,
 ]
