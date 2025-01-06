@@ -269,6 +269,7 @@ from roster as e
 left join
     college_assessments_official as o
     on e.contact_id = o.contact
+    and e.academic_year = o.test_academic_year
     and o.test_type != 'PSAT10'
 where o.test_type = 'Official'
 
@@ -329,6 +330,7 @@ from roster as e
 left join
     college_assessments_official as o
     on cast(e.student_number as string) = o.contact
+    and e.academic_year = o.test_academic_year
     and o.test_type = 'PSAT10'
 where o.test_type = 'Official'
 
