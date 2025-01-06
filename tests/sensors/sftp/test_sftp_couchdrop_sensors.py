@@ -42,3 +42,9 @@ def test_couchdrop_sftp_sensor_kippnewark():
     )
 
     _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
+
+
+def test_couchdrop_sftp_sensor_kipptaf():
+    from teamster.code_locations.kipptaf.couchdrop.sensors import couchdrop_sftp_sensor
+
+    _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
