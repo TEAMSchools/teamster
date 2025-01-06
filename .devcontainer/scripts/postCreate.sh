@@ -58,6 +58,10 @@ op inject -f --in-file=.devcontainer/tpl/gcloud_teamster_dlt_keyfile.json.tpl \
   --out-file=env/gcloud_teamster_dlt_keyfile.json &&
   sudo mv -f env/gcloud_teamster_dlt_keyfile.json /etc/secret-volume/gcloud_teamster_dlt_keyfile.json
 
+op inject -f --in-file=.devcontainer/tpl/powerschool_ssh_password.txt.tpl \
+  --out-file=env/powerschool_ssh_password.txt &&
+  sudo mv -f env/powerschool_ssh_password.txt /etc/secret-volume/powerschool_ssh_password.txt
+
 # install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh || true
 
