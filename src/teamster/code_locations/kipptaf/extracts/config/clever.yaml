@@ -28,7 +28,7 @@ assets:
       suffix: csv
       format:
         header_replacements:
-          ext__gifted_status: ext.gifted_status
+          ext__gifted: ext.gifted
   - query_config:
       type: schema
       value:

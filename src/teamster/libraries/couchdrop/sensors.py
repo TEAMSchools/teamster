@@ -35,7 +35,7 @@ def build_couchdrop_sftp_sensor(
     if exclude_dirs is None:
         exclude_dirs = []
 
-    base_job_name = f"{code_location}_couchdrop_sftp_asset_job"
+    base_job_name = f"{code_location}__couchdrop__sftp_asset_job"
 
     keys_by_partitions_def = defaultdict(set[AssetKey])
 
@@ -46,6 +46,8 @@ def build_couchdrop_sftp_sensor(
         define_asset_job(
             name=(
                 f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
+                if partitions_def is not None
+                else base_job_name
             ),
             selection=list(keys),
         )
@@ -97,7 +99,6 @@ def build_couchdrop_sftp_sensor(
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()
             metadata = a.metadata_by_key[a.key]
-            partitions_def = _check.not_none(value=a.partitions_def)
 
             max_st_mtime = cursor_st_mtime = cursor.get(asset_identifier, 0)
 
@@ -131,28 +132,38 @@ def build_couchdrop_sftp_sensor(
                     partition_key = None
 
                 context.log.info(f"{asset_identifier}\n{f.filename}: {partition_key}")
-                run_request_kwargs.append(
-                    {
-                        "asset_key": a.key,
-                        "job_name": (
-                            f"{base_job_name}_"
-                            f"{partitions_def.get_serializable_unique_identifier()}"
-                        ),
-                        "partition_key": partition_key,
-                    }
-                )
+
+                if a.partitions_def is not None:
+                    run_request_kwargs.append(
+                        {
+                            "asset_key": a.key,
+                            "job_name": (
+                                f"{base_job_name}_"
+                                + a.partitions_def.get_serializable_unique_identifier()
+                            ),
+                            "partition_key": partition_key,
+                        }
+                    )
+                else:
+                    run_request_kwargs.append(
+                        {
+                            "asset_key": a.key,
+                            "job_name": base_job_name,
+                            "partition_key": None,
+                        }
+                    )
 
             cursor[asset_identifier] = max_st_mtime
 
         if run_request_kwargs:
-            for (job_name, parition_key), group in groupby(
+            for (job_name, partition_key), group in groupby(
                 iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
             ):
                 run_requests.append(
                     RunRequest(
-                        run_key=f"{job_name}_{parition_key}_{now_timestamp}",
+                        run_key=f"{job_name}_{partition_key}_{now_timestamp}",
                         job_name=job_name,
-                        partition_key=parition_key,
+                        partition_key=partition_key,
                         asset_selection=[g["asset_key"] for g in group],
                     )
                 )

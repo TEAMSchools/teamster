@@ -353,14 +353,14 @@ def build_powerschool_asset_sensor(
 
         item_getter = itemgetter("job_name", "partition_key")
 
-        for (job_name, parition_key), group in groupby(
+        for (job_name, partition_key), group in groupby(
             iterable=sorted(run_request_kwargs, key=item_getter), key=item_getter
         ):
             run_requests.append(
                 RunRequest(
-                    run_key=f"{job_name}_{parition_key}_{now_timestamp}",
+                    run_key=f"{job_name}_{partition_key}_{now_timestamp}",
                     job_name=job_name,
-                    partition_key=parition_key,
+                    partition_key=partition_key,
                     asset_selection=[g["asset_key"] for g in group],
                     tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
                 )
