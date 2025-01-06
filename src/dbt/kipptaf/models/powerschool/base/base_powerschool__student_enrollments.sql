@@ -3,9 +3,18 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippnewark_powerschool", model.name),
-                    source("kippcamden_powerschool", model.name),
-                    source("kippmiami_powerschool", model.name),
+                    source(
+                        "kippnewark_powerschool",
+                        "base_powerschool__student_enrollments",
+                    ),
+                    source(
+                        "kippcamden_powerschool",
+                        "base_powerschool__student_enrollments",
+                    ),
+                    source(
+                        "kippmiami_powerschool",
+                        "base_powerschool__student_enrollments",
+                    ),
                 ]
             )
         }}
@@ -22,28 +31,28 @@ with
             suf.media_release,
             suf.rides_staff,
 
-            nj.districtcoderesident,
-            nj.referral_date,
-            nj.parental_consent_eval_date,
-            nj.eligibility_determ_date,
-            nj.initial_iep_meeting_date,
-            nj.parent_consent_intial_iep_date,
-            nj.annual_iep_review_meeting_date,
-            nj.reevaluation_date,
-            nj.parent_consent_obtain_code,
-            nj.initial_process_delay_reason,
-            nj.special_education_placement,
-            nj.time_in_regular_program,
-            nj.early_intervention_yn,
-            nj.determined_ineligible_yn,
-            nj.counseling_services_yn,
-            nj.occupational_therapy_serv_yn,
-            nj.physical_therapy_services_yn,
-            nj.speech_lang_theapy_services_yn,
-            nj.other_related_services_yn,
-            nj.lepbegindate,
-            nj.lependdate,
-            nj.gifted_and_talented,
+            njs.districtcoderesident,
+            njs.referral_date,
+            njs.parental_consent_eval_date,
+            njs.eligibility_determ_date,
+            njs.initial_iep_meeting_date,
+            njs.parent_consent_intial_iep_date,
+            njs.annual_iep_review_meeting_date,
+            njs.reevaluation_date,
+            njs.parent_consent_obtain_code,
+            njs.initial_process_delay_reason,
+            njs.special_education_placement,
+            njs.time_in_regular_program,
+            njs.early_intervention_yn,
+            njs.determined_ineligible_yn,
+            njs.counseling_services_yn,
+            njs.occupational_therapy_serv_yn,
+            njs.physical_therapy_services_yn,
+            njs.speech_lang_theapy_services_yn,
+            njs.other_related_services_yn,
+            njs.lepbegindate,
+            njs.lependdate,
+            njs.gifted_and_talented,
 
             sr.mail as advisor_email,
             sr.communication_business_mobile as advisor_phone,
@@ -55,16 +64,20 @@ with
             regexp_extract(seu._dbt_source_relation, r'(kipp\w+)_') as code_location,
             initcap(regexp_extract(seu._dbt_source_relation, r'kipp(\w+)_')) as region,
 
-            coalesce(suf.is_504, false) as is_504,
+            coalesce(njr.pid_504_tf, suf.is_504, false) as is_504,
         from student_enrollments_union as seu
         left join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
             on seu.students_dcid = suf.studentsdcid
             and {{ union_dataset_join_clause(left_alias="seu", right_alias="suf") }}
         left join
-            {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
-            on seu.students_dcid = nj.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="seu", right_alias="nj") }}
+            {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
+            on seu.students_dcid = njs.studentsdcid
+            and {{ union_dataset_join_clause(left_alias="seu", right_alias="njs") }}
+        left join
+            {{ ref("stg_powerschool__s_nj_ren_x") }} as njr
+            on seu.reenrollments_dcid = njr.reenrollmentsdcid
+            and {{ union_dataset_join_clause(left_alias="seu", right_alias="njr") }}
         left join
             {{ ref("base_people__staff_roster") }} as sr
             on seu.advisor_teachernumber = sr.powerschool_teacher_number
