@@ -3,12 +3,12 @@ version: 2
 sources:
   - name: tableau
     schema: kipptaf_tableau
-    config:
-      enabled: false
     tags:
       - stage_external_sources
     tables:
       - name: src_tableau__workbook
+        config:
+          enabled: false
         external:
           location: "{{ var('cloud_storage_uri_base') }}/tableau/workbook/*"
           options:
@@ -21,3 +21,15 @@ sources:
               - kipptaf
               - tableau
               - workbook
+      - name: src_tableau__view_count_per_view
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/tableau/view_count_per_view/*"
+          options:
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            parent_asset_key_path:
+              - kipptaf
+              - tableau
+              - view_count_per_view

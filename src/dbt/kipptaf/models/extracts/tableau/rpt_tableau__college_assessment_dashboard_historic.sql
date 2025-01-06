@@ -111,7 +111,7 @@ with
             'Official' as test_type,
 
             concat(
-                format_date('%b', date), ' ', format_date('%g', date)
+                format_date('%b', date), ' ', format_date('%y', date)
             ) as administration_round,
 
             case
@@ -172,7 +172,7 @@ with
             'Official' as test_type,
 
             concat(
-                format_date('%b', test_date), ' ', format_date('%g', test_date)
+                format_date('%b', test_date), ' ', format_date('%y', test_date)
             ) as administration_round,
 
             case
@@ -269,6 +269,7 @@ from roster as e
 left join
     college_assessments_official as o
     on e.contact_id = o.contact
+    and e.academic_year = o.test_academic_year
     and o.test_type != 'PSAT10'
 where o.test_type = 'Official'
 
@@ -329,6 +330,7 @@ from roster as e
 left join
     college_assessments_official as o
     on cast(e.student_number as string) = o.contact
+    and e.academic_year = o.test_academic_year
     and o.test_type = 'PSAT10'
 where o.test_type = 'Official'
 
