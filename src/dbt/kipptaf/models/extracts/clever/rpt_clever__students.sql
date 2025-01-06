@@ -7,7 +7,7 @@ select
     sr.ethnicity as race,
     sr.student_email_google as student_email,
     sr.student_web_id as username,
-    sr.gifted_and_talented as ext__gifted_status,
+    sr.gifted_and_talented as ext__gifted,
 
     sc.relationship_type as contact_relationship,
 
