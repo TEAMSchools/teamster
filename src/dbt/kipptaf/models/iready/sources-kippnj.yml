@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: kippnj_iready
     schema: |
-      {% if env_var('DBT_DEV', '') == 'true' -%}_dev_kippnewark_iready
+      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kippnewark_iready
       {%- else -%}kippnewark_iready
       {%- endif %}
     tables:

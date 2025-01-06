@@ -1,5 +1,4 @@
 import json
-import os
 from datetime import date
 
 from dagster import AssetExecutionContext, AssetKey, EnvVar, _check
@@ -7,10 +6,23 @@ from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
+from dlt.destinations import bigquery
 from dlt.sources.sql_database import remove_nullability_adapter, sql_database
 from sqlalchemy.sql import Select, TableClause
 
 from teamster.libraries.dlt.asset_decorator import dlt_assets
+
+CREDENTIALS = ConnectionStringCredentials(
+    {
+        "drivername": _check.not_none(
+            value=EnvVar("ILLUMINATE_DB_DRIVERNAME").get_value()
+        ),
+        "database": EnvVar("ILLUMINATE_DB_DATABASE").get_value(),
+        "password": EnvVar("ILLUMINATE_DB_PASSWORD").get_value(),
+        "username": EnvVar("ILLUMINATE_DB_USERNAME").get_value(),
+        "host": EnvVar("ILLUMINATE_DB_HOST").get_value(),
+    }
+)
 
 
 class IlluminateDagsterDltTranslator(DagsterDltTranslator):
@@ -54,18 +66,8 @@ def build_illuminate_dlt_assets(
     op_tags.update({"dagster/concurrency_key": f"dlt_illuminate_{code_location}"})
 
     # trunk-ignore(pyright/reportArgumentType)
-    dlt_source = sql_database.with_args(name="illuminate")(
-        credentials=ConnectionStringCredentials(
-            {
-                "drivername": _check.not_none(
-                    value=EnvVar("ILLUMINATE_DB_DRIVERNAME").get_value()
-                ),
-                "database": EnvVar("ILLUMINATE_DB_DATABASE").get_value(),
-                "password": EnvVar("ILLUMINATE_DB_PASSWORD").get_value(),
-                "username": EnvVar("ILLUMINATE_DB_USERNAME").get_value(),
-                "host": EnvVar("ILLUMINATE_DB_HOST").get_value(),
-            }
-        ),
+    dlt_source = sql_database.with_args(name="illuminate", parallelized=True)(
+        credentials=CREDENTIALS,
         schema=schema,
         table_names=[table_name],
         defer_table_reflect=True,
@@ -74,14 +76,14 @@ def build_illuminate_dlt_assets(
         query_adapter_callback=(
             filter_date_taken_callback if filter_date_taken else None
         ),
-    ).parallelize()
+    )
 
     # bigquery cannot load data type 'json' from 'parquet' files
-    os.environ["DESTINATION__BIGQUERY__AUTODETECT_SCHEMA"] = "true"
+    # os.environ["DESTINATION__BIGQUERY__AUTODETECT_SCHEMA"] = "true"
 
     dlt_pipeline = pipeline(
         pipeline_name="illuminate",
-        destination="bigquery",
+        destination=bigquery(autodetect_schema=True),
         dataset_name=f"dagster_{code_location}_dlt_illuminate_{schema}",
         progress=LogCollector(dump_system_stats=False),
     )
@@ -100,6 +102,7 @@ def build_illuminate_dlt_assets(
             credentials=json.load(
                 fp=open(file="/etc/secret-volume/gcloud_teamster_dlt_keyfile.json")
             ),
+            write_disposition="replace",
         )
 
     return _assets

@@ -5,8 +5,6 @@ from dagster import _check
 from dagster_ssh import SSHResource as DagsterSSHResource
 from paramiko import AutoAddPolicy, SFTPAttributes, SFTPClient, SSHClient
 
-from teamster.libraries.ssh.sshtunnel.forwarder import SSHTunnelForwarder
-
 
 class SSHResource(DagsterSSHResource):
     # trunk-ignore(pyright/reportIncompatibleVariableOverride)
@@ -34,7 +32,6 @@ class SSHResource(DagsterSSHResource):
                 )
             )
             # Default is RejectPolicy
-            # trunk-ignore(bandit/B507)
             client.set_missing_host_key_policy(AutoAddPolicy())
 
         if self.password and self.password.strip():
@@ -72,60 +69,6 @@ class SSHResource(DagsterSSHResource):
             transport = _check.not_none(client.get_transport())
 
             transport.set_keepalive(self.keepalive_interval)
-
-        return client
-
-    # trunk-ignore(pyright/reportIncompatibleMethodOverride)
-    def get_tunnel(
-        self, remote_port, remote_host="localhost", local_port=None
-    ) -> SSHTunnelForwarder:
-        _check.str_param(obj=remote_host, param_name="remote_host")
-        _check.int_param(obj=remote_port, param_name="remote_port")
-        _check.opt_int_param(obj=local_port, param_name="local_port")
-
-        if self.tunnel_remote_host is not None:
-            remote_bind_address = (self.tunnel_remote_host, remote_port)
-        else:
-            remote_bind_address = (remote_host, remote_port)
-
-        if local_port is not None:
-            local_bind_address = ("localhost", local_port)
-        else:
-            local_bind_address = ("localhost",)
-
-        # Will prefer key string if specified, otherwise use the key file
-        if self._key_obj and self.key_file:
-            self.log.warning(
-                "SSHResource: key_string and key_file both specified as config. "
-                "Using key_string."
-            )
-
-        pkey = self._key_obj if self._key_obj else self.key_file
-
-        if self.password and self.password.strip():
-            client = SSHTunnelForwarder(
-                ssh_address_or_host=self.remote_host,
-                ssh_port=int(self.remote_port),
-                ssh_username=self.username,
-                ssh_password=self.password,
-                ssh_pkey=pkey,
-                ssh_proxy=self._host_proxy,
-                local_bind_address=local_bind_address,
-                remote_bind_address=remote_bind_address,
-                logger=self._logger,
-            )
-        else:
-            client = SSHTunnelForwarder(
-                ssh_address_or_host=self.remote_host,
-                ssh_port=int(self.remote_port),
-                ssh_username=self.username,
-                ssh_pkey=pkey,
-                ssh_proxy=self._host_proxy,
-                local_bind_address=local_bind_address,
-                remote_bind_address=(remote_host, remote_port),
-                host_pkey_directories=[],
-                logger=self._logger,
-            )
 
         return client
 

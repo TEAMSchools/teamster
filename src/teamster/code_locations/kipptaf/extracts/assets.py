@@ -14,16 +14,14 @@ from teamster.libraries.extracts.assets import (
 config_dir = pathlib.Path(__file__).parent / "config"
 
 # BQ extract jobs
-clever_extract_assets = [
-    build_bigquery_extract_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
-    )
-    for a in config_from_files([f"{config_dir}/clever.yaml"])["assets"]
-]
 
 illuminate_extract_assets = [
     build_bigquery_extract_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+        code_location=CODE_LOCATION,
+        timezone=LOCAL_TIMEZONE,
+        extract_job_config={"field_delimiter": "\t"},
+        destination_config={"name": "illuminate"},
+        **a,
     )
     for a in config_from_files([f"{config_dir}/illuminate.yaml"])["assets"]
 ]
@@ -56,9 +54,22 @@ littlesis_extract = build_bigquery_extract_sftp_asset(
 )
 
 # BQ query
+clever_extract_assets = [
+    build_bigquery_query_sftp_asset(
+        code_location=CODE_LOCATION,
+        timezone=LOCAL_TIMEZONE,
+        destination_config={"name": "clever"},
+        **a,
+    )
+    for a in config_from_files([f"{config_dir}/clever.yaml"])["assets"]
+]
+
 deanslist_annual_extract_assets = [
     build_bigquery_query_sftp_asset(
-        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+        code_location=CODE_LOCATION,
+        timezone=LOCAL_TIMEZONE,
+        destination_config={"name": "deanslist"},
+        **a,
     )
     for a in config_from_files([f"{config_dir}/deanslist-annual.yaml"])["assets"]
 ]

@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: kippnewark_deanslist
     schema: |
-      {% if env_var('DBT_DEV', '') == 'true' -%}_dev_kippnewark_deanslist
+      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kippnewark_deanslist
       {%- else -%}kippnewark_deanslist
       {%- endif %}
     tables:

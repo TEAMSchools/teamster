@@ -11,9 +11,9 @@ with
         select
             student_identifier as student_number,
             _dagster_partition_subject as star_subject,
-            district_benchmark_category_level,
-            district_benchmark_category_name,
-            district_benchmark_proficient,
+            state_benchmark_category_level,
+            state_benchmark_category_name,
+            state_benchmark_proficient,
             scaled_score,
             unified_score,
             current_sgp,
@@ -21,6 +21,8 @@ with
             assessment_id,
             assessment_number,
             assessment_status,
+
+            _dagster_partition_fiscal_year - 1 as academic_year,
 
             case
                 _dagster_partition_subject
@@ -46,19 +48,21 @@ with
                 partition by
                     student_identifier,
                     _dagster_partition_subject,
-                    screening_period_window_name
+                    screening_period_window_name,
+                    _dagster_partition_fiscal_year
                 order by completed_date desc
             ) as rn_subject_round,
         from {{ ref("stg_renlearn__star") }}
-        where assessment_status = 'Active'
+        where deactivation_reason is null
     ),
 
     star as (
         select
+            sub.academic_year,
             sub.student_number,
-            sub.district_benchmark_category_level,
-            sub.district_benchmark_category_name,
-            sub.district_benchmark_proficient,
+            sub.state_benchmark_category_level,
+            sub.state_benchmark_category_name,
+            sub.state_benchmark_proficient,
             sub.scaled_score,
             sub.unified_score,
             sub.current_sgp,
@@ -79,7 +83,11 @@ with
             d.standard_percent_mastery,
 
             row_number() over (
-                partition by sub.student_number, sub.subject, sub.administration_window
+                partition by
+                    sub.student_number,
+                    sub.subject,
+                    sub.administration_window,
+                    sub.academic_year
                 order by d.standard_name desc
             ) as rn_subject_round_star,
         from sub
@@ -90,6 +98,7 @@ with
     )
 
 select
+    co.academic_year,
     co.student_number,
     co.lastfirst as student_name,
     co.grade_level,
@@ -109,9 +118,9 @@ select
     e.sections_section_number as section_number,
     e.teacher_lastfirst as teacher_name,
 
-    s.district_benchmark_category_level as star_category_level,
-    s.district_benchmark_category_name as star_category_name,
-    s.district_benchmark_proficient as star_proficient,
+    s.state_benchmark_category_level as star_category_level,
+    s.state_benchmark_category_name as star_category_name,
+    s.state_benchmark_proficient as star_proficient,
     s.scaled_score,
     s.unified_score,
     s.current_sgp,
@@ -137,6 +146,7 @@ left join
 left join
     star as s
     on co.student_number = s.student_number
+    and co.academic_year = s.academic_year
     and subj.iready_subject = s.subject
     and administration_round = s.administration_window
 where
