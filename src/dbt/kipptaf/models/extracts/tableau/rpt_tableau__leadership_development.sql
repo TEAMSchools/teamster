@@ -60,7 +60,9 @@ with
                     contains_substr(column_name, 'manager_rating')
                     and count(column_value) >= 10
                 then 1
-                when contains_substr(column_name, 'rating') and count(column_value) >= 3
+                when column_name = 'rating_moy' and count(column_value) >= 3
+                then 1
+                when column_name = 'rating_eoy' and count(column_value) >= 3
                 then 1
                 else 0
             end as round_completion,
