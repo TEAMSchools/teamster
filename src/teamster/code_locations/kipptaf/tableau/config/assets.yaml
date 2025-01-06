@@ -235,6 +235,13 @@ assets:
         - 0 6 * * *
         - 30 14 * * *
         - 15 16 * * *
+  - name: Recruitment Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__smartrecruiters]
+    metadata:
+      id: 970826ab-8d1c-4468-9b84-62f6432a9642
+      cron_schedule:
+        - 0 7 * * *
   # - name: Master Renewal Tracking Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__staff_performance_compliance_history]
