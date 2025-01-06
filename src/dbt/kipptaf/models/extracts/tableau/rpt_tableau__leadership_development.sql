@@ -56,7 +56,9 @@ with
             case
                 when column_name = 'notes_boy' and count(column_value) >= 2
                 then 1
-                when contains_substr(column_name, 'manager_rating') and count(column_value) >= 10
+                when
+                    contains_substr(column_name, 'manager_rating')
+                    and count(column_value) >= 10
                 then 1
                 when contains_substr(column_name, 'rating') and count(column_value) >= 3
                 then 1
