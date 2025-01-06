@@ -270,7 +270,6 @@ select
 
     cb_student_id,
     district_student_id,
-    local_student_id,
     state_student_id,
 
     test_date,
@@ -321,6 +320,8 @@ select
     total_usr_percentile,
     words_context_usr_percentile,
     writing_lang_usr_percentile,
+
+    safe_cast(local_student_id as int) as local_student_id,
 
     safe_cast(total_score as numeric) as total_score,
     safe_cast(math_test_score as numeric) as math_test_score,

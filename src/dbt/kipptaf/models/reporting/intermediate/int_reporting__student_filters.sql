@@ -36,6 +36,15 @@ with
         where specprog_name in ('Bucket 2 - ELA', 'Bucket 2 - Math')
     ),
 
+    tutoring_nj as (
+        select _dbt_source_relation, studentid, academic_year, 'Math' as iready_subject,
+        from {{ ref("int_powerschool__spenrollments") }}
+        where
+            specprog_name = 'Tutoring'
+            and current_date('{{ var("local_timezone") }}')
+            between enter_date and exit_date
+    ),
+
     prev_yr_state_test as (
         select
             _dbt_source_relation,
@@ -67,35 +76,18 @@ with
 
     psat_bucket1 as (
         select
-            safe_cast(pt.local_student_id as int) as local_student_id,
+            local_student_id,
+            academic_year,
+            discipline,
 
-            if(
-                pt.score_type = 'psat10_eb_read_write_section_score', 'ELA', 'Math'
-            ) as discipline,
+            max(score) as score,
 
-            max(pt.score) as score,
-
-            if(max(pt.score) >= 420, 'Bucket 1', null) as bucket_1,
+            if(max(score) >= 420, 'Bucket 1', null) as bucket_1,
         from {{ ref("int_illuminate__psat_unpivot") }} as pt
-        inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
-            on safe_cast(pt.local_student_id as int) = co.student_number
-            and pt.academic_year = co.academic_year
-            and co.rn_year = 1
-            and co.grade_level = 10
         where
-            pt.score_type
+            score_type
             in ('psat10_math_section_score', 'psat10_eb_read_write_section_score')
         group by all
-    ),
-
-    tutoring_nj as (
-        select _dbt_source_relation, studentid, academic_year, 'Math' as iready_subject,
-        from {{ ref("int_powerschool__spenrollments") }}
-        where
-            specprog_name = 'Tutoring'
-            and current_date('{{ var("local_timezone") }}')
-            between enter_date and exit_date
     ),
 
     prev_yr_iready as (
@@ -151,8 +143,6 @@ with
             _dbt_source_relation,
             students_student_number as student_number,
             cc_academic_year as academic_year,
-
-            true as `value`,
 
             case
                 sections_section_number
@@ -225,7 +215,7 @@ select
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
 
-    coalesce(ie.value, false) as is_exempt_iready,
+    if(ie.student_number is not null, true, false) as is_exempt_iready,
 
     coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
     coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
@@ -345,5 +335,7 @@ left join
 left join
     psat_bucket1 as ps
     on co.student_number = ps.local_student_id
+    and co.academic_year = ps.academic_year
     and sj.discipline = ps.discipline
+    and co.grade_level = 10
 where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}

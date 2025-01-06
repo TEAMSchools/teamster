@@ -215,13 +215,7 @@ with
             'PSAT10' as test_type,
 
             score,
-
-            if(
-                score_type
-                in ('psat10_eb_read_write_section_score', 'psat10_reading_test_score'),
-                'ELA',
-                'Math'
-            ) as discipline,
+            discipline,
 
             case
                 when score_type = 'psat10_reading_test_score'

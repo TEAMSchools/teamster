@@ -161,7 +161,7 @@ with
         union all
 
         select
-            safe_cast(local_student_id as string) as contact,
+            cast(local_student_id as string) as contact,
 
             'PSAT10' as scope,
 

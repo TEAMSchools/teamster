@@ -66,14 +66,14 @@ with
 
         from {{ ref("int_tableau__gradebook_audit_roster") }} as f
         inner join
-            {{ ref("int_powerschool__teacher_assignment_audit") }} as t
+            {{ ref("int_tableau__teacher_assignment_audit") }} as t
             on f.sectionid = t.sectionid
             and f.quarter = t.quarter
             and f.week_number = t.week_number_quarter
             and f.assignment_category_code = t.assignment_category_code
             and {{ union_dataset_join_clause(left_alias="f", right_alias="t") }}
         inner join
-            {{ ref("int_powerschool__student_assignment_audit") }} as s
+            {{ ref("int_tableau__student_assignment_audit") }} as s
             on f.studentid = s.studentid
             and f.sectionid = s.sectionid
             and f.quarter = s.quarter
@@ -536,7 +536,7 @@ with
 
         from {{ ref("int_tableau__gradebook_audit_roster") }} as f
         inner join
-            {{ ref("int_powerschool__teacher_assignment_audit") }} as t
+            {{ ref("int_tableau__teacher_assignment_audit") }} as t
             on f.sectionid = t.sectionid
             and f.quarter = t.quarter
             and f.week_number = t.week_number_quarter
@@ -591,7 +591,7 @@ with
 
         from {{ ref("int_tableau__gradebook_audit_roster") }} as f
         inner join
-            {{ ref("int_powerschool__teacher_assignment_audit") }} as t
+            {{ ref("int_tableau__teacher_assignment_audit") }} as t
             on f.sectionid = t.sectionid
             and f.quarter = t.quarter
             and f.week_number = t.week_number_quarter
