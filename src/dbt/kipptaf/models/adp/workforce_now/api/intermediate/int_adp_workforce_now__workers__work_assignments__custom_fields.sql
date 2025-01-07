@@ -202,4 +202,4 @@ select
     c.shortname as short_name,
     c.effectivedate as effective_date,
 from multi_code_fields as mcf
-cross join unnest(codes) as c
+cross join unnest(mcf.codes) as c
