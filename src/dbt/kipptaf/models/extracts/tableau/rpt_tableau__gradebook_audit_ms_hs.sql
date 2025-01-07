@@ -108,11 +108,11 @@ with
             and r.assignment_category_code = f.code
             and f.cte_grouping not in ('student_course', 'student')
         left join
-            {{ ref("int_tableau__teacher_assignment_audit_base") }} as t
-            on r.quarter = t.quarter
+            {{ ref("int_tableau__teacher_assignment_audit") }} as t
+            on r.sectionid = t.sectionid
+            and r.quarter = t.quarter
             and r.week_number = t.week_number_quarter
             and r.assignment_category_code = t.assignment_category_code
-            and r.sectionid = t.sectionid
             and {{ union_dataset_join_clause(left_alias="r", right_alias="t") }}
         where r.school_level != 'ES'
     ),
