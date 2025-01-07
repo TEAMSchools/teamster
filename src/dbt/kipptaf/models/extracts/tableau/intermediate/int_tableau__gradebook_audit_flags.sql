@@ -63,7 +63,6 @@ with
             s.assign_s_hs_score_not_conversion_chart_options,
 
             'assignment_student' as cte_grouping,
-
         from {{ ref("int_tableau__gradebook_audit_roster") }} as f
         inner join
             {{ ref("int_tableau__teacher_assignment_audit") }} as t
@@ -137,7 +136,6 @@ with
                 true,
                 false
             ) as w_grade_inflation,
-
         from {{ ref("int_tableau__gradebook_audit_roster") }}
         where assignment_category_code = 'W' and school_level != 'ES'
     ),
@@ -189,7 +187,6 @@ with
                 true,
                 false
             ) as qt_effort_grade_missing,
-
         from {{ ref("int_tableau__gradebook_audit_roster") }}
         where region = 'Miami' and assignment_category_code = 'W'
     ),
@@ -248,7 +245,6 @@ with
                 true,
                 false
             ) as qt_grade_70_comment_missing,
-
         from {{ ref("int_tableau__gradebook_audit_roster") }}
         where region != 'Miami' and school_level != 'ES'
     ),
@@ -325,7 +321,6 @@ with
                 true,
                 false
             ) as qt_g1_g8_conduct_code_incorrect,
-
         from {{ ref("int_tableau__gradebook_audit_roster") }}
         where region = 'Miami' and school_level != 'ES'
     ),
@@ -430,7 +425,6 @@ with
                 true,
                 false
             ) as qt_g1_g8_conduct_code_incorrect,
-
         from {{ ref("int_tableau__gradebook_audit_roster") }}
         where region = 'Miami' and school_level = 'ES'
     ),
@@ -484,7 +478,6 @@ with
                 true,
                 false
             ) as qt_student_is_ada_80_plus_gpa_less_2,
-
         from {{ ref("int_tableau__gradebook_audit_roster") }}
         where school_level != 'ES'
     ),
@@ -533,7 +526,6 @@ with
             t.s_max_score_greater_100,
 
             'class_category_assignment' as cte_grouping,
-
         from {{ ref("int_tableau__gradebook_audit_roster") }} as f
         inner join
             {{ ref("int_tableau__teacher_assignment_audit") }} as t
