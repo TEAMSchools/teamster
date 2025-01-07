@@ -6,8 +6,11 @@ select
     home_department_name as department,
     assignment_status as status,
     job_title,
+    mail,
+    reports_to_mail,
     google_email,
     reports_to_google_email,
+    null as active,
     if(
         job_title in (
             'Assistant School Leader',
