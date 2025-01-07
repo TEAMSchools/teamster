@@ -321,11 +321,6 @@ workspace:
   #   maxServers: 10
   serverTTL: ~
 
-  # Controls how workspace snapshots are uploaded.
-  # The default enabled behavior is to upload job snapshots separately, only if they have not
-  # been uploaded before. When disabled, the workspace snapshot is uploaded as a single payload.
-  deferJobSnapshots: ~
-
   # Specifies security settings for pods launched by the agent.
   securityContext: ~
 

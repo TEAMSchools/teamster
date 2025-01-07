@@ -92,6 +92,8 @@ models:
     extracts:
       +schema: extracts
       +materialized: table
+      clever:
+        +materialized: view
       deanslist:
         +materialized: view
       google:
@@ -162,6 +164,8 @@ models:
       +schema: powerschool
     powerschool_enrollment:
       +schema: powerschool_enrollment
+    qa:
+      +schema: qa
     renlearn:
       +schema: renlearn
     reporting:
@@ -185,9 +189,6 @@ models:
         +materialized: table
     titan:
       +schema: titan
-    utils:
-      +schema: utils
-      +materialized: table
     zendesk:
       +schema: zendesk
       staging:

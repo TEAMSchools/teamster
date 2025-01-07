@@ -1,4 +1,30 @@
 with
+    ssds_period as (
+        select
+            {{ var("current_academic_year") }} as academic_year,
+            'SSDS Reporting Period 1' as ssds_period,
+            date({{ var("current_academic_year") }}, 9, 1) as period_start_date,
+            date({{ var("current_academic_year") }}, 12, 31) as period_end_date,
+        union all
+        select
+            {{ var("current_academic_year") - 1 }} as academic_year,
+            'SSDS Reporting Period 1' as ssds_period,
+            date({{ var("current_academic_year") - 1 }}, 9, 1) as period_start_date,
+            date({{ var("current_academic_year") - 1 }}, 12, 31) as period_end_date,
+        union all
+        select
+            {{ var("current_academic_year") }} as academic_year,
+            'SSDS Reporting Period 2' as ssds_period,
+            date({{ var("current_academic_year") }} + 1, 1, 1) as period_start_date,
+            date({{ var("current_academic_year") }} + 1, 6, 30) as period_end_date,
+        union all
+        select
+            {{ var("current_academic_year") - 1 }} as academic_year,
+            'SSDS Reporting Period 2' as ssds_period,
+            date({{ var("current_academic_year") }} + 1, 1, 1) as period_start_date,
+            date({{ var("current_academic_year") }} + 1, 6, 30) as period_end_date,
+    ),
+
     ms_grad_sub as (
         select
             _dbt_source_relation,
@@ -50,18 +76,26 @@ with
 
             lc.powerschool_school_id as schoolid,
 
+            s.academic_year,
+
+            coalesce(s.ssds_period, 'Outside SSDS Period') as ssds_period,
+
             count(*) as att_discrepancy_count,
         from {{ ref("stg_deanslist__reconcile_attendance") }} as ra
         inner join
             {{ ref("stg_people__location_crosswalk") }} as lc
             on ra.school_name = lc.name
-        group by ra.student_id, lc.powerschool_school_id
+        left join
+            ssds_period as s
+            on ra.attendance_date between s.period_start_date and s.period_end_date
+        group by ra.student_id, lc.powerschool_school_id, s.academic_year, s.ssds_period
     ),
 
     suspension_reconciliation_rollup as (
         select
             rs.student_id as student_number,
             rs.dl_incident_id as incident_id,
+            rs.dl_penalty_id as penalty_id,
 
             lc.powerschool_school_id as schoolid,
 
@@ -73,6 +107,35 @@ with
         inner join
             {{ ref("stg_people__location_crosswalk") }} as lc
             on rs.school_name = lc.name
+    ),
+
+    attachments as (
+        select
+            'Suspension Letter' as type,
+            incident_id,
+            string_agg(
+                concat(entity_name, ' (', date(file_posted_at__date), ')'), '; '
+            ) as attachments,
+        from {{ ref("stg_deanslist__incidents__attachments") }}
+        where
+            entity_name in (
+                'KIPP Miami Suspension Letter',
+                'Short-Term OSS (no further investigation)',
+                'OSS Long-Term Suspension',
+                'OSS Suspended Next Day'
+            )
+        group by all
+
+        union all
+        select
+            'Upload' as type,
+            incident_id,
+            string_agg(
+                concat(public_filename, ' (', date(file_posted_at__date), ')'), '; '
+            ) as attachments,
+        from {{ ref("stg_deanslist__incidents__attachments") }}
+        where attachment_type = 'UPLOAD'
+        group by all
     )
 
 select
@@ -103,6 +166,7 @@ select
 
     dli.incident_id,
     dli.create_ts_date,
+    dli.return_date_date as return_date,
     dli.category,
     dli.reported_details,
     dli.admin_summary,
@@ -130,6 +194,9 @@ select
     ar.att_discrepancy_count,
 
     ms.ms_attended,
+
+    if(ats.type = 'Suspension Letter', ats.attachments, null) as attachments,
+    if(ats.type = 'Upload', ats.attachments, null) as attachments_uploaded,
 
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
@@ -179,7 +246,63 @@ select
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_iss_int,
 
+    if(
+        sum(if(dlp.is_suspension, 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        = 1,
+        1,
+        0
+    ) as is_suspended_y1_one_int,
+
+    if(
+        sum(if(st.suspension_type = 'OSS', 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        = 1,
+        1,
+        0
+    ) as is_suspended_y1_oss_one_int,
+
+    if(
+        sum(if(st.suspension_type = 'ISS', 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        = 1,
+        1,
+        0
+    ) as is_suspended_y1_iss_one_int,
+
+    if(
+        sum(if(dlp.is_suspension, 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        > 1,
+        1,
+        0
+    ) as is_suspended_y1_2plus_int,
+
+    if(
+        sum(if(st.suspension_type = 'OSS', 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        > 1,
+        1,
+        0
+    ) as is_suspended_y1_oss_2plus_int,
+
+    if(
+        sum(if(st.suspension_type = 'ISS', 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        > 1,
+        1,
+        0
+    ) as is_suspended_y1_iss_2plus_int,
+
     if(tr.student_school_id is not null, true, false) as is_tier3_4,
+
+    coalesce(s.ssds_period, 'Outside SSDS Period') as ssds_period,
 
     row_number() over (
         partition by co.academic_year, co.student_number
@@ -219,6 +342,9 @@ left join
     between w.week_start_monday and w.week_end_sunday
     and {{ union_dataset_join_clause(left_alias="w", right_alias="dli") }}
 left join
+    ssds_period as s
+    on dli.create_ts_date between s.period_start_date and s.period_end_date
+left join
     {{ ref("stg_deanslist__incidents__penalties") }} as dlp
     on dli.incident_id = dlp.incident_id
     and {{ union_dataset_join_clause(left_alias="dli", right_alias="dlp") }}
@@ -243,10 +369,12 @@ left join
     att_reconciliation_rollup as ar
     on co.student_number = ar.student_number
     and co.schoolid = ar.schoolid
+    and s.ssds_period = ar.ssds_period
+    and co.academic_year = ar.academic_year
 left join
     suspension_reconciliation_rollup as sr
     on co.student_number = sr.student_number
-    and dli.incident_id = sr.incident_id
+    and dlp.incident_id = sr.incident_id
     and co.schoolid = sr.schoolid
     and sr.rn_incident = 1
 left join
@@ -254,5 +382,6 @@ left join
     on co.student_number = ms.student_number
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ms") }}
     and ms.rn = 1
+left join attachments as ats on dli.incident_id = ats.incident_id
 where
     co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99
