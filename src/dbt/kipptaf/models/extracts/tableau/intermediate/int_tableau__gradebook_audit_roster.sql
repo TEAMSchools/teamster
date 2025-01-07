@@ -56,6 +56,7 @@ with
             and enr.yearid = tb.yearid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="tb") }}
             and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
+            and tb.term_start_date <= current_date('{{ var("local_timezone") }}')
         where
             enr.academic_year = {{ var("current_academic_year") }}
             and enr.enroll_status = 0
@@ -231,7 +232,7 @@ with
                 s.grade_level <= 8, ce.section_number, ce.external_expression
             ) as section_or_period,
         from student_roster as s
-        left join
+        inner join
             course_enrollments as ce
             on s.studentid = ce.studentid
             and s.yearid = ce.yearid
@@ -284,7 +285,7 @@ select
     s.is_student_athlete,
     s.ada,
     s.semester,
-    s.`quarter`,
+    s.quarter,
     s.quarter_start_date,
     s.quarter_end_date,
     s.cal_quarter_end_date,
@@ -320,13 +321,13 @@ select
     w.week_end_sunday as audit_end_date,
     w.school_week_start_date_lead as audit_due_date,
 
-    c.category_quarter_percent_grade,
-    c.category_quarter_average_all_courses,
-
     qg.quarter_course_percent_grade_that_matters,
     qg.quarter_course_grade_points_that_matters,
     qg.quarter_citizenship,
     qg.quarter_comment_value,
+
+    c.category_quarter_percent_grade,
+    c.category_quarter_average_all_courses,
 from roster as s
 left join
     {{ ref("int_powerschool__calendar_week") }} as w
@@ -337,20 +338,15 @@ left join
     and s.schoolid = w.schoolid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="w") }}
 left join
-    category_grades as c
-    on s.studentid = c.studentid
-    and s.yearid = c.yearid
-    and s.quarter = c.term
-    and s.sectionid = c.sectionid
-    and s.assignment_category_code = c.category_name_code
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
-left join
     quarter_grades as qg
     on s.studentid = qg.studentid
-    and s.yearid = qg.yearid
-    and s.quarter = qg.storecode
     and s.sectionid = qg.sectionid
+    and s.quarter = qg.storecode
     and {{ union_dataset_join_clause(left_alias="s", right_alias="qg") }}
-where
-    s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
-    and s.sectionid is not null
+left join
+    category_grades as c
+    on s.studentid = c.studentid
+    and s.sectionid = c.sectionid
+    and s.quarter = c.term
+    and s.assignment_category_code = c.category_name_code
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}

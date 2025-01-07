@@ -17,7 +17,7 @@ with
             f.date_enrolled,
 
             f.semester,
-            f.`quarter`,
+            f.quarter,
             f.week_number,
             f.quarter_start_date,
             f.quarter_end_date,
