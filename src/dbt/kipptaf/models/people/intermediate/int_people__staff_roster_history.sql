@@ -95,7 +95,7 @@ with
         from {{ ref("int_adp_workforce_now__workers") }} as w
         inner join
             {{ ref("stg_people__employee_numbers") }} as en
-            on w.worker_id = en.adp_associate_id
+            on w.worker_id__id_value = en.adp_associate_id
             and en.is_active
         /* after transistion from Dayforce */
         where w.effective_date_end >= '2021-01-01'
