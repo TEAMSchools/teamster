@@ -7,11 +7,7 @@ import subprocess
 
 
 def main() -> None:
-    commands = [
-        "uv lock --upgrade",
-        "uv export --output-file requirements.txt",
-        "uv sync",
-    ]
+    commands = ["uv lock --upgrade", "uv sync"]
 
     for cmd in commands:
         subprocess.run(args=cmd.split(sep=" "))

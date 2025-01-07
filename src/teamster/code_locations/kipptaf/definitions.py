@@ -5,17 +5,20 @@ from dagster import (
     build_sensor_for_freshness_checks,
     load_assets_from_modules,
 )
+from dagster_embedded_elt.dlt import DagsterDltResource
 from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kipptaf import (
     CODE_LOCATION,
     DBT_PROJECT,
     _dbt,
+    _dlt,
     _google,
     adp,
     airbyte,
     amplify,
     asset_checks,
+    couchdrop,
     deanslist,
     extracts,
     fivetran,
@@ -49,11 +52,12 @@ defs = Definitions(
         *load_assets_from_modules(
             modules=[
                 _dbt,
+                _dlt,
                 _google,
                 adp,
                 amplify,
-                extracts,
                 deanslist,
+                extracts,
                 ldap,
                 overgrad,
                 performance_management,
@@ -66,6 +70,7 @@ defs = Definitions(
     ],
     asset_checks=asset_checks.freshness_checks,
     schedules=[
+        *_dlt.schedules,
         *_google.schedules,
         *adp.schedules,
         *airbyte.schedules,
@@ -75,11 +80,11 @@ defs = Definitions(
         *ldap.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
-        *tableau.schedules,
     ],
     sensors=[
         *_google.sensors,
         *adp.sensors,
+        *couchdrop.sensors,
         *deanslist.sensors,
         *fivetran.sensors,
         build_sensor_for_freshness_checks(
@@ -97,6 +102,7 @@ defs = Definitions(
         "db_bigquery": BIGQUERY_RESOURCE,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "dds": resources.DIBELS_DATA_SYSTEM_RESOURCE,
+        "dlt": DagsterDltResource(),
         "fivetran": resources.FIVETRAN_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,

@@ -1,5 +1,6 @@
 select
     dlincidentid as dl_incident_id,
+    dlpenaltyid as dl_penalty_id,
     studentid as student_id,
     schoolname as school_name,
     studentfirst as student_first_name,

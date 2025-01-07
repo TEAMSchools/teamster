@@ -60,6 +60,8 @@ with
             e.contact_id,
             e.ktc_cohort,
             e.contact_owner_name,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
             e.ms_attended,
 
             s.courses_course_name,
@@ -109,7 +111,7 @@ with
             'Official' as test_type,
 
             concat(
-                format_date('%b', date), ' ', format_date('%g', date)
+                format_date('%b', date), ' ', format_date('%y', date)
             ) as administration_round,
 
             case
@@ -170,7 +172,7 @@ with
             'Official' as test_type,
 
             concat(
-                format_date('%b', test_date), ' ', format_date('%g', test_date)
+                format_date('%b', test_date), ' ', format_date('%y', test_date)
             ) as administration_round,
 
             case
@@ -233,6 +235,8 @@ select
     e.contact_id,
     e.ktc_cohort,
     e.contact_owner_name,
+    e.college_match_gpa,
+    e.college_match_gpa_bands,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
@@ -265,6 +269,7 @@ from roster as e
 left join
     college_assessments_official as o
     on e.contact_id = o.contact
+    and e.academic_year = o.test_academic_year
     and o.test_type != 'PSAT10'
 where o.test_type = 'Official'
 
@@ -291,6 +296,8 @@ select
     e.contact_id,
     e.ktc_cohort,
     e.contact_owner_name,
+    e.college_match_gpa,
+    e.college_match_gpa_bands,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
@@ -323,6 +330,7 @@ from roster as e
 left join
     college_assessments_official as o
     on cast(e.student_number as string) = o.contact
+    and e.academic_year = o.test_academic_year
     and o.test_type = 'PSAT10'
 where o.test_type = 'Official'
 
@@ -349,6 +357,8 @@ select
     e.contact_id,
     e.ktc_cohort,
     e.contact_owner_name,
+    e.college_match_gpa,
+    e.college_match_gpa_bands,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
