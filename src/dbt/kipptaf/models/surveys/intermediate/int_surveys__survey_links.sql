@@ -176,7 +176,7 @@ select
 
     'Intent to Return Survey' as survey,
     'Complete Intent to Return Survey' as `assignment`,
-
+-- trunk-ignore(sqlfluff(LT05))
     'https://docs.google.com/forms/d/e/1FAIpQLSerLfKQhyeRGIWNBRTyYHfefnuCmveUCKQ-nt3qaeJrq96w3A/viewform?usp=pp_url&entry.927104043='
     as link,
 
@@ -185,7 +185,7 @@ inner join
     {{ ref("stg_reporting__terms") }} as rt
     on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Teacher ITR'
-where business_unit <> 'KIPP TEAM and Family Schools Inc.'
+where r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
 
 union all
 -- KTAF Support Survey
@@ -220,20 +220,20 @@ inner join
     on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'KTAF Support Survey'
 where
-    job_title in ('Executive Director', 'Managing Director of Operations')
+    r.job_title in ('Executive Director', 'Managing Director of Operations')
     or (
-        business_unit != 'KIPP TEAM and Family Schools Inc.'
+        r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
         and (
-            job_title like ('%Leader%')
-            or job_title like ('%Head%')
-            or job_title = 'School Operations Manager'
+            r.job_title like ('%Leader%')
+            or r.job_title like ('%Head%')
+            or r.job_title = 'School Operations Manager'
         )
     )
     or (
-        business_unit != 'KIPP TEAM and Family Schools Inc.'
+        r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
         and (
-            job_title like ('%Director%')
-            and department
+            r.job_title like ('%Director%')
+            and r.department
             in ('Operations', 'KIPP Forward', 'Special Education', 'School Support')
         )
     )
