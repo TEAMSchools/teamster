@@ -1,3 +1,5 @@
+-- trunk-ignore(sqlfluff/LT05)
+
 with
     eligible_roster as (
         select
@@ -176,7 +178,7 @@ select
 
     'Intent to Return Survey' as survey,
     'Complete Intent to Return Survey' as `assignment`,
--- trunk-ignore(sqlfluff/LT05)
+
     'https://docs.google.com/forms/d/e/1FAIpQLSerLfKQhyeRGIWNBRTyYHfefnuCmveUCKQ-nt3qaeJrq96w3A/viewform?usp=pp_url&entry.927104043='
     as link,
 
