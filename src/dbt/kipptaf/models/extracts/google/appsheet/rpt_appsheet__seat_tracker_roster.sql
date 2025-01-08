@@ -50,7 +50,7 @@ select
         when sr.home_department_name in ('Data')
         then 7
         when
-            sr.home_department_name = 'Recruitment'
+            sr.home_department_name in ('Recruitment', 'Finance and Purchasing')
             and contains_substr(sr.job_title, 'Director')
         then 7
         /* see your state/region, edit everything */
