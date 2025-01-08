@@ -67,11 +67,11 @@ select
     r.samaccountname,
     r.username,
 
-    rt.academic_year as academic_year,
+    rt.academic_year,
     rt.code as survey_round,
 
     'Staff Info & Certification Update' as survey,
-    'Update Your Info' as assignment,
+    'Update Your Info' as `assignment`,
 
     replace(
         concat(
@@ -116,7 +116,7 @@ select
             coalesce(replace(r.undergraduate_school, "'", ""), ''),
             /* years outside of kipp */
             '&entry.2136123484=',
-            coalesce(cast(years_exp_outside_kipp as string), ''),
+            coalesce(cast(r.years_exp_outside_kipp as string), ''),
             /* years teaching njfl */
             '&entry.2038589601=',
             coalesce(cast(r.years_teaching_in_njfl as string), ''),
@@ -150,7 +150,7 @@ select
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on current_date("America/New_York") between rt.start_date and rt.end_date
+    on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Staff Info & Certification Update'
 
 union all
@@ -171,11 +171,11 @@ select
     r.samaccountname,
     r.username,
 
-    rt.academic_year as academic_year,
+    rt.academic_year,
     rt.code as survey_round,
 
     'Intent to Return Survey' as survey,
-    'Complete Intent to Return Survey' as assignment,
+    'Complete Intent to Return Survey' as `assignment`,
 
     'https://docs.google.com/forms/d/e/1FAIpQLSerLfKQhyeRGIWNBRTyYHfefnuCmveUCKQ-nt3qaeJrq96w3A/viewform?usp=pp_url&entry.927104043='
     as link,
@@ -183,7 +183,7 @@ select
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on current_date("America/New_York") between rt.start_date and rt.end_date
+    on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Teacher ITR'
 where business_unit <> 'KIPP TEAM and Family Schools Inc.'
 
@@ -205,11 +205,11 @@ select
     r.samaccountname,
     r.username,
 
-    rt.academic_year as academic_year,
+    rt.academic_year,
     rt.code as survey_round,
 
     'KTAF Support Survey' as survey,
-    'Complete KTAF Support Survey' as assignment,
+    'Complete KTAF Support Survey' as `assignment`,
 
     'https://docs.google.com/forms/d/e/1FAIpQLSfMM4t9aoSZomoYWZfghSDNnmHTtFIV5cUf_yvTZaUlz5Kz2A/viewform?usp=sf_link'
     as link,
@@ -217,7 +217,7 @@ select
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on current_date("America/New_York") between rt.start_date and rt.end_date
+    on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'KTAF Support Survey'
 where
     job_title in ('Executive Director', 'Managing Director of Operations')
@@ -256,7 +256,7 @@ select
     r.samaccountname,
     r.username,
 
-    rt.academic_year as academic_year,
+    rt.academic_year,
     rt.code as survey_round,
 
     'Manager Survey' as survey,
@@ -267,7 +267,7 @@ select
         ' ( ',
         safe_cast(r.report_to_employee_number as string),
         ')'
-    ) as assignment,
+    ) as `assignment`,
 
     coalesce(
         concat(
@@ -291,7 +291,7 @@ select
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on current_date("America/New_York") between rt.start_date and rt.end_date
+    on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Manager Survey'
 
 union all
@@ -312,11 +312,11 @@ select
     r.samaccountname,
     r.username,
 
-    rt.academic_year as academic_year,
+    rt.academic_year,
     rt.code as survey_round,
 
     'Support Survey' as survey,
-    'Complete Your Support Survey' as assignment,
+    'Complete Your Support Survey' as `assignment`,
 
     concat(
         'https://docs.google.com/forms/d/e/1FAIpQLSf-KQi1iI4gEhilQABKe8gTHtb7wPHuJHG0i_ZX6Bln1JiwwA/viewform?usp=pp_url&entry.1442315056=',
@@ -332,7 +332,7 @@ select
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on current_date("America/New_York") between rt.start_date and rt.end_date
+    on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Support Survey'
 
 union all
@@ -353,17 +353,17 @@ select
     r.samaccountname,
     r.username,
 
-    rt.academic_year as academic_year,
+    rt.academic_year,
     rt.code as survey_round,
 
     'School Community Diagnostic' as survey,
-    'Complete The School Community Diagnostic' as assignment,
+    'Complete The School Community Diagnostic' as `assignment`,
     'https://docs.google.com/forms/d/e/1FAIpQLSfozw5B8DP9jKhf_mA5JhtwfLdziZwVsjDFCJtfs2nJnQlWXA/viewform?usp=sf_link'
     as link,
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on current_date("America/New_York") between rt.start_date and rt.end_date
+    on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'School Community Diagnostic Staff Survey'
 
 union all
@@ -384,19 +384,19 @@ select
     r.samaccountname,
     r.username,
 
-    rt.academic_year as academic_year,
+    rt.academic_year,
     rt.code as survey_round,
 
     'TNTP Insight Survey' as survey,
     'Complete TNTP Insight Survey (Note: link is only accessible via your email)'
-    as assignment,
+    as `assignment`,
 
     'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys'
     as link,
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on current_date("America/New_York") between rt.start_date and rt.end_date
+    on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'TNTP Insight'
 
 union all
@@ -417,18 +417,18 @@ select
     r.samaccountname,
     r.username,
 
-    rt.academic_year as academic_year,
+    rt.academic_year,
     rt.code as survey_round,
 
     'Gallup Q12 Survey' as survey,
     'Complete Gallup Q12 Survey (Note: link is only accessible via your email)'
-    as assignment,
+    as `assignment`,
     'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys'
     as link,
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on current_date("America/New_York") between rt.start_date and rt.end_date
+    on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Gallup Q12 Survey'
 
 union all
@@ -449,15 +449,15 @@ select
     r.samaccountname,
     r.username,
 
-    rt.academic_year as academic_year,
+    rt.academic_year,
     rt.code as survey_round,
 
     'AI Survey' as survey,
-    'Optional: Complete an AI Usage Survey' as assignment,
+    'Optional: Complete an AI Usage Survey' as `assignment`,
     'https://docs.google.com/forms/d/e/1FAIpQLSd4PG0h1rVmJWEfepQuc6GMDTv3Kk_vrqD0AU_BpQAkyPhKGw/viewform?usp=sf_link'
     as link,
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on current_date("America/New_York") between rt.start_date and rt.end_date
+    on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Gallup Q12 Survey'
