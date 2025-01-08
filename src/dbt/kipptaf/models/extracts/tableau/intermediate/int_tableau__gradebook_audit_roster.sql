@@ -36,14 +36,15 @@ with
             enr.ktc_cohort,
             enr.is_counseling_services,
             enr.is_student_athlete,
+            enr.is_tutoring,
             enr.hos,
             enr.region_school_level,
             enr.ada,
 
             tb.storecode as `quarter`,
-            tb.term_start_date as quarter_start_date,
-            tb.term_end_date as quarter_end_date,
-            tb.term_end_date as cal_quarter_end_date,
+            tb.date1 as quarter_start_date,
+            tb.date2 as quarter_end_date,
+            tb.date2 as cal_quarter_end_date,
             tb.is_current_term as is_current_quarter,
             tb.is_quarter_end_date_range,
             tb.semester,
@@ -56,7 +57,7 @@ with
             and enr.yearid = tb.yearid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="tb") }}
             and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
-            and tb.term_start_date <= current_date('{{ var("local_timezone") }}')
+            and tb.date1 <= current_date('{{ var("local_timezone") }}')
         where
             enr.academic_year = {{ var("current_academic_year") }}
             and enr.enroll_status = 0
@@ -82,7 +83,6 @@ with
             m.teacher_lastfirst as teacher_name,
             m.is_ap_course,
 
-            f.tutoring_nj,
             f.nj_student_tier,
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
@@ -194,6 +194,7 @@ with
             s.is_504,
             s.is_counseling_services,
             s.is_student_athlete,
+            s.is_tutoring,
             s.ada,
             s.quarter,
             s.semester,
@@ -215,7 +216,6 @@ with
             ce.exclude_from_gpa,
             ce.teacher_number,
             ce.teacher_name,
-            ce.tutoring_nj,
             ce.nj_student_tier,
             ce.is_ap_course,
 
@@ -283,6 +283,7 @@ select
     s.is_504,
     s.is_counseling_services,
     s.is_student_athlete,
+    s.is_tutoring as tutoring_nj,
     s.ada,
     s.semester,
     s.quarter,
@@ -293,14 +294,12 @@ select
     s.is_quarter_end_date_range,
     s.ada_above_or_at_80,
     s.section_or_period,
-
     s.week_number,
     s.assignment_category_name,
     s.assignment_category_code,
     s.assignment_category_term,
     s.expectation,
     s.notes,
-
     s.sectionid,
     s.sections_dcid,
     s.section_number,
@@ -312,7 +311,6 @@ select
     s.exclude_from_gpa,
     s.teacher_number,
     s.teacher_name,
-    s.tutoring_nj,
     s.nj_student_tier,
     s.is_ap_course,
     s.tableau_username,

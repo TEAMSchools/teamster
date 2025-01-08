@@ -36,15 +36,6 @@ with
         where specprog_name in ('Bucket 2 - ELA', 'Bucket 2 - Math')
     ),
 
-    tutoring_nj as (
-        select _dbt_source_relation, studentid, academic_year, 'Math' as iready_subject,
-        from {{ ref("int_powerschool__spenrollments") }}
-        where
-            specprog_name = 'Tutoring'
-            and current_date('{{ var("local_timezone") }}')
-            between enter_date and exit_date
-    ),
-
     prev_yr_state_test as (
         select
             _dbt_source_relation,
@@ -229,7 +220,7 @@ select
 
     if(nj.iready_subject is not null, true, false) as bucket_two,
 
-    if(t.iready_subject is not null, true, false) as tutoring_nj,
+    if(t.studentid is not null, true, false) as tutoring_nj,
 
     if(co.grade_level < 4, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
 
@@ -293,11 +284,13 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
     and sj.iready_subject = nj.iready_subject
 left join
-    tutoring_nj as t
+    {{ ref("int_powerschool__spenrollments") }} as t
     on co.studentid = t.studentid
     and co.academic_year = t.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="t") }}
-    and sj.iready_subject = t.iready_subject
+    and t.specprog_name = 'Tutoring'
+    and current_date('{{ var("local_timezone") }}') between t.enter_date and t.exit_date
+    and sj.iready_subject = 'Math'
 left join
     prev_yr_state_test as py
     {# TODO: find records that only match on SID #}
