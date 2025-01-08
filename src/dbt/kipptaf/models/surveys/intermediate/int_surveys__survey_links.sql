@@ -456,10 +456,10 @@ select
     'AI Survey' as survey,
     'Optional: Complete an AI Usage Survey' as `assignment`,
     'https://docs.google.com/forms/d/e/1FAIpQLSd4PG0h1rVmJWEfepQuc6GMDTv3Kk_vrqD0AU_BpQAkyPhKGw/viewform?usp=sf_link'
+    -- trunk-ignore-end(sqlfluff/LT05)
     as link,
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Gallup Q12 Survey'
-    -- trunk-ignore-end(sqlfluff/LT05)
