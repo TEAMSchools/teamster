@@ -4,6 +4,7 @@ with
             _dbt_source_relation,
             student_number,
             school_abbreviation as ms_attended,
+
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
@@ -84,6 +85,8 @@ select
 
     if(sa.studentid is not null, 1, null) as is_student_athlete,
 
+    if(tut.studentid is not null, true, false) as is_tutoring,
+
     case
         e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
     end as race_ethnicity,
@@ -137,6 +140,13 @@ left join
     and current_date('{{ var("local_timezone") }}')
     between sa.enter_date and sa.exit_date
     and sa.specprog_name = 'Student Athlete'
+left join
+    {{ ref("int_powerschool__spenrollments") }} as tut
+    on e.studentid = sa.studentid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="tut") }}
+    and current_date('{{ var("local_timezone") }}')
+    between tut.enter_date and tut.exit_date
+    and tut.specprog_name = 'Tutoring'
 left join
     {{ ref("base_powerschool__course_enrollments") }} as hr
     on e.student_number = hr.students_student_number
