@@ -47,7 +47,6 @@ with
                 round(safe_divide(s.scorepoints, a.totalpointvalue) * 100, 2),
                 safe_cast(s.actualscoreentered as numeric)
             ) as assign_final_score_percent,
-
         from {{ ref("base_powerschool__course_enrollments") }} as ce
         inner join
             {{ ref("stg_powerschool__schools") }} as sch

@@ -15,7 +15,13 @@ with
             tb.storecode_order,
             tb.date1 as termbin_start_date,
             tb.date2 as termbin_end_date,
+
             'RT' || tb.storecode_order as reporting_term,
+            'Q' || tb.storecode_order as `quarter`,
+
+            coalesce(sg.percent, pgf.percent) as percent_grade,
+            coalesce(sg.behavior, pgf.citizenship) as citizenship_grade,
+
             case
                 when
                     tb.date2 < current_date('{{ var("local_timezone") }}')
@@ -27,9 +33,6 @@ with
                 then true
                 else false
             end as is_current,
-
-            coalesce(sg.percent, pgf.percent) as percent_grade,
-            coalesce(sg.behavior, nullif(pgf.citizenship, '')) as citizenship_grade,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
         inner join
             {{ ref("stg_powerschool__termbins") }} as tb
@@ -68,6 +71,7 @@ select
     is_dropped_section,
     yearid,
     reporting_term,
+    `quarter`,
     termbin_start_date,
     termbin_end_date,
     is_current,
@@ -76,6 +80,7 @@ select
     storecode_order,
     percent_grade,
     citizenship_grade,
+
     round(
         avg(percent_grade) over (
             partition by studentid, yearid, course_number, storecode_type
