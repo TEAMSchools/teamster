@@ -1,5 +1,4 @@
 -- trunk-ignore(sqlfluff/LT05)
-
 with
     eligible_roster as (
         select
