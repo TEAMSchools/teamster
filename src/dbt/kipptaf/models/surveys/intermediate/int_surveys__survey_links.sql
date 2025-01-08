@@ -462,4 +462,5 @@ inner join
     {{ ref("stg_reporting__terms") }} as rt
     on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Gallup Q12 Survey'
--- trunk-ignore-end(sqlfluff/LT05)
+    -- trunk-ignore-end(sqlfluff/LT05)
+    
