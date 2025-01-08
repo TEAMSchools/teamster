@@ -219,7 +219,7 @@ with
         cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
         inner join
-            {{ ref("int_reporting__student_filters") }} as sf
+            {{ ref("int_extracts__student_filters") }} as sf
             on co.academic_year = sf.academic_year
             and co.student_number = sf.student_number
             and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}
@@ -297,7 +297,7 @@ with
         cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
         inner join
-            {{ ref("int_reporting__student_filters") }} as sf
+            {{ ref("int_extracts__student_filters") }} as sf
             on co.academic_year = sf.academic_year
             and co.student_number = sf.student_number
             and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}

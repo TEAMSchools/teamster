@@ -481,7 +481,7 @@ select
     ) as is_regress,
 from ps_data as p
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_filters") }} as sf
     on p.student_number = sf.student_number
     and p.academic_year = sf.academic_year
     and p.subject_area = sf.illuminate_subject_area

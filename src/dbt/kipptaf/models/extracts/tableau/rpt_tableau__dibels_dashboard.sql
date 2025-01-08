@@ -200,7 +200,7 @@ left join
     and s.region = t.region
     and t.type = 'LIT'
 left join
-    {{ ref("int_reporting__student_filters") }} as f
+    {{ ref("int_extracts__student_filters") }} as f
     on s.academic_year = f.academic_year
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}

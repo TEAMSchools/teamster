@@ -77,7 +77,7 @@ with
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
         left join
-            {{ ref("int_reporting__student_filters") }} as f
+            {{ ref("int_extracts__student_filters") }} as f
             on s.cc_academic_year = f.academic_year
             and s.students_student_number = f.student_number
             and s.courses_credittype = f.powerschool_credittype

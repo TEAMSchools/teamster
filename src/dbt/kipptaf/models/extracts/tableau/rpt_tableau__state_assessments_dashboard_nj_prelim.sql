@@ -230,12 +230,12 @@ left join
     and s.schoolid = g.school_id
     and a.test_code = g.state_assessment_code
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_filters") }} as sf
     on s.academic_year = sf.academic_year
     and a.discipline = sf.discipline
     and s.student_number = sf.student_number
 left join
-    {{ ref("int_reporting__student_filters") }} as sf2
+    {{ ref("int_extracts__student_filters") }} as sf2
     on s.academic_year = sf2.academic_year - 1
     and a.discipline = sf2.discipline
     and s.student_number = sf2.student_number

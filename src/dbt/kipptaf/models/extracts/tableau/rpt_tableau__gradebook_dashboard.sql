@@ -64,7 +64,7 @@ with
             on enr.cc_sectionid = sec.sections_id
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="sec") }}
         left join
-            {{ ref("int_reporting__student_filters") }} as f
+            {{ ref("int_extracts__student_filters") }} as f
             on enr.cc_studentid = f.studentid
             and enr.cc_academic_year = f.academic_year
             and sec.courses_credittype = f.powerschool_credittype
