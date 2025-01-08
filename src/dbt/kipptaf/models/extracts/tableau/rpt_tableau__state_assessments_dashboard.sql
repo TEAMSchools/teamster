@@ -328,12 +328,12 @@ left join
     and s.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_filters") }} as sf
     on s.academic_year = sf.academic_year
     and s.discipline = sf.discipline
     and s.student_number = sf.student_number
 left join
-    {{ ref("int_reporting__student_filters") }} as sf2
+    {{ ref("int_extracts__student_filters") }} as sf2
     on s.academic_year = sf2.academic_year - 1
     and s.discipline = sf2.discipline
     and s.student_number = sf2.student_number

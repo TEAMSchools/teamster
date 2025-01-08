@@ -184,7 +184,7 @@ with
             if(m.ap_course_subject is not null, true, false) as is_ap_course,
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
-            {{ ref("int_reporting__student_filters") }} as f
+            {{ ref("int_extracts__student_filters") }} as f
             on m.cc_studentid = f.studentid
             and m.cc_academic_year = f.academic_year
             and m.courses_credittype = f.powerschool_credittype

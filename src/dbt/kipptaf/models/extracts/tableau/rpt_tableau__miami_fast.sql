@@ -303,7 +303,7 @@ left join
     and subj.fast_subject = fs.assessment_subject
     and administration_window = fs.administration_window
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_filters") }} as sf
     on co.student_number = sf.student_number
     and co.academic_year = sf.academic_year
     and subj.iready_subject = sf.iready_subject

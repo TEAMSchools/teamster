@@ -93,7 +93,7 @@ with
             and s.courses_course_name = ec.courses_course_name_expected
             and {{ union_dataset_join_clause(left_alias="s", right_alias="ec") }}
         left join
-            {{ ref("int_reporting__student_filters") }} as f
+            {{ ref("int_extracts__student_filters") }} as f
             on s.cc_academic_year = f.academic_year
             and s.students_student_number = f.student_number
             and s.courses_credittype = f.powerschool_credittype

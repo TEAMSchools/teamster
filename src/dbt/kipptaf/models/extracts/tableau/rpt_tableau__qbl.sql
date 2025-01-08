@@ -105,7 +105,7 @@ left join
     and co.grade_level = ag.grade_level
     and asr.subject_area = ag.illuminate_subject_area
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_filters") }} as sf
     on sf.student_number = co.student_number
     and sf.academic_year = co.academic_year
     and asr.subject_area = sf.illuminate_subject_area
@@ -219,7 +219,7 @@ left join
     and co.schoolid = ag.school_id
     and asr.subject_area = ag.illuminate_subject_area
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_filters") }} as sf
     on sf.student_number = co.student_number
     and sf.academic_year = co.academic_year
     and asr.subject_area = sf.illuminate_subject_area

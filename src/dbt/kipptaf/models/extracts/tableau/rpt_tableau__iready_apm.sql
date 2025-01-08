@@ -149,7 +149,7 @@ left join
     and hr.cc_course_number = 'HR'
     and hr.rn_course_number_year = 1
 left join
-    {{ ref("int_reporting__student_filters") }} as f
+    {{ ref("int_extracts__student_filters") }} as f
     on co.student_number = f.student_number
     and co.academic_year = f.academic_year
     and subj = f.iready_subject

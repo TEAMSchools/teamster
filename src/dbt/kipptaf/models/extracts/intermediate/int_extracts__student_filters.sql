@@ -1,10 +1,10 @@
 with
     subjects as (
         select
-            `subject` as iready_subject,
+            iready_subject,
 
             case
-                `subject`
+                iready_subject
                 when 'Reading'
                 then 'Text Study'
                 when 'Math'
@@ -12,17 +12,17 @@ with
             end as illuminate_subject_area,
 
             case
-                `subject` when 'Reading' then 'ENG' when 'Math' then 'MATH'
+                iready_subject when 'Reading' then 'ENG' when 'Math' then 'MATH'
             end as powerschool_credittype,
 
             case
-                `subject` when 'Reading' then 'ela' when 'Math' then 'math'
+                iready_subject when 'Reading' then 'ela' when 'Math' then 'math'
             end as grad_unpivot_subject,
 
             case
-                `subject` when 'Reading' then 'ELA' when 'Math' then 'Math'
+                iready_subject when 'Reading' then 'ELA' when 'Math' then 'Math'
             end as discipline,
-        from unnest(['Reading', 'Math']) as `subject`
+        from unnest(['Reading', 'Math']) as iready_subject
     ),
 
     intervention_nj as (

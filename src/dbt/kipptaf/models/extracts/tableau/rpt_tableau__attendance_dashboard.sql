@@ -21,7 +21,7 @@ with
                 end
             ) over (partition by academic_year, student_number)
             as nj_overall_student_tier,
-        from {{ ref("int_reporting__student_filters") }}
+        from {{ ref("int_extracts__student_filters") }}
 
     ),
 

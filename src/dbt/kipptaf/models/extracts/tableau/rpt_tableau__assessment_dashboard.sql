@@ -137,7 +137,7 @@ select
     sf.territory,
 from dashboard as d
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_filters") }} as sf
     on d.student_number = sf.student_number
     and d.academic_year = sf.academic_year
     and d.filter_join = sf.assessment_dashboard_join
