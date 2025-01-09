@@ -19,7 +19,7 @@ select
 
     if(sr.date_submitted is not null, 1, 0) as completion,
 
-    max(DATETIME(date_submitted, 'America/New_York')) as date_submitted,
+    max(datetime(date_submitted, 'America/New_York')) as date_submitted,
 
 from {{ ref("rpt_tableau__survey_links") }} as sl
 left join
