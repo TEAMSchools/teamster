@@ -14,6 +14,8 @@ select
     sl.samaccountname,
     sl.username,
     sl.survey,
+    sl.link,
+    sl.assignment,
 
     if(sr.date_submitted is not null, 1, 0) as completion,
 
@@ -41,4 +43,6 @@ group by
     sl.samaccountname,
     sl.username,
     sl.survey,
+    sl.link,
+    sl.assignment,
     sr.date_submitted
