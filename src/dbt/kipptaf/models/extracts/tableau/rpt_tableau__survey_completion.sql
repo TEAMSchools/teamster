@@ -16,6 +16,8 @@ select
     sl.survey,
     sl.link,
     sl.assignment,
+    sl.academic_year,
+    sl.survey_round,
 
     if(sr.date_submitted is not null, 1, 0) as completion,
 
@@ -45,4 +47,6 @@ group by
     sl.survey,
     sl.link,
     sl.assignment,
-    sr.date_submitted
+    sr.date_submitted,
+    sl.academic_year,
+    sl.survey_round
