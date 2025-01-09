@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from socket import gaierror
 from zoneinfo import ZoneInfo
 
@@ -19,9 +19,9 @@ from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_edplan_sftp_sensor(
-    code_location: str,
     asset: AssetsDefinition,
-    timezone: ZoneInfo,
+    code_location: str,
+    execution_timezone: ZoneInfo,
     minimum_interval_seconds=None,
 ):
     job = define_asset_job(
@@ -34,7 +34,7 @@ def build_edplan_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_edplan: SSHResource):
-        now_timestamp = datetime.now(timezone).timestamp()
+        now_timestamp = datetime.now(execution_timezone).timestamp()
 
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
@@ -74,7 +74,7 @@ def build_edplan_sftp_sensor(
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                 partition_key = (
                     datetime.fromtimestamp(
-                        timestamp=_check.not_none(value=f.st_mtime), tz=ZoneInfo("UTC")
+                        timestamp=_check.not_none(value=f.st_mtime), tz=timezone.utc
                     )
                     .date()
                     .isoformat()

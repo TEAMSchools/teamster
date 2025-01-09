@@ -1,6 +1,5 @@
 import json
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from datetime import datetime, timezone
 
 from dagster import (
     RunRequest,
@@ -19,7 +18,7 @@ job = define_asset_job(name=f"{CODE_LOCATION}_ldap_asset_job", selection=assets)
 
 @sensor(name=f"{job.name}_sensor", minimum_interval_seconds=(60 * 10), job=job)
 def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
-    now_timestamp = datetime.now(ZoneInfo("UTC")).timestamp()
+    now_timestamp = datetime.now(timezone.utc).timestamp()
 
     run_requests = []
     asset_selection = []
@@ -33,7 +32,7 @@ def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
         search_filter = asset_metadata["search_filter"]
 
         last_check_timestamp = datetime.fromtimestamp(
-            timestamp=cursor.get(asset_identifier, 0), tz=ZoneInfo("UTC")
+            timestamp=cursor.get(asset_identifier, 0), tz=timezone.utc
         ).strftime("%Y%m%d%H%M%S.%f%z")
         context.log.info(last_check_timestamp)
 

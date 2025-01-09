@@ -122,14 +122,14 @@ def build_iready_sftp_sensor(
 
                 cursor[asset_identifier] = now_timestamp
 
-        for (job_name, parition_key), group in groupby(
+        for (job_name, partition_key), group in groupby(
             iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
         ):
             run_requests.append(
                 RunRequest(
-                    run_key=f"{job_name}_{parition_key}_{now_timestamp}",
+                    run_key=f"{job_name}_{partition_key}_{now_timestamp}",
                     job_name=job_name,
-                    partition_key=parition_key,
+                    partition_key=partition_key,
                     asset_selection=[g["asset_key"] for g in group],
                 )
             )

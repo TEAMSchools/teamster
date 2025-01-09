@@ -88,6 +88,8 @@ models:
     extracts:
       +schema: extracts
       +materialized: table
+      clever:
+        +materialized: view
       deanslist:
         +materialized: view
       google:
@@ -176,15 +178,11 @@ models:
       +schema: surveys
       +materialized: table
     tableau:
-      +enabled: false
       +schema: tableau
       staging:
         +materialized: table
     titan:
       +schema: titan
-    utils:
-      +schema: utils
-      +materialized: table
     zendesk:
       +schema: zendesk
       staging:

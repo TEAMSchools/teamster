@@ -17,7 +17,6 @@ def main() -> None:
 
     input_file: pathlib.Path = args.input_file
 
-    # trunk-ignore(bandit/B603)
     subprocess.run(
         args=[
             "/workspaces/teamster/.venv/bin/datamodel-codegen",

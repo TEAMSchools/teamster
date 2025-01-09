@@ -1,8 +1,7 @@
 import hashlib
 import pathlib
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BufferedReader
-from zoneinfo import ZoneInfo
 
 from dagster import (
     AssetExecutionContext,
@@ -16,10 +15,10 @@ from dagster import (
 from dateutil.relativedelta import relativedelta
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
-from sshtunnel import HandlerSSHTunnelForwarderError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.utils import open_ssh_tunnel
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -72,7 +71,7 @@ def build_powerschool_table_asset(
         db_powerschool: PowerSchoolODBCResource,
     ):
         hour_timestamp = (
-            datetime.now(ZoneInfo("UTC"))
+            datetime.now(timezone.utc)
             .replace(minute=0, second=0, microsecond=0)
             .timestamp()
         )
@@ -127,17 +126,19 @@ def build_powerschool_table_asset(
             .where(text(constructed_where))
         )
 
-        ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
+        context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
+        ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
 
         try:
-            ssh_tunnel.start()
+            connection = db_powerschool.connect()
+        except Exception as e:
+            ssh_tunnel.kill()
+            raise e
 
-            context.log.debug(msg=ssh_tunnel.tunnel_is_up)
-            if not ssh_tunnel.tunnel_is_up:
-                raise HandlerSSHTunnelForwarderError
-
+        try:
             file_path = _check.inst(
                 obj=db_powerschool.execute_query(
+                    connection=connection,
                     query=sql,
                     output_format="avro",
                     batch_size=partition_size,
@@ -147,7 +148,8 @@ def build_powerschool_table_asset(
                 ttype=pathlib.Path,
             )
         finally:
-            ssh_tunnel.stop(force=True)
+            connection.close()
+            ssh_tunnel.kill()
 
         with file_path.open(mode="rb") as f:
             num_records = sum(block.num_records for block in block_reader(f))

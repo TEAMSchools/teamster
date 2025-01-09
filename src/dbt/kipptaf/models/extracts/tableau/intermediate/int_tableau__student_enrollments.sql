@@ -58,6 +58,7 @@ select
     adb.ktc_cohort,
     adb.contact_owner_name,
     adb.contact_df_has_fafsa as has_fafsa,
+    adb.contact_college_match_display_gpa as college_match_gpa,
 
     hr.sections_section_number as team,
 
@@ -94,6 +95,20 @@ select
         when e.region = 'Miami'
         then 'FL'
     end as `state`,
+
+    case
+        when adb.contact_college_match_display_gpa >= 3.50
+        then '3.50+'
+        when adb.contact_college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when adb.contact_college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when adb.contact_college_match_display_gpa >= 2.00
+        then '2.00-2.49'
+        when adb.contact_college_match_display_gpa < 2.00
+        then '<2.00'
+        else 'No GPA'
+    end as college_match_gpa_bands,
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     ms_grad_sub as m
