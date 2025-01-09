@@ -185,7 +185,7 @@ from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on current_date('America/New_York') between rt.start_date and rt.end_date
-    and rt.name = 'Teacher ITR'
+    and rt.name = 'Intent to Return Survey'
 where r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
 
 union all
