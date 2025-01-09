@@ -29,7 +29,7 @@ def google_forms_responses_sensor(
     )
 
     for form_id in partition_keys:
-        timestamp = cursor.get("form_id", "1970-01-01T00:00:00Z")
+        timestamp = cursor.get(form_id, "1970-01-01T00:00:00Z")
 
         reponses = google_forms.list_responses(
             form_id=form_id, pageSize=1, filter=f"timestamp > {timestamp}"
