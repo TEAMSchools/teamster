@@ -5,7 +5,10 @@ from dagster import DagsterInstance, SensorResult, build_sensor_context
 from teamster.code_locations.kipptaf._google.forms.sensors import (
     google_forms_responses_sensor,
 )
-from teamster.code_locations.kipptaf.resources import GOOGLE_FORMS_RESOURCE
+from teamster.code_locations.kipptaf.resources import (
+    GOOGLE_DRIVE_RESOURCE,
+    GOOGLE_FORMS_RESOURCE,
+)
 
 
 def test_google_forms_responses_sensor():
@@ -34,8 +37,13 @@ def test_google_forms_responses_sensor():
             cursor=json.dumps(obj=cursor),
         ),
         google_forms=GOOGLE_FORMS_RESOURCE,
+        google_drive=GOOGLE_DRIVE_RESOURCE,
     )
 
     assert isinstance(sensor_result, SensorResult)
+
     assert sensor_result.run_requests is not None
+    assert sensor_result.dynamic_partitions_requests is not None
+
     assert len(sensor_result.run_requests) > 0
+    assert len(sensor_result.dynamic_partitions_requests) > 0
