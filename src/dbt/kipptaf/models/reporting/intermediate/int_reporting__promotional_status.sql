@@ -110,6 +110,7 @@ with
             fg.academic_year,
             fg.storecode,
             fg.n_failing_core,
+            fg.n_failing,
 
             coalesce(fg.projected_credits_y1_term, 0)
             + coalesce(gc.earned_credits_cum, 0) as projected_credits_cum,
@@ -195,6 +196,20 @@ with
             storecode as term_name,
             n_failing_core as metric,
             cast(n_failing_core as string) as metric_display,
+        from credits
+
+        union all
+
+        select
+            'Academics' as discipline,
+            'N Failing' as subject,
+
+            studentid,
+            _dbt_source_relation,
+            academic_year,
+            storecode as term_name,
+            n_failing as metric,
+            cast(n_failing as string) as metric_display,
         from credits
 
         union all
@@ -381,6 +396,7 @@ with
             ) as projected_credits_cum,
             cast(`metric_display_Days Absent` as int) as days_absent_running,
             cast(`metric_display_Core Fs` as int) as n_failing_core,
+            cast(`metric_display_N Failing` as int) as n_failing,
             cast(
                 `metric_display_i-Ready Reading` as string
             ) as iready_reading_orp_recent,
@@ -402,6 +418,7 @@ with
                     'i-Ready Math',
                     'DIBELS Benchmark',
                     'Core Fs',
+                    'N Failing',
                     'Projected Credits',
                     'Star ELA',
                     'Star Math',
@@ -424,6 +441,7 @@ with
             ada_running,
             projected_credits_cum,
             days_absent_running,
+            n_failing,
             n_failing_core,
             iready_reading_orp_recent,
             iready_math_orp_recent,
@@ -492,6 +510,7 @@ select
     s.ada_running,
     s.projected_credits_cum,
     s.days_absent_running,
+    s.n_failing,
     s.n_failing_core,
     s.iready_reading_orp_recent,
     s.iready_math_orp_recent,
@@ -546,4 +565,3 @@ left join
     on s.academic_year = hs.academic_year
     and s.region = hs.region
     and s.grade_level = hs.grade_level
-where s.region = 'Miami'
