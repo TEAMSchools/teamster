@@ -16,10 +16,12 @@ select
     sl.survey,
     sl.link,
     sl.assignment,
+    sl.academic_year,
+    sl.survey_round,
 
     if(sr.date_submitted is not null, 1, 0) as completion,
 
-    max(sr.date_submitted) as date_submitted,
+    max(datetime(sr.date_submitted, 'America/New_York')) as date_submitted,
 
 from {{ ref("rpt_tableau__survey_links") }} as sl
 left join
@@ -45,4 +47,6 @@ group by
     sl.survey,
     sl.link,
     sl.assignment,
-    sr.date_submitted
+    sr.date_submitted,
+    sl.academic_year,
+    sl.survey_round
