@@ -30,6 +30,8 @@ with
             s.scorepoints as raw_score,
             s.actualscoreentered,
 
+            a.category_code || right(c.quarter, 1) as assignment_category_term,
+
             if(ce.ap_course_subject is not null, true, false) as is_ap_course,
 
             if(s.islate = 0 or s.islate is null, false, true) as islate,
@@ -132,6 +134,7 @@ select
     week_end_sunday,
     school_week_start_date_lead,
     school_level,
+    assignment_category_term,
     assignment_category_code,
     assignment_category_name,
     assignmentid,
