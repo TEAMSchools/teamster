@@ -2,100 +2,66 @@ assets:
   - dataset_config:
       dataset_id: kipptaf_extracts
       table_id: rpt_illuminate__courses
-    extract_job_config:
-      field_delimiter: "\t"
     file_config:
       stem: courses
       suffix: txt
-    destination_config:
-      name: illuminate
   - dataset_config:
       dataset_id: kipptaf_extracts
       table_id: rpt_illuminate__enrollment
-    extract_job_config:
-      field_delimiter: "\t"
     file_config:
       stem: enrollment
       suffix: txt
-    destination_config:
-      name: illuminate
   - dataset_config:
       dataset_id: kipptaf_extracts
       table_id: rpt_illuminate__mastschd
-    extract_job_config:
-      field_delimiter: "\t"
     file_config:
       stem: mastschd
       suffix: txt
-    destination_config:
-      name: illuminate
   - dataset_config:
       dataset_id: kipptaf_extracts
       table_id: rpt_illuminate__roles
-    extract_job_config:
-      field_delimiter: "\t"
     file_config:
       stem: roles
       suffix: txt
-    destination_config:
-      name: illuminate
   - dataset_config:
       dataset_id: kipptaf_extracts
       table_id: rpt_illuminate__roster
-    extract_job_config:
-      field_delimiter: "\t"
     file_config:
       stem: roster
       suffix: txt
-    destination_config:
-      name: illuminate
   - dataset_config:
       dataset_id: kipptaf_extracts
       table_id: rpt_illuminate__users
-    extract_job_config:
-      field_delimiter: "\t"
     file_config:
       stem: users
       suffix: txt
-    destination_config:
-      name: illuminate
   - dataset_config:
       dataset_id: kipptaf_extracts
       table_id: rpt_illuminate__terms
-    extract_job_config:
-      field_delimiter: "\t"
     file_config:
       stem: terms
       suffix: txt
-    destination_config:
-      name: illuminate
   - dataset_config:
       dataset_id: kipptaf_extracts
       table_id: rpt_illuminate__student_portal_accounts
-    extract_job_config:
-      field_delimiter: "\t"
     file_config:
       stem: student_portal_accounts
       suffix: txt
-    destination_config:
-      name: illuminate
   - dataset_config:
       dataset_id: kipptaf_extracts
       table_id: rpt_illuminate__studemo
-    extract_job_config:
-      field_delimiter: "\t"
     file_config:
       stem: studemo
       suffix: txt
-    destination_config:
-      name: illuminate
   - dataset_config:
       dataset_id: kipptaf_extracts
       table_id: rpt_illuminate__sites
-    extract_job_config:
-      field_delimiter: "\t"
     file_config:
       stem: sites
       suffix: txt
-    destination_config:
-      name: illuminate
+  - dataset_config:
+      dataset_id: kipptaf_extracts
+      table_id: rpt_illuminate__programs
+    file_config:
+      stem: programs
+      suffix: txt

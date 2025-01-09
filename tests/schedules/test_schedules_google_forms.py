@@ -1,4 +1,4 @@
-from dagster import build_schedule_context
+from dagster import DagsterInstance, build_schedule_context
 
 from teamster.code_locations.kipptaf._google.forms.schedules import (
     google_forms_asset_job_schedule,
@@ -6,7 +6,11 @@ from teamster.code_locations.kipptaf._google.forms.schedules import (
 
 
 def test_schedule():
-    context = build_schedule_context()
+    context = build_schedule_context(
+        instance=DagsterInstance.from_config(
+            config_dir=".dagster/home", config_filename="dagster-cloud.yaml"
+        )
+    )
 
     output = google_forms_asset_job_schedule(context=context)
 

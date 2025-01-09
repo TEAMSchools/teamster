@@ -7,4 +7,4 @@ packages:
   - local: ../titan
   # https://github.com/dbt-labs/dbt-external-tables
   - package: dbt-labs/dbt_external_tables
-    version: 0.10.0
+    version: 0.11.1

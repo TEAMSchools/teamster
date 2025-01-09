@@ -1,4 +1,3 @@
-# trunk-ignore-all(trivy/DS026,checkov/CKV_DOCKER_2)
 ARG PYTHON_VERSION=3.12
 
 # https://hub.docker.com/_/python
@@ -12,6 +11,12 @@ ENV PATH="/app/.venv/bin:${PATH}"
 ENV UV_LINK_MODE=copy
 ENV UV_COMPILE_BYTECODE=1
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        openssh-client=1:9.2p1-2+deb12u3 sshpass=1.09-1* \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # set workdir
 WORKDIR /app
 
@@ -20,18 +25,18 @@ COPY uv.lock pyproject.toml /app/
 
 # Install dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project --no-editable
+uv sync --frozen --no-dev --no-install-project --no-editable
 
 # Copy the project into the image
 COPY src/ /app/src/
 
 # Sync the project
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-editable
+uv sync --frozen --no-dev --no-editable
 
 # Install dbt project
 RUN dagster-dbt project prepare-and-package \
-    --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
+--file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
 
 # Create a custom user with UID 1234 and GID 1234
 RUN groupadd -g 1234 teamster \

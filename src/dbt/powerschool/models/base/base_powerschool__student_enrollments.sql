@@ -7,6 +7,9 @@ with
             s.id as studentid,
             s.dcid as students_dcid,
             s.student_number,
+
+            null as reenrollments_dcid,
+
             s.grade_level,
             s.schoolid,
             s.entrydate,
@@ -67,6 +70,7 @@ with
             s.dcid as students_dcid,
             s.student_number,
 
+            re.dcid as reenrollments_dcid,
             re.grade_level,
             re.schoolid,
             re.entrydate,
@@ -130,6 +134,9 @@ with
             s.id as studentid,
             s.dcid as students_dcid,
             s.student_number,
+
+            null as reenrollments_dcid,
+
             s.grade_level,
             s.schoolid,
 
