@@ -66,7 +66,6 @@ with
             ge.expectation,
 
             sec.sections_id as sectionid,
-            sec.sections_schoolid as schoolid,
             sec.teachernumber as teacher_number,
 
             a.assignmentsectionid,
@@ -97,10 +96,6 @@ with
             sum(a.totalpointvalue) over (
                 partition by c._dbt_source_relation, c.quarter, sec.sections_id
             ) as total_totalpointvalue_section_quarter,
-
-            sum(asg.n_missing) over (
-                partition by c._dbt_source_relation, c.quarter, sec.sections_id
-            ) as total_missing_section_quarter,
         from {{ ref("int_powerschool__calendar_week") }} as c
         inner join
             {{ ref("stg_reporting__gradebook_expectations") }} as ge

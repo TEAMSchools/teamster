@@ -1,54 +1,6 @@
 {{- config(materialized="table") -}}
 
 with
-    students as (
-        select
-            enr._dbt_source_relation,
-            enr.studentid,
-            enr.student_number,
-            enr.student_name,
-            enr.enroll_status,
-            enr.cohort,
-            enr.gender,
-            enr.ethnicity,
-            enr.academic_year,
-            enr.academic_year_display,
-            enr.yearid,
-            enr.region,
-            enr.school_level,
-            enr.schoolid,
-            enr.school,
-            enr.grade_level,
-            enr.advisory,
-            enr.year_in_school,
-            enr.year_in_network,
-            enr.rn_undergrad,
-            enr.is_self_contained as is_pathways,
-            enr.is_out_of_district,
-            enr.is_retained_year,
-            enr.is_retained_ever,
-            enr.lunch_status,
-            enr.lep_status,
-            enr.gifted_and_talented,
-            enr.iep_status,
-            enr.is_504,
-            enr.contact_id as salesforce_id,
-            enr.ktc_cohort,
-            enr.is_counseling_services,
-            enr.is_student_athlete,
-            enr.is_tutoring,
-            enr.hos,
-            enr.region_school_level,
-            enr.ada,
-
-            if(enr.ada >= 0.80, true, false) as ada_above_or_at_80,
-        from {{ ref("int_tableau__student_enrollments") }} as enr
-        where
-            enr.academic_year = {{ var("current_academic_year") }}
-            and enr.enroll_status = 0
-            and not enr.is_out_of_district
-    ),
-
     course_enrollments as (
         select
             m._dbt_source_relation,
@@ -154,7 +106,7 @@ select
     s.student_number,
     s.student_name,
     s.grade_level,
-    s.salesforce_id,
+    s.contact_id as salesforce_id,
     s.ktc_cohort,
     s.enroll_status,
     s.cohort,
@@ -167,7 +119,7 @@ select
     s.year_in_network,
     s.rn_undergrad,
     s.is_out_of_district,
-    s.is_pathways,
+    s.is_self_contained as is_pathways,
     s.is_retained_year,
     s.is_retained_ever,
     s.lunch_status,
@@ -179,7 +131,6 @@ select
     s.is_student_athlete,
     s.is_tutoring as tutoring_nj,
     s.ada,
-    s.ada_above_or_at_80,
 
     ce.sectionid,
     ce.sections_dcid,
@@ -223,10 +174,12 @@ select
     cg.percent_grade as category_quarter_percent_grade,
     cg.category_quarter_average_all_courses,
 
+    if(s.ada >= 0.80, true, false) as ada_above_or_at_80,
+
     if(
         s.grade_level <= 8, ce.section_number, ce.external_expression
     ) as section_or_period,
-from students as s
+from {{ ref("int_tableau__student_enrollments") }} as s
 inner join
     course_enrollments as ce
     on s.studentid = ce.studentid
@@ -267,3 +220,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="s", right_alias="w") }}
     and ge.quarter = w.quarter
     and ge.week_number = w.week_number_quarter
+where
+    s.academic_year = {{ var("current_academic_year") }}
+    and s.enroll_status = 0
+    and not s.is_out_of_district
