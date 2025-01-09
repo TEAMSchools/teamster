@@ -1,7 +1,6 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlencode
-from zoneinfo import ZoneInfo
 
 from dagster import (
     AssetKey,
@@ -23,7 +22,7 @@ ASSET_KEYS = [a.key for a in asset_specs]
 def airbyte_job_status_sensor(
     context: SensorEvaluationContext, airbyte: AirbyteCloudResource
 ):
-    now_timestamp = datetime.now(ZoneInfo("UTC")).timestamp()
+    now_timestamp = datetime.now(timezone.utc).timestamp()
 
     asset_events = []
     cursor: dict = json.loads(context.cursor or "{}")
@@ -40,7 +39,7 @@ def airbyte_job_status_sensor(
         connection_id = connection["connectionId"]
 
         last_updated = datetime.fromtimestamp(
-            timestamp=cursor.get(connection_id, 0), tz=ZoneInfo("UTC")
+            timestamp=cursor.get(connection_id, 0), tz=timezone.utc
         )
 
         params = urlencode(

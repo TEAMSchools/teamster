@@ -25,5 +25,6 @@ schedules = [
 sensors = [
     *bigquery.sensors,
     *drive.sensors,
+    *forms.sensors,
     *sheets.sensors,
 ]
