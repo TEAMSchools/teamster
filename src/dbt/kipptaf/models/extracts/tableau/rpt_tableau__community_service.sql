@@ -30,7 +30,7 @@ left join
     {{ ref("stg_deanslist__behavior") }} as b
     on co.student_number = b.student_school_id
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
-    and b.behavior_category = 'Community Service'
+    and b.behavior_category in ('Community Service', 'Community Service Hours')
     and b.behavior_date between co.entrydate and co.exitdate
 left join
     {{ ref("int_deanslist__students__custom_fields__pivot") }} as c
