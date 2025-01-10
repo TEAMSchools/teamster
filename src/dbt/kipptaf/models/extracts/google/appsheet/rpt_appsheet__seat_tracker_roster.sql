@@ -1,3 +1,10 @@
+with itr_response as (
+    select *
+    from {{ ref('rpt_tableau__survey_responses') }} as sr
+    
+)
+
+
 select
     sr.employee_number,
     sr.assignment_status,
@@ -50,14 +57,10 @@ select
         when sr.home_department_name in ('Data')
         then 7
         when
-            sr.home_department_name in ('Recruitment', 'Finance and Purchasing')
+            sr.home_department_name = 'Recruitment'
             and contains_substr(sr.job_title, 'Director')
         then 7
-        /* see your state/region, edit everything */
-        when
-            contains_substr(sr.job_title, 'Director')
-            and sr.home_department_name = 'School Support'
-        then 6
+        /* see your state/region, edit everything, (intentionally blank below)*/
         /* see everything, edit teammate and seat status fields (recruiters)*/
         when
             sr.home_department_name = 'Recruitment'
@@ -84,7 +87,7 @@ select
             contains_substr(sr.job_title, 'Director')
             and sr.home_department_name = 'Special Education'
         then 3
-        when sr.home_department_name in ('Leadership Development', 'Human Resources')
+        when sr.home_department_name in ('Leadership Development', 'Human Resources','Finance and Purchasing')
         then 3
         /* see your state/region, edit nothing */
         when
