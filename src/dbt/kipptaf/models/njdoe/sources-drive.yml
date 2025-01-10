@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: njdoe
     schema: kipptaf_njdoe
-    tags:
-      - stage_external_sources
     tables:
       - name: src_njdoe__parcc
         external:

@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: edplan
     schema: "{{ var('edplan_schema', 'edplan') }}"
-    tags:
-      - stage_external_sources
     tables:
       - name: src_edplan__njsmart_powerschool_archive
         meta:

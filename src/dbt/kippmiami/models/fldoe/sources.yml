@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: fldoe
     schema: kippmiami_fldoe
-    tags:
-      - stage_external_sources
     tables:
       - name: src_fldoe__fast
         meta:
