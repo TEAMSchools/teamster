@@ -11,7 +11,7 @@ sources:
       - name: src_titan__person_data
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - titan
               - person_data
@@ -28,7 +28,7 @@ sources:
       - name: src_titan__income_form_data
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - titan
               - income_form_data

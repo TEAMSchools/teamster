@@ -10,7 +10,7 @@ sources:
       - name: src_iready__diagnostic_results
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - iready
               - diagnostic_results
@@ -27,7 +27,7 @@ sources:
       - name: src_iready__diagnostic_and_instruction
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - iready
               - diagnostic_and_instruction
@@ -44,7 +44,7 @@ sources:
       - name: src_iready__instructional_usage_data
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - iready
               - instructional_usage_data
@@ -61,7 +61,7 @@ sources:
       - name: src_iready__instruction_by_lesson
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - iready
               - personalized_instruction_by_lesson
@@ -78,7 +78,7 @@ sources:
       - name: src_iready__instruction_by_lesson_pro
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - iready
               - instruction_by_lesson

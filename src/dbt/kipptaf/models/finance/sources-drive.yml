@@ -16,7 +16,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - finance
               - enrollment_targets
@@ -30,7 +30,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - finance
               - payroll_code_mapping
