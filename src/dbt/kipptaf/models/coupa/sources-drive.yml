@@ -20,7 +20,7 @@ sources:
             data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - coupa
               - address_name_crosswalk
@@ -39,7 +39,7 @@ sources:
             data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - coupa
               - school_name_crosswalk
@@ -62,7 +62,7 @@ sources:
             data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - coupa
               - school_name_lookup
@@ -85,7 +85,7 @@ sources:
             data_type: int64
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - coupa
               - user_exceptions
@@ -99,7 +99,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - coupa
               - intacct_program_lookup
@@ -122,7 +122,7 @@ sources:
             data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - coupa
               - intacct_location_lookup
@@ -136,7 +136,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - coupa
               - intacct_fund_lookup
@@ -150,7 +150,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - coupa
               - intacct_department_lookup
