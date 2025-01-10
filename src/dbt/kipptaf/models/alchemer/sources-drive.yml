@@ -18,7 +18,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - alchemer
               - response_id_override

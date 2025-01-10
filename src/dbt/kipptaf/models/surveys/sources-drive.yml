@@ -16,7 +16,7 @@ sources:
               - https://docs.google.com/spreadsheets/d/1pVY5ByKU03s8kfrd9ori1m6Sa-xOTJR9Qt0eFkkKycM
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - surveys
               - scd_question_crosswalk
@@ -35,7 +35,7 @@ sources:
               - https://docs.google.com/spreadsheets/d/1pVY5ByKU03s8kfrd9ori1m6Sa-xOTJR9Qt0eFkkKycM
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - surveys
               - scd_answer_crosswalk
@@ -48,7 +48,7 @@ sources:
               - https://drive.google.com/open?id=1BBUf3RyA7Y3J6LLBbCh7me75MXujhQcw
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - surveys
               - manager_survey_detail_archive
@@ -61,7 +61,7 @@ sources:
               - https://drive.google.com/open?id=1W6ACbPefRNgojIdN-fCCnepXpobuXgfv
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - surveys
               - staff_info_archive
@@ -74,7 +74,7 @@ sources:
               - https://drive.google.com/open?id=1B9tEe-9tTSD7bQDXcctl97TuJrfOOf3i
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - surveys
               - cmo_engagement_regional_survey_detail_archive
