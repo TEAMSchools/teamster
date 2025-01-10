@@ -321,6 +321,12 @@ workspace:
   #   maxServers: 10
   serverTTL: ~
 
+  # Controls how workspace snapshots are uploaded.
+  # The default behavior (false) is to upload definitions snapshots to Dagster api servers.
+  # Setting to true opts in to a newer scheme of uploading directly to blob storage via signed urls,
+  # for improved performance and more generous size limits.
+  directSnapshotUploads: ~
+
   # Specifies security settings for pods launched by the agent.
   securityContext: ~
 
