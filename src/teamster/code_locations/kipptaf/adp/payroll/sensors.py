@@ -30,9 +30,6 @@ from teamster.libraries.ssh.resources import SSHResource
         selection=[
             general_ledger_file.key,
             AssetKey(
-                [CODE_LOCATION, "adp_payroll", "src_adp_payroll__general_ledger_file"]
-            ),
-            AssetKey(
                 [CODE_LOCATION, "adp_payroll", "stg_adp_payroll__general_ledger_file"]
             ),
             AssetKey(
@@ -85,8 +82,8 @@ def adp_payroll_sftp_sensor(
     context.log.info(asset_identifier)
     pattern = re.compile(
         pattern=(
-            rf"{metadata_by_key["remote_dir_regex"]}/"
-            rf"{metadata_by_key["remote_file_regex"]}"
+            rf"{metadata_by_key['remote_dir_regex']}/"
+            rf"{metadata_by_key['remote_file_regex']}"
         )
     )
 

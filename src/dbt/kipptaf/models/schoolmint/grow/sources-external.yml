@@ -17,7 +17,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -33,7 +33,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -48,7 +48,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -63,7 +63,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -80,7 +80,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -96,7 +96,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -112,7 +112,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -129,7 +129,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -146,7 +146,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -162,7 +162,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -179,7 +179,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -195,7 +195,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -211,7 +211,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -227,7 +227,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -242,7 +242,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -258,7 +258,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -274,7 +274,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -290,7 +290,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -306,7 +306,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -322,7 +322,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -338,7 +338,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -354,7 +354,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -370,7 +370,7 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
