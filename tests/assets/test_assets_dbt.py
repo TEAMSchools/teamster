@@ -21,11 +21,7 @@ MANIFEST_NODES = MANIFEST["nodes"]
 DAGSTER_DBT_TRANSLATOR = CustomDagsterDbtTranslator(code_location="kipptaf")
 
 
-@dbt_assets(
-    manifest=MANIFEST,
-    exclude="tag:stage_external_sources",
-    dagster_dbt_translator=DAGSTER_DBT_TRANSLATOR,
-)
+@dbt_assets(manifest=MANIFEST, dagster_dbt_translator=DAGSTER_DBT_TRANSLATOR)
 def _dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
     asset_materialization_keys = []
 
@@ -94,21 +90,16 @@ def test_dbt_assets():
     )
 
 
-def test_external_source_dbt_assets():
-    from teamster.code_locations.kipptaf._dbt.assets import external_source_dbt_assets
-
-    _test_dbt_assets(
-        assets=[external_source_dbt_assets],
-        code_location="kipptaf",
-        selection=["kipptaf/google_forms/src_google_forms__form"],
-    )
-
-
 def test_dbt_assets_kipptaf():
-    from teamster.code_locations.kipptaf._dbt.assets import adp_payroll_dbt_assets
+    from teamster.code_locations.kipptaf._dbt.assets import dbt_assets
 
     _test_dbt_assets(
-        assets=[adp_payroll_dbt_assets],
+        assets=[dbt_assets],
         code_location="kipptaf",
-        selection=["kipptaf/extracts/rpt_gsheets__intacct_integration_file"],
+        selection=[
+            "kipptaf/schoolmint_grow/stg_schoolmint_grow__users",
+            "kipptaf/schoolmint_grow/stg_schoolmint_grow__schools",
+            "kipptaf/schoolmint_grow/int_schoolmint_grow__observations",
+            "kipptaf/illuminate/stg_illuminate__reporting_groups",
+        ],
     )
