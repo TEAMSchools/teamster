@@ -21,11 +21,7 @@ MANIFEST_NODES = MANIFEST["nodes"]
 DAGSTER_DBT_TRANSLATOR = CustomDagsterDbtTranslator(code_location="kipptaf")
 
 
-@dbt_assets(
-    manifest=MANIFEST,
-    exclude="tag:stage_external_sources",
-    dagster_dbt_translator=DAGSTER_DBT_TRANSLATOR,
-)
+@dbt_assets(manifest=MANIFEST, dagster_dbt_translator=DAGSTER_DBT_TRANSLATOR)
 def _dbt_assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
     asset_materialization_keys = []
 
