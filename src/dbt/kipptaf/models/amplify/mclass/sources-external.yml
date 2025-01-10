@@ -19,7 +19,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - amplify
               - benchmark_student_summary
@@ -33,7 +33,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - amplify
               - pm_student_summary
