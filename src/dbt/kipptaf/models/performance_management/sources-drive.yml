@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: performance_management
     schema: kipptaf_performance_management
-    tags:
-      - stage_external_sources
     tables:
       - name: src_performance_management__leadership_development_metrics
         external:

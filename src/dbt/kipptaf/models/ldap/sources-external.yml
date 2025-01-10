@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: ldap
     schema: kipptaf_ldap
-    tags:
-      - stage_external_sources
     tables:
       - name: src_ldap__user_person
         external:

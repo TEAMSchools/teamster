@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: assessments
     schema: kipptaf_assessments
-    tags:
-      - stage_external_sources
     tables:
       - name: src_assessments__ap_course_crosswalk
         external:

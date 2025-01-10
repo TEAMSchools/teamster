@@ -5,8 +5,6 @@ sources:
     schema: kipptaf_alchemer
     config:
       enabled: false
-    tags:
-      - stage_external_sources
     tables:
       - name: src_alchemer__survey
         external:

@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: adp_workforce_manager
     schema: kipptaf_adp_workforce_manager
-    tags:
-      - stage_external_sources
     tables:
       - name: src_adp_workforce_manager__accrual_reporting_period_summary
         external:
