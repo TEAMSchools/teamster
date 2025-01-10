@@ -1,6 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
-from zoneinfo import ZoneInfo
 
 from dagster import AssetKey, EnvVar, _check, build_resources
 from dagster_airbyte import AirbyteCloudResource
@@ -24,7 +23,7 @@ def test_resource():
     for connection in connections:
         connection_id = connection["connectionId"]
 
-        last_updated = datetime.now(ZoneInfo("UTC")) - timedelta(days=1)
+        last_updated = datetime.now(timezone.utc) - timedelta(days=1)
 
         params = urlencode(
             query={
