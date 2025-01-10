@@ -1,7 +1,11 @@
 with itr_response as (
-    select *
+    select 
+    employee_number,
+answer,
     from {{ ref('rpt_tableau__survey_responses') }} as sr
-    
+    where survey_code in ('ITR','ITR-L')
+    and question_shortname = 'plans'
+    --and rn = 1
 )
 
 
