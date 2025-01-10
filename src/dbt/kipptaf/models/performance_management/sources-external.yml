@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: performance_management
     schema: kipptaf_performance_management
-    tags:
-      - stage_external_sources
     tables:
       - name: src_performance_management__outlier_detection
         external:
@@ -16,7 +14,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - performance_management
               - outlier_detection
@@ -31,7 +29,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - performance_management
               - observation_details

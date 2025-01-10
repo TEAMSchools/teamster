@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: people
     schema: kipptaf_people
-    tags:
-      - stage_external_sources
     tables:
       - name: src_people__employee_numbers_archive
         external:
@@ -16,7 +14,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - people
               - employee_numbers_archive
@@ -30,7 +28,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - people
               - location_crosswalk
@@ -44,7 +42,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - people
               - campus_crosswalk
@@ -58,7 +56,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - people
               - powerschool_crosswalk
@@ -72,7 +70,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - people
               - student_logins_archive
@@ -86,7 +84,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - people
               - staffing_model
@@ -100,7 +98,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - people
               - salary_scale
@@ -114,7 +112,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - people
               - miami_performance_criteria

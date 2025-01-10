@@ -6,8 +6,6 @@ sources:
       {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kipptaf_amplify
       {%- else -%}kipptaf_amplify
       {%- endif %}
-    tags:
-      - stage_external_sources
     tables:
       - name: src_amplify__dibels_data_farming
         external:
@@ -19,7 +17,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - amplify
               - dibels
@@ -34,7 +32,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - amplify
               - dibels

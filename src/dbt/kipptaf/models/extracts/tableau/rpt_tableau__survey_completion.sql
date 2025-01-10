@@ -29,6 +29,7 @@ left join
     on sl.employee_number = sr.employee_number
     and sl.academic_year = sr.academic_year
     and sl.survey_round = sr.survey_code
+    and sr.rn = 1
 group by
     sl.employee_number,
     sl.assignment_status,
