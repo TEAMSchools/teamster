@@ -25,7 +25,7 @@ sources:
             data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - egencia
               - traveler_groups
@@ -42,7 +42,7 @@ sources:
             data_type: int64
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - egencia
               - travel_managers
@@ -61,7 +61,7 @@ sources:
             data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - egencia
               - traveler_group_exceptions
