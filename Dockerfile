@@ -9,14 +9,15 @@ ENV PATH="/app/.venv/bin:${PATH}"
 ENV UV_LINK_MODE=copy
 ENV UV_COMPILE_BYTECODE=1
 
-# install system deps & create non-root user
+# install system deps, create non-root user & update permissions
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         openssh-client=1:9.2p1-2+deb12u3 sshpass=1.09-1* \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -g 1234 teamster \
-    && useradd -m -u 1234 -g teamster teamster
+    && useradd -m -u 1234 -g teamster teamster \
+    && chown -R g+s 1234:1234 /app
 
 # set workdir
 WORKDIR /app
@@ -36,9 +37,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable \
     && dagster-dbt project prepare-and-package \
         --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
-
-# update non-root user permissions
-RUN chown -R 1234:1234 /app
 
 # Switch to the non-root user
 USER 1234:1234
