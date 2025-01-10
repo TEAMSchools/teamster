@@ -1,6 +1,5 @@
 import re
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from datetime import datetime, timezone
 
 from dagster import (
     AddDynamicPartitionsRequest,
@@ -53,7 +52,7 @@ from teamster.libraries.ssh.resources import SSHResource
 def adp_payroll_sftp_sensor(
     context: SensorEvaluationContext, ssh_couchdrop: SSHResource
 ):
-    now = datetime.now(ZoneInfo("UTC"))
+    now = datetime.now(timezone.utc)
     run_requests = []
     dynamic_partitions_requests = []
 

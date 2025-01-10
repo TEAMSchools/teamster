@@ -27,11 +27,11 @@ class GoogleFormsResource(ConfigurableResource):
             serviceName="forms", version=self.version, credentials=credentials
         ).forms()
 
-    def get_form(self, form_id):
+    def get_form(self, form_id: str):
         # trunk-ignore(pyright/reportAttributeAccessIssue)
         return self._resource.get(formId=form_id).execute()
 
-    def list_responses(self, form_id, **kwargs):
+    def list_responses(self, form_id: str, **kwargs):
         page_token = None
         reponses = []
 
@@ -47,6 +47,9 @@ class GoogleFormsResource(ConfigurableResource):
             page_token = data.get("nextPageToken")
 
             if page_token is None:
+                break
+            # pageSize=1 only used to check for new responses in sensor
+            elif kwargs.get("pageSize") == 1:
                 break
 
         return reponses
