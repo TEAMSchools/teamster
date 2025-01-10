@@ -10,7 +10,7 @@ sources:
       - name: src_edplan__njsmart_powerschool
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - edplan
               - njsmart_powerschool

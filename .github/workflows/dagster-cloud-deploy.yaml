@@ -109,7 +109,6 @@ jobs:
           platforms: ${{ env.PLATFORM_PAIR }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            PYTHON_VERSION=${{ inputs.python-version }}
             CODE_LOCATION=${{ inputs.code-location }}
           outputs: |
             type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true

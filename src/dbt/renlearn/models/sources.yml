@@ -11,7 +11,7 @@ sources:
       - name: src_renlearn__accelerated_reader
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - renlearn
               - accelerated_reader
@@ -28,7 +28,7 @@ sources:
       - name: src_renlearn__star
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - renlearn
               - star
@@ -45,7 +45,7 @@ sources:
       - name: src_renlearn__star_skill_area
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - renlearn
               - star_skill_area
@@ -62,7 +62,7 @@ sources:
       - name: src_renlearn__star_dashboard_standards
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - renlearn
               - star_dashboard_standards
@@ -79,7 +79,7 @@ sources:
       - name: src_renlearn__fast_star
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - renlearn
               - fast_star

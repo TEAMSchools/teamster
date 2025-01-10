@@ -14,7 +14,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - dayforce
               - employees
@@ -26,7 +26,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - dayforce
               - employee_manager
@@ -38,7 +38,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - dayforce
               - employee_status
@@ -50,7 +50,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - dayforce
               - employee_work_assignment
