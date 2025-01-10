@@ -65,7 +65,7 @@ sources:
             data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - njdoe
               - parcc

@@ -11,7 +11,7 @@ sources:
       - name: src_pearson__njgpa
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - pearson
               - njgpa
@@ -28,7 +28,7 @@ sources:
       - name: src_pearson__njsla
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - pearson
               - njsla
@@ -45,7 +45,7 @@ sources:
       - name: src_pearson__njsla_science
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - pearson
               - njsla_science
@@ -62,7 +62,7 @@ sources:
       - name: src_pearson__parcc
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - pearson
               - parcc
@@ -79,7 +79,7 @@ sources:
       - name: src_pearson__student_list_report
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - pearson
               - student_list_report
