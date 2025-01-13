@@ -69,6 +69,10 @@ sources:
             data_type: string
           - name: description
             data_type: string
+          - name: measure_standard_translation
+            data_type: string
+          - name: description_translation
+            data_type: string
       - name: src_amplify__dibels_goals_wide
         config:
           enabled: false
