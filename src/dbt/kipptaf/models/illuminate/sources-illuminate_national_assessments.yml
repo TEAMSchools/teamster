@@ -22,6 +22,15 @@ sources:
               - illuminate
               - national_assessments
               - psat_2024
+      - name: psat89_2025
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - psat89_2025
       - name: aptest_2019
         meta:
           dagster:
