@@ -14,7 +14,8 @@ sudo apt-get -y --no-install-recommends update &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # auth gcloud
-gcloud auth login --enable-gdrive-access --update-adc
+gcloud auth activate-service-account \
+  --key-file=/etc/secret-volume/gcloud_service_account_json
 
 # create env folder
 mkdir -p ./env
