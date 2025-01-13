@@ -8,12 +8,8 @@ with
                 where="not _fivetran_deleted",
             )
         }}
-    )
+    ),
 
-select *
-from
-    union_relations
-    /*
     combined_years as (
         select
             student_id,
@@ -42,7 +38,7 @@ from
             psat89_2025_readingtestscore as reading_test_score,
             psat89_2025_sciencecrosstestscore as science_cross_test_score,
             psat89_2025_writingtestscore as writing_test_score,
-            psat89_2025_ebreadwritesectionscoreas eb_read_write_section_score,
+            psat89_2025_ebreadwritesectionscore as eb_read_write_section_score,
             psat89_2025_mathsectionscore as math_section_score,
             psat89_2025_mathtestscore as advanced_math_subscore,
             psat89_2025_commandevidencesubscore as command_evidence_subscore,
@@ -80,17 +76,17 @@ from
             psat89_2025_totalusrpercentile as total_usr_percentile,
             psat89_2025_wordscontextusrpercentile as words_context_usr_percentile,
             psat89_2025_writinglangusrpercentile as writing_lang_usr_percentile,
-            psat89_2025_newdistrictid as psat_2023_newdistrictid,
-            psat89_2025_newssid as psat_2023_newssid,
-            psat89_2025_gradeassessed as psat_2023_gradeassessed,
-            psat89_2025_gpa as psat_2023_gpa,
-            psat89_2025_studentmiddleinitial as psat_2023_studentmiddleinitial,
-            psat89_2025_aparthist as psat_2023_aparthist,
-            psat89_2025_apeurohist as psat_2023_apeurohist,
-            psat89_2025_aphumgeo as psat_2024_aphumgeo,
-            psat89_2025_apphysii as psat_2024_apphysii,
-            psat89_2025_apseminar as psat_2024_apseminar,
-            psat89_2025_apworldhist as psat_2024_apworldhist,
+            psat89_2025_newdistrictid,
+            psat89_2025_newssid,
+            psat89_2025_gradeassessed,
+            psat89_2025_gpa,
+            psat89_2025_studentmiddleinitial,
+            psat89_2025_aparthist,
+            psat89_2025_apeurohist,
+            psat89_2025_aphumgeo,
+            psat89_2025_apphysii,
+            psat89_2025_apseminar,
+            psat89_2025_apworldhis,
         from union_relations
     )
 
@@ -168,43 +164,41 @@ select
     safe_cast(prob_solve_data_subscore as numeric) as prob_solve_data_subscore,
     safe_cast(relevant_words_subscore as numeric) as relevant_words_subscore,
 
-    coalesce(psat_2023_newdistrictid, psat_2024_newdistrictid) as new_district_id,
-    coalesce(psat_2023_newssid, psat_2024_newssid) as new_ssid,
-    coalesce(psat_2023_gradeassessed, psat_2024_gradeassessed) as grade_assessed,
+    psat89_2025_newdistrictid as new_district_id,
+    coalesce(psat89_2025_newssid, psat_2024_newssid) as new_ssid,
+    coalesce(psat89_2025_gradeassessed, psat_2024_gradeassessed) as grade_assessed,
     coalesce(
-        psat_2023_firstchoicemajor, psat_2024_firstchoicemajor
+        psat89_2025_firstchoicemajor, psat_2024_firstchoicemajor
     ) as first_choice_major,
-    coalesce(psat_2023_gpa, psat_2024_gpa) as gpa,
+    coalesce(psat89_2025_gpa, psat_2024_gpa) as gpa,
     coalesce(
-        psat_2023_numyearsgrade912, psat_2024_numyearsgrade912
+        psat89_2025_numyearsgrade912, psat_2024_numyearsgrade912
     ) as num_years_grade_9_12,
-    coalesce(
-        psat_2023_studentmiddleinitial, psat_2024_studentmiddleinitial
-    ) as student_middle_initial,
-    coalesce(psat_2023_aparthist, psat_2024_aparthist) as ap_art_hist,
-    coalesce(psat_2023_apbio, psat_2024_apbio) as ap_bio,
-    coalesce(psat_2023_apcalc, psat_2024_apcalc) as ap_calc,
-    coalesce(psat_2023_apchem, psat_2024_apchem) as ap_chem,
-    coalesce(psat_2023_apcompgovpol, psat_2024_apcompgovpol) as ap_comp_gov_pol,
-    coalesce(psat_2023_apcompsci, psat_2024_apcompsci) as ap_comp_sci,
-    coalesce(psat_2023_apenglang, psat_2024_apenglang) as ap_eng_lang,
-    coalesce(psat_2023_apenglit, psat_2024_apenglit) as ap_eng_lit,
-    coalesce(psat_2023_apenvsci, psat_2024_apenvsci) as ap_env_sci,
-    coalesce(psat_2023_apeurohist, psat_2024_apeurohist) as ap_euro_hist,
-    coalesce(psat_2023_aphumgeo, psat_2024_aphumgeo) as ap_hum_geo,
-    coalesce(psat_2023_apmacecon, psat_2024_apmacecon) as ap_mac_econ,
-    coalesce(psat_2023_apmicecon, psat_2024_apmicecon) as ap_mic_econ,
-    coalesce(psat_2023_apmusic, psat_2024_apmusic) as ap_music,
-    coalesce(psat_2023_apphysi, psat_2024_apphysi) as ap_phys_i,
-    coalesce(psat_2023_apphysii, psat_2024_apphysii) as ap_phys_ii,
-    coalesce(psat_2023_apphysmag, psat_2024_apphysmag) as ap_phys_mag,
-    coalesce(psat_2023_apphysmech, psat_2024_apphysmech) as ap_phys_mech,
-    coalesce(psat_2023_appsych, psat_2024_appsych) as ap_psych,
-    coalesce(psat_2023_apseminar, psat_2024_apseminar) as ap_seminar,
-    coalesce(psat_2023_apstat, psat_2024_apstat) as ap_stat,
-    coalesce(psat_2023_apusgovpol, psat_2024_apusgovpol) as ap_us_gov_pol,
-    coalesce(psat_2023_apushist, psat_2024_apushist) as ap_us_hist,
-    coalesce(psat_2023_apworldhist, psat_2024_apworldhist) as ap_world_hist,
+    null as student_middle_initial,
+    coalesce(psat89_2025_aparthist, psat_2024_aparthist) as ap_art_hist,
+    coalesce(psat89_2025_apbio, psat_2024_apbio) as ap_bio,
+    coalesce(psat89_2025_apcalc, psat_2024_apcalc) as ap_calc,
+    coalesce(psat89_2025_apchem, psat_2024_apchem) as ap_chem,
+    coalesce(psat89_2025_apcompgovpol, psat_2024_apcompgovpol) as ap_comp_gov_pol,
+    coalesce(psat89_2025_apcompsci, psat_2024_apcompsci) as ap_comp_sci,
+    coalesce(psat89_2025_apenglang, psat_2024_apenglang) as ap_eng_lang,
+    coalesce(psat89_2025_apenglit, psat_2024_apenglit) as ap_eng_lit,
+    coalesce(psat89_2025_apenvsci, psat_2024_apenvsci) as ap_env_sci,
+    coalesce(psat89_2025_apeurohist, psat_2024_apeurohist) as ap_euro_hist,
+    coalesce(psat89_2025_aphumgeo, psat_2024_aphumgeo) as ap_hum_geo,
+    coalesce(psat89_2025_apmacecon, psat_2024_apmacecon) as ap_mac_econ,
+    coalesce(psat89_2025_apmicecon, psat_2024_apmicecon) as ap_mic_econ,
+    coalesce(psat89_2025_apmusic, psat_2024_apmusic) as ap_music,
+    coalesce(psat89_2025_apphysi, psat_2024_apphysi) as ap_phys_i,
+    coalesce(psat89_2025_apphysii, psat_2024_apphysii) as ap_phys_ii,
+    coalesce(psat89_2025_apphysmag, psat_2024_apphysmag) as ap_phys_mag,
+    coalesce(psat89_2025_apphysmech, psat_2024_apphysmech) as ap_phys_mech,
+    coalesce(psat89_2025_appsych, psat_2024_appsych) as ap_psych,
+    coalesce(psat89_2025_apseminar, psat_2024_apseminar) as ap_seminar,
+    coalesce(psat89_2025_apstat, psat_2024_apstat) as ap_stat,
+    coalesce(psat89_2025_apusgovpol, psat_2024_apusgovpol) as ap_us_gov_pol,
+    coalesce(psat89_2025_apushist, psat_2024_apushist) as ap_us_hist,
+    coalesce(psat89_2025_apworldhist, psat_2024_apworldhist) as ap_world_hist,
 
     {{
         date_to_fiscal_year(
@@ -212,6 +206,3 @@ select
         )
     }} as academic_year,
 from combined_years
-
-*/
-    
