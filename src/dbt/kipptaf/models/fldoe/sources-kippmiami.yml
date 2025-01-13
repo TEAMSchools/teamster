@@ -2,6 +2,10 @@ version: 2
 
 sources:
   - name: kippmiami_fldoe
+    schema: |
+      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kippmiami_fldoe
+      {%- else -%}kippmiami_fldoe
+      {%- endif %}
     tables:
       - name: stg_fldoe__fast
         meta:
@@ -51,3 +55,11 @@ sources:
               - kippmiami
               - fldoe
               - int_fldoe__all_assessments
+      - name: int_fldoe__fte_pivot
+        meta:
+          dagster:
+            group: fldoe
+            asset_key:
+              - kippmiami
+              - fldoe
+              - int_fldoe__fte_pivot
