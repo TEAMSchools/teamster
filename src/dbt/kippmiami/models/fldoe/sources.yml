@@ -2,7 +2,10 @@ version: 2
 
 sources:
   - name: fldoe
-    schema: kippmiami_fldoe
+    schema: |
+      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kippmiami_fldoe
+      {%- else -%}kippmiami_fldoe
+      {%- endif %}
     tables:
       - name: src_fldoe__fast
         meta:

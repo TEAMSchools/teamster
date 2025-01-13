@@ -2,7 +2,7 @@ with
     source as (
         {{
             dbt_utils.union_relations(
-                relations=[source("kippmiami_fldoe", model.name)]
+                relations=[source("kippmiami_fldoe", "int_fldoe__all_assessments")]
             )
         }}
     ),

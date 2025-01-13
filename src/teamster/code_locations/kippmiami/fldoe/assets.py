@@ -58,7 +58,7 @@ eoc = build_sftp_file_asset(
     partitions_def=MultiPartitionsDefinition(
         {
             "school_year_term": StaticPartitionsDefinition(
-                [str(year) for year in range(2023, CURRENT_FISCAL_YEAR.fiscal_year + 1)]
+                [str(year) for year in range(2023, CURRENT_FISCAL_YEAR.fiscal_year)]
             ),
             "grade_level_subject": StaticPartitionsDefinition(
                 ["Civics", "B.E.S.T.Algebra1"]
@@ -78,7 +78,7 @@ science = build_sftp_file_asset(
     partitions_def=MultiPartitionsDefinition(
         {
             "school_year_term": StaticPartitionsDefinition(
-                [str(year) for year in range(2023, CURRENT_FISCAL_YEAR.fiscal_year + 1)]
+                [str(year) for year in range(2023, CURRENT_FISCAL_YEAR.fiscal_year)]
             ),
             "grade_level_subject": StaticPartitionsDefinition(["5", "8"]),
         }
