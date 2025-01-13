@@ -1,13 +1,40 @@
-with itr_response as (
-    select 
-    employee_number,
-answer,
-    from {{ ref('rpt_tableau__survey_responses') }} as sr
-    where survey_code in ('ITR','ITR-L')
-    and question_shortname = 'plans'
-    --and rn = 1
-)
+with
+    itr_response as (
+        select
+            employee_number,
+            answer,
+            academic_year,
+            max(date_submitted) as last_date_submitted,
 
+            case
+                when academic_year <> {{ var("current_academic_year") }}
+                then 'No Response'
+                when
+                    answer
+                    = 'I am committed to my school community/team and, if offered a renewal contract, definitely returning; the Recruitment Team should NOT hire for my position.'
+                then 'Returning'
+                when
+                    answer
+                    = 'I am committed to KIPP NJ|Miami, but interested in an opportunity at another other school and/or in a different role. I will speak to my manager and/or School Leader about my interests.'
+                then 'Interested in Transfer'
+                when
+                    answer
+                    = 'I am not returning but want to ensure my kids have an outstanding TEAMmate next year; the Recruitment Team should definitely hire for my position.'
+                then 'Not Returning'
+                when
+                    answer
+                    = 'I am not sure if I am returning and want to follow up with my manager and/or School Leader.'
+                then 'Not Sure'
+                else answer
+            end as answer_short,
+        from {{ ref("rpt_tableau__survey_responses") }} as sr
+        where
+            survey_code = 'ITR'
+            and question_shortname = 'itr_plans'
+        group by employee_number, answer, academic_year
+    )
+
+    
 
 select
     sr.employee_number,
@@ -27,7 +54,7 @@ select
     sr.reports_to_sam_account_name as tableau_manager_username,
 
     /* future feeds from other data sources*/
-    null as itr_response,
+    ir.answer_short as itr_response,
     null as certification_renewal_status,
     null as last_performance_management_score,
     null as smart_recruiter_id,
@@ -91,7 +118,9 @@ select
             contains_substr(sr.job_title, 'Director')
             and sr.home_department_name = 'Special Education'
         then 3
-        when sr.home_department_name in ('Leadership Development', 'Human Resources','Finance and Purchasing')
+        when
+            sr.home_department_name
+            in ('Leadership Development', 'Human Resources', 'Finance and Purchasing')
         then 3
         /* see your state/region, edit nothing */
         when
@@ -120,6 +149,7 @@ left join
     on sr.powerschool_teacher_number = tgl.teachernumber
     and tgl.academic_year = {{ var("current_academic_year") }}
     and tgl.grade_level_rank = 1
+left join itr_response as ir on sr.employee_number = ir.employee_number
 
 union all
 
