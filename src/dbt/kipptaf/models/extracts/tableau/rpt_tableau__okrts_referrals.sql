@@ -184,6 +184,8 @@ select
     cf.restraint_duration,
     cf.restraint_type,
     cf.ssds_incident_id,
+    cf.referral_to_law_enforcement,
+    cf.arrested_for_school_related_activity,
 
     st.suspension_type,
 
