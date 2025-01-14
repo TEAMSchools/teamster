@@ -5,7 +5,7 @@ with
             answer,
             academic_year,
             max(date_submitted) as last_date_submitted,
-
+            -- trunk-ignore-begin(sqlfluff/LT05)
             case
                 when academic_year <> {{ var("current_academic_year") }}
                 then 'No Response'
@@ -27,7 +27,8 @@ with
                 then 'Not Sure'
                 else answer
             end as answer_short,
-        from {{ ref("rpt_tableau__survey_responses") }} as sr
+        -- trunk-ignore-end(sqlfluff/LT05)
+        from {{ ref("rpt_tableau__survey_responses") }}
         where survey_code = 'ITR' and question_shortname = 'itr_plans'
         group by employee_number, answer, academic_year
     ),
