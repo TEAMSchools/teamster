@@ -4,13 +4,11 @@ sources:
   - name: edplan
     schema: "{{ var('edplan_schema', env_var('DBT_DEV_EDPLAN_SCHEMA', 'edplan')) }}"
     database: "{{ var('edplan_database', target.database) }}"
-    tags:
-      - stage_external_sources
     tables:
       - name: src_edplan__njsmart_powerschool
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - edplan
               - njsmart_powerschool

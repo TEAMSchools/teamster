@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: kippadb
     schema: kipptaf_kippadb
-    tags:
-      - stage_external_sources
     tables:
       - name: src_kippadb__nsc_crosswalk
         external:
@@ -16,7 +14,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - kippadb
               - nsc_crosswalk

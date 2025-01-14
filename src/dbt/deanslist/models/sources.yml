@@ -4,13 +4,11 @@ sources:
   - name: deanslist
     schema: "{{ var('deanslist_schema', env_var('DBT_DEV_DEANSLIST_SCHEMA', 'deanslist')) }}"
     database: "{{ var('deanslist_database', target.database) }}"
-    tags:
-      - stage_external_sources
     tables:
       - name: src_deanslist__behavior
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - behavior
@@ -27,7 +25,7 @@ sources:
       - name: src_deanslist__comm_log
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - comm_log
@@ -44,7 +42,7 @@ sources:
       - name: src_deanslist__followups
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - followups
@@ -61,7 +59,7 @@ sources:
       - name: src_deanslist__homework
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - homework
@@ -78,7 +76,7 @@ sources:
       - name: src_deanslist__incidents
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - incidents
@@ -95,7 +93,7 @@ sources:
       - name: src_deanslist__lists
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - lists
@@ -112,7 +110,7 @@ sources:
       - name: src_deanslist__roster_assignments
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - roster_assignments
@@ -129,7 +127,7 @@ sources:
       - name: src_deanslist__rosters
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - rosters
@@ -146,7 +144,7 @@ sources:
       - name: src_deanslist__terms
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - terms
@@ -163,7 +161,7 @@ sources:
       - name: src_deanslist__users
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - users
@@ -180,7 +178,7 @@ sources:
       - name: src_deanslist__students
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - students
@@ -197,7 +195,7 @@ sources:
       - name: src_deanslist__dff_stats
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - deanslist
               - dff_stats
