@@ -28,13 +28,21 @@ with
                 else answer
             end as answer_short,
         from {{ ref("rpt_tableau__survey_responses") }} as sr
-        where
-            survey_code = 'ITR'
-            and question_shortname = 'itr_plans'
+        where survey_code = 'ITR' and question_shortname = 'itr_plans'
         group by employee_number, answer, academic_year
-    )
+    ),
 
-    
+    pm_tier as (
+        select
+            employee_number,
+            overall_tier,
+            max(eval_date) as eval_date
+
+        from {{ ref("int_performance_management__observations") }}
+        where observation_type_abbreviation = 'PMS'
+        group by employee_number, overall_tier
+
+    )
 
 select
     sr.employee_number,
@@ -56,7 +64,7 @@ select
     /* future feeds from other data sources*/
     ir.answer_short as itr_response,
     null as certification_renewal_status,
-    null as last_performance_management_score,
+    pm.overall_tier as last_performance_management_score,
     null as smart_recruiter_id,
 
     coalesce(
@@ -150,6 +158,7 @@ left join
     and tgl.academic_year = {{ var("current_academic_year") }}
     and tgl.grade_level_rank = 1
 left join itr_response as ir on sr.employee_number = ir.employee_number
+left join pm_tier as pm on sr.employee_number = pm.employee_number
 
 union all
 
