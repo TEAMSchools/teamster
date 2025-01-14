@@ -19,8 +19,8 @@ with
             nc.mclass_measure_standard_level as performance_level,
 
             m.description,
-            m.description_translation,
-            m.measure_standard_translation,
+            m.description_translation as description_value_translated,
+            m.measure_standard_translation as measure_standard_value_translated,
 
             'KIPP NJ/MIAMI' as district,
 
@@ -71,8 +71,8 @@ select
     literacy_key_concept,
     `description`,
     performance_level,
-    measure_standard_translation,
-    description_translation,
+    measure_standard_value_translated,
+    description_value_translated,
 
     'Not applicable' as growth_level,
     'Q1' as `quarter`,
@@ -90,8 +90,8 @@ select
     literacy_key_concept,
     `description`,
     performance_level,
-    measure_standard_translation,
-    description_translation,
+    measure_standard_value_translated,
+    description_value_translated,
     mclass_measure_semester_growth as growth_level,
 
     'Q2' as `quarter`,
@@ -110,8 +110,8 @@ select
     literacy_key_concept,
     `description`,
     performance_level,
-    measure_standard_translation,
-    description_translation,
+    measure_standard_value_translated,
+    description_value_translated,
     mclass_measure_semester_growth as growth_level,
 
     'Q3' as `quarter`,
@@ -129,8 +129,8 @@ select
     literacy_key_concept,
     `description`,
     performance_level,
-    measure_standard_translation,
-    description_translation,
+    measure_standard_value_translated,
+    description_value_translated,
     mclass_measure_year_growth as growth_level,
 
     'Q4' as `quarter`,
