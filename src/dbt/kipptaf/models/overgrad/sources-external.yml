@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: overgrad
     schema: kipptaf_overgrad
-    tags:
-      - stage_external_sources
     tables:
       - name: src_overgrad__universities
         external:

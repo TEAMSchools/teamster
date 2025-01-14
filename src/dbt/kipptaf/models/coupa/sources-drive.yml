@@ -2,8 +2,6 @@ version: 2
 
 sources:
   - name: coupa
-    tags:
-      - stage_external_sources
     tables:
       - name: src_coupa__address_name_crosswalk
         external:

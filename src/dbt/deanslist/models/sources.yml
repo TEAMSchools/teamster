@@ -4,8 +4,6 @@ sources:
   - name: deanslist
     schema: "{{ var('deanslist_schema', env_var('DBT_DEV_DEANSLIST_SCHEMA', 'deanslist')) }}"
     database: "{{ var('deanslist_database', target.database) }}"
-    tags:
-      - stage_external_sources
     tables:
       - name: src_deanslist__behavior
         meta:
