@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: ldap
     schema: kipptaf_ldap
-    tags:
-      - stage_external_sources
     tables:
       - name: src_ldap__user_person
         external:
@@ -14,7 +12,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - ldap
               - user_person
@@ -26,7 +24,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - ldap
               - group

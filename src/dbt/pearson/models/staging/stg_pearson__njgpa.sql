@@ -12,7 +12,6 @@ select
     testscorecomplete,
 
     studentwithdisabilities,
-    englishlearnerel,
     hispanicorlatinoethnicity,
     americanindianoralaskanative,
     asian,
@@ -26,6 +25,8 @@ select
     cast(left(assessmentyear, 4) as int) as academic_year,
 
     cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
+
+    coalesce(multilinguallearnerml, englishlearnerel) as englishlearnerel,
 
     coalesce(
         staffmemberidentifier.long_value,

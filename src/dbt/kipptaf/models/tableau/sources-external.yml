@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: tableau
     schema: kipptaf_tableau
-    tags:
-      - stage_external_sources
     tables:
       - name: src_tableau__workbook
         config:
@@ -17,7 +15,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - tableau
               - workbook
@@ -29,7 +27,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - tableau
               - view_count_per_view

@@ -3,7 +3,7 @@ from teamster.libraries.google.sheets.assets import build_google_sheets_asset_sp
 
 asset_specs = [
     build_google_sheets_asset_spec(
-        asset_key=source["meta"]["dagster"]["parent_asset_key_path"],
+        asset_key=source["meta"]["dagster"]["asset_key"],
         uri=source["external"]["options"]["uris"][0],
         range_name=source["external"]["options"]["sheet_range"],
     )
