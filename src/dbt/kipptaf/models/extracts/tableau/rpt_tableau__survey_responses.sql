@@ -42,12 +42,10 @@ from {{ ref("int_surveys__survey_responses") }} as sr
 left join
     {{ ref("base_people__staff_roster_history") }} as eh
     on sr.respondent_email = eh.google_email
-    and sr.date_submitted 
+    and sr.date_submitted
     between eh.work_assignment_start_timestamp and eh.work_assignment_end_timestamp
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on eh.powerschool_teacher_number = tgl.teachernumber
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
-where eh.employee_number is not null
-and survey_code = 'ITR'
