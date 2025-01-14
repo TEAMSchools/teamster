@@ -2,6 +2,7 @@ import google.auth
 from dagster import ConfigurableResource, InitResourceContext
 from googleapiclient import discovery
 from pydantic import PrivateAttr
+from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 
 class GoogleFormsResource(ConfigurableResource):
@@ -31,16 +32,18 @@ class GoogleFormsResource(ConfigurableResource):
         # trunk-ignore(pyright/reportAttributeAccessIssue)
         return self._resource.get(formId=form_id).execute()
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential_jitter())
+    def _execute_list_responses(self, **kwargs) -> dict:
+        # trunk-ignore(pyright/reportAttributeAccessIssue)
+        return self._resource.responses().list(**kwargs).execute()
+
     def list_responses(self, form_id: str, **kwargs):
         page_token = None
         reponses = []
 
         while True:
-            data: dict = (
-                # trunk-ignore(pyright/reportAttributeAccessIssue)
-                self._resource.responses()
-                .list(formId=form_id, pageToken=page_token, **kwargs)
-                .execute()
+            data = self._execute_list_responses(
+                formId=form_id, pageToken=page_token, **kwargs
             )
 
             reponses.extend(data.get("responses", []))
