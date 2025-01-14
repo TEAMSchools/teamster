@@ -148,7 +148,7 @@ with
         select
             safe_cast(local_student_id as string) as contact,
 
-            'PSAT NMSQT' as scope,
+            test_name as scope,
 
             test_date,
             score as scale_score,
@@ -164,21 +164,16 @@ with
                 score_type
                 when 'psat_total_score'
                 then 'Composite'
-                when 'psat_reading_test_score'
-                then 'Reading'
-                when 'psat_math_test_score'
-                then 'Math Test'
                 when 'psat_math_section_score'
                 then 'Math'
                 when 'psat_eb_read_write_section_score'
-                then 'Writing and Language Test'
+                then 'EBRW'
             end as subject_area,
             case
-                when
-                    score_type
-                    in ('psat_eb_read_write_section_score', 'psat_reading_test_score')
+                score_type
+                when 'psat_eb_read_write_section_score'
                 then 'ENG'
-                when score_type in ('psat_math_test_score', 'psat_math_section_score')
+                when 'psat_math_section_score'
                 then 'MATH'
                 else 'NA'
             end as course_discipline,
@@ -190,8 +185,6 @@ with
             score_type in (
                 'psat_eb_read_write_section_score',
                 'psat_math_section_score',
-                'psat_math_test_score',
-                'psat_reading_test_score',
                 'psat_total_score'
             )
             and academic_year = 2024
@@ -335,7 +328,8 @@ left join
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official' and e.expected_scope = 'PSAT10'
+where
+    e.expected_test_type = 'Official' and e.expected_scope in ('PSAT NMSQT', 'PSAT 8/9')
 
 union all
 
