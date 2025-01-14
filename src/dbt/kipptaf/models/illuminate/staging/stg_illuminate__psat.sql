@@ -376,6 +376,8 @@ select
     coalesce(psat_2023_apushist, psat_2024_apushist) as ap_us_hist,
     coalesce(psat_2023_apworldhist, psat_2024_apworldhist) as ap_world_hist,
 
+    'PSAT' as test_name,
+
     {{
         date_to_fiscal_year(
             date_field="test_date", start_month=7, year_source="start"
@@ -491,9 +493,7 @@ select
     null as ap_us_hist,
     ap_world_hist,
 
-    {{
-        date_to_fiscal_year(
-            date_field="test_date", start_month=7, year_source="start"
-        )
-    }} as academic_year,
+    'PSAT89' as test_name,
+
+    academic_year,
 from {{ ref("stg_illuminate__psat89") }}
