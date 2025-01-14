@@ -25,7 +25,7 @@ select
     coalesce(safe_cast(c.`10th_hours` as numeric), 0) as grade_10_hours,
     coalesce(safe_cast(c.`11th_hours` as numeric), 0) as grade_11_hours,
     coalesce(safe_cast(c.`12th_hours` as numeric), 0) as grade_12_hours,
-from {{ ref("int_tableau__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     {{ ref("stg_deanslist__behavior") }} as b
     on co.student_number = b.student_school_id

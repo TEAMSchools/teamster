@@ -45,7 +45,7 @@ with
                 round(safe_divide(s.scorepoints, a.totalpointvalue) * 100, 2),
                 safe_cast(s.actualscoreentered as numeric)
             ) as assign_final_score_percent,
-        from {{ ref("int_tableau__gradebook_audit_roster") }} as ce
+        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }} as ce
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on ce.sections_dcid = a.sectionsdcid
@@ -60,34 +60,6 @@ with
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="s") }}
             and a.assignmentsectionid = s.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
-        where
-            /* exclude courses by school */
-            ce.schoolid_course_number not in (
-                '133570965LOG300',
-                '133570965SEM72250G1',
-                '133570965SEM72250G2',
-                '133570965SEM72250G3',
-                '133570965SEM72250G4',
-                '732514GYM08035G1',
-                '732514GYM08036G2',
-                '732514GYM08037G3',
-                '732514GYM08038G4',
-                '73252SEM72250G1',
-                '73252SEM72250G2',
-                '73252SEM72250G3',
-                '73252SEM72250G4'
-            )
-            /* exclude F & S categories for iReady courses */
-            and ce.course_number_assignment_category_code not in (
-                'SEM72005G1F',
-                'SEM72005G2F',
-                'SEM72005G3F',
-                'SEM72005G4F',
-                'SEM72005G1S',
-                'SEM72005G2S',
-                'SEM72005G3S',
-                'SEM72005G4S'
-            )
     )
 
 select

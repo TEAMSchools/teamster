@@ -48,7 +48,7 @@ with
                 true,
                 false
             ) as year_grade_filter,
-        from {{ ref("int_tableau__student_enrollments") }} as e
+        from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
             {{ ref("stg_assessments__assessment_expectations") }} as a
             on e.academic_year = a.academic_year
@@ -132,6 +132,7 @@ select
     s.expected_mclass_measure_name_code,
     s.expected_mclass_measure_name,
     s.expected_mclass_measure_standard,
+
     null as goal,
     null as admin_benchmark,
 
@@ -166,7 +167,7 @@ select
     t.end_date,
 
     f.nj_student_tier,
-    f.tutoring_nj,
+    f.is_tutoring as tutoring_nj,
 
     coalesce(a.assessment_type, 'Benchmark') as assessment_type,
 
@@ -179,7 +180,6 @@ select
     if(
         s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
     ) as expected_grade_level,
-
 from students as s
 left join
     schedules as m
@@ -200,7 +200,7 @@ left join
     and s.region = t.region
     and t.type = 'LIT'
 left join
-    {{ ref("int_extracts__student_filters") }} as f
+    {{ ref("int_extracts__student_enrollments_subjects") }} as f
     on s.academic_year = f.academic_year
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
@@ -215,7 +215,7 @@ select
     academic_year_display,
     district,
     region,
-    state,
+    `state`,
     schoolid,
     school,
     studentid,
@@ -241,7 +241,6 @@ select
     expected_mclass_measure_standard,
     goal,
     admin_benchmark,
-
     schedule_student_number,
     schedule_student_grade_level,
     teacherid,
@@ -251,7 +250,6 @@ select
     section_number,
     scheduled,
     hos,
-
     mclass_student_number,
     mclass_assessment_grade,
     mclass_period,
@@ -268,20 +266,14 @@ select
     boy_composite,
     moy_composite,
     eoy_composite,
-
-    start_date,
+    `start_date`,
     end_date,
-
     nj_student_tier,
     tutoring_nj,
-
     assessment_type,
-
     met_standard_goal,
     met_overall_goal,
     met_bm_goal,
-
     expected_round,
     expected_grade_level,
-
 from {{ ref("rpt_tableau__dibels_pm_dashboard") }}

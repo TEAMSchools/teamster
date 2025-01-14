@@ -8,9 +8,8 @@ with
             sch.school_level,
 
             t.yearid,
+            t.academic_year,
             t.abbreviation as `quarter`,
-
-            t.yearid + 1990 as academic_year,
 
             if(t.abbreviation in ('Q1', 'Q2'), 'S1', 'S2') as semester,
 
@@ -48,6 +47,7 @@ with
             cd.week_end_date,
             sch.school_level,
             t.yearid,
+            t.academic_year,
             t.abbreviation
     )
 

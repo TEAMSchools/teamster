@@ -79,7 +79,7 @@ with
                 then 'Oral Reading Fluency'
                 else a.measure_level_code
             end as expected_mclass_measure_name,
-        from {{ ref("int_tableau__student_enrollments") }} as e
+        from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
             eligible_students as s
             on e.student_number = s.mclass_student_number
@@ -285,7 +285,7 @@ select
     a.eoy_composite,
 
     f.nj_student_tier,
-    f.tutoring_nj,
+    f.is_tutoring as tutoring_nj,
 
     coalesce(a.assessment_type, 'PM') as assessment_type,
 
@@ -389,7 +389,7 @@ left join
     and s.expected_test = bm_mod.expected_test
     and s.expected_round = bm_mod.expected_round
 left join
-    {{ ref("int_extracts__student_filters") }} as f
+    {{ ref("int_extracts__student_enrollments_subjects") }} as f
     on s.academic_year = f.academic_year
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}

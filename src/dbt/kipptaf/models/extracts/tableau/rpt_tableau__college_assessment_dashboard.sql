@@ -15,7 +15,7 @@ with
             e.lep_status,
             e.gifted_and_talented,
             e.advisory,
-            e.contact_id,
+            e.salesforce_id as contact_id,
             e.ktc_cohort,
             e.contact_owner_name,
             e.college_match_gpa,
@@ -30,8 +30,7 @@ with
             t.subject_area as expected_subject_area,
 
             if(e.iep_status = 'No IEP', 0, 1) as sped,
-
-        from {{ ref("int_tableau__student_enrollments") }} as e
+        from {{ ref("int_extracts__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.student_number = s.students_student_number
@@ -59,28 +58,22 @@ with
             e._dbt_source_relation,
             e.academic_year,
             e.student_number,
-            e.contact_id,
+            e.salesforce_id as contact_id,
+            e.is_exempt_state_testing,
 
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
             s.courses_credittype,
-
-            f.is_exempt_state_testing,
-
-        from {{ ref("int_tableau__student_enrollments") }} as e
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.student_number = s.students_student_number
             and e.academic_year = s.cc_academic_year
-            and s.courses_credittype in ('ENG', 'MATH')
+            and e.powerschool_credittype = s.courses_credittype
             and s.rn_course_number_year = 1
+            and s.courses_credittype in ('ENG', 'MATH')
             and not s.is_dropped_section
-        left join
-            {{ ref("int_extracts__student_filters") }} as f
-            on s.cc_academic_year = f.academic_year
-            and s.students_student_number = f.student_number
-            and s.courses_credittype = f.powerschool_credittype
         where e.school_level = 'HS'
     ),
 
