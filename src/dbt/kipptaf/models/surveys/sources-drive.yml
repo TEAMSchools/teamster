@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: surveys
     schema: kipptaf_surveys
-    tags:
-      - stage_external_sources
     tables:
       - name: src_surveys__scd_question_crosswalk
         external:

@@ -1,3 +1,47 @@
+with
+    itr_response as (
+        select
+            employee_number,
+            answer,
+            academic_year,
+            max(date_submitted) as last_date_submitted,
+            -- trunk-ignore-begin(sqlfluff/LT05)
+            case
+                when academic_year <> {{ var("current_academic_year") }}
+                then 'No Response'
+                when
+                    answer
+                    = 'I am committed to my school community/team and, if offered a renewal contract, definitely returning; the Recruitment Team should NOT hire for my position.'
+                then 'Returning'
+                when
+                    answer
+                    = 'I am committed to KIPP NJ|Miami, but interested in an opportunity at another other school and/or in a different role. I will speak to my manager and/or School Leader about my interests.'
+                then 'Interested in Transfer'
+                when
+                    answer
+                    = 'I am not returning but want to ensure my kids have an outstanding TEAMmate next year; the Recruitment Team should definitely hire for my position.'
+                then 'Not Returning'
+                when
+                    answer
+                    = 'I am not sure if I am returning and want to follow up with my manager and/or School Leader.'
+                then 'Not Sure'
+                else answer
+            end as answer_short,
+        -- trunk-ignore-end(sqlfluff/LT05)
+        from {{ ref("rpt_tableau__survey_responses") }}
+        where survey_code = 'ITR' and question_shortname = 'itr_plans'
+        group by employee_number, answer, academic_year
+    ),
+
+    pm_tier as (
+        select employee_number, overall_tier, max(eval_date) as eval_date,
+
+        from {{ ref("int_performance_management__observations") }}
+        where observation_type_abbreviation = 'PMS'
+        group by employee_number, overall_tier
+
+    )
+
 select
     sr.employee_number,
     sr.assignment_status,
@@ -16,9 +60,9 @@ select
     sr.reports_to_sam_account_name as tableau_manager_username,
 
     /* future feeds from other data sources*/
-    null as itr_response,
+    ir.answer_short as itr_response,
     null as certification_renewal_status,
-    null as last_performance_management_score,
+    pm.overall_tier as last_performance_management_score,
     null as smart_recruiter_id,
 
     coalesce(
@@ -53,11 +97,7 @@ select
             sr.home_department_name = 'Recruitment'
             and contains_substr(sr.job_title, 'Director')
         then 7
-        /* see your state/region, edit everything */
-        when
-            contains_substr(sr.job_title, 'Director')
-            and sr.home_department_name = 'School Support'
-        then 6
+        /* see your state/region, edit everything, (intentionally blank below)*/
         /* see everything, edit teammate and seat status fields (recruiters)*/
         when
             sr.home_department_name = 'Recruitment'
@@ -84,7 +124,9 @@ select
             contains_substr(sr.job_title, 'Director')
             and sr.home_department_name = 'Special Education'
         then 3
-        when sr.home_department_name in ('Leadership Development', 'Human Resources')
+        when
+            sr.home_department_name
+            in ('Leadership Development', 'Human Resources', 'Finance and Purchasing')
         then 3
         /* see your state/region, edit nothing */
         when
@@ -113,6 +155,8 @@ left join
     on sr.powerschool_teacher_number = tgl.teachernumber
     and tgl.academic_year = {{ var("current_academic_year") }}
     and tgl.grade_level_rank = 1
+left join itr_response as ir on sr.employee_number = ir.employee_number
+left join pm_tier as pm on sr.employee_number = pm.employee_number
 
 union all
 

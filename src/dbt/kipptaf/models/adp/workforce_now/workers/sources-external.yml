@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: adp_workforce_now
     schema: kipptaf_adp_workforce_now
-    tags:
-      - stage_external_sources
     tables:
       - name: src_adp_workforce_now__workers
         external:
