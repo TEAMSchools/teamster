@@ -5,8 +5,6 @@ sources:
     schema: kipptaf_alchemer
     config:
       enabled: false
-    tags:
-      - stage_external_sources
     tables:
       - name: src_alchemer__survey
         external:
@@ -17,7 +15,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - alchemer
               - survey
@@ -31,7 +29,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - alchemer
               - survey_campaign
@@ -45,7 +43,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - alchemer
               - survey_question
@@ -59,7 +57,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - alchemer
               - survey_response
@@ -73,7 +71,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - alchemer
               - survey_response_disqualified

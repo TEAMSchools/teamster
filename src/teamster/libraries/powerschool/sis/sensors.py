@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import groupby
 from operator import itemgetter
 from zoneinfo import ZoneInfo
@@ -63,7 +63,7 @@ def build_powerschool_asset_sensor(
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
     ) -> SensorResult | SkipReason:
-        now_timestamp = datetime.now(ZoneInfo("UTC")).timestamp()
+        now_timestamp = datetime.now(timezone.utc).timestamp()
 
         run_requests = []
         run_request_kwargs = []

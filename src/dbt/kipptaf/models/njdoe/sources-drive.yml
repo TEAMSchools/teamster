@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: njdoe
     schema: kipptaf_njdoe
-    tags:
-      - stage_external_sources
     tables:
       - name: src_njdoe__parcc
         external:
@@ -65,7 +63,7 @@ sources:
             data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - njdoe
               - parcc
