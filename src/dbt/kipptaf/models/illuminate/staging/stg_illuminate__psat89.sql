@@ -114,7 +114,6 @@ select
     birth_date,
 
     latest_psat_access_code,
-    selection_index,
 
     hs_student,
     ebrw_ccr_benchmark,
@@ -157,6 +156,12 @@ select
     ap_seminar,
     ap_world_hist,
 
+    -- note for charlie: this safe_cast is here because the regular psat tables have
+    -- selection_index as integer, but the psat89 have it as string. i didnt wanna
+    -- mess with that part of the data model, but if you prefer to align the field
+    -- types elsewhere, im good
+    safe_cast(selection_index as numeric) as selection_index,
+
     safe_cast(total_score as numeric) as total_score,
     safe_cast(math_test_score as numeric) as math_test_score,
     safe_cast(history_cross_test_score as numeric) as history_cross_test_score,
@@ -172,10 +177,10 @@ select
     safe_cast(heart_algebra_subscore as numeric) as heart_algebra_subscore,
     safe_cast(prob_solve_data_subscore as numeric) as prob_solve_data_subscore,
     safe_cast(relevant_words_subscore as numeric) as relevant_words_subscore,
-/*
+
     {{
         date_to_fiscal_year(
             date_field="test_date", start_month=7, year_source="start"
         )
-    }} as academic_year,*/
+    }} as academic_year,
 from combined_years
