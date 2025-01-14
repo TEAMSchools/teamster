@@ -27,8 +27,10 @@ with
             end as answer_short,
         -- trunk-ignore-end(sqlfluff/LT05)
         from {{ ref("rpt_tableau__survey_responses") }}
-        where survey_code = 'ITR' and question_shortname = 'itr_plans'
-        and academic_year = {{ var("current_academic_year") }}
+        where
+            survey_code = 'ITR'
+            and question_shortname = 'itr_plans'
+            and academic_year = {{ var("current_academic_year") }}
         group by employee_number, answer, academic_year
     ),
 
