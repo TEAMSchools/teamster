@@ -1,7 +1,7 @@
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from pydantic import PrivateAttr
 from requests import Response, Session, exceptions
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 
 class AdpWorkforceManagerResource(ConfigurableResource):
@@ -57,9 +57,7 @@ class AdpWorkforceManagerResource(ConfigurableResource):
             "Bearer " + response_data["access_token"]
         )
 
-    @retry(
-        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
-    )
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential_jitter())
     def _request(self, method, url, **kwargs):
         response = Response()
 
