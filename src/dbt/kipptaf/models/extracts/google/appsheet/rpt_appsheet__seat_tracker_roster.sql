@@ -33,10 +33,7 @@ with
     ),
 
     pm_tier as (
-        select
-            employee_number,
-            overall_tier,
-            max(eval_date) as eval_date
+        select employee_number, overall_tier, max(eval_date) as eval_date
 
         from {{ ref("int_performance_management__observations") }}
         where observation_type_abbreviation = 'PMS'
