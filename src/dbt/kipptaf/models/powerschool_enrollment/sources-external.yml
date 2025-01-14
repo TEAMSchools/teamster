@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: powerschool_enrollment
     schema: kipptaf_powerschool_enrollment
-    tags:
-      - stage_external_sources
     tables:
       - name: src_powerschool_enrollment__submission_records
         external:
@@ -17,7 +15,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - powerschool
               - enrollment

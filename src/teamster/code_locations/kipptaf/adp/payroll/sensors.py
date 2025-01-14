@@ -1,6 +1,5 @@
 import re
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from datetime import datetime, timezone
 
 from dagster import (
     AddDynamicPartitionsRequest,
@@ -31,9 +30,6 @@ from teamster.libraries.ssh.resources import SSHResource
         selection=[
             general_ledger_file.key,
             AssetKey(
-                [CODE_LOCATION, "adp_payroll", "src_adp_payroll__general_ledger_file"]
-            ),
-            AssetKey(
                 [CODE_LOCATION, "adp_payroll", "stg_adp_payroll__general_ledger_file"]
             ),
             AssetKey(
@@ -53,7 +49,7 @@ from teamster.libraries.ssh.resources import SSHResource
 def adp_payroll_sftp_sensor(
     context: SensorEvaluationContext, ssh_couchdrop: SSHResource
 ):
-    now = datetime.now(ZoneInfo("UTC"))
+    now = datetime.now(timezone.utc)
     run_requests = []
     dynamic_partitions_requests = []
 
@@ -86,8 +82,8 @@ def adp_payroll_sftp_sensor(
     context.log.info(asset_identifier)
     pattern = re.compile(
         pattern=(
-            rf"{metadata_by_key["remote_dir_regex"]}/"
-            rf"{metadata_by_key["remote_file_regex"]}"
+            rf"{metadata_by_key['remote_dir_regex']}/"
+            rf"{metadata_by_key['remote_file_regex']}"
         )
     )
 

@@ -1,8 +1,7 @@
 import hashlib
 import pathlib
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BufferedReader
-from zoneinfo import ZoneInfo
 
 from dagster import (
     AssetExecutionContext,
@@ -72,7 +71,7 @@ def build_powerschool_table_asset(
         db_powerschool: PowerSchoolODBCResource,
     ):
         hour_timestamp = (
-            datetime.now(ZoneInfo("UTC"))
+            datetime.now(timezone.utc)
             .replace(minute=0, second=0, microsecond=0)
             .timestamp()
         )

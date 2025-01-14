@@ -4,13 +4,11 @@ sources:
   - name: powerschool
     schema: "{{ var('powerschool_schema', env_var('DBT_DEV_POWERSCHOOL_SCHEMA', 'powerschool')) }}"
     database: "{{ var('powerschool_database', target.database) }}"
-    tags:
-      - stage_external_sources
     tables:
       - name: src_powerschool__assignmentscore
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - assignmentscore
@@ -27,7 +25,7 @@ sources:
       - name: src_powerschool__attendance
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - attendance
@@ -44,7 +42,7 @@ sources:
       - name: src_powerschool__pgfinalgrades
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - pgfinalgrades
@@ -61,7 +59,7 @@ sources:
       - name: src_powerschool__storedgrades
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - storedgrades
@@ -78,7 +76,7 @@ sources:
       - name: src_powerschool__assignmentcategoryassoc
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - assignmentcategoryassoc
@@ -95,7 +93,7 @@ sources:
       - name: src_powerschool__assignmentsection
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - assignmentsection
@@ -112,7 +110,7 @@ sources:
       - name: src_powerschool__cc
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - cc
@@ -126,7 +124,7 @@ sources:
       - name: src_powerschool__codeset
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - codeset
@@ -140,7 +138,7 @@ sources:
       - name: src_powerschool__courses
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - courses
@@ -154,7 +152,7 @@ sources:
       - name: src_powerschool__districtteachercategory
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - districtteachercategory
@@ -168,7 +166,7 @@ sources:
       - name: src_powerschool__emailaddress
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - emailaddress
@@ -182,7 +180,7 @@ sources:
       - name: src_powerschool__gradecalcformulaweight
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gradecalcformulaweight
@@ -196,7 +194,7 @@ sources:
       - name: src_powerschool__gradecalcschoolassoc
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gradecalcschoolassoc
@@ -210,7 +208,7 @@ sources:
       - name: src_powerschool__gradecalculationtype
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gradecalculationtype
@@ -224,7 +222,7 @@ sources:
       - name: src_powerschool__gradeformulaset
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gradeformulaset
@@ -238,7 +236,7 @@ sources:
       - name: src_powerschool__gradescaleitem
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gradescaleitem
@@ -252,7 +250,7 @@ sources:
       - name: src_powerschool__gradeschoolconfig
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gradeschoolconfig
@@ -266,7 +264,7 @@ sources:
       - name: src_powerschool__gradeschoolformulaassoc
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gradeschoolformulaassoc
@@ -280,7 +278,7 @@ sources:
       - name: src_powerschool__gradesectionconfig
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gradesectionconfig
@@ -294,7 +292,7 @@ sources:
       - name: src_powerschool__originalcontactmap
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - originalcontactmap
@@ -308,7 +306,7 @@ sources:
       - name: src_powerschool__person
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - person
@@ -322,7 +320,7 @@ sources:
       - name: src_powerschool__personaddress
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - personaddress
@@ -336,7 +334,7 @@ sources:
       - name: src_powerschool__personaddressassoc
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - personaddressassoc
@@ -350,7 +348,7 @@ sources:
       - name: src_powerschool__personemailaddressassoc
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - personemailaddressassoc
@@ -364,7 +362,7 @@ sources:
       - name: src_powerschool__personphonenumberassoc
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - personphonenumberassoc
@@ -378,7 +376,7 @@ sources:
       - name: src_powerschool__phonenumber
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - phonenumber
@@ -392,7 +390,7 @@ sources:
       - name: src_powerschool__prefs
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - prefs
@@ -406,7 +404,7 @@ sources:
       - name: src_powerschool__roledef
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - roledef
@@ -420,7 +418,7 @@ sources:
       - name: src_powerschool__s_nj_crs_x
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - s_nj_crs_x
@@ -434,7 +432,7 @@ sources:
       - name: src_powerschool__s_nj_ren_x
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - s_nj_ren_x
@@ -448,7 +446,7 @@ sources:
       - name: src_powerschool__s_nj_stu_x
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - s_nj_stu_x
@@ -462,7 +460,7 @@ sources:
       - name: src_powerschool__s_nj_usr_x
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - s_nj_usr_x
@@ -476,7 +474,7 @@ sources:
       - name: src_powerschool__schools
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - schools
@@ -490,7 +488,7 @@ sources:
       - name: src_powerschool__schoolstaff
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - schoolstaff
@@ -504,7 +502,7 @@ sources:
       - name: src_powerschool__sections
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - sections
@@ -518,7 +516,7 @@ sources:
       - name: src_powerschool__sectionteacher
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - sectionteacher
@@ -532,7 +530,7 @@ sources:
       - name: src_powerschool__studentcontactassoc
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - studentcontactassoc
@@ -546,7 +544,7 @@ sources:
       - name: src_powerschool__studentcontactdetail
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - studentcontactdetail
@@ -560,7 +558,7 @@ sources:
       - name: src_powerschool__studentcorefields
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - studentcorefields
@@ -574,7 +572,7 @@ sources:
       - name: src_powerschool__studentrace
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - studentrace
@@ -588,7 +586,7 @@ sources:
       - name: src_powerschool__students
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - students
@@ -602,7 +600,7 @@ sources:
       - name: src_powerschool__teachercategory
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - teachercategory
@@ -616,7 +614,7 @@ sources:
       - name: src_powerschool__termbins
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - termbins
@@ -630,7 +628,7 @@ sources:
       - name: src_powerschool__terms
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - terms
@@ -644,7 +642,7 @@ sources:
       - name: src_powerschool__u_clg_et_stu
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - u_clg_et_stu
@@ -658,7 +656,7 @@ sources:
       - name: src_powerschool__u_clg_et_stu_alt
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - u_clg_et_stu_alt
@@ -672,7 +670,7 @@ sources:
       - name: src_powerschool__u_def_ext_students
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - u_def_ext_students
@@ -686,7 +684,7 @@ sources:
       - name: src_powerschool__u_studentsuserfields
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - u_studentsuserfields
@@ -700,7 +698,7 @@ sources:
       - name: src_powerschool__users
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - users
@@ -715,7 +713,7 @@ sources:
       - name: src_powerschool__attendance_code
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - attendance_code
@@ -729,7 +727,7 @@ sources:
       - name: src_powerschool__attendance_conversion_items
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - attendance_conversion_items
@@ -743,7 +741,7 @@ sources:
       - name: src_powerschool__bell_schedule
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - bell_schedule
@@ -757,7 +755,7 @@ sources:
       - name: src_powerschool__calendar_day
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - calendar_day
@@ -771,7 +769,7 @@ sources:
       - name: src_powerschool__cycle_day
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - cycle_day
@@ -785,7 +783,7 @@ sources:
       - name: src_powerschool__fte
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - fte
@@ -799,7 +797,7 @@ sources:
       - name: src_powerschool__gen
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gen
@@ -813,7 +811,7 @@ sources:
       - name: src_powerschool__log
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - log
@@ -827,7 +825,7 @@ sources:
       - name: src_powerschool__period
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - period
@@ -841,7 +839,7 @@ sources:
       - name: src_powerschool__reenrollments
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - reenrollments
@@ -855,7 +853,7 @@ sources:
       - name: src_powerschool__spenrollments
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - spenrollments
@@ -869,7 +867,7 @@ sources:
       - name: src_powerschool__test
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - test
@@ -883,7 +881,7 @@ sources:
       - name: src_powerschool__testscore
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - testscore
@@ -897,7 +895,7 @@ sources:
       - name: src_powerschool__studenttest
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - studenttest
@@ -911,7 +909,7 @@ sources:
       - name: src_powerschool__studenttestscore
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - studenttestscore
@@ -925,7 +923,7 @@ sources:
       - name: src_powerschool__sced_code_mapping
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - sced_code_mapping
@@ -939,7 +937,7 @@ sources:
       - name: src_powerschool__gpnode
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gpnode
@@ -953,7 +951,7 @@ sources:
       - name: src_powerschool__gpprogresssubject
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gpprogresssubject
@@ -967,7 +965,7 @@ sources:
       - name: src_powerschool__gpprogresssubjectwaived
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gpprogresssubjectwaived
@@ -981,7 +979,7 @@ sources:
       - name: src_powerschool__gpstudentwaiver
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gpstudentwaiver
@@ -995,7 +993,7 @@ sources:
       - name: src_powerschool__gpversion
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gpversion
@@ -1009,7 +1007,7 @@ sources:
       - name: src_powerschool__gradplan
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - gradplan
@@ -1023,7 +1021,7 @@ sources:
       - name: src_powerschool__userscorefields
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - "{{ project_name }}"
               - powerschool
               - userscorefields

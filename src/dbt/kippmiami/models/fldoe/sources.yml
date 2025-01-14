@@ -2,14 +2,15 @@ version: 2
 
 sources:
   - name: fldoe
-    schema: kippmiami_fldoe
-    tags:
-      - stage_external_sources
+    schema: |
+      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kippmiami_fldoe
+      {%- else -%}kippmiami_fldoe
+      {%- endif %}
     tables:
       - name: src_fldoe__fast
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kippmiami
               - fldoe
               - fast
@@ -22,7 +23,7 @@ sources:
       - name: src_fldoe__fsa
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kippmiami
               - fldoe
               - fsa
@@ -35,7 +36,7 @@ sources:
       - name: src_fldoe__science
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kippmiami
               - fldoe
               - science
@@ -48,7 +49,7 @@ sources:
       - name: src_fldoe__eoc
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kippmiami
               - fldoe
               - eoc
@@ -61,7 +62,7 @@ sources:
       - name: src_fldoe__fte
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kippmiami
               - fldoe
               - fte

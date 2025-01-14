@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: assessments
     schema: kipptaf_assessments
-    tags:
-      - stage_external_sources
     tables:
       - name: src_assessments__ap_course_crosswalk
         external:
@@ -25,7 +23,7 @@ sources:
             data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - assessments
               - ap_course_crosswalk
@@ -39,7 +37,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - assessments
               - course_subject_crosswalk
@@ -53,7 +51,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - assessments
               - iready_crosswalk
@@ -67,7 +65,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - assessments
               - academic_goals
@@ -81,7 +79,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - assessments
               - act_scale_score_key
@@ -95,7 +93,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - assessments
               - qbls_power_standards
@@ -114,7 +112,7 @@ sources:
             data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - assessments
               - standard_domains
@@ -128,7 +126,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - assessments
               - state_test_comparison
@@ -142,7 +140,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - assessments
               - assessment_expectations
@@ -158,7 +156,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - assessments
               - college_readiness_expected_tests
@@ -174,7 +172,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - assessments
               - internal_assessment_scopes
