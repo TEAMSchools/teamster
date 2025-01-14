@@ -23,6 +23,8 @@ with
             r.sam_account_name as tableau_username,
 
             f.nj_student_tier,
+
+            concat(m.cc_schoolid, m.cc_course_number) as schoolid_course_number,
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
             {{ ref("base_people__staff_roster") }} as r
@@ -34,19 +36,20 @@ with
             and m.courses_credittype = f.powerschool_credittype
             and {{ union_dataset_join_clause(left_alias="m", right_alias="f") }}
         where
-            m.rn_course_number_year = 1
-            and m.cc_sectionid > 0
+            not m.is_dropped_section
             and m.cc_course_number not in (
-                'LOG100',  -- Lunch
-                'LOG1010',  -- Lunch
-                'LOG11',  -- Lunch
-                'LOG12',  -- Lunch
                 'LOG20',  -- Early Dismissal
-                'LOG22999XL',  -- Lunch
                 'LOG300',  -- Study Hall
-                'LOG9',  -- Lunch
+                'SEM22101G1',  -- Student Government
                 'SEM22106G1',  -- Advisory
-                'SEM22106S1'  -- Not in SY24-25 yet
+                'SEM22106S1',  -- Not in SY24-25 yet
+                /* Lunch */
+                'LOG100',
+                'LOG1010',
+                'LOG11',
+                'LOG12',
+                'LOG22999XL',
+                'LOG9'
             )
     ),
 
@@ -102,11 +105,12 @@ select
     s.school_level,
     s.schoolid,
     s.school,
+    s.students_dcid,
     s.studentid,
     s.student_number,
     s.student_name,
     s.grade_level,
-    s.contact_id as salesforce_id,
+    s.salesforce_id,
     s.ktc_cohort,
     s.enroll_status,
     s.cohort,
@@ -119,7 +123,7 @@ select
     s.year_in_network,
     s.rn_undergrad,
     s.is_out_of_district,
-    s.is_self_contained as is_pathways,
+    s.is_self_contained,
     s.is_retained_year,
     s.is_retained_ever,
     s.lunch_status,
@@ -129,8 +133,9 @@ select
     s.is_504,
     s.is_counseling_services,
     s.is_student_athlete,
-    s.is_tutoring as tutoring_nj,
+    s.is_tutoring,
     s.ada,
+    s.ada_above_or_at_80,
 
     ce.sectionid,
     ce.sections_dcid,
@@ -146,12 +151,12 @@ select
     ce.nj_student_tier,
     ce.is_ap_course,
     ce.tableau_username,
+    ce.schoolid_course_number,
 
     t.quarter,
     t.semester,
     t.quarter_start_date,
     t.quarter_end_date,
-    t.quarter_end_date as cal_quarter_end_date,
     t.is_current_quarter,
     t.is_quarter_end_date_range,
 
@@ -162,9 +167,13 @@ select
     ge.expectation,
     ge.notes,
 
-    w.week_start_monday as audit_start_date,
-    w.week_end_sunday as audit_end_date,
-    w.school_week_start_date_lead as audit_due_date,
+    w.week_start_date,
+    w.week_end_date,
+    w.week_start_monday,
+    w.week_end_sunday,
+    w.school_week_start_date_lead,
+    w.week_number_academic_year,
+    w.week_number_quarter,
 
     qg.term_percent_grade_adjusted as quarter_course_percent_grade_that_matters,
     qg.term_grade_points as quarter_course_grade_points_that_matters,
@@ -174,7 +183,9 @@ select
     cg.percent_grade as category_quarter_percent_grade,
     cg.category_quarter_average_all_courses,
 
-    if(s.ada >= 0.80, true, false) as ada_above_or_at_80,
+    concat(
+        ce.course_number, ge.assignment_category_code
+    ) as course_number_assignment_category_code,
 
     if(
         s.grade_level <= 8, ce.section_number, ce.external_expression
@@ -197,6 +208,14 @@ left join
     and s.academic_year = ge.academic_year
     and t.quarter = ge.quarter
 left join
+    {{ ref("int_powerschool__calendar_week") }} as w
+    on s.academic_year = w.academic_year
+    and s.school_level = w.school_level
+    and s.schoolid = w.schoolid
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="w") }}
+    and ge.quarter = w.quarter
+    and ge.week_number = w.week_number_quarter
+left join
     {{ ref("base_powerschool__final_grades") }} as qg
     on s.studentid = qg.studentid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="qg") }}
@@ -212,14 +231,6 @@ left join
     and ce.sectionid = cg.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="cg") }}
     and ge.assignment_category_term = cg.storecode
-left join
-    {{ ref("int_powerschool__calendar_week") }} as w
-    on s.academic_year = w.academic_year
-    and s.school_level = w.school_level
-    and s.schoolid = w.schoolid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="w") }}
-    and ge.quarter = w.quarter
-    and ge.week_number = w.week_number_quarter
 where
     s.academic_year = {{ var("current_academic_year") }}
     and s.enroll_status = 0

@@ -55,7 +55,7 @@ select
 
     m.ms_attended,
 
-    adb.contact_id,
+    adb.contact_id as salesforce_id,
     adb.ktc_cohort,
     adb.contact_owner_name,
     adb.contact_df_has_fafsa as has_fafsa,
@@ -86,6 +86,8 @@ select
     if(sa.studentid is not null, 1, null) as is_student_athlete,
 
     if(tut.studentid is not null, true, false) as is_tutoring,
+
+    if(round(ada.ada, 3) >= 0.80, true, false) as ada_above_or_at_80,
 
     case
         e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
