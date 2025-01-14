@@ -82,7 +82,7 @@ with
             enr.gifted_and_talented,
             enr.iep_status,
             enr.is_504,
-            enr.contact_id as salesforce_id,
+            enr.salesforce_id,
             enr.ktc_cohort,
             enr.is_counseling_services,
             enr.is_student_athlete,
@@ -121,7 +121,7 @@ with
                 false
             ) as is_quarter_end_date_range,
 
-        from {{ ref("int_tableau__student_enrollments") }} as enr
+        from {{ ref("int_extracts__student_enrollments") }} as enr
         inner join
             term
             on enr.schoolid = term.schoolid
@@ -178,13 +178,13 @@ with
             m.teachernumber as teacher_number,
             m.teacher_lastfirst,
 
-            f.tutoring_nj,
+            f.is_tutoring as tutoring_nj,
             f.nj_student_tier,
 
             if(m.ap_course_subject is not null, true, false) as is_ap_course,
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
-            {{ ref("int_extracts__student_filters") }} as f
+            {{ ref("int_extracts__student_enrollments_subjects") }} as f
             on m.cc_studentid = f.studentid
             and m.cc_academic_year = f.academic_year
             and m.courses_credittype = f.powerschool_credittype

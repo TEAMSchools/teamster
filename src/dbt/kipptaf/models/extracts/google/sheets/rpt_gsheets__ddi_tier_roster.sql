@@ -11,7 +11,7 @@ select
     f.nj_student_tier,
     f.state_test_proficiency as njsla_previous_year,
     f.iready_proficiency_eoy as iready_eoy_previous_year,
-from {{ ref("int_extracts__student_filters") }} as f
+from {{ ref("int_extracts__student_enrollments_subjects") }} as f
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as co
     on f.student_number = co.student_number

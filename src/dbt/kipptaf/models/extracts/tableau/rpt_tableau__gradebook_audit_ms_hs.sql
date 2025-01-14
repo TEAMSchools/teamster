@@ -38,7 +38,7 @@ with
             r.is_504,
             r.is_counseling_services,
             r.is_student_athlete,
-            r.tutoring_nj,
+            r.is_tutoring as tutoring_nj,
             r.nj_student_tier,
             r.ada,
             r.ada_above_or_at_80,
@@ -100,7 +100,7 @@ with
             t.n_expected_scored,
             t.teacher_running_total_assign_by_cat,
             t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
-        from {{ ref("int_tableau__gradebook_audit_roster") }} as r
+        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }} as r
         left join
             {{ ref("stg_reporting__gradebook_flags") }} as f
             on r.region = f.region
@@ -154,7 +154,7 @@ with
             r.is_504,
             r.is_counseling_services,
             r.is_student_athlete,
-            r.tutoring_nj,
+            r.is_tutoring as tutoring_nj,
             r.nj_student_tier,
             r.ada,
             r.ada_above_or_at_80,
@@ -202,7 +202,7 @@ with
             r.quarter_comment_value,
 
             f.audit_category,
-        from {{ ref("int_tableau__gradebook_audit_roster") }} as r
+        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }} as r
         left join
             {{ ref("stg_reporting__gradebook_flags") }} as f
             on r.region = f.region

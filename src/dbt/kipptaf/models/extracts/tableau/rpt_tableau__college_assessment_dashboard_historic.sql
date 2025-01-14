@@ -57,7 +57,7 @@ with
             e.lep_status,
             e.gifted_and_talented,
             e.advisory,
-            e.contact_id,
+            e.salesforce_id as contact_id,
             e.ktc_cohort,
             e.contact_owner_name,
             e.college_match_gpa,
@@ -71,7 +71,7 @@ with
             if(e.iep_status = 'No IEP', 0, 1) as sped,
 
             coalesce(f.is_exempt_state_testing, false) as dlm,
-        from {{ ref("int_tableau__student_enrollments") }} as e
+        from {{ ref("int_extracts__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
@@ -93,7 +93,7 @@ with
             and s.courses_course_name = ec.courses_course_name_expected
             and {{ union_dataset_join_clause(left_alias="s", right_alias="ec") }}
         left join
-            {{ ref("int_extracts__student_filters") }} as f
+            {{ ref("int_extracts__student_enrollments_subjects") }} as f
             on s.cc_academic_year = f.academic_year
             and s.students_student_number = f.student_number
             and s.courses_credittype = f.powerschool_credittype

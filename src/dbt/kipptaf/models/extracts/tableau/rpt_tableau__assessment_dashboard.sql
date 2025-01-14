@@ -133,11 +133,11 @@ select
     null as standard_domain,
 
     sf.nj_student_tier,
-    sf.tutoring_nj,
+    sf.is_tutoring as tutoring_nj,
     sf.territory,
 from dashboard as d
 left join
-    {{ ref("int_extracts__student_filters") }} as sf
+    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on d.student_number = sf.student_number
     and d.academic_year = sf.academic_year
     and d.filter_join = sf.assessment_dashboard_join

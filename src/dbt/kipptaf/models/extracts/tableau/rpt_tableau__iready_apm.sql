@@ -84,7 +84,7 @@ select
     iu.last_week_end_date,
     iu.last_week_time_on_task_min,
 
-    f.tutoring_nj as is_tutoring,
+    f.is_tutoring as tutoring_nj,
     f.state_test_proficiency,
     f.nj_student_tier,
     f.is_exempt_iready,
@@ -108,7 +108,7 @@ select
 
     dr.mid_on_grade_level_scale_score
     - dr.overall_scale_score as scale_pts_to_mid_on_grade_level,
-from {{ ref("int_tableau__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as w
     on co.schoolid = w.schoolid
@@ -150,7 +150,7 @@ left join
     and hr.cc_course_number = 'HR'
     and hr.rn_course_number_year = 1
 left join
-    {{ ref("int_extracts__student_filters") }} as f
+    {{ ref("int_extracts__student_enrollments_subjects") }} as f
     on co.student_number = f.student_number
     and co.academic_year = f.academic_year
     and subj = f.iready_subject

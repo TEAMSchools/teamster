@@ -82,7 +82,7 @@ with
                 true,
                 false
             ) as qt_effort_grade_missing,
-        from {{ ref("int_tableau__gradebook_audit_roster") }} as r
+        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }} as r
         inner join
             {{ ref("int_tableau__teacher_assignment_audit") }} as t
             on r.sectionid = t.sectionid
@@ -149,7 +149,7 @@ with
                 true,
                 false
             ) as qt_grade_70_comment_missing,
-        from {{ ref("int_tableau__gradebook_audit_roster") }}
+        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }}
         where region != 'Miami' and school_level != 'ES'
     ),
 
@@ -220,7 +220,7 @@ with
                 true,
                 false
             ) as qt_g1_g8_conduct_code_incorrect,
-        from {{ ref("int_tableau__gradebook_audit_roster") }}
+        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }}
         where region = 'Miami' and school_level != 'ES'
     ),
 
@@ -319,7 +319,7 @@ with
                 true,
                 false
             ) as qt_g1_g8_conduct_code_incorrect,
-        from {{ ref("int_tableau__gradebook_audit_roster") }}
+        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }}
         where region = 'Miami' and school_level = 'ES'
     ),
 
@@ -367,7 +367,7 @@ with
                 true,
                 false
             ) as qt_student_is_ada_80_plus_gpa_less_2,
-        from {{ ref("int_tableau__gradebook_audit_roster") }}
+        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }}
         where school_level != 'ES'
     ),
 
@@ -411,7 +411,7 @@ with
             t.w_assign_max_score_not_10,
             t.f_assign_max_score_not_10,
             t.s_max_score_greater_100,
-        from {{ ref("int_tableau__gradebook_audit_roster") }} as f
+        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }} as f
         inner join
             {{ ref("int_tableau__teacher_assignment_audit") }} as t
             on f.sectionid = t.sectionid
@@ -460,7 +460,7 @@ with
             t.w_expected_assign_count_not_met,
             t.f_expected_assign_count_not_met,
             t.s_expected_assign_count_not_met,
-        from {{ ref("int_tableau__gradebook_audit_roster") }} as f
+        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }} as f
         inner join
             {{ ref("int_tableau__teacher_assignment_audit") }} as t
             on f.sectionid = t.sectionid
