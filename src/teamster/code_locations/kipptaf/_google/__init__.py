@@ -2,7 +2,6 @@ from teamster.code_locations.kipptaf._google import (
     appsheet,
     bigquery,
     directory,
-    drive,
     forms,
     sheets,
 )
@@ -24,6 +23,6 @@ schedules = [
 
 sensors = [
     *bigquery.sensors,
-    *drive.sensors,
+    *forms.sensors,
     *sheets.sensors,
 ]

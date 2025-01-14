@@ -44,6 +44,7 @@ select
     co.schoolid,
     co.school,
     co.gifted_and_talented,
+    co.lunch_status,
 
     subj as `subject`,
 
