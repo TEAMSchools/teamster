@@ -1,5 +1,3 @@
-{{- config(materialized="table") -}}
-
 with
     assignments as (
         select
@@ -13,7 +11,7 @@ with
             sec.week_number_quarter,
             sec.week_start_monday,
             sec.week_end_sunday,
-            sec.audit_due_date,
+            sec.school_week_start_date_lead,
             sec.assignment_category_code,
             sec.assignment_category_name,
             sec.assignment_category_term,
@@ -22,11 +20,11 @@ with
             sec.teacher_number,
 
             a.assignmentsectionid,
-            a.assignmentid as teacher_assign_id,
-            a.name as teacher_assign_name,
-            a.duedate as teacher_assign_due_date,
-            a.scoretype as teacher_assign_score_type,
-            a.totalpointvalue as teacher_assign_max_score,
+            a.assignmentid,
+            a.name as assignment_name,
+            a.duedate,
+            a.scoretype,
+            a.totalpointvalue,
 
             asg.n_students,
             asg.n_late,
@@ -34,21 +32,19 @@ with
             asg.n_missing,
             asg.n_expected,
             asg.n_expected_scored,
-            asg.avg_expected_scored_percent
-            as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+            asg.avg_expected_scored_percent,
 
             count(a.assignmentid) over (
                 partition by
                     sec._dbt_source_relation,
-                    sec.quarter,
-                    sec.assignment_category_code,
-                    sec.sectionid
+                    sec.sectionid,
+                    sec.assignment_category_term
                 order by sec.week_number_quarter asc
-            ) as teacher_running_total_assign_by_cat,
+            ) as running_count_assignments_section_category_term,
 
             sum(a.totalpointvalue) over (
                 partition by sec._dbt_source_relation, sec.quarter, sec.sectionid
-            ) as total_totalpointvalue_section_quarter,
+            ) as sum_totalpointvalue_section_quarter,
         from {{ ref("int_tableau__gradebook_audit_section_scaffold") }} as sec
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
@@ -73,70 +69,70 @@ select
     week_number_quarter,
     week_start_monday,
     week_end_sunday,
-    audit_due_date,
+    school_week_start_date_lead,
     assignment_category_code,
     assignment_category_name,
     assignment_category_term,
     expectation,
     assignmentsectionid,
-    teacher_assign_id,
-    teacher_assign_name,
-    teacher_assign_score_type,
-    teacher_assign_max_score,
-    teacher_assign_due_date,
+    assignmentid as teacher_assign_id,
+    assignment_name as teacher_assign_name,
+    duedate as teacher_assign_due_date,
+    scoretype as teacher_assign_score_type,
+    totalpointvalue as teacher_assign_max_score,
     n_students,
     n_late,
     n_exempt,
     n_missing,
     n_expected,
     n_expected_scored,
-    teacher_running_total_assign_by_cat,
-    teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    running_count_assignments_section_category_term
+    as teacher_running_total_assign_by_cat,
+    avg_expected_scored_percent
+    as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-    if(teacher_assign_id is not null, 1, 0) as teacher_assign_count,
+    if(assignmentid is not null, 1, 0) as teacher_assign_count,
 
     if(
         assignment_category_code = 'W'
-        and teacher_running_total_assign_by_cat < expectation,
+        and running_count_assignments_section_category_term < expectation,
         true,
         false
     ) as w_expected_assign_count_not_met,
 
     if(
         assignment_category_code = 'F'
-        and teacher_running_total_assign_by_cat < expectation,
+        and running_count_assignments_section_category_term < expectation,
         true,
         false
     ) as f_expected_assign_count_not_met,
 
     if(
         assignment_category_code = 'S'
-        and teacher_running_total_assign_by_cat < expectation,
+        and running_count_assignments_section_category_term < expectation,
         true,
         false
     ) as s_expected_assign_count_not_met,
 
     if(
-        assignment_category_code = 'W' and teacher_assign_max_score != 10, true, false
+        assignment_category_code = 'W' and totalpointvalue != 10, true, false
     ) as w_assign_max_score_not_10,
 
     if(
-        assignment_category_code = 'F' and teacher_assign_max_score != 10, true, false
+        assignment_category_code = 'F' and totalpointvalue != 10, true, false
     ) as f_assign_max_score_not_10,
+
+    if(
+        region = 'Miami' and assignment_category_code = 'S' and totalpointvalue > 100,
+        true,
+        false
+    ) as s_max_score_greater_100,
 
     if(
         assignment_category_code = 'S'
         and n_expected = 1
-        and total_totalpointvalue_section_quarter > 200,
+        and sum_totalpointvalue_section_quarter > 200,
         true,
         false
     ) as qt_teacher_s_total_greater_200,
-
-    if(
-        region = 'Miami'
-        and assignment_category_code = 'S'
-        and teacher_assign_max_score > 100,
-        true,
-        false
-    ) as s_max_score_greater_100,
 from assignments

@@ -93,6 +93,8 @@ inner join
     on t.yearid = cw.yearid
     and t.schoolid = cw.schoolid
     and {{ union_dataset_join_clause(left_alias="t", right_alias="cw") }}
+    and tb.storecode = cw.quarter
+    and {{ union_dataset_join_clause(left_alias="tb", right_alias="cw") }}
 inner join
     {{ ref("stg_reporting__gradebook_expectations") }} as ge
     on cw.region = ge.region

@@ -1,5 +1,3 @@
-{{- config(materialized="table") -}}
-
 with
     roster_assignments_scores as (
         select
@@ -27,7 +25,7 @@ with
             a.totalpointvalue,
             a.category_name,
 
-            s.scorepoints as raw_score,
+            s.scorepoints,
             s.actualscoreentered,
 
             coalesce(s.islate, 0) as is_late,
@@ -49,6 +47,7 @@ with
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on ce.sections_dcid = a.sectionsdcid
+            and ce.assignment_category_code = a.category_code
             and a.duedate between ce.week_start_date and ce.week_end_date
             and ce.date_enrolled <= a.duedate
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="a") }}
@@ -82,7 +81,7 @@ select
     duedate,
     scoretype,
     totalpointvalue,
-    raw_score,
+    scorepoints as raw_score,
     score_entered,
     assign_final_score_percent,
     is_exempt,
@@ -112,54 +111,54 @@ select
         false
     ) as assign_s_hs_score_not_conversion_chart_options,
 
-    if(raw_score > totalpointvalue, true, false) as assign_score_above_max,
+    if(scorepoints > totalpointvalue, true, false) as assign_score_above_max,
 
     if(
         assignmentid is not null and is_exempt = 0, true, false
     ) as assign_expected_to_be_scored,
 
     if(
-        assignmentid is not null and raw_score is not null and is_exempt = 0,
+        assignmentid is not null and scorepoints is not null and is_exempt = 0,
         true,
         false
     ) as assign_scored,
 
     if(
-        assignmentid is not null and raw_score is null and is_exempt = 0, true, false
+        assignmentid is not null and scorepoints is null and is_exempt = 0, true, false
     ) as assign_null_score,
 
     if(
         assignmentid is not null
         and is_exempt = 0
-        and ((is_missing = 0 and raw_score is not null) or raw_score is not null),
+        and ((is_missing = 0 and scorepoints is not null) or scorepoints is not null),
         true,
         false
     ) as assign_expected_with_score,
 
-    if(is_exempt = 1 and raw_score > 0, true, false) as assign_exempt_with_score,
+    if(is_exempt = 1 and scorepoints > 0, true, false) as assign_exempt_with_score,
 
     if(
-        assignment_category_code = 'W' and raw_score < 5, true, false
+        assignment_category_code = 'W' and scorepoints < 5, true, false
     ) as assign_w_score_less_5,
 
     if(
-        assignment_category_code = 'F' and raw_score < 5, true, false
+        assignment_category_code = 'F' and scorepoints < 5, true, false
     ) as assign_f_score_less_5,
 
     if(
-        assignment_category_code = 'W' and is_missing = 1 and raw_score != 5,
+        assignment_category_code = 'W' and is_missing = 1 and scorepoints != 5,
         true,
         false
     ) as assign_w_missing_score_not_5,
 
     if(
-        assignment_category_code = 'F' and is_missing = 1 and raw_score != 5,
+        assignment_category_code = 'F' and is_missing = 1 and scorepoints != 5,
         true,
         false
     ) as assign_f_missing_score_not_5,
 
     if(
-        assignment_category_code = 'S' and raw_score < (totalpointvalue / 2),
+        assignment_category_code = 'S' and scorepoints < (totalpointvalue / 2),
         true,
         false
     ) as assign_s_score_less_50p,
