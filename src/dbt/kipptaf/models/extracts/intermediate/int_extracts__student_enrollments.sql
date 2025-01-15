@@ -1,3 +1,5 @@
+{{- config(materialized="table") -}}
+
 with
     ms_grad_sub as (
         select
