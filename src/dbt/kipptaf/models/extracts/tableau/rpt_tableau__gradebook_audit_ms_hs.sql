@@ -100,7 +100,8 @@ with
             t.n_expected_scored,
             t.teacher_running_total_assign_by_cat,
             t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
-        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }} as r
+        from
+            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }} as r
         left join
             {{ ref("stg_reporting__gradebook_flags") }} as f
             on r.region = f.region
@@ -108,7 +109,7 @@ with
             and r.assignment_category_code = f.code
             and f.cte_grouping not in ('student_course', 'student')
         left join
-            {{ ref("int_tableau__teacher_assignment_audit") }} as t
+            {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as t
             on r.sectionid = t.sectionid
             and r.quarter = t.quarter
             and r.week_number = t.week_number_quarter
@@ -202,7 +203,8 @@ with
             r.quarter_comment_value,
 
             f.audit_category,
-        from {{ ref("int_tableau__gradebook_audit_student_section_scaffold") }} as r
+        from
+            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }} as r
         left join
             {{ ref("stg_reporting__gradebook_flags") }} as f
             on r.region = f.region
