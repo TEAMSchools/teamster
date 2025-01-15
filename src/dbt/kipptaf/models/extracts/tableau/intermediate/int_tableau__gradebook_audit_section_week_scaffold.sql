@@ -1,5 +1,3 @@
-{{- config(materialized="table") -}}
-
 with
     sections as (
         select
@@ -8,7 +6,14 @@ with
             sections_id,
             sections_schoolid,
             sections_course_number,
+            sections_section_number,
+            sections_external_expression,
+            courses_course_name,
+            courses_credittype,
+            courses_excludefromgpa,
+            is_ap_course,
             teachernumber,
+            teacher_lastfirst,
             terms_yearid,
             terms_firstday,
             terms_lastday,
@@ -59,6 +64,8 @@ select
     tb.is_current_term,
     tb.is_quarter_end_date_range,
 
+    sch.abbreviation as school,
+
     cw.region,
     cw.school_level,
     cw.week_start_date,
@@ -69,17 +76,31 @@ select
     cw.week_number_academic_year,
     cw.week_number_quarter,
 
-    ge.assignment_category_code,
-    ge.assignment_category_name,
-    ge.assignment_category_term,
-    ge.expectation,
-    ge.notes,
-
     sec.sections_dcid,
     sec.sections_id as sectionid,
+    sec.sections_section_number as section_number,
+    sec.sections_external_expression as external_expression,
+    sec.sections_course_number as course_number,
+    sec.courses_course_name as course_name,
+    sec.courses_credittype as credit_type,
+    sec.courses_excludefromgpa as exclude_from_gpa,
+    sec.is_ap_course,
     sec.teachernumber as teacher_number,
+    sec.teacher_lastfirst as teacher_name,
 
     r.sam_account_name as tableau_username,
+
+    concat(cw.region, cw.school_level) as region_school_level,
+
+    cast(t.academic_year as string)
+    || '-'
+    || right(cast(t.academic_year + 1 as string), 2) as academic_year_display,
+
+    if(
+        cw.school_level = 'HS',
+        sec.sections_external_expression,
+        sec.sections_section_number
+    ) as section_or_period,
 from {{ ref("stg_powerschool__terms") }} as t
 inner join
     {{ ref("stg_powerschool__termbins") }} as tb
@@ -89,19 +110,16 @@ inner join
     and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
     and tb.date1 <= current_date('{{ var("local_timezone") }}')
 inner join
+    {{ ref("stg_powerschool__schools") }} as sch
+    on t.schoolid = sch.school_number
+    and {{ union_dataset_join_clause(left_alias="t", right_alias="sch") }}
+inner join
     {{ ref("int_powerschool__calendar_week") }} as cw
     on t.yearid = cw.yearid
     and t.schoolid = cw.schoolid
     and {{ union_dataset_join_clause(left_alias="t", right_alias="cw") }}
     and tb.storecode = cw.quarter
     and {{ union_dataset_join_clause(left_alias="tb", right_alias="cw") }}
-inner join
-    {{ ref("stg_reporting__gradebook_expectations") }} as ge
-    on cw.region = ge.region
-    and cw.school_level = ge.school_level
-    and cw.academic_year = ge.academic_year
-    and cw.quarter = ge.quarter
-    and cw.week_number_quarter = ge.week_number
 inner join
     sections as sec
     on cw.schoolid = sec.sections_schoolid
@@ -115,14 +133,3 @@ where
     t.yearid = {{ var("current_academic_year") - 1990 }}
     and t.isyearrec = 1
     and t.schoolid not in (0, 999999)
-    /* exclude F & S categories for iReady courses */
-    and concat(sec.sections_course_number, ge.assignment_category_code) not in (
-        'SEM72005G1F',
-        'SEM72005G2F',
-        'SEM72005G3F',
-        'SEM72005G4F',
-        'SEM72005G1S',
-        'SEM72005G2S',
-        'SEM72005G3S',
-        'SEM72005G4S'
-    )
