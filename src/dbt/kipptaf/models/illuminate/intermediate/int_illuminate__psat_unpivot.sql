@@ -1,6 +1,13 @@
 with
-    psat10 as (
-        select local_student_id, academic_year, test_date, score_type, score,
+    psat as (
+        select
+            local_student_id,
+            academic_year,
+            test_name,
+            test_date,
+            score,
+
+            concat('psat_', score_type) as score_type,
         from
             {{ ref("stg_illuminate__psat") }} unpivot (
                 score for score_type in (
@@ -50,6 +57,6 @@ select
     end as subject_area,
 
     row_number() over (
-        partition by local_student_id, score_type order by score desc
+        partition by local_student_id, test_name, score_type order by score desc
     ) as rn_highest,
-from psat10
+from psat
