@@ -108,6 +108,7 @@ with
                 then 'Math Test'
                 else test_subject
             end as subject_area,
+
             case
                 when
                     score_type in (
@@ -147,7 +148,7 @@ with
         select
             safe_cast(local_student_id as string) as contact,
 
-            'PSAT10' as scope,
+            test_name as scope,
 
             test_date,
             score as scale_score,
@@ -161,41 +162,32 @@ with
 
             case
                 score_type
-                when 'psat10_total_score'
+                when 'psat_total_score'
                 then 'Composite'
-                when 'psat10_reading_test_score'
-                then 'Reading'
-                when 'psat10_math_test_score'
-                then 'Math Test'
-                when 'psat10_math_section_score'
+                when 'psat_math_section_score'
                 then 'Math'
-                when 'psat10_eb_read_write_section_score'
-                then 'Writing and Language Test'
+                when 'psat_eb_read_write_section_score'
+                then 'EBRW'
             end as subject_area,
             case
-                when
-                    score_type in (
-                        'psat10_eb_read_write_section_score',
-                        'psat10_reading_test_score'
-                    )
+                score_type
+                when 'psat_eb_read_write_section_score'
                 then 'ENG'
-                when
-                    score_type
-                    in ('psat10_math_test_score', 'psat10_math_section_score')
+                when 'psat_math_section_score'
                 then 'MATH'
                 else 'NA'
             end as course_discipline,
 
             academic_year as test_academic_year,
+
         from {{ ref("int_illuminate__psat_unpivot") }}
         where
             score_type in (
-                'psat10_eb_read_write_section_score',
-                'psat10_math_section_score',
-                'psat10_math_test_score',
-                'psat10_reading_test_score',
-                'psat10_total_score'
+                'psat_eb_read_write_section_score',
+                'psat_math_section_score',
+                'psat_total_score'
             )
+            and academic_year = {{ var("current_academic_year") }}
     )
 
 select
@@ -336,7 +328,8 @@ left join
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official' and e.expected_scope = 'PSAT10'
+where
+    e.expected_test_type = 'Official' and e.expected_scope in ('PSAT NMSQT', 'PSAT 8/9')
 
 union all
 
