@@ -5,6 +5,7 @@ with
 
         union all
 
+        -- trunk-ignore(sqlfluff/RF01)
         select grade, `subject`,
         from unnest(['1', '2']) as grade
         cross join unnest(['SM', 'SR']) as `subject`
@@ -159,12 +160,13 @@ with
         union all
 
         select
-            yearid + 1990 as academic_year,
+            academic_year,
             'fte2 enrollment' as measure,
             'region' as grade_level,
-            sum(if(is_enrolled_fte2, 1, 0)) as criteria,
-        from {{ ref("int_students__fldoe_fte") }}
-        group by yearid
+            sum(if(is_fldoe_fte_2, 1, 0)) as criteria,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where region = 'Miami' and rn_year = 1 and grade_level != 99
+        group by academic_year
 
         union all
 

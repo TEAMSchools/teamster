@@ -7,8 +7,6 @@ with
             max(date_submitted) as last_date_submitted,
             -- trunk-ignore-begin(sqlfluff/LT05)
             case
-                when academic_year <> {{ var("current_academic_year") }}
-                then 'No Response'
                 when
                     answer
                     = 'I am committed to my school community/team and, if offered a renewal contract, definitely returning; the Recruitment Team should NOT hire for my position.'
@@ -29,7 +27,10 @@ with
             end as answer_short,
         -- trunk-ignore-end(sqlfluff/LT05)
         from {{ ref("rpt_tableau__survey_responses") }}
-        where survey_code = 'ITR' and question_shortname = 'itr_plans'
+        where
+            survey_code = 'ITR'
+            and question_shortname = 'itr_plans'
+            and academic_year = {{ var("current_academic_year") }}
         group by employee_number, answer, academic_year
     ),
 
