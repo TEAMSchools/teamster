@@ -1,6 +1,6 @@
 version: 0.1
 cli:
-  version: 1.22.8
+  version: 1.22.9
 plugins:
   sources:
     - id: trunk
@@ -10,7 +10,7 @@ lint:
   enabled:
     - actionlint@1.7.6
     - git-diff-check
-    - gitleaks@8.23.0
+    - gitleaks@8.23.1
     - hadolint@2.12.1-beta
     - isort@5.13.2
     - markdownlint@0.43.0
