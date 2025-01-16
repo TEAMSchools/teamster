@@ -77,6 +77,10 @@ models:
       +schema: coupa
       staging:
         +materialized: table
+    crdc:
+      +schema: crdc
+      staging:
+        +materialized: table
     dayforce:
       +schema: dayforce
       staging:
