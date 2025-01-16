@@ -187,7 +187,7 @@ with
                 'psat_math_section_score',
                 'psat_total_score'
             )
-            and academic_year = 2024
+            and academic_year = {{ var("current_academic_year") }}
     )
 
 select
