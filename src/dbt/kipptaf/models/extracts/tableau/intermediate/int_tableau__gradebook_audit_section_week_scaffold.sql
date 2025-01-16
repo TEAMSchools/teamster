@@ -49,32 +49,69 @@ with
                 'SEM72250G4133570965',
                 'SEM72250G473252'
             )
+    ),
+
+    term_weeks as (
+        select
+            t._dbt_source_relation,
+            t.schoolid,
+            t.yearid,
+            t.academic_year,
+
+            tb.storecode as `quarter`,
+            tb.semester,
+            tb.date1 as quarter_start_date,
+            tb.date2 as quarter_end_date,
+            tb.is_current_term,
+
+            sch.abbreviation as school,
+
+            cw.region,
+            cw.school_level,
+            cw.week_start_date,
+            cw.week_end_date,
+            cw.week_start_monday,
+            cw.week_end_sunday,
+            cw.school_week_start_date_lead,
+            cw.week_number_academic_year,
+            cw.week_number_quarter,
+
+            concat(cw.region, cw.school_level) as region_school_level,
+
+            cast(t.academic_year as string)
+            || '-'
+            || right(cast(t.academic_year + 1 as string), 2) as academic_year_display,
+
+            max(cw.week_end_date) over (
+                partition by t._dbt_source_relation, t.schoolid, t.yearid, tb.storecode
+            ) as quarter_end_date_insession,
+        from {{ ref("stg_powerschool__terms") }} as t
+        inner join
+            {{ ref("stg_powerschool__termbins") }} as tb
+            on t.schoolid = tb.schoolid
+            and t.id = tb.termid
+            and {{ union_dataset_join_clause(left_alias="t", right_alias="tb") }}
+            and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
+            and tb.date1 <= current_date('{{ var("local_timezone") }}')
+        inner join
+            {{ ref("stg_powerschool__schools") }} as sch
+            on t.schoolid = sch.school_number
+            and {{ union_dataset_join_clause(left_alias="t", right_alias="sch") }}
+        inner join
+            {{ ref("int_powerschool__calendar_week") }} as cw
+            on t.yearid = cw.yearid
+            and t.schoolid = cw.schoolid
+            and {{ union_dataset_join_clause(left_alias="t", right_alias="cw") }}
+            and tb.storecode = cw.quarter
+            and {{ union_dataset_join_clause(left_alias="tb", right_alias="cw") }}
+        where
+            t.yearid = {{ var("current_academic_year") - 1990 }}
+            and t.isyearrec = 1
+            and t.schoolid not in (0, 999999)
     )
 
 select
-    t._dbt_source_relation,
-    t.schoolid,
-    t.yearid,
-    t.academic_year,
-
-    tb.storecode as `quarter`,
-    tb.semester,
-    tb.date1 as quarter_start_date,
-    tb.date2 as quarter_end_date,
-    tb.is_current_term,
-    tb.is_quarter_end_date_range,
-
-    sch.abbreviation as school,
-
-    cw.region,
-    cw.school_level,
-    cw.week_start_date,
-    cw.week_end_date,
-    cw.week_start_monday,
-    cw.week_end_sunday,
-    cw.school_week_start_date_lead,
-    cw.week_number_academic_year,
-    cw.week_number_quarter,
+    tw.*,
 
     sec.sections_dcid,
     sec.sections_id as sectionid,
@@ -90,46 +127,28 @@ select
 
     r.sam_account_name as tableau_username,
 
-    concat(cw.region, cw.school_level) as region_school_level,
-
-    cast(t.academic_year as string)
-    || '-'
-    || right(cast(t.academic_year + 1 as string), 2) as academic_year_display,
+    if(
+        current_date(
+            '{{ var("local_timezone") }}'
+        ) between (tw.quarter_end_date_insession - interval 7 day) and (
+            tw.quarter_end_date_insession + interval 14 day
+        ),
+        true,
+        false
+    ) as is_quarter_end_date_range,
 
     if(
-        cw.school_level = 'HS',
+        tw.school_level = 'HS',
         sec.sections_external_expression,
         sec.sections_section_number
     ) as section_or_period,
-from {{ ref("stg_powerschool__terms") }} as t
-inner join
-    {{ ref("stg_powerschool__termbins") }} as tb
-    on t.schoolid = tb.schoolid
-    and t.id = tb.termid
-    and {{ union_dataset_join_clause(left_alias="t", right_alias="tb") }}
-    and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
-    and tb.date1 <= current_date('{{ var("local_timezone") }}')
-inner join
-    {{ ref("stg_powerschool__schools") }} as sch
-    on t.schoolid = sch.school_number
-    and {{ union_dataset_join_clause(left_alias="t", right_alias="sch") }}
-inner join
-    {{ ref("int_powerschool__calendar_week") }} as cw
-    on t.yearid = cw.yearid
-    and t.schoolid = cw.schoolid
-    and {{ union_dataset_join_clause(left_alias="t", right_alias="cw") }}
-    and tb.storecode = cw.quarter
-    and {{ union_dataset_join_clause(left_alias="tb", right_alias="cw") }}
+from term_weeks as tw
 inner join
     sections as sec
-    on cw.schoolid = sec.sections_schoolid
-    and cw.yearid = sec.terms_yearid
-    and cw.week_end_date between sec.terms_firstday and sec.terms_lastday
-    and {{ union_dataset_join_clause(left_alias="cw", right_alias="sec") }}
+    on tw.schoolid = sec.sections_schoolid
+    and tw.yearid = sec.terms_yearid
+    and tw.week_end_date between sec.terms_firstday and sec.terms_lastday
+    and {{ union_dataset_join_clause(left_alias="tw", right_alias="sec") }}
 left join
     {{ ref("base_people__staff_roster") }} as r
     on sec.teachernumber = r.powerschool_teacher_number
-where
-    t.yearid = {{ var("current_academic_year") - 1990 }}
-    and t.isyearrec = 1
-    and t.schoolid not in (0, 999999)
