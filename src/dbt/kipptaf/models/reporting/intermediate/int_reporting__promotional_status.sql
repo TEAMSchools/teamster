@@ -477,6 +477,24 @@ with
                     and grade_level >= 9
                     and not is_on_track_projected_credits
                 then 'Off-Track'
+                /* Miami K-2 */
+                when
+                    region = 'Miami'
+                    and grade_level <= 2
+                    and (not is_on_track_star_ela or not is_on_track_star_math)
+                then 'Off-Track'
+                /* Miami Gr3 */
+                when region = 'Miami' and grade_level = 3 and not is_on_track_fast_ela
+                then 'Off-Track'
+                /* Miami Gr4 */
+                when
+                    region = 'Miami'
+                    and grade_level = 4
+                    and (not is_on_track_fast_ela and not_is_on_track_fast_math)
+                then 'Off-Track'
+                /* Miami 5-8 */
+                when region = 'Miami' and grade_level >= 5 and not is_on_track_core_f
+                then 'Off-Track'
                 else 'On-Track'
             end as academic_status,
 
@@ -492,6 +510,17 @@ with
                     region in ('Camden', 'Newark')
                     and grade_level >= 9
                     and not is_on_track_days_absent
+                then 'Off-Track'
+                /* Miami K */
+                when
+                    region = 'Miami'
+                    and grade_level in (0, 1, 2, 4)
+                    and not is_on_track_ada
+                then 'Off-Track'
+                when
+                    region = 'Miami'
+                    and grade_level >= 5
+                    and (not is_on_track_ada or not is_on_track_days_absent)
                 then 'Off-Track'
                 else 'On-Track'
             end as attendance_status,
