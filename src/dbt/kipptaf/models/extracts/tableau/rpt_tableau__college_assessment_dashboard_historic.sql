@@ -157,61 +157,6 @@ with
                 'sat_math',
                 'sat_ebrw'
             )
-
-        union all
-
-        select
-            safe_cast(local_student_id as string) as contact,
-
-            'PSAT10' as scope,
-
-            test_date,
-            score as scale_score,
-            rn_highest,
-
-            'Official' as test_type,
-
-            concat(
-                format_date('%b', test_date), ' ', format_date('%y', test_date)
-            ) as administration_round,
-
-            case
-                score_type
-                when 'psat10_total_score'
-                then 'Composite'
-                when 'psat10_reading_test_score'
-                then 'Reading'
-                when 'psat10_math_test_score'
-                then 'Math Test'
-                when 'psat10_math_section_score'
-                then 'Math'
-                when 'psat10_eb_read_write_section_score'
-                then 'Writing and Language Test'
-            end as subject_area,
-            case
-                when
-                    score_type in (
-                        'psat10_eb_read_write_section_score',
-                        'psat10_reading_test_score'
-                    )
-                then 'ENG'
-                when
-                    score_type
-                    in ('psat10_math_test_score', 'psat10_math_section_score')
-                then 'MATH'
-                else 'NA'
-            end as course_discipline,
-
-            academic_year as test_academic_year,
-        from {{ ref("int_illuminate__psat_unpivot") }}
-        where
-            score_type in (
-                'psat10_eb_read_write_section_score',
-                'psat10_math_section_score',
-                'psat10_math_test_score',
-                'psat10_reading_test_score',
-                'psat10_total_score'
-            )
     )
 
 select
@@ -271,67 +216,6 @@ left join
     on e.contact_id = o.contact
     and e.academic_year = o.test_academic_year
     and o.test_type != 'PSAT10'
-where o.test_type = 'Official'
-
-union all
-
-select
-    e.academic_year,
-    e.academic_year_display,
-    e.region,
-    e.schoolid,
-    e.school,
-    e.student_number,
-    e.student_name,
-    e.grade_level,
-    e.enroll_status,
-    e.cohort,
-    e.entrydate,
-    e.exitdate,
-    e.sped,
-    e.c_504_status,
-    e.lep_status,
-    e.gifted_and_talented,
-    e.advisory,
-    e.contact_id,
-    e.ktc_cohort,
-    e.contact_owner_name,
-    e.college_match_gpa,
-    e.college_match_gpa_bands,
-    e.courses_course_name,
-    e.teacher_lastfirst,
-    e.sections_external_expression,
-    e.dlm,
-    e.ms_attended,
-
-    o.test_type,
-    o.scope,
-
-    'NA' as scope_round,
-    null as assessment_id,
-    'NA' as assessment_title,
-
-    o.administration_round,
-    o.test_academic_year,
-    o.subject_area,
-    o.test_date,
-
-    'NA' as response_type,
-    'NA' as response_type_description,
-
-    null as points,
-    null as percent_correct,
-    null as total_subjects_tested,
-    null as raw_score,
-
-    o.scale_score,
-    o.rn_highest,
-from roster as e
-left join
-    college_assessments_official as o
-    on cast(e.student_number as string) = o.contact
-    and e.academic_year = o.test_academic_year
-    and o.test_type = 'PSAT10'
 where o.test_type = 'Official'
 
 union all
