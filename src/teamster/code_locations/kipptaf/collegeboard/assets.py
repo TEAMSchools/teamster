@@ -10,7 +10,7 @@ psat = build_sftp_folder_asset(
     remote_file_regex=r"\d+_(?P<test_type>\w+)_\d+_\d+\.csv",
     ssh_resource_key="ssh_couchdrop",
     avro_schema=PSAT_SCHEMA,
-    partitions_def=StaticPartitionsDefinition(["PSAT89", "PSATNM"]),
+    partitions_def=StaticPartitionsDefinition(["PSAT10", "PSAT89", "PSATNM"]),
 )
 
 assets = [
