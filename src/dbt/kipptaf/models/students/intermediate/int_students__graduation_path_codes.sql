@@ -104,22 +104,25 @@ with
             pivot (max(met_pathway_requirement) for test_type in ('ACT', 'SAT'))
     ),
 
-    psat10_official as (
+    psat_official as (
         select
-            local_student_id,
-            discipline,
+            safe_cast(local_student_id as int) as local_student_id,
+
+            if(
+                score_type
+                in ('psat_eb_read_write_section_score', 'psat_reading_test_score'),
+                'ELA',
+                'Math'
+            ) as discipline,
 
             case
                 when
-                    score_type
-                    in ('psat10_reading_test_score', 'psat10_math_test_score')
+                    score_type in ('psat_reading_test_score', 'psat_math_test_score')
                     and score >= 21
                 then true
                 when
-                    score_type in (
-                        'psat10_math_section_score',
-                        'psat10_eb_read_write_section_score'
-                    )
+                    score_type
+                    in ('psat_math_section_score', 'psat_eb_read_write_section_score')
                     and score >= 420
                 then true
                 else false
@@ -128,16 +131,17 @@ with
         where
             rn_highest = 1
             and score_type in (
-                'psat10_eb_read_write_section_score',
-                'psat10_math_test_score',
-                'psat10_math_section_score',
-                'psat10_reading_test_score'
+                'psat_eb_read_write_section_score',
+                'psat_math_test_score',
+                'psat_math_section_score',
+                'psat_reading_test_score'
             )
+            and test_name != 'PSAT89'
     ),
 
-    psat10_rollup as (
-        select local_student_id, discipline, max(met_pathway_requirement) as psat10,
-        from psat10_official
+    psat_rollup as (
+        select local_student_id, discipline, max(met_pathway_requirement) as psat,
+        from psat_official
         group by local_student_id, discipline
     ),
 
@@ -193,7 +197,7 @@ with
             coalesce(o1.act, false) as act,
             coalesce(o1.sat, false) as sat,
 
-            coalesce(o2.psat10, false) as psat10,
+            coalesce(o2.psat, false) as psat,
 
             if(n.testscalescore is null, false, true) as njgpa_attempt,
             if(n.testscalescore >= 725, true, false) as njgpa_pass,
@@ -208,7 +212,7 @@ with
             on r.kippadb_contact_id = o1.contact
             and r.discipline = o1.discipline
         left join
-            psat10_rollup as o2
+            psat_rollup as o2
             on r.student_number = o2.local_student_id
             and r.discipline = o2.discipline
     )
@@ -219,7 +223,7 @@ select
     r.discipline,
     r.act,
     r.sat,
-    r.psat10,
+    r.psat,
     r.njgpa_attempt,
     r.njgpa_pass,
 
@@ -236,12 +240,7 @@ select
         then 'E'
         when r.njgpa_attempt and not r.njgpa_pass and not r.act and r.sat
         then 'D'
-        when
-            r.njgpa_attempt
-            and not r.njgpa_pass
-            and not r.act
-            and not r.sat
-            and r.psat10
+        when r.njgpa_attempt and not r.njgpa_pass and not r.act and not r.sat and r.psat
         then 'J'
         else 'R'
     end as final_grad_path,

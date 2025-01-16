@@ -158,7 +158,7 @@ with
             discipline
     ),
 
-    act_sat_psat10_official as (
+    act_sat_psat_official as (
         select
             contact,
             test_type,
@@ -212,33 +212,36 @@ with
         select
             cast(local_student_id as string) as contact,
 
-            'PSAT10' as test_type,
+            'PSAT' as test_type,
 
             score,
-            discipline,
+
+            if(
+                score_type
+                in ('psat_eb_read_write_section_score', 'psat_reading_test_score'),
+                'ELA',
+                'Math'
+            ) as discipline,
 
             case
-                when score_type = 'psat10_reading_test_score'
+                when score_type = 'psat_reading_test_score'
                 then 'Reading'
-                when score_type = 'psat10_math_section_score'
+                when score_type = 'psat_math_section_score'
                 then 'Math'
-                when score_type = 'psat10_math_test_score'
+                when score_type = 'psat_math_test_score'
                 then 'Math Test'
-                when score_type = 'psat10_eb_read_write_section_score'
+                when score_type = 'psat_eb_read_write_section_score'
                 then 'EBRW'
             end as `subject`,
 
             case
                 when
-                    score_type
-                    in ('psat10_reading_test_score', 'psat10_math_test_score')
+                    score_type in ('psat_reading_test_score', 'psat_math_test_score')
                     and score >= 21
                 then true
                 when
-                    score_type in (
-                        'psat10_math_section_score',
-                        'psat10_eb_read_write_section_score'
-                    )
+                    score_type
+                    in ('psat_math_section_score', 'psat_eb_read_write_section_score')
                     and score >= 420
                 then true
                 else false
@@ -247,11 +250,12 @@ with
         where
             rn_highest = 1
             and score_type in (
-                'psat10_eb_read_write_section_score',
-                'psat10_math_test_score',
-                'psat10_math_section_score',
-                'psat10_reading_test_score'
+                'psat_eb_read_write_section_score',
+                'psat_math_test_score',
+                'psat_math_section_score',
+                'psat_reading_test_score'
             )
+            and test_name != 'PSAT89'
     ),
 
     grad_options_append_final as (
@@ -285,7 +289,7 @@ with
 
             a.met_pathway_requirement,
         from roster as r
-        inner join act_sat_psat10_official as a on r.kippadb_contact_id = a.contact
+        inner join act_sat_psat_official as a on r.kippadb_contact_id = a.contact
         where a.test_type in ('ACT', 'SAT')
 
         union all
@@ -297,15 +301,15 @@ with
             a.subject,
             a.test_type,
 
-            'PSAT10' as pathway_option,
+            'PSAT' as pathway_option,
 
             cast(a.score as string) as `value`,
 
             a.met_pathway_requirement,
         from roster as r
         inner join
-            act_sat_psat10_official as a on cast(r.student_number as string) = a.contact
-        where a.test_type = 'PSAT10'
+            act_sat_psat_official as a on cast(r.student_number as string) = a.contact
+        where a.test_type = 'PSAT'
 
         union all
 
@@ -379,7 +383,7 @@ select distinct
     c.njgpa_pass,
     c.act,
     c.sat,
-    c.psat10,
+    c.psat,
     c.final_grad_path,
 from roster as r
 left join
