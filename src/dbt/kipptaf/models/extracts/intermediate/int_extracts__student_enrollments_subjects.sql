@@ -68,19 +68,12 @@ with
     ),
 
     psat_bucket1 as (
-        select
-            local_student_id,
-            academic_year,
-            discipline,
-
-            max(score) as score,
-
-            if(max(score) >= 420, 'Bucket 1', null) as bucket_1,
+        select local_student_id, academic_year, discipline, max(score) as max_score,
         from {{ ref("int_illuminate__psat_unpivot") }} as pt
         where
             score_type
             in ('psat10_math_section_score', 'psat10_eb_read_write_section_score')
-        group by all
+        group by local_student_id, academic_year, discipline
     ),
 
     prev_yr_iready as (
@@ -217,11 +210,11 @@ select
             and py.njsla_proficiency = 'At/Above'
         then 'Bucket 1'
         when
-            co.academic_year > 2023
+            co.academic_year >= 2024
             and co.grade_level between 0 and 8
             and coalesce(py.is_proficient, ci.is_proficient)
         then 'Bucket 1'
-        when co.academic_year > 2023 and co.grade_level = 11 and ps.bucket_1 is not null
+        when co.academic_year >= 2024 and co.grade_level = 11 and ps.max_score >= 420
         then 'Bucket 1'
         when nj.iready_subject is not null
         then 'Bucket 2'
