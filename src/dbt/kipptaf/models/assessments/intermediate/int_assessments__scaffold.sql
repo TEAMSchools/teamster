@@ -235,18 +235,14 @@ inner join
     {{ ref("stg_illuminate__public__students") }} as s on sa.student_id = s.student_id
 inner join
     {{ ref("int_illuminate__student_session_aff") }} as ssa
-    on a.academic_year = ssa.academic_year
-    and sa.student_id = ssa.student_id
+    on sa.student_id = ssa.student_id
+    and a.academic_year = ssa.academic_year
+    and a.illuminate_grade_level_id != ssa.grade_level_id
     and ssa.rn_student_session_desc = 1
-    and ssa.grade_level_id <= 9
-left join
-    {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
-    on a.assessment_id = agl.assessment_id
-    and ssa.grade_level_id = agl.grade_level_id
 where
     a.is_internal_assessment
     and a.subject_area in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
-    and agl.assessment_grade_level_id is null
+    and a.grade_level <= 8
 
 union all
 

@@ -15,3 +15,13 @@ models:
             1. Newark
             2. Camden
             3. Miami
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - _dbt_source_relation
+            - student_number
+            - academic_year
+            - entrydate
+          config:
+            severity: warn
+            store_failures: true

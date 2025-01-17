@@ -67,7 +67,7 @@ with
 
             if(
                 current_date('{{ var("local_timezone") }}')
-                between (quarter_end_date - 10) and (quarter_end_date + 14),
+                between (quarter_end_date - 4) and (quarter_end_date + 14),
                 true,
                 false
             ) as is_quarter_end_date_range,

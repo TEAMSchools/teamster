@@ -8,8 +8,6 @@ assets:
     file_config:
       stem: deanslist_college_admission_tests
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -19,8 +17,6 @@ assets:
     file_config:
       stem: deanslist_designations
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -30,8 +26,6 @@ assets:
     file_config:
       stem: deanslist_iready_lessons
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -41,8 +35,6 @@ assets:
     file_config:
       stem: deanslist_missing_assignments
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -52,8 +44,6 @@ assets:
     file_config:
       stem: deanslist_mod_assessment
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -63,8 +53,6 @@ assets:
     file_config:
       stem: deanslist_reading_levels
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -74,8 +62,6 @@ assets:
     file_config:
       stem: deanslist_sight_words
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -85,8 +71,6 @@ assets:
     file_config:
       stem: deanslist_state_test_scores
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -96,8 +80,6 @@ assets:
     file_config:
       stem: deanslist_transcript_gpas
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -107,8 +89,6 @@ assets:
     file_config:
       stem: deanslist_iready_diagnostics
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -118,8 +98,6 @@ assets:
     file_config:
       stem: deanslist_transcript_grades
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -129,8 +107,6 @@ assets:
     file_config:
       stem: deanslist_mod_standards_domains
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -140,8 +116,6 @@ assets:
     file_config:
       stem: deanslist_promo_status
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -151,8 +125,6 @@ assets:
     file_config:
       stem: rpt_deanslist__hs_transcript_programs
       suffix: json.gz
-    destination_config:
-      name: deanslist
   - query_config:
       type: schema
       value:
@@ -162,8 +134,6 @@ assets:
     file_config:
       stem: rpt_deanslist__star
       suffix: json.gz
-    destination_config:
-      name: deanslist
   # increased resources
   - query_config:
       type: schema
@@ -174,8 +144,6 @@ assets:
     file_config:
       stem: deanslist_finalgrades
       suffix: json.gz
-    destination_config:
-      name: deanslist
     op_tags:
       dagster-k8s/config:
         container_config:
@@ -191,8 +159,6 @@ assets:
     file_config:
       stem: deanslist_mod_standards
       suffix: json.gz
-    destination_config:
-      name: deanslist
     op_tags:
       dagster-k8s/config:
         container_config:

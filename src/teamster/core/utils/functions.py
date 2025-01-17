@@ -1,7 +1,6 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Mapping
-from zoneinfo import ZoneInfo
 
 from dagster import MultiPartitionKey, _check
 
@@ -41,9 +40,9 @@ def parse_partition_key(partition_key, dimension=None):
 
                 # save resync file with current timestamp
                 if partition_key_parsed == datetime.fromtimestamp(
-                    timestamp=0, tz=ZoneInfo("UTC")
+                    timestamp=0, tz=timezone.utc
                 ):
-                    partition_key_parsed = datetime.now(ZoneInfo("UTC"))
+                    partition_key_parsed = datetime.now(timezone.utc)
 
                 break
             except ValueError:

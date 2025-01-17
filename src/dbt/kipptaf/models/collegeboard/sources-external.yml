@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: collegeboard
+    schema: |
+      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kipptaf_collegeboard
+      {%- else -%}kipptaf_collegeboard
+      {%- endif %}
+    tables:
+      - name: src_collegeboard__psat
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/collegeboard/psat/*"
+          options:
+            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/collegeboard/psat/"
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            group: collegeboard
+            asset_key:
+              - kipptaf
+              - collegeboard
+              - psat

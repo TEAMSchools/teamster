@@ -6,8 +6,6 @@ sources:
       {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kipptaf_amplify
       {%- else -%}kipptaf_amplify
       {%- endif %}
-    tags:
-      - stage_external_sources
     tables:
       - name: src_amplify__dibels_pm_expectations
         external:
@@ -19,7 +17,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - amplify
               - dibels
@@ -57,7 +55,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - amplify
               - dibels
@@ -71,6 +69,10 @@ sources:
             data_type: string
           - name: description
             data_type: string
+          - name: measure_standard_translation
+            data_type: string
+          - name: description_translation
+            data_type: string
       - name: src_amplify__dibels_goals_wide
         config:
           enabled: false
@@ -83,7 +85,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - amplify
               - dibels
@@ -100,7 +102,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - amplify
               - dibels

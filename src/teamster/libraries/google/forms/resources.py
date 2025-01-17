@@ -2,6 +2,7 @@ import google.auth
 from dagster import ConfigurableResource, InitResourceContext
 from googleapiclient import discovery
 from pydantic import PrivateAttr
+from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 
 class GoogleFormsResource(ConfigurableResource):
@@ -27,26 +28,31 @@ class GoogleFormsResource(ConfigurableResource):
             serviceName="forms", version=self.version, credentials=credentials
         ).forms()
 
-    def get_form(self, form_id):
+    def get_form(self, form_id: str):
         # trunk-ignore(pyright/reportAttributeAccessIssue)
         return self._resource.get(formId=form_id).execute()
 
-    def list_responses(self, form_id, **kwargs):
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential_jitter())
+    def _execute_list_responses(self, **kwargs) -> dict:
+        # trunk-ignore(pyright/reportAttributeAccessIssue)
+        return self._resource.responses().list(**kwargs).execute()
+
+    def list_responses(self, form_id: str, **kwargs):
         page_token = None
         reponses = []
 
         while True:
-            data: dict = (
-                # trunk-ignore(pyright/reportAttributeAccessIssue)
-                self._resource.responses()
-                .list(formId=form_id, pageToken=page_token, **kwargs)
-                .execute()
+            data = self._execute_list_responses(
+                formId=form_id, pageToken=page_token, **kwargs
             )
 
             reponses.extend(data.get("responses", []))
             page_token = data.get("nextPageToken")
 
             if page_token is None:
+                break
+            # pageSize=1 only used to check for new responses in sensor
+            elif kwargs.get("pageSize") == 1:
                 break
 
         return reponses

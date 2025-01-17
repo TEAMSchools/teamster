@@ -26,6 +26,11 @@ locations:
                     items:
                       - key: deanslist_api_key_map.yaml
                         path: deanslist_api_key_map_yaml
+                - secret:
+                    name: op-ps-ssh-kippmiami
+                    items:
+                      - key: password
+                        path: powerschool_ssh_password.txt
         server_k8s_config:
           container_config:
             env:
@@ -156,11 +161,6 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-db-kippmiami
-                    key: password
-              - name: PS_SSH_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippmiami
                     key: password
               - name: PS_SSH_PORT
                 valueFrom:
