@@ -3,12 +3,14 @@ with
         select
             cb_id,
             powerschool_student_number as local_student_id,
-            latest_psat_date as `date`,
+
             score,
 
             concat(
                 test_name, '_', regexp_extract(score_type, r'^[^_]+_(.+)')
             ) as score_type,
+
+            safe_cast(latest_psat_date as date) as `date`,
 
             case
                 test_type
