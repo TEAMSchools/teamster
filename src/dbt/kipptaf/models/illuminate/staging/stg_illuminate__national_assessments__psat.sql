@@ -495,4 +495,4 @@ select
     'PSAT89' as test_name,
 
     academic_year,
-from {{ ref("stg_illuminate__psat89") }}
+from {{ ref("stg_illuminate__national_assessments__psat89") }}
