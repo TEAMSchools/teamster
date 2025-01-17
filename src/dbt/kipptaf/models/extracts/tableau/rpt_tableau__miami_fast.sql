@@ -135,11 +135,12 @@ select
     co.lunch_status as lunchstatus,
     co.is_retained_year,
     co.enroll_status,
-
-    fte.is_enrolled_fte2,
-    fte.is_enrolled_fte3,
-    fte.is_present_fte2,
-    fte.is_present_fte3,
+    co.is_fldoe_fte_2 as is_enrolled_fte2,
+    co.is_fldoe_fte_3 as is_enrolled_fte3,
+    co.is_fldoe_fte_all as is_enrolled_fte,
+    {# TODO: are these needed? #}
+    null as is_present_fte2,
+    null as is_present_fte3,
 
     subj.fast_subject as fsa_subject,
     subj.iready_subject,
@@ -210,8 +211,6 @@ select
 
     round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
 
-    if(fte.is_enrolled_fte2 and fte.is_enrolled_fte3, true, false) as is_enrolled_fte,
-
     if(p.fldoe_percentile_rank < .255, true, false) as is_low_25,
 
     if(
@@ -258,11 +257,6 @@ select
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['PM1', 'PM2', 'PM3']) as administration_window
-left join
-    {{ ref("int_students__fldoe_fte") }} as fte
-    on co.studentid = fte.studentid
-    and co.yearid = fte.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="fte") }}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on co.student_number = ce.students_student_number
