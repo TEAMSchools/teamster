@@ -147,47 +147,30 @@ with
 
         select
             safe_cast(local_student_id as string) as contact,
-
-            test_name as scope,
-
-            test_date,
+            test_type as scope,
+            date as test_date,
             score as scale_score,
             rn_highest,
 
             'Official' as test_type,
 
             concat(
-                format_date('%b', test_date), ' ', format_date('%g', test_date)
+                format_date('%b', date), ' ', format_date('%g', date)
             ) as administration_round,
 
+            test_subject as subject_area,
+
             case
-                score_type
-                when 'psat_total_score'
-                then 'Composite'
-                when 'psat_math_section_score'
-                then 'Math'
-                when 'psat_eb_read_write_section_score'
-                then 'EBRW'
-            end as subject_area,
-            case
-                score_type
-                when 'psat_eb_read_write_section_score'
-                then 'ENG'
-                when 'psat_math_section_score'
-                then 'MATH'
-                else 'NA'
+                test_subject when 'EBRW' then 'ENG' when 'Math' then 'MATH' else 'NA'
             end as course_discipline,
 
-            academic_year as test_academic_year,
+            {{
+                date_to_fiscal_year(
+                    date_field="date", start_month=7, year_source="start"
+                )
+            }} as test_academic_year,
 
-        from {{ ref("int_illuminate__psat_unpivot") }}
-        where
-            score_type in (
-                'psat_eb_read_write_section_score',
-                'psat_math_section_score',
-                'psat_total_score'
-            )
-            and academic_year = {{ var("current_academic_year") }}
+        from {{ ref("int_collegeboard__psat_unpivot") }}
     )
 
 select
