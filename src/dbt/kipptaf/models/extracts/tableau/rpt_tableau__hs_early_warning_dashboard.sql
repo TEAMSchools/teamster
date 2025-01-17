@@ -75,7 +75,7 @@ select
 
     sus.suspension_count,
     sus.suspension_days,
-from {{ ref("int_tableau__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("stg_reporting__terms") }} as dt
     on co.academic_year = dt.academic_year
