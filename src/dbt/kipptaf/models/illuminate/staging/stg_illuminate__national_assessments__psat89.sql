@@ -3,7 +3,7 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("illuminate", "psat89_2025"),
+                    source("illuminate_national_assessments", "psat89_2025"),
                 ],
                 where="not _fivetran_deleted",
             )
