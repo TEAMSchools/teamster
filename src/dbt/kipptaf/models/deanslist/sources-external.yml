@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: deanslist
     schema: kipptaf_deanslist
-    tags:
-      - stage_external_sources
     tables:
       - name: src_deanslist__reconcile_attendance
         external:
@@ -14,7 +12,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - deanslist
               - reconcile_attendance
@@ -26,7 +24,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - deanslist
               - reconcile_suspensions

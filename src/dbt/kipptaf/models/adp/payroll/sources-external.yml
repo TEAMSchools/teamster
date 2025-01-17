@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: adp_payroll
     schema: kipptaf_adp_payroll
-    tags:
-      - stage_external_sources
     tables:
       - name: src_adp_payroll__general_ledger_file
         external:
@@ -18,7 +16,7 @@ sources:
           dagster:
             automation_condition:
               enabled: false
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - adp
               - payroll

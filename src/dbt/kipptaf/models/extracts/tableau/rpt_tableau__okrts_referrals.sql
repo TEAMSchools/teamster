@@ -184,6 +184,8 @@ select
     cf.restraint_duration,
     cf.restraint_type,
     cf.ssds_incident_id,
+    cf.referral_to_law_enforcement,
+    cf.arrested_for_school_related_activity,
 
     st.suspension_type,
 
@@ -245,6 +247,60 @@ select
     max(if(st.suspension_type = 'ISS', 1, 0)) over (
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_iss_int,
+
+    if(
+        sum(if(dlp.is_suspension, 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        = 1,
+        1,
+        0
+    ) as is_suspended_y1_one_int,
+
+    if(
+        sum(if(st.suspension_type = 'OSS', 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        = 1,
+        1,
+        0
+    ) as is_suspended_y1_oss_one_int,
+
+    if(
+        sum(if(st.suspension_type = 'ISS', 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        = 1,
+        1,
+        0
+    ) as is_suspended_y1_iss_one_int,
+
+    if(
+        sum(if(dlp.is_suspension, 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        > 1,
+        1,
+        0
+    ) as is_suspended_y1_2plus_int,
+
+    if(
+        sum(if(st.suspension_type = 'OSS', 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        > 1,
+        1,
+        0
+    ) as is_suspended_y1_oss_2plus_int,
+
+    if(
+        sum(if(st.suspension_type = 'ISS', 1, 0)) over (
+            partition by co.academic_year, co.student_number
+        )
+        > 1,
+        1,
+        0
+    ) as is_suspended_y1_iss_2plus_int,
 
     if(tr.student_school_id is not null, true, false) as is_tier3_4,
 

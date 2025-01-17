@@ -1,6 +1,6 @@
 from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudResource
-from dagster_embedded_elt.dlt import DagsterDltResource
+from dagster_dlt import DagsterDltResource
 from dagster_fivetran import FivetranResource
 
 from teamster.libraries.adp.workforce_manager.resources import (

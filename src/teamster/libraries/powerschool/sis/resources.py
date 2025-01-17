@@ -1,8 +1,8 @@
 import pathlib
 
 import fastavro
-import oracledb
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from oracledb import Connection, ConnectParams, Cursor, connect, defaults
 from pydantic import PrivateAttr
 from sqlalchemy import Select, TextClause
 
@@ -20,16 +20,16 @@ class PowerSchoolODBCResource(ConfigurableResource):
     retry_delay: int = 1
     tcp_connect_timeout: float = 20.0
 
-    _connect_params: oracledb.ConnectParams = PrivateAttr()
+    _connect_params: ConnectParams = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         # trunk-ignore(pyright/reportAttributeAccessIssue)
-        oracledb.defaults.fetch_lobs = False
+        defaults.fetch_lobs = False
 
         self._log = _check.not_none(value=context.log)
 
-        self._connect_params = oracledb.ConnectParams(
+        self._connect_params = ConnectParams(
             user=self.user,
             password=self.password,
             host=self.host,
@@ -42,19 +42,18 @@ class PowerSchoolODBCResource(ConfigurableResource):
         )
 
     def connect(self):
-        return oracledb.connect(params=self._connect_params)
+        self._log.debug("Opening connection to database")
+        return connect(params=self._connect_params)
 
     def execute_query(
         self,
+        connection: Connection,
         query: Select | TextClause,
         output_format: str | None = None,
         batch_size: int = 1000,
-        prefetch_rows: int = oracledb.defaults.prefetchrows,
-        array_size: int = oracledb.defaults.arraysize,
+        prefetch_rows: int = defaults.prefetchrows,
+        array_size: int = defaults.arraysize,
     ):
-        self._log.debug("Opening connection to database")
-        connection = self.connect()
-
         self._log.debug(f"Opening cursor on {connection.service_name}")
         cursor = connection.cursor()
 
@@ -98,14 +97,11 @@ class PowerSchoolODBCResource(ConfigurableResource):
         self._log.debug("Closing cursor on connection")
         cursor.close()
 
-        self._log.debug("Closing connection to database")
-        connection.close()
-
         return output
 
     def result_to_avro(
         self,
-        cursor: oracledb.Cursor,
+        cursor: Cursor,
         batch_size: int,
         schema,
         data_filepath: pathlib.Path | None = None,

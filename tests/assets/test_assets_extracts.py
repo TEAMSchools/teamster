@@ -9,8 +9,17 @@ from teamster.libraries.extracts.assets import format_file_name
 
 
 def _test_asset(
-    asset: AssetsDefinition, partition_key=None, instance=None, **ssh_kwargs
+    assets: list[AssetsDefinition],
+    partition_key=None,
+    instance=None,
+    asset_selection=None,
+    **ssh_kwargs,
 ):
+    if asset_selection is not None:
+        asset = [a for a in assets if a.key.to_user_string() == asset_selection][0]
+    else:
+        asset = assets[random.randint(a=0, b=(len(assets) - 1))]
+
     if asset.partitions_def is not None and partition_key is None:
         partition_keys = asset.partitions_def.get_partition_keys(
             dynamic_partitions_store=instance
@@ -116,7 +125,7 @@ def test_intacct_extract_asset():
     from teamster.code_locations.kipptaf.extracts.assets import intacct_extract
 
     _test_asset(
-        asset=intacct_extract,
+        assets=[intacct_extract],
         instance=DagsterInstance.from_config(
             config_dir=".dagster/home", config_filename="dagster-cloud.yaml"
         ),
@@ -129,24 +138,14 @@ def test_extracts_powerschool_kippnewark():
         powerschool_extract_assets,
     )
 
-    _test_asset(
-        # asset=powerschool_extract_assets[
-        #     random.randint(a=0, b=(len(powerschool_extract_assets) - 1))
-        # ],
-        asset=[
-            a
-            for a in powerschool_extract_assets
-            if a.key.path[-1] == "powerschool_autocomm_students_iep_txt"
-        ][0],
-        ssh_couchdrop=SSH_COUCHDROP,
-    )
+    _test_asset(assets=powerschool_extract_assets, ssh_couchdrop=SSH_COUCHDROP)
 
 
 def test_littlesis_extract():
     from teamster.code_locations.kipptaf.extracts.assets import littlesis_extract
     from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_LITTLESIS
 
-    _test_asset(asset=littlesis_extract, ssh_littlesis=SSH_RESOURCE_LITTLESIS)
+    _test_asset(assets=[littlesis_extract], ssh_littlesis=SSH_RESOURCE_LITTLESIS)
 
 
 def test_deanslist_jsongz():
@@ -156,7 +155,7 @@ def test_deanslist_jsongz():
     from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_DEANSLIST
 
     _test_asset(
-        asset=deanslist_continuous_extract, ssh_deanslist=SSH_RESOURCE_DEANSLIST
+        assets=[deanslist_continuous_extract], ssh_deanslist=SSH_RESOURCE_DEANSLIST
     )
 
 
@@ -165,8 +164,7 @@ def test_clever_extract():
     from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_CLEVER
 
     _test_asset(
-        asset=clever_extract_assets[
-            random.randint(a=0, b=(len(clever_extract_assets) - 1))
-        ],
+        assets=clever_extract_assets,
+        asset_selection="kipptaf/extracts/clever/students_csv",
         ssh_clever=SSH_RESOURCE_CLEVER,
     )
