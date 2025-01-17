@@ -2,15 +2,13 @@ import json
 from datetime import date
 
 from dagster import AssetExecutionContext, AssetKey, EnvVar, _check
-from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator
+from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
 from dlt.sources.sql_database import remove_nullability_adapter, sql_database
 from sqlalchemy.sql import Select, TableClause
-
-from teamster.libraries.dlt.asset_decorator import dlt_assets
 
 CREDENTIALS = ConnectionStringCredentials(
     {
