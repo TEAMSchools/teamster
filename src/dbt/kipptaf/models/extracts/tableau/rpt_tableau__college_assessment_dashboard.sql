@@ -240,7 +240,79 @@ left join
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official'
+where e.expected_test_type = 'Official' and e.expected_scope in ('ACT', 'SAT')
+
+union all
+
+select
+    e.academic_year,
+    e.academic_year_display,
+    e.region,
+    e.schoolid,
+    e.school,
+    e.student_number,
+    e.student_name,
+    e.grade_level,
+    e.enroll_status,
+    e.cohort,
+    e.sped,
+    e.is_504,
+    e.lep_status,
+    e.gifted_and_talented,
+    e.advisory,
+    e.contact_id,
+    e.ktc_cohort,
+    e.contact_owner_name,
+    e.college_match_gpa,
+    e.college_match_gpa_bands,
+    e.courses_course_name,
+    e.teacher_lastfirst,
+    e.sections_external_expression,
+    e.expected_test_type,
+    e.expected_scope,
+    e.expected_subject_area,
+
+    o.test_type,
+    o.scope,
+
+    'NA' as scope_round,
+    null as assessment_id,
+    'NA' as assessment_title,
+
+    o.administration_round,
+    o.subject_area,
+    o.test_date,
+
+    'NA' as response_type,
+    'NA' as response_type_description,
+
+    null as points,
+    null as percent_correct,
+    null as total_subjects_tested,
+    null as raw_score,
+
+    o.scale_score,
+    o.rn_highest,
+
+    c.courses_course_name as subject_course,
+    c.teacher_lastfirst as subject_teacher,
+    c.sections_external_expression as subject_external_expression,
+
+    coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
+from roster as e
+left join
+    college_assessments_official as o
+    on safe_cast(e.student_number as string) = o.contact
+    and e.expected_test_type = o.test_type
+    and e.expected_scope = o.scope
+    and e.expected_subject_area = o.subject_area
+left join
+    course_subjects_roster as c
+    on o.contact = c.contact_id
+    and o.test_academic_year = c.academic_year
+    and o.course_discipline = c.courses_credittype
+where
+    e.expected_test_type = 'Official' and e.expected_scope in ('PSAT NMSQT', 'PSAT 8/9')
 
 union all
 
