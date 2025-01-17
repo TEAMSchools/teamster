@@ -423,7 +423,7 @@ def build_sftp_folder_asset(
         kinds={"python", "file"},
     )
     def _asset(context: AssetExecutionContext):
-        records = []
+        all_records = []
         record_count = 0
 
         ssh: SSHResource = getattr(context.resources, ssh_resource_key)
@@ -487,12 +487,14 @@ def build_sftp_folder_asset(
             if n_rows == 0:
                 context.log.warning(msg="File contains 0 rows")
 
-            records.extend(records)
+            all_records.extend(records)
             record_count += n_rows
 
-        yield Output(value=(records, avro_schema), metadata={"records": record_count})
+        yield Output(
+            value=(all_records, avro_schema), metadata={"records": record_count}
+        )
         yield check_avro_schema_valid(
-            asset_key=context.asset_key, records=records, schema=avro_schema
+            asset_key=context.asset_key, records=all_records, schema=avro_schema
         )
 
     return _asset

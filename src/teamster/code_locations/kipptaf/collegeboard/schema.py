@@ -90,7 +90,7 @@ class PSAT(BaseModel):
     percentile_state_rw: int | None = None
     percentile_state_total: int | None = None
     report_date: str | None = None
-    secondary_id: int | None = None
+    secondary_id: float | None = None
     selection_index: int | None = None
     state_student_id: float | None = None
     yrs_9to12: str | None = None
@@ -100,9 +100,7 @@ PSAT_SCHEMA = json.loads(
     py_avro_schema.generate(
         py_type=PSAT,
         options=(
-            py_avro_schema.Option.USE_FIELD_ALIAS
-            | py_avro_schema.Option.NO_DOC
-            | py_avro_schema.Option.NO_AUTO_NAMESPACE
+            py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
         ),
     )
 )
