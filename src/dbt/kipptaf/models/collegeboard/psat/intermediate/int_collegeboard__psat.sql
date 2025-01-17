@@ -9,7 +9,7 @@ select
         then 'psatnmsqt'
         when 'PSAT10'
         then 'psat10'
-    end as test_name
+    end as test_name,
 from {{ ref("stg_collegeboard__psat") }} as psat
 left join
     {{ ref("stg_collegeboard__id_crosswalk") }} as xw
