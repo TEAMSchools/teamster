@@ -286,7 +286,7 @@ select
     coalesce(ip.is_pass_4_lessons_int_math, 0) as is_passed_iready_4plus_math_int,
 from identifiers as co
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on co.student_number = sf.student_number
     and co.academic_year = sf.academic_year
     and co.subject_area = sf.illuminate_subject_area
@@ -390,7 +390,7 @@ select
     null as is_passed_iready_4plus_math_int,
 from identifiers as co
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on co.student_number = sf.student_number
     and co.academic_year = sf.academic_year
     and co.course_credittype = sf.assessment_dashboard_join

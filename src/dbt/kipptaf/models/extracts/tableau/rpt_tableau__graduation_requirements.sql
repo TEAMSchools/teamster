@@ -24,7 +24,7 @@ with
             e.is_retained_year,
             e.is_retained_ever,
             e.student_email as student_email_google,
-            e.contact_id as kippadb_contact_id,
+            e.salesforce_id as kippadb_contact_id,
             e.ktc_cohort,
             e.has_fafsa,
 
@@ -37,7 +37,7 @@ with
 
             safe_cast(e.state_studentnumber as int) as state_studentnumber,
 
-        from {{ ref("int_tableau__student_enrollments") }} as e
+        from {{ ref("int_extracts__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
@@ -210,7 +210,7 @@ with
         union all
 
         select
-            local_student_id as contact,
+            cast(local_student_id as string) as contact,
 
             'PSAT' as test_type,
 

@@ -45,7 +45,7 @@ select
     e.is_504 as c_504_status,
     e.lep_status,
     e.gifted_and_talented,
-    e.contact_id,
+    e.salesforce_id as contact_id,
     e.ktc_cohort,
 
     s.cc_dateenrolled as ap_date_enrolled,
@@ -75,7 +75,7 @@ select
         then 'Took course, but not AP exam.'
         else a.test_subject_area
     end as test_subject_area,
-from {{ ref("int_tableau__student_enrollments") }} as e
+from {{ ref("int_extracts__student_enrollments") }} as e
 left join
     {{ ref("base_powerschool__course_enrollments") }} as s
     on e.studentid = s.cc_studentid
@@ -86,7 +86,7 @@ left join
     and not s.is_dropped_section
 left join
     ap_assessments_official as a
-    on e.contact_id = a.contact
+    on e.salesforce_id = a.contact
     and s.courses_course_name = a.test_subject_area
 where
     e.school_level = 'HS'

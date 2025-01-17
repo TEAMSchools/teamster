@@ -6,3 +6,12 @@ models:
       dagster:
         automation_condition:
           enabled: false
+  - name: int_extracts__student_enrollments_subjects
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - student_number
+            - academic_year
+            - iready_subject
+          config:
+            severity: warn
