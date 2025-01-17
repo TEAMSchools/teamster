@@ -200,15 +200,14 @@ select
 
     f.audit_category,
 
-    1 as audit_flag_value,
+    if(r.audit_flag_value, 1, 0) as audit_flag_value,
 from student_unpivot as r
-left join
+inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
     on r.region = f.region
     and r.school_level = f.school_level
     and r.assignment_category_code = f.code
     and r.audit_flag_name = f.audit_flag_name
-where r.audit_flag_value
 
 union all
 
@@ -322,12 +321,11 @@ select
 
     f.audit_category,
 
-    1 as audit_flag_value,
+    if(r.audit_flag_value, 1, 0) as audit_flag_value,
 from teacher_unpivot as r
-left join
+inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
     on r.region = f.region
     and r.school_level = f.school_level
     and r.assignment_category_code = f.code
     and r.audit_flag_name = f.audit_flag_name
-where r.audit_flag_value
