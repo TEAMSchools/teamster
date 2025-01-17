@@ -34,7 +34,7 @@ sources:
             asset_key:
               - kipptaf
               - dlt
-              - illuminate_xmin
+              - illuminate
               - dna_assessments
               - agg_student_responses
       - name: agg_student_responses_group
@@ -44,7 +44,7 @@ sources:
             asset_key:
               - kipptaf
               - dlt
-              - illuminate_xmin
+              - illuminate
               - dna_assessments
               - agg_student_responses_group
       - name: agg_student_responses_standard
@@ -54,7 +54,7 @@ sources:
             asset_key:
               - kipptaf
               - dlt
-              - illuminate_xmin
+              - illuminate
               - dna_assessments
               - agg_student_responses_standard
       - name: assessment_grade_levels
