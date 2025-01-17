@@ -147,47 +147,30 @@ with
 
         select
             safe_cast(local_student_id as string) as contact,
-
-            test_name as scope,
-
-            test_date,
+            test_type as scope,
+            date as test_date,
             score as scale_score,
             rn_highest,
 
             'Official' as test_type,
 
             concat(
-                format_date('%b', test_date), ' ', format_date('%g', test_date)
+                format_date('%b', date), ' ', format_date('%g', date)
             ) as administration_round,
 
+            test_subject as subject_area,
+
             case
-                score_type
-                when 'psat_total_score'
-                then 'Composite'
-                when 'psat_math_section_score'
-                then 'Math'
-                when 'psat_eb_read_write_section_score'
-                then 'EBRW'
-            end as subject_area,
-            case
-                score_type
-                when 'psat_eb_read_write_section_score'
-                then 'ENG'
-                when 'psat_math_section_score'
-                then 'MATH'
-                else 'NA'
+                test_subject when 'EBRW' then 'ENG' when 'Math' then 'MATH' else 'NA'
             end as course_discipline,
 
-            academic_year as test_academic_year,
+            {{
+                date_to_fiscal_year(
+                    date_field="date", start_month=7, year_source="start"
+                )
+            }} as test_academic_year,
 
-        from {{ ref("int_illuminate__psat_unpivot") }}
-        where
-            score_type in (
-                'psat_eb_read_write_section_score',
-                'psat_math_section_score',
-                'psat_total_score'
-            )
-            and academic_year = {{ var("current_academic_year") }}
+        from {{ ref("int_collegeboard__psat_unpivot") }}
     )
 
 select
@@ -257,79 +240,7 @@ left join
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official' and e.expected_scope in ('ACT', 'SAT')
-
-union all
-
-select
-    e.academic_year,
-    e.academic_year_display,
-    e.region,
-    e.schoolid,
-    e.school,
-    e.student_number,
-    e.student_name,
-    e.grade_level,
-    e.enroll_status,
-    e.cohort,
-    e.sped,
-    e.is_504,
-    e.lep_status,
-    e.gifted_and_talented,
-    e.advisory,
-    e.contact_id,
-    e.ktc_cohort,
-    e.contact_owner_name,
-    e.college_match_gpa,
-    e.college_match_gpa_bands,
-    e.courses_course_name,
-    e.teacher_lastfirst,
-    e.sections_external_expression,
-    e.expected_test_type,
-    e.expected_scope,
-    e.expected_subject_area,
-
-    o.test_type,
-    o.scope,
-
-    'NA' as scope_round,
-    null as assessment_id,
-    'NA' as assessment_title,
-
-    o.administration_round,
-    o.subject_area,
-    o.test_date,
-
-    'NA' as response_type,
-    'NA' as response_type_description,
-
-    null as points,
-    null as percent_correct,
-    null as total_subjects_tested,
-    null as raw_score,
-
-    o.scale_score,
-    o.rn_highest,
-
-    c.courses_course_name as subject_course,
-    c.teacher_lastfirst as subject_teacher,
-    c.sections_external_expression as subject_external_expression,
-
-    coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
-from roster as e
-left join
-    college_assessments_official as o
-    on safe_cast(e.student_number as string) = o.contact
-    and e.expected_test_type = o.test_type
-    and e.expected_scope = o.scope
-    and e.expected_subject_area = o.subject_area
-left join
-    course_subjects_roster as c
-    on o.contact = c.contact_id
-    and o.test_academic_year = c.academic_year
-    and o.course_discipline = c.courses_credittype
-where
-    e.expected_test_type = 'Official' and e.expected_scope in ('PSAT NMSQT', 'PSAT 8/9')
+where e.expected_test_type = 'Official'
 
 union all
 
