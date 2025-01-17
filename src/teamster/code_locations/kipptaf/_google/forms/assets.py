@@ -33,7 +33,7 @@ asset_kwargs = {
 @asset(
     key=[*key_prefix, "form"],
     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "form"])],
-    automation_condition=AutomationCondition.on_missing(),
+    automation_condition=AutomationCondition.newly_missing(),
     **asset_kwargs,
 )
 def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
