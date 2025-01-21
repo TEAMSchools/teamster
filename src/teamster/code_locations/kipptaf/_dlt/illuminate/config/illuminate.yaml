@@ -42,6 +42,7 @@ assets:
     tables:
       - table_name: psat_2023
       - table_name: psat_2024
+      - table_name: psat89_2025
   - schema: public
     tables:
       - table_name: sessions

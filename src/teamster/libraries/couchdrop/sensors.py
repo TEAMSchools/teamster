@@ -104,7 +104,7 @@ def build_couchdrop_sftp_sensor(
 
             pattern = re.compile(
                 pattern=(
-                    rf"{metadata["remote_dir_regex"]}/{metadata["remote_file_regex"]}"
+                    rf"{metadata['remote_dir_regex']}/{metadata['remote_file_regex']}"
                 )
             )
 
@@ -156,8 +156,11 @@ def build_couchdrop_sftp_sensor(
             cursor[asset_identifier] = max_st_mtime
 
         if run_request_kwargs:
+            item_getter_key = itemgetter("job_name", "partition_key")
+
             for (job_name, partition_key), group in groupby(
-                iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
+                iterable=sorted(run_request_kwargs, key=item_getter_key),
+                key=item_getter_key,
             ):
                 run_requests.append(
                     RunRequest(
