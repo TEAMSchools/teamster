@@ -140,17 +140,9 @@ with
         union all
 
         select
-<<<<<<< HEAD
-            cast(local_student_id as string) as contact,
-
-            test_name as scope,
-
-            test_date,
-=======
             safe_cast(local_student_id as string) as contact,
             test_type as scope,
             date as test_date,
->>>>>>> 31bcf9eb25657332dded5eb653e6b5609ae25bf7
             score as scale_score,
             rn_highest,
 
