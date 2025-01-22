@@ -35,10 +35,8 @@ select
     s.is_504,
     s.is_counseling_services,
     s.is_student_athlete,
-    s.is_tutoring,
     s.ada,
     s.ada_above_or_at_80,
-    s.nj_student_tier,
 
     ce.cc_sectionid as sectionid,
     ce.cc_course_number as course_number,
@@ -158,12 +156,11 @@ select
         true,
         false
     ) as qt_student_is_ada_80_plus_gpa_less_2,
-from {{ ref("int_extracts__student_enrollments_subjects") }} as s
+from {{ ref("int_extracts__student_enrollments") }} as s
 inner join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on s.studentid = ce.cc_studentid
     and s.yearid = ce.terms_yearid
-    and s.powerschool_credittype = ce.courses_credittype
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
     and not ce.is_dropped_section
 left join
