@@ -49,3 +49,4 @@ left join
     on eh.powerschool_teacher_number = tgl.teachernumber
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
+where eh.primary_indicator
