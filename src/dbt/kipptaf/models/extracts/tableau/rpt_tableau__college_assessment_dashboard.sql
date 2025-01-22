@@ -48,6 +48,7 @@ with
             {{ ref("stg_assessments__assessment_expectations") }} as t
             on e.academic_year = t.academic_year
             and e.grade_level = t.grade
+            and e.region = t.region
             and t.assessment_type = 'College Entrance'
         where
             e.academic_year = {{ var("current_academic_year") }}
