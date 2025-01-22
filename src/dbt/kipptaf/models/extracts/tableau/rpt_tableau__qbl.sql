@@ -1,3 +1,4 @@
+{{ config(enabled=False) }}
 -- K-8
 select
     co.academic_year,
