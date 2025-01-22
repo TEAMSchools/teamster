@@ -1,3 +1,5 @@
+{{- config(materialized="table") -}}
+
 select
     _dbt_source_relation,
     academic_year,
