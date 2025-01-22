@@ -136,8 +136,6 @@ select
     r.iep_status,
     r.lep_status,
     r.is_504,
-    r.is_tutoring as tutoring_nj,
-    r.nj_student_tier,
     r.sectionid,
     r.sections_dcid,
     r.section_number,
@@ -252,8 +250,6 @@ select
     null as iep_status,
     null as lep_status,
     null as is_504,
-    null as tutoring_nj,
-    null as nj_student_tier,
 
     r.sectionid,
     r.sections_dcid,
