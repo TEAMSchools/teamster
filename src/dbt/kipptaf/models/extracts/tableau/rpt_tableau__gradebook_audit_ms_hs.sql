@@ -93,6 +93,7 @@ select
     is_exempt,
     is_late,
     is_missing,
+    cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
@@ -195,6 +196,7 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
+    cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
@@ -301,6 +303,7 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
+    cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
@@ -410,6 +413,7 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
+    cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
@@ -518,6 +522,7 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
+    cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
@@ -624,6 +629,7 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
+    cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
@@ -730,6 +736,7 @@ select
     null as is_exempt,
     null as is_late,
     null as is_missing,
+    cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
