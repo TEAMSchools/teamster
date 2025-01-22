@@ -25,6 +25,7 @@ select
     e.cur_actual_end_date,
     e.cur_anticipated_graduation,
 
+    co.state_studentnumber,
     co.contact_1_name as ps_contact_1_name,
     co.contact_1_relationship as ps_contact_1_relationship,
     co.contact_1_email_current as ps_contact_1_email_current,
