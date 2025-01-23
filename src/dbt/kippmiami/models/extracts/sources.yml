@@ -6,7 +6,7 @@ sources:
       - name: rpt_powerschool__autocomm_teachers
         meta:
           dagster:
-            group: powerschool
+            group: extracts
             asset_key:
               - kipptaf
               - extracts
@@ -14,7 +14,7 @@ sources:
       - name: rpt_powerschool__autocomm_students
         meta:
           dagster:
-            group: powerschool
+            group: extracts
             asset_key:
               - kipptaf
               - extracts
@@ -22,7 +22,7 @@ sources:
       - name: rpt_powerschool__autocomm_students_iep
         meta:
           dagster:
-            group: powerschool
+            group: extracts
             asset_key:
               - kipptaf
               - extracts

@@ -6,6 +6,15 @@
             unique_key="surrogate_key",
             strategy="check",
             check_cols="all",
+            meta={
+                "dagster": {
+                    "asset_key": [
+                        "kipptaf",
+                        "people",
+                        "snapshot_people__employee_numbers",
+                    ]
+                }
+            },
         )
     }}
 
