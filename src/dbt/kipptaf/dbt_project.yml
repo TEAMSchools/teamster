@@ -98,19 +98,8 @@ models:
       +schema: edplan
     extracts:
       +schema: extracts
-      +materialized: table
-      clever:
-        +materialized: view
-      deanslist:
-        +materialized: view
-      google:
-        sheets:
-          +materialized: view
-      powerschool:
-        +materialized: view
       tableau:
         +schema: tableau
-        +materialized: view
     facebook:
       +enabled: false
     finance:
