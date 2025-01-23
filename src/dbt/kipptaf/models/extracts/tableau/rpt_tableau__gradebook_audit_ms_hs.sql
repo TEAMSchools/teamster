@@ -9,6 +9,7 @@ select
     region_school_level,
     schoolid,
     school,
+
     studentid,
     student_number,
     student_name,
@@ -25,7 +26,6 @@ select
     year_in_network,
     rn_undergrad,
     is_out_of_district,
-    is_pathways,
     is_retained_year,
     is_retained_ever,
     lunch_status,
@@ -38,22 +38,24 @@ select
     ada,
     ada_above_or_at_80,
     date_enrolled,
+
     `quarter`,
     semester,
-    week_number,
+    week_number_quarter as audit_qt_week_number,
     quarter_start_date,
     quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
+    is_current_term as is_current_quarter,
     is_quarter_end_date_range,
-    audit_start_date,
-    audit_end_date,
-    audit_due_date,
+    week_start_monday as audit_start_date,
+    week_end_sunday as audit_end_date,
+    school_week_start_date_lead as audit_due_date,
+
     assignment_category_name,
     assignment_category_code,
     assignment_category_term,
     expectation,
     notes,
+
     section_or_period,
     sectionid,
     sections_dcid,
@@ -64,39 +66,47 @@ select
     course_name,
     exclude_from_gpa,
     is_ap_course,
+
     teacher_number,
     teacher_name,
     tableau_username,
+
     category_quarter_percent_grade,
     category_quarter_average_all_courses,
+
     quarter_course_percent_grade_that_matters,
     quarter_course_grade_points_that_matters,
     quarter_citizenship,
     quarter_comment_value,
+
     audit_category,
-    teacher_assign_id,
-    teacher_assign_name,
-    teacher_assign_due_date,
-    teacher_assign_score_type,
-    teacher_assign_max_score,
+
+    assignmentid as teacher_assign_id,
+    assignment_name as teacher_assign_name,
+    duedate as teacher_assign_due_date,
+    scoretype as teacher_assign_score_type,
+    totalpointvalue as teacher_assign_max_score,
     n_students,
     n_late,
     n_exempt,
     n_missing,
     n_expected,
     n_expected_scored,
-    teacher_running_total_assign_by_cat,
-    teacher_avg_score_for_assign_per_class_section_and_assign_id,
-    raw_score,
+    null as teacher_running_total_assign_by_cat,
+    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
+    actualscoreentered as raw_score,
     score_entered,
     assign_final_score_percent,
     is_exempt,
     is_late,
     is_missing,
+
     cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
+
 from {{ ref("int_tableau__gradebook_audit_flags") }}
 where cte_grouping = 'assignment_student' and school_level != 'ES'
 
@@ -111,6 +121,7 @@ select
     region_school_level,
     schoolid,
     school,
+
     studentid,
     student_number,
     student_name,
@@ -127,7 +138,6 @@ select
     year_in_network,
     rn_undergrad,
     is_out_of_district,
-    is_pathways,
     is_retained_year,
     is_retained_ever,
     lunch_status,
@@ -140,22 +150,24 @@ select
     ada,
     ada_above_or_at_80,
     date_enrolled,
+
     `quarter`,
     semester,
-    week_number,
+    week_number_quarter as week_number,
     quarter_start_date,
     quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
+    is_current_term as is_current_quarter,
     is_quarter_end_date_range,
-    audit_start_date,
-    audit_end_date,
-    audit_due_date,
+    week_start_monday as audit_start_date,
+    week_end_sunday as audit_end_date,
+    school_week_start_date_lead as audit_due_date,
+
     assignment_category_name,
     assignment_category_code,
     assignment_category_term,
     expectation,
     notes,
+
     section_or_period,
     sectionid,
     sections_dcid,
@@ -166,15 +178,19 @@ select
     course_name,
     exclude_from_gpa,
     is_ap_course,
+
     teacher_number,
     teacher_name,
     tableau_username,
+
     category_quarter_percent_grade,
     category_quarter_average_all_courses,
+
     quarter_course_percent_grade_that_matters,
     quarter_course_grade_points_that_matters,
     quarter_citizenship,
     quarter_comment_value,
+
     audit_category,
 
     null as teacher_assign_id,
@@ -190,21 +206,23 @@ select
     null as n_expected_scored,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
     null as raw_score,
     null as score_entered,
     null as assign_final_score_percent,
     null as is_exempt,
     null as is_late,
     null as is_missing,
+
     cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
+
 from {{ ref("int_tableau__gradebook_audit_flags") }}
 where
     assignment_category_code = 'W'
     and audit_flag_name = 'w_grade_inflation'
-    and cte_grouping not in ('student_course', 'student')
     and school_level != 'ES'
 
 union all
@@ -218,6 +236,7 @@ select
     region_school_level,
     schoolid,
     school,
+
     studentid,
     student_number,
     student_name,
@@ -234,7 +253,6 @@ select
     year_in_network,
     rn_undergrad,
     is_out_of_district,
-    is_pathways,
     is_retained_year,
     is_retained_ever,
     lunch_status,
@@ -247,22 +265,24 @@ select
     ada,
     ada_above_or_at_80,
     date_enrolled,
+
     `quarter`,
     semester,
-    week_number,
+    week_number_quarter as week_number,
     quarter_start_date,
     quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
+    is_current_term as is_current_quarter,
     is_quarter_end_date_range,
-    audit_start_date,
-    audit_end_date,
-    audit_due_date,
+    week_start_monday as audit_start_date,
+    week_end_sunday as audit_end_date,
+    school_week_start_date_lead as audit_due_date,
+
     assignment_category_name,
     assignment_category_code,
     assignment_category_term,
     expectation,
     notes,
+
     section_or_period,
     sectionid,
     sections_dcid,
@@ -273,15 +293,19 @@ select
     course_name,
     exclude_from_gpa,
     is_ap_course,
+
     teacher_number,
     teacher_name,
     tableau_username,
+
     category_quarter_percent_grade,
     category_quarter_average_all_courses,
+
     quarter_course_percent_grade_that_matters,
     quarter_course_grade_points_that_matters,
     quarter_citizenship,
     quarter_comment_value,
+
     audit_category,
 
     null as teacher_assign_id,
@@ -297,16 +321,19 @@ select
     null as n_expected_scored,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
     null as raw_score,
     null as score_entered,
     null as assign_final_score_percent,
     null as is_exempt,
     null as is_late,
     null as is_missing,
+
     cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
+
 from {{ ref("int_tableau__gradebook_audit_flags") }}
 where
     assignment_category_code = 'W'
@@ -324,6 +351,7 @@ select
     region_school_level,
     schoolid,
     school,
+
     studentid,
     student_number,
     student_name,
@@ -340,7 +368,6 @@ select
     year_in_network,
     rn_undergrad,
     is_out_of_district,
-    is_pathways,
     is_retained_year,
     is_retained_ever,
     lunch_status,
@@ -353,17 +380,17 @@ select
     ada,
     ada_above_or_at_80,
     date_enrolled,
+
     `quarter`,
     semester,
-    week_number,
+    week_number_quarter as week_number,
     quarter_start_date,
     quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
+    is_current_term as is_current_quarter,
     is_quarter_end_date_range,
-    audit_start_date,
-    audit_end_date,
-    audit_due_date,
+    week_start_monday as audit_start_date,
+    week_end_sunday as audit_end_date,
+    school_week_start_date_lead as audit_due_date,
 
     null as assignment_category_name,
     null as assignment_category_code,
@@ -381,6 +408,7 @@ select
     course_name,
     exclude_from_gpa,
     is_ap_course,
+
     teacher_number,
     teacher_name,
     tableau_username,
@@ -392,6 +420,7 @@ select
     quarter_course_grade_points_that_matters,
     quarter_citizenship,
     quarter_comment_value,
+
     audit_category,
 
     null as teacher_assign_id,
@@ -407,16 +436,19 @@ select
     null as n_expected_scored,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
     null as raw_score,
     null as score_entered,
     null as assign_final_score_percent,
     null as is_exempt,
     null as is_late,
     null as is_missing,
+
     cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
+
 from {{ ref("int_tableau__gradebook_audit_flags") }}
 where cte_grouping = 'student_course' and school_level != 'ES'
 
@@ -431,6 +463,7 @@ select
     region_school_level,
     schoolid,
     school,
+
     studentid,
     student_number,
     student_name,
@@ -447,7 +480,6 @@ select
     year_in_network,
     rn_undergrad,
     is_out_of_district,
-    is_pathways,
     is_retained_year,
     is_retained_ever,
     lunch_status,
@@ -460,17 +492,17 @@ select
     ada,
     ada_above_or_at_80,
     date_enrolled,
+
     `quarter`,
     semester,
-    week_number,
+    week_number_quarter as week_number,
     quarter_start_date,
     quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
+    is_current_term as is_current_quarter,
     is_quarter_end_date_range,
-    audit_start_date,
-    audit_end_date,
-    audit_due_date,
+    week_start_monday as audit_start_date,
+    week_end_sunday as audit_end_date,
+    school_week_start_date_lead as audit_due_date,
 
     null as assignment_category_name,
     null as assignment_category_code,
@@ -488,6 +520,7 @@ select
     course_name,
     exclude_from_gpa,
     is_ap_course,
+
     teacher_number,
     teacher_name,
     tableau_username,
@@ -497,7 +530,6 @@ select
 
     quarter_course_percent_grade_that_matters,
     quarter_course_grade_points_that_matters,
-
     null as quarter_citizenship,
     null as quarter_comment_value,
 
@@ -516,16 +548,19 @@ select
     null as n_expected_scored,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
     null as raw_score,
     null as score_entered,
     null as assign_final_score_percent,
     null as is_exempt,
     null as is_late,
     null as is_missing,
+
     cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
+
 from {{ ref("int_tableau__gradebook_audit_flags") }}
 where cte_grouping = 'student' and school_level != 'ES'
 
@@ -557,7 +592,6 @@ select
     null as year_in_network,
     null as rn_undergrad,
     null as is_out_of_district,
-    null as is_pathways,
     null as is_retained_year,
     null as is_retained_ever,
     null as lunch_status,
@@ -573,20 +607,21 @@ select
 
     `quarter`,
     semester,
-    week_number,
+    week_number_quarter as week_number,
     quarter_start_date,
     quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
+    is_current_term as is_current_quarter,
     is_quarter_end_date_range,
-    audit_start_date,
-    audit_end_date,
-    audit_due_date,
+    week_start_monday as audit_start_date,
+    week_end_sunday as audit_end_date,
+    school_week_start_date_lead as audit_due_date,
+
     assignment_category_name,
     assignment_category_code,
     assignment_category_term,
     expectation,
     notes,
+
     section_or_period,
     sectionid,
     sections_dcid,
@@ -597,24 +632,26 @@ select
     course_name,
     exclude_from_gpa,
     is_ap_course,
+
     teacher_number,
     teacher_name,
     tableau_username,
 
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
+
     null as quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
     null as quarter_citizenship,
     null as quarter_comment_value,
 
     audit_category,
-    teacher_assign_id,
-    teacher_assign_name,
-    teacher_assign_due_date,
-    teacher_assign_score_type,
-    teacher_assign_max_score,
 
+    assignmentid as teacher_assign_id,
+    assignment_name as teacher_assign_name,
+    duedate as teacher_assign_due_date,
+    scoretype as teacher_assign_score_type,
+    totalpointvalue as teacher_assign_max_score,
     null as n_students,
     null as n_late,
     null as n_exempt,
@@ -623,16 +660,19 @@ select
     null as n_expected_scored,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
     null as raw_score,
     null as score_entered,
     null as assign_final_score_percent,
     null as is_exempt,
     null as is_late,
     null as is_missing,
+
     cte_grouping,
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
+
 from {{ ref("int_tableau__gradebook_audit_flags") }}
 where cte_grouping = 'class_category_assignment' and school_level != 'ES'
 
@@ -664,7 +704,6 @@ select
     null as year_in_network,
     null as rn_undergrad,
     null as is_out_of_district,
-    null as is_pathways,
     null as is_retained_year,
     null as is_retained_ever,
     null as lunch_status,
@@ -680,20 +719,21 @@ select
 
     `quarter`,
     semester,
-    week_number,
+    week_number_quarter as week_number,
     quarter_start_date,
     quarter_end_date,
-    cal_quarter_end_date,
-    is_current_quarter,
+    is_current_term as is_current_quarter,
     is_quarter_end_date_range,
-    audit_start_date,
-    audit_end_date,
-    audit_due_date,
+    week_start_monday as audit_start_date,
+    week_end_sunday as audit_end_date,
+    school_week_start_date_lead as audit_due_date,
+
     assignment_category_name,
     assignment_category_code,
     assignment_category_term,
     expectation,
     notes,
+
     section_or_period,
     sectionid,
     sections_dcid,
@@ -704,12 +744,14 @@ select
     course_name,
     exclude_from_gpa,
     is_ap_course,
+
     teacher_number,
     teacher_name,
     tableau_username,
 
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
+
     null as quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
     null as quarter_citizenship,
@@ -730,6 +772,7 @@ select
     null as n_expected_scored,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
     null as raw_score,
     null as score_entered,
     null as assign_final_score_percent,
@@ -740,5 +783,6 @@ select
 
     coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
     coalesce(audit_flag_value, 0) as audit_flag_value,
+
 from {{ ref("int_tableau__gradebook_audit_flags") }}
 where cte_grouping = 'class_category' and school_level != 'ES'
