@@ -222,7 +222,7 @@ inner join
 left join
     {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as t
     on r.region = t.region
-    and r.schoolid = r.schoolid
+    and r.schoolid = t.schoolid
     and r.quarter = t.quarter
     and r.week_number_quarter = t.week_number_quarter
     and r.sectionid = t.sectionid
@@ -352,7 +352,7 @@ inner join
     and r.quarter = f.code
     and r.audit_flag_name = f.audit_flag_name
     and f.cte_grouping in ('student_course', 'student')
-    and audit_category != 'Conduct Code'
+    and f.audit_category != 'Conduct Code'
 
 union all
 
@@ -479,7 +479,7 @@ inner join
     and r.grade_level = f.grade_level
     and r.audit_flag_name = f.audit_flag_name
     and f.cte_grouping = 'student_course'
-    and audit_category = 'Conduct Code'
+    and f.audit_category = 'Conduct Code'
 
 union all
 
@@ -581,15 +581,15 @@ select distinct
     r.cte_grouping,
     r.audit_flag_name,
 
-    n_students,
-    n_late,
-    n_exempt,
-    n_missing,
-    n_expected,
-    n_expected_scored,
-    running_count_assignments_section_category_term
+    r.n_students,
+    r.n_late,
+    r.n_exempt,
+    r.n_missing,
+    r.n_expected,
+    r.n_expected_scored,
+    r.running_count_assignments_section_category_term
     as teacher_running_total_assign_by_cat,
-    avg_expected_scored_percent
+    r.avg_expected_scored_percent
     as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     f.audit_category,
