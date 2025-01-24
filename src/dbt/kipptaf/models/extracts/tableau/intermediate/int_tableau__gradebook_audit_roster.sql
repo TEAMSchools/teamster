@@ -84,7 +84,7 @@ with
 
             if(
                 current_date('America/New_York')
-                between (term.term_end_date - 3) and (term.term_start_date + 14),
+                between (term.term_end_date - 14) and (term.term_start_date + 14),
                 true,
                 false
             ) as is_quarter_end_date_range,
