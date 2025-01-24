@@ -38,6 +38,9 @@ select
     cn.academic_year,
 
     sw.date as referral_date,
+    case
+        when cn.status = 'Successful' and cn.type = 'School Visit' then 1 else 0
+    end as school_visit,
 from {{ ref("int_kippadb__roster") }} as ktc
 inner join {{ ref("stg_kippadb__contact_note") }} as cn on ktc.contact_id = cn.contact
 left join

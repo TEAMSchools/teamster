@@ -6,6 +6,17 @@
             strategy="timestamp",
             updated_at="edited_at",
             unique_key="surrogate_key",
+            meta={
+                "dagster": {
+                    "group": "google_appsheet",
+                    "asset_key": [
+                        "kipptaf",
+                        "google",
+                        "appsheet",
+                        "snapshot__seat_tracker__seats",
+                    ],
+                }
+            },
         )
     }}
 

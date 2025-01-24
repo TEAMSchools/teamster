@@ -22,7 +22,7 @@ on:
       - src/teamster/libraries/airbyte/**
       - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/schema.py
       - src/teamster/libraries/dlt/**
@@ -49,7 +49,7 @@ on:
       - src/teamster/libraries/airbyte/**
       - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/schema.py
       - src/teamster/libraries/dlt/**
