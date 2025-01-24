@@ -511,8 +511,8 @@ with
             f.cal_quarter_end_date,
             f.is_current_quarter,
             f.is_quarter_end_date_range,
-            audit_start_date,
-            audit_end_date,
+            f.audit_start_date,
+            f.audit_end_date,
             f.audit_due_date,
 
             f.assignment_category_name,
@@ -586,6 +586,9 @@ with
             t.w_expected_assign_count_not_met,
             t.f_expected_assign_count_not_met,
             t.s_expected_assign_count_not_met,
+            t.w_percent_graded_min_not_met,
+            t.f_percent_graded_min_not_met,
+            t.s_percent_graded_min_not_met,
 
             'class_category' as cte_grouping,
 
@@ -1473,7 +1476,10 @@ from
             qt_teacher_s_total_greater_200,
             w_expected_assign_count_not_met,
             f_expected_assign_count_not_met,
-            s_expected_assign_count_not_met
+            s_expected_assign_count_not_met,
+            w_percent_graded_min_not_met,
+            f_percent_graded_min_not_met,
+            s_percent_graded_min_not_met
         )
     ) as r
 left join

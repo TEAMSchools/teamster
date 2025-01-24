@@ -42,6 +42,11 @@ with
                 partition by c._dbt_source_relation, c.sectionid, c.quarter
             ) as total_missing_section_quarter,
 
+            safe_divide(
+                total_expected_scored_section_quarter_week_category,
+                total_expected_section_quarter_week_category
+            ) as percent_graded_for_quarter_week_class,
+
         from {{ ref("int_powerschool__teacher_assignment_audit_base") }} as c
         where c.yearid = {{ var("current_academic_year") - 1990 }}
 
@@ -76,8 +81,27 @@ select
     n_expected_scored,
     teacher_running_total_assign_by_cat,
     teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    percent_graded_for_quarter_week_class,
 
     if(teacher_assign_id is not null, 1, 0) as teacher_assign_count,
+
+    if(
+        assignment_category_code = 'W' and percent_graded_for_quarter_week_class < .7,
+        true,
+        false
+    ) as w_percent_graded_min_not_met,
+
+    if(
+        assignment_category_code = 'F' and percent_graded_for_quarter_week_class < .7,
+        true,
+        false
+    ) as f_percent_graded_min_not_met,
+
+    if(
+        assignment_category_code = 'S' and percent_graded_for_quarter_week_class < .7,
+        true,
+        false
+    ) as s_percent_graded_min_not_met,
 
     if(
         assignment_category_code = 'W'

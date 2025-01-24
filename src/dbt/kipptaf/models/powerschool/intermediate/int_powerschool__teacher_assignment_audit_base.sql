@@ -47,6 +47,24 @@ select
         order by c.week_number_quarter asc
     ) as teacher_running_total_assign_by_cat,
 
+    sum(asg.n_expected_scored) over (
+        partition by
+            sec._dbt_source_relation,
+            sec.sections_id,
+            c.quarter,
+            c.week_number_quarter,
+            ge.assignment_category_code
+    ) as total_expected_scored_section_quarter_week_category,
+
+    sum(asg.n_expected) over (
+        partition by
+            sec._dbt_source_relation,
+            sec.sections_id,
+            c.quarter,
+            c.week_number_quarter,
+            ge.assignment_category_code
+    ) as total_expected_section_quarter_week_category,
+
 from {{ ref("int_powerschool__calendar_week") }} as c
 inner join
     {{ ref("stg_reporting__gradebook_expectations") }} as ge
