@@ -6,6 +6,15 @@
             unique_key="student_number",
             strategy="check",
             check_cols="all",
+            meta={
+                "dagster": {
+                    "asset_key": [
+                        "kipptaf",
+                        "people",
+                        "snapshot_people__student_logins",
+                    ]
+                }
+            },
         )
     }}
 

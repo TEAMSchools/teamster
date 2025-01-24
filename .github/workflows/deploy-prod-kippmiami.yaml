@@ -23,7 +23,7 @@ on:
       - src/teamster/code_locations/kippmiami/**
       - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/fldoe/**
@@ -41,7 +41,7 @@ on:
       - src/teamster/code_locations/kippmiami/**
       - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/fldoe/**
