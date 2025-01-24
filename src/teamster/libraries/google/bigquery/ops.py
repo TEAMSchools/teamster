@@ -3,7 +3,7 @@ from dagster_gcp import BigQueryResource
 from google.cloud.bigquery import DatasetReference
 
 
-class BigQueryGetTableOpConfig(Config):
+class BigQueryOpConfig(Config):
     dataset_id: str
     table_id: str
     project: str | None = None
@@ -11,9 +11,7 @@ class BigQueryGetTableOpConfig(Config):
 
 @op
 def bigquery_get_table_op(
-    context: OpExecutionContext,
-    db_bigquery: BigQueryResource,
-    config: BigQueryGetTableOpConfig,
+    context: OpExecutionContext, db_bigquery: BigQueryResource, config: BigQueryOpConfig
 ):
     project = config.project or db_bigquery.project
 
@@ -38,9 +36,7 @@ def bigquery_get_table_op(
 
 @op
 def bigquery_query_op(
-    context: OpExecutionContext,
-    db_bigquery: BigQueryResource,
-    config: BigQueryGetTableOpConfig,
+    context: OpExecutionContext, db_bigquery: BigQueryResource, config: BigQueryOpConfig
 ):
     project = config.project or db_bigquery.project
 
