@@ -1139,15 +1139,13 @@ select
     ) as school_teachers_total_for_audit_week,
 
     round(
-        1 - (
-            safe_divide(
-                sum(teacher_gradebook_done_for_audit_week) over (
-                    partition by school, quarter, week_number
-                ),
-                count(teacher_name) over (partition by school, quarter, week_number)
-            )
+        safe_divide(
+            sum(teacher_gradebook_done_for_audit_week) over (
+                partition by school, quarter, week_number
+            ),
+            count(teacher_name) over (partition by school, quarter, week_number)
         ),
         4
     ) as school_percent_teachers_done_for_audit_week,
-    
+
 from teacher_aggs
