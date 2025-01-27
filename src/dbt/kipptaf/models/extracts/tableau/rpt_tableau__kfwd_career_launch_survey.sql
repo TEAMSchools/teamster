@@ -115,8 +115,6 @@ with
             alumni_dob,
             alumni_email,
             alumni_phone,
-            coalesce(annual_income, annual_income_alt) as annual_income,
-            coalesce(benefits, benefits_alt) as benefits,
             cell_number,
             company,
             complete_program,
@@ -135,6 +133,9 @@ with
             role,
             satisfied_program,
             search_focus,
+
+            coalesce(annual_income, annual_income_alt) as annual_income,
+            coalesce(benefits, benefits_alt) as benefits,
         from
             survey_union pivot (
                 max(response_string_value) for question_short_name in (
