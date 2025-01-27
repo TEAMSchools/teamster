@@ -1086,6 +1086,7 @@ with
             school,
 
             quarter,
+            is_current_quarter,
             week_number,
             quarter_start_date,
             quarter_end_date,
@@ -1119,6 +1120,7 @@ select
     region,
     school,
     quarter,
+    is_current_quarter,
     week_number,
     quarter_start_date,
     quarter_end_date,
