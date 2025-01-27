@@ -1,4 +1,4 @@
-{% snapshot snapshot__seat_tracker__seats %}
+{% snapshot snapshot_seat_tracker__seats %}
 
     {{
         config(
@@ -13,14 +13,14 @@
                         "kipptaf",
                         "google",
                         "appsheet",
-                        "snapshot__seat_tracker__seats",
+                        "snapshot_seat_tracker__seats",
                     ],
                 }
             },
         )
     }}
 
-    select *
+    select *,
     from {{ ref("stg_seat_tracker__seats") }}
 
 {% endsnapshot %}
