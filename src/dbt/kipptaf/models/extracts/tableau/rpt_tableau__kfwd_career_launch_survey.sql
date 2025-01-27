@@ -22,6 +22,7 @@ with
             r.contact_id,
             r.contact_first_name as sf_first_name,
             r.contact_last_name as sf_last_name,
+            r.lastfirst as sf_lastfirst,
             r.contact_kipp_ms_graduate,
             r.contact_kipp_hs_graduate,
             r.contact_kipp_hs_class,
@@ -196,6 +197,29 @@ select
     r.*,
 
     sp.*,
+
+    case
+        when sp.annual_income like '%-%'
+        then
+            cast(
+                replace(
+                    regexp_extract(sp.annual_income, r'\$([0-9,]+) -'), ',', ''
+                ) as float64
+            )
+        when sp.annual_income like '%or more%'
+        then
+            cast(
+                replace(
+                    regexp_extract(sp.annual_income, r'\$([0-9,]+) or more'), ',', ''
+                ) as float64
+            )
+        else
+            cast(
+                replace(
+                    regexp_extract(sp.annual_income, r'\$([0-9,]+)'), ',', ''
+                ) as float64
+            )
+    end as annual_income_clean,
 
     if(
         r.actual_end_date_month < 7,
