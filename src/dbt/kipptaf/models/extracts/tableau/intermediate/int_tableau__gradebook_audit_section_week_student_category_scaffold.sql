@@ -30,6 +30,19 @@ select
 
     cg.percent_grade as category_quarter_percent_grade,
     cg.category_quarter_average_all_courses,
+
+    if(
+        ge.assignment_category_code = 'W'
+        and s.school_level != 'ES'
+        and abs(
+            round(cg.category_quarter_average_all_courses, 2)
+            - round(cg.percent_grade, 2)
+        )
+        >= 30,
+        true,
+        false
+    ) as w_grade_inflation,
+
 from {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }} as s
 inner join
     {{ ref("stg_reporting__gradebook_expectations") }} as ge
