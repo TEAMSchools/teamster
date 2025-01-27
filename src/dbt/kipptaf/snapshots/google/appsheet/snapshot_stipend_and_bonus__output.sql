@@ -1,4 +1,4 @@
-{%- snapshot snapshot__stipend_and_bonus__output -%}
+{%- snapshot snapshot_stipend_and_bonus__output -%}
 
     {{
         config(
@@ -13,7 +13,7 @@
                         "kipptaf",
                         "google",
                         "appsheet",
-                        "snapshot__stipend_and_bonus__output",
+                        "snapshot_stipend_and_bonus__output",
                     ],
                 }
             },
