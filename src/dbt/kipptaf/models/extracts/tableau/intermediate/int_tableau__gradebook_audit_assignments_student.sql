@@ -131,18 +131,6 @@ select
     ) as assign_s_hs_score_not_conversion_chart_options,
 
     if(
-        assignment_category_code = 'W'
-        and school_level != 'ES'
-        and abs(
-            round(category_quarter_average_all_courses, 2)
-            - round(category_quarter_percent_grade, 2)
-        )
-        >= 30,
-        true,
-        false
-    ) as w_grade_inflation,
-
-    if(
         region = 'Miami'
         and assignment_category_code = 'W'
         and category_quarter_percent_grade is null
@@ -150,4 +138,5 @@ select
         true,
         false
     ) as qt_effort_grade_missing,
+
 from roster_assignments_scores
