@@ -24,6 +24,35 @@ with
             )
     ),
 
+    programs as (
+        select
+            p.student,
+
+            string_agg(
+                concat(
+                    a.name,
+                    if(
+                        p.opportunity_dates is not null,
+                        concat(' (', p.opportunity_dates, ')'),
+                        ''
+                    )
+                ),
+                '; '
+            ) as college_programs,
+
+            max(if(a.name = 'Project BASTA', true, false)) as is_basta,
+            max(if(a.name = 'Braven', true, false)) as is_braven,
+        from {{ ref("stg_kippadb__internships_programs") }} as p
+        inner join
+            {{ ref("stg_kippadb__account") }} as a
+            on p.program_or_organization_name = a.id
+        where
+            p.internship_or_program_type = 'College Program'
+            and p.application_status not in ('Not Matched', 'Wait-listed')
+        group by all
+
+    ),
+
     roster as (
         select
             r.contact_id,
@@ -53,8 +82,19 @@ with
 
             sr.survey_response_id as reconciliation_response_id,
 
+            p.college_programs,
+            p.is_basta,
+            p.is_braven,
+
             lower(r.contact_email) as sf_email,
             lower(r.contact_secondary_email) as sf_secondary_email,
+            extract(
+                month from r.contact_expected_college_graduation
+            ) as expected_grad_date_month,
+            extract(
+                year from r.contact_expected_college_graduation
+            ) as expected_grad_date_year,
+
             extract(month from e.actual_end_date) as actual_end_date_month,
             extract(year from e.actual_end_date) as actual_end_date_year,
             if(
@@ -75,6 +115,7 @@ with
             survey_reconciliation as sr
             on r.contact_id = sr.sf_contact_id
             and sr.rn_response_id = 1
+        left join programs as p on r.contact_id = p.student
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.ktc_cohort <= {{ var("current_academic_year") }}
@@ -229,6 +270,11 @@ select
             )
     end as annual_income_clean,
 
+    if(
+        r.actual_end_date_month < 7,
+        concat('Spring ', r.expected_grad_date_month),
+        concat('Fall ', r.expected_grad_date_year)
+    ) as season_label_expected,
     if(
         r.actual_end_date_month < 7,
         concat('Spring ', r.actual_end_date_year),
