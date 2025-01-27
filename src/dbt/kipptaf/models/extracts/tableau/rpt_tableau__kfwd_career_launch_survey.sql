@@ -175,6 +175,11 @@ select
 
     sp.*,
 
+    if(
+        r.actual_end_date_month < 7,
+        concat('Spring ', r.actual_end_date_year),
+        concat('Fall ', r.actual_end_date_year)
+    ) as season_label,
     if(r.contact_id is null, true, false) as is_unmatched_response,
     if(
         r.contact_id is not null,
