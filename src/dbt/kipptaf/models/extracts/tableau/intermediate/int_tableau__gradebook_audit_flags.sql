@@ -82,7 +82,10 @@ with
                         'qt_teacher_s_total_greater_200',
                         'w_expected_assign_count_not_met',
                         'f_expected_assign_count_not_met',
-                        's_expected_assign_count_not_met'
+                        's_expected_assign_count_not_met',
+                        'w_percent_graded_min_not_met',
+                        'f_percent_graded_min_not_met',
+                        's_percent_graded_min_not_met'
                     )
                 then 'class_category'
             end as cte_grouping,
