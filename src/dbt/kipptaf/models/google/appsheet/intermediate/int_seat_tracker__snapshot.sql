@@ -18,7 +18,7 @@ with
             if(
                 status_detail in ('New Hire', 'Transfer In'), true, false
             ) as is_new_hire,
-        from {{ ref("snapshot__seat_tracker__seats") }}
+        from {{ ref("snapshot_seat_tracker__seats") }}
         /* last day of manual snapshot from appsheet*/
         where dbt_updated_at > '2024-08-07'
 
