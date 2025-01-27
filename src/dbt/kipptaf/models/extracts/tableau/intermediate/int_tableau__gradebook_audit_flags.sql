@@ -510,6 +510,130 @@ inner join
     and r.audit_flag_name = f.audit_flag_name
     and f.cte_grouping = 'student_course'
     and f.audit_category = 'Conduct Code'
+
+union all
+
+select
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.yearid,
+    r.region,
+    r.school_level,
+    r.schoolid,
+    r.school,
+    null as students_dcid,
+    null as studentid,
+    null as student_number,
+    '' as student_name,
+    null as grade_level,
+    '' as salesforce_id,
+    null as ktc_cohort,
+    null as enroll_status,
+    null as cohort,
+    '' as gender,
+    '' as ethnicity,
+    '' as advisory,
+    '' as hos,
+    r.region_school_level,
+    null as year_in_school,
+    null as year_in_network,
+    null as rn_undergrad,
+    false as is_out_of_district,
+    false as is_self_contained,
+    false as is_retained_year,
+    false as is_retained_ever,
+    '' as lunch_status,  -- 30
+    '' as gifted_and_talented,
+    '' as iep_status,
+    false as lep_status,  -- 33
+    false as is_504,
+    null as is_counseling_services,  -- 35
+    null as is_student_athlete,
+    null as ada,
+    false as ada_above_or_at_80,
+    r.sectionid,
+    r.course_number,
+    cast(null as date) as date_enrolled,  -- 41
+    r.sections_dcid,
+    r.section_number,
+    r.external_expression,
+    null as termid,
+    r.credit_type,
+    r.course_name,
+    r.exclude_from_gpa,
+    r.teacher_number,
+    r.teacher_name,  -- 50
+    r.is_ap_course,
+    r.tableau_username,
+    r.quarter,
+    r.semester,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.is_current_term,
+    r.is_quarter_end_date_range,
+    r.week_start_date,
+    r.week_end_date,  -- 60
+    r.week_start_monday,
+    r.week_end_sunday,
+    r.school_week_start_date_lead,
+    r.week_number_academic_year,
+    r.week_number_quarter,
+    null as quarter_course_percent_grade_that_matters,
+    null as quarter_course_grade_points_that_matters,
+    '' as quarter_citizenship,
+    '' as quarter_comment_value,
+    r.section_or_period,  -- 70
+    r.assignment_category_name,
+    r.assignment_category_code,
+    r.assignment_category_term,
+    r.expectation,
+    r.notes,
+    null as category_quarter_percent_grade,
+    null as category_quarter_average_all_courses,  -- 77
+    r.assignmentid,  -- 78
+    r.assignment_name,
+    r.duedate,
+    r.scoretype,  -- 81
+    r.totalpointvalue,
+    '' as category_name,
+    null as scorepoints,
+
+    '' as actualscoreentered,
+    null as is_late,
+    null as is_exempt,
+    null as is_missing,
+    null as score_entered,
+    null as assign_final_score_percent,
+    false as assign_expected_to_be_scored,
+    false as assign_scored,
+    false as assign_expected_with_score,
+    r.cte_grouping,
+    r.audit_flag_name,
+
+    r.n_students,
+    r.n_late,
+    r.n_exempt,
+    r.n_missing,
+    r.n_expected,
+    r.n_expected_scored,
+    r.running_count_assignments_section_category_term
+    as teacher_running_total_assign_by_cat,
+    r.avg_expected_scored_percent
+    as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
+    f.audit_category,
+
+    if(r.audit_flag_value, 1, 0) as audit_flag_value,
+
+from teacher_unpivot as r
+inner join
+    {{ ref("stg_reporting__gradebook_flags") }} as f
+    on r.region = f.region
+    and r.school_level = f.school_level
+    and r.assignment_category_code = f.code
+    and r.audit_flag_name = f.audit_flag_name
+    and f.cte_grouping = 'class_category_assignment'
     /*
 union all
 
