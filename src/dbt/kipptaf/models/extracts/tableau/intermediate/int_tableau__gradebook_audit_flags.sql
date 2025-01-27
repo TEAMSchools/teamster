@@ -101,9 +101,36 @@ with
                     s_expected_assign_count_not_met
                 )
             )
+    ),
+
+    eoq_items as (
+        select
+            *,
+
+            if(
+                audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2',
+                'student',
+                'student_course'
+            ) as cte_grouping,
+
+        from
+            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
+            unpivot (
+                audit_flag_value for audit_flag_name in (
+                    qt_comment_missing,
+                    qt_g1_g8_conduct_code_incorrect,
+                    qt_g1_g8_conduct_code_missing,
+                    qt_grade_70_comment_missing,
+                    qt_kg_conduct_code_incorrect,
+                    qt_kg_conduct_code_missing,
+                    qt_kg_conduct_code_not_hr,
+                    qt_percent_grade_greater_100,
+                    qt_student_is_ada_80_plus_gpa_less_2
+                )
+            )
     )
 
-select distinct
+select
     r._dbt_source_relation,
     r.academic_year,
     r.academic_year_display,
@@ -233,7 +260,7 @@ left join
 
 union all
 
-select distinct
+select
     r._dbt_source_relation,
     r.academic_year,
     r.academic_year_display,
@@ -347,7 +374,7 @@ select distinct
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
 
-from student_unpivot as r
+from eoq_items as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
     on r.region = f.region
@@ -356,7 +383,7 @@ inner join
     and r.audit_flag_name = f.audit_flag_name
     and f.cte_grouping in ('student_course', 'student')
     and f.audit_category != 'Conduct Code'
-
+    /*
 union all
 
 select distinct
@@ -606,4 +633,5 @@ inner join
     and r.school_level = f.school_level
     and r.assignment_category_code = f.code
     and r.audit_flag_name = f.audit_flag_name
-    and f.cte_grouping in ('class_category', 'class_category_assignment')
+    and f.cte_grouping in ('class_category', 'class_category_assignment')*/
+    
