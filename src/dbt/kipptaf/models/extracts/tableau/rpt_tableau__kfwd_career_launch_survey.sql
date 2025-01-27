@@ -82,8 +82,9 @@ with
             cast(fr.form_id as string) as survey_id,
             cast(fr.response_id as string) as response_id,
             lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("base_google_forms__form_responses") }} as fr  /* 'KIPP Forward Career Launch Survey - OLD' */
-        where form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
+        from {{ ref("base_google_forms__form_responses") }} as fr
+        /* 'KIPP Forward Career Launch Survey - OLD' */
+        where fr.form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
 
         union all
 
@@ -96,8 +97,9 @@ with
             cast(fr.form_id as string) as survey_id,
             cast(fr.response_id as string) as response_id,
             lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("base_google_forms__form_responses") }} as fr  /* 'KIPP Forward Career Launch Survey' */
-        where form_id = '1c4SLP61YIVnUUvRl_IUdFuLXdtI1Vsq9OE3Jrz3HR0U'
+        from {{ ref("base_google_forms__form_responses") }} as fr
+        /* 'KIPP Forward Career Launch Survey' */
+        where fr.form_id = '1c4SLP61YIVnUUvRl_IUdFuLXdtI1Vsq9OE3Jrz3HR0U'
     ),
 
     survey_pivot as (
