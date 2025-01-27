@@ -355,9 +355,9 @@ select
     null as is_missing,
     null as score_entered,
     null as assign_final_score_percent,
-    false as assign_expected_to_be_scored,
-    false as assign_scored,
-    false as assign_expected_with_score,
+    cast(null as boolean) as assign_expected_to_be_scored,
+    cast(null as boolean) as assign_scored,
+    cast(null as boolean) as assign_expected_with_score,
     r.cte_grouping,
     r.audit_flag_name,
 
@@ -481,9 +481,9 @@ select
     null as is_missing,
     null as score_entered,
     null as assign_final_score_percent,
-    false as assign_expected_to_be_scored,
-    false as assign_scored,
-    false as assign_expected_with_score,
+    cast(null as boolean) as assign_expected_to_be_scored,
+    cast(null as boolean) as assign_scored,
+    cast(null as boolean) as assign_expected_with_score,
     r.cte_grouping,
     r.audit_flag_name,
 
@@ -539,19 +539,19 @@ select
     null as year_in_school,
     null as year_in_network,
     null as rn_undergrad,
-    false as is_out_of_district,
-    false as is_self_contained,
-    false as is_retained_year,
-    false as is_retained_ever,
+    cast(null as boolean) as is_out_of_district,
+    cast(null as boolean) as is_self_contained,
+    cast(null as boolean) as is_retained_year,
+    cast(null as boolean) as is_retained_ever,
     '' as lunch_status,  -- 30
     '' as gifted_and_talented,
     '' as iep_status,
-    false as lep_status,  -- 33
-    false as is_504,
+    cast(null as boolean) as lep_status,  -- 33
+    cast(null as boolean) as is_504,
     null as is_counseling_services,  -- 35
     null as is_student_athlete,
     null as ada,
-    false as ada_above_or_at_80,
+    cast(null as boolean) as ada_above_or_at_80,
     r.sectionid,
     r.course_number,
     cast(null as date) as date_enrolled,  -- 41
@@ -605,9 +605,9 @@ select
     null as is_missing,
     null as score_entered,
     null as assign_final_score_percent,
-    false as assign_expected_to_be_scored,
-    false as assign_scored,
-    false as assign_expected_with_score,
+    cast(null as boolean) as assign_expected_to_be_scored,
+    cast(null as boolean) as assign_scored,
+    cast(null as boolean) as assign_expected_with_score,
     r.cte_grouping,
     r.audit_flag_name,
 
@@ -634,10 +634,10 @@ inner join
     and r.assignment_category_code = f.code
     and r.audit_flag_name = f.audit_flag_name
     and f.cte_grouping = 'class_category_assignment'
-    /*
+
 union all
 
-select distinct
+select
     r._dbt_source_relation,
     r.academic_year,
     r.academic_year_display,
@@ -663,19 +663,19 @@ select distinct
     null as year_in_school,
     null as year_in_network,
     null as rn_undergrad,
-    false as is_out_of_district,
-    false as is_self_contained,
-    false as is_retained_year,
-    false as is_retained_ever,
+    cast(null as boolean) as is_out_of_district,
+    cast(null as boolean) as is_self_contained,
+    cast(null as boolean) as is_retained_year,
+    cast(null as boolean) as is_retained_ever,
     '' as lunch_status,  -- 30
     '' as gifted_and_talented,
     '' as iep_status,
-    false as lep_status,  -- 33
-    false as is_504,
+    cast(null as boolean) as lep_status,  -- 33
+    cast(null as boolean) as is_504,
     null as is_counseling_services,  -- 35
     null as is_student_athlete,
     null as ada,
-    false as ada_above_or_at_80,
+    cast(null as boolean) as ada_above_or_at_80,
     r.sectionid,
     r.course_number,
     cast(null as date) as date_enrolled,  -- 41
@@ -715,11 +715,11 @@ select distinct
     r.notes,
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,  -- 77
-    r.assignmentid,  -- 78
-    r.assignment_name,
-    r.duedate,
-    r.scoretype,  -- 81
-    r.totalpointvalue,
+    null as assignmentid,  -- 78
+    null as assignment_name,
+    null as duedate,
+    null as scoretype,  -- 81
+    null as totalpointvalue,
     '' as category_name,
     null as scorepoints,
 
@@ -729,22 +729,21 @@ select distinct
     null as is_missing,
     null as score_entered,
     null as assign_final_score_percent,
-    false as assign_expected_to_be_scored,
-    false as assign_scored,
-    false as assign_expected_with_score,
+    cast(null as boolean) as assign_expected_to_be_scored,
+    cast(null as boolean) as assign_scored,
+    cast(null as boolean) as assign_expected_with_score,
     r.cte_grouping,
     r.audit_flag_name,
 
-    r.n_students,
-    r.n_late,
-    r.n_exempt,
-    r.n_missing,
-    r.n_expected,
-    r.n_expected_scored,
+    null as n_students,
+    null as n_late,
+    null as n_exempt,
+    null as n_missing,
+    null as n_expected,
+    null as n_expected_scored,
     r.running_count_assignments_section_category_term
     as teacher_running_total_assign_by_cat,
-    r.avg_expected_scored_percent
-    as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     f.audit_category,
 
@@ -757,5 +756,5 @@ inner join
     and r.school_level = f.school_level
     and r.assignment_category_code = f.code
     and r.audit_flag_name = f.audit_flag_name
-    and f.cte_grouping in ('class_category', 'class_category_assignment')*/
-    
+    and f.cte_grouping = 'class_category'
+group by all
