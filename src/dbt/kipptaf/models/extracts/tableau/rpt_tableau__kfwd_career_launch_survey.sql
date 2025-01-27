@@ -1,20 +1,27 @@
 with
+    survey_reconciliation_raw as (
+        select response_id, item_title, text_value, create_timestamp,
+        from {{ ref("base_google_forms__form_responses") }}
+        where
+            form_id = '1oUBls4Kaj0zcbQyeWowe8Es1BFqunolAPEamzT6enQs'
+            and item_title in ('Survey response ID', 'Salesforce contact ID')
+    ),
+
     survey_reconciliation as (
         select
-            answer_survey_response_id as survey_response_id,
+            survey_response_id,
             sf_contact_id,
 
             row_number() over (
-                partition by survey_response_id order by date_submitted desc
+                partition by survey_response_id order by create_timestamp desc
             ) as rn_response_id,
         from
-            {{ ref("int_surveys__survey_responses") }} pivot (
-                max(answer) for question_title in (
-                    'Survey response ID' as answer_survey_response_id,
+            survey_reconciliation_raw pivot (
+                max(text_value) for item_title in (
+                    'Survey response ID' as survey_response_id,
                     'Salesforce contact ID' as sf_contact_id
                 )
             )
-        where survey_title = 'Career Launch Survey invalid response reconciliation'
     ),
 
     roster as (
