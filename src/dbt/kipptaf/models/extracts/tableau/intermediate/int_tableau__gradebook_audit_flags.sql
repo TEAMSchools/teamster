@@ -383,10 +383,10 @@ inner join
     and r.audit_flag_name = f.audit_flag_name
     and f.cte_grouping in ('student_course', 'student')
     and f.audit_category != 'Conduct Code'
-    /*
+
 union all
 
-select distinct
+select
     r._dbt_source_relation,
     r.academic_year,
     r.academic_year_display,
@@ -500,7 +500,7 @@ select distinct
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
 
-from student_unpivot as r
+from eoq_items as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
     on r.region = f.region
@@ -510,7 +510,7 @@ inner join
     and r.audit_flag_name = f.audit_flag_name
     and f.cte_grouping = 'student_course'
     and f.audit_category = 'Conduct Code'
-
+    /*
 union all
 
 select distinct
