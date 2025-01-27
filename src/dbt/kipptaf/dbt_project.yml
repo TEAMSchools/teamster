@@ -102,6 +102,10 @@ models:
       +schema: deanslist
     edplan:
       +schema: edplan
+    egencia:
+      +schema: egencia
+      staging:
+        +materialized: table
     extracts:
       +schema: extracts
       tableau:
