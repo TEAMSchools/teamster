@@ -78,6 +78,7 @@ with
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.ktc_cohort <= {{ var("current_academic_year") }}
+            and r.contact_id is not null
     ),
 
     survey_union as (
