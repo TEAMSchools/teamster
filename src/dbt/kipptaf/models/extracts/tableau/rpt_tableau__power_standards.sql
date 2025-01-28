@@ -395,7 +395,7 @@ select
 
     sf.nj_student_tier,
     sf.state_test_proficiency,
-    sf.tutoring_nj,
+    sf.is_tutoring as tutoring_nj,
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
@@ -482,7 +482,7 @@ select
     ) as is_regress,
 from ps_data as p
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on p.student_number = sf.student_number
     and p.academic_year = sf.academic_year
     and p.subject_area = sf.illuminate_subject_area
