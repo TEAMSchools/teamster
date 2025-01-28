@@ -153,7 +153,7 @@ select
 
     `quarter`,
     semester,
-    week_number_quarter as week_number,
+    week_number_quarter as audit_qt_week_number,
     quarter_start_date,
     quarter_end_date,
     is_current_term as is_current_quarter,
@@ -268,7 +268,7 @@ select
 
     `quarter`,
     semester,
-    week_number_quarter as week_number,
+    week_number_quarter as audit_qt_week_number,
     quarter_start_date,
     quarter_end_date,
     is_current_term as is_current_quarter,
@@ -383,7 +383,7 @@ select
 
     `quarter`,
     semester,
-    week_number_quarter as week_number,
+    week_number_quarter as audit_qt_week_number,
     quarter_start_date,
     quarter_end_date,
     is_current_term as is_current_quarter,
@@ -495,7 +495,7 @@ select
 
     `quarter`,
     semester,
-    week_number_quarter as week_number,
+    week_number_quarter as audit_qt_week_number,
     quarter_start_date,
     quarter_end_date,
     is_current_term as is_current_quarter,
@@ -607,7 +607,7 @@ select
 
     `quarter`,
     semester,
-    week_number_quarter as week_number,
+    week_number_quarter as audit_qt_week_number,
     quarter_start_date,
     quarter_end_date,
     is_current_term as is_current_quarter,
@@ -719,7 +719,7 @@ select
 
     `quarter`,
     semester,
-    week_number_quarter as week_number,
+    week_number_quarter as audit_qt_week_number,
     quarter_start_date,
     quarter_end_date,
     is_current_term as is_current_quarter,
