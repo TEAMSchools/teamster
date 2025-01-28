@@ -28,7 +28,7 @@ with
 
             if(
                 round(1 - (sum(audit_flag_value) / count(*)), 4) = 1, 1, 0
-            ) teacher_gradebook_done_for_audit_week,
+            ) as teacher_gradebook_done_for_audit_week,
 
         from {{ ref("rpt_tableau__gradebook_audit_ms_hs") }}
         where
