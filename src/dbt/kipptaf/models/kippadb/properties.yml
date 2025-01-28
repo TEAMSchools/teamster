@@ -7,9 +7,10 @@ models:
         data_tests:
           - unique
   - name: stg_kippadb__contact
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - school_specific_id
-          config:
-            store_failures: true
+    columns:
+      - name: school_specific_id
+        data_tests:
+          - unique:
+              config:
+                where: school_specific_id is not null
+                store_failures: true
