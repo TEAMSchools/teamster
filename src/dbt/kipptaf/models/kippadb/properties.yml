@@ -12,5 +12,4 @@ models:
           combination_of_columns:
             - school_specific_id
           config:
-            severity: warn
             store_failures: true
