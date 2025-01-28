@@ -107,7 +107,7 @@ select
     coalesce(audit_flag_value, 0) as audit_flag_value,
 
 from {{ ref("int_tableau__gradebook_audit_flags") }}
-where cte_grouping = 'assignment_student' and school_level != 'ES'
+where cte_grouping = 'assignment_student'
 
 union all
 
@@ -218,10 +218,7 @@ select
     coalesce(audit_flag_value, 0) as audit_flag_value,
 
 from {{ ref("int_tableau__gradebook_audit_flags") }}
-where
-    assignment_category_code = 'W'
-    and audit_flag_name = 'w_grade_inflation'
-    and school_level != 'ES'
+where assignment_category_code = 'W' and audit_flag_name = 'w_grade_inflation'
 
 union all
 
@@ -332,10 +329,7 @@ select
     coalesce(audit_flag_value, 0) as audit_flag_value,
 
 from {{ ref("int_tableau__gradebook_audit_flags") }}
-where
-    assignment_category_code = 'W'
-    and audit_flag_name = 'qt_effort_grade_missing'
-    and school_level != 'ES'
+where assignment_category_code = 'W' and audit_flag_name = 'qt_effort_grade_missing'
 
 union all
 
@@ -446,7 +440,7 @@ select
     coalesce(audit_flag_value, 0) as audit_flag_value,
 
 from {{ ref("int_tableau__gradebook_audit_flags") }}
-where cte_grouping = 'student_course' and school_level != 'ES'
+where cte_grouping = 'student_course'
 
 union all
 
@@ -557,7 +551,7 @@ select
     coalesce(audit_flag_value, 0) as audit_flag_value,
 
 from {{ ref("int_tableau__gradebook_audit_flags") }}
-where cte_grouping = 'student' and school_level != 'ES'
+where cte_grouping = 'student'
 
 union all
 
@@ -668,7 +662,7 @@ select
     coalesce(audit_flag_value, 0) as audit_flag_value,
 
 from {{ ref("int_tableau__gradebook_audit_flags") }}
-where cte_grouping = 'class_category_assignment' and school_level != 'ES'
+where cte_grouping = 'class_category_assignment'
 
 union all
 
@@ -778,4 +772,4 @@ select
     coalesce(audit_flag_value, 0) as audit_flag_value,
 
 from {{ ref("int_tableau__gradebook_audit_flags") }}
-where cte_grouping = 'class_category' and school_level != 'ES'
+where cte_grouping = 'class_category'
