@@ -534,7 +534,7 @@ select
     '' as gender,
     '' as ethnicity,
     '' as advisory,
-    '' as hos,
+    r.hos,
     r.region_school_level,
     null as year_in_school,
     null as year_in_network,
@@ -543,18 +543,18 @@ select
     cast(null as boolean) as is_self_contained,
     cast(null as boolean) as is_retained_year,
     cast(null as boolean) as is_retained_ever,
-    '' as lunch_status,  -- 30
+    '' as lunch_status,
     '' as gifted_and_talented,
     '' as iep_status,
-    cast(null as boolean) as lep_status,  -- 33
+    cast(null as boolean) as lep_status,
     cast(null as boolean) as is_504,
-    null as is_counseling_services,  -- 35
+    null as is_counseling_services,
     null as is_student_athlete,
     null as ada,
     cast(null as boolean) as ada_above_or_at_80,
     r.sectionid,
     r.course_number,
-    cast(null as date) as date_enrolled,  -- 41
+    cast(null as date) as date_enrolled,
     r.sections_dcid,
     r.section_number,
     r.external_expression,
@@ -563,7 +563,7 @@ select
     r.course_name,
     r.exclude_from_gpa,
     r.teacher_number,
-    r.teacher_name,  -- 50
+    r.teacher_name,
     r.is_ap_course,
     r.tableau_username,
     r.quarter,
@@ -573,7 +573,7 @@ select
     r.is_current_term,
     r.is_quarter_end_date_range,
     r.week_start_date,
-    r.week_end_date,  -- 60
+    r.week_end_date,
     r.week_start_monday,
     r.week_end_sunday,
     r.school_week_start_date_lead,
@@ -583,18 +583,18 @@ select
     null as quarter_course_grade_points_that_matters,
     '' as quarter_citizenship,
     '' as quarter_comment_value,
-    r.section_or_period,  -- 70
+    r.section_or_period,
     r.assignment_category_name,
     r.assignment_category_code,
     r.assignment_category_term,
     r.expectation,
     r.notes,
     null as category_quarter_percent_grade,
-    null as category_quarter_average_all_courses,  -- 77
-    r.assignmentid,  -- 78
+    null as category_quarter_average_all_courses,
+    r.assignmentid,
     r.assignment_name,
     r.duedate,
-    r.scoretype,  -- 81
+    r.scoretype,
     r.totalpointvalue,
     '' as category_name,
     null as scorepoints,
@@ -658,7 +658,7 @@ select
     '' as gender,
     '' as ethnicity,
     '' as advisory,
-    '' as hos,
+    r.hos,
     r.region_school_level,
     null as year_in_school,
     null as year_in_network,
@@ -667,18 +667,18 @@ select
     cast(null as boolean) as is_self_contained,
     cast(null as boolean) as is_retained_year,
     cast(null as boolean) as is_retained_ever,
-    '' as lunch_status,  -- 30
+    '' as lunch_status,
     '' as gifted_and_talented,
     '' as iep_status,
-    cast(null as boolean) as lep_status,  -- 33
+    cast(null as boolean) as lep_status,
     cast(null as boolean) as is_504,
-    null as is_counseling_services,  -- 35
+    null as is_counseling_services,
     null as is_student_athlete,
     null as ada,
     cast(null as boolean) as ada_above_or_at_80,
     r.sectionid,
     r.course_number,
-    cast(null as date) as date_enrolled,  -- 41
+    cast(null as date) as date_enrolled,
     r.sections_dcid,
     r.section_number,
     r.external_expression,
@@ -687,7 +687,7 @@ select
     r.course_name,
     r.exclude_from_gpa,
     r.teacher_number,
-    r.teacher_name,  -- 50
+    r.teacher_name,
     r.is_ap_course,
     r.tableau_username,
     r.quarter,
@@ -697,7 +697,7 @@ select
     r.is_current_term,
     r.is_quarter_end_date_range,
     r.week_start_date,
-    r.week_end_date,  -- 60
+    r.week_end_date,
     r.week_start_monday,
     r.week_end_sunday,
     r.school_week_start_date_lead,
@@ -707,18 +707,18 @@ select
     null as quarter_course_grade_points_that_matters,
     '' as quarter_citizenship,
     '' as quarter_comment_value,
-    r.section_or_period,  -- 70
+    r.section_or_period,
     r.assignment_category_name,
     r.assignment_category_code,
     r.assignment_category_term,
     r.expectation,
     r.notes,
     null as category_quarter_percent_grade,
-    null as category_quarter_average_all_courses,  -- 77
-    null as assignmentid,  -- 78
+    null as category_quarter_average_all_courses,
+    null as assignmentid,
     null as assignment_name,
     null as duedate,
-    null as scoretype,  -- 81
+    null as scoretype,
     null as totalpointvalue,
     '' as category_name,
     null as scorepoints,
