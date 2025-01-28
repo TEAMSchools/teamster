@@ -118,6 +118,7 @@ with
             unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_comment_missing,
+                    qt_es_comment_missing,
                     qt_g1_g8_conduct_code_incorrect,
                     qt_g1_g8_conduct_code_missing,
                     qt_grade_70_comment_missing,
