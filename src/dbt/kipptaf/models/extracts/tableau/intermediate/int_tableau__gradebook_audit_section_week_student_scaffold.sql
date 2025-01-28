@@ -152,10 +152,21 @@ select
     ) as qt_comment_missing,
 
     if(
+        s.region != 'Miami'
+        and sec.is_quarter_end_date_range
+        and s.grade_level < 5
+        and ce.courses_credittype in ('HR', 'MATH', 'ENG')
+        and qg.comment_value is null,
+        true,
+        false
+    ) as qt_es_comment_missing,
+
+    if(
         s.school_level != 'ES' and s.ada_above_or_at_80 and qg.term_grade_points < 2.0,
         true,
         false
     ) as qt_student_is_ada_80_plus_gpa_less_2,
+
 from {{ ref("int_extracts__student_enrollments") }} as s
 inner join
     {{ ref("base_powerschool__course_enrollments") }} as ce
