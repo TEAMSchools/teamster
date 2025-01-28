@@ -1,3 +1,5 @@
+{{- config(materialized="table") -}}
+
 with
     teacher_aggs as (
         select
