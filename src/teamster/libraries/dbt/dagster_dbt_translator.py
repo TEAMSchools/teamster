@@ -1,6 +1,6 @@
 from typing import Any, Mapping
 
-from dagster import AssetKey, AutomationCondition
+from dagster import AssetKey, AssetSelection, AutomationCondition
 from dagster_dbt import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 
@@ -46,7 +46,12 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             )
         else:
             return (
-                AutomationCondition.eager() | AutomationCondition.code_version_changed()
+                AutomationCondition.eager().ignore(
+                    AssetSelection.keys(
+                        *automation_condition_config.get("ignore", {}).get("keys", {})
+                    )
+                )
+                | AutomationCondition.code_version_changed()
             )
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
