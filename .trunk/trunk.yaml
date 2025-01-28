@@ -12,7 +12,7 @@ lint:
     - git-diff-check
     - gitleaks@8.23.2
     - hadolint@2.12.1-beta
-    - isort@5.13.2
+    - isort@6.0.0
     - markdownlint@0.44.0
     - osv-scanner@1.9.2
     - oxipng@9.1.3
@@ -22,7 +22,7 @@ lint:
     - shellcheck@0.10.0
     - shfmt@3.6.0
     - sqlfluff@3.3.0
-    - sqlfmt@0.25.0
+    - sqlfmt@0.26.0
     - svgo@3.3.2
     - taplo@0.9.3
     - trufflehog@3.88.2
