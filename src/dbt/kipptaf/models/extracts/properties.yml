@@ -15,3 +15,4 @@ models:
             - iready_subject
           config:
             severity: warn
+            store_failures: true
