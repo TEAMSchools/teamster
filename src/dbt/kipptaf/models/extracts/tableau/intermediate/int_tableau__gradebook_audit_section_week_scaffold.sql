@@ -127,6 +127,8 @@ select
 
     r.sam_account_name as tableau_username,
 
+    hos.head_of_school_preferred_name_lastfirst as hos,
+
     if(
         current_date(
             '{{ var("local_timezone") }}'
@@ -142,6 +144,7 @@ select
         sec.sections_external_expression,
         sec.sections_section_number
     ) as section_or_period,
+
 from term_weeks as tw
 inner join
     sections as sec
@@ -152,3 +155,6 @@ inner join
 left join
     {{ ref("base_people__staff_roster") }} as r
     on sec.teachernumber = r.powerschool_teacher_number
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on tw.schoolid = hos.home_work_location_powerschool_school_id
