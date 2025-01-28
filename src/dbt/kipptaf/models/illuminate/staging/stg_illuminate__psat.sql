@@ -270,7 +270,6 @@ select
 
     cb_student_id,
     district_student_id,
-    local_student_id,
     state_student_id,
 
     test_date,
@@ -321,6 +320,8 @@ select
     total_usr_percentile,
     words_context_usr_percentile,
     writing_lang_usr_percentile,
+
+    safe_cast(local_student_id as int) as local_student_id,
 
     safe_cast(total_score as numeric) as total_score,
     safe_cast(math_test_score as numeric) as math_test_score,
@@ -390,30 +391,27 @@ union all
 select
     id,
     form_code,
-
     cb_student_id,
     district_student_id,
-    local_student_id,
     state_student_id,
-
     test_date,
     report_date,
     self_assessment_date,
-
     student_first_name,
     student_last_name,
     cohort_year,
     birth_date,
-
     latest_psat_access_code,
     selection_index,
-
     hs_student,
+
     null as not_valid_national_merit,
+
     ebrw_ccr_benchmark,
     math_ccr_benchmark,
 
     null as advanced_math_rep_percentile,
+
     algebra_rep_percentile,
     command_rep_percentile,
     ebrw_rep_percentile,
@@ -430,6 +428,7 @@ select
     writing_lang_rep_percentile,
 
     null as advanced_math_usr_percentile,
+
     algebra_usr_percentile,
     command_usr_percentile,
     ebrw_usr_percentile,
@@ -444,7 +443,7 @@ select
     total_usr_percentile,
     words_context_usr_percentile,
     writing_lang_usr_percentile,
-
+    local_student_id,
     total_score,
     math_test_score,
     history_cross_test_score,
@@ -460,15 +459,19 @@ select
     heart_algebra_subscore,
     prob_solve_data_subscore,
     relevant_words_subscore,
-
     new_district_id,
     new_ssid,
     grade_assessed,
+
     null as first_choice_major,
+
     gpa,
+
     null as num_years_grade_9_12,
+
     student_middle_initial,
     ap_art_hist,
+
     null as ap_bio,
     null as ap_calc,
     null as ap_chem,
@@ -477,20 +480,27 @@ select
     null as ap_eng_lang,
     null as ap_eng_lit,
     null as ap_env_sci,
+
     ap_euro_hist,
     ap_hum_geo,
+
     null as ap_mac_econ,
     null as ap_mic_econ,
     null as ap_music,
     null as ap_phys_i,
+
     ap_phys_ii,
+
     null as ap_phys_mag,
     null as ap_phys_mech,
     null as ap_psych,
+
     ap_seminar,
+
     null as ap_stat,
     null as ap_us_gov_pol,
     null as ap_us_hist,
+
     ap_world_hist,
 
     'PSAT89' as test_name,
