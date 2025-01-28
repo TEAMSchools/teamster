@@ -1,3 +1,5 @@
+{{- config(materialized="table") -}}
+
 with
     student_unpivot as (
         select
