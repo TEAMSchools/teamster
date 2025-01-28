@@ -335,6 +335,140 @@ select
     r.quarter_citizenship,
     r.quarter_comment_value,
     r.section_or_period,
+    r.assignment_category_name,
+    r.assignment_category_code,
+    r.assignment_category_term,
+    r.expectation,
+    r.notes,
+    r.category_quarter_percent_grade,
+    r.category_quarter_average_all_courses,
+    null as assignmentid,
+    '' as assignment_name,
+    cast(null as date) as duedate,
+    '' as scoretype,
+    null as totalpointvalue,
+    '' as category_name,
+    null as scorepoints,
+
+    '' as actualscoreentered,
+    null as is_late,
+    null as is_exempt,
+    null as is_missing,
+    null as score_entered,
+    null as assign_final_score_percent,
+    cast(null as boolean) as assign_expected_to_be_scored,
+    cast(null as boolean) as assign_scored,
+    cast(null as boolean) as assign_expected_with_score,
+    r.cte_grouping,
+    r.audit_flag_name,
+
+    null as n_students,
+    null as n_late,
+    null as n_exempt,
+    null as n_missing,
+    null as n_expected,
+    null as n_expected_scored,
+    null as teacher_running_total_assign_by_cat,
+    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
+    f.audit_category,
+
+    if(r.audit_flag_value, 1, 0) as audit_flag_value,
+
+from student_unpivot as r
+inner join
+    {{ ref("stg_reporting__gradebook_flags") }} as f
+    on r.region = f.region
+    and r.school_level = f.school_level
+    and r.quarter = f.code
+    and r.audit_flag_name = f.audit_flag_name
+    and r.assignment_category_code = 'W'
+    and f.cte_grouping in ('student_course_category')
+    and f.audit_flag_name = 'qt_effort_grade_missing'
+
+left join
+    {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as t
+    on r.region = t.region
+    and r.schoolid = t.schoolid
+    and r.quarter = t.quarter
+    and r.week_number_quarter = t.week_number_quarter
+    and r.sectionid = t.sectionid
+    and r.assignmentid = t.assignmentid
+group by all
+
+union all
+
+select
+    r._dbt_source_relation,
+    r.academic_year,
+    r.academic_year_display,
+    r.yearid,
+    r.region,
+    r.school_level,
+    r.schoolid,
+    r.school,
+    r.students_dcid,
+    r.studentid,
+    r.student_number,
+    r.student_name,
+    r.grade_level,
+    r.salesforce_id,
+    r.ktc_cohort,
+    r.enroll_status,
+    r.cohort,
+    r.gender,
+    r.ethnicity,
+    r.advisory,
+    r.hos,
+    r.region_school_level,
+    r.year_in_school,
+    r.year_in_network,
+    r.rn_undergrad,
+    r.is_out_of_district,
+    r.is_self_contained,
+    r.is_retained_year,
+    r.is_retained_ever,
+    r.lunch_status,
+    r.gifted_and_talented,
+    r.iep_status,
+    r.lep_status,
+    r.is_504,
+    r.is_counseling_services,
+    r.is_student_athlete,
+    r.ada,
+    r.ada_above_or_at_80,
+    r.sectionid,
+    r.course_number,
+    r.date_enrolled,
+    r.sections_dcid,
+    r.section_number,
+    r.external_expression,
+    r.termid,
+    r.credit_type,
+    r.course_name,
+    r.exclude_from_gpa,
+    r.teacher_number,
+    r.teacher_name,
+    r.is_ap_course,
+    r.tableau_username,
+    r.quarter,
+    r.semester,
+    r.quarter_start_date,
+    r.quarter_end_date,
+    r.is_current_term,
+    r.is_quarter_end_date_range,
+    r.week_start_date,
+    r.week_end_date,
+    r.week_start_monday,
+    r.week_end_sunday,
+    r.school_week_start_date_lead,
+    r.week_number_academic_year,
+    r.week_number_quarter,
+    r.quarter_course_percent_grade_that_matters,
+    r.quarter_course_grade_points_that_matters,
+    r.quarter_citizenship,
+    r.quarter_comment_value,
+    r.section_or_period,
 
     '' as assignment_category_name,
     '' as assignment_category_code,
