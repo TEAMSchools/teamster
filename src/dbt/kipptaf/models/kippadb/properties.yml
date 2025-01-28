@@ -6,3 +6,11 @@ models:
       - name: student
         data_tests:
           - unique
+  - name: stg_kippadb__contact
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - school_specific_id
+          config:
+            severity: warn
+            store_failures: true
