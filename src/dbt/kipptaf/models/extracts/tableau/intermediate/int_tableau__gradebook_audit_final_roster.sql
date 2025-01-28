@@ -1,3 +1,5 @@
+{{- config(materialized="table") -}}
+
 select
     academic_year,
     academic_year_display,
