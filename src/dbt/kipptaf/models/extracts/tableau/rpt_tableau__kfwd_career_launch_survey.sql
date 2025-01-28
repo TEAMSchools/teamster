@@ -272,7 +272,7 @@ select
 
     if(
         r.actual_end_date_month < 7,
-        concat('Spring ', r.expected_grad_date_month),
+        concat('Spring ', r.expected_grad_date_year),
         concat('Fall ', r.expected_grad_date_year)
     ) as season_label_expected,
     if(
