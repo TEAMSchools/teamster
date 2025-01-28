@@ -217,7 +217,6 @@ select
     r.totalpointvalue,
     r.category_name,
     r.scorepoints,
-
     r.actualscoreentered,
     r.is_late,
     r.is_exempt,
@@ -242,7 +241,6 @@ select
     f.audit_category,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-
 from student_unpivot as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -340,23 +338,24 @@ select
     r.notes,
     r.category_quarter_percent_grade,
     r.category_quarter_average_all_courses,
-    null as assignmentid,
-    '' as assignment_name,
-    cast(null as date) as duedate,
-    '' as scoretype,
-    null as totalpointvalue,
-    '' as category_name,
-    null as scorepoints,
 
-    '' as actualscoreentered,
+    null as assignmentid,
+    null as assignment_name,
+    null as duedate,
+    null as scoretype,
+    null as totalpointvalue,
+    null as category_name,
+    null as scorepoints,
+    null as actualscoreentered,
     null as is_late,
     null as is_exempt,
     null as is_missing,
     null as score_entered,
     null as assign_final_score_percent,
-    cast(null as boolean) as assign_expected_to_be_scored,
-    cast(null as boolean) as assign_scored,
-    cast(null as boolean) as assign_expected_with_score,
+    null as assign_expected_to_be_scored,
+    null as assign_scored,
+    null as assign_expected_with_score,
+
     r.cte_grouping,
     r.audit_flag_name,
 
@@ -372,7 +371,6 @@ select
     f.audit_category,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-
 from student_unpivot as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -383,7 +381,6 @@ inner join
     and r.assignment_category_code = 'W'
     and f.cte_grouping in ('student_course_category')
     and f.audit_flag_name = 'qt_effort_grade_missing'
-
 left join
     {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as t
     on r.region = t.region
@@ -468,32 +465,30 @@ select
     r.quarter_comment_value,
     r.section_or_period,
 
-    '' as assignment_category_name,
-    '' as assignment_category_code,
-    '' as assignment_category_term,
+    null as assignment_category_name,
+    null as assignment_category_code,
+    null as assignment_category_term,
     null as expectation,
-    '' as notes,
-
+    null as notes,
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
-
     null as assignmentid,
-    '' as assignment_name,
-    cast(null as date) as duedate,
-    '' as scoretype,
+    null as assignment_name,
+    null as duedate,
+    null as scoretype,
     null as totalpointvalue,
-    '' as category_name,
+    null as category_name,
     null as scorepoints,
-
-    '' as actualscoreentered,
+    null as actualscoreentered,
     null as is_late,
     null as is_exempt,
     null as is_missing,
     null as score_entered,
     null as assign_final_score_percent,
-    cast(null as boolean) as assign_expected_to_be_scored,
-    cast(null as boolean) as assign_scored,
-    cast(null as boolean) as assign_expected_with_score,
+    null as assign_expected_to_be_scored,
+    null as assign_scored,
+    null as assign_expected_with_score,
+
     r.cte_grouping,
     r.audit_flag_name,
 
@@ -509,7 +504,6 @@ select
     f.audit_category,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-
 from eoq_items as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -567,7 +561,9 @@ select
     r.sections_dcid,
     r.section_number,
     r.external_expression,
+
     null as termid,
+
     r.credit_type,
     r.course_name,
     r.exclude_from_gpa,
@@ -594,32 +590,30 @@ select
     r.quarter_comment_value,
     r.section_or_period,
 
-    '' as assignment_category_name,
-    '' as assignment_category_code,
-    '' as assignment_category_term,
+    null as assignment_category_name,
+    null as assignment_category_code,
+    null as assignment_category_term,
     null as expectation,
-    '' as notes,
-
+    null as notes,
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
-
     null as assignmentid,
-    '' as assignment_name,
-    cast(null as date) as duedate,
-    '' as scoretype,
+    null as assignment_name,
+    null as duedate,
+    null as scoretype,
     null as totalpointvalue,
-    '' as category_name,
+    null as category_name,
     null as scorepoints,
-
-    '' as actualscoreentered,
+    null as actualscoreentered,
     null as is_late,
     null as is_exempt,
     null as is_missing,
     null as score_entered,
     null as assign_final_score_percent,
-    cast(null as boolean) as assign_expected_to_be_scored,
-    cast(null as boolean) as assign_scored,
-    cast(null as boolean) as assign_expected_with_score,
+    null as assign_expected_to_be_scored,
+    null as assign_scored,
+    null as assign_expected_with_score,
+
     r.cte_grouping,
     r.audit_flag_name,
 
@@ -635,7 +629,6 @@ select
     f.audit_category,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-
 from eoq_items as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -658,43 +651,51 @@ select
     r.school_level,
     r.schoolid,
     r.school,
+
     null as students_dcid,
     null as studentid,
     null as student_number,
-    '' as student_name,
+    null as student_name,
     null as grade_level,
-    '' as salesforce_id,
+    null as salesforce_id,
     null as ktc_cohort,
     null as enroll_status,
     null as cohort,
-    '' as gender,
-    '' as ethnicity,
-    '' as advisory,
+    null as gender,
+    null as ethnicity,
+    null as advisory,
+
     r.hos,
     r.region_school_level,
+
     null as year_in_school,
     null as year_in_network,
     null as rn_undergrad,
-    cast(null as boolean) as is_out_of_district,
-    cast(null as boolean) as is_self_contained,
-    cast(null as boolean) as is_retained_year,
-    cast(null as boolean) as is_retained_ever,
-    '' as lunch_status,
-    '' as gifted_and_talented,
-    '' as iep_status,
-    cast(null as boolean) as lep_status,
-    cast(null as boolean) as is_504,
+    null as is_out_of_district,
+    null as is_self_contained,
+    null as is_retained_year,
+    null as is_retained_ever,
+    null as lunch_status,
+    null as gifted_and_talented,
+    null as iep_status,
+    null as lep_status,
+    null as is_504,
     null as is_counseling_services,
     null as is_student_athlete,
     null as ada,
-    cast(null as boolean) as ada_above_or_at_80,
+    null as ada_above_or_at_80,
+
     r.sectionid,
     r.course_number,
-    cast(null as date) as date_enrolled,
+
+    null as date_enrolled,
+
     r.sections_dcid,
     r.section_number,
     r.external_expression,
+
     null as termid,
+
     r.credit_type,
     r.course_name,
     r.exclude_from_gpa,
@@ -715,38 +716,42 @@ select
     r.school_week_start_date_lead,
     r.week_number_academic_year,
     r.week_number_quarter,
+
     null as quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
-    '' as quarter_citizenship,
-    '' as quarter_comment_value,
+    null as quarter_citizenship,
+    null as quarter_comment_value,
+
     r.section_or_period,
     r.assignment_category_name,
     r.assignment_category_code,
     r.assignment_category_term,
     r.expectation,
     r.notes,
+
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
+
     r.assignmentid,
     r.assignment_name,
     r.duedate,
     r.scoretype,
     r.totalpointvalue,
-    '' as category_name,
-    null as scorepoints,
 
-    '' as actualscoreentered,
+    null as category_name,
+    null as scorepoints,
+    null as actualscoreentered,
     null as is_late,
     null as is_exempt,
     null as is_missing,
     null as score_entered,
     null as assign_final_score_percent,
-    cast(null as boolean) as assign_expected_to_be_scored,
-    cast(null as boolean) as assign_scored,
-    cast(null as boolean) as assign_expected_with_score,
+    null as assign_expected_to_be_scored,
+    null as assign_scored,
+    null as assign_expected_with_score,
+
     r.cte_grouping,
     r.audit_flag_name,
-
     r.n_students,
     r.n_late,
     r.n_exempt,
@@ -761,7 +766,6 @@ select
     f.audit_category,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-
 from teacher_unpivot as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -782,43 +786,51 @@ select
     r.school_level,
     r.schoolid,
     r.school,
+
     null as students_dcid,
     null as studentid,
     null as student_number,
-    '' as student_name,
+    null as student_name,
     null as grade_level,
-    '' as salesforce_id,
+    null as salesforce_id,
     null as ktc_cohort,
     null as enroll_status,
     null as cohort,
-    '' as gender,
-    '' as ethnicity,
-    '' as advisory,
+    null as gender,
+    null as ethnicity,
+    null as advisory,
+
     r.hos,
     r.region_school_level,
+
     null as year_in_school,
     null as year_in_network,
     null as rn_undergrad,
-    cast(null as boolean) as is_out_of_district,
-    cast(null as boolean) as is_self_contained,
-    cast(null as boolean) as is_retained_year,
-    cast(null as boolean) as is_retained_ever,
-    '' as lunch_status,
-    '' as gifted_and_talented,
-    '' as iep_status,
-    cast(null as boolean) as lep_status,
-    cast(null as boolean) as is_504,
+    null as is_out_of_district,
+    null as is_self_contained,
+    null as is_retained_year,
+    null as is_retained_ever,
+    null as lunch_status,
+    null as gifted_and_talented,
+    null as iep_status,
+    null as lep_status,
+    null as is_504,
     null as is_counseling_services,
     null as is_student_athlete,
     null as ada,
-    cast(null as boolean) as ada_above_or_at_80,
+    null as ada_above_or_at_80,
+
     r.sectionid,
     r.course_number,
-    cast(null as date) as date_enrolled,
+
+    null as date_enrolled,
+
     r.sections_dcid,
     r.section_number,
     r.external_expression,
+
     null as termid,
+
     r.credit_type,
     r.course_name,
     r.exclude_from_gpa,
@@ -839,16 +851,19 @@ select
     r.school_week_start_date_lead,
     r.week_number_academic_year,
     r.week_number_quarter,
+
     null as quarter_course_percent_grade_that_matters,
     null as quarter_course_grade_points_that_matters,
-    '' as quarter_citizenship,
-    '' as quarter_comment_value,
+    null as quarter_citizenship,
+    null as quarter_comment_value,
+
     r.section_or_period,
     r.assignment_category_name,
     r.assignment_category_code,
     r.assignment_category_term,
     r.expectation,
     r.notes,
+
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
     null as assignmentid,
@@ -856,18 +871,18 @@ select
     null as duedate,
     null as scoretype,
     null as totalpointvalue,
-    '' as category_name,
+    null as category_name,
     null as scorepoints,
-
-    '' as actualscoreentered,
+    null as actualscoreentered,
     null as is_late,
     null as is_exempt,
     null as is_missing,
     null as score_entered,
     null as assign_final_score_percent,
-    cast(null as boolean) as assign_expected_to_be_scored,
-    cast(null as boolean) as assign_scored,
-    cast(null as boolean) as assign_expected_with_score,
+    null as assign_expected_to_be_scored,
+    null as assign_scored,
+    null as assign_expected_with_score,
+
     r.cte_grouping,
     r.audit_flag_name,
 
@@ -877,14 +892,15 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+
     r.running_count_assignments_section_category_term
     as teacher_running_total_assign_by_cat,
+
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     f.audit_category,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-
 from teacher_unpivot as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
