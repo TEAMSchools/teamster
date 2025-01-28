@@ -40,6 +40,7 @@ with
             s.ethnicity_code as ethnicity,
 
             terms.yearid,
+            terms.academic_year,
 
             x1.exit_code as exit_code_kf,
             x2.exit_code as exit_code_ts,
@@ -103,6 +104,7 @@ with
             s.ethnicity_code as ethnicity,
 
             terms.yearid,
+            terms.academic_year,
 
             x1.exit_code as exit_code_kf,
             x2.exit_code as exit_code_ts,
