@@ -108,7 +108,7 @@ with
 
     eoq_items as (
         select  -- All but Conduct Code
-            r.*, f.cte_grouping, f.audit_category,
+            r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
             {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
@@ -135,7 +135,7 @@ with
 
     eoq_items_conduct_code as (
         select  -- Conduct Code for ES (requires grade level join)
-            r.*, f.cte_grouping, f.audit_category,
+            r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
             {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
@@ -267,6 +267,7 @@ select
     t.avg_expected_scored_percent,
 
     f.audit_category,
+    f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
 from student_unpivot as r
@@ -397,6 +398,7 @@ select
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     f.audit_category,
+    f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
 from student_unpivot as r
@@ -530,6 +532,7 @@ select
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     r.audit_category,
+    r.code_type,
 
     if(s.audit_flag_value, 1, 0) as audit_flag_value,
 from eoq_items as r
@@ -656,6 +659,7 @@ select
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     r.audit_category,
+    r.code_type,
 
     if(s.audit_flag_value, 1, 0) as audit_flag_value,
 from eoq_items_conduct_code as r
@@ -793,6 +797,7 @@ select
     as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     f.audit_category,
+    f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
 from teacher_unpivot as r
@@ -928,6 +933,7 @@ select
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     f.audit_category,
+    f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
 from teacher_unpivot as r
