@@ -62,13 +62,14 @@ with
             r.contact_kipp_ms_graduate,
             r.contact_kipp_hs_graduate,
             r.contact_kipp_hs_class,
-            r.contact_college_match_display_gpa,
-            r.contact_kipp_region_name,
+            r.contact_college_match_display_gpa as college_match_display_gpa,
+            r.contact_kipp_region_name as kipp_region_name,
             r.contact_description,
             r.contact_gender,
             r.contact_ethnicity,
             r.contact_expected_college_graduation as expected_college_grad_date,
             r.contact_actual_college_graduation_date as actual_college_grad_date,
+            r.contact_current_kipp_student as current_kipp_student,
 
             e.pursuing_degree_type,
             e.type,
@@ -85,6 +86,19 @@ with
             p.college_programs,
             p.is_basta,
             p.is_braven,
+
+            case
+                when r.contact_college_match_display_gpa >= 3.50
+                then '3.50+'
+                when r.contact_college_match_display_gpa >= 3.00
+                then '3.00-3.49'
+                when r.contact_college_match_display_gpa >= 2.50
+                then '2.50-2.99'
+                when r.contact_college_match_display_gpa >= 2.00
+                then '2.00-2.50'
+                when r.contact_college_match_display_gpa < 2.00
+                then '<2.00'
+            end as hs_gpa_bands,
 
             lower(r.contact_email) as sf_email,
             lower(r.contact_secondary_email) as sf_secondary_email,
