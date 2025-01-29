@@ -57,7 +57,7 @@ with
             audit_category,
             cte_grouping,
             audit_flag_name,
-            audit_flag_value,
+            max(audit_flag_value) as audit_flag_value,
 
         from {{ ref("int_tableau__gradebook_audit_final_roster") }}
         group by all
