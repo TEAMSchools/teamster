@@ -195,3 +195,70 @@ left join
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
+
+where t.assignment_category_code is not null
+
+union all
+
+select
+    t.*,
+    v.studentid,
+    v.student_number,
+    v.student_name,
+    v.grade_level,
+    v.salesforce_id,
+    v.ktc_cohort,
+    v.enroll_status,
+    v.cohort,
+    v.gender,
+    v.ethnicity,
+    v.advisory,
+    v.year_in_school,
+    v.year_in_network,
+    v.rn_undergrad,
+    v.is_out_of_district,
+    v.is_retained_year,
+    v.is_retained_ever,
+    v.lunch_status,
+    v.gifted_and_talented,
+    v.iep_status,
+    v.lep_status,
+    v.is_504,
+    v.is_counseling_services,
+    v.is_student_athlete,
+    v.ada,
+    v.ada_above_or_at_80,
+    v.date_enrolled,
+
+    v.category_quarter_percent_grade,
+    v.category_quarter_average_all_courses,
+
+    v.quarter_course_percent_grade_that_matters,
+    v.quarter_course_grade_points_that_matters,
+    v.quarter_citizenship,
+    v.quarter_comment_value,
+
+    v.raw_score,
+    v.score_entered,
+    v.assign_final_score_percent,
+    v.is_exempt,
+    v.is_late,
+    v.is_missing,
+
+    v.flag_value,
+
+from teacher_aggs as t
+left join
+    valid_flags as v
+    on t.academic_year = v.academic_year
+    and t.region = v.region
+    and t.schoolid = v.schoolid
+    and t.quarter = v.quarter
+    and t.audit_qt_week_number = v.audit_qt_week_number
+    and t.sectionid = v.sectionid
+    and t.teacher_number = v.teacher_number
+    and t.teacher_assign_id = v.teacher_assign_id
+    and t.audit_category = v.audit_category
+    and t.cte_grouping = v.cte_grouping
+    and t.audit_flag_name = v.audit_flag_name
+where t.assignment_category_code is null
