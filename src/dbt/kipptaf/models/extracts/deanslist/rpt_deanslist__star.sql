@@ -1,4 +1,5 @@
 select
+    'Benchmark' as score_type,
     student_display_id as student_number,
     academic_year,
     screening_period_window_name as test_round,
@@ -16,8 +17,6 @@ select
     if(
         grade_level = 0, district_benchmark_proficient, state_benchmark_proficient
     ) as state_benchmark_proficient,
-
-    'Benchmark' as score_type,
 
     concat(
         if(
