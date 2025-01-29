@@ -391,7 +391,7 @@ left join
     and r.week_number_quarter = t.week_number_quarter
     and r.sectionid = t.sectionid
     and r.assignmentid = t.assignmentid
-group by all
+group by all  {# TODO: determine cause of duplicates and remove #}
 
 union all
 
@@ -911,4 +911,4 @@ inner join
     and r.assignment_category_code = f.code
     and r.audit_flag_name = f.audit_flag_name
     and f.cte_grouping = 'class_category'
-group by all
+group by all  {# TODO: determine cause of duplicates and remove #}
