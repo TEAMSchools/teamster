@@ -107,14 +107,8 @@ with
     ),
 
     eoq_items as (
-        select
-            *,
-
-            if(
-                audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2',
-                'student',
-                'student_course'
-            ) as cte_grouping,
+        select  -- All but Conduct Code
+            r.*, f.cte_grouping, f.audit_category,
 
         from
             {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
@@ -125,13 +119,45 @@ with
                     qt_g1_g8_conduct_code_incorrect,
                     qt_g1_g8_conduct_code_missing,
                     qt_grade_70_comment_missing,
-                    qt_kg_conduct_code_incorrect,
-                    qt_kg_conduct_code_missing,
-                    qt_kg_conduct_code_not_hr,
                     qt_percent_grade_greater_100,
                     qt_student_is_ada_80_plus_gpa_less_2
                 )
-            )
+            ) as r
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.quarter = f.code
+            and r.audit_flag_name = f.audit_flag_name
+            and f.cte_grouping in ('student_course', 'student')
+            and f.audit_category != 'Conduct Code'
+    ),
+
+    eoq_items_conduct_code as (
+        select  -- Conduct Code for ES (requires grade level join)
+            r.*, f.cte_grouping, f.audit_category,
+
+        from
+            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
+            unpivot (
+                audit_flag_value for audit_flag_name in (
+                    qt_kg_conduct_code_incorrect,
+                    qt_kg_conduct_code_missing,
+                    qt_kg_conduct_code_not_hr,
+                    qt_g1_g8_conduct_code_missing,
+                    qt_g1_g8_conduct_code_incorrect
+                )
+            ) as r
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.quarter = f.code
+            and r.grade_level = f.grade_level
+            and r.audit_flag_name = f.audit_flag_name
+            and f.cte_grouping = 'student_course'
+            and f.audit_category = 'Conduct Code'
+        where r.school_level = 'ES'
     )
 
 select
@@ -381,7 +407,7 @@ inner join
     and r.quarter = f.code
     and r.audit_flag_name = f.audit_flag_name
     and r.assignment_category_code = 'W'
-    and f.cte_grouping in ('student_course_category')
+    and f.cte_grouping = 'student_course_category'
     and f.audit_flag_name = 'qt_effort_grade_missing'
 left join
     {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as t
@@ -503,18 +529,19 @@ select
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-    f.audit_category,
+    r.audit_category,
 
-    if(r.audit_flag_value, 1, 0) as audit_flag_value,
+    if(s.audit_flag_value, 1, 0) as audit_flag_value,
 from eoq_items as r
-inner join
-    {{ ref("stg_reporting__gradebook_flags") }} as f
-    on r.region = f.region
-    and r.school_level = f.school_level
-    and r.quarter = f.code
-    and r.audit_flag_name = f.audit_flag_name
-    and f.cte_grouping in ('student_course', 'student')
-    and f.audit_category != 'Conduct Code'
+left join
+    student_unpivot as s
+    on r.region = s.region
+    and r.student_number = s.student_number
+    and r.quarter = s.quarter
+    and r.week_number_quarter = s.week_number_quarter
+    and r.audit_flag_name = s.audit_flag_name
+    and r.cte_grouping in ('student_course', 'student')
+    and r.audit_category != 'Conduct Code'
 
 union all
 
@@ -628,19 +655,19 @@ select
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-    f.audit_category,
+    r.audit_category,
 
-    if(r.audit_flag_value, 1, 0) as audit_flag_value,
-from eoq_items as r
-inner join
-    {{ ref("stg_reporting__gradebook_flags") }} as f
-    on r.region = f.region
-    and r.school_level = f.school_level
-    and r.quarter = f.code
-    and r.grade_level = f.grade_level
-    and r.audit_flag_name = f.audit_flag_name
-    and f.cte_grouping = 'student_course'
-    and f.audit_category = 'Conduct Code'
+    if(s.audit_flag_value, 1, 0) as audit_flag_value,
+from eoq_items_conduct_code as r
+left join
+    student_unpivot as s
+    on r.region = s.region
+    and r.student_number = s.student_number
+    and r.quarter = s.quarter
+    and r.week_number_quarter = s.week_number_quarter
+    and r.audit_flag_name = s.audit_flag_name
+    and r.cte_grouping = 'student_course'
+    and r.audit_category = 'Conduct Code'
 
 union all
 
