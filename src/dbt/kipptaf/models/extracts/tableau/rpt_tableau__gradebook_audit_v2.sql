@@ -60,7 +60,7 @@ with
             audit_flag_value,
 
         from {{ ref("int_tableau__gradebook_audit_final_roster") }}
-        group by all
+        group by all  {# TODO: determine cause of duplicates and remove #}
     ),
 
     valid_flags as (
@@ -130,7 +130,7 @@ with
 
         from {{ ref("int_tableau__gradebook_audit_final_roster") }}
         where audit_flag_value = 1
-        group by all
+        group by all  {# TODO: determine cause of duplicates and remove #}
     )
 
 select
