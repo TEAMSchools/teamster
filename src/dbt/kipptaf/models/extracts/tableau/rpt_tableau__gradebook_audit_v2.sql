@@ -258,7 +258,6 @@ left join
     and t.audit_qt_week_number = v.audit_qt_week_number
     and t.sectionid = v.sectionid
     and t.teacher_number = v.teacher_number
-    and t.teacher_assign_id = v.teacher_assign_id
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
