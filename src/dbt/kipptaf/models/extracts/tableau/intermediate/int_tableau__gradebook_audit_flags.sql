@@ -256,6 +256,7 @@ select
     r.assign_expected_to_be_scored,
     r.assign_scored,
     r.assign_expected_with_score,
+
     r.cte_grouping,
     r.audit_flag_name,
 
@@ -389,10 +390,6 @@ select
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
     null as assign_scored,
-    null as total_expected_scored_section_quarter_week_category,
-    null as total_expected_section_quarter_week_category,
-    null as percent_graded_for_quarter_week_class,
-    null as sum_totalpointvalue_section_quarter_category,
     null as assign_expected_with_score,
 
     r.cte_grouping,
@@ -404,6 +401,10 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as um_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
@@ -803,6 +804,7 @@ select
 
     r.cte_grouping,
     r.audit_flag_name,
+    
     r.n_students,
     r.n_late,
     r.n_exempt,
