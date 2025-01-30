@@ -80,6 +80,7 @@ with
                 when
                     audit_flag_name in (
                         'qt_teacher_s_total_greater_200',
+                        'qt_teacher_s_total_less_200',
                         'w_expected_assign_count_not_met',
                         'f_expected_assign_count_not_met',
                         's_expected_assign_count_not_met',
@@ -96,6 +97,7 @@ with
                     f_assign_max_score_not_10,
                     s_max_score_greater_100,
                     qt_teacher_s_total_greater_200,
+                    qt_teacher_s_total_less_200,
                     w_expected_assign_count_not_met,
                     f_expected_assign_count_not_met,
                     s_expected_assign_count_not_met,
@@ -107,14 +109,8 @@ with
     ),
 
     eoq_items as (
-        select
-            *,
-
-            if(
-                audit_flag_name = 'qt_student_is_ada_80_plus_gpa_less_2',
-                'student',
-                'student_course'
-            ) as cte_grouping,
+        select  -- All but Conduct Code
+            r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
             {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
@@ -125,13 +121,45 @@ with
                     qt_g1_g8_conduct_code_incorrect,
                     qt_g1_g8_conduct_code_missing,
                     qt_grade_70_comment_missing,
-                    qt_kg_conduct_code_incorrect,
-                    qt_kg_conduct_code_missing,
-                    qt_kg_conduct_code_not_hr,
                     qt_percent_grade_greater_100,
                     qt_student_is_ada_80_plus_gpa_less_2
                 )
-            )
+            ) as r
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.quarter = f.code
+            and r.audit_flag_name = f.audit_flag_name
+            and f.cte_grouping in ('student_course', 'student')
+            and f.audit_category != 'Conduct Code'
+    ),
+
+    eoq_items_conduct_code as (
+        select  -- Conduct Code for ES (requires grade level join)
+            r.*, f.cte_grouping, f.audit_category, f.code_type,
+
+        from
+            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
+            unpivot (
+                audit_flag_value for audit_flag_name in (
+                    qt_kg_conduct_code_incorrect,
+                    qt_kg_conduct_code_missing,
+                    qt_kg_conduct_code_not_hr,
+                    qt_g1_g8_conduct_code_missing,
+                    qt_g1_g8_conduct_code_incorrect
+                )
+            ) as r
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.quarter = f.code
+            and r.grade_level = f.grade_level
+            and r.audit_flag_name = f.audit_flag_name
+            and f.cte_grouping = 'student_course'
+            and f.audit_category = 'Conduct Code'
+        where r.school_level = 'ES'
     )
 
 select
@@ -228,6 +256,7 @@ select
     r.assign_expected_to_be_scored,
     r.assign_scored,
     r.assign_expected_with_score,
+
     r.cte_grouping,
     r.audit_flag_name,
 
@@ -237,10 +266,17 @@ select
     t.n_missing,
     t.n_expected,
     t.n_expected_scored,
-    t.running_count_assignments_section_category_term,
-    t.avg_expected_scored_percent,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    t.sum_totalpointvalue_section_quarter_category,
+    t.running_count_assignments_section_category_term
+    as teacher_running_total_assign_by_cat,
+    t.avg_expected_scored_percent
+    as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     f.audit_category,
+    f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
 from student_unpivot as r
@@ -367,10 +403,15 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as um_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     f.audit_category,
+    f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
 from student_unpivot as r
@@ -381,7 +422,7 @@ inner join
     and r.quarter = f.code
     and r.audit_flag_name = f.audit_flag_name
     and r.assignment_category_code = 'W'
-    and f.cte_grouping in ('student_course_category')
+    and f.cte_grouping = 'student_course_category'
     and f.audit_flag_name = 'qt_effort_grade_missing'
 left join
     {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as t
@@ -500,21 +541,27 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-    f.audit_category,
+    r.audit_category,
+    r.code_type,
 
-    if(r.audit_flag_value, 1, 0) as audit_flag_value,
+    if(s.audit_flag_value, 1, 0) as audit_flag_value,
 from eoq_items as r
-inner join
-    {{ ref("stg_reporting__gradebook_flags") }} as f
-    on r.region = f.region
-    and r.school_level = f.school_level
-    and r.quarter = f.code
-    and r.audit_flag_name = f.audit_flag_name
-    and f.cte_grouping in ('student_course', 'student')
-    and f.audit_category != 'Conduct Code'
+left join
+    student_unpivot as s
+    on r.region = s.region
+    and r.student_number = s.student_number
+    and r.quarter = s.quarter
+    and r.week_number_quarter = s.week_number_quarter
+    and r.audit_flag_name = s.audit_flag_name
+    and r.cte_grouping in ('student_course', 'student')
+    and r.audit_category != 'Conduct Code'
 
 union all
 
@@ -625,22 +672,27 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-    f.audit_category,
+    r.audit_category,
+    r.code_type,
 
-    if(r.audit_flag_value, 1, 0) as audit_flag_value,
-from eoq_items as r
-inner join
-    {{ ref("stg_reporting__gradebook_flags") }} as f
-    on r.region = f.region
-    and r.school_level = f.school_level
-    and r.quarter = f.code
-    and r.grade_level = f.grade_level
-    and r.audit_flag_name = f.audit_flag_name
-    and f.cte_grouping = 'student_course'
-    and f.audit_category = 'Conduct Code'
+    if(s.audit_flag_value, 1, 0) as audit_flag_value,
+from eoq_items_conduct_code as r
+left join
+    student_unpivot as s
+    on r.region = s.region
+    and r.student_number = s.student_number
+    and r.quarter = s.quarter
+    and r.week_number_quarter = s.week_number_quarter
+    and r.audit_flag_name = s.audit_flag_name
+    and r.cte_grouping = 'student_course'
+    and r.audit_category = 'Conduct Code'
 
 union all
 
@@ -754,18 +806,24 @@ select
 
     r.cte_grouping,
     r.audit_flag_name,
+
     r.n_students,
     r.n_late,
     r.n_exempt,
     r.n_missing,
     r.n_expected,
     r.n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    r.sum_totalpointvalue_section_quarter_category,
     r.running_count_assignments_section_category_term
     as teacher_running_total_assign_by_cat,
     r.avg_expected_scored_percent
     as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     f.audit_category,
+    f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
 from teacher_unpivot as r
@@ -894,6 +952,10 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    r.total_expected_scored_section_quarter_week_category,
+    r.total_expected_section_quarter_week_category,
+    r.percent_graded_for_quarter_week_class,
+    r.sum_totalpointvalue_section_quarter_category,
 
     r.running_count_assignments_section_category_term
     as teacher_running_total_assign_by_cat,
@@ -901,6 +963,7 @@ select
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     f.audit_category,
+    f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
 from teacher_unpivot as r
