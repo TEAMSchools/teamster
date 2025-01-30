@@ -127,6 +127,9 @@ RENLEARN_SFTP_PASSWORD=op://Data Team/RenLearning SFTP Exports - NJ/password
 RENLEARN_SFTP_USERNAME_KIPPMIAMI=op://Data Team/RenLearning SFTP Exports - Miami/username
 RENLEARN_SFTP_USERNAME_KIPPNJ=op://Data Team/RenLearning SFTP Exports - NJ/username
 RENLEARN_SFTP_USERNAME=op://Data Team/RenLearning SFTP Exports - NJ/username
+SALESFORCE_KIPPADB_PASSWORD=op://Data Team/KIPP ADB/password
+SALESFORCE_KIPPADB_USER_NAME=op://Data Team/KIPP ADB/username
+SALESFORCE_KIPPADB_SECURITY_TOKEN=op://Data Team/KIPP ADB/security token
 SCHOOLMINT_GROW_CLIENT_ID=op://Data Team/SchooMint Grow API/client id
 SCHOOLMINT_GROW_CLIENT_SECRET=op://Data Team/SchooMint Grow API/client secret
 SCHOOLMINT_GROW_DISTRICT_ID=op://Data Team/SchooMint Grow API/district id
@@ -146,4 +149,5 @@ TITAN_SFTP_USERNAME=op://Data Team/Titan SFTP - Camden/username
 ZENDESK_EMAIL=op://Data Team/Zendesk API/email
 ZENDESK_SUBDOMAIN=op://Data Team/Zendesk API/subdomain
 ZENDESK_TOKEN=op://Data Team/Zendesk API/token
-LDAP_USER=op://Data Team/Active Directory Service Account/username # breaks uv env read
+# breaks uv env read
+LDAP_USER=op://Data Team/Active Directory Service Account/username

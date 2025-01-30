@@ -4,28 +4,32 @@ from dlt import pipeline
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
 
-from teamster.libraries.dlt.zendesk.pipeline import zendesk_support
-from teamster.libraries.dlt.zendesk.pipeline.helpers.credentials import (
-    TZendeskCredentials,
-)
+from teamster.libraries.dlt.salesforce.pipeline import salesforce_source
 
 
-class ZendeskDagsterDltTranslator(DagsterDltTranslator):
+class SalesforceDagsterDltTranslator(DagsterDltTranslator):
     def __init__(self, code_location: str):
         self.code_location = code_location
         return super().__init__()
 
     def get_asset_key(self, resource):
-        return AssetKey(
-            [self.code_location, "dlt", "zendesk", "support", resource.name]
-        )
+        return AssetKey([self.code_location, "dlt", "kippadb", resource.name])
 
     def get_deps_asset_keys(self, resource):
         return []
 
+    def get_kinds(self, resource, destination):
+        kinds = super().get_kinds(resource, destination)
 
-def build_zendesk_support_dlt_assets(
-    zendesk_credentials: TZendeskCredentials,
+        kinds.add("salesforce")
+
+        return kinds
+
+
+def build_salesforce_kippadb_dlt_assets(
+    salesforce_user_name: str,
+    salesforce_password: str,
+    salesforce_security_token: str,
     dlt_credentials: dict,
     code_location: str,
     op_tags: dict[str, object] | None = None,
@@ -33,21 +37,25 @@ def build_zendesk_support_dlt_assets(
     if op_tags is None:
         op_tags = {}
 
-    dlt_source = zendesk_support(credentials=zendesk_credentials, load_all=True)
+    dlt_source = salesforce_source(
+        user_name=salesforce_user_name,
+        password=salesforce_password,
+        security_token=salesforce_security_token,
+    )
 
     dlt_pipeline = pipeline(
-        pipeline_name="zendesk",
+        pipeline_name="kippadb",
         destination=bigquery(),
-        dataset_name=f"dagster_{code_location}_dlt_zendesk_support",
+        dataset_name=f"dagster_{code_location}_dlt_kippadb",
         progress=LogCollector(dump_system_stats=False),
     )
 
     @dlt_assets(
         dlt_source=dlt_source,
         dlt_pipeline=dlt_pipeline,
-        name=f"{code_location}__dlt__zendesk__support",
-        group_name="zendesk",
-        dagster_dlt_translator=ZendeskDagsterDltTranslator(code_location),
+        name=f"{code_location}__dlt__kippadb",
+        group_name="kippadb",
+        dagster_dlt_translator=SalesforceDagsterDltTranslator(code_location),
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):

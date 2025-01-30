@@ -1,4 +1,3 @@
-import json
 from datetime import date
 
 from dagster import AssetExecutionContext, AssetKey
@@ -31,7 +30,11 @@ class IlluminateDagsterDltTranslator(DagsterDltTranslator):
         return []
 
     def get_kinds(self, resource, destination):
-        return {"dlt", "postgresql", destination.destination_name}
+        kinds = super().get_kinds(resource, destination)
+
+        kinds.add("postgresql")
+
+        return kinds
 
 
 def filter_date_taken_callback(query: Select, table: TableClause):
@@ -40,7 +43,8 @@ def filter_date_taken_callback(query: Select, table: TableClause):
 
 
 def build_illuminate_dlt_assets(
-    credentials: ConnectionStringCredentials,
+    sql_database_credentials: ConnectionStringCredentials,
+    dlt_credentials: dict,
     code_location: str,
     schema: str,
     table_name: str,
@@ -54,7 +58,7 @@ def build_illuminate_dlt_assets(
 
     # trunk-ignore(pyright/reportArgumentType)
     dlt_source = sql_database.with_args(name="illuminate", parallelized=True)(
-        credentials=credentials,
+        credentials=sql_database_credentials,
         schema=schema,
         table_names=[table_name],
         defer_table_reflect=True,
@@ -64,9 +68,6 @@ def build_illuminate_dlt_assets(
             filter_date_taken_callback if filter_date_taken else None
         ),
     )
-
-    # bigquery cannot load data type 'json' from 'parquet' files
-    # os.environ["DESTINATION__BIGQUERY__AUTODETECT_SCHEMA"] = "true"
 
     dlt_pipeline = pipeline(
         pipeline_name="illuminate",
@@ -85,11 +86,7 @@ def build_illuminate_dlt_assets(
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
         yield from dlt.run(
-            context=context,
-            credentials=json.load(
-                fp=open(file="/etc/secret-volume/gcloud_teamster_dlt_keyfile.json")
-            ),
-            write_disposition="replace",
+            context=context, credentials=dlt_credentials, write_disposition="replace"
         )
 
     return _assets

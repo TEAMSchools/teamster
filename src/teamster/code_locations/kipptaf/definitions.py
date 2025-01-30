@@ -1,5 +1,3 @@
-import os
-
 from dagster import (
     AssetSelection,
     AutomationConditionSensorDefinition,
@@ -46,7 +44,7 @@ from teamster.core.resources import (
 )
 
 defs = Definitions(
-    executor=k8s_job_executor if os.getenv("DBT_DEV") == "true" else None,
+    executor=k8s_job_executor,
     assets=[
         *_google.asset_specs,
         *airbyte.asset_specs,
