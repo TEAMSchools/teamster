@@ -51,11 +51,16 @@ with
             n_missing,
             n_expected,
             n_expected_scored,
+            total_expected_scored_section_quarter_week_category,
+            total_expected_section_quarter_week_category,
+            percent_graded_for_quarter_week_class,
+            sum_totalpointvalue_section_quarter_category,
             teacher_running_total_assign_by_cat,
             teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
             audit_category,
             cte_grouping,
+            code_type,
             audit_flag_name,
             max(audit_flag_value) as audit_flag_value,
 
@@ -125,6 +130,7 @@ with
 
             audit_category,
             cte_grouping,
+            code_type,
             audit_flag_name,
             audit_flag_value as flag_value,
 
@@ -195,8 +201,7 @@ left join
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
-
-where t.assignment_category_code is not null
+where t.code_type = 'Gradebook Category'
 
 union all
 
@@ -257,8 +262,7 @@ left join
     and t.audit_qt_week_number = v.audit_qt_week_number
     and t.sectionid = v.sectionid
     and t.teacher_number = v.teacher_number
-    and t.teacher_assign_id = v.teacher_assign_id
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
-where t.assignment_category_code is null
+where t.code_type = 'Quarter'
