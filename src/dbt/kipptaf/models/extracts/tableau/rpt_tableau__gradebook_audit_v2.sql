@@ -51,6 +51,10 @@ with
             n_missing,
             n_expected,
             n_expected_scored,
+            total_expected_scored_section_quarter_week_category,
+            total_expected_section_quarter_week_category,
+            percent_graded_for_quarter_week_class,
+            sum_totalpointvalue_section_quarter_category,
             teacher_running_total_assign_by_cat,
             teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
