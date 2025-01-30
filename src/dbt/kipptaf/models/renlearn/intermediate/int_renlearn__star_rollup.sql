@@ -3,6 +3,9 @@ select
     state_benchmark_category_level,
     state_benchmark_category_name,
     state_benchmark_proficient,
+    district_benchmark_category_level,
+    district_benchmark_category_name,
+    district_benchmark_proficient,
     unified_score,
     screening_period_window_name,
 
