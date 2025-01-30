@@ -459,6 +459,8 @@ select
     ta.n_act_attempts,
     ta.n_sat_attempts,
 
+    sv.school_visit_count,
+
     case
         when c.contact_college_match_display_gpa >= 3.50
         then '3.50+'
