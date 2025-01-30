@@ -1,3 +1,4 @@
+import json
 import pathlib
 
 import yaml
@@ -7,7 +8,9 @@ from dlt.common.configuration.specs import ConnectionStringCredentials
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.libraries.dlt.illuminate.assets import build_illuminate_dlt_assets
 
-credentials = ConnectionStringCredentials(
+config_file = pathlib.Path(__file__).parent / "config" / "illuminate.yaml"
+
+sql_database_credentials = ConnectionStringCredentials(
     {
         "drivername": _check.not_none(
             value=EnvVar("ILLUMINATE_DB_DRIVERNAME").get_value()
@@ -19,11 +22,17 @@ credentials = ConnectionStringCredentials(
     }
 )
 
-config_file = pathlib.Path(__file__).parent / "config" / "illuminate.yaml"
+dlt_credentials = json.load(
+    fp=open(file="/etc/secret-volume/gcloud_teamster_dlt_keyfile.json")
+)
 
 assets = [
     build_illuminate_dlt_assets(
-        credentials=credentials, code_location=CODE_LOCATION, schema=a["schema"], **t
+        sql_database_credentials=sql_database_credentials,
+        dlt_credentials=dlt_credentials,
+        code_location=CODE_LOCATION,
+        schema=a["schema"],
+        **t,
     )
     for a in yaml.safe_load(config_file.read_text())["assets"]
     for t in a["tables"]
