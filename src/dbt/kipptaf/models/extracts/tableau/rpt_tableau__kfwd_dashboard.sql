@@ -464,6 +464,8 @@ select
     c.contact_opt_out_national_contact,
     c.contact_opt_out_regional_contact,
 
+    coalesce(ar.max_ecc_accepted, 0) as max_ecc_accepted,
+
     case
         when c.contact_college_match_display_gpa >= 3.50
         then '3.50+'
