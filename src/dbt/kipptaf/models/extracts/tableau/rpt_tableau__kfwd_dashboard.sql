@@ -195,6 +195,13 @@ with
             ) as n_award_letters_received,
         from {{ ref("stg_overgrad__admissions") }}
         group by all
+    ),
+
+    school_visit as (
+        select contact, academic_year, count(*) as school_visit_count
+        from {{ ref("stg_kippadb__contact_note") }}
+        where type = 'School Visit' and status = 'Successful'
+        group by all
     )
 
 select
@@ -650,6 +657,10 @@ left join
     and ocf._dbt_source_model = 'stg_overgrad__students'
 left join award_letter_rollup as al on os.id = al.og_student_id
 left join test_attempts as ta on c.contact_id = ta.contact
+left join
+    school_visit as sv
+    on sv.contact = c.contact_id
+    and sv.academic_year = ay.academic_year
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
