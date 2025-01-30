@@ -80,6 +80,7 @@ with
                 when
                     audit_flag_name in (
                         'qt_teacher_s_total_greater_200',
+                        'qt_teacher_s_total_less_200',
                         'w_expected_assign_count_not_met',
                         'f_expected_assign_count_not_met',
                         's_expected_assign_count_not_met',
@@ -96,6 +97,7 @@ with
                     f_assign_max_score_not_10,
                     s_max_score_greater_100,
                     qt_teacher_s_total_greater_200,
+                    qt_teacher_s_total_less_200,
                     w_expected_assign_count_not_met,
                     f_expected_assign_count_not_met,
                     s_expected_assign_count_not_met,
@@ -263,6 +265,10 @@ select
     t.n_missing,
     t.n_expected,
     t.n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    t.sum_totalpointvalue_section_quarter_category,
     t.running_count_assignments_section_category_term,
     t.avg_expected_scored_percent,
 
@@ -383,6 +389,10 @@ select
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
     null as assign_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
     null as assign_expected_with_score,
 
     r.cte_grouping,
@@ -528,6 +538,10 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
@@ -655,6 +669,10 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
@@ -791,6 +809,10 @@ select
     r.n_missing,
     r.n_expected,
     r.n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    r.sum_totalpointvalue_section_quarter_category,
     r.running_count_assignments_section_category_term
     as teacher_running_total_assign_by_cat,
     r.avg_expected_scored_percent
@@ -926,6 +948,10 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    r.total_expected_scored_section_quarter_week_category,
+    r.total_expected_section_quarter_week_category,
+    r.percent_graded_for_quarter_week_class,
+    r.sum_totalpointvalue_section_quarter_category,
 
     r.running_count_assignments_section_category_term
     as teacher_running_total_assign_by_cat,
