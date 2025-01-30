@@ -1,7 +1,7 @@
 import json
 from datetime import date
 
-from dagster import AssetExecutionContext, AssetKey, EnvVar, _check
+from dagster import AssetExecutionContext, AssetKey
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
@@ -9,18 +9,6 @@ from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
 from dlt.sources.sql_database import remove_nullability_adapter, sql_database
 from sqlalchemy.sql import Select, TableClause
-
-CREDENTIALS = ConnectionStringCredentials(
-    {
-        "drivername": _check.not_none(
-            value=EnvVar("ILLUMINATE_DB_DRIVERNAME").get_value()
-        ),
-        "database": EnvVar("ILLUMINATE_DB_DATABASE").get_value(),
-        "password": EnvVar("ILLUMINATE_DB_PASSWORD").get_value(),
-        "username": EnvVar("ILLUMINATE_DB_USERNAME").get_value(),
-        "host": EnvVar("ILLUMINATE_DB_HOST").get_value(),
-    }
-)
 
 
 class IlluminateDagsterDltTranslator(DagsterDltTranslator):
@@ -52,6 +40,7 @@ def filter_date_taken_callback(query: Select, table: TableClause):
 
 
 def build_illuminate_dlt_assets(
+    credentials: ConnectionStringCredentials,
     code_location: str,
     schema: str,
     table_name: str,
@@ -65,7 +54,7 @@ def build_illuminate_dlt_assets(
 
     # trunk-ignore(pyright/reportArgumentType)
     dlt_source = sql_database.with_args(name="illuminate", parallelized=True)(
-        credentials=CREDENTIALS,
+        credentials=credentials,
         schema=schema,
         table_names=[table_name],
         defer_table_reflect=True,
