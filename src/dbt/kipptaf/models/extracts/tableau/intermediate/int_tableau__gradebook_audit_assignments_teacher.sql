@@ -27,8 +27,12 @@ with
             ) as running_count_assignments_section_category_term,
 
             sum(a.totalpointvalue) over (
-                partition by sec._dbt_source_relation, sec.quarter, sec.sectionid
-            ) as sum_totalpointvalue_section_quarter,
+                partition by
+                    sec._dbt_source_relation,
+                    sec.quarter,
+                    sec.sectionid,
+                    sec.assignment_category_code
+            ) as sum_totalpointvalue_section_quarter_category,
 
             sum(asg.n_expected) over (
                 partition by
@@ -136,10 +140,16 @@ select
 
     if(
         assignment_category_code = 'S'
-        and n_expected = 1
-        and sum_totalpointvalue_section_quarter > 200,
+        and sum_totalpointvalue_section_quarter_category > 200,
         true,
         false
     ) as qt_teacher_s_total_greater_200,
+
+    if(
+        assignment_category_code = 'S'
+        and sum_totalpointvalue_section_quarter_category < 200,
+        true,
+        false
+    ) as qt_teacher_s_total_less_200,
 
 from final
