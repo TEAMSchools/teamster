@@ -1,3 +1,7 @@
+-- generates rows for all of the assignment_student flags: assign_exempt_with_score,
+-- assign_f_missing_score_not_5, assign_f_score_less_5, assign_null_score,
+-- assign_s_hs_score_not_conversion_chart_options,assign_s_score_less_50p,
+-- assign_score_above_max,assign_w_missing_score_not_5,assign_w_score_less_5
 select
     academic_year,
     academic_year_display,
@@ -89,6 +93,10 @@ select
     n_missing,
     n_expected,
     n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
@@ -109,7 +117,7 @@ from {{ ref("int_tableau__gradebook_audit_flags") }}
 where cte_grouping = 'assignment_student'
 
 union all
-
+-- generates rows for the following student_course_category flag: w_grade_inflation
 select
     academic_year,
     academic_year_display,
@@ -201,6 +209,10 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
@@ -222,6 +234,8 @@ where assignment_category_code = 'W' and audit_flag_name = 'w_grade_inflation'
 
 union all
 
+-- generates rows for the following student_course_category flag:
+-- qt_effort_grade_missing
 select
     academic_year,
     academic_year_display,
@@ -313,6 +327,10 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
@@ -334,6 +352,13 @@ where assignment_category_code = 'W' and audit_flag_name = 'qt_effort_grade_miss
 
 union all
 
+-- generates rows for all of the student_course flags:
+-- qt_percent_grade_greater_100,qt_g1_g8_conduct_code_incorrect,
+-- qt_grade_70_comment_missing,qt_es_comment_missing,
+-- qt_comment_missing,qt_g1_g8_conduct_code_incorrect,
+-- qt_g1_g8_conduct_code_missing,qt_kg_conduct_code_incorrect,
+-- qt_kg_conduct_code_missing,qt_kg_conduct_code_not_hr,
+-- qt_percent_grade_greater_100,qt_es_comment_missing
 select
     academic_year,
     academic_year_display,
@@ -425,6 +450,10 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
@@ -446,6 +475,8 @@ where cte_grouping = 'student_course'
 
 union all
 
+-- generates rows for all of the student flags: 
+-- qt_student_is_ada_80_plus_gpa_less_2
 select
     academic_year,
     academic_year_display,
@@ -537,6 +568,10 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
@@ -558,6 +593,9 @@ where cte_grouping = 'student'
 
 union all
 
+-- generates rows for all of the class_category_assignment flags: 
+-- f_assign_max_score_not_10, w_assign_max_score_not_10
+-- s_max_score_greater_100
 select
     academic_year,
     academic_year_display,
@@ -649,6 +687,10 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
@@ -669,7 +711,8 @@ from {{ ref("int_tableau__gradebook_audit_flags") }}
 where cte_grouping = 'class_category_assignment'
 
 union all
-
+-- generates rows for the following class_category flag: qt_teacher_s_total_greater_200,
+-- qt_teacher_s_total_less_200
 select
     academic_year,
     academic_year_display,
@@ -761,6 +804,10 @@ select
     null as n_missing,
     null as n_expected,
     null as n_expected_scored,
+    null as total_expected_scored_section_quarter_week_category,
+    null as total_expected_section_quarter_week_category,
+    null as percent_graded_for_quarter_week_class,
+    sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
@@ -778,4 +825,130 @@ select
     coalesce(audit_flag_value, 0) as audit_flag_value,
 
 from {{ ref("int_tableau__gradebook_audit_flags") }}
-where cte_grouping = 'class_category'
+where
+    cte_grouping = 'class_category'
+    and audit_flag_name = 'qt_teacher_s_total_greater_200'
+    and assignment_category_code = 'S'
+
+union all
+-- generates rows for the following class_category flag:
+-- f_expected_assign_count_not_met,
+-- s_expected_assign_count_not_met, w_expected_assign_count_not_met,
+-- f_percent_graded_min_not_met, s_percent_graded_min_not_met,
+-- w_percent_graded_min_not_met
+select
+    academic_year,
+    academic_year_display,
+    region,
+    school_level,
+    region_school_level,
+    schoolid,
+    school,
+
+    null as studentid,
+    null as student_number,
+    null as student_name,
+    null as grade_level,
+    null as salesforce_id,
+    null as ktc_cohort,
+    null as enroll_status,
+    null as cohort,
+    null as gender,
+    null as ethnicity,
+    null as advisory,
+    null as hos,
+    null as year_in_school,
+    null as year_in_network,
+    null as rn_undergrad,
+    null as is_out_of_district,
+    null as is_retained_year,
+    null as is_retained_ever,
+    null as lunch_status,
+    null as gifted_and_talented,
+    null as iep_status,
+    null as lep_status,
+    null as is_504,
+    null as is_counseling_services,
+    null as is_student_athlete,
+    null as ada,
+    null as ada_above_or_at_80,
+    null as date_enrolled,
+
+    `quarter`,
+    semester,
+    week_number_quarter as audit_qt_week_number,
+    quarter_start_date,
+    quarter_end_date,
+    is_current_term as is_current_quarter,
+    is_quarter_end_date_range,
+    week_start_monday as audit_start_date,
+    week_end_sunday as audit_end_date,
+    school_week_start_date_lead as audit_due_date,
+
+    assignment_category_name,
+    assignment_category_code,
+    assignment_category_term,
+    expectation,
+    notes,
+
+    section_or_period,
+    sectionid,
+    sections_dcid,
+    section_number,
+    external_expression,
+    credit_type,
+    course_number,
+    course_name,
+    exclude_from_gpa,
+    is_ap_course,
+
+    teacher_number,
+    teacher_name,
+    tableau_username,
+
+    null as category_quarter_percent_grade,
+    null as category_quarter_average_all_courses,
+
+    null as quarter_course_percent_grade_that_matters,
+    null as quarter_course_grade_points_that_matters,
+    null as quarter_citizenship,
+    null as quarter_comment_value,
+
+    audit_category,
+
+    null as teacher_assign_id,
+    null as teacher_assign_name,
+    null as teacher_assign_due_date,
+    null as teacher_assign_score_type,
+    null as teacher_assign_max_score,
+    null as n_students,
+    null as n_late,
+    null as n_exempt,
+    null as n_missing,
+    null as n_expected,
+    null as n_expected_scored,
+    total_expected_scored_section_quarter_week_category,
+    total_expected_section_quarter_week_category,
+    percent_graded_for_quarter_week_class,
+    null as sum_totalpointvalue_section_quarter_category,
+    teacher_running_total_assign_by_cat,
+    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
+    null as raw_score,
+    null as score_entered,
+    null as assign_final_score_percent,
+    null as is_exempt,
+    null as is_late,
+    null as is_missing,
+
+    cte_grouping,
+    code_type,
+
+    coalesce(audit_flag_name, 'no_flag') as audit_flag_name,
+    coalesce(audit_flag_value, 0) as audit_flag_value,
+
+from {{ ref("int_tableau__gradebook_audit_flags") }}
+where
+    cte_grouping = 'class_category'
+    and audit_flag_name
+    not in ('qt_teacher_s_total_greater_200', 'qt_teacher_s_total_less_200')
