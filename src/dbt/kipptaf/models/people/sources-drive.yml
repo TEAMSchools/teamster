@@ -2,7 +2,10 @@ version: 2
 
 sources:
   - name: people
-    schema: kipptaf_people
+    schema: |
+      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kipptaf_people
+      {%- else -%}kipptaf_people
+      {%- endif %}
     tables:
       - name: src_people__employee_numbers_archive
         external:
@@ -116,3 +119,17 @@ sources:
               - kipptaf
               - people
               - miami_performance_criteria
+      - name: src_people__renewal_approvers
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__renewal_approvers
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - people
+              - renewal_approvers
