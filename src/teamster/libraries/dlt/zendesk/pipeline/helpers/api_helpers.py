@@ -1,7 +1,7 @@
-from typing import Dict, Optional, TypedDict
+from typing import TypedDict
 
 from dlt.common import logger, pendulum
-from dlt.common.time import ensure_pendulum_datetime  # , parse_iso_like_datetime
+from dlt.common.time import ensure_pendulum_datetime
 from dlt.common.typing import DictStrAny, DictStrStr, TDataItem
 
 
@@ -10,7 +10,7 @@ class TCustomFieldInfo(TypedDict):
     options: DictStrStr
 
 
-def _parse_date_or_none(value: Optional[str]) -> Optional[pendulum.DateTime]:
+def _parse_date_or_none(value: str | None) -> pendulum.DateTime | None:
     if not value:
         return None
     return ensure_pendulum_datetime(value)
@@ -18,7 +18,7 @@ def _parse_date_or_none(value: Optional[str]) -> Optional[pendulum.DateTime]:
 
 def process_ticket(
     ticket: DictStrAny,
-    custom_fields: Dict[str, TCustomFieldInfo],
+    custom_fields: dict[str, TCustomFieldInfo],
     pivot_custom_fields: bool = True,
 ) -> DictStrAny:
     """
@@ -79,7 +79,7 @@ def process_ticket(
 
 
 def process_ticket_field(
-    field: DictStrAny, custom_fields_state: Dict[str, TCustomFieldInfo]
+    field: DictStrAny, custom_fields_state: dict[str, TCustomFieldInfo]
 ) -> TDataItem:
     """Update custom field mapping in dlt state for the given field."""
     # grab id and update state dict
