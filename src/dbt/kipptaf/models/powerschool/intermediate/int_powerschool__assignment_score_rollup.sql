@@ -12,6 +12,8 @@ with
 
             if(s.isexempt = 0, true, false) as is_expected,
 
+            if(s.scorepoints is null, 1, 0) as is_null,
+
             case
                 when s.isexempt = 1
                 then false
@@ -76,6 +78,7 @@ select
     sum(s.islate) as n_late,
     sum(s.isexempt) as n_exempt,
     sum(s.ismissing) as n_missing,
+    sum(s.is_null) as n_null,
 
     countif(s.is_expected) as n_expected,
     countif(s.is_expected_scored) as n_expected_scored,
