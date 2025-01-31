@@ -57,17 +57,17 @@ with
                     survey_id,
                     campaign_academic_year,
                     campaign_reporting_term,
-                    respondent_employee_number,
                     subject_employee_number,
                     approval_level
+                order by date_submitted desc
             ) as rn_level_approval,
             row_number() over (
                 partition by
                     survey_id,
                     campaign_academic_year,
                     campaign_reporting_term,
-                    respondent_employee_number,
                     subject_employee_number
+                order by date_submitted desc
             ) as rn_approval,
         from response_identifiers
     ),
@@ -151,6 +151,8 @@ select
     sc.approval_level,
     sc.date_started,
     sc.date_submitted,
+    sc.rn_level_approval,
+    sc.rn_approval,
 
     pr.dept_and_job,
     pr.final_confirmation,
@@ -171,5 +173,27 @@ select
     pr.add_comp_name_4,
     pr.add_comp_name_5,
 
+    ssr.preferred_name_lastfirst as subject_preferred_name,
+    ssr.sam_account_name as subject_samaccountname,
+    ssr.user_principal_name as subject_userprincipalname,
+
+    rsr.preferred_name_lastfirst as respondent_preferred_name,
+    rsr.sam_account_name as respondent_samaccountname,
+    rsr.user_principal_name as respondent_userprincipalname,
+
+    concat(
+        coalesce(concat(add_comp_name_1, ': $', add_comp_amt_1, '; '), ''),
+        coalesce(concat(add_comp_name_2, ': $', add_comp_amt_2, '; '), ''),
+        coalesce(concat(add_comp_name_3, ': $', add_comp_amt_3, '; '), ''),
+        coalesce(concat(add_comp_name_4, ': $', add_comp_amt_4, '; '), ''),
+        coalesce(concat(add_comp_name_5, ': $', add_comp_amt_5, '; '), '')
+    ) as concated_add_comp
+
 from submissions_counter as sc
 inner join pivoted_responses as pr on sc.survey_response_id = pr.survey_response_id
+inner join
+    {{ ref("base_people__staff_roster") }} as ssr
+    on ssr.employee_number = sc.subject_employee_number
+inner join
+    {{ ref("base_people__staff_roster") }} as rsr
+    on rsr.employee_number = sc.respondent_employee_number
