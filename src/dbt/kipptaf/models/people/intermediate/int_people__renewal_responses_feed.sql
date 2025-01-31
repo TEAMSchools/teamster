@@ -182,12 +182,12 @@ select
     rsr.user_principal_name as respondent_userprincipalname,
 
     concat(
-        coalesce(concat(add_comp_name_1, ': $', add_comp_amt_1, '; '), ''),
-        coalesce(concat(add_comp_name_2, ': $', add_comp_amt_2, '; '), ''),
-        coalesce(concat(add_comp_name_3, ': $', add_comp_amt_3, '; '), ''),
-        coalesce(concat(add_comp_name_4, ': $', add_comp_amt_4, '; '), ''),
-        coalesce(concat(add_comp_name_5, ': $', add_comp_amt_5, '; '), '')
-    ) as concated_add_comp
+        coalesce(concat(pr.add_comp_name_1, ': $', pr.add_comp_amt_1, '; '), ''),
+        coalesce(concat(pr.add_comp_name_2, ': $', pr.add_comp_amt_2, '; '), ''),
+        coalesce(concat(pr.add_comp_name_3, ': $', pr.add_comp_amt_3, '; '), ''),
+        coalesce(concat(pr.add_comp_name_4, ': $', pr.add_comp_amt_4, '; '), ''),
+        coalesce(concat(pr.add_comp_name_5, ': $', pr.add_comp_amt_5, '; '), '')
+    ) as concated_add_comp,
 
 from submissions_counter as sc
 inner join pivoted_responses as pr on sc.survey_response_id = pr.survey_response_id
