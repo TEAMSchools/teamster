@@ -1,4 +1,4 @@
-{{- config(materialized="table") -}}
+{{ config(materialized="table", cluster_by="cte_grouping") }}
 
 with
     student_unpivot as (
