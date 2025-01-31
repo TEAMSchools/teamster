@@ -11,7 +11,6 @@ from dlt.common.time import ensure_pendulum_datetime
 from dlt.common.typing import TAnyDateTime, TDataItem, TDataItems
 from dlt.sources import DltResource
 
-# from teamster.libraries.dlt.zendesk.helpers import make_date_ranges
 from teamster.libraries.dlt.zendesk.pipeline.helpers.api_helpers import (
     process_ticket,
     process_ticket_field,

@@ -1,7 +1,5 @@
 """Zendesk source helpers"""
 
-from typing import List, Tuple
-
 from dlt.common import pendulum
 
 # trunk-ignore(pyright/reportPrivateImportUsage)
@@ -10,7 +8,7 @@ from dlt.common.time import timedelta
 
 def make_date_ranges(
     start: pendulum.DateTime, end: pendulum.DateTime, step: timedelta
-) -> List[Tuple[pendulum.DateTime, pendulum.DateTime]]:
+) -> list[tuple[pendulum.DateTime, pendulum.DateTime]]:
     """Make tuples of (start, end) date ranges between the given `start` and `end` dates.
     The last range in the resulting list will be capped to the value of `end` argument so it may be smaller than `step`
 
