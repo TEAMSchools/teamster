@@ -3,8 +3,10 @@ select
     sr.survey_title,
     sr.survey_response_id,
     sr.survey_response_link,
-    sr.survey_code,
-    sr.survey_type,
+    sr.term_code as survey_code,
+
+    'SURVEY' as survey_type,
+
     sr.academic_year,
     sr.date_started,
     sr.date_submitted,
