@@ -254,6 +254,11 @@ locations:
                   secretKeyRef:
                     name: op-smartrecruiters-api
                     key: smart-token
+              - name: ZENDESK_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-zendesk-api
+                    key: subdomain
               - name: ZENDESK_EMAIL
                 valueFrom:
                   secretKeyRef:
