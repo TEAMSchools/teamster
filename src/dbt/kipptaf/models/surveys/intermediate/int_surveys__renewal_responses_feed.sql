@@ -32,7 +32,7 @@ with
     ),
 
     submissions_counter as (
-        /* need 1 row per response to calculate rns below */
+        /* need 1 row per response to calculate rns */
         select
             ri.*,
 
@@ -170,6 +170,3 @@ select
     ) as concated_add_comp,
 from submissions_counter as sc
 inner join pivoted_responses as pr on sc.survey_response_id = pr.survey_response_id
-inner join
-    {{ ref("base_people__staff_roster") }} as ssr
-    on ssr.employee_number = sc.subject_employee_number
