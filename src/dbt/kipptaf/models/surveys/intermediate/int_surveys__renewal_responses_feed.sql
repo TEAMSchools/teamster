@@ -34,28 +34,35 @@ with
     submissions_counter as (
         /* need 1 row per response to calculate rns below */
         select
-            *,
+            ri.*,
+
+            ssr.preferred_name_lastfirst as subject_preferred_name,
+            ssr.sam_account_name as subject_samaccountname,
+            ssr.user_principal_name as subject_userprincipalname,
 
             row_number() over (
                 partition by
-                    survey_id,
-                    campaign_academic_year,
-                    campaign_reporting_term,
-                    subject_employee_number,
-                    approval_level
-                order by date_submitted desc
+                    ri.survey_id,
+                    ri.campaign_academic_year,
+                    ri.campaign_reporting_term,
+                    ri.subject_employee_number,
+                    ri.approval_level
+                order by ri.date_submitted desc
             ) as rn_level_approval,
 
             row_number() over (
                 partition by
-                    survey_id,
-                    campaign_academic_year,
-                    campaign_reporting_term,
-                    subject_employee_number
-                order by date_submitted desc
+                    ri.survey_id,
+                    ri.campaign_academic_year,
+                    ri.campaign_reporting_term,
+                    ri.subject_employee_number
+                order by ri.date_submitted desc
             ) as rn_approval,
-        from response_identifiers
-        where question_title = 'Employee Name'
+        from response_identifiers as ri
+        inner join
+            {{ ref("base_people__staff_roster") }} as ssr
+            on ri.subject_employee_number = ssr.subject_employee_number
+        where ri.question_title = 'Employee Name'
     ),
 
     pre_pivot as (
@@ -131,6 +138,9 @@ select
     sc.respondent_preferred_name,
     sc.respondent_samaccountname,
     sc.respondent_userprincipalname,
+    sc.subject_preferred_name,
+    sc.subject_samaccountname,
+    sc.subject_userprincipalname,
 
     pr.dept_and_job,
     pr.final_confirmation,
@@ -150,10 +160,6 @@ select
     pr.add_comp_name_3,
     pr.add_comp_name_4,
     pr.add_comp_name_5,
-
-    ssr.preferred_name_lastfirst as subject_preferred_name,
-    ssr.sam_account_name as subject_samaccountname,
-    ssr.user_principal_name as subject_userprincipalname,
 
     concat(
         coalesce(concat(pr.add_comp_name_1, ': $', pr.add_comp_amt_1, '; '), ''),
