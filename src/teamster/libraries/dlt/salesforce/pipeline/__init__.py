@@ -1,6 +1,7 @@
 """Source for Salesforce depending on the simple_salesforce python package.
 
-Imported resources are: account, campaign, contact, lead, opportunity, pricebook_2, pricebook_entry, product_2, user and user_role
+Imported resources are: account, campaign, contact, lead, opportunity, pricebook_2,
+pricebook_entry, product_2, user and user_role
 
 Salesforce api docs: https://developer.salesforce.com/docs/apis
 
@@ -27,15 +28,20 @@ def salesforce_source(
     Retrieves data from Salesforce using the Salesforce API.
 
     Args:
-        user_name (str): The username for authentication. Defaults to the value in the `dlt.secrets` object.
-        password (str): The password for authentication. Defaults to the value in the `dlt.secrets` object.
-        security_token (str): The security token for authentication. Defaults to the value in the `dlt.secrets` object.
+        user_name (str): The username for authentication. Defaults to the value in the
+            `dlt.secrets` object.
+        password (str): The password for authentication. Defaults to the value in the
+            `dlt.secrets` object.
+        security_token (str): The security token for authentication. Defaults to the
+            value in the `dlt.secrets` object.
 
     Yields:
         DltResource: Data resources from Salesforce.
     """
 
-    client = Salesforce(user_name, password, security_token)
+    client = Salesforce(
+        username=user_name, password=password, security_token=security_token
+    )
 
     # define resources
     @dlt.resource(write_disposition="replace")
