@@ -61,7 +61,7 @@ with
         from response_identifiers as ri
         inner join
             {{ ref("base_people__staff_roster") }} as ssr
-            on ri.subject_employee_number = ssr.subject_employee_number
+            on ri.subject_employee_number = ssr.employee_number
         where ri.question_title = 'Employee Name'
     ),
 
