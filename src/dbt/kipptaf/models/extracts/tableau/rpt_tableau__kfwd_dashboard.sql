@@ -461,6 +461,9 @@ select
 
     sv.school_visit_count,
 
+    c.contact_opt_out_national_contact,
+    c.contact_opt_out_regional_contact,
+
     case
         when c.contact_college_match_display_gpa >= 3.50
         then '3.50+'
