@@ -14,6 +14,7 @@ with
             asg.n_late,
             asg.n_exempt,
             asg.n_missing,
+            asg.n_null,
             asg.n_expected,
             asg.n_expected_scored,
             asg.avg_expected_scored_percent,
