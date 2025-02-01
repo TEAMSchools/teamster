@@ -49,6 +49,7 @@ with
             n_late,
             n_exempt,
             n_missing,
+            n_null,
             n_expected,
             n_expected_scored,
             total_expected_scored_section_quarter_week_category,
@@ -132,7 +133,7 @@ with
             cte_grouping,
             code_type,
             audit_flag_name,
-            audit_flag_value as flag_value,
+            max(audit_flag_value) as flag_value,
 
         from {{ ref("int_tableau__gradebook_audit_final_roster") }}
         where audit_flag_value = 1
@@ -184,7 +185,7 @@ select
     v.is_late,
     v.is_missing,
 
-    v.flag_value,
+    coalesce(v.flag_value, 0) as flag_value,
 
 from teacher_aggs as t
 left join
@@ -250,7 +251,7 @@ select
     v.is_late,
     v.is_missing,
 
-    v.flag_value,
+    coalesce(v.flag_value, 0) as flag_value,
 
 from teacher_aggs as t
 left join
