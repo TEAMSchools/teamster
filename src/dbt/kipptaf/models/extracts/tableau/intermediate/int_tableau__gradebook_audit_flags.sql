@@ -162,6 +162,8 @@ with
         where r.school_level = 'ES'
     )
 
+-- this captures all flags from assignment_student, but only w_grade_inflation from
+-- student_course_category
 select
     r._dbt_source_relation,
     r.academic_year,
@@ -264,6 +266,7 @@ select
     t.n_late,
     t.n_exempt,
     t.n_missing,
+    t.n_null,
     t.n_expected,
     t.n_expected_scored,
     null as total_expected_scored_section_quarter_week_category,
@@ -401,6 +404,7 @@ select
     null as n_late,
     null as n_exempt,
     null as n_missing,
+    null as n_null,
     null as n_expected,
     null as n_expected_scored,
     null as total_expected_scored_section_quarter_week_category,
@@ -539,6 +543,7 @@ select
     null as n_late,
     null as n_exempt,
     null as n_missing,
+    null as n_null,
     null as n_expected,
     null as n_expected_scored,
     null as total_expected_scored_section_quarter_week_category,
@@ -670,6 +675,7 @@ select
     null as n_late,
     null as n_exempt,
     null as n_missing,
+    null as n_null,
     null as n_expected,
     null as n_expected_scored,
     null as total_expected_scored_section_quarter_week_category,
@@ -811,6 +817,7 @@ select
     r.n_late,
     r.n_exempt,
     r.n_missing,
+    r.n_null,
     r.n_expected,
     r.n_expected_scored,
     null as total_expected_scored_section_quarter_week_category,
@@ -950,6 +957,7 @@ select
     null as n_late,
     null as n_exempt,
     null as n_missing,
+    null as n_null,
     null as n_expected,
     null as n_expected_scored,
     r.total_expected_scored_section_quarter_week_category,
