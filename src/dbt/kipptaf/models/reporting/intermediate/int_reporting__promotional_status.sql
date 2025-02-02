@@ -153,41 +153,16 @@ with
         where assessment_type = 'Benchmark' and mclass_measure_name_code = 'Composite'
     ),
 
-    -- star_results as (
-    -- select
-    -- student_display_id,
-    -- district_benchmark_category_level,
-    -- safe_cast(left(school_year, 4) as int) as academic_year,
-    -- case
-    -- when _dagster_partition_subject = 'SM'
-    -- then 'Math'
-    -- when _dagster_partition_subject = 'SR'
-    -- then 'Reading'
-    -- when _dagster_partition_subject = 'SEL'
-    -- then 'Early Literacy'
-    -- end as star_subject,
-    -- row_number() over (
-    -- partition by
-    -- student_display_id,
-    -- _dagster_partition_subject,
-    -- school_year,
-    -- screening_period_window_name
-    -- order by completed_date desc
-    -- ) as rn_subj_year,
-    -- from {{ ref("stg_renlearn__star") }}
-    -- where deactivation_reason is null
-    -- ),
     star_results as (
         select
             student_display_id,
             academic_year,
             star_discipline,
-            state_benchmark_category_level,
-            state_benchmark_category_name,
-            state_benchmark_proficient,
 
-            cast(
-                right(state_benchmark_category_name, 1) as int64
+            if(
+                grade_level > 0,
+                cast(right(state_benchmark_category_name, 1) as int64),
+                5 - district_benchmark_category_level
             ) as star_achievement_level,
         from {{ ref("int_renlearn__star_rollup") }}
         where rn_subj_year = 1
@@ -274,6 +249,7 @@ with
             co.grade_level,
             co.is_self_contained,
             co.special_education_code,
+            co.region,
 
             term_name,
 
@@ -449,7 +425,7 @@ with
                     and coalesce(ir.iready_reading_recent, '')
                     in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
                 then 'Off-Track'
-                /* Gr3-8 */
+                /* Gr3-8 NJ */
                 when
                     co.region in ('Camden', 'Newark')
                     and co.grade_level between 3 and 8
@@ -462,6 +438,25 @@ with
                     or c.n_failing_core >= 2
                 then 'Off-Track'
 
+                /* Miami K-3 */
+                when
+                    co.region = 'Miami'
+                    and co.grade_level < 3
+                    and (s.star_math_level = 1 or s.star_ela_level = 1)
+                then 'Off-Track'
+                when co.region = 'Miami' and co.grade_level = 3 and f.fast_ela = 1
+                then 'Off-Track'
+                /* Miami Gr4 */
+                when
+                    co.region = 'Miami'
+                    and co.grade_level = 4
+                    and f.fast_math = 1
+                    and f.fast_ela = 1
+                then 'Off-Track'
+                /* Miami 5-8 */
+                when
+                    co.region = 'Miami' and co.grade_level > 4 and c.n_failing_core >= 2
+                then 'Off-Track'
                 /* HS */
                 when co.grade_level = 9 and c.projected_credits_cum < 25
                 then 'Off-Track'
@@ -540,16 +535,34 @@ select
     exemption,
 
     case
+        /* NJ */
         when
-            grade_level <= 8
+            region in ('Camden', 'Newark')
+            and grade_level <= 8
             and academic_status = 'Off-Track'
             and attendance_status = 'Off-Track'
         then 'Off-Track'
-        when grade_level between 5 and 8 and n_failing_core >= 2
+        when
+            region in ('Camden', 'Newark')
+            and grade_level between 5 and 8
+            and n_failing_core >= 2
         then 'Off-Track'
         when
-            grade_level >= 9
+            region in ('Camden', 'Newark')
+            and grade_level >= 9
             and (academic_status = 'Off-Track' or attendance_status = 'Off-Track')
+        then 'Off-Track'
+        /* Miami */
+        when
+            region = 'Miami'
+            and grade_level != 4
+            and (academic_status = 'Off-Track' or attendance_status = 'Off-Track')
+        then 'Off-Track'
+        when
+            region = 'Miami'
+            and grade_level = 4
+            and academic_status = 'Off-Track'
+            and attendance_status = 'Off-Track'
         then 'Off-Track'
         else 'On-Track'
     end as overall_status,
