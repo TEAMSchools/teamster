@@ -1,5 +1,4 @@
-{{ config(materialized="table", cluster_by="cte_grouping") }}
-
+-- {{ config(materialized="table", cluster_by="cte_grouping") }}
 with
     student_unpivot as (
         select
@@ -96,8 +95,8 @@ with
                     qt_comment_missing,
                     qt_es_comment_missing,
                     qt_grade_70_comment_missing,
-                    qt_g1_g8_conduct_code_incorrect,
                     qt_g1_g8_conduct_code_missing,
+                    qt_g1_g8_conduct_code_incorrect,
                     qt_percent_grade_greater_100,
                     qt_student_is_ada_80_plus_gpa_less_2
                 )
@@ -120,8 +119,8 @@ with
             {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
             unpivot (
                 audit_flag_value for audit_flag_name in (
-                    qt_kg_conduct_code_incorrect,
                     qt_kg_conduct_code_missing,
+                    qt_kg_conduct_code_incorrect,
                     qt_kg_conduct_code_not_hr,
                     qt_g1_g8_conduct_code_missing,
                     qt_g1_g8_conduct_code_incorrect
