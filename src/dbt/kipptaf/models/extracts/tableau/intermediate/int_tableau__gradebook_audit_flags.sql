@@ -14,7 +14,7 @@ with
                     assign_f_missing_score_not_5,
                     assign_s_score_less_50p,
                     assign_s_ms_score_not_conversion_chart_options,
-                    assign_s_hs_score_not_conversion_chart_options,
+                    assign_s_hs_score_not_conversion_chart_options
                 )
             )
     ),
@@ -136,8 +136,9 @@ with
             and r.school_level = f.school_level
             and r.quarter = f.code
             and r.audit_flag_name = f.audit_flag_name
+            and r.assignment_category_code = 'W'
             and f.cte_grouping = 'student_course_category'
-            and f.assignment_category_code = 'W'
+
     )
 
 -- this captures all flags from assignment_student
