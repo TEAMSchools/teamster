@@ -137,7 +137,7 @@ with
             and r.quarter = f.code
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'student_course_category'
-            and f.audit_flag_name in ('qt_effort_grade_missing', 'w_grade_inflation')
+            and f.assignment_category_code = 'W'
     )
 
 -- this captures all flags from assignment_student
@@ -277,7 +277,7 @@ left join
     and r.assignmentid = t.assignmentid
 
 union all
--- this captures one student_course_category: qt_effort_grade_missing and
+-- this captures all student_course_category: qt_effort_grade_missing and
 -- w_grade_inflation
 select
     r._dbt_source_relation,
@@ -392,22 +392,12 @@ select
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-    f.audit_category,
-    f.code_type,
+    r.audit_category,
+    r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-from
-    {{ ref("int_tableau__gradebook_audit_section_week_student_category_scaffold") }}
-    as r
-inner join
-    {{ ref("stg_reporting__gradebook_flags") }} as f
-    on r.region = f.region
-    and r.school_level = f.school_level
-    and r.quarter = f.code
-    and r.audit_flag_name = f.audit_flag_name
-    and r.assignment_category_code = 'W'
-    and f.cte_grouping = 'student_course_category'
-    and f.audit_flag_name = 'qt_effort_grade_missing'
+from student_course_category as r
+where r.assignment_category_code = 'W' and r.cte_grouping = 'student_course_category'
 group by all  {# TODO: determine cause of duplicates and remove #}
 
 union all
