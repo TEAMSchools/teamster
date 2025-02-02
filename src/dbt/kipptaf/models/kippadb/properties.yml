@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: int_kippadb__enrollment_pivot
+    columns:
+      - name: student
+        data_tests:
+          - unique
+  - name: stg_kippadb__contact
+    columns:
+      - name: school_specific_id
+        data_tests:
+          - unique:
+              config:
+                where: school_specific_id is not null
+                store_failures: true

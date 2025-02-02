@@ -13,7 +13,6 @@ with
     combined_years as (
         select
             student_id,
-
             psat89_2025_id as id,
             psat89_2025_formcode as form_code,
             psat89_2025_newdistrictid as new_district_id,
@@ -93,32 +92,25 @@ with
 select
     id,
     form_code,
-
     cb_student_id,
     district_student_id,
-    local_student_id,
     state_student_id,
     new_district_id,
     new_ssid,
-
     grade_assessed,
     test_date,
     report_date,
     self_assessment_date,
     gpa,
-
     student_first_name,
     student_last_name,
     student_middle_initial,
     cohort_year,
     birth_date,
-
     latest_psat_access_code,
-
     hs_student,
     ebrw_ccr_benchmark,
     math_ccr_benchmark,
-
     algebra_rep_percentile,
     command_rep_percentile,
     ebrw_rep_percentile,
@@ -133,7 +125,6 @@ select
     total_rep_percentile,
     words_context_rep_percentile,
     writing_lang_rep_percentile,
-
     algebra_usr_percentile,
     command_usr_percentile,
     ebrw_usr_percentile,
@@ -148,7 +139,6 @@ select
     total_usr_percentile,
     words_context_usr_percentile,
     writing_lang_usr_percentile,
-
     ap_art_hist,
     ap_euro_hist,
     ap_hum_geo,
@@ -156,12 +146,9 @@ select
     ap_seminar,
     ap_world_hist,
 
-    -- note for charlie: this safe_cast is here because the regular psat tables have
-    -- selection_index as integer, but the psat89 have it as string. i didnt wanna
-    -- mess with that part of the data model, but if you prefer to align the field
-    -- types elsewhere, im good
-    safe_cast(selection_index as numeric) as selection_index,
+    safe_cast(local_student_id as int) as local_student_id,
 
+    safe_cast(selection_index as numeric) as selection_index,
     safe_cast(total_score as numeric) as total_score,
     safe_cast(math_test_score as numeric) as math_test_score,
     safe_cast(history_cross_test_score as numeric) as history_cross_test_score,
