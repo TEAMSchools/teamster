@@ -27,7 +27,6 @@ select
     ps.dibels_composite_level_recent,
     ps.star_math_level_recent,
     ps.star_reading_level_recent,
-    ps.star_early_literacy_level_recent,
     ps.fast_ela_level_recent,
     ps.fast_math_level_recent,
     ps.attendance_status,
