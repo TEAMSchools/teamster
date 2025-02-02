@@ -400,7 +400,7 @@ select
 from student_course_category
 
 union all
-
+-- this captures all eoq items except conduct_code
 select
     _dbt_source_relation,
     academic_year,
@@ -521,7 +521,7 @@ select
 from eoq_items
 
 union all
-
+-- this captures conduct_code
 select
     _dbt_source_relation,
     academic_year,
