@@ -1,67 +1,122 @@
 assets:
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_illuminate__courses
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kipptaf_extracts
+          name: rpt_illuminate__courses
     file_config:
       stem: courses
       suffix: txt
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_illuminate__enrollment
+      format:
+        delimiter: "\t"
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kipptaf_extracts
+          name: rpt_illuminate__enrollment
     file_config:
       stem: enrollment
       suffix: txt
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_illuminate__mastschd
+      format:
+        delimiter: "\t"
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kipptaf_extracts
+          name: rpt_illuminate__mastschd
     file_config:
       stem: mastschd
       suffix: txt
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_illuminate__roles
+      format:
+        delimiter: "\t"
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kipptaf_extracts
+          name: rpt_illuminate__roles
     file_config:
       stem: roles
       suffix: txt
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_illuminate__roster
+      format:
+        delimiter: "\t"
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kipptaf_extracts
+          name: rpt_illuminate__roster
     file_config:
       stem: roster
       suffix: txt
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_illuminate__users
+      format:
+        delimiter: "\t"
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kipptaf_extracts
+          name: rpt_illuminate__users
     file_config:
       stem: users
       suffix: txt
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_illuminate__terms
+      format:
+        delimiter: "\t"
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kipptaf_extracts
+          name: rpt_illuminate__terms
     file_config:
       stem: terms
       suffix: txt
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_illuminate__student_portal_accounts
+      format:
+        delimiter: "\t"
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kipptaf_extracts
+          name: rpt_illuminate__student_portal_accounts
     file_config:
       stem: student_portal_accounts
       suffix: txt
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_illuminate__studemo
+      format:
+        delimiter: "\t"
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kipptaf_extracts
+          name: rpt_illuminate__studemo
     file_config:
       stem: studemo
       suffix: txt
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_illuminate__sites
+      format:
+        delimiter: "\t"
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kipptaf_extracts
+          name: rpt_illuminate__sites
     file_config:
       stem: sites
       suffix: txt
-  - dataset_config:
-      dataset_id: kipptaf_extracts
-      table_id: rpt_illuminate__programs
+      format:
+        delimiter: "\t"
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kipptaf_extracts
+          name: rpt_illuminate__programs
     file_config:
       stem: programs
       suffix: txt
+      format:
+        delimiter: "\t"

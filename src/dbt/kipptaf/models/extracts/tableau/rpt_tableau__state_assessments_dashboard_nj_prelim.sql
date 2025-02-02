@@ -26,7 +26,7 @@ with
             ms_attended,
             iep_status,
             advisory,
-        from {{ ref("int_tableau__student_enrollments") }}
+        from {{ ref("int_extracts__student_enrollments") }}
         where
             region in ('Camden', 'Newark')
             and academic_year >= {{ academic_year }}
@@ -194,7 +194,7 @@ select
     g.organization_goal,
 
     sf.nj_student_tier,
-    sf.tutoring_nj,
+    sf.is_tutoring as tutoring_nj,
 
     sf2.iready_proficiency_eoy,
 
@@ -230,12 +230,12 @@ left join
     and s.schoolid = g.school_id
     and a.test_code = g.state_assessment_code
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on s.academic_year = sf.academic_year
     and a.discipline = sf.discipline
     and s.student_number = sf.student_number
 left join
-    {{ ref("int_reporting__student_filters") }} as sf2
+    {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
     on s.academic_year = sf2.academic_year - 1
     and a.discipline = sf2.discipline
     and s.student_number = sf2.student_number

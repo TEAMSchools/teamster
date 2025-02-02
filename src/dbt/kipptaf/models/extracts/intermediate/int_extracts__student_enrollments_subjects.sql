@@ -1,10 +1,12 @@
+{{- config(materialized="table") -}}
+
 with
     subjects as (
         select
-            `subject` as iready_subject,
+            iready_subject,
 
             case
-                `subject`
+                iready_subject
                 when 'Reading'
                 then 'Text Study'
                 when 'Math'
@@ -12,17 +14,17 @@ with
             end as illuminate_subject_area,
 
             case
-                `subject` when 'Reading' then 'ENG' when 'Math' then 'MATH'
+                iready_subject when 'Reading' then 'ENG' when 'Math' then 'MATH'
             end as powerschool_credittype,
 
             case
-                `subject` when 'Reading' then 'ela' when 'Math' then 'math'
+                iready_subject when 'Reading' then 'ela' when 'Math' then 'math'
             end as grad_unpivot_subject,
 
             case
-                `subject` when 'Reading' then 'ELA' when 'Math' then 'Math'
+                iready_subject when 'Reading' then 'ELA' when 'Math' then 'Math'
             end as discipline,
-        from unnest(['Reading', 'Math']) as `subject`
+        from unnest(['Reading', 'Math']) as iready_subject
     ),
 
     intervention_nj as (
@@ -66,36 +68,12 @@ with
     ),
 
     psat_bucket1 as (
-        select
-            safe_cast(pt.local_student_id as int) as local_student_id,
-
-            if(
-                pt.score_type = 'psat10_eb_read_write_section_score', 'ELA', 'Math'
-            ) as discipline,
-
-            max(pt.score) as score,
-
-            if(max(pt.score) >= 420, 'Bucket 1', null) as bucket_1,
+        select local_student_id, academic_year, discipline, max(score) as max_score,
         from {{ ref("int_illuminate__psat_unpivot") }} as pt
-        inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
-            on safe_cast(pt.local_student_id as int) = co.student_number
-            and pt.academic_year = co.academic_year
-            and co.rn_year = 1
-            and co.grade_level = 10
         where
-            pt.score_type
+            score_type
             in ('psat10_math_section_score', 'psat10_eb_read_write_section_score')
-        group by all
-    ),
-
-    tutoring_nj as (
-        select _dbt_source_relation, studentid, academic_year, 'Math' as iready_subject,
-        from {{ ref("int_powerschool__spenrollments") }}
-        where
-            specprog_name = 'Tutoring'
-            and current_date('{{ var("local_timezone") }}')
-            between enter_date and exit_date
+        group by local_student_id, academic_year, discipline
     ),
 
     prev_yr_iready as (
@@ -152,8 +130,6 @@ with
             students_student_number as student_number,
             cc_academic_year as academic_year,
 
-            true as `value`,
-
             case
                 sections_section_number
                 when 'mgmath'
@@ -165,25 +141,8 @@ with
         where
             courses_course_number = 'LOG300'
             and rn_course_number_year = 1
-            and not is_dropped_section
             and sections_section_number in ('mgmath', 'mgela')
-    ),
-
-    mia_territory as (
-        select
-            r._dbt_source_relation,
-            r.roster_name as territory,
-
-            a.student_school_id as student_number,
-
-            row_number() over (
-                partition by a.student_school_id order by r.roster_id asc
-            ) as rn_territory,
-        from {{ ref("stg_deanslist__rosters") }} as r
-        left join
-            {{ ref("stg_deanslist__roster_assignments") }} as a
-            on r.roster_id = a.dl_roster_id
-        where r.school_id = 472 and r.roster_type = 'House' and r.active = 'Y'
+            and not is_dropped_section
     ),
 
     dibels as (
@@ -205,11 +164,7 @@ with
     )
 
 select
-    co._dbt_source_relation,
-    co.student_number,
-    co.studentid,
-    co.academic_year,
-    co.gifted_and_talented,
+    co.*,
 
     sj.iready_subject,
     sj.illuminate_subject_area,
@@ -219,13 +174,9 @@ select
 
     a.is_iep_eligible as is_grad_iep_exempt,
 
-    mt.territory,
-
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
-
-    coalesce(ie.value, false) as is_exempt_iready,
 
     coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
     coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
@@ -237,9 +188,9 @@ select
         'No Composite Score Available'
     ) as dibels_most_recent_composite,
 
-    if(nj.iready_subject is not null, true, false) as bucket_two,
+    if(ie.student_number is not null, true, false) as is_exempt_iready,
 
-    if(t.iready_subject is not null, true, false) as tutoring_nj,
+    if(nj.iready_subject is not null, true, false) as bucket_two,
 
     if(co.grade_level < 4, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
 
@@ -259,11 +210,11 @@ select
             and py.njsla_proficiency = 'At/Above'
         then 'Bucket 1'
         when
-            co.academic_year > 2023
+            co.academic_year >= 2024
             and co.grade_level between 0 and 8
             and coalesce(py.is_proficient, ci.is_proficient)
         then 'Bucket 1'
-        when co.academic_year > 2023 and co.grade_level = 11 and ps.bucket_1 is not null
+        when co.academic_year >= 2024 and co.grade_level = 11 and ps.max_score >= 420
         then 'Bucket 1'
         when nj.iready_subject is not null
         then 'Bucket 2'
@@ -281,14 +232,8 @@ select
         then true
         else false
     end as is_exempt_state_testing,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as sj
-left join
-    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
-    on co.students_dcid = se.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
-    and sj.discipline = se.discipline
-    and se.value_type = 'State Assessment Name'
 left join
     {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as a
     on co.students_dcid = a.studentsdcid
@@ -297,17 +242,11 @@ left join
     and a.value_type = 'Graduation Pathway'
     and a.values_column = 'M'
 left join
-    intervention_nj as nj
-    on co.studentid = nj.studentid
-    and co.academic_year = nj.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
-    and sj.iready_subject = nj.iready_subject
-left join
-    tutoring_nj as t
-    on co.studentid = t.studentid
-    and co.academic_year = t.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="t") }}
-    and sj.iready_subject = t.iready_subject
+    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
+    on co.students_dcid = se.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
+    and sj.discipline = se.discipline
+    and se.value_type = 'State Assessment Name'
 left join
     prev_yr_state_test as py
     {# TODO: find records that only match on SID #}
@@ -321,10 +260,11 @@ left join
     and co.academic_year = pr.academic_year_plus
     and sj.iready_subject = pr.subject
 left join
-    cur_yr_iready as ci
-    on co.student_number = ci.student_number
-    and co.academic_year = ci.academic_year
-    and sj.iready_subject = ci.subject
+    dibels as db
+    on co.student_number = db.mclass_student_number
+    and co.academic_year = db.mclass_academic_year
+    and sj.iready_subject = db.iready_subject
+    and db.rn_year = 1
 left join
     iready_exempt as ie
     on co.student_number = ie.student_number
@@ -332,18 +272,20 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ie") }}
     and sj.iready_subject = ie.iready_subject
 left join
-    mia_territory as mt
-    on co.student_number = mt.student_number
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="mt") }}
-    and mt.rn_territory = 1
+    intervention_nj as nj
+    on co.studentid = nj.studentid
+    and co.academic_year = nj.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
+    and sj.iready_subject = nj.iready_subject
 left join
-    dibels as db
-    on co.student_number = db.mclass_student_number
-    and co.academic_year = db.mclass_academic_year
-    and sj.iready_subject = db.iready_subject
-    and db.rn_year = 1
+    cur_yr_iready as ci
+    on co.student_number = ci.student_number
+    and co.academic_year = ci.academic_year
+    and sj.iready_subject = ci.subject
 left join
     psat_bucket1 as ps
     on co.student_number = ps.local_student_id
+    and co.academic_year = ps.academic_year
     and sj.discipline = ps.discipline
-where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}
+    and co.grade_level = 10
+where co.academic_year >= {{ var("current_academic_year") - 1 }}

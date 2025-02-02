@@ -3,9 +3,18 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippnewark_powerschool", model.name),
-                    source("kippcamden_powerschool", model.name),
-                    source("kippmiami_powerschool", model.name),
+                    source(
+                        "kippnewark_powerschool",
+                        "base_powerschool__course_enrollments",
+                    ),
+                    source(
+                        "kippcamden_powerschool",
+                        "base_powerschool__course_enrollments",
+                    ),
+                    source(
+                        "kippmiami_powerschool",
+                        "base_powerschool__course_enrollments",
+                    ),
                 ]
             )
         }}
@@ -36,6 +45,8 @@ select
     csc.illuminate_subject_area,
     csc.is_foundations,
     csc.is_advanced_math,
+
+    if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 
     row_number() over (
         partition by
