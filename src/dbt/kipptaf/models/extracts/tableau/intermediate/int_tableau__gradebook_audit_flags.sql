@@ -52,15 +52,6 @@ with
                     assign_s_hs_score_not_conversion_chart_options,
                     w_grade_inflation,
                     qt_effort_grade_missing,
-                    qt_comment_missing,
-                    qt_g1_g8_conduct_code_incorrect,
-                    qt_g1_g8_conduct_code_missing,
-                    qt_grade_70_comment_missing,
-                    qt_kg_conduct_code_incorrect,
-                    qt_kg_conduct_code_missing,
-                    qt_kg_conduct_code_not_hr,
-                    qt_percent_grade_greater_100,
-                    qt_student_is_ada_80_plus_gpa_less_2
                 )
             )
     ),
