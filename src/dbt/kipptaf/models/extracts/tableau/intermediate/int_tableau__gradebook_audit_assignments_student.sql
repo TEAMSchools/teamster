@@ -130,13 +130,4 @@ select
         false
     ) as assign_s_hs_score_not_conversion_chart_options,
 
-    if(
-        region = 'Miami'
-        and assignment_category_code = 'W'
-        and category_quarter_percent_grade is null
-        and is_quarter_end_date_range,
-        true,
-        false
-    ) as qt_effort_grade_missing,
-
 from roster_assignments_scores
