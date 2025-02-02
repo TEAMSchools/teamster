@@ -1,27 +1,7 @@
 -- {{ config(materialized="table", cluster_by="cte_grouping") }}
 with
     student_unpivot as (
-        select
-            *,
-
-            case
-                when
-                    audit_flag_name in (
-                        'assign_null_score',
-                        'assign_score_above_max',
-                        'assign_exempt_with_score',
-                        'assign_w_score_less_5',
-                        'assign_f_score_less_5',
-                        'assign_w_missing_score_not_5',
-                        'assign_f_missing_score_not_5',
-                        'assign_s_score_less_50p',
-                        'assign_s_ms_score_not_conversion_chart_options',
-                        'assign_s_hs_score_not_conversion_chart_options'
-                    )
-                then 'assignment_student'
-                when audit_flag_name in ('w_grade_inflation', 'qt_effort_grade_missing')
-                then 'student_course_category'
-            end as cte_grouping,
+        select *, 'assignment_student' as cte_grouping,
         from
             {{ ref("int_tableau__gradebook_audit_assignments_student") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -35,8 +15,6 @@ with
                     assign_s_score_less_50p,
                     assign_s_ms_score_not_conversion_chart_options,
                     assign_s_hs_score_not_conversion_chart_options,
-                    w_grade_inflation,
-                    qt_effort_grade_missing
                 )
             )
     ),
@@ -136,10 +114,33 @@ with
             and f.cte_grouping = 'student_course'
             and f.audit_category = 'Conduct Code'
         where r.school_level = 'ES'
+    ),
+
+    student_course_category as (
+        select  -- w_grade_inflation and qt_effort_grade_missing
+            r.*, f.cte_grouping, f.audit_category, f.code_type,
+
+        from
+            {{
+                ref(
+                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
+                )
+            }}
+            unpivot (
+                audit_flag_value for audit_flag_name
+                in (qt_effort_grade_missing, w_grade_inflation)
+            ) as r
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.quarter = f.code
+            and r.audit_flag_name = f.audit_flag_name
+            and f.cte_grouping = 'student_course_category'
+            and f.audit_flag_name in ('qt_effort_grade_missing', 'w_grade_inflation')
     )
 
--- this captures all flags from assignment_student, but only w_grade_inflation from
--- student_course_category
+-- this captures all flags from assignment_student
 select
     r._dbt_source_relation,
     r.academic_year,
@@ -265,7 +266,7 @@ inner join
     and r.school_level = f.school_level
     and r.assignment_category_code = f.code
     and r.audit_flag_name = f.audit_flag_name
-    and f.cte_grouping in ('assignment_student', 'student_course_category')
+    and f.cte_grouping = 'assignment_student'
 left join
     {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as t
     on r.region = t.region
@@ -276,7 +277,8 @@ left join
     and r.assignmentid = t.assignmentid
 
 union all
-
+-- this captures one student_course_category: qt_effort_grade_missing and
+-- w_grade_inflation
 select
     r._dbt_source_relation,
     r.academic_year,
@@ -394,7 +396,9 @@ select
     f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-from student_unpivot as r
+from
+    {{ ref("int_tableau__gradebook_audit_section_week_student_category_scaffold") }}
+    as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
     on r.region = f.region
@@ -404,14 +408,6 @@ inner join
     and r.assignment_category_code = 'W'
     and f.cte_grouping = 'student_course_category'
     and f.audit_flag_name = 'qt_effort_grade_missing'
-left join
-    {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as t
-    on r.region = t.region
-    and r.schoolid = t.schoolid
-    and r.quarter = t.quarter
-    and r.week_number_quarter = t.week_number_quarter
-    and r.sectionid = t.sectionid
-    and r.assignmentid = t.assignmentid
 group by all  {# TODO: determine cause of duplicates and remove #}
 
 union all
