@@ -34,6 +34,7 @@ with
             on r.region = f.region
             and r.school_level = f.school_level
             and r.assignment_category_code = f.code
+            and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'class_category_assignment'
     ),
 
@@ -57,6 +58,7 @@ with
             on r.region = f.region
             and r.school_level = f.school_level
             and r.assignment_category_code = f.code
+            and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'class_category'
     ),
 
@@ -908,7 +910,4 @@ select
     r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-from
-    teacher_unpivot_cc as r
-    -- group by all  {# TODO: determine cause of duplicates and remove #}
-    
+from teacher_unpivot_cc as r
