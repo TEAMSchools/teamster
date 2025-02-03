@@ -774,10 +774,8 @@ select
     r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-from
-    teacher_unpivot_cca as r
+from teacher_unpivot_cca as r
 
-    /*
 union all
 -- this captures 'class_category'
 select
@@ -910,12 +908,7 @@ select
     r.code_type,
 
     if(f.audit_flag_value, 1, 0) as audit_flag_value,
-from class_category as r
-left join
-    teacher_unpivot_cc as f
-    on r.region = f.region
-    and r.school_level = f.school_level
-    and r.assignment_category_code = f.assignment_category_code
-    and r.audit_flag_name = f.audit_flag_name
-group by all  {# TODO: determine cause of duplicates and remove #}*/
+from
+    teacher_unpivot_cca as r
+    -- group by all  {# TODO: determine cause of duplicates and remove #}
     
