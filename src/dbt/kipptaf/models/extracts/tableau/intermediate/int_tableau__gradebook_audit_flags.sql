@@ -1,4 +1,4 @@
--- {{ config(materialized="table", cluster_by="cte_grouping") }}
+{{ config(materialized="table") }}
 with
     student_unpivot as (
         select *, 'assignment_student' as cte_grouping,
@@ -19,37 +19,23 @@ with
             )
     ),
 
-    teacher_unpivot as (
-        select
-            *,
-
-            case
-                when
-                    audit_flag_name in (
-                        'w_assign_max_score_not_10',
-                        'f_assign_max_score_not_10',
-                        's_max_score_greater_100'
-                    )
-                then 'class_category_assignment'
-                when
-                    audit_flag_name in (
-                        'qt_teacher_s_total_greater_200',
-                        'qt_teacher_s_total_less_200',
-                        'w_expected_assign_count_not_met',
-                        'f_expected_assign_count_not_met',
-                        's_expected_assign_count_not_met',
-                        'w_percent_graded_min_not_met',
-                        'f_percent_graded_min_not_met',
-                        's_percent_graded_min_not_met'
-                    )
-                then 'class_category'
-            end as cte_grouping,
+    teacher_unpivot_cca as (
+        select *, 'class_category_assignment' as cte_grouping,
         from
             {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     w_assign_max_score_not_10,
                     f_assign_max_score_not_10,
-                    s_max_score_greater_100,
+                    s_max_score_greater_100
+                )
+            )
+    ),
+
+    teacher_unpivot_cc as (
+        select *, 'class_category' as cte_grouping,
+        from
+            {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} unpivot (
+                audit_flag_value for audit_flag_name in (
                     qt_teacher_s_total_greater_200,
                     qt_teacher_s_total_less_200,
                     w_expected_assign_count_not_met,
@@ -60,6 +46,19 @@ with
                     s_percent_graded_min_not_met
                 )
             )
+    ),
+
+    class_category as (
+        select r.*, f.cte_grouping, f.audit_category, f.code_type, f.audit_flag_name,
+        from
+            {{ ref("int_tableau__gradebook_audit_section_week_category_scaffold") }}
+            as r
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.assignment_category_code = f.code
+            and f.cte_grouping = 'class_category'
     ),
 
     eoq_items as (
@@ -276,7 +275,7 @@ left join
     and r.week_number_quarter = t.week_number_quarter
     and r.sectionid = t.sectionid
     and r.assignmentid = t.assignmentid
-
+    /*
 union all
 -- this captures all student_course_category: qt_effort_grade_missing and
 -- w_grade_inflation
@@ -644,7 +643,8 @@ select
 from eoq_items_conduct_code
 
 union all
-
+-- this captures 'class_category_assignment': f_assign_max_score_not_10,
+-- w_assign_max_score_not_10, s_max_score_greater_100
 select
     r._dbt_source_relation,
     r.academic_year,
@@ -776,7 +776,7 @@ select
     f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-from teacher_unpivot as r
+from teacher_unpivot_cca as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
     on r.region = f.region
@@ -786,7 +786,7 @@ inner join
     and f.cte_grouping = 'class_category_assignment'
 
 union all
-
+-- this captures 'class_category'
 select
     r._dbt_source_relation,
     r.academic_year,
@@ -903,26 +903,27 @@ select
     null as n_null,
     null as n_expected,
     null as n_expected_scored,
-    r.total_expected_scored_section_quarter_week_category,
-    r.total_expected_section_quarter_week_category,
-    r.percent_graded_for_quarter_week_class,
-    r.sum_totalpointvalue_section_quarter_category,
+    f.total_expected_scored_section_quarter_week_category,
+    f.total_expected_section_quarter_week_category,
+    f.percent_graded_for_quarter_week_class,
+    f.sum_totalpointvalue_section_quarter_category,
 
-    r.running_count_assignments_section_category_term
+    f.running_count_assignments_section_category_term
     as teacher_running_total_assign_by_cat,
 
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-    f.audit_category,
-    f.code_type,
+    r.audit_category,
+    r.code_type,
 
-    if(r.audit_flag_value, 1, 0) as audit_flag_value,
-from teacher_unpivot as r
+    if(f.audit_flag_value, 1, 0) as audit_flag_value,
+from class_category as r
 inner join
-    {{ ref("stg_reporting__gradebook_flags") }} as f
+    teacher_unpivot_cc as f
     on r.region = f.region
     and r.school_level = f.school_level
-    and r.assignment_category_code = f.code
+    and r.assignment_category_code = f.assignment_category_code
     and r.audit_flag_name = f.audit_flag_name
     and f.cte_grouping = 'class_category'
-group by all  {# TODO: determine cause of duplicates and remove #}
+group by all  {# TODO: determine cause of duplicates and remove #}*/
+    
