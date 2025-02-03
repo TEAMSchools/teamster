@@ -8,7 +8,6 @@ with
             region_school_level,
             schoolid,
             school,
-
             `quarter`,
             semester,
             week_number_quarter as audit_qt_week_number,
@@ -19,13 +18,11 @@ with
             week_start_monday as audit_start_date,
             week_end_sunday as audit_end_date,
             school_week_start_date_lead as audit_due_date,
-
             assignment_category_name,
             assignment_category_code,
             assignment_category_term,
             expectation,
             notes,
-
             section_or_period,
             sectionid,
             sections_dcid,
@@ -36,11 +33,9 @@ with
             course_name,
             exclude_from_gpa,
             is_ap_course,
-
             teacher_number,
             teacher_name,
             tableau_username,
-
             assignmentid as teacher_assign_id,
             assignment_name as teacher_assign_name,
             duedate as teacher_assign_due_date,
@@ -59,13 +54,12 @@ with
             sum_totalpointvalue_section_quarter_category,
             teacher_running_total_assign_by_cat,
             teacher_avg_score_for_assign_per_class_section_and_assign_id,
-
             audit_category,
             cte_grouping,
             code_type,
             audit_flag_name,
-            max(audit_flag_value) as audit_flag_value,
 
+            max(audit_flag_value) as audit_flag_value,
         from {{ ref("int_tableau__gradebook_audit_flags") }}
         group by all
     ),
@@ -75,18 +69,12 @@ with
             academic_year,
             region,
             schoolid,
-
-            quarter,
+            `quarter`,
             week_number_quarter as audit_qt_week_number,
-
             assignment_category_term,
-
             sectionid,
-
             teacher_number,
-
             assignmentid as teacher_assign_id,
-
             studentid,
             student_number,
             student_name,
@@ -114,34 +102,30 @@ with
             ada,
             ada_above_or_at_80,
             date_enrolled,
-
             category_quarter_percent_grade,
             category_quarter_average_all_courses,
-
             quarter_course_percent_grade_that_matters,
             quarter_course_grade_points_that_matters,
             quarter_citizenship,
             quarter_comment_value,
-
             scorepoints as raw_score,
             score_entered,
             assign_final_score_percent,
             is_exempt,
             is_late,
             is_missing,
-
             audit_category,
             cte_grouping,
             code_type,
             audit_flag_name,
             audit_flag_value as flag_value,
-
         from {{ ref("int_tableau__gradebook_audit_flags") }}
         where audit_flag_value = 1
     )
 
 select
     t.*,
+
     v.studentid,
     v.student_number,
     v.student_name,
@@ -169,15 +153,12 @@ select
     v.ada,
     v.ada_above_or_at_80,
     v.date_enrolled,
-
     v.category_quarter_percent_grade,
     v.category_quarter_average_all_courses,
-
     v.quarter_course_percent_grade_that_matters,
     v.quarter_course_grade_points_that_matters,
     v.quarter_citizenship,
     v.quarter_comment_value,
-
     v.raw_score,
     v.score_entered,
     v.assign_final_score_percent,
@@ -186,7 +167,6 @@ select
     v.is_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
-
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -208,6 +188,7 @@ union all
 
 select
     t.*,
+
     v.studentid,
     v.student_number,
     v.student_name,
@@ -235,15 +216,12 @@ select
     v.ada,
     v.ada_above_or_at_80,
     v.date_enrolled,
-
     v.category_quarter_percent_grade,
     v.category_quarter_average_all_courses,
-
     v.quarter_course_percent_grade_that_matters,
     v.quarter_course_grade_points_that_matters,
     v.quarter_citizenship,
     v.quarter_comment_value,
-
     v.raw_score,
     v.score_entered,
     v.assign_final_score_percent,
@@ -252,7 +230,6 @@ select
     v.is_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
-
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -273,6 +250,7 @@ union all
 
 select
     t.*,
+
     v.studentid,
     v.student_number,
     v.student_name,
@@ -300,15 +278,12 @@ select
     v.ada,
     v.ada_above_or_at_80,
     v.date_enrolled,
-
     v.category_quarter_percent_grade,
     v.category_quarter_average_all_courses,
-
     v.quarter_course_percent_grade_that_matters,
     v.quarter_course_grade_points_that_matters,
     v.quarter_citizenship,
     v.quarter_comment_value,
-
     v.raw_score,
     v.score_entered,
     v.assign_final_score_percent,
@@ -317,7 +292,6 @@ select
     v.is_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
-
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -337,6 +311,7 @@ union all
 
 select
     t.*,
+
     v.studentid,
     v.student_number,
     v.student_name,
@@ -364,15 +339,12 @@ select
     v.ada,
     v.ada_above_or_at_80,
     v.date_enrolled,
-
     v.category_quarter_percent_grade,
     v.category_quarter_average_all_courses,
-
     v.quarter_course_percent_grade_that_matters,
     v.quarter_course_grade_points_that_matters,
     v.quarter_citizenship,
     v.quarter_comment_value,
-
     v.raw_score,
     v.score_entered,
     v.assign_final_score_percent,
@@ -381,7 +353,6 @@ select
     v.is_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
-
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -404,6 +375,7 @@ union all
 
 select
     t.*,
+
     v.studentid,
     v.student_number,
     v.student_name,
@@ -431,15 +403,12 @@ select
     v.ada,
     v.ada_above_or_at_80,
     v.date_enrolled,
-
     v.category_quarter_percent_grade,
     v.category_quarter_average_all_courses,
-
     v.quarter_course_percent_grade_that_matters,
     v.quarter_course_grade_points_that_matters,
     v.quarter_citizenship,
     v.quarter_comment_value,
-
     v.raw_score,
     v.score_entered,
     v.assign_final_score_percent,
@@ -448,7 +417,6 @@ select
     v.is_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
-
 from teacher_aggs as t
 left join
     valid_flags as v
