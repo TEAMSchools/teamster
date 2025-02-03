@@ -1,4 +1,3 @@
--- {{ config(materialized="table") }}
 with
     student_unpivot as (
         select *, 'assignment_student' as cte_grouping,
