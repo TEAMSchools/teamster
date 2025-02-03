@@ -396,9 +396,8 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
-from
-    student_course_category
-    /*
+from student_course_category
+
 union all
 -- this captures all eoq items except conduct_code
 select
@@ -518,8 +517,9 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
-from eoq_items
-
+from
+    eoq_items
+    /*
 union all
 -- this captures conduct_code
 select
