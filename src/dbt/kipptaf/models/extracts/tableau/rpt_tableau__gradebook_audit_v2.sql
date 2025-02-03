@@ -65,8 +65,8 @@ with
             audit_flag_name,
             max(audit_flag_value) as audit_flag_value,
 
-        from {{ ref("int_tableau__gradebook_audit_final_roster") }}
-        group by all  {# TODO: determine cause of duplicates and remove #}
+        from {{ ref("int_tableau__gradebook_audit_flags") }}
+        group by all
     ),
 
     valid_flags as (
@@ -133,11 +133,10 @@ with
             cte_grouping,
             code_type,
             audit_flag_name,
-            max(audit_flag_value) as flag_value,
+            audit_flag_value as flag_value,
 
-        from {{ ref("int_tableau__gradebook_audit_final_roster") }}
+        from {{ ref("int_tableau__gradebook_audit_flags") }}
         where audit_flag_value = 1
-        group by all  {# TODO: determine cause of duplicates and remove #}
     )
 
 select
