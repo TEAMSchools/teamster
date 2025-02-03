@@ -918,12 +918,11 @@ select
 
     if(f.audit_flag_value, 1, 0) as audit_flag_value,
 from class_category as r
-inner join
+left join
     teacher_unpivot_cc as f
     on r.region = f.region
     and r.school_level = f.school_level
     and r.assignment_category_code = f.assignment_category_code
     and r.audit_flag_name = f.audit_flag_name
-    and f.cte_grouping = 'class_category'
 group by all  {# TODO: determine cause of duplicates and remove #}*/
     
