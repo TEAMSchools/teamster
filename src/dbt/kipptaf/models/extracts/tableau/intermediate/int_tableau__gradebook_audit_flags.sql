@@ -275,7 +275,7 @@ left join
     and r.week_number_quarter = t.week_number_quarter
     and r.sectionid = t.sectionid
     and r.assignmentid = t.assignmentid
-    /*
+
 union all
 -- this captures all student_course_category: qt_effort_grade_missing and
 -- w_grade_inflation
@@ -396,8 +396,9 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
-from student_course_category
-
+from
+    student_course_category
+    /*
 union all
 -- this captures all eoq items except conduct_code
 select
