@@ -56,7 +56,6 @@ def build_illuminate_dlt_assets(
 
     op_tags.update({"dagster/concurrency_key": f"dlt_illuminate_{code_location}"})
 
-    # trunk-ignore(pyright/reportArgumentType)
     dlt_source = sql_database.with_args(name="illuminate", parallelized=True)(
         credentials=sql_database_credentials,
         schema=schema,
