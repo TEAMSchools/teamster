@@ -640,9 +640,8 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
-from
-    eoq_items_conduct_code
-    /*
+from eoq_items_conduct_code
+
 union all
 -- this captures 'class_category_assignment': f_assign_max_score_not_10,
 -- w_assign_max_score_not_10, s_max_score_greater_100
@@ -785,7 +784,7 @@ inner join
     and r.assignment_category_code = f.code
     and r.audit_flag_name = f.audit_flag_name
     and f.cte_grouping = 'class_category_assignment'
-
+    /*
 union all
 -- this captures 'class_category'
 select
