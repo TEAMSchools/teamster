@@ -18,15 +18,17 @@ select
     asg.avg_expected_scored_percent,
 
     if(
-        assignment_category_code = 'W' and totalpointvalue != 10, true, false
+        sec.assignment_category_code = 'W' and a.totalpointvalue != 10, true, false
     ) as w_assign_max_score_not_10,
 
     if(
-        assignment_category_code = 'F' and totalpointvalue != 10, true, false
+        sec.assignment_category_code = 'F' and a.totalpointvalue != 10, true, false
     ) as f_assign_max_score_not_10,
 
     if(
-        region = 'Miami' and assignment_category_code = 'S' and totalpointvalue > 100,
+        sec.region = 'Miami'
+        and sec.assignment_category_code = 'S'
+        and a.totalpointvalue > 100,
         true,
         false
     ) as s_max_score_greater_100,
