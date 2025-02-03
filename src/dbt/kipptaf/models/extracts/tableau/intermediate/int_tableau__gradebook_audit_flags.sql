@@ -894,12 +894,12 @@ select
     null as n_null,
     null as n_expected,
     null as n_expected_scored,
-    f.total_expected_scored_section_quarter_week_category,
-    f.total_expected_section_quarter_week_category,
-    f.percent_graded_for_quarter_week_class,
-    f.sum_totalpointvalue_section_quarter_category,
+    r.total_expected_scored_section_quarter_week_category,
+    r.total_expected_section_quarter_week_category,
+    r.percent_graded_for_quarter_week_class,
+    r.sum_totalpointvalue_section_quarter_category,
 
-    f.running_count_assignments_section_category_term
+    r.running_count_assignments_section_category_term
     as teacher_running_total_assign_by_cat,
 
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
@@ -907,8 +907,8 @@ select
     r.audit_category,
     r.code_type,
 
-    if(f.audit_flag_value, 1, 0) as audit_flag_value,
+    if(r.audit_flag_value, 1, 0) as audit_flag_value,
 from
-    teacher_unpivot_cca as r
+    teacher_unpivot_cc as r
     -- group by all  {# TODO: determine cause of duplicates and remove #}
     

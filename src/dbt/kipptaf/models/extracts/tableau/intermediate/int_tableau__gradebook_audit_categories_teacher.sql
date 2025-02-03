@@ -77,7 +77,7 @@ with
             semester,
             quarter_start_date,
             quarter_end_date,
-            is_current_term
+            is_current_term,
             school,
             region,
             school_level,
@@ -101,6 +101,7 @@ with
             exclude_from_gpa,
             is_ap_course,
             teacher_number,
+            teacher_name,
             tableau_username,
             hos,
             is_quarter_end_date_range,
