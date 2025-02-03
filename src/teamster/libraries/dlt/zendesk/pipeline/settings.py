@@ -5,8 +5,6 @@ from dlt.common import pendulum
 DEFAULT_START_DATE = pendulum.datetime(year=2000, month=1, day=1)
 PAGE_SIZE = 100
 INCREMENTAL_PAGE_SIZE = 1000
-
-
 CUSTOM_FIELDS_STATE_KEY = "ticket_custom_fields_v2"
 
 # Tuples of (Resource name, endpoint URL, data_key, supports pagination)
