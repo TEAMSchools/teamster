@@ -184,7 +184,6 @@ with
             student_id,
             academic_year,
             assessment_subject,
-            administration_window,
             achievement_level_int,
 
             row_number() over (
@@ -195,14 +194,13 @@ with
     ),
 
     fast as (
-        select student_id, academic_year, administration_window, fast_ela, fast_math,
+        select student_id, academic_year, fast_ela, fast_math,
         from
             (
                 select
                     f.student_id,
                     f.academic_year,
                     f.assessment_subject,
-                    f.administration_window,
                     f.achievement_level_int,
                 from fast_results as f
                 where f.rn_subject_year = 1
