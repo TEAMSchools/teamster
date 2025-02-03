@@ -9,15 +9,16 @@ with
             schoolid,
             school,
 
+            `quarter`,
             semester,
-            quarter,
-            audit_qt_week_number,
+            week_number_quarter as audit_qt_week_number,
             quarter_start_date,
             quarter_end_date,
-            is_current_quarter,
-            audit_start_date,
-            audit_end_date,
-            audit_due_date,
+            is_current_term as is_current_quarter,
+            is_quarter_end_date_range,
+            week_start_monday as audit_start_date,
+            week_end_sunday as audit_end_date,
+            school_week_start_date_lead as audit_due_date,
 
             assignment_category_name,
             assignment_category_code,
@@ -40,11 +41,11 @@ with
             teacher_name,
             tableau_username,
 
-            teacher_assign_id,
-            teacher_assign_name,
-            teacher_assign_due_date,
-            teacher_assign_score_type,
-            teacher_assign_max_score,
+            assignmentid as teacher_assign_id,
+            assignment_name as teacher_assign_name,
+            duedate as teacher_assign_due_date,
+            scoretype as teacher_assign_score_type,
+            totalpointvalue as teacher_assign_max_score,
             n_students,
             n_late,
             n_exempt,
@@ -76,7 +77,7 @@ with
             schoolid,
 
             quarter,
-            audit_qt_week_number,
+            week_number_quarter as audit_qt_week_number,
 
             assignment_category_term,
 
@@ -84,7 +85,7 @@ with
 
             teacher_number,
 
-            teacher_assign_id,
+            assignmentid as teacher_assign_id,
 
             studentid,
             student_number,
@@ -122,7 +123,7 @@ with
             quarter_citizenship,
             quarter_comment_value,
 
-            raw_score,
+            scorepoints as raw_score,
             score_entered,
             assign_final_score_percent,
             is_exempt,
@@ -266,10 +267,71 @@ left join
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
-where
-    t.code_type = 'Gradebook Category'
-    and t.audit_flag_name = 'w_grade_inflation'
-    and t.assignment_category_code = 'W'
+where t.cte_grouping = 'student_course_category'
+
+union all
+
+select
+    t.*,
+    v.studentid,
+    v.student_number,
+    v.student_name,
+    v.grade_level,
+    v.salesforce_id,
+    v.ktc_cohort,
+    v.enroll_status,
+    v.cohort,
+    v.gender,
+    v.ethnicity,
+    v.advisory,
+    v.year_in_school,
+    v.year_in_network,
+    v.rn_undergrad,
+    v.is_out_of_district,
+    v.is_retained_year,
+    v.is_retained_ever,
+    v.lunch_status,
+    v.gifted_and_talented,
+    v.iep_status,
+    v.lep_status,
+    v.is_504,
+    v.is_counseling_services,
+    v.is_student_athlete,
+    v.ada,
+    v.ada_above_or_at_80,
+    v.date_enrolled,
+
+    v.category_quarter_percent_grade,
+    v.category_quarter_average_all_courses,
+
+    v.quarter_course_percent_grade_that_matters,
+    v.quarter_course_grade_points_that_matters,
+    v.quarter_citizenship,
+    v.quarter_comment_value,
+
+    v.raw_score,
+    v.score_entered,
+    v.assign_final_score_percent,
+    v.is_exempt,
+    v.is_late,
+    v.is_missing,
+
+    coalesce(v.flag_value, 0) as flag_value,
+
+from teacher_aggs as t
+left join
+    valid_flags as v
+    on t.academic_year = v.academic_year
+    and t.region = v.region
+    and t.schoolid = v.schoolid
+    and t.quarter = v.quarter
+    and t.audit_qt_week_number = v.audit_qt_week_number
+    and t.sectionid = v.sectionid
+    and t.teacher_number = v.teacher_number
+    and t.audit_category = v.audit_category
+    and t.cte_grouping = v.cte_grouping
+    and t.audit_flag_name = v.audit_flag_name
+where t.code_type = 'Quarter'
 
 union all
 
@@ -402,67 +464,3 @@ left join
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
 where t.code_type = 'Gradebook Category' and t.cte_grouping = 'class_category'
-
-union all
-
-select
-    t.*,
-    v.studentid,
-    v.student_number,
-    v.student_name,
-    v.grade_level,
-    v.salesforce_id,
-    v.ktc_cohort,
-    v.enroll_status,
-    v.cohort,
-    v.gender,
-    v.ethnicity,
-    v.advisory,
-    v.year_in_school,
-    v.year_in_network,
-    v.rn_undergrad,
-    v.is_out_of_district,
-    v.is_retained_year,
-    v.is_retained_ever,
-    v.lunch_status,
-    v.gifted_and_talented,
-    v.iep_status,
-    v.lep_status,
-    v.is_504,
-    v.is_counseling_services,
-    v.is_student_athlete,
-    v.ada,
-    v.ada_above_or_at_80,
-    v.date_enrolled,
-
-    v.category_quarter_percent_grade,
-    v.category_quarter_average_all_courses,
-
-    v.quarter_course_percent_grade_that_matters,
-    v.quarter_course_grade_points_that_matters,
-    v.quarter_citizenship,
-    v.quarter_comment_value,
-
-    v.raw_score,
-    v.score_entered,
-    v.assign_final_score_percent,
-    v.is_exempt,
-    v.is_late,
-    v.is_missing,
-
-    coalesce(v.flag_value, 0) as flag_value,
-
-from teacher_aggs as t
-left join
-    valid_flags as v
-    on t.academic_year = v.academic_year
-    and t.region = v.region
-    and t.schoolid = v.schoolid
-    and t.quarter = v.quarter
-    and t.audit_qt_week_number = v.audit_qt_week_number
-    and t.sectionid = v.sectionid
-    and t.teacher_number = v.teacher_number
-    and t.audit_category = v.audit_category
-    and t.cte_grouping = v.cte_grouping
-    and t.audit_flag_name = v.audit_flag_name
-where t.code_type = 'Quarter'
