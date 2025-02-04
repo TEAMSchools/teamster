@@ -5,18 +5,23 @@ with
             a.sectionsdcid,
             a.assignmentsectionid,
 
-            s.studentsdcid,
-            s.islate,
-            s.isexempt,
-            s.ismissing,
+            e.students_dcid,
 
-            if(s.isexempt = 0, true, false) as is_expected,
+            coalesce(s.islate, 0) as islate,
+            coalesce(s.isexempt, 0) as isexempt,
+            coalesce(s.ismissing, 0) as ismissing,
+
+            if(coalesce(s.isexempt, 0) = 0, true, false) as is_expected,
 
             if(s.scorepoints is null, 1, 0) as is_null,
 
-            if(s.scorepoints is null and s.ismissing = 1, 1, 0) as is_null_missing,
+            if(
+                s.scorepoints is null and coalesce(s.ismissing, 0) = 1, 1, 0
+            ) as is_null_missing,
 
-            if(s.scorepoints is null and s.ismissing = 0, 1, 0) as is_null_not_missing,
+            if(
+                s.scorepoints is null and coalesce(s.ismissing, 0) = 0, 1, 0
+            ) as is_null_not_missing,
 
             case
                 when s.isexempt = 1
@@ -47,7 +52,6 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
             and e.students_dcid = s.studentsdcid
             and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
-        where s.studentsdcid is not null
     ),
 
     school_course_exceptions as (
@@ -79,7 +83,8 @@ select
     s._dbt_source_relation,
     s.assignmentsectionid,
 
-    count(s.studentsdcid) as n_students,
+    count(s.students_dcid) as n_students,
+
     sum(s.islate) as n_late,
     sum(s.isexempt) as n_exempt,
     sum(s.ismissing) as n_missing,
