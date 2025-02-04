@@ -14,6 +14,10 @@ with
 
             if(s.scorepoints is null, 1, 0) as is_null,
 
+            if(s.scorepoints is null and s.ismissing = 1, 1, 0) as is_null_missing,
+
+            if(s.scorepoints is null and s.ismissing = 0, 1, 0) as is_null_not_missing,
+
             case
                 when s.isexempt = 1
                 then false
@@ -43,6 +47,7 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
             and e.students_dcid = s.studentsdcid
             and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+        where s.studentsdcid is not null
     ),
 
     school_course_exceptions as (
@@ -79,6 +84,8 @@ select
     sum(s.isexempt) as n_exempt,
     sum(s.ismissing) as n_missing,
     sum(s.is_null) as n_null,
+    sum(s.is_null_missing) as n_is_null_missing,
+    sum(s.is_null_not_missing) as n_is_null_not_missing,
 
     countif(s.is_expected) as n_expected,
     countif(s.is_expected_scored) as n_expected_scored,
