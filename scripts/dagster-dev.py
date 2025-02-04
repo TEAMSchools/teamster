@@ -25,7 +25,10 @@ def main() -> None:
 
     subprocess.run(
         args=["dagster", "dev", *module_args],
-        env={**os.environ, "PATH": os.environ["PATH"] + ":.venv/bin"},
+        env={
+            **os.environ,
+            "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
+        },
     )
 
 
