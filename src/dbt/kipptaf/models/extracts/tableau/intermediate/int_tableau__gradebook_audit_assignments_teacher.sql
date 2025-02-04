@@ -13,6 +13,8 @@ select
     asg.n_exempt,
     asg.n_missing,
     asg.n_null,
+    asg.n_is_null_missing,
+    asg.n_is_null_not_missing,
     asg.n_expected,
     asg.n_expected_scored,
     asg.avg_expected_scored_percent,
