@@ -9,6 +9,7 @@ from teamster.libraries.adp.workforce_manager.resources import (
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 from teamster.libraries.amplify.dibels.resources import DibelsDataSystemResource
 from teamster.libraries.amplify.mclass.resources import MClassResource
+from teamster.libraries.coupa.resources import CoupaResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
@@ -45,6 +46,75 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
     client_id=EnvVar("AIRBYTE_CLIENT_ID"), client_secret=EnvVar("AIRBYTE_CLIENT_SECRET")
+)
+
+COUPA_RESOURCE = CoupaResource(
+    instance_url=EnvVar("COUPA_API_INSTANCE_URL"),
+    client_id=EnvVar("COUPA_API_CLIENT_ID"),
+    client_secret=EnvVar("COUPA_API_CLIENT_SECRET"),
+    scope=[
+        "core.accounting.read",
+        "core.approval.read",
+        "core.budget.read",
+        "core.business_entity.read",
+        "core.catalog.read",
+        "core.comment.read",
+        "core.common.read",
+        "core.contract.read",
+        "core.contracts_template.read",
+        "core.easy_form_response.read",
+        "core.expense.read",
+        "core.expense.secure.read",
+        "core.financial_counterparty.read",
+        "core.global_navigation.read",
+        "core.integration.read",
+        "core.inventory.adjustment.read",
+        "core.inventory.asn.read",
+        "core.inventory.balance.read",
+        "core.inventory.common.read",
+        "core.inventory.consumption.read",
+        "core.inventory.cycle_counts.read",
+        "core.inventory.pick_list.read",
+        "core.inventory.receiving.read",
+        "core.inventory.return_to_supplier.read",
+        "core.inventory.transfer.read",
+        "core.invoice.read",
+        "core.item.read",
+        "core.legal_entity.read",
+        "core.object_translations.read",
+        "core.order_pad.read",
+        "core.pay.charges.read",
+        "core.pay.payment_accounts.read",
+        "core.pay.payments.read",
+        "core.pay.statements.read",
+        "core.pay.virtual_cards.read",
+        "core.payables.allocations.read",
+        "core.payables.expense.read",
+        "core.payables.external.read",
+        "core.payables.invoice.read",
+        "core.payables.order.read",
+        "core.project.read",
+        "core.purchase_order_change.read",
+        "core.purchase_order.read",
+        "core.requisition.read",
+        "core.sourcing.pending_supplier.read",
+        "core.sourcing.read",
+        "core.sourcing.response.read",
+        "core.supplier_information_sites.read",
+        "core.supplier_information_tax_registrations.read",
+        "core.supplier_sharing_settings.read",
+        "core.supplier_sites.read",
+        "core.supplier.read",
+        "core.supplier.risk_aware.read",
+        "core.uom.read",
+        "core.user_group.read",
+        "core.user.read",
+        "travel_booking.common.read",
+        "travel_booking.team.read",
+        "travel_booking.trip.read",
+        "travel_booking.user.read",
+        "treasury.cash_management.read",
+    ],
 )
 
 DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
