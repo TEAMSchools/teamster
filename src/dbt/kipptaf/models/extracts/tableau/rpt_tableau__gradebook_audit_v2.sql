@@ -46,6 +46,8 @@ with
             n_exempt,
             n_missing,
             n_null,
+            n_is_null_missing,
+            n_is_null_not_missing,
             n_expected,
             n_expected_scored,
             total_expected_scored_section_quarter_week_category,
