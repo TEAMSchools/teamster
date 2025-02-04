@@ -142,15 +142,15 @@ wheels = [
 
 [[package]]
 name = "beautifulsoup4"
-version = "4.13.1"
+version = "4.13.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "soupsieve" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/f3/d90227cc52f7b8fcd0f2af804f56e55edf8dd07036b681a2809e3245318b/beautifulsoup4-4.13.1.tar.gz", hash = "sha256:741c8b6903a1e4ae8ba32b9c9ae7510dab7a197fdbadcf9fcdeb0891ef5ec66a", size = 618295 }
+sdist = { url = "https://files.pythonhosted.org/packages/52/f4/c64f8d746f61edb305afc057c58895d0ded4b01532472aff6a5e15ba4655/beautifulsoup4-4.13.2.tar.gz", hash = "sha256:da9184389e6848818cf31c970ba3cbe6f33c2b8fbabd70d5bd4a2bfa0c1c4272", size = 619134 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/18/75/899bf9b6270b2ce5e8f01b8da121b29e4b88256feb2cf6c6418d4cc42130/beautifulsoup4-4.13.1-py3-none-any.whl", hash = "sha256:72465267014897bb10ca749bb632bde6c2d20f3254afd5458544bd74e6c2e6d8", size = 185056 },
+    { url = "https://files.pythonhosted.org/packages/82/4f/4fc5ea4f6a239be79aec67c406e67ad9fd5567b4a1a4aa69c8da4b457ac2/beautifulsoup4-4.13.2-py3-none-any.whl", hash = "sha256:b0ebbcecbfbed2f28e07fb8d004494dfb3030711874a034551ac52008b87a1d1", size = 185818 },
 ]
 
 [[package]]
@@ -808,7 +808,7 @@ wheels = [
 
 [[package]]
 name = "dlt"
-version = "1.6.0"
+version = "1.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -839,9 +839,9 @@ dependencies = [
     { name = "tzdata" },
     { name = "win-precise-time", marker = "os_name == 'nt'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bc/e1/8b86a2a49416a8cced792fdf2bdac6db1f0e0be7ac24a91ac1b7d1484a46/dlt-1.6.0.tar.gz", hash = "sha256:07609bf4d4a9853f1162e88740e4eecabede76cf7af81408093f0b70152e519f", size = 701204 }
+sdist = { url = "https://files.pythonhosted.org/packages/92/c0/fb17676de190121db2fc1df4b478bc4f4b10dc7d7e8f7ab743abb150eaaa/dlt-1.6.1.tar.gz", hash = "sha256:df3afccf41c6ff028f7d1ba6b9c84e404b27d815c9c0623ba1b9f22990cf24c4", size = 700101 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/79/39d34083f88b74aee333af06702c051ac238d593d8aba494fb0325455d54/dlt-1.6.0-py3-none-any.whl", hash = "sha256:570c3e358a95bc0eb2a0fd2a78cac4ef1615e263c1630d04f26297f972d0c8aa", size = 885391 },
+    { url = "https://files.pythonhosted.org/packages/34/77/45520f098888c593ff9bf7a8c38bd45db6db0c2a138b0c6829c58b65dc93/dlt-1.6.1-py3-none-any.whl", hash = "sha256:30a2b9ac6d93f38289c85c305ab6f19cf50e6457d4891346260969d36b735e6b", size = 884349 },
 ]
 
 [[package]]
@@ -1574,14 +1574,14 @@ wheels = [
 
 [[package]]
 name = "mako"
-version = "1.3.8"
+version = "1.3.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markupsafe" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5f/d9/8518279534ed7dace1795d5a47e49d5299dd0994eed1053996402a8902f9/mako-1.3.8.tar.gz", hash = "sha256:577b97e414580d3e088d47c2dbbe9594aa7a5146ed2875d4dfa9075af2dd3cc8", size = 392069 }
+sdist = { url = "https://files.pythonhosted.org/packages/62/4f/ddb1965901bc388958db9f0c991255b2c469349a741ae8c9cd8a562d70a6/mako-1.3.9.tar.gz", hash = "sha256:b5d65ff3462870feec922dbccf38f6efb44e5714d7b593a656be86663d8600ac", size = 392195 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1e/bf/7a6a36ce2e4cafdfb202752be68850e22607fccd692847c45c1ae3c17ba6/Mako-1.3.8-py3-none-any.whl", hash = "sha256:42f48953c7eb91332040ff567eb7eea69b22e7a4affbc5ba8e845e8f730f6627", size = 78569 },
+    { url = "https://files.pythonhosted.org/packages/cd/83/de0a49e7de540513f53ab5d2e105321dedeb08a8f5850f0208decf4390ec/Mako-1.3.9-py3-none-any.whl", hash = "sha256:95920acccb578427a9aa38e37a186b1e43156c87260d7ba18ca63aa4c7cbd3a1", size = 78456 },
 ]
 
 [[package]]
@@ -1937,16 +1937,16 @@ wheels = [
 
 [[package]]
 name = "paramiko"
-version = "3.5.0"
+version = "3.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bcrypt" },
     { name = "cryptography" },
     { name = "pynacl" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1b/0f/c00296e36ff7485935b83d466c4f2cf5934b84b0ad14e81796e1d9d3609b/paramiko-3.5.0.tar.gz", hash = "sha256:ad11e540da4f55cedda52931f1a3f812a8238a7af7f62a60de538cd80bb28124", size = 1704305 }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/15/ad6ce226e8138315f2451c2aeea985bf35ee910afb477bae7477dc3a8f3b/paramiko-3.5.1.tar.gz", hash = "sha256:b2c665bc45b2b215bd7d7f039901b14b067da00f3a11e6640995fd58f2664822", size = 1566110 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1f/66/14b2c030fcce69cba482d205c2d1462ca5c77303a263260dcb1192801c85/paramiko-3.5.0-py3-none-any.whl", hash = "sha256:1fedf06b085359051cd7d0d270cebe19e755a8a921cc2ddbfa647fb0cd7d68f9", size = 227143 },
+    { url = "https://files.pythonhosted.org/packages/15/f8/c7bd0ef12954a81a1d3cea60a13946bd9a49a0036a5927770c461eade7ae/paramiko-3.5.1-py3-none-any.whl", hash = "sha256:43b9a0501fc2b5e70680388d9346cf252cfb7d00b0667c39e80eb43a408b8f61", size = 227298 },
 ]
 
 [[package]]
@@ -2779,11 +2779,11 @@ wheels = [
 
 [[package]]
 name = "sqlglot"
-version = "26.3.9"
+version = "26.4.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/0d/a5/92ac5fd2b6efa578005ebc16a3665997db91f147ff294bc106863edc8cd1/sqlglot-26.3.9.tar.gz", hash = "sha256:3c57599604ba5fc90424a97d1e463fc1d25737abcf1621944e05b6be587e4de2", size = 5311903 }
+sdist = { url = "https://files.pythonhosted.org/packages/86/38/a6b01d6f291c09dc4e17f87f131310cdc104a719910eca3878c893fcffa5/sqlglot-26.4.1.tar.gz", hash = "sha256:97cc367e364d0ac00a85ea1a1b7ff0e1a91e9e6e97c4824b34f3bf6b619ab3b0", size = 5315460 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/d0/30afab08413d8a1312c5e79ca0937d850cdea384ed10624b742482818850/sqlglot-26.3.9-py3-none-any.whl", hash = "sha256:476a21c18b099fdb662848aed95e98e12e400684c779f3b0e3ddfb033253c369", size = 445036 },
+    { url = "https://files.pythonhosted.org/packages/88/e4/0d9749dc9b837e47e19e5db12c8ca6b1f4f02c079145a8ab7278d0f5727d/sqlglot-26.4.1-py3-none-any.whl", hash = "sha256:c9dae7b974fdb88f443408ceac817a4627d9e8c33afdb2bb4ebdd87864b0d1ba", size = 447000 },
 ]
 
 [package.optional-dependencies]
