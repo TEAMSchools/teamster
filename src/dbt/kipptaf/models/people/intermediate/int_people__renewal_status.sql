@@ -22,7 +22,9 @@ select
     p.final_tier as ay_pm4_overall_tier,
     tgl.grade_level as ay_primary_grade_level_taught,
     pss.scale_cy_salary,
+    pss.scale_ny_salary,
     pss.scale_step,
+    tss.scale_ny_salary as pm_salary_increase,
     coalesce(
         pss.scale_ny_salary,
         tss.scale_ny_salary + h.base_remuneration_annual_rate_amount_amount_value,
