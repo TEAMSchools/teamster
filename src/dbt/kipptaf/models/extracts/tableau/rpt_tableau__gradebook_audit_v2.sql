@@ -307,7 +307,7 @@ left join
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
-where t.code_type = 'Quarter'
+where t.code_type = 'Quarter' and t.cte_grouping != 'student_course_category'
 
 union all
 
