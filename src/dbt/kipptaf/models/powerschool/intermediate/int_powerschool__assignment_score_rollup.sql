@@ -5,14 +5,23 @@ with
             a.sectionsdcid,
             a.assignmentsectionid,
 
-            s.studentsdcid,
-            s.islate,
-            s.isexempt,
-            s.ismissing,
+            e.students_dcid,
 
-            if(s.isexempt = 0, true, false) as is_expected,
+            coalesce(s.islate, 0) as islate,
+            coalesce(s.isexempt, 0) as isexempt,
+            coalesce(s.ismissing, 0) as ismissing,
+
+            if(coalesce(s.isexempt, 0) = 0, true, false) as is_expected,
 
             if(s.scorepoints is null, 1, 0) as is_null,
+
+            if(
+                s.scorepoints is null and coalesce(s.ismissing, 0) = 1, 1, 0
+            ) as is_null_missing,
+
+            if(
+                s.scorepoints is null and coalesce(s.ismissing, 0) = 0, 1, 0
+            ) as is_null_not_missing,
 
             case
                 when s.isexempt = 1
@@ -74,11 +83,14 @@ select
     s._dbt_source_relation,
     s.assignmentsectionid,
 
-    count(s.studentsdcid) as n_students,
+    count(s.students_dcid) as n_students,
+
     sum(s.islate) as n_late,
     sum(s.isexempt) as n_exempt,
     sum(s.ismissing) as n_missing,
     sum(s.is_null) as n_null,
+    sum(s.is_null_missing) as n_is_null_missing,
+    sum(s.is_null_not_missing) as n_is_null_not_missing,
 
     countif(s.is_expected) as n_expected,
     countif(s.is_expected_scored) as n_expected_scored,

@@ -155,7 +155,7 @@ select
         s.region != 'Miami'
         and sec.is_quarter_end_date_range
         and s.grade_level < 5
-        and ce.courses_credittype in ('HR', 'MATH', 'ENG')
+        and ce.courses_credittype in ('HR', 'MATH', 'ENG', 'RHET')
         and qg.comment_value is null,
         true,
         false
