@@ -28,6 +28,7 @@ class Application(BaseModel):
     application_status_interview_phone_screen_complete_date: str | None = None
     application_status_interview_phone_screen_requested_date: str | None = None
     application_status: str | None = None
+    average_rating: float | None = None
     candidate_email: str | None = None
     candidate_first_and_last_name: str | None = None
     candidate_first_name: str | None = None
