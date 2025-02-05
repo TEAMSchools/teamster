@@ -70,3 +70,11 @@ sources:
               - google
               - appsheet
               - src_stipend_bonus_app__output
+      - name: src_seat_tracker__people
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - src_seat_tracker__people

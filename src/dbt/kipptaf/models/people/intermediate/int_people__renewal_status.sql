@@ -25,6 +25,12 @@ select
     pss.scale_ny_salary,
     pss.scale_step,
     tss.scale_ny_salary as pm_salary_increase,
+    s.staffing_model_id,
+    s.adp_location,
+    s.adp_dept,
+    s.adp_title,
+    stp.nonrenewal_reason,
+    stp.nonrenewal_notes,
     coalesce(
         pss.scale_ny_salary,
         tss.scale_ny_salary + h.base_remuneration_annual_rate_amount_amount_value,
@@ -89,6 +95,12 @@ left join
     and y.academic_year = tss.academic_year
     and h.business_unit_assigned_name = tss.region
     and p.final_tier = tss.scale_step
+left join
+    {{ ref("stg_people__seats")}} as s
+    on c.employee_number = s.teammate
+    and y.academic_year = cast(s.academic_year as int) - 1 
+left join
+    {{ ref("stg_people__seat_tracker_people")}} as stp
+    on c.employee_number = stp.employee_number
+    and y.academic_year = stp.academic_year
 
-    -- Add next year seats next
-    
