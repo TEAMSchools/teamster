@@ -46,5 +46,3 @@ left join
     {{ ref("int_people__renewal_status") }} as s
     on b.employee_number = s.employee_number
     and s.academic_year = {{ var("current_academic_year") }}
-
-
