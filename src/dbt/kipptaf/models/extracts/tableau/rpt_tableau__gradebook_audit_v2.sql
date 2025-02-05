@@ -46,6 +46,8 @@ with
             n_exempt,
             n_missing,
             n_null,
+            n_is_null_missing,
+            n_is_null_not_missing,
             n_expected,
             n_expected_scored,
             total_expected_scored_section_quarter_week_category,
@@ -305,7 +307,7 @@ left join
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
-where t.code_type = 'Quarter'
+where t.code_type = 'Quarter' and t.cte_grouping != 'student_course_category'
 
 union all
 
