@@ -286,5 +286,13 @@ select
             null
         )
     ) as n_meets_full_need_85plus_ecc_ea_ed_submitted,
+
+    max(
+        if(
+            application_status = 'Accepted',
+            adjusted_6_year_minority_graduation_rate,
+            null
+        )
+    ) as max_ecc_accepted,
 from {{ ref("base_kippadb__application") }}
 group by applicant
