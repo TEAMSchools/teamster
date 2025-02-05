@@ -60,29 +60,3 @@ class CoupaResource(ConfigurableResource):
 
     def post(self, resource: str, **kwargs):
         return self._request(method="POST", resource=resource, **kwargs)
-
-    # def get_records(self, endpoint, params: dict | None = None) -> list[dict]:
-    #     page_size = 100
-    #     all_records = []
-
-    #     if params is None:
-    #         params = {}
-
-    #     endpoint_name = endpoint.split("/")[-1]
-
-    #     params.update({"$top": page_size, "$skip": 0})
-
-    #     while True:
-    #         self._log.debug(params)
-    #         response = self.get(endpoint=endpoint, params=params)
-
-    #         if response.status_code == 204:
-    #             break
-
-    #         response_json = response.json()[endpoint_name]
-
-    #         all_records.extend(response_json)
-
-    #         params.update({"$skip": params["$skip"] + page_size})
-
-    #     return all_records
