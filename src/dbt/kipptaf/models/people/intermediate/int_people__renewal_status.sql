@@ -96,11 +96,10 @@ left join
     and h.business_unit_assigned_name = tss.region
     and p.final_tier = tss.scale_step
 left join
-    {{ ref("stg_people__seats")}} as s
+    {{ ref("stg_people__seats") }} as s
     on c.employee_number = s.teammate
-    and y.academic_year = cast(s.academic_year as int) - 1 
+    and y.academic_year = cast(s.academic_year as int) - 1
 left join
-    {{ ref("stg_people__seat_tracker_people")}} as stp
+    {{ ref("stg_people__seat_tracker_people") }} as stp
     on c.employee_number = stp.employee_number
     and y.academic_year = stp.academic_year
-
