@@ -18,7 +18,9 @@ with
         from {{ ref("int_extracts__student_enrollments") }}
     ),
 
-    act_sat as (  -- this is by itself because the int_kippadb__standardized_test_unpivot view uses contact id
+    -- this is by itself because the int_kippadb__standardized_test_unpivot view uses
+    -- contact id
+    act_sat as (
         select
             contact,
             test_type as scope,
@@ -85,7 +87,9 @@ with
 
     ),
 
-    psat as (  -- this is by itself because the int_kippadb__standardized_test_unpivot view uses student number as local_student_id
+    -- this is by itself because the int_kippadb__standardized_test_unpivot view uses
+    -- student number as local_student_id
+    psat as (
         select
             local_student_id,
             test_type as scope,
