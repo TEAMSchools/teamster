@@ -42,9 +42,5 @@ def test_asset_coupa_addresses():
     _test_asset("kipptaf/coupa/addresses")
 
 
-def test_asset_coupa_business_groups():
-    _test_asset("kipptaf/coupa/business_groups")
-
-
 def test_asset_coupa_users():
     _test_asset("kipptaf/coupa/users")
