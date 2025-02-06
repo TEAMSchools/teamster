@@ -18,7 +18,10 @@ def build_coupa_asset(code_location, resource, schema):
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: AssetExecutionContext, coupa: CoupaResource):
-        records = coupa.get(resource=resource).json()
+        records = [
+            {k.replace("-", "_"): v for k, v in record.items()}
+            for record in coupa.get(resource=resource).json()
+        ]
 
         yield Output(value=(records, schema), metadata={"record_count": len(records)})
         yield check_avro_schema_valid(
