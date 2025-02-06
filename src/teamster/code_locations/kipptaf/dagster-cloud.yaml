@@ -662,6 +662,21 @@ locations:
                   secretKeyRef:
                     name: op-coupa-sftp
                     key: host
+              - name: COUPA_API_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: username
+              - name: COUPA_API_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: credential
+              - name: COUPA_API_INSTANCE_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: hostname
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:
