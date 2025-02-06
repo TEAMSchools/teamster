@@ -458,7 +458,9 @@ select
     o.strand_name as response_type_root_description,
     o.observation_score as percent_correct,
 
-    if(o.row_score = 1, true, false) as is_mastery,
+    case
+        when o.row_score = 1 then true when o.row_score = 0 then false
+    end as is_mastery,
 
     null as performance_band_label_number,
     null as performance_band_label,
