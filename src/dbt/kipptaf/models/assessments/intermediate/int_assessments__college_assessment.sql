@@ -146,6 +146,7 @@ with
             on e.academic_year = a.test_academic_year
             and e.salesforce_id = a.contact
         group by all
+
         union all
 
         select
