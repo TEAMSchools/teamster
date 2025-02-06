@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class UserBase(BaseModel):
@@ -74,18 +74,10 @@ class UserCustomFields(BaseModel):
     ccc_external_id: str | None = None
 
     school_name: str | ExtensionField | None = None
-    sage_intacct_department: str | ExtensionField | None = Field(
-        None, alias="sage-intacct-department"
-    )
-    sage_intacct_fund: str | ExtensionField | None = Field(
-        None, alias="sage-intacct-fund"
-    )
-    sage_intacct_location: str | ExtensionField | None = Field(
-        None, alias="sage-intacct-location"
-    )
-    sage_intacct_program: str | ExtensionField | None = Field(
-        None, alias="sage-intacct-program"
-    )
+    sage_intacct_department: str | ExtensionField | None = None
+    sage_intacct_fund: str | ExtensionField | None = None
+    sage_intacct_location: str | ExtensionField | None = None
+    sage_intacct_program: str | ExtensionField | None = None
 
 
 class Country(BaseModel):
@@ -140,9 +132,7 @@ class Address(BaseModel):
 
     purposes: list[str] | None = None
     content_groups: list[ContentGroup] | None = None
-    tax_registrations: list[TaxRegistration] | None = Field(
-        None, alias="tax-registrations"
-    )
+    tax_registrations: list[TaxRegistration] | None = None
 
 
 class Currency(BaseModel):
@@ -269,17 +259,6 @@ class AccountGroup(BaseModel):
     updated_by: UserBase | None = None
 
 
-class BusinessGroup(BaseModel):
-    id: int | None = None
-    name: str | None = None
-    description: str | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-    updated_by: UserBase | None = None
-    created_by: UserBase | None = None
-
-
 class ApprovalLimit(BaseModel):
     id: int | None = None
     name: str | None = None
@@ -326,6 +305,20 @@ class UserGroup(BaseModel):
     content_groups: list[ContentGroup] | None = None
 
 
+class LegalEntity(BaseModel):
+    id: int | None = None
+    name: str | None = None
+    abbreviation: str | None = None
+    active: bool | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+    currency: Currency | None = None
+    bill_to_address: Address | None = None
+    created_by: UserBase | None = None
+    updated_by: UserBase | None = None
+
+
 class User(UserBase):
     id: int | None = None
     login: str | None = None
@@ -359,16 +352,12 @@ class User(UserBase):
     authentication_method: str | None = None
     sso_identifier: str | None = None
     default_locale: str | None = None
-    business_group_security_type: int | None = Field(
-        None, alias="business-group-security-type"
-    )
+    business_group_security_type: int | None = None
     mention_name: str | None = None
     seniority_level: str | None = None
     business_function: str | None = None
     employee_payment_channel: str | None = None
-    allow_employee_payment_account_creation: bool | None = Field(
-        None, alias="allow-employee-payment-account-creation"
-    )
+    allow_employee_payment_account_creation: bool | None = None
     category_planner_user: bool | None = None
 
     custom_fields: UserCustomFields | None = None
@@ -376,42 +365,23 @@ class User(UserBase):
     default_account_type: AccountType | None = None
     default_address: Address | None = None
     default_currency: Currency | None = None
-    requisition_approval_limit: ApprovalLimit | None = Field(
-        None, alias="requisition-approval-limit"
-    )
-    expense_approval_limit: ApprovalLimit | None = Field(
-        None, alias="expense-approval-limit"
-    )
-    invoice_approval_limit: ApprovalLimit | None = Field(
-        None, alias="invoice-approval-limit"
-    )
-    contract_approval_limit: ApprovalLimit | None = Field(
-        None, alias="contract-approval-limit"
-    )
-    requisition_self_approval_limit: ApprovalLimit | None = Field(
-        None, alias="requisition-self-approval-limit"
-    )
-    expense_self_approval_limit: ApprovalLimit | None = Field(
-        None, alias="expense-self-approval-limit"
-    )
-    invoice_self_approval_limit: ApprovalLimit | None = Field(
-        None, alias="invoice-self-approval-limit"
-    )
-    contract_self_approval_limit: ApprovalLimit | None = Field(
-        None, alias="contract-self-approval-limit"
-    )
+    requisition_approval_limit: ApprovalLimit | None = None
+    expense_approval_limit: ApprovalLimit | None = None
+    invoice_approval_limit: ApprovalLimit | None = None
+    contract_approval_limit: ApprovalLimit | None = None
+    requisition_self_approval_limit: ApprovalLimit | None = None
+    expense_self_approval_limit: ApprovalLimit | None = None
+    invoice_self_approval_limit: ApprovalLimit | None = None
+    contract_self_approval_limit: ApprovalLimit | None = None
     created_by: UserBase | None = None
     updated_by: UserBase | None = None
+    legal_entity: LegalEntity | None = None
 
     working_warehouses: list[str] | None = None
-    inventory_organizations: list[str] | None = Field(
-        None, alias="inventory-organizations"
-    )
+    inventory_organizations: list[str] | None = None
 
     roles: list[Role] | None = None
-    expenses_delegated_to: list[UserBase] | None = Field(
-        None, alias="expenses-delegated-to"
-    )
+    expenses_delegated_to: list[UserBase] | None = None
     can_expense_for: list[UserBase] | None = None
     content_groups: list[ContentGroup] | None = None
     account_groups: list[AccountGroup] | None = None
