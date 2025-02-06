@@ -56,6 +56,10 @@ with
                 else 'NA'
             end as course_discipline,
 
+            concat(
+                format_date('%b', date), ' ', format_date('%g', date)
+            ) as administration_round,
+
             if(
                 extract(month from date) >= 7,
                 extract(year from date),
@@ -106,6 +110,10 @@ with
                 test_subject when 'EBRW' then 'ENG' when 'Math' then 'MATH' else 'NA'
             end as course_discipline,
 
+            concat(
+                format_date('%b', date), ' ', format_date('%g', date)
+            ) as administration_round,
+
             if(
                 extract(month from date) >= 7,
                 extract(year from date),
@@ -137,6 +145,10 @@ with
             a.scope,
             a.subject_area,
             a.score_type,
+            a.administration_round,
+
+            if(duplicate_check > 1, true, false) as duplicate,
+
             max(a.test_date) as test_date,
             max(a.scale_score) as scale_score,
 
@@ -161,6 +173,10 @@ with
             p.scope,
             p.subject_area,
             p.score_type,
+            p.administration_round,
+
+            if(duplicate_check > 1, true, false) as duplicate,
+
             max(p.test_date) as test_date,
             max(p.scale_score) as scale_score,
 
@@ -175,12 +191,8 @@ with
 select
     *,
 
-    -- im doing these 2 calcs here because of the dups im trying to sort workaround
+    -- im doing this here because of the dups im trying to sort workaround
     -- for now by the group by above
-    concat(
-        format_date('%b', test_date), ' ', format_date('%g', test_date)
-    ) as administration_round,
-
     row_number() over (
         partition by student_number, test_type, score_type order by scale_score desc
     ) as rn_highest,
