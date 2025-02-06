@@ -29,10 +29,6 @@ with
 
             'Official' as test_type,
 
-            concat(
-                format_date('%b', date), ' ', format_date('%g', date)
-            ) as administration_round,
-
             case
                 score_type
                 when 'sat_total_score'
@@ -100,10 +96,6 @@ with
 
             'Official' as test_type,
 
-            concat(
-                format_date('%b', date), ' ', format_date('%g', date)
-            ) as administration_round,
-
             test_subject as subject_area,
 
             case
@@ -141,7 +133,6 @@ with
             a.scope,
             a.subject_area,
             a.score_type,
-            a.administration_round,
             max(a.test_date) as test_date,
             max(a.scale_score) as scale_score,
 
@@ -165,7 +156,6 @@ with
             p.scope,
             p.subject_area,
             p.score_type,
-            p.administration_round,
             max(p.test_date) as test_date,
             max(p.scale_score) as scale_score,
 
@@ -179,9 +169,15 @@ with
 
 select
     *,
+
+    concat(
+        format_date('%b', test_date), ' ', format_date('%g', test_date)
+    ) as administration_round,
+
     -- im doing the rn_highest here because of the dups im trying to sort workaround
     -- for now by the group by above
     row_number() over (
         partition by student_number, test_type, score_type order by scale_score desc
     ) as rn_highest,
+
 from college_assesement_scores
