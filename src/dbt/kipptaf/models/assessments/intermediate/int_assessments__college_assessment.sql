@@ -20,14 +20,13 @@ with
 
     -- this is by itself because the int_kippadb__standardized_test_unpivot view uses
     -- contact id
-    act_sat as (
+    prep_work as (
         select
             contact,
             test_type as scope,
             score_type,
             date as test_date,
             score as scale_score,
-            rn_highest,
 
             'Official' as test_type,
 
@@ -56,26 +55,6 @@ with
                 else 'NA'
             end as course_discipline,
 
-            concat(
-                format_date('%b', date), ' ', format_date('%g', date)
-            ) as administration_round,
-
-            if(
-                extract(month from date) >= 7,
-                extract(year from date),
-                extract(year from date) - 1
-
-            ) as test_academic_year,
-            -- this window calc my way to track a bigger problem: we have poor
-            -- salesforce data entry that is causing abtou 600 or so dups on this
-            -- table. i would like to later discuss a way to check the unpivot table
-            -- for dups before it even makes it to the data model and align with casey
-            -- on what the process will be for her to remove these dups from
-            -- salesforce. for now,  i just need a way to track them to show walters
-            count(*) over (
-                partition by contact, score_type, extract(month from date)
-            ) as duplicate_check,
-
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
             score_type in (
@@ -88,19 +67,18 @@ with
                 'sat_math',
                 'sat_ebrw'
             )
+            and date is not null
 
-    ),
+        union all
 
-    -- this is by itself because the int_kippadb__standardized_test_unpivot view uses
-    -- student number as local_student_id
-    psat as (
+        -- this is by itself because the int_kippadb__standardized_test_unpivot view
+        -- uses student number as local_student_id
         select
-            local_student_id,
+            cast(local_student_id as string) as contact,
             test_type as scope,
             score_type,
             date as test_date,
             score as scale_score,
-            rn_highest,
 
             'Official' as test_type,
 
@@ -110,91 +88,99 @@ with
                 test_subject when 'EBRW' then 'ENG' when 'Math' then 'MATH' else 'NA'
             end as course_discipline,
 
-            concat(
-                format_date('%b', date), ' ', format_date('%g', date)
-            ) as administration_round,
-
-            if(
-                extract(month from date) >= 7,
-                extract(year from date),
-                extract(year from date) - 1
-
-            ) as test_academic_year,
-            -- the chances of dups happening here is very very very low, but you never
-            -- know, i guess
-            count(*) over (
-                partition by local_student_id, score_type, extract(month from date)
-            ) as duplicate_check,
-
         from {{ ref("int_collegeboard__psat_unpivot") }}
     ),
 
     -- the group bys below are a workaround for now for all of those dups due to bad
     -- or null dates. trying my best to keep this moving forward while i figure out
     -- someting with casey
-    college_assesement_scores as (
+    aggregates as (
         select
-            e._dbt_source_relation,
-            e.academic_year,
-            e.student_number,
-            e.salesforce_id,
-            e.grade_level,
+            contact,
+            course_discipline,
+            subject_area,
+            test_type,
+            scope,
+            score_type,
 
-            a.course_discipline,
-            a.test_type,
-            a.scope,
-            a.subject_area,
-            a.score_type,
-            a.administration_round,
+            max(test_date) as test_date,
+            max(scale_score) as scale_score,
 
-            if(a.duplicate_check > 1, true, false) as duplicate,
-
-            max(a.test_date) as test_date,
-            max(a.scale_score) as scale_score,
-
-        from id_table as e
-        inner join
-            act_sat as a
-            on e.academic_year = a.test_academic_year
-            and e.salesforce_id = a.contact
+        from prep_work as e
         group by all
+    ),
 
-        union all
-
+    clean_scores as (
         select
-            e._dbt_source_relation,
-            e.academic_year,
-            e.student_number,
-            e.salesforce_id,
-            e.grade_level,
+            *,
 
-            p.course_discipline,
-            p.test_type,
-            p.scope,
-            p.subject_area,
-            p.score_type,
-            p.administration_round,
+            -- im doing these calcs here because of the dups im trying to sort
+            -- workaround
+            -- for now by the group by above
+            concat(
+                format_date('%b', test_date), ' ', format_date('%g', test_date)
+            ) as administration_round,
 
-            if(p.duplicate_check > 1, true, false) as duplicate,
+            if(
+                extract(month from test_date) >= 7,
+                extract(year from test_date),
+                extract(year from test_date) - 1
 
-            max(p.test_date) as test_date,
-            max(p.scale_score) as scale_score,
+            ) as test_academic_year,
 
-        from id_table as e
-        inner join
-            psat as p
-            on e.academic_year = p.test_academic_year
-            and e.student_number = p.local_student_id
-        group by all
+            row_number() over (
+                partition by contact, test_type, score_type order by scale_score desc
+            ) as rn_highest,
+
+        from aggregates
     )
 
 select
-    *,
+    e._dbt_source_relation,
+    e.academic_year,
+    e.student_number,
+    e.salesforce_id,
+    e.grade_level,
 
-    -- im doing this here because of the dups im trying to sort workaround
-    -- for now by the group by above
-    row_number() over (
-        partition by student_number, test_type, score_type order by scale_score desc
-    ) as rn_highest,
+    a.course_discipline,
+    a.test_type,
+    a.scope,
+    a.subject_area,
+    a.score_type,
+    a.administration_round,
+    a.test_date,
+    a.scale_score,
+    a.rn_highest,
 
-from college_assesement_scores
+from id_table as e
+inner join
+    clean_scores as a
+    on e.academic_year = a.test_academic_year
+    and e.salesforce_id = a.contact
+    and a.scope in ('ACT', 'SAT')
+
+union all
+
+select
+    e._dbt_source_relation,
+    e.academic_year,
+    e.student_number,
+    e.salesforce_id,
+    e.grade_level,
+
+    a.course_discipline,
+    a.test_type,
+    a.scope,
+    a.subject_area,
+    a.score_type,
+    a.administration_round,
+    a.test_date,
+    a.scale_score,
+    a.rn_highest,
+
+from id_table as e
+inner join
+    clean_scores as a
+    on e.academic_year = a.test_academic_year
+    and e.student_number = cast(a.contact as numeric)
+    and a.scope not in ('ACT', 'SAT')
