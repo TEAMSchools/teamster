@@ -31,7 +31,8 @@ def build_powerschool_asset_sensor(
     code_location: str,
     execution_timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
-    minimum_interval_seconds=None,
+    minimum_interval_seconds: int | None = None,
+    max_runtime_seconds: int = (60 * 5),
 ):
     jobs = []
     keys_by_partitions_def = defaultdict(set[AssetKey])
@@ -362,7 +363,7 @@ def build_powerschool_asset_sensor(
                     job_name=job_name,
                     partition_key=partition_key,
                     asset_selection=[g["asset_key"] for g in group],
-                    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
+                    tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
                 )
             )
 
