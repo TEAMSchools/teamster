@@ -20,7 +20,7 @@ with
 
     -- this is by itself because the int_kippadb__standardized_test_unpivot view uses
     -- contact id
-    prep_work as (
+    test_scores as (
         select
             contact,
             test_type as scope,
@@ -55,6 +55,21 @@ with
                 else 'NA'
             end as course_discipline,
 
+            concat(
+                format_date('%b', date), ' ', format_date('%g', date)
+            ) as administration_round,
+
+            if(
+                extract(month from date) >= 7,
+                extract(year from date),
+                extract(year from date) - 1
+
+            ) as test_academic_year,
+
+            row_number() over (
+                partition by contact, test_type, score_type order by score desc
+            ) as rn_highest,
+
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
             score_type in (
@@ -88,50 +103,22 @@ with
                 test_subject when 'EBRW' then 'ENG' when 'Math' then 'MATH' else 'NA'
             end as course_discipline,
 
-        from {{ ref("int_collegeboard__psat_unpivot") }}
-    ),
-
-    -- the group bys below are a workaround for now for all of those dups due to bad
-    -- or null dates. trying my best to keep this moving forward while i figure out
-    -- someting with casey
-    aggregates as (
-        select
-            contact,
-            course_discipline,
-            subject_area,
-            test_type,
-            scope,
-            score_type,
-
-            max(test_date) as test_date,
-            max(scale_score) as scale_score,
-
-        from prep_work
-        group by all
-    ),
-
-    clean_scores as (
-        select
-            *,
-
-            -- im doing these calcs here because of the dups im trying to sort
-            -- workaround for now by the group by above
             concat(
-                format_date('%b', test_date), ' ', format_date('%g', test_date)
+                format_date('%b', date), ' ', format_date('%g', date)
             ) as administration_round,
 
             if(
-                extract(month from test_date) >= 7,
-                extract(year from test_date),
-                extract(year from test_date) - 1
+                extract(month from date) >= 7,
+                extract(year from date),
+                extract(year from date) - 1
 
             ) as test_academic_year,
 
             row_number() over (
-                partition by contact, test_type, score_type order by scale_score desc
+                partition by local_student_id, test_type, score_type order by score desc
             ) as rn_highest,
 
-        from aggregates
+        from {{ ref("int_collegeboard__psat_unpivot") }}
     )
 
 select
@@ -153,7 +140,7 @@ select
 
 from id_table as e
 inner join
-    clean_scores as a
+    test_scores as a
     on e.academic_year = a.test_academic_year
     and e.salesforce_id = a.contact
     and a.scope in ('ACT', 'SAT')
@@ -179,7 +166,7 @@ select
 
 from id_table as e
 inner join
-    clean_scores as a
+    test_scores as a
     on e.academic_year = a.test_academic_year
     and e.student_number = cast(a.contact as numeric)
     and a.scope not in ('ACT', 'SAT')
