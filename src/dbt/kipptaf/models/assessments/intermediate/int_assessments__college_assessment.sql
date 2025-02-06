@@ -115,8 +115,7 @@ with
             *,
 
             -- im doing these calcs here because of the dups im trying to sort
-            -- workaround
-            -- for now by the group by above
+            -- workaround for now by the group by above
             concat(
                 format_date('%b', test_date), ' ', format_date('%g', test_date)
             ) as administration_round,
