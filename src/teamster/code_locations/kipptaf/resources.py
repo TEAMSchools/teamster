@@ -9,6 +9,7 @@ from teamster.libraries.adp.workforce_manager.resources import (
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 from teamster.libraries.amplify.dibels.resources import DibelsDataSystemResource
 from teamster.libraries.amplify.mclass.resources import MClassResource
+from teamster.libraries.coupa.resources import CoupaResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
@@ -45,6 +46,13 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
     client_id=EnvVar("AIRBYTE_CLIENT_ID"), client_secret=EnvVar("AIRBYTE_CLIENT_SECRET")
+)
+
+COUPA_RESOURCE = CoupaResource(
+    instance_url=EnvVar("COUPA_API_INSTANCE_URL"),
+    client_id=EnvVar("COUPA_API_CLIENT_ID"),
+    client_secret=EnvVar("COUPA_API_CLIENT_SECRET"),
+    scope=["core.common.read", "core.user.read"],
 )
 
 DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
