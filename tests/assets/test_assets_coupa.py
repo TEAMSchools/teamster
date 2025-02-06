@@ -27,7 +27,7 @@ def _test_asset(selection):
     )
 
     records = _check.inst(
-        event_specific_data.materialization.metadata["records"].value, int
+        event_specific_data.materialization.metadata["record_count"].value, int
     )
     assert records > 0
 
