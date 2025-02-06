@@ -1,6 +1,6 @@
 version: 0.1
 cli:
-  version: 1.22.9
+  version: 1.22.10
 plugins:
   sources:
     - id: trunk
@@ -21,11 +21,11 @@ lint:
     - ruff@0.9.4
     - shellcheck@0.10.0
     - shfmt@3.6.0
-    - sqlfluff@3.3.0
+    - sqlfluff@3.3.1
     - sqlfmt@0.26.0
     - svgo@3.3.2
     - taplo@0.9.3
-    - trufflehog@3.88.4
+    - trufflehog@3.88.5
     - yamllint@1.35.1
   disabled:
     - bandit
