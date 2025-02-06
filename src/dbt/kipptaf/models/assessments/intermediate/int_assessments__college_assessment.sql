@@ -106,7 +106,7 @@ with
             max(test_date) as test_date,
             max(scale_score) as scale_score,
 
-        from prep_work as e
+        from prep_work
         group by all
     ),
 
