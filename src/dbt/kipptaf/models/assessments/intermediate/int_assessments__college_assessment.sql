@@ -170,12 +170,12 @@ with
 select
     *,
 
+    -- im doing these 2 calcs here because of the dups im trying to sort workaround
+    -- for now by the group by above
     concat(
         format_date('%b', test_date), ' ', format_date('%g', test_date)
     ) as administration_round,
 
-    -- im doing the rn_highest here because of the dups im trying to sort workaround
-    -- for now by the group by above
     row_number() over (
         partition by student_number, test_type, score_type order by scale_score desc
     ) as rn_highest,
