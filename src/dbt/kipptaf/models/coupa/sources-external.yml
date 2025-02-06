@@ -20,19 +20,6 @@ sources:
               - kipptaf
               - coupa
               - addresses
-      - name: src_coupa__business_groups
-        external:
-          location: "{{ var('cloud_storage_uri_base') }}/coupa/business_groups/*"
-          options:
-            format: AVRO
-            enable_logical_types: true
-        meta:
-          dagster:
-            group: coupa
-            asset_key:
-              - kipptaf
-              - coupa
-              - business_groups
       - name: src_coupa__users
         external:
           location: "{{ var('cloud_storage_uri_base') }}/coupa/users/*"
