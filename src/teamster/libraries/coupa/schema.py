@@ -1,6 +1,18 @@
 from pydantic import BaseModel, Field
 
 
+class UserBase(BaseModel):
+    id: int | None = None
+    login: str | None = None
+    email: str | None = None
+    firstname: str | None = None
+    lastname: str | None = None
+    fullname: str | None = None
+    employee_number: str | None = Field(None, alias="employee-number")
+    salesforce_id: str | None = Field(None, alias="salesforce-id")
+    avatar_thumb_url: str | None = Field(None, alias="avatar-thumb-url")
+
+
 class ContentGroup(BaseModel):
     id: int | None = None
     name: str | None = None
@@ -8,8 +20,8 @@ class ContentGroup(BaseModel):
     created_at: str | None = Field(None, alias="created-at")
     updated_at: str | None = Field(None, alias="updated-at")
 
-    created_by: "User | None" = Field(None, alias="created-by")
-    updated_by: "User | None" = Field(None, alias="updated-by")
+    created_by: UserBase | None = Field(None, alias="created-by")
+    updated_by: UserBase | None = Field(None, alias="updated-by")
 
 
 class Lookup(BaseModel):
@@ -91,20 +103,14 @@ class TaxRegistration(BaseModel):
     owner_type: str | None = Field(None, alias="owner-type")
 
     country: Country | None = None
-    created_at: "User | None" = Field(None, alias="created-at")
-    updated_at: "User | None" = Field(None, alias="updated-at")
+    created_at: UserBase | None = Field(None, alias="created-at")
+    updated_at: UserBase | None = Field(None, alias="updated-at")
 
 
 class VatCountry(BaseModel):
     id: int | None = None
     code: str | None = None
     name: str | None = None
-
-
-class Currency(BaseModel):
-    id: int | None = None
-    code: str | None = None
-    decimals: int | None = None
 
 
 class Address(BaseModel):
@@ -128,8 +134,8 @@ class Address(BaseModel):
     local_tax_number: str | None = Field(None, alias="local-tax-number")
 
     country: Country | None = None
-    created_by: "User | None" = Field(None, alias="created-by")
-    updated_by: "User | None" = Field(None, alias="updated-by")
+    created_by: UserBase | None = Field(None, alias="created-by")
+    updated_by: UserBase | None = Field(None, alias="updated-by")
     vat_country: VatCountry | None = Field(None, alias="vat-country")
 
     purposes: list[str] | None = None
@@ -137,6 +143,12 @@ class Address(BaseModel):
     tax_registrations: list[TaxRegistration] | None = Field(
         None, alias="tax-registrations"
     )
+
+
+class Currency(BaseModel):
+    id: int | None = None
+    code: str | None = None
+    decimals: int | None = None
 
 
 class AccountType(BaseModel):
@@ -150,11 +162,11 @@ class AccountType(BaseModel):
 
     currency: Currency | None = None
     primary_address: Address | None = Field(None, alias="primary-address")
-    created_by: "User | None" = Field(None, alias="created-by")
-    updated_by: "User | None" = Field(None, alias="updated-by")
+    created_by: UserBase | None = Field(None, alias="created-by")
+    updated_by: UserBase | None = Field(None, alias="updated-by")
 
 
-class DefaultAccount(BaseModel):
+class Account(BaseModel):
     id: int | None = None
     name: str | None = None
     code: str | None = None
@@ -182,6 +194,7 @@ class DefaultAccount(BaseModel):
     segment_18: str | None = Field(None, alias="segment-18")
     segment_19: str | None = Field(None, alias="segment-19")
     segment_20: str | None = Field(None, alias="segment-20")
+
     account_type: AccountType | None = Field(None, alias="account-type")
 
 
@@ -252,8 +265,8 @@ class AccountGroup(BaseModel):
     segment_20_val: str | None = Field(None, alias="segment-20-val")
 
     account_type: AccountType | None = Field(None, alias="account-type")
-    created_by: "User | None" = Field(None, alias="created-by")
-    updated_by: "User | None" = Field(None, alias="updated-by")
+    created_by: UserBase | None = Field(None, alias="created-by")
+    updated_by: UserBase | None = Field(None, alias="updated-by")
 
 
 class BusinessGroup(BaseModel):
@@ -263,8 +276,8 @@ class BusinessGroup(BaseModel):
     created_at: str | None = Field(None, alias="created-at")
     updated_at: str | None = Field(None, alias="updated-at")
 
-    updated_by: "User | None" = Field(None, alias="updated-by")
-    created_by: "User | None" = Field(None, alias="created-by")
+    updated_by: UserBase | None = Field(None, alias="updated-by")
+    created_by: UserBase | None = Field(None, alias="created-by")
 
 
 class ApprovalLimit(BaseModel):
@@ -276,8 +289,8 @@ class ApprovalLimit(BaseModel):
     updated_at: str | None = Field(None, alias="updated-at")
 
     currency: Currency | None = None
-    created_by: "User | None" = Field(None, alias="created-by")
-    updated_by: "User | None" = Field(None, alias="updated-by")
+    created_by: UserBase | None = Field(None, alias="created-by")
+    updated_by: UserBase | None = Field(None, alias="updated-by")
 
 
 class Role(BaseModel):
@@ -289,8 +302,8 @@ class Role(BaseModel):
     updated_at: str | None = Field(None, alias="updated-at")
     system_role: bool | None = Field(None, alias="system-role")
 
-    updated_by: "User | None" = Field(None, alias="updated-by")
-    created_by: "User | None" = Field(None, alias="created-by")
+    updated_by: UserBase | None = Field(None, alias="updated-by")
+    created_by: UserBase | None = Field(None, alias="created-by")
 
 
 class UserGroup(BaseModel):
@@ -306,21 +319,24 @@ class UserGroup(BaseModel):
     mention_name: str | None = Field(None, alias="mention-name")
     avatar_thumb_url: str | None = Field(None, alias="avatar-thumb-url")
 
-    updated_by: "User | None" = Field(None, alias="updated-by")
-    created_by: "User | None" = Field(None, alias="created-by")
+    updated_by: UserBase | None = Field(None, alias="updated-by")
+    created_by: UserBase | None = Field(None, alias="created-by")
 
-    users: list["User"] | None = None
+    users: list[UserBase] | None = None
     content_groups: list[ContentGroup] | None = Field(None, alias="content-groups")
 
 
-class User(BaseModel):
+class User(UserBase):
     id: int | None = None
     login: str | None = None
     email: str | None = None
     firstname: str | None = None
-    middlename: str | None = None
     lastname: str | None = None
     fullname: str | None = None
+    employee_number: str | None = Field(None, alias="employee-number")
+    salesforce_id: str | None = Field(None, alias="salesforce-id")
+    avatar_thumb_url: str | None = Field(None, alias="avatar-thumb-url")
+    middlename: str | None = None
     active: bool | None = None
     created_at: str | None = Field(None, alias="created-at")
     updated_at: str | None = Field(None, alias="updated-at")
@@ -338,9 +354,7 @@ class User(BaseModel):
     risk_assess_user: bool | None = Field(None, alias="risk-assess-user")
     travel_user: bool | None = Field(None, alias="travel-user")
     treasury_user: bool | None = Field(None, alias="treasury-user")
-    employee_number: str | None = Field(None, alias="employee-number")
     api_user: bool | None = Field(None, alias="api-user")
-    salesforce_id: str | None = Field(None, alias="salesforce-id")
     account_security_type: int | None = Field(None, alias="account-security-type")
     authentication_method: str | None = Field(None, alias="authentication-method")
     sso_identifier: str | None = Field(None, alias="sso-identifier")
@@ -348,7 +362,6 @@ class User(BaseModel):
     business_group_security_type: int | None = Field(
         None, alias="business-group-security-type"
     )
-    avatar_thumb_url: str | None = Field(None, alias="avatar-thumb-url")
     mention_name: str | None = Field(None, alias="mention-name")
     seniority_level: str | None = Field(None, alias="seniority-level")
     business_function: str | None = Field(None, alias="business-function")
@@ -357,10 +370,11 @@ class User(BaseModel):
         None, alias="allow-employee-payment-account-creation"
     )
     category_planner_user: bool | None = Field(None, alias="category-planner-user")
-    custom_fields: UserCustomFields | None = Field(None, alias="custom-fields")
 
-    default_account: DefaultAccount | None = Field(None, alias="default-account")
+    custom_fields: UserCustomFields | None = Field(None, alias="custom-fields")
+    default_account: Account | None = Field(None, alias="default-account")
     default_account_type: AccountType | None = Field(None, alias="default-account-type")
+    default_address: Address | None = Field(None, alias="default-address")
     default_currency: Currency | None = Field(None, alias="default-currency")
     requisition_approval_limit: ApprovalLimit | None = Field(
         None, alias="requisition-approval-limit"
@@ -386,19 +400,19 @@ class User(BaseModel):
     contract_self_approval_limit: ApprovalLimit | None = Field(
         None, alias="contract-self-approval-limit"
     )
-    created_by: "User | None" = Field(None, alias="created-by")
-    updated_by: "User | None" = Field(None, alias="updated-by")
-    default_address: Address | None = Field(None, alias="default-address")
+    created_by: UserBase | None = Field(None, alias="created-by")
+    updated_by: UserBase | None = Field(None, alias="updated-by")
 
     working_warehouses: list[str] | None = Field(None, alias="working-warehouses")
     inventory_organizations: list[str] | None = Field(
         None, alias="inventory-organizations"
     )
+
     roles: list[Role] | None = None
-    expenses_delegated_to: list["User"] | None = Field(
+    expenses_delegated_to: list[UserBase] | None = Field(
         None, alias="expenses-delegated-to"
     )
-    can_expense_for: list["User"] | None = Field(None, alias="can-expense-for")
+    can_expense_for: list[UserBase] | None = Field(None, alias="can-expense-for")
     content_groups: list[ContentGroup] | None = Field(None, alias="content-groups")
     account_groups: list[AccountGroup] | None = Field(None, alias="account-groups")
     approval_groups: list[UserGroup] | None = Field(None, alias="approval-groups")
