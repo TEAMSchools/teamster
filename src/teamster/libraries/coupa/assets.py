@@ -20,7 +20,7 @@ def build_coupa_asset(code_location, resource, schema):
     def _asset(context: AssetExecutionContext, coupa: CoupaResource):
         records = [
             {k.replace("-", "_"): v for k, v in record.items()}
-            for record in coupa.get(resource=resource).json()
+            for record in coupa.list(resource=resource)
         ]
 
         yield Output(value=(records, schema), metadata={"record_count": len(records)})

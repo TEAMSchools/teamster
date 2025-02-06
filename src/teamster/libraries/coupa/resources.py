@@ -41,9 +41,10 @@ class CoupaResource(ConfigurableResource):
     def _request(
         self, method: str, resource: str, id: int | None, **kwargs
     ) -> Response:
-        response = self._session.request(
-            method=method, url=self._get_url(resource=resource, id=id), **kwargs
-        )
+        url = self._get_url(resource=resource, id=id)
+
+        self._log.debug(msg=f"{method} {url}\n{kwargs}")
+        response = self._session.request(method=method, url=url, **kwargs)
 
         try:
             response.raise_for_status()
@@ -60,3 +61,18 @@ class CoupaResource(ConfigurableResource):
 
     def post(self, resource: str, **kwargs):
         return self._request(method="POST", resource=resource, **kwargs)
+
+    def list(self, resource, **kwargs):
+        all_data = []
+        offset = 0
+
+        while True:
+            kwargs.update({"params": {"offset": offset}})
+
+            data = self.get(resource=resource, **kwargs).json()
+
+            if data:
+                all_data.extend(data)
+                offset += 50
+            else:
+                return all_data
