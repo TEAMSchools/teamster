@@ -147,7 +147,7 @@ with
             a.score_type,
             a.administration_round,
 
-            if(duplicate_check > 1, true, false) as duplicate,
+            if(a.duplicate_check > 1, true, false) as duplicate,
 
             max(a.test_date) as test_date,
             max(a.scale_score) as scale_score,
@@ -175,7 +175,7 @@ with
             p.score_type,
             p.administration_round,
 
-            if(duplicate_check > 1, true, false) as duplicate,
+            if(p.duplicate_check > 1, true, false) as duplicate,
 
             max(p.test_date) as test_date,
             max(p.scale_score) as scale_score,
