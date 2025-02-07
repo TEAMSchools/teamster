@@ -10,7 +10,7 @@ with
             application_status,
             reason_for_rejection,
             phone_interview_score,
-            resume_score,
+            coalesce(resume_score,star_score) as resume_score,
             status_type,
             date_val,
         from
