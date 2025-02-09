@@ -2,8 +2,10 @@ version: 2
 
 sources:
   - name: coupa
-    tags:
-      - stage_external_sources
+    schema: |
+      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kipptaf_coupa
+      {%- else -%}kipptaf_coupa
+      {%- endif %}
     tables:
       - name: src_coupa__address_name_crosswalk
         external:

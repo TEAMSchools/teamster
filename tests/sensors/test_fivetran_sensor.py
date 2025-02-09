@@ -30,10 +30,8 @@ def test_fivetran_connector_sync_status_sensor_cursor():
         "connectors": {
             "sameness_cunning": 1723450048.417,
             "bellows_curliness": 1723449958.987,
-            "regency_carrying": 1723457999.419,
             "genuine_describing": 1723474975.763,
             "jinx_credulous": 1723475700.144,
-            "muskiness_cumulative": 1723457833.448,
         },
         "assets": {
             "kipptaf__adp_workforce_now__business_communication": 1723449993.769,
@@ -64,9 +62,6 @@ def test_fivetran_connector_sync_status_sensor_cursor():
             "kipptaf__coupa__user": 1723449856.883,
             "kipptaf__coupa__user_business_group_mapping": 1723449880.422,
             "kipptaf__coupa__user_role_mapping": 1723449869.48,
-            "kipptaf__facebook_pages__daily_page_metrics_total": 1723457976.672,
-            "kipptaf__facebook_pages__lifetime_post_metrics_total": 1723457972.712,
-            "kipptaf__facebook_pages__post_history": 1723457975.393,
             "kipptaf__illuminate_xmin__dna_assessments__agg_student_responses": 1722978109.663,
             "kipptaf__illuminate_xmin__dna_assessments__agg_student_responses_group": 1722949326.966,
             "kipptaf__illuminate_xmin__dna_assessments__agg_student_responses_standard": 1722978106.489,
@@ -121,10 +116,6 @@ def test_fivetran_connector_sync_status_sensor_cursor():
             "kipptaf__illuminate__dna_repositories__repository_441": 1718118897.216,
             "kipptaf__illuminate__dna_repositories__repository_442": 1717776872.146,
             "kipptaf__illuminate__dna_repositories__repository_443": 1717942530.139,
-            "kipptaf__instagram_business__media_history": 1723457824.372,
-            "kipptaf__instagram_business__media_insights": 1723457827.138,
-            "kipptaf__instagram_business__user_history": 1723457822.568,
-            "kipptaf__instagram_business__user_insights": 1723457822.496,
         },
     }
 

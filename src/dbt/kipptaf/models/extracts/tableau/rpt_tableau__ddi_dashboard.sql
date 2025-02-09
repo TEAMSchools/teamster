@@ -286,7 +286,7 @@ select
     coalesce(ip.is_pass_4_lessons_int_math, 0) as is_passed_iready_4plus_math_int,
 from identifiers as co
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on co.student_number = sf.student_number
     and co.academic_year = sf.academic_year
     and co.subject_area = sf.illuminate_subject_area
@@ -390,7 +390,7 @@ select
     null as is_passed_iready_4plus_math_int,
 from identifiers as co
 left join
-    {{ ref("int_reporting__student_filters") }} as sf
+    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on co.student_number = sf.student_number
     and co.academic_year = sf.academic_year
     and co.course_credittype = sf.assessment_dashboard_join
@@ -458,7 +458,9 @@ select
     o.strand_name as response_type_root_description,
     o.observation_score as percent_correct,
 
-    if(o.row_score = 1, true, false) as is_mastery,
+    case
+        when o.row_score = 1 then true when o.row_score = 0 then false
+    end as is_mastery,
 
     null as performance_band_label_number,
     null as performance_band_label,

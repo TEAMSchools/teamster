@@ -7,6 +7,15 @@
             unique_key="work_assignment_id",
             strategy="check",
             check_cols="all",
+            meta={
+                "dagster": {
+                    "asset_key": [
+                        "kipptaf",
+                        "people",
+                        "snapshot_people__staff_roster",
+                    ]
+                }
+            },
         )
     }}
 

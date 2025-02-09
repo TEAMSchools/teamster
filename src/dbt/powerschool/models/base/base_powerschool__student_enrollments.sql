@@ -40,6 +40,7 @@ with
             s.ethnicity_code as ethnicity,
 
             terms.yearid,
+            terms.academic_year,
 
             x1.exit_code as exit_code_kf,
             x2.exit_code as exit_code_ts,
@@ -103,6 +104,7 @@ with
             s.ethnicity_code as ethnicity,
 
             terms.yearid,
+            terms.academic_year,
 
             x1.exit_code as exit_code_kf,
             x2.exit_code as exit_code_ts,
@@ -170,6 +172,7 @@ with
             s.ethnicity_code as ethnicity,
 
             terms.yearid,
+            terms.academic_year,
 
             null as exit_code_kf,
             null as exit_code_ts,
@@ -187,8 +190,7 @@ with
         select
             *,
 
-            yearid + 1990 as academic_year,
-            yearid + 2003 + (-1 * grade_level) as cohort_primary,
+            (academic_year + 13) + (-1 * grade_level) as cohort_primary,
 
             if(
                 lunchstatus in unnest({{ invalid_lunch_status }}), null, lunchstatus

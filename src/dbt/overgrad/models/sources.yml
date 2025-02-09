@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: overgrad
     schema: "{{ var('overgrad_schema', env_var('DBT_DEV_OVERGRAD_SCHEMA', 'overgrad')) }}"
-    tags:
-      - stage_external_sources
     tables:
       - name: src_overgrad__admissions
         external:
