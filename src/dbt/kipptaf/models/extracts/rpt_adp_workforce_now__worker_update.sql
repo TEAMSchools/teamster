@@ -9,10 +9,9 @@ select
     wf_mgr_trigger as adp__wf_mgr_trigger,
 from {{ ref("int_people__staff_roster_history") }}
 where
-    is_current_record
+    (is_current_record or is_prestart)
     and primary_indicator
     and mail is not null
-    and worker_hire_date_recent <= current_date('{{ var("local_timezone") }}')
     and (
         surrogate_key != coalesce(wf_mgr_trigger, '')
         or employee_number != coalesce(custom_field__employee_number, -1)

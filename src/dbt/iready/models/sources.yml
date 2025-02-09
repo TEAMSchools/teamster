@@ -4,8 +4,6 @@ sources:
   - name: iready
     schema: "{{ var('iready_schema', env_var('DBT_DEV_IREADY_SCHEMA', 'iready')) }}"
     database: "{{ var('iready_database', target.database) }}"
-    tags:
-      - stage_external_sources
     tables:
       - name: src_iready__diagnostic_results
         meta:

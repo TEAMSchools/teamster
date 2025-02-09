@@ -53,9 +53,15 @@ models:
           +materialized: table
       workforce_manager:
         +schema: adp_workforce_manager
+        +meta:
+          dagster:
+            group: adp_workforce_manager
         +materialized: table
       workforce_now:
         +schema: adp_workforce_now
+        +meta:
+          dagster:
+            group: adp_workforce_now
         staging:
           +materialized: table
         workers:
@@ -73,8 +79,19 @@ models:
       +schema: assessments
       staging:
         +materialized: table
+    collegeboard:
+      +schema: collegeboard
+      staging:
+        +materialized: table
+      psat:
+        staging:
+          +materialized: table
     coupa:
       +schema: coupa
+      staging:
+        +materialized: table
+    crdc:
+      +schema: crdc
       staging:
         +materialized: table
     dayforce:
@@ -85,21 +102,14 @@ models:
       +schema: deanslist
     edplan:
       +schema: edplan
+    egencia:
+      +schema: egencia
+      staging:
+        +materialized: table
     extracts:
       +schema: extracts
-      +materialized: table
-      clever:
-        +materialized: view
-      deanslist:
-        +materialized: view
-      google:
-        sheets:
-          +materialized: view
-      powerschool:
-        +materialized: view
       tableau:
         +schema: tableau
-        +materialized: view
     facebook:
       +enabled: false
     finance:
@@ -111,14 +121,23 @@ models:
     google:
       forms:
         +schema: google_forms
+        +meta:
+          dagster:
+            group: google_forms
         staging:
           +materialized: table
       directory:
         +schema: google_directory
+        +meta:
+          dagster:
+            group: google_directory
         staging:
           +materialized: table
       appsheet:
         +schema: google_appsheet
+        +meta:
+          dagster:
+            group: google_appsheet
     illuminate:
       +schema: illuminate
       +materialized: table

@@ -93,6 +93,8 @@ select
                 "filler",
                 "staffmemberidentifier",
                 "testadministrator",
+                "englishlearnerel",
+                "multilinguallearnerml",
             ],
         )
     }},
@@ -105,6 +107,8 @@ select
     cast(left(assessmentyear, 4) as int) as academic_year,
 
     cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
+
+    coalesce(multilinguallearnerml, englishlearnerel) as englishlearnerel,
 
     if(
         `subject` in ('English Language Arts', 'English Language Arts/Literacy'),

@@ -1,12 +1,6 @@
 with
-    psat10 as (
-        select
-            local_student_id,
-            academic_year,
-            test_date,
-            score,
-
-            concat('psat10_', score_type) as score_type,
+    psat as (
+        select local_student_id, academic_year, test_name, test_date, score, score_type,
         from
             {{ ref("stg_illuminate__psat") }} unpivot (
                 score for score_type in (
@@ -30,9 +24,32 @@ with
     )
 
 select
-    *,
+    * except (score_type),
+
+    concat('psat_', score_type) as score_type,
+
+    case
+        when score_type in ('eb_read_write_section_score', 'reading_test_score')
+        then 'ELA'
+        when score_type in ('math_test_score', 'math_section_score')
+        then 'Math'
+    end as discipline,
+
+    case
+        score_type
+        when 'total_score'
+        then 'Composite'
+        when 'reading_test_score'
+        then 'Reading'
+        when 'math_test_score'
+        then 'Math Test'
+        when 'math_section_score'
+        then 'Math'
+        when 'eb_read_write_section_score'
+        then 'Writing and Language Test'
+    end as subject_area,
 
     row_number() over (
-        partition by local_student_id, score_type order by score desc
+        partition by local_student_id, test_name, score_type order by score desc
     ) as rn_highest,
-from psat10
+from psat

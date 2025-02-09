@@ -53,8 +53,10 @@ with
             and sr.assignment_status not in ('Terminated', 'Deceased')
             and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
             and (
-                sr.home_department_name in ('Data', 'Teaching and Learning')
-                or sr.job_title in ('Executive Director', 'Managing Director')
+                sr.home_department_name
+                in ('Data', 'Teaching and Learning', 'Executive')
+                or sr.job_title
+                in ('Executive Director', 'Managing Director', 'Deputy Chief')
             )
 
         union all

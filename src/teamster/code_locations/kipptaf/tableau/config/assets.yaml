@@ -9,6 +9,7 @@ assets:
     deps:
       - [kipptaf, tableau, rpt_tableau__ap_assessment_dashboard]
       - [kipptaf, tableau, rpt_tableau__college_assessment_dashboard]
+      - [kipptaf, tableau, rpt_tableau__college_assessment_dashboard_historic]
     metadata:
       id: 286156c4-2f9e-4983-926b-63c9b11f44f4
       cron_schedule: 0 6 * * *
@@ -54,15 +55,6 @@ assets:
       cron_schedule:
         - 0 4 * * *
         - 0 17 * * *
-  - name: "Marketing Data: Social Media"
-    deps:
-      - [kipptaf, tableau, rpt_tableau__marketing_facebook_page]
-      - [kipptaf, tableau, rpt_tableau__marketing_facebook_post]
-      - [kipptaf, tableau, rpt_tableau__marketing_instagram_page]
-      - [kipptaf, tableau, rpt_tableau__marketing_instagram_post]
-    metadata:
-      id: f6aa0647-55a0-425b-b991-160965f6f2ad
-      cron_schedule: 0 7 * * *
   - name: NJ Certification Dashboard (Schools View)
     deps:
       - [kipptaf, tableau, rpt_tableau__staff_roster]
@@ -240,15 +232,25 @@ assets:
       - [kipptaf, tableau, rpt_tableau__smartrecruiters]
     metadata:
       id: 970826ab-8d1c-4468-9b84-62f6432a9642
-      cron_schedule:
-        - 0 7 * * *
+      cron_schedule: 0 7 * * *
+  - name: Survey Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__survey_responses]
+      - [kipptaf, tableau, rpt_tableau__survey_completion]
+    metadata:
+      id: b11542a2-6780-4feb-a1dd-534ffe724faf
+      cron_schedule: 0 * * * *
   # - name: Master Renewal Tracking Tool
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__staff_performance_compliance_history]
   #   metadata:
   #     id: 1b363885-e6b2-4396-afff-ece0f8c6c77a
-  # - name: Survey Dashboard
+  # - name: "Marketing Data: Social Media"
   #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__survey_responses]
+  #     - [kipptaf, tableau, rpt_tableau__marketing_facebook_page]
+  #     - [kipptaf, tableau, rpt_tableau__marketing_facebook_post]
+  #     - [kipptaf, tableau, rpt_tableau__marketing_instagram_page]
+  #     - [kipptaf, tableau, rpt_tableau__marketing_instagram_post]
   #   metadata:
-  #     id: b11542a2-6780-4feb-a1dd-534ffe724faf
+  #     id: f6aa0647-55a0-425b-b991-160965f6f2ad
+  #     cron_schedule: 0 7 * * *

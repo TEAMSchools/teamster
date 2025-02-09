@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: tableau
     schema: kipptaf_tableau
-    tags:
-      - stage_external_sources
     tables:
       - name: src_tableau__workbook
         config:

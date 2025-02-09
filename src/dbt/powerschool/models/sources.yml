@@ -4,8 +4,6 @@ sources:
   - name: powerschool
     schema: "{{ var('powerschool_schema', env_var('DBT_DEV_POWERSCHOOL_SCHEMA', 'powerschool')) }}"
     database: "{{ var('powerschool_database', target.database) }}"
-    tags:
-      - stage_external_sources
     tables:
       - name: src_powerschool__assignmentscore
         meta:

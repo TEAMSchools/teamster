@@ -56,7 +56,7 @@ with
             sec.courses_course_name as course_name,
             sec.teacher_lastfirst as teacher_name,
 
-            f.tutoring_nj,
+            f.is_tutoring as tutoring_nj,
             f.nj_student_tier,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
         left join
@@ -64,7 +64,7 @@ with
             on enr.cc_sectionid = sec.sections_id
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="sec") }}
         left join
-            {{ ref("int_reporting__student_filters") }} as f
+            {{ ref("int_extracts__student_enrollments_subjects") }} as f
             on enr.cc_studentid = f.studentid
             and enr.cc_academic_year = f.academic_year
             and sec.courses_credittype = f.powerschool_credittype

@@ -3,8 +3,6 @@ version: 2
 sources:
   - name: deanslist
     schema: kipptaf_deanslist
-    tags:
-      - stage_external_sources
     tables:
       - name: src_deanslist__reconcile_attendance
         external:
