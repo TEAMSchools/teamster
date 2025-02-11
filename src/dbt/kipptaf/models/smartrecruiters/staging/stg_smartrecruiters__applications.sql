@@ -11,6 +11,7 @@ with
             application_field_phone_interview_score as phone_interview_score,
             application_field_resume_score as resume_score,
             average_rating as star_score,
+            screening_question_answer_knjm_application_subject_preference as subject_preference,
             application_reason_for_rejection as reason_for_rejection,
             application_reason_for_withdrawal as reason_for_withdrawal,
 
