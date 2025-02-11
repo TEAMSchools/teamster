@@ -1,6 +1,6 @@
 version: 0.1
 cli:
-  version: 1.22.9
+  version: 1.22.10
 plugins:
   sources:
     - id: trunk
@@ -16,16 +16,16 @@ lint:
     - markdownlint@0.44.0
     - osv-scanner@1.9.2
     - oxipng@9.1.3
-    - prettier@3.4.2
+    - prettier@3.5.0
     - pyright@1.1.393
-    - ruff@0.9.4
+    - ruff@0.9.6
     - shellcheck@0.10.0
     - shfmt@3.6.0
-    - sqlfluff@3.3.0
+    - sqlfluff@3.3.1
     - sqlfmt@0.26.0
     - svgo@3.3.2
     - taplo@0.9.3
-    - trufflehog@3.88.4
+    - trufflehog@3.88.6
     - yamllint@1.35.1
   disabled:
     - bandit

@@ -464,8 +464,6 @@ select
     c.contact_opt_out_national_contact,
     c.contact_opt_out_regional_contact,
 
-    apps.honors_special_program_name,
-
     coalesce(ar.max_ecc_accepted, 0) as max_ecc_accepted,
 
     case
