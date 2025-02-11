@@ -41,6 +41,7 @@ class Application(BaseModel):
     job_city: str | None = None
     job_title: str | None = None
     recruiters: str | None = None
+    screening_question_answer_knjm_application_subject_preference: str | None = None
     source_subtype: str | None = None
     source_type: str | None = None
     source: str | None = None
