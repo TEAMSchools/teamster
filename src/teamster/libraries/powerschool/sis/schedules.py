@@ -26,6 +26,7 @@ def build_powerschool_sis_asset_schedule(
     execution_timezone: ZoneInfo,
     cron_schedule: str,
     asset_selection: list[AssetsDefinition],
+    max_runtime_seconds: int = (60 * 10),
 ):
     asset_keys = [a.key for a in asset_selection]
 
@@ -323,7 +324,7 @@ def build_powerschool_sis_asset_schedule(
                 run_key=f"{partitions_def}_{partition_key}",
                 asset_selection=[g["key"] for g in group],
                 partition_key=partition_key,
-                tags={MAX_RUNTIME_SECONDS_TAG: (60 * 10)},
+                tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
             )
 
     return _schedule

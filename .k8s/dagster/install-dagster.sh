@@ -13,4 +13,5 @@ helm show values dagster-cloud/dagster-cloud-agent >.k8s/dagster/values.yaml
 helm upgrade \
   --install user-cloud dagster-cloud/dagster-cloud-agent \
   --namespace dagster-cloud \
-  -f .k8s/dagster/values-override.yaml
+  -f .k8s/dagster/values-override.yaml \
+  --skip-schema-validation
