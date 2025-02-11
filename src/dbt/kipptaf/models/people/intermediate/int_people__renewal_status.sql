@@ -58,7 +58,7 @@ left join
 left join
     {{ ref("int_people__next_year_salary_projections") }} as sp
     on c.employee_number = sp.employee_number
-    and c.academic_year = sp.academic_year
+    and y.academic_year = sp.academic_year
 left join
     {{ ref("stg_people__seats") }} as s
     on c.employee_number = s.teammate
