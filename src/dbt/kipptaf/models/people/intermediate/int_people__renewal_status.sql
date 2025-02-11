@@ -52,14 +52,14 @@ select
 
     coalesce(pss.salary_rule, tss.salary_rule, 'Annual Adjustment') as salary_rule,
 
-from {{ ref("base_people__staff_roster") }} as c
+from {{ ref("int_people__staff_roster") }} as c
 inner join
     years as y
     on y.effective_date between c.worker_original_hire_date and coalesce(
         c.worker_termination_date, date(9999, 12, 31)
     )
 left join
-    {{ ref("base_people__staff_roster_history") }} as h
+    {{ ref("int_people__staff_roster_history") }} as h
     on c.employee_number = h.employee_number
     and y.effective_date
     between h.work_assignment_start_date and h.work_assignment_end_date

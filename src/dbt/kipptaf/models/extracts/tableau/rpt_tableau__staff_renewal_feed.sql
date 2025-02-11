@@ -41,7 +41,7 @@ select
     s.nonrenewal_notes,
     s.ny_salary,
     s.salary_rule,
-from {{ ref("base_people__staff_roster") }} as b
+from {{ ref("int_people__staff_roster") }} as b
 left join
     {{ ref("int_people__renewal_status") }} as s
     on b.employee_number = s.employee_number
