@@ -13,7 +13,7 @@ with
             subject_preference,
             status_type,
             date_val,
-            coalesce(resume_score,star_score) as resume_score,
+            coalesce(resume_score, star_score) as resume_score,
         from
             {{ ref("stg_smartrecruiters__applications") }} unpivot (
                 date_val for status_type in (
