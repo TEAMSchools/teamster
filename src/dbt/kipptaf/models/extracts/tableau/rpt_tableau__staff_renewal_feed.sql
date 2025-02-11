@@ -42,10 +42,11 @@ select
     s.ny_salary,
     s.salary_rule,
 
-    concat(b.family_name_1,', ',b.given_name) as preferred_name,
-    concat(m.family_name_1,', ',m.given_name) as manager_name,
+    concat(b.family_name_1, ', ', b.given_name) as preferred_name,
+    concat(m.family_name_1, ', ', m.given_name) as manager_name,
 from {{ ref("int_people__staff_roster") }} as b
-left join {{ ref("int_people__staff_roster")}} as m
+left join
+    {{ ref("int_people__staff_roster") }} as m
     on b.reports_to_employee_number = m.employee_number
 left join
     {{ ref("int_people__renewal_status") }} as s
