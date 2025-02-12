@@ -1,7 +1,6 @@
 import json
 import re
 from datetime import datetime, timezone
-from socket import gaierror
 from zoneinfo import ZoneInfo
 
 from dagster import (
@@ -9,7 +8,6 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     _check,
     define_asset_job,
     sensor,
@@ -39,21 +37,7 @@ def build_edplan_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            files = ssh_edplan.listdir_attr_r("Reports")
-        except gaierror as e:
-            if (
-                "[Errno -3] Temporary failure in name resolution" in e.args
-                or "[Errno -5] No address associated with hostname" in e.args
-            ):
-                return SkipReason(str(e))
-            else:
-                raise e
-        except TimeoutError as e:
-            if "timed out" in e.args:
-                return SkipReason(str(e))
-            else:
-                raise e
+        files = ssh_edplan.listdir_attr_r("Reports")
 
         asset_identifier = asset.key.to_python_identifier()
         context.log.info(asset_identifier)
