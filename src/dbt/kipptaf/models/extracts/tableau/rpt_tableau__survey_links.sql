@@ -6,7 +6,7 @@ with
             sr.assignment_status,
             sr.preferred_name_lastfirst,
             sr.business_unit_home_name as business_unit,
-            sr.home_work_location_name as location,
+            sr.home_work_location_name as `location`,
             sr.department_home_name as department,
             sr.job_title,
             sr.worker_original_hire_date as hire_date,

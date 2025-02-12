@@ -144,7 +144,6 @@ select
         sec.sections_external_expression,
         sec.sections_section_number
     ) as section_or_period,
-
 from term_weeks as tw
 inner join
     sections as sec
