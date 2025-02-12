@@ -1,4 +1,4 @@
--- trunk-ignore(sqlfluff/LT05)
+-- trunk-ignore-begin(sqlfluff/LT05)
 with
     eligible_roster as (
         select
@@ -418,5 +418,6 @@ select
     as `assignment`,
     'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys'
     as link,
+-- trunk-ignore-end(sqlfluff/LT05)
 from eligible_roster as r
 inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Gallup Q12 Survey'
