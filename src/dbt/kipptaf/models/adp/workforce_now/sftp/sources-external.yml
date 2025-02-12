@@ -18,23 +18,6 @@ sources:
               - adp
               - workforce_now
               - additional_earnings_report
-<<<<<<< HEAD:src/dbt/kipptaf/models/adp/workforce_now/sftp/sources-external.yml
-=======
-      - name: src_adp_workforce_now__comprehensive_benefits_report
-        external:
-          location:
-            "{{ var('cloud_storage_uri_base') }}/adp/workforce_now/comprehensive_benefits_report/*"
-          options:
-            format: AVRO
-            enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - adp
-              - workforce_now
-              - comprehensive_benefits_report
->>>>>>> aef5112cf2e58f8c85256ed58bc930963769e14e:src/dbt/kipptaf/models/adp/workforce_now/sources-external.yml
       - name: src_adp_workforce_now__pension_and_benefits_enrollments
         external:
           location:

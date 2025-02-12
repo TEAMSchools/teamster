@@ -43,7 +43,7 @@ left join
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
     and rt.type = 'SURVEY'
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on ldap.employee_number = sr.employee_number
 
 union all

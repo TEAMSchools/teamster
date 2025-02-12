@@ -44,9 +44,9 @@ with
                 'School-based',
                 'Not+school-based'
             ) as loc_type,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         left join
-            {{ ref("base_people__staff_roster") }} as mgr
+            {{ ref("int_people__staff_roster") }} as mgr
             on sr.report_to_employee_number = mgr.employee_number
         where sr.assignment_status in ('Active', 'Leave')
     )

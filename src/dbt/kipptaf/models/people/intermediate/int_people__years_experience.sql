@@ -106,7 +106,7 @@ with
                 )
             }} as academic_year,
         from with_end_date_corrected as srh
-        inner join
+        cross join
             unnest(
                 generate_date_array(
                     srh.assignment_status_effective_date_start,
