@@ -25,72 +25,9 @@ with
         select
             *,
 
-<<<<<<< HEAD
-            suf.fleid,
-            suf.newark_enrollment_number,
-            suf.infosnap_id,
-            suf.infosnap_opt_in,
-            suf.media_release,
-            suf.rides_staff,
-
-            njs.districtcoderesident,
-            njs.referral_date,
-            njs.parental_consent_eval_date,
-            njs.eligibility_determ_date,
-            njs.initial_iep_meeting_date,
-            njs.parent_consent_intial_iep_date,
-            njs.annual_iep_review_meeting_date,
-            njs.reevaluation_date,
-            njs.parent_consent_obtain_code,
-            njs.initial_process_delay_reason,
-            njs.special_education_placement,
-            njs.time_in_regular_program,
-            njs.early_intervention_yn,
-            njs.determined_ineligible_yn,
-            njs.counseling_services_yn,
-            njs.occupational_therapy_serv_yn,
-            njs.physical_therapy_services_yn,
-            njs.speech_lang_theapy_services_yn,
-            njs.other_related_services_yn,
-            njs.lepbegindate,
-            njs.lependdate,
-            njs.gifted_and_talented,
-
-            sr.mail as advisor_email,
-            sr.work_cell as advisor_phone,
-
-            sl.username as student_web_id,
-            sl.default_password as student_web_password,
-            sl.google_email as student_email_google,
-
-            regexp_extract(seu._dbt_source_relation, r'(kipp\w+)_') as code_location,
-            initcap(regexp_extract(seu._dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            coalesce(njr.pid_504_tf, suf.is_504, false) as is_504,
-        from student_enrollments_union as seu
-        left join
-            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-            on seu.students_dcid = suf.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="seu", right_alias="suf") }}
-        left join
-            {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
-            on seu.students_dcid = njs.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="seu", right_alias="njs") }}
-        left join
-            {{ ref("stg_powerschool__s_nj_ren_x") }} as njr
-            on seu.reenrollments_dcid = njr.reenrollmentsdcid
-            and {{ union_dataset_join_clause(left_alias="seu", right_alias="njr") }}
-        left join
-            {{ ref("int_people__staff_roster") }} as sr
-            on seu.advisor_teachernumber = sr.powerschool_teacher_number
-        left join
-            {{ ref("stg_people__student_logins") }} as sl
-            on seu.student_number = sl.student_number
-=======
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
->>>>>>> aef5112cf2e58f8c85256ed58bc930963769e14e
     )
 
 select
@@ -190,7 +127,7 @@ select
     end as lunch_application_status,
 from with_region as ar
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on ar.advisor_teachernumber = sr.powerschool_teacher_number
 left join
     {{ ref("stg_people__student_logins") }} as sl
