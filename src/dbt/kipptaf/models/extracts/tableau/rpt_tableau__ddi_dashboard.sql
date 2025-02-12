@@ -273,8 +273,12 @@ select
     sf.dibels_most_recent_composite,
     sf.state_test_proficiency,
 
-    ip.total_iready_lessons_passed_reading,
-    ip.total_iready_lessons_passed_math,
+    coalesce(
+        ip.total_iready_lessons_passed_reading, 0
+    ) as total_iready_lessons_passed_reading,
+    coalesce(
+        ip.total_iready_lessons_passed_math, 0
+    ) as total_iready_lessons_passed_math,
 
     coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
 
