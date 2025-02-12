@@ -12,18 +12,17 @@ class SalesforceDagsterDltTranslator(DagsterDltTranslator):
         self.code_location = code_location
         return super().__init__()
 
-    def get_asset_key(self, resource):
-        return AssetKey([self.code_location, "dlt", "kippadb", resource.name])
+    def get_asset_spec(self, data):
+        asset_spec = super().get_asset_spec(data)
 
-    def get_deps_asset_keys(self, resource):
-        return []
+        asset_spec = asset_spec.replace_attributes(
+            key=AssetKey([self.code_location, "dlt", "kippadb", data.resource.name]),
+            deps=[],
+        )
 
-    def get_kinds(self, resource, destination):
-        kinds = super().get_kinds(resource, destination)
+        asset_spec = asset_spec.merge_attributes(kinds={"salesforce"})
 
-        kinds.add("salesforce")
-
-        return kinds
+        return asset_spec
 
 
 def build_salesforce_kippadb_dlt_assets(
