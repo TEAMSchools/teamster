@@ -71,6 +71,9 @@ with
             if(
                 srh.assignment_status in ('Terminated', 'Deceased'), 1, 0
             ) as is_attrition,
+            max(srh.worker_termination_date) over (
+                partition by srh.employee_number
+            ) as termination_date,
         from denom as dc
         inner join
             {{ ref("int_people__staff_roster_history") }} as srh
@@ -89,6 +92,7 @@ with
             assignment_status,
             termination_reason,
             is_attrition,
+            termination_date
         from active_next_year
 
         union all
@@ -109,6 +113,9 @@ with
             if(
                 srh.assignment_status in ('Terminated', 'Deceased'), 1, 0
             ) as is_attrition,
+            max(srh.worker_termination_date) over (
+                partition by srh.employee_number
+            ) as termination_date
         from denom as dc
         inner join
             {{ ref("int_people__staff_roster_history") }} as srh
@@ -131,6 +138,7 @@ with
             employee_number,
             termination_reason,
             is_attrition,
+            termination_date,
 
             sum(1) over (
                 partition by employee_number order by academic_year
@@ -163,6 +171,7 @@ with
             cat.is_attrition,
             cat.year_at_kipp,
             cat.termination_reason,
+            cat.termination_date,
             srh.formatted_name,
             srh.home_business_unit_name,
             srh.home_work_location_name,
@@ -180,7 +189,6 @@ with
             srh.community_professional_exp,
             srh.level_of_education,
             srh.alumni_status,
-            srh.worker_termination_date as termination_date,
             srh.worker_original_hire_date as original_hire_date,
 
             tgl.grade_level,
@@ -210,6 +218,7 @@ with
             is_attrition,
             year_at_kipp,
             termination_reason,
+            termination_date,
             formatted_name,
             home_business_unit_name,
             home_work_location_name,
@@ -228,7 +237,6 @@ with
             grade_level,
             level_of_education,
             alumni_status,
-            termination_date,
             original_hire_date,
             total_years_teaching,
         from ly_active
@@ -241,6 +249,7 @@ with
             cat.is_attrition,
             cat.year_at_kipp,
             cat.termination_reason,
+            cat.termination_date,
             srh.formatted_name,
             srh.home_business_unit_name,
             srh.home_work_location_name,
@@ -261,7 +270,6 @@ with
 
             srh.level_of_education,
             srh.alumni_status,
-            srh.worker_termination_date as termination_date,
             srh.worker_original_hire_date as original_hire_date,
 
             coalesce(srh.years_exp_outside_kipp, 0)
@@ -354,12 +362,13 @@ select distinct
     l.grade_level as primary_grade_level_taught,
     l.level_of_education,
     l.alumni_status,
-    l.termination_date,
     l.original_hire_date,
+    l.termination_date,
     l.total_years_teaching,
 
     pm.final_tier as overall_tier,
     pm.final_score as overall_score,
+
 from ly_deduped as l
 left join
     {{ ref("int_performance_management__overall_scores") }} as pm
