@@ -2,6 +2,7 @@ with
     adp_df_union as (
         select
             '{{ ref("int_adp_workforce_now__workers") }}' as _dbt_source_relation,
+
             w.associate_oid,
             w.effective_date_end,
             w.effective_date_end_timestamp,
@@ -105,24 +106,33 @@ with
         select
             '{{ ref("int_dayforce__employee_history") }}' as _dbt_source_relation,
             null as associate_oid,
+
             effective_end_date as effective_date_end,
             effective_end_timestamp as effective_date_end_timestamp,
             is_active as is_current_record,
+
             null as worker_id,
+
             original_hire_date as worker_original_hire_date,
             rehire_date as worker_rehire_date,
             termination_date as worker_termination_date,
+
             null as worker_status_code,
             null as work_assignment_termination_date,
+
             work_assignment_effective_start_date as work_assignment_actual_start_date,
             preferred_name_lastfirst as formatted_name,
             preferred_last_name as family_name_1,
             preferred_first_name as given_name,
+
             null as legal_formatted_name,
+
             legal_last_name as legal_family_name,
             legal_first_name as legal_given_name,
             birth_date,
+
             null as race_code,
+
             ethnicity as ethnicity_code,
             gender as gender_code,
             city as legal_address_city_name,
@@ -131,21 +141,32 @@ with
             postal_code as legal_address_postal_code,
             false as is_prestart,
             surrogate_key as item_id,
+
             null as position_id,
+
             job_name as job_title,
             true as primary_indicator,
+
             null as management_position_indicator,
+
             `status` as assignment_status,
+
             null as assignment_status_lag,
+
             status_effective_start_date as assignment_status_effective_date,
             status_reason_description as assignment_status_reason,
             physical_location_name as home_work_location_name,
             pay_class_name as worker_type_code,
+
             'Fair Labor Standards Act' as wage_law_name,
+
             flsa_status_name as wage_law_coverage,
             base_salary as base_remuneration_annual_rate_amount,
+
             null as additional_remunerations_rate_amount,
+
             mobile_number as personal_cell,
+
             null as personal_email,
             null as work_cell,
             null as work_email,
@@ -156,11 +177,15 @@ with
             null as wf_mgr_pay_rule,
             null as wf_mgr_trigger,
             null as assigned_business_unit_code,
+
             legal_entity_name as assigned_business_unit_name,
             department_name as assigned_department_name,
+
             null as home_business_unit_code,
+
             legal_entity_name as home_business_unit_name,
             department_name as home_department_name,
+
             null as reports_to_worker_id,
             null as reports_to_formatted_name,
             null as payroll_file_number,
@@ -168,6 +193,7 @@ with
             null as benefits_eligibility_class,
             null as worker_hire_date_recent,
             null as wf_mgr_trigger_new,
+
             employee_number,
             race_ethnicity_reporting,
             manager_employee_number as reports_to_employee_number,
