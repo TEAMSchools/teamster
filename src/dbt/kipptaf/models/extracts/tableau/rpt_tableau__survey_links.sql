@@ -70,6 +70,7 @@ select
 
     rt.academic_year,
     rt.code as survey_round,
+    rt.is_current,
 
     'Staff Info & Certification Update' as survey,
     'Update Your Info' as `assignment`,
@@ -151,8 +152,7 @@ select
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on current_date('America/New_York') between rt.start_date and rt.end_date
-    and rt.name = 'Staff Info & Certification Update'
+    on rt.name = 'Staff Info & Certification Update'
 
 union all
 -- Intent to Return
@@ -174,6 +174,7 @@ select
 
     rt.academic_year,
     rt.code as survey_round,
+    rt.is_current,
 
     'Intent to Return Survey' as survey,
     'Complete Intent to Return Survey' as `assignment`,
@@ -183,9 +184,7 @@ select
 
 from eligible_roster as r
 inner join
-    {{ ref("stg_reporting__terms") }} as rt
-    on current_date('America/New_York') between rt.start_date and rt.end_date
-    and rt.name = 'Intent to Return Survey'
+    {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Intent to Return Survey'
 where r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
 
 union all
@@ -208,6 +207,7 @@ select
 
     rt.academic_year,
     rt.code as survey_round,
+    rt.is_current,
 
     'KTAF Support Survey' as survey,
     'Complete KTAF Support Survey' as `assignment`,
@@ -216,10 +216,7 @@ select
     as link,
 
 from eligible_roster as r
-inner join
-    {{ ref("stg_reporting__terms") }} as rt
-    on current_date('America/New_York') between rt.start_date and rt.end_date
-    and rt.name = 'KTAF Support Survey'
+inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'KTAF Support Survey'
 where
     r.job_title in ('Executive Director', 'Managing Director of Operations')
     or (
@@ -259,6 +256,7 @@ select
 
     rt.academic_year,
     rt.code as survey_round,
+    rt.is_current,
 
     'Manager Survey' as survey,
     concat(
@@ -290,10 +288,7 @@ select
         'https://docs.google.com/forms/d/e/1FAIpQLSe9thH3gWfdPLWVtI7gTimKqFO4xjcSr8-Htq-pPhzccxf6dw/viewform?usp=pp_url'
     ) as link,
 from eligible_roster as r
-inner join
-    {{ ref("stg_reporting__terms") }} as rt
-    on current_date('America/New_York') between rt.start_date and rt.end_date
-    and rt.name = 'Manager Survey'
+inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Manager Survey'
 
 union all
 -- Support Survey
@@ -315,6 +310,7 @@ select
 
     rt.academic_year,
     rt.code as survey_round,
+    rt.is_current,
 
     'Support Survey' as survey,
     'Complete Your Support Survey' as `assignment`,
@@ -331,10 +327,7 @@ select
         r.loc_type
     ) as link,
 from eligible_roster as r
-inner join
-    {{ ref("stg_reporting__terms") }} as rt
-    on current_date('America/New_York') between rt.start_date and rt.end_date
-    and rt.name = 'Support Survey'
+inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Support Survey'
 
 union all
 -- School Community Diagnostic Staff Survey
@@ -356,6 +349,7 @@ select
 
     rt.academic_year,
     rt.code as survey_round,
+    rt.is_current,
 
     'School Community Diagnostic' as survey,
     'Complete The School Community Diagnostic' as `assignment`,
@@ -364,8 +358,7 @@ select
 from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on current_date('America/New_York') between rt.start_date and rt.end_date
-    and rt.name = 'School Community Diagnostic Staff Survey'
+    on rt.name = 'School Community Diagnostic Staff Survey'
 
 union all
 -- TNTP Insight
@@ -387,6 +380,7 @@ select
 
     rt.academic_year,
     rt.code as survey_round,
+    rt.is_current,
 
     'TNTP Insight Survey' as survey,
     'Complete TNTP Insight Survey (Note: link is only accessible via your email)'
@@ -395,10 +389,7 @@ select
     'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys'
     as link,
 from eligible_roster as r
-inner join
-    {{ ref("stg_reporting__terms") }} as rt
-    on current_date('America/New_York') between rt.start_date and rt.end_date
-    and rt.name = 'TNTP Insight'
+inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'TNTP Insight'
 
 union all
 -- Gallup Q12 Survey
@@ -420,46 +411,13 @@ select
 
     rt.academic_year,
     rt.code as survey_round,
+    rt.is_current,
 
     'Gallup Q12 Survey' as survey,
     'Complete Gallup Q12 Survey (Note: link is only accessible via your email)'
     as `assignment`,
     'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys'
     as link,
+-- trunk-ignore-end(sqlfluff/LT05)
 from eligible_roster as r
-inner join
-    {{ ref("stg_reporting__terms") }} as rt
-    on current_date('America/New_York') between rt.start_date and rt.end_date
-    and rt.name = 'Gallup Q12 Survey'
-
-union all
--- AI Survey
-select
-    r.employee_number,
-    r.assignment_status,
-    r.preferred_name_lastfirst,
-    r.business_unit,
-    r.location,
-    r.department,
-    r.job_title,
-    r.hire_date,
-    r.mail,
-    r.google_email,
-    r.report_to_employee_number,
-    r.report_to_preferred_name_lastfirst,
-    r.samaccountname,
-    r.username,
-
-    rt.academic_year,
-    rt.code as survey_round,
-
-    'AI Survey' as survey,
-    'Optional: Complete an AI Usage Survey' as `assignment`,
-    'https://docs.google.com/forms/d/e/1FAIpQLSd4PG0h1rVmJWEfepQuc6GMDTv3Kk_vrqD0AU_BpQAkyPhKGw/viewform?usp=sf_link'
-    -- trunk-ignore-end(sqlfluff/LT05)
-    as link,
-from eligible_roster as r
-inner join
-    {{ ref("stg_reporting__terms") }} as rt
-    on current_date('America/New_York') between rt.start_date and rt.end_date
-    and rt.name = 'Gallup Q12 Survey'
+inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Gallup Q12 Survey'
