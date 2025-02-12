@@ -1,6 +1,10 @@
 with
     years as (
-        select effective_date, extract(year from effective_date) - 1 as academic_year,
+        select
+            effective_date,
+
+            extract(year from effective_date) as fiscal_year,
+            extract(year from effective_date) - 1 as academic_year,
         from
             unnest(
                 generate_date_array(
@@ -12,28 +16,34 @@ with
     )
 
 select
-    h.employee_number,
+    c.employee_number,
+
+    y.academic_year,
+
     h.home_business_unit_name as ay_business_unit,
     h.job_title as ay_job_title,
     h.home_work_location_name as ay_location,
     h.base_remuneration_annual_rate_amount as ay_salary,
-    y.academic_year,
+
     p.final_score as ay_pm4_overall_score,
     p.final_tier as ay_pm4_overall_tier,
+
     tgl.grade_level as ay_primary_grade_level_taught,
+
     sp.scale_cy_salary,
     sp.scale_ny_salary,
     sp.scale_step,
     sp.scale_ny_salary as pm_salary_increase,
     sp.ny_salary,
     sp.salary_rule,
+
     s.staffing_model_id as seat_tracker_id_number,
     s.adp_location as ny_location,
     s.adp_dept as ny_dept,
     s.adp_title as ny_title,
+
     stp.nonrenewal_reason,
     stp.nonrenewal_notes,
-
 from {{ ref("int_people__staff_roster") }} as c
 inner join
     years as y
@@ -60,9 +70,9 @@ left join
     on c.employee_number = sp.employee_number
     and y.academic_year = sp.academic_year
 left join
-    {{ ref("stg_people__seats") }} as s
+    {{ ref("stg_seat_tracker__seats") }} as s
     on c.employee_number = s.teammate
-    and y.academic_year = cast(s.academic_year as int) - 1
+    and y.fiscal_year = s.academic_year
 left join
     {{ ref("stg_people__seat_tracker_people") }} as stp
     on c.employee_number = stp.employee_number
