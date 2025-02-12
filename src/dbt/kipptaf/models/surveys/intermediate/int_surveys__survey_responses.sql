@@ -15,7 +15,7 @@ select
 
     ldap.employee_number as respondent_employee_number,
 
-    sr.preferred_name_lastfirst as respondent_preferred_name,
+    sr.formatted_name as respondent_preferred_name,
     sr.sam_account_name as respondent_samaccountname,
     sr.user_principal_name as respondent_userprincipalname,
 
