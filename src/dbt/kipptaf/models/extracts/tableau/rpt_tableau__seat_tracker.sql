@@ -5,7 +5,7 @@ select
     s.display_name as job_title,
     s.entity,
     s.grade_band,
-    s.short_name as location,
+    s.short_name as `location`,
     s.plan_status,
     s.staffing_status,
     s.status_detail,
@@ -20,7 +20,7 @@ select
     if(s.staffing_status = 'Staffed', 1, 0) as staffed,
     if(s.plan_status = 'Active', 1, 0) as active,
     if(s.mid_year_hire, 1, 0) as mid_year_hire,
-from {{ ref("stg_people__seats") }} as s
+from {{ ref("stg_seat_tracker__seats") }} as s
 /* recruiters */
 left join
     {{ ref("base_people__staff_roster") }} as srr on s.recruiter = srr.employee_number
