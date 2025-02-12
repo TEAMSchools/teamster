@@ -21,7 +21,6 @@ dependencies = [
   "dbt-bigquery>=1.9,<1.10",
   "dbt-core",
   "beautifulsoup4>=4.12.2",
-  "cmake>=3.28.1",
   "cramjam>=2.7.0",
   "fastavro>=1.9.0",
   "gspread>=5.12.0",
@@ -29,13 +28,11 @@ dependencies = [
   "oracledb>=1.4.2",
   "psycopg[binary,pool]>=3.2.3",
   "py-avro-schema>=3.4.1",
-  "pycryptodome>=3.19.0",
   "pypdf>=5.0.0",
   "python-dateutil>=2.9.0.post0",
   "scikit-learn>=1.4.0",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
-  "simple-salesforce>=1.12.6",
 ]
 
 [dependency-groups]
