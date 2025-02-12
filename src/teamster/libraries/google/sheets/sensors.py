@@ -10,7 +10,6 @@ from dagster import (
     _check,
     sensor,
 )
-from gspread.exceptions import APIError
 
 from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 
@@ -34,14 +33,7 @@ def build_google_sheets_asset_sensor(
         ):
             asset_keys = [g.key for g in group]
 
-            try:
-                spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
-            except APIError as e:
-                if str(e.code)[0] == "5" or e.code == 429:
-                    context.log.error(msg=str(e))
-                    continue
-                else:
-                    raise e
+            spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
 
             last_update_timestamp = datetime.fromisoformat(
                 spreadsheet.get_lastUpdateTime()

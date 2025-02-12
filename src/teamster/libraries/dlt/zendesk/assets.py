@@ -15,13 +15,17 @@ class ZendeskDagsterDltTranslator(DagsterDltTranslator):
         self.code_location = code_location
         return super().__init__()
 
-    def get_asset_key(self, resource):
-        return AssetKey(
-            [self.code_location, "dlt", "zendesk", "support", resource.name]
+    def get_asset_spec(self, data):
+        asset_spec = super().get_asset_spec(data)
+
+        asset_spec = asset_spec.replace_attributes(
+            key=AssetKey(
+                [self.code_location, "dlt", "zendesk", "support", data.resource.name]
+            ),
+            deps=[],
         )
 
-    def get_deps_asset_keys(self, resource):
-        return []
+        return asset_spec
 
 
 def build_zendesk_support_dlt_assets(
