@@ -13,12 +13,10 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     _check,
     define_asset_job,
     sensor,
 )
-from paramiko.ssh_exception import AuthenticationException
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -60,15 +58,7 @@ def build_iready_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            files = ssh_iready.listdir_attr_r(remote_dir=remote_dir_regex)
-        except AuthenticationException as e:
-            if "Authentication failed: transport shut down or saw EOF" in str(e):
-                return SkipReason(str(e))
-            else:
-                raise e
-        except Exception as e:
-            raise e
+        files = ssh_iready.listdir_attr_r(remote_dir=remote_dir_regex)
 
         for asset in asset_selection:
             asset_identifier = asset.key.to_python_identifier()
@@ -80,8 +70,8 @@ def build_iready_sftp_sensor(
 
             pattern = re.compile(
                 pattern=(
-                    rf"{metadata_by_key["remote_dir_regex"]}/"
-                    rf"{metadata_by_key["remote_file_regex"]}"
+                    rf"{metadata_by_key['remote_dir_regex']}/"
+                    rf"{metadata_by_key['remote_file_regex']}"
                 )
             )
 
