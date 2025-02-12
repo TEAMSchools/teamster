@@ -10,10 +10,19 @@
                 "last_week_lessons_passed",
                 "last_week_time_on_task_min",
             ],
+            meta={
+                "dagster": {
+                    "asset_key": [
+                        "kipptaf",
+                        "iready",
+                        "snapshot_iready__instructional_usage_data",
+                    ]
+                }
+            },
         )
     }}
 
-    select *
+    select *,
     from {{ ref("stg_iready__instructional_usage_data") }}
 
 {% endsnapshot %}

@@ -37,7 +37,7 @@ def build_google_sheets_asset_sensor(
             try:
                 spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
             except APIError as e:
-                if str(e.code)[0] == "5":
+                if str(e.code)[0] == "5" or e.code == 429:
                     context.log.error(msg=str(e))
                     continue
                 else:

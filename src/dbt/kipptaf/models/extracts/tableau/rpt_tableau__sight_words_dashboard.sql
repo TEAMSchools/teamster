@@ -22,7 +22,7 @@ select
     co.gender,
     co.ethnicity,
 
-    sw.`value`,
+    sw.value,
 
     nj.nj_student_tier,
 
@@ -42,7 +42,7 @@ inner join
     {{ ref("stg_illuminate__repository_grade_levels") }} as g
     on r.repository_id = g.repository_id
 inner join
-    {{ ref("int_tableau__student_enrollments") }} as co
+    {{ ref("int_extracts__student_enrollments") }} as co
     on g.grade_level = co.grade_level
     and rt.academic_year = co.academic_year
     and co.is_enrolled_recent
@@ -52,7 +52,7 @@ left join
     and r.repository_id = sw.repository_id
     and f.label = sw.field_label
 left join
-    {{ ref("int_reporting__student_filters") }} as nj
+    {{ ref("int_extracts__student_enrollments_subjects") }} as nj
     on co.academic_year = nj.academic_year
     and co.student_number = nj.student_number
     and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
@@ -60,7 +60,6 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on co.schoolid = hos.home_work_location_powerschool_school_id
-
 where r.scope = 'Sight Words Quiz'
 
 union all
@@ -89,7 +88,7 @@ select
     co.gender,
     co.ethnicity,
 
-    sw.`value`,
+    sw.value,
 
     nj.nj_student_tier,
 
@@ -109,7 +108,7 @@ inner join
     {{ ref("stg_illuminate__repository_grade_levels") }} as g
     on r.repository_id = g.repository_id
 inner join
-    {{ ref("int_tableau__student_enrollments") }} as co
+    {{ ref("int_extracts__student_enrollments") }} as co
     on g.grade_level != co.grade_level
     and rt.academic_year = co.academic_year
     and co.is_enrolled_recent
@@ -119,7 +118,7 @@ inner join
     and r.repository_id = sw.repository_id
     and f.label = sw.field_label
 left join
-    {{ ref("int_reporting__student_filters") }} as nj
+    {{ ref("int_extracts__student_enrollments_subjects") }} as nj
     on co.academic_year = nj.academic_year
     and co.student_number = nj.student_number
     and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}

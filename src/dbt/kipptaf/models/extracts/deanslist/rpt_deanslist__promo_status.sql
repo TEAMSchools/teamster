@@ -32,6 +32,18 @@ select
     ) as dibels_composite_recent,
     coalesce(p.iready_reading_recent, '(No Data)') as iready_reading_recent,
     coalesce(p.iready_math_recent, '(No Data)') as iready_math_recent,
+    coalesce(
+        concat('Level ', p.star_reading_level_recent), '(No Data)'
+    ) as star_reading_level_recent,
+    coalesce(
+        concat('Level ', p.star_math_level_recent), '(No Data)'
+    ) as star_math_level_recent,
+    coalesce(
+        concat('Level ', p.fast_ela_level_recent), '(No Data)'
+    ) as fast_ela_level_recent,
+    coalesce(
+        concat('Level ', p.fast_math_level_recent), '(No Data)'
+    ) as fast_math_level_recent,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
 left join

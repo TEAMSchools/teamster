@@ -1,3 +1,4 @@
+{{ config(enabled=False) }}
 with
     assessment_responses as (
         select
@@ -24,17 +25,19 @@ with
             ) as overall_number_correct,
         from {{ ref("int_illuminate__assessments") }} as ais
         inner join
-            {{ ref("stg_illuminate__assessment_grade_levels") }} as agl
+            {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on ais.assessment_id = agl.assessment_id
         inner join
             {{ ref("stg_reporting__terms") }} as rt
             on ais.administered_at between rt.start_date and rt.end_date
             and rt.type = 'ACT'
         inner join
-            {{ ref("stg_illuminate__agg_student_responses_overall") }} as asr
+            {{ ref("stg_illuminate__dna_assessments__agg_student_responses_overall") }}
+            as asr
             on ais.assessment_id = asr.assessment_id
         inner join
-            {{ ref("stg_illuminate__students") }} as s on asr.student_id = s.student_id
+            {{ ref("stg_illuminate__public__students") }} as s
+            on asr.student_id = s.student_id
         where ais.scope = 'ACT Prep'
     ),
 

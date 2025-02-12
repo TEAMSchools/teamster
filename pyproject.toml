@@ -12,12 +12,12 @@ dependencies = [
   "dagster-airbyte",
   "dagster-cloud",
   "dagster-dbt",
+  "dagster-dlt",
   "dagster-fivetran",
   "dagster-gcp",
   "dagster-k8s",
   "dagster-slack",
   "dagster-ssh",
-  "dagster-embedded-elt",
   "dbt-bigquery>=1.9,<1.10",
   "dbt-core",
   "beautifulsoup4>=4.12.2",
@@ -35,6 +35,7 @@ dependencies = [
   "scikit-learn>=1.4.0",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
+  "simple-salesforce>=1.12.6",
 ]
 
 [dependency-groups]
@@ -49,9 +50,3 @@ packages = ["src/teamster"]
 
 [tool.dagster]
 project_name = "teamster"
-
-[tool.pdm.scripts]
-dagster-dev = { shell = "bash .pdm/scripts/dagster-dev.sh", help = "Validate Dagster imports and configs" }
-dbt-sxs = { shell = "pdm run bash .pdm/scripts/dbt-stage-external-sources.sh" }
-json2py = { shell = "bash .pdm/scripts/json2py.sh" }
-op-inject = { shell = "op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env" }

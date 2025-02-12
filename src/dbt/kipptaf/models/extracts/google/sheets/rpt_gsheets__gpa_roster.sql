@@ -19,7 +19,7 @@ with
 
             gpa.gpa_term,
             coalesce(co.gifted_and_talented, 'N') as gifted_and_talented,
-        from {{ ref("int_tableau__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
         left join
             {{ ref("int_powerschool__gpa_term") }} as y
