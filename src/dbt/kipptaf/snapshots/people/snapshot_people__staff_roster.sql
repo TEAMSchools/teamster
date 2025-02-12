@@ -7,6 +7,15 @@
             unique_key="item_id",
             strategy="check",
             check_cols="all",
+            meta={
+                "dagster": {
+                    "asset_key": [
+                        "kipptaf",
+                        "people",
+                        "snapshot_people__staff_roster",
+                    ]
+                }
+            },
         )
     }}
 

@@ -156,52 +156,27 @@ with
     star_results as (
         select
             student_display_id,
-            district_benchmark_category_level,
+            academic_year,
+            star_discipline,
 
-            safe_cast(left(school_year, 4) as int) as academic_year,
-            case
-                when _dagster_partition_subject = 'SM'
-                then 'Math'
-                when _dagster_partition_subject = 'SR'
-                then 'Reading'
-                when _dagster_partition_subject = 'SEL'
-                then 'Early Literacy'
-            end as star_subject,
-            row_number() over (
-                partition by
-                    student_display_id,
-                    _dagster_partition_subject,
-                    school_year,
-                    screening_period_window_name
-                order by completed_date desc
-            ) as rn_subj_year,
-        from {{ ref("stg_renlearn__star") }}
-        where deactivation_reason is null
+            if(
+                grade_level > 0,
+                cast(right(state_benchmark_category_name, 1) as int64),
+                5 - district_benchmark_category_level
+            ) as star_achievement_level,
+        from {{ ref("int_renlearn__star_rollup") }}
+        where rn_subj_year = 1
     ),
 
     star as (
         select
             student_display_id,
             academic_year,
-            star_math,
-            star_reading,
-            star_early_literacy,
+            `ELA` as star_ela_level,
+            `Math` as star_math_level,
         from
-            (
-                select
-                    s.student_display_id,
-                    s.academic_year,
-                    s.star_subject,
-                    s.district_benchmark_category_level,
-                from star_results as s
-                where s.rn_subj_year = 1
-            ) pivot (
-                max(district_benchmark_category_level) for star_subject in (
-                    'Math' as star_math,
-                    'Reading' as star_reading,
-                    'Early Literacy' as star_early_literacy
-                )
-            )
+            star_results
+            pivot (max(star_achievement_level) for star_discipline in ('ELA', 'Math'))
     ),
 
     fast_results as (
@@ -209,7 +184,6 @@ with
             student_id,
             academic_year,
             assessment_subject,
-            administration_window,
             achievement_level_int,
 
             row_number() over (
@@ -220,14 +194,13 @@ with
     ),
 
     fast as (
-        select student_id, academic_year, administration_window, fast_ela, fast_math,
+        select student_id, academic_year, fast_ela, fast_math,
         from
             (
                 select
                     f.student_id,
                     f.academic_year,
                     f.assessment_subject,
-                    f.administration_window,
                     f.achievement_level_int,
                 from fast_results as f
                 where f.rn_subject_year = 1
@@ -274,6 +247,7 @@ with
             co.grade_level,
             co.is_self_contained,
             co.special_education_code,
+            co.region,
 
             term_name,
 
@@ -292,9 +266,8 @@ with
             m.mclass_measure_standard_level as dibels_composite_level_recent_str,
             m.mclass_measure_standard_level_int as dibels_composite_level_recent,
 
-            s.star_math as star_math_level_recent,
-            s.star_reading as star_reading_level_recent,
-            s.star_early_literacy as star_early_literacy_level_recent,
+            s.star_math_level as star_math_level_recent,
+            s.star_ela_level as star_reading_level_recent,
 
             f.fast_ela as fast_ela_level_recent,
             f.fast_math as fast_math_level_recent,
@@ -317,16 +290,25 @@ with
             end as exemption,
 
             case
-                /* Gr K-8 */
-                when co.grade_level <= 8 and att.ada_term_running is null
+                /* NJ Gr K-8 */
+                when
+                    co.region in ('Camden', 'Newark')
+                    and co.grade_level <= 8
+                    and att.ada_term_running is null
                 then 'Off-Track'
-                /* Gr K */
-                when co.grade_level = 0 and att.ada_term_running < 0.80
+                /* NJ Gr K */
+                when
+                    co.region in ('Camden', 'Newark')
+                    and co.grade_level = 0
+                    and att.ada_term_running < 0.80
                 then 'Off-Track'
-                /* Gr 1-2 */
-                when co.grade_level between 1 and 2 and att.ada_term_running < 0.85
+                /* NJ Gr 1-2 */
+                when
+                    co.region in ('Camden', 'Newark')
+                    and co.grade_level between 1 and 2
+                    and att.ada_term_running < 0.85
                 then 'Off-Track'
-                /* Gr3-8 */
+                /* NJ Gr3-8 */
                 when
                     co.grade_level between 3 and 8
                     and co.region = 'Camden'
@@ -336,6 +318,24 @@ with
                     co.grade_level between 3 and 8
                     and co.region = 'Newark'
                     and att.ada_term_running < 0.87
+                then 'Off-Track'
+                /* Miami K */
+                when
+                    co.region = 'Miami'
+                    and co.grade_level = 0
+                    and att.ada_term_running < 0.80
+                then 'Off-Track'
+                /* Miami Gr1-2, 4 */
+                when
+                    co.region = 'Miami'
+                    and co.grade_level in (1, 2, 4)
+                    and att.ada_term_running < 0.85
+                then 'Off-Track'
+                /* Miami Gr5-8*/
+                when
+                    co.region = 'Miami'
+                    and co.grade_level in (1, 2, 4)
+                    and (att.ada_term_running < 0.85 or att.n_absences_y1_running >= 27)
                 then 'Off-Track'
                 /* HS */
                 when
@@ -351,13 +351,22 @@ with
 
             case
                 /* Gr K-8 */
-                when co.grade_level <= 8 and att.ada_term_running is null
+                when
+                    co.region in ('Camden', 'Newark')
+                    and co.grade_level <= 8
+                    and att.ada_term_running is null
                 then 'Off-Track'
                 /* Gr K */
-                when co.grade_level = 0 and att.ada_term_running < 0.80
+                when
+                    co.region in ('Camden', 'Newark')
+                    and co.grade_level = 0
+                    and att.ada_term_running < 0.80
                 then 'Off-Track'
                 /* Gr 1-2 */
-                when co.grade_level between 1 and 2 and att.ada_term_running < 0.85
+                when
+                    co.region in ('Camden', 'Newark')
+                    and co.grade_level between 1 and 2
+                    and att.ada_term_running < 0.85
                 then 'Off-Track'
                 /* Gr3-8 */
                 when
@@ -369,6 +378,24 @@ with
                     co.grade_level between 3 and 8
                     and co.region = 'Newark'
                     and att.ada_term_running < 0.87
+                then 'Off-Track'
+                /* Miami K */
+                when
+                    co.region = 'Miami'
+                    and co.grade_level = 0
+                    and att.ada_term_running < 0.80
+                then 'Off-Track'
+                /* Miami Gr1-2, 4 */
+                when
+                    co.region = 'Miami'
+                    and co.grade_level in (1, 2, 4)
+                    and att.ada_term_running < 0.85
+                then 'Off-Track'
+                /* Miami Gr5-8*/
+                when
+                    co.region = 'Miami'
+                    and co.grade_level in (1, 2, 4)
+                    and (att.ada_term_running < 0.85 or att.n_absences_y1_running >= 27)
                 then 'Off-Track'
                 /* HS */
                 when
@@ -385,18 +412,21 @@ with
             case
                 /* GrK-1 NJ */
                 when
-                    co.grade_level <= 1
+                    co.region in ('Camden', 'Newark')
+                    and co.grade_level <= 1
                     and coalesce(m.mclass_measure_standard_level_int, 0) <= 1
                 then 'Off-Track'
                 /* Gr2 NJ */
                 when
-                    co.grade_level = 2
+                    co.region in ('Camden', 'Newark')
+                    and co.grade_level = 2
                     and coalesce(ir.iready_reading_recent, '')
                     in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
                 then 'Off-Track'
-                /* Gr3-8 */
+                /* Gr3-8 NJ */
                 when
-                    co.grade_level between 3 and 8
+                    co.region in ('Camden', 'Newark')
+                    and co.grade_level between 3 and 8
                     and (
                         coalesce(ir.iready_reading_recent, '')
                         in ('2 Grade Levels Below', '3 or More Grade Levels Below', '')
@@ -406,6 +436,25 @@ with
                     or c.n_failing_core >= 2
                 then 'Off-Track'
 
+                /* Miami K-3 */
+                when
+                    co.region = 'Miami'
+                    and co.grade_level < 3
+                    and (s.star_math_level = 1 or s.star_ela_level = 1)
+                then 'Off-Track'
+                when co.region = 'Miami' and co.grade_level = 3 and f.fast_ela = 1
+                then 'Off-Track'
+                /* Miami Gr4 */
+                when
+                    co.region = 'Miami'
+                    and co.grade_level = 4
+                    and f.fast_math = 1
+                    and f.fast_ela = 1
+                then 'Off-Track'
+                /* Miami 5-8 */
+                when
+                    co.region = 'Miami' and co.grade_level > 4 and c.n_failing_core >= 2
+                then 'Off-Track'
                 /* HS */
                 when co.grade_level = 9 and c.projected_credits_cum < 25
                 then 'Off-Track'
@@ -476,7 +525,6 @@ select
     dibels_composite_level_recent,
     star_math_level_recent,
     star_reading_level_recent,
-    star_early_literacy_level_recent,
     fast_ela_level_recent,
     fast_math_level_recent,
     attendance_status,
@@ -485,16 +533,34 @@ select
     exemption,
 
     case
+        /* NJ */
         when
-            grade_level <= 8
+            region in ('Camden', 'Newark')
+            and grade_level <= 8
             and academic_status = 'Off-Track'
             and attendance_status = 'Off-Track'
         then 'Off-Track'
-        when grade_level between 5 and 8 and n_failing_core >= 2
+        when
+            region in ('Camden', 'Newark')
+            and grade_level between 5 and 8
+            and n_failing_core >= 2
         then 'Off-Track'
         when
-            grade_level >= 9
+            region in ('Camden', 'Newark')
+            and grade_level >= 9
             and (academic_status = 'Off-Track' or attendance_status = 'Off-Track')
+        then 'Off-Track'
+        /* Miami */
+        when
+            region = 'Miami'
+            and grade_level != 4
+            and (academic_status = 'Off-Track' or attendance_status = 'Off-Track')
+        then 'Off-Track'
+        when
+            region = 'Miami'
+            and grade_level = 4
+            and academic_status = 'Off-Track'
+            and attendance_status = 'Off-Track'
         then 'Off-Track'
         else 'On-Track'
     end as overall_status,

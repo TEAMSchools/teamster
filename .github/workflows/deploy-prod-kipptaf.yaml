@@ -22,10 +22,11 @@ on:
       - src/teamster/libraries/airbyte/**
       - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/coupa/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/schema.py
       - src/teamster/libraries/dlt/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/fivetran/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**
@@ -49,10 +50,11 @@ on:
       - src/teamster/libraries/airbyte/**
       - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/coupa/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/schema.py
       - src/teamster/libraries/dlt/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/fivetran/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**

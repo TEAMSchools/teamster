@@ -15,7 +15,7 @@ with
             e.lep_status,
             e.gifted_and_talented,
             e.advisory,
-            e.contact_id,
+            e.salesforce_id as contact_id,
             e.ktc_cohort,
             e.contact_owner_name,
             e.college_match_gpa,
@@ -30,8 +30,7 @@ with
             t.subject_area as expected_subject_area,
 
             if(e.iep_status = 'No IEP', 0, 1) as sped,
-
-        from {{ ref("int_tableau__student_enrollments") }} as e
+        from {{ ref("int_extracts__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.student_number = s.students_student_number
@@ -48,6 +47,7 @@ with
             {{ ref("stg_assessments__assessment_expectations") }} as t
             on e.academic_year = t.academic_year
             and e.grade_level = t.grade
+            and e.region = t.region
             and t.assessment_type = 'College Entrance'
         where
             e.academic_year = {{ var("current_academic_year") }}
@@ -59,28 +59,22 @@ with
             e._dbt_source_relation,
             e.academic_year,
             e.student_number,
-            e.contact_id,
+            e.salesforce_id as contact_id,
+            e.is_exempt_state_testing,
 
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
             s.courses_credittype,
-
-            f.is_exempt_state_testing,
-
-        from {{ ref("int_tableau__student_enrollments") }} as e
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.student_number = s.students_student_number
             and e.academic_year = s.cc_academic_year
-            and s.courses_credittype in ('ENG', 'MATH')
+            and e.powerschool_credittype = s.courses_credittype
             and s.rn_course_number_year = 1
+            and s.courses_credittype in ('ENG', 'MATH')
             and not s.is_dropped_section
-        left join
-            {{ ref("int_reporting__student_filters") }} as f
-            on s.cc_academic_year = f.academic_year
-            and s.students_student_number = f.student_number
-            and s.courses_credittype = f.powerschool_credittype
         where e.school_level = 'HS'
     ),
 
@@ -108,6 +102,7 @@ with
                 then 'Math Test'
                 else test_subject
             end as subject_area,
+
             case
                 when
                     score_type in (
@@ -146,56 +141,30 @@ with
 
         select
             safe_cast(local_student_id as string) as contact,
-
-            'PSAT10' as scope,
-
-            test_date,
+            test_type as scope,
+            date as test_date,
             score as scale_score,
             rn_highest,
 
             'Official' as test_type,
 
             concat(
-                format_date('%b', test_date), ' ', format_date('%g', test_date)
+                format_date('%b', date), ' ', format_date('%g', date)
             ) as administration_round,
 
+            test_subject as subject_area,
+
             case
-                score_type
-                when 'psat10_total_score'
-                then 'Composite'
-                when 'psat10_reading_test_score'
-                then 'Reading'
-                when 'psat10_math_test_score'
-                then 'Math Test'
-                when 'psat10_math_section_score'
-                then 'Math'
-                when 'psat10_eb_read_write_section_score'
-                then 'Writing and Language Test'
-            end as subject_area,
-            case
-                when
-                    score_type in (
-                        'psat10_eb_read_write_section_score',
-                        'psat10_reading_test_score'
-                    )
-                then 'ENG'
-                when
-                    score_type
-                    in ('psat10_math_test_score', 'psat10_math_section_score')
-                then 'MATH'
-                else 'NA'
+                test_subject when 'EBRW' then 'ENG' when 'Math' then 'MATH' else 'NA'
             end as course_discipline,
 
-            academic_year as test_academic_year,
-        from {{ ref("int_illuminate__psat_unpivot") }}
-        where
-            score_type in (
-                'psat10_eb_read_write_section_score',
-                'psat10_math_section_score',
-                'psat10_math_test_score',
-                'psat10_reading_test_score',
-                'psat10_total_score'
-            )
+            {{
+                date_to_fiscal_year(
+                    date_field="date", start_month=7, year_source="start"
+                )
+            }} as test_academic_year,
+
+        from {{ ref("int_collegeboard__psat_unpivot") }}
     )
 
 select
@@ -336,7 +305,8 @@ left join
     on o.contact = c.contact_id
     and o.test_academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official' and e.expected_scope = 'PSAT10'
+where
+    e.expected_test_type = 'Official' and e.expected_scope in ('PSAT NMSQT', 'PSAT 8/9')
 
 union all
 

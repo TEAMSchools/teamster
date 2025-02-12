@@ -4,6 +4,7 @@ from itertools import groupby
 from dagster import (
     AssetMaterialization,
     AssetSpec,
+    Failure,
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
@@ -43,14 +44,18 @@ def build_fivetran_connector_sync_status_sensor(
                 connector_id, 0
             )
 
-            curr_last_sync_completion, curr_last_sync_succeeded, curr_sync_state = (
-                fivetran.get_connector_sync_status(connector_id)
-            )
+            try:
+                curr_last_sync_completion, curr_last_sync_succeeded, curr_sync_state = (
+                    fivetran.get_connector_sync_status(connector_id)
+                )
+            except Failure as e:
+                context.log.error(msg=str(e))
+                continue
 
             context.log.info(
                 f"{connector_id}: "
-                f"{"Succeeded" if curr_last_sync_succeeded else "Failed"} "
-                f"{curr_last_sync_completion.strftime("%c")}\t{curr_sync_state}"
+                f"{'Succeeded' if curr_last_sync_succeeded else 'Failed'} "
+                f"{curr_last_sync_completion.strftime('%c')}\t{curr_sync_state}"
             )
 
             curr_last_sync_completion_timestamp = curr_last_sync_completion.timestamp()

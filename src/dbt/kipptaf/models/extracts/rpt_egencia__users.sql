@@ -25,25 +25,25 @@ select
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__staff_roster") }} as sr
 left join
-    {{ source("egencia", "src_egencia__traveler_groups") }} as tg
+    {{ ref("stg_egencia__traveler_groups") }} as tg
     on sr.home_work_location_name = tg.adp_home_work_location_name
     and sr.home_department_name = tg.adp_department_home_name
     and sr.job_title = tg.adp_job_title
 left join
-    {{ source("egencia", "src_egencia__traveler_groups") }} as tg2
+    {{ ref("stg_egencia__traveler_groups") }} as tg2
     on sr.home_work_location_name = tg2.adp_home_work_location_name
     and sr.home_department_name = tg2.adp_department_home_name
     and tg2.adp_job_title = 'Default'
 left join
-    {{ source("egencia", "src_egencia__traveler_groups") }} as tg3
+    {{ ref("stg_egencia__traveler_groups") }} as tg3
     on sr.home_work_location_name = tg3.adp_home_work_location_name
     and tg3.adp_department_home_name = 'Default'
     and tg3.adp_job_title = 'Default'
 left join
-    {{ source("egencia", "src_egencia__travel_managers") }} as tm
+    {{ ref("stg_egencia__travel_managers") }} as tm
     on sr.employee_number = tm.employee_number
 left join
-    {{ source("egencia", "src_egencia__traveler_group_exceptions") }} as tgx
+    {{ ref("stg_egencia__traveler_group_exceptions") }} as tgx
     on sr.employee_number = tgx.employee_number
 where
     (sr.worker_type_code not in ('Intern', 'Part Time') or sr.worker_type_code is null)

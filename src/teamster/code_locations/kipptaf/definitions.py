@@ -5,7 +5,6 @@ from dagster import (
     build_sensor_for_freshness_checks,
     load_assets_from_modules,
 )
-from dagster_embedded_elt.dlt import DagsterDltResource
 from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kipptaf import (
@@ -18,7 +17,9 @@ from teamster.code_locations.kipptaf import (
     airbyte,
     amplify,
     asset_checks,
+    collegeboard,
     couchdrop,
+    coupa,
     deanslist,
     extracts,
     fivetran,
@@ -56,6 +57,8 @@ defs = Definitions(
                 _google,
                 adp,
                 amplify,
+                collegeboard,
+                coupa,
                 deanslist,
                 extracts,
                 ldap,
@@ -99,10 +102,11 @@ defs = Definitions(
         "adp_wfm": resources.ADP_WORKFORCE_MANAGER_RESOURCE,
         "adp_wfn": resources.ADP_WORKFORCE_NOW_RESOURCE,
         "airbyte": resources.AIRBYTE_CLOUD_RESOURCE,
+        "coupa": resources.COUPA_RESOURCE,
         "db_bigquery": BIGQUERY_RESOURCE,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "dds": resources.DIBELS_DATA_SYSTEM_RESOURCE,
-        "dlt": DagsterDltResource(),
+        "dlt": resources.DLT_RESOURCE,
         "fivetran": resources.FIVETRAN_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,

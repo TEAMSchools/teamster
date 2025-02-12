@@ -3,8 +3,10 @@ select
     sr.survey_title,
     sr.survey_response_id,
     sr.survey_response_link,
-    sr.survey_code,
-    sr.survey_type,
+    sr.term_code as survey_code,
+
+    'SURVEY' as survey_type,
+
     sr.academic_year,
     sr.date_started,
     sr.date_submitted,
@@ -49,3 +51,4 @@ left join
     on eh.powerschool_teacher_number = tgl.teachernumber
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
+where eh.primary_indicator

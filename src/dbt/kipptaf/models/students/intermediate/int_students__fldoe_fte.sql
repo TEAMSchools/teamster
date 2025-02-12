@@ -1,3 +1,5 @@
+{{- config(enabled=False) -}}
+
 with
     ada_group as (
         select
