@@ -1,7 +1,7 @@
 select
     b.employee_number as df_employee_number,
-    b.legal_name__given_name as first_name,
-    b.legal_name__family_name_1 as last_name,
+    b.legal_given_name as first_name,
+    b.legal_family_name as last_name,
     b.given_name as preferred_first,
     b.family_name_1 as preferred_last,
     b.assignment_status as position_status,
@@ -43,6 +43,7 @@ select
     s.salary_rule,
 
     concat(b.family_name_1, ', ', b.given_name) as preferred_name,
+
     concat(m.family_name_1, ', ', m.given_name) as manager_name,
 from {{ ref("int_people__staff_roster") }} as b
 left join

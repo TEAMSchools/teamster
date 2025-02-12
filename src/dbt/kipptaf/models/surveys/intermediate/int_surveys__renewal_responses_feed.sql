@@ -36,7 +36,7 @@ with
         select
             ri.*,
 
-            ssr.preferred_name_lastfirst as subject_preferred_name,
+            ssr.formatted_name as subject_preferred_name,
             ssr.sam_account_name as subject_samaccountname,
             ssr.user_principal_name as subject_userprincipalname,
 

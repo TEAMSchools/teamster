@@ -34,7 +34,7 @@ select
     ar.* except (lep_status, lunch_status, spedlep),
 
     sr.mail as advisor_email,
-    sr.communication_business_mobile as advisor_phone,
+    sr.work_cell as advisor_phone,
 
     sl.username as student_web_id,
     sl.default_password as student_web_password,
