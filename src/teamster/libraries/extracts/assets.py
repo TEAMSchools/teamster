@@ -121,8 +121,10 @@ def load_sftp(
                 sftp.stat(str(destination_filepath.parent))
             except IOError:
                 path = pathlib.Path("/")
+
                 for part in destination_filepath.parent.parts:
                     path = path / part
+
                     try:
                         sftp.stat(str(path))
                     except IOError:
@@ -131,8 +133,9 @@ def load_sftp(
 
         if isinstance(data, Blob):
             context.log.info(f"Saving file to {destination_filepath}")
-            with sftp.open(filename=str(destination_filepath), mode="w") as f:
-                data.download_to_file(file_obj=f)
+            with sftp.open(filename=str(destination_filepath), mode="w") as file_obj:
+                # trunk-ignore(pyright/reportCallIssue)
+                data.download_to_file(file_obj=file_obj)
         else:
             # if destination_path given, chdir after confirming
             if destination_path:
@@ -140,8 +143,8 @@ def load_sftp(
                 sftp.chdir(str(destination_filepath.parent))
 
             context.log.info(f"Saving file to {destination_filepath}")
-            with sftp.file(filename=file_name, mode="w") as f:
-                f.write(data)
+            with sftp.file(filename=file_name, mode="w") as sftp_file:
+                sftp_file.write(data)
 
 
 def build_bigquery_query_sftp_asset(
