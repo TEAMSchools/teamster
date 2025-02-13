@@ -2,16 +2,16 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 from dagster import AssetKey, EnvVar, _check, build_resources
-from dagster_airbyte import AirbyteCloudResource
+from dagster_airbyte import AirbyteCloudWorkspace
 
 
 def test_resource():
     with build_resources(
         resources={
-            "airbyte": AirbyteCloudResource(client_id=EnvVar(), client_secret=EnvVar())
+            "airbyte": AirbyteCloudWorkspace(client_id=EnvVar(), client_secret=EnvVar())
         }
     ) as resources:
-        airbyte: AirbyteCloudResource = resources.airbyte
+        airbyte: AirbyteCloudWorkspace = resources.airbyte
 
     connections_response = _check.not_none(
         airbyte.make_request(endpoint="/connections", method="GET")

@@ -9,7 +9,7 @@ from dagster import (
     SkipReason,
     sensor,
 )
-from dagster_fivetran import FivetranResource
+from dagster_fivetran import FivetranWorkspace
 from dagster_gcp import BigQueryResource
 from google.cloud.bigquery import DatasetReference, TableReference
 
@@ -26,7 +26,7 @@ def build_fivetran_connector_sync_status_sensor(
     )
     def _sensor(
         context: SensorEvaluationContext,
-        fivetran: FivetranResource,
+        fivetran: FivetranWorkspace,
         db_bigquery: BigQueryResource,
     ):
         asset_events = []
