@@ -88,7 +88,7 @@ with
             sg.academic_year,
             sg._dbt_source_relation,
 
-            max(case when sg.grade like 'F%' then false else true end) is_algebra1_pass,
+            max(if sg.grade like 'F%', false, true) is_algebra1_pass,
 
         from {{ ref("stg_powerschool__storedgrades") }} as sg
         left join
