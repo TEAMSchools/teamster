@@ -1,5 +1,5 @@
 from dagster import ScheduleEvaluationContext, SkipReason, _check, job, schedule
-from dagster_airbyte import AirbyteCloudResource
+from dagster_airbyte import AirbyteCloudWorkspace
 
 
 def build_airbyte_start_sync_schedule(
@@ -15,7 +15,7 @@ def build_airbyte_start_sync_schedule(
         execution_timezone=execution_timezone,
         job=_job,
     )
-    def _schedule(context: ScheduleEvaluationContext, airbyte: AirbyteCloudResource):
+    def _schedule(context: ScheduleEvaluationContext, airbyte: AirbyteCloudWorkspace):
         job_sync = _check.not_none(
             airbyte.make_request(
                 endpoint="/jobs",
