@@ -50,7 +50,7 @@ with
         where sr.assignment_status in ('Active', 'Leave')
     )
 
--- Staff Info and Cert
+/* Staff Info and Cert */
 select
     r.employee_number,
     r.assignment_status,
@@ -154,7 +154,8 @@ inner join
     on rt.name = 'Staff Info & Certification Update'
 
 union all
--- Intent to Return
+
+/* Intent to Return */
 select
     r.employee_number,
     r.assignment_status,
@@ -188,7 +189,8 @@ inner join
 where r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
 
 union all
--- KTAF Support Survey
+
+/* KTAF Support Survey */
 select
     r.employee_number,
     r.assignment_status,
@@ -215,30 +217,30 @@ select
     -- trunk-ignore(sqlfluff/LT05)
     'https://docs.google.com/forms/d/e/1FAIpQLSfMM4t9aoSZomoYWZfghSDNnmHTtFIV5cUf_yvTZaUlz5Kz2A/viewform?usp=sf_link'
     as link,
-
 from eligible_roster as r
 inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'KTAF Support Survey'
 where
-    r.job_title in ('Executive Director', 'Managing Director of Operations')
-    or (
-        r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
-        and (
-            r.job_title like ('%Leader%')
-            or r.job_title like ('%Head%')
-            or r.job_title = 'School Operations Manager'
+    (
+        r.job_title in ('Executive Director', 'Managing Director of Operations')
+        or (
+            r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
+            and (
+                r.job_title like '%Leader%'
+                or r.job_title like '%Head%'
+                or r.job_title = 'School Operations Manager'
+            )
         )
-    )
-    or (
-        r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
-        and (
-            r.job_title like ('%Director%')
+        or (
+            r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
+            and r.job_title like '%Director%'
             and r.department
             in ('Operations', 'KIPP Forward', 'Special Education', 'School Support')
         )
     )
 
 union all
--- Manager Survey
+
+/* Manager Survey */
 select
     r.employee_number,
     r.assignment_status,
@@ -294,7 +296,8 @@ from eligible_roster as r
 inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Manager Survey'
 
 union all
--- Support Survey
+
+/* Support Survey */
 select
     r.employee_number,
     r.assignment_status,
@@ -334,7 +337,8 @@ from eligible_roster as r
 inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Support Survey'
 
 union all
--- School Community Diagnostic Staff Survey
+
+/* School Community Diagnostic Staff Survey */
 select
     r.employee_number,
     r.assignment_status,
@@ -366,7 +370,8 @@ inner join
     on rt.name = 'School Community Diagnostic Staff Survey'
 
 union all
--- TNTP Insight
+
+/* TNTP Insight */
 select
     r.employee_number,
     r.assignment_status,
@@ -398,7 +403,8 @@ from eligible_roster as r
 inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'TNTP Insight'
 
 union all
--- Gallup Q12 Survey
+
+/* Gallup Q12 Survey */
 select
     r.employee_number,
     r.assignment_status,
@@ -425,16 +431,15 @@ select
     -- trunk-ignore(sqlfluff/LT05)
     'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys'
     as link,
--- trunk-ignore-end(sqlfluff/LT05)
 from eligible_roster as r
-<<<<<<< HEAD
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Gallup Q12 Survey'
 
 union all
--- AI Survey
+
+/* AI Survey */
 select
     r.employee_number,
     r.assignment_status,
@@ -453,6 +458,7 @@ select
 
     rt.academic_year,
     rt.code as survey_round,
+    rt.is_current,
 
     'AI Survey' as survey,
     'Optional: Complete an AI Usage Survey' as `assignment`,
@@ -464,6 +470,3 @@ inner join
     {{ ref("stg_reporting__terms") }} as rt
     on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Gallup Q12 Survey'
-=======
-inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Gallup Q12 Survey'
->>>>>>> 748f714b05c7273c3c5745861a7a234ce1977da9
