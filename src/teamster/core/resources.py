@@ -59,6 +59,15 @@ def get_dbt_cli_resource(dbt_project, test=False):
         return DbtCliResource(project_dir=dbt_project)
 
 
+def get_powerschool_ssh_resource():
+    return SSHResource(
+        remote_host=EnvVar("PS_SSH_HOST"),
+        remote_port=int(_check.not_none(value=EnvVar("PS_SSH_PORT").get_value())),
+        username=EnvVar("PS_SSH_USERNAME"),
+        tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
+    )
+
+
 BIGQUERY_RESOURCE = BigQueryResource(project=GCS_PROJECT_NAME)
 
 DB_POWERSCHOOL = PowerSchoolODBCResource(
@@ -97,13 +106,6 @@ SSH_IREADY = SSHResource(
     remote_port=22,
     username=EnvVar("IREADY_SFTP_USERNAME"),
     password=EnvVar("IREADY_SFTP_PASSWORD"),
-)
-
-SSH_POWERSCHOOL = SSHResource(
-    remote_host=EnvVar("PS_SSH_HOST"),
-    remote_port=int(_check.not_none(value=EnvVar("PS_SSH_PORT").get_value())),
-    username=EnvVar("PS_SSH_USERNAME"),
-    tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
 )
 
 SSH_RENLEARN = SSHResource(
