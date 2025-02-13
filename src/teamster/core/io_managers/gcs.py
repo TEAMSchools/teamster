@@ -100,8 +100,8 @@ class AvroGCSIOManager(GCSUPathIOManager):
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
         blob = self.bucket_obj.blob(blob_name=str(path))
 
+        # trunk-ignore(pyright/reportCallIssue)
         with blob.open(mode="rb") as fo:
-            # trunk-ignore(pyright/reportArgumentType)
             reader = fastavro.reader(fo=fo)
 
             records = [record for record in reader]
