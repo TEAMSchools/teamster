@@ -24,7 +24,7 @@ def build_airbyte_start_sync_schedule(
         )
 
         context.log.info(
-            f"Job {job_sync["jobId"]} {job_sync["status"]} for {connection_id}"
+            f"Job {job_sync['jobId']} {job_sync['status']} for {connection_id}"
         )
 
         return SkipReason("This schedule doesn't actually return any runs.")
