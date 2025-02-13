@@ -34,7 +34,7 @@ select
     ar.* except (lep_status, lunch_status, spedlep),
 
     sr.mail as advisor_email,
-    sr.communication_business_mobile as advisor_phone,
+    sr.work_cell as advisor_phone,
 
     sl.username as student_web_id,
     sl.default_password as student_web_password,
@@ -127,7 +127,7 @@ select
     end as lunch_application_status,
 from with_region as ar
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on ar.advisor_teachernumber = sr.powerschool_teacher_number
 left join
     {{ ref("stg_people__student_logins") }} as sl

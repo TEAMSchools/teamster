@@ -144,7 +144,6 @@ select
         sec.sections_external_expression,
         sec.sections_section_number
     ) as section_or_period,
-
 from term_weeks as tw
 inner join
     sections as sec
@@ -153,7 +152,7 @@ inner join
     and tw.week_end_date between sec.terms_firstday and sec.terms_lastday
     and {{ union_dataset_join_clause(left_alias="tw", right_alias="sec") }}
 left join
-    {{ ref("base_people__staff_roster") }} as r
+    {{ ref("int_people__staff_roster") }} as r
     on sec.teachernumber = r.powerschool_teacher_number
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
