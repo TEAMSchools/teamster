@@ -10,6 +10,8 @@ helm repo update
 
 helm show values 1password/connect >.k8s/1password/values.yaml
 
+source env/.env
+
 helm upgrade \
   --install connect 1password/connect \
   --set-file connect.credentials=env/1password-credentials.json \
