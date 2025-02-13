@@ -2,6 +2,7 @@ with
     date_scaffold as (
         select
             employee_number,
+
             if(
                 work_assignment_effective_start_date > '2020-12-31',
                 '2020-12-31',
@@ -13,6 +14,7 @@ with
 
         select
             employee_number,
+
             if(
                 status_effective_start_date > '2020-12-31',
                 '2020-12-31',
@@ -24,6 +26,7 @@ with
 
         select
             employee_number,
+
             if(
                 manager_effective_start_date > '2020-12-31',
                 '2020-12-31',
@@ -36,6 +39,7 @@ with
         select
             employee_number,
             effective_start_date,
+
             coalesce(
                 date_sub(
                     lead(effective_start_date, 1) over (
@@ -90,6 +94,8 @@ select
     m.manager_effective_end_date,
     m.manager_employee_number,
 
+    e.preferred_last_name || ', ' || e.preferred_first_name as preferred_name_lastfirst,
+
     timestamp(
         ed.effective_start_date, '{{ var("local_timezone") }}'
     ) as effective_start_timestamp,
@@ -98,8 +104,6 @@ select
     ) as effective_end_timestamp,
 
     if(ed.effective_end_date = '2020-12-31', true, false) as is_active,
-
-    e.preferred_last_name || ', ' || e.preferred_first_name as preferred_name_lastfirst,
 
     case
         e.ethnicity
@@ -136,5 +140,4 @@ left join
     on ed.employee_number = m.employee_number
     and ed.effective_start_date
     between m.manager_effective_start_date and m.manager_effective_end_date
-{# bad records #}
-where ed.employee_number not in (102553, 100764)
+where ed.employee_number not in (102553, 100764)  /* bad records */

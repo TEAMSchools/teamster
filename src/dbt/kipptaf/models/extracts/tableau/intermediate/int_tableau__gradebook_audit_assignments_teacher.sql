@@ -48,7 +48,6 @@ select
             sec.sectionid,
             sec.assignment_category_code
     ) as sum_totalpointvalue_section_quarter_category,
-
 from {{ ref("int_tableau__gradebook_audit_section_week_category_scaffold") }} as sec
 left join
     {{ ref("int_powerschool__gradebook_assignments") }} as a

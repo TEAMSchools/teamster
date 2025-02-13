@@ -1,19 +1,18 @@
--- trunk-ignore-begin(sqlfluff/LT05)
 with
     eligible_roster as (
         select
             sr.employee_number,
             sr.assignment_status,
-            sr.preferred_name_lastfirst,
-            sr.business_unit_home_name as business_unit,
-            sr.home_work_location_name as location,
-            sr.department_home_name as department,
+            sr.formatted_name as preferred_name_lastfirst,
+            sr.home_business_unit_name as business_unit,
+            sr.home_work_location_name as `location`,
+            sr.home_department_name as department,
             sr.job_title,
             sr.worker_original_hire_date as hire_date,
             sr.mail,
             sr.google_email,
-            sr.report_to_employee_number,
-            sr.report_to_preferred_name_lastfirst,
+            sr.reports_to_employee_number as report_to_employee_number,
+            sr.reports_to_formatted_name as report_to_preferred_name_lastfirst,
             sr.survey_last_submitted_timestamp,
             sr.race_ethnicity,
             sr.gender_identity,
@@ -44,14 +43,14 @@ with
                 'School-based',
                 'Not+school-based'
             ) as loc_type,
-        from {{ ref("base_people__staff_roster") }} as sr
+        from {{ ref("int_people__staff_roster") }} as sr
         left join
-            {{ ref("base_people__staff_roster") }} as mgr
-            on sr.report_to_employee_number = mgr.employee_number
+            {{ ref("int_people__staff_roster") }} as mgr
+            on sr.reports_to_employee_number = mgr.employee_number
         where sr.assignment_status in ('Active', 'Leave')
     )
 
--- Staff Info and Cert
+/* Staff Info and Cert */
 select
     r.employee_number,
     r.assignment_status,
@@ -155,7 +154,8 @@ inner join
     on rt.name = 'Staff Info & Certification Update'
 
 union all
--- Intent to Return
+
+/* Intent to Return */
 select
     r.employee_number,
     r.assignment_status,
@@ -179,6 +179,7 @@ select
     'Intent to Return Survey' as survey,
     'Complete Intent to Return Survey' as `assignment`,
 
+    -- trunk-ignore(sqlfluff/LT05)
     'https://docs.google.com/forms/d/e/1FAIpQLSerLfKQhyeRGIWNBRTyYHfefnuCmveUCKQ-nt3qaeJrq96w3A/viewform?usp=pp_url&entry.927104043='
     as link,
 
@@ -188,7 +189,8 @@ inner join
 where r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
 
 union all
--- KTAF Support Survey
+
+/* KTAF Support Survey */
 select
     r.employee_number,
     r.assignment_status,
@@ -212,32 +214,33 @@ select
     'KTAF Support Survey' as survey,
     'Complete KTAF Support Survey' as `assignment`,
 
+    -- trunk-ignore(sqlfluff/LT05)
     'https://docs.google.com/forms/d/e/1FAIpQLSfMM4t9aoSZomoYWZfghSDNnmHTtFIV5cUf_yvTZaUlz5Kz2A/viewform?usp=sf_link'
     as link,
-
 from eligible_roster as r
 inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'KTAF Support Survey'
 where
-    r.job_title in ('Executive Director', 'Managing Director of Operations')
-    or (
-        r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
-        and (
-            r.job_title like ('%Leader%')
-            or r.job_title like ('%Head%')
-            or r.job_title = 'School Operations Manager'
+    (
+        r.job_title in ('Executive Director', 'Managing Director of Operations')
+        or (
+            r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
+            and (
+                r.job_title like '%Leader%'
+                or r.job_title like '%Head%'
+                or r.job_title = 'School Operations Manager'
+            )
         )
-    )
-    or (
-        r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
-        and (
-            r.job_title like ('%Director%')
+        or (
+            r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
+            and r.job_title like '%Director%'
             and r.department
             in ('Operations', 'KIPP Forward', 'Special Education', 'School Support')
         )
     )
 
 union all
--- Manager Survey
+
+/* Manager Survey */
 select
     r.employee_number,
     r.assignment_status,
@@ -270,6 +273,7 @@ select
 
     coalesce(
         concat(
+            -- trunk-ignore(sqlfluff/LT05)
             'https://docs.google.com/forms/d/e/1FAIpQLSe9thH3gWfdPLWVtI7gTimKqFO4xjcSr8-Htq-pPhzccxf6dw/viewform?usp=pp_url&entry.1442315056=',
             r.preferred_name_lastfirst,
             '+-+',
@@ -285,13 +289,15 @@ select
             safe_cast(r.report_to_employee_number as string),
             ')'
         ),
+        -- trunk-ignore(sqlfluff/LT05)
         'https://docs.google.com/forms/d/e/1FAIpQLSe9thH3gWfdPLWVtI7gTimKqFO4xjcSr8-Htq-pPhzccxf6dw/viewform?usp=pp_url'
     ) as link,
 from eligible_roster as r
 inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Manager Survey'
 
 union all
--- Support Survey
+
+/* Support Survey */
 select
     r.employee_number,
     r.assignment_status,
@@ -316,6 +322,7 @@ select
     'Complete Your Support Survey' as `assignment`,
 
     concat(
+        -- trunk-ignore(sqlfluff/LT05)
         'https://docs.google.com/forms/d/e/1FAIpQLSf-KQi1iI4gEhilQABKe8gTHtb7wPHuJHG0i_ZX6Bln1JiwwA/viewform?usp=pp_url&entry.1442315056=',
         r.preferred_name_lastfirst,
         '+-+',
@@ -330,7 +337,8 @@ from eligible_roster as r
 inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Support Survey'
 
 union all
--- School Community Diagnostic Staff Survey
+
+/* School Community Diagnostic Staff Survey */
 select
     r.employee_number,
     r.assignment_status,
@@ -353,6 +361,7 @@ select
 
     'School Community Diagnostic' as survey,
     'Complete The School Community Diagnostic' as `assignment`,
+    -- trunk-ignore(sqlfluff/LT05)
     'https://docs.google.com/forms/d/e/1FAIpQLSfozw5B8DP9jKhf_mA5JhtwfLdziZwVsjDFCJtfs2nJnQlWXA/viewform?usp=sf_link'
     as link,
 from eligible_roster as r
@@ -361,7 +370,8 @@ inner join
     on rt.name = 'School Community Diagnostic Staff Survey'
 
 union all
--- TNTP Insight
+
+/* TNTP Insight */
 select
     r.employee_number,
     r.assignment_status,
@@ -386,13 +396,15 @@ select
     'Complete TNTP Insight Survey (Note: link is only accessible via your email)'
     as `assignment`,
 
+    -- trunk-ignore(sqlfluff/LT05)
     'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys'
     as link,
 from eligible_roster as r
 inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'TNTP Insight'
 
 union all
--- Gallup Q12 Survey
+
+/* Gallup Q12 Survey */
 select
     r.employee_number,
     r.assignment_status,
@@ -416,8 +428,11 @@ select
     'Gallup Q12 Survey' as survey,
     'Complete Gallup Q12 Survey (Note: link is only accessible via your email)'
     as `assignment`,
+    -- trunk-ignore(sqlfluff/LT05)
     'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys'
     as link,
--- trunk-ignore-end(sqlfluff/LT05)
 from eligible_roster as r
-inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Gallup Q12 Survey'
+inner join
+    {{ ref("stg_reporting__terms") }} as rt
+    on current_date('America/New_York') between rt.start_date and rt.end_date
+    and rt.name = 'Gallup Q12 Survey'

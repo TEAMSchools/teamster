@@ -1,19 +1,12 @@
 version: 2
 
 models:
-  - name: base_people__staff_roster
+  - name: int_people__staff_roster
     columns:
       - name: employee_number
         data_tests:
           - unique
           - not_null
-  - name: base_people__staff_roster_history
-    meta:
-      dagster:
-        automation_condition:
-          ignore:
-            keys:
-              - kipptaf/surveys/int_surveys__staff_information_survey_pivot
   - name: int_people__staff_roster_history
     meta:
       dagster:
