@@ -1,4 +1,4 @@
-from dagster import EnvVar
+from dagster import EnvVar, _check
 from dagster_airbyte import AirbyteCloudResource
 from dagster_dlt import DagsterDltResource
 from dagster_fivetran import FivetranResource
@@ -124,49 +124,56 @@ SSH resources
 
 SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
     remote_host=EnvVar("ADP_SFTP_HOST_IP"),
+    remote_port=22,
     username=EnvVar("ADP_SFTP_USERNAME"),
     password=EnvVar("ADP_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_CLEVER = SSHResource(
     remote_host=EnvVar("CLEVER_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("CLEVER_SFTP_USERNAME"),
     password=EnvVar("CLEVER_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_COUPA = SSHResource(
     remote_host=EnvVar("COUPA_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("COUPA_SFTP_USERNAME"),
     password=EnvVar("COUPA_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_DEANSLIST = SSHResource(
     remote_host=EnvVar("DEANSLIST_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("DEANSLIST_SFTP_USERNAME"),
     password=EnvVar("DEANSLIST_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_EGENCIA = SSHResource(
     remote_host=EnvVar("EGENCIA_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("EGENCIA_SFTP_USERNAME"),
     key_file="/etc/secret-volume/id_rsa_egencia",
 )
 
 SSH_RESOURCE_ILLUMINATE = SSHResource(
     remote_host=EnvVar("ILLUMINATE_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("ILLUMINATE_SFTP_USERNAME"),
     password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_IDAUTO = SSHResource(
     remote_host=EnvVar("KTAF_SFTP_HOST_IP"),
+    remote_port=22,
     username=EnvVar("KTAF_SFTP_USERNAME"),
     password=EnvVar("KTAF_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_host=EnvVar("LITTLESIS_SFTP_HOST"),
-    remote_port=EnvVar("LITTLESIS_SFTP_PORT"),
+    remote_port=int(_check.not_none(value=EnvVar("LITTLESIS_SFTP_PORT").get_value())),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
 )

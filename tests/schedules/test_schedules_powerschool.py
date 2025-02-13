@@ -1,9 +1,6 @@
 from dagster import DagsterInstance, build_schedule_context
 
-from teamster.core.resources import (
-    get_db_powerschool_resource,
-    get_ssh_powerschool_resource,
-)
+from tests.utils import get_db_powerschool_resource, get_ssh_powerschool_resource
 
 
 def _test(schedule, ssh_powerschool, db_powerschool):
