@@ -47,6 +47,21 @@ models:
     act:
       +schema: act
     adp:
+      workforce_now:
+        +schema: adp_workforce_now
+        +meta:
+          dagster:
+            group: adp_workforce_now
+        api:
+          staging:
+            +materialized: table
+        sftp:
+          staging:
+            +materialized: table
+        fivetran:
+          +enabled: false
+          staging:
+            +materialized: table
       payroll:
         +schema: adp_payroll
         staging:
@@ -57,16 +72,6 @@ models:
           dagster:
             group: adp_workforce_manager
         +materialized: table
-      workforce_now:
-        +schema: adp_workforce_now
-        +meta:
-          dagster:
-            group: adp_workforce_now
-        staging:
-          +materialized: table
-        workers:
-          staging:
-            +materialized: table
     alchemer:
       +schema: alchemer
       +enabled: false
@@ -96,8 +101,7 @@ models:
         +materialized: table
     dayforce:
       +schema: dayforce
-      staging:
-        +materialized: table
+      +materialized: table
     deanslist:
       +schema: deanslist
     edplan:
@@ -170,6 +174,8 @@ models:
     people:
       +schema: people
       +materialized: table
+      base:
+        +enabled: false
     performance_management:
       +schema: performance_management
       +materialized: table

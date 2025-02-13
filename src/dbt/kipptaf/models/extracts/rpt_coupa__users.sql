@@ -29,8 +29,8 @@ with
         /* existing users */
         select
             sr.employee_number,
-            sr.legal_name__given_name,
-            sr.legal_name__family_name_1,
+            sr.legal_given_name,
+            sr.legal_family_name,
             sr.assignment_status,
             sr.home_business_unit_code,
             sr.home_department_name,
@@ -79,8 +79,8 @@ with
         /* new users */
         select
             sr.employee_number,
-            sr.legal_name__given_name,
-            sr.legal_name__family_name_1,
+            sr.legal_given_name,
+            sr.legal_family_name,
             sr.assignment_status,
             sr.home_business_unit_code,
             sr.home_department_name,
@@ -114,8 +114,8 @@ with
     sub as (
         select
             au.employee_number,
-            au.legal_name__given_name,
-            au.legal_name__family_name_1,
+            au.legal_given_name,
+            au.legal_family_name,
             au.roles,
             au.assignment_status,
             au.active,
@@ -201,8 +201,8 @@ select
     sub.sam_account_name as `Login`,
     sub.user_principal_name as `Sso Identifier`,
     sub.mail as `Email`,
-    sub.legal_name__given_name as `First Name`,
-    sub.legal_name__family_name_1 as `Last Name`,
+    sub.legal_given_name as `First Name`,
+    sub.legal_family_name as `Last Name`,
     sub.employee_number as `Employee Number`,
     sub.roles as `User Role Names`,
     sub.location_code as `Default Address Location Code`,
@@ -262,9 +262,7 @@ select
         if(sub.assignment_status = 'Terminated', 'X', ''),
         coalesce(
             regexp_replace(
-                concat(sub.legal_name__given_name, sub.legal_name__family_name_1),
-                r'[^A-Za-z0-9]',
-                ''
+                concat(sub.legal_given_name, sub.legal_family_name), r'[^A-Za-z0-9]', ''
             ),
             ''
         ),
