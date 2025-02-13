@@ -1,70 +1,75 @@
 -- trunk-ignore(sqlfluff/ST06)
 select
-    student_number,
+    co.student_number,
 
-    if(region = 'Miami', fleid, newark_enrollment_number) as newark_enrollment_number,
+    if(
+        co.region = 'Miami', co.fleid, co.newark_enrollment_number
+    ) as newark_enrollment_number,
 
-    state_studentnumber,
-    lastfirst,
-    schoolid,
-    school_name,
+    co.state_studentnumber,
+    co.lastfirst,
+    co.schoolid,
+    co.school_name,
 
-    if(grade_level = 0, 'K', safe_cast(grade_level as string)) as grade_level,
+    if(co.grade_level = 0, 'K', safe_cast(co.grade_level as string)) as grade_level,
 
-    advisory_name as team,
-    advisor_lastfirst as advisor_name,
-    entrydate,
-    boy_status,
-    dob,
-    gender,
-    lunch_status as lunchstatus,
+    co.advisory_name as team,
+    co.advisor_lastfirst as advisor_name,
+    co.entrydate,
+    co.boy_status,
+    co.dob,
+    co.gender,
+    co.lunch_status as lunchstatus,
 
     case
-        when lunch_application_status is null
+        when co.lunch_application_status is null
         then 'N'
-        when lunch_application_status = 'No Application'
+        when co.lunch_application_status = 'No Application'
         then 'N'
-        when lunch_application_status like 'Prior%'
+        when co.lunch_application_status like 'Prior%'
         then 'N'
         else 'Y'
     end as lunch_app_status,
 
-    lunch_balance,
-    home_phone,
-    contact_1_phone_primary as mother_cell,
-    contact_2_phone_primary as father_cell,
-    contact_1_name as mother,
-    contact_2_name as father,
+    co.lunch_balance,
+    co.home_phone,
+    co.contact_1_phone_primary as mother_cell,
+    co.contact_2_phone_primary as father_cell,
+    co.contact_1_name as mother,
+    co.contact_2_name as father,
 
-    concat(pickup_1_name, ' | ', pickup_1_phone_mobile) as release_1,
-    concat(pickup_2_name, ' | ', pickup_2_phone_mobile) as release_2,
-    concat(pickup_3_name, ' | ', pickup_3_phone_mobile) as release_3,
+    concat(co.pickup_1_name, ' | ', co.pickup_1_phone_mobile) as release_1,
+    concat(co.pickup_2_name, ' | ', co.pickup_2_phone_mobile) as release_2,
+    concat(co.pickup_3_name, ' | ', co.pickup_3_phone_mobile) as release_3,
 
     null as release_4,
     null as release_5,
 
-    coalesce(contact_1_email_current, contact_2_email_current) as guardianemail,
-    concat(street, ', ', city, ', ', `state`, ' ', zip) as `address`,
+    coalesce(co.contact_1_email_current, co.contact_2_email_current) as guardianemail,
+    concat(co.street, ', ', co.city, ', ', co.`state`, ' ', co.zip) as `address`,
 
-    first_name,
-    last_name,
-    student_web_id,
-    student_web_password,
+    co.first_name,
+    co.last_name,
+    co.student_web_id,
+    co.student_web_password,
 
-    student_web_id || '.fam' as family_web_id,
+    co.student_web_id || '.fam' as family_web_id,
 
-    student_web_password as family_web_password,
-    media_release,
-    region,
-    spedlep as iep_status,
-    lep_status,
-    is_504 as c_504_status,
-    is_homeless,
-    infosnap_opt_in,
-    city,
-    is_self_contained as is_selfcontained,
-    infosnap_id,
-    rides_staff,
-    gifted_and_talented,
-from {{ ref("base_powerschool__student_enrollments") }}
+    co.student_web_password as family_web_password,
+    co.media_release,
+    co.region,
+    co.spedlep as iep_status,
+    co.lep_status,
+    co.is_504 as c_504_status,
+    co.is_homeless,
+    co.infosnap_opt_in,
+    co.city,
+    co.is_self_contained as is_selfcontained,
+    co.infosnap_id,
+    co.rides_staff,
+    co.gifted_and_talented,
+
+    r.contact_id as salesforce_contact_id,
+from {{ ref("base_powerschool__student_enrollments") }} as co
+left join {{ ref("int_kippadb__roster") }} as r on co.student_number = r.student_number
 where enroll_status in (0, -1) and rn_all = 1
