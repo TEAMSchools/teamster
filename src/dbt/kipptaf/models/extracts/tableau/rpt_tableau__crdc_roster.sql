@@ -27,12 +27,15 @@ with
             x.crdc_course_group,
             x.crdc_subject_group,
             x.crdc_ap_group,
-            x.ap_tag,
             x.sced_code as sced_code_xwalk,
+
+            coalesce(x.ap_tag, false) as ap_tag,
 
             concat(c.nces_subject_area, c.nces_course_id) as sced_code_courses,
 
             if(c.courses_course_name like '%(DE)%', true, false) as is_dual_enrollment,
+
+            if(c.courses_course_name like '%(CR)%', true, false) as is_credit_recovery,
 
             if(
                 c.cc_dateenrolled <= '2023-10-02' and c.cc_dateleft >= '2023-10-02',
