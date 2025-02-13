@@ -7,8 +7,8 @@ connect:
         cpu: 250m
         memory: 0.5Gi
       limits:
-        cpu: 250m
-        memory: 0.5Gi
+        cpu: 500m
+        memory: 1.0Gi
 
   # The 1Password Connect Sync Specific Values
   sync:
@@ -17,13 +17,12 @@ connect:
         cpu: 250m
         memory: 0.5Gi
       limits:
-        cpu: 250m
-        memory: 0.5Gi
+        cpu: 500m
+        memory: 1.0Gi
 
   # Node selector stanza for the Connect pod
   nodeSelector:
     cloud.google.com/gke-spot: "true"
-    cloud.google.com/compute-class: Balanced
 
 # This section of values is for 1Password Operator Configuration
 operator:
@@ -40,8 +39,8 @@ operator:
       cpu: 250m
       memory: 0.5Gi
     limits:
-      cpu: 250m
-      memory: 0.5Gi
+      cpu: 500m
+      memory: 1.0Gi
 
   # Node selector stanza for the Operator pod
   nodeSelector:
