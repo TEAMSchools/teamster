@@ -28,6 +28,7 @@ dependencies = [
   "oracledb>=1.4.2",
   "psycopg[binary,pool]>=3.2.3",
   "py-avro-schema>=3.4.1",
+  "pycryptodome>=3.21.0",
   "pypdf>=5.0.0",
   "python-dateutil>=2.9.0.post0",
   "scikit-learn>=1.4.0",
