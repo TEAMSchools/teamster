@@ -69,7 +69,8 @@ select
     co.rides_staff,
     co.gifted_and_talented,
 
-    r.contact_id as salesforce_contact_id,
+    c.id as salesforce_contact_id,
 from {{ ref("base_powerschool__student_enrollments") }} as co
-left join {{ ref("int_kippadb__roster") }} as r on co.student_number = r.student_number
+left join
+    {{ ref("stg_kippadb__contact") }} as c on co.student_number = c.school_specific_id
 where co.enroll_status in (0, -1) and co.rn_all = 1
