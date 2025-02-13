@@ -78,7 +78,6 @@ LITTLESIS_SFTP_HOST=op://Data Team/Little SIS SFTP/host
 LITTLESIS_SFTP_PASSWORD=op://Data Team/Little SIS SFTP/password
 LITTLESIS_SFTP_PORT=op://Data Team/Little SIS SFTP/port
 LITTLESIS_SFTP_USERNAME=op://Data Team/Little SIS SFTP/username
-OP_CONNECT_TOKEN=op://Data Team/hltg4twkgkf6xc23n6pc7dqvee/credential
 OVERGRAD_API_KEY_KIPPCAMDEN=op://Data Team/Overgrad API - Camden/credential
 OVERGRAD_API_KEY_KIPPNEWARK=op://Data Team/Overgrad API - Newark/credential
 OVERGRAD_API_KEY=op://Data Team/Overgrad API - Newark/credential
