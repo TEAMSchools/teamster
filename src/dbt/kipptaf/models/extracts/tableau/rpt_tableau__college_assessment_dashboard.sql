@@ -30,6 +30,7 @@ with
             t.subject_area as expected_subject_area,
 
             if(e.iep_status = 'No IEP', 0, 1) as sped,
+
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -66,6 +67,11 @@ with
             s.teacher_lastfirst,
             s.sections_external_expression,
             s.courses_credittype,
+
+            if(
+                s.courses_course_number = 'MAT02056D3', true, false
+            ) as is_math_double_blocked,
+
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -220,6 +226,7 @@ select
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
+    c.is_math_double_blocked,
 
     coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
 from roster as e
@@ -291,6 +298,7 @@ select
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
+    c.is_math_double_blocked,
 
     coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
 from roster as e
@@ -362,6 +370,7 @@ select
     c.courses_course_name as subject_course,
     c.teacher_lastfirst as subject_teacher,
     c.sections_external_expression as subject_external_expression,
+    c.is_math_double_blocked,
 
     coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
 from roster as e
