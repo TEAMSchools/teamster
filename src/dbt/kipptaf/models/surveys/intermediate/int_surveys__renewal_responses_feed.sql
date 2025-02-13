@@ -36,7 +36,7 @@ with
         select
             ri.*,
 
-            ssr.preferred_name_lastfirst as subject_preferred_name,
+            ssr.formatted_name as subject_preferred_name,
             ssr.sam_account_name as subject_samaccountname,
             ssr.user_principal_name as subject_userprincipalname,
 
@@ -60,7 +60,7 @@ with
             ) as rn_approval,
         from response_identifiers as ri
         inner join
-            {{ ref("base_people__staff_roster") }} as ssr
+            {{ ref("int_people__staff_roster") }} as ssr
             on ri.subject_employee_number = ssr.employee_number
         where ri.question_title = 'Employee Name'
     ),
