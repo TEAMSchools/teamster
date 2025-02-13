@@ -15,26 +15,25 @@ class IlluminateDagsterDltTranslator(DagsterDltTranslator):
         self.code_location = code_location
         return super().__init__()
 
-    def get_asset_key(self, resource):
-        return AssetKey(
-            [
-                self.code_location,
-                "dlt",
-                "illuminate",
-                resource.explicit_args["schema"],
-                resource.explicit_args["table"],
-            ]
+    def get_asset_spec(self, data):
+        asset_spec = super().get_asset_spec(data)
+
+        asset_spec = asset_spec.replace_attributes(
+            key=AssetKey(
+                [
+                    self.code_location,
+                    "dlt",
+                    "illuminate",
+                    data.resource.explicit_args["schema"],
+                    data.resource.explicit_args["table"],
+                ]
+            ),
+            deps=[],
         )
 
-    def get_deps_asset_keys(self, resource):
-        return []
+        asset_spec = asset_spec.merge_attributes(kinds={"postgresql"})
 
-    def get_kinds(self, resource, destination):
-        kinds = super().get_kinds(resource, destination)
-
-        kinds.add("postgresql")
-
-        return kinds
+        return asset_spec
 
 
 def filter_date_taken_callback(query: Select, table: TableClause):
