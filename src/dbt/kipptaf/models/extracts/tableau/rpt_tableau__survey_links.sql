@@ -436,37 +436,3 @@ inner join
     {{ ref("stg_reporting__terms") }} as rt
     on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Gallup Q12 Survey'
-
-union all
-
-/* AI Survey */
-select
-    r.employee_number,
-    r.assignment_status,
-    r.preferred_name_lastfirst,
-    r.business_unit,
-    r.location,
-    r.department,
-    r.job_title,
-    r.hire_date,
-    r.mail,
-    r.google_email,
-    r.report_to_employee_number,
-    r.report_to_preferred_name_lastfirst,
-    r.samaccountname,
-    r.username,
-
-    rt.academic_year,
-    rt.code as survey_round,
-    rt.is_current,
-
-    'AI Survey' as survey,
-    'Optional: Complete an AI Usage Survey' as `assignment`,
-    -- trunk-ignore(sqlfluff/LT05)
-    'https://docs.google.com/forms/d/e/1FAIpQLSd4PG0h1rVmJWEfepQuc6GMDTv3Kk_vrqD0AU_BpQAkyPhKGw/viewform?usp=sf_link'
-    as link,
-from eligible_roster as r
-inner join
-    {{ ref("stg_reporting__terms") }} as rt
-    on current_date('America/New_York') between rt.start_date and rt.end_date
-    and rt.name = 'Gallup Q12 Survey'
