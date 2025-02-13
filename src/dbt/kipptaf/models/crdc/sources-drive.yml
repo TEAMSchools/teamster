@@ -18,10 +18,18 @@ sources:
         columns:
           - name: sced_code
             data_type: string
-          - name: crdc_subject
+          - name: sced_course_name
             data_type: string
-          - name: crdc_course_name
+          - name: crdc_course_group
             data_type: string
+          - name: crdc_subject_group
+            data_type: string
+          - name: crdc_ap_group
+            data_type: string
+          - name: ap_tag
+            data_type: boolean
+          - name: duplicate
+            data_type: numeric
         meta:
           dagster:
             asset_key:
