@@ -8,7 +8,7 @@ authors = [
 license = { text = "GPL-3.0-or-later" }
 requires-python = ">=3.12,<3.13"
 dependencies = [
-  "dagster>=1.9,<1.10",
+  "dagster>=1.10,<1.11",
   "dagster-airbyte",
   "dagster-cloud",
   "dagster-dbt",
