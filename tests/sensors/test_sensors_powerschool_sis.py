@@ -1,9 +1,6 @@
 from dagster import DagsterInstance, SensorResult, _check, build_sensor_context
 
-from teamster.core.resources import (
-    get_db_powerschool_resource,
-    get_ssh_powerschool_resource,
-)
+from tests.utils import get_db_powerschool_resource, get_ssh_powerschool_resource
 
 
 def _test(sensor, ssh_powerschool, db_powerschool):
