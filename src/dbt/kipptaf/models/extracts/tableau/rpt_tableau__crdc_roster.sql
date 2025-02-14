@@ -86,7 +86,6 @@ with
 
 -- this CTE is appending the different versions/groupings i need for reporting on
 -- course data
-
 -- dual enrolled students
 select *, 'PENR-4' as crdc_question_section,
 from custom_schedule
@@ -98,3 +97,11 @@ union all
 select *, 'PENR-6' as crdc_question_section,
 from custom_schedule
 where is_credit_recovery
+
+union all
+
+-- algebra classes for MS
+select *, 'COUR-1' as crdc_question_section,
+from custom_schedule
+-- alg 1 ms courses use a special code
+where sced_code_courses = '52052'
