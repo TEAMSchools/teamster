@@ -153,7 +153,7 @@ with
     final_schedule as (
         select *, 'PENR-4' as crdc_question_section,
         from custom_schedule
-        where is_dual_enrollment
+        where is_dual_enrollment and is_oct_01_course
 
         union all
 
@@ -164,7 +164,7 @@ with
 
         union all
 
-        -- algebra classes for MS; we dont' do geometry, so there will be no cte check
+        -- algebra classes for MS; we don't do geometry, so there will be no cte check
         -- for it
         select *, 'COUR-1' as crdc_question_section,
         from custom_schedule
@@ -189,23 +189,22 @@ with
         union all
 
         -- hs science courses
-        select *, 'COUR-14' as crdc_question_section,
+        select
+            *,
+            case
+                crdc_subject_group
+                when 'Computer Science'
+                then 'COUR-18'
+                when 'Data Science'
+                then 'COUR-20'
+                else 'COUR-14'
+            end as crdc_question_section,
+
         from custom_schedule
-        where crdc_subject_group in ('Biology', 'Chemistry', 'Physics')
-
-        union all
-
-        -- hs computer science courses
-        select *, 'COUR-18' as crdc_question_section,
-        from custom_schedule
-        where crdc_subject_group = 'Computer Science'
-
-        union all
-
-        -- hs data science courses
-        select *, 'COUR-20' as crdc_question_section,
-        from custom_schedule
-        where crdc_subject_group = 'Data Science'
+        where
+            crdc_subject_group
+            in ('Biology', 'Chemistry', 'Physics', 'Computer Science', 'Data Science')
+            and is_oct_01_course
 
         union all
 
@@ -213,7 +212,7 @@ with
         select *, 'APIB-4' as crdc_question_section,
         from custom_schedule
         -- crdc ap group is needed to not count the AP courses crdc doesnt like
-        where ap_tag_mismatch and crdc_ap_group is not null
+        where ap_tag_mismatch and crdc_ap_group is not null and is_oct_01_course
 
         union all
 
@@ -221,7 +220,11 @@ with
         select *, 'APIB-4' as crdc_question_section,
         from custom_schedule
         -- crdc ap group is needed to not count the AP courses crdc doesnt like
-        where not ap_tag_mismatch and is_ap_course and crdc_ap_group is not null
+        where
+            not ap_tag_mismatch
+            and is_ap_course
+            and crdc_ap_group is not null
+            and is_oct_01_course
     )
 
 select *
