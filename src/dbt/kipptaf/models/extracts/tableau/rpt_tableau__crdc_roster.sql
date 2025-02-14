@@ -141,3 +141,17 @@ union all
 select *, 'COUR-20' as crdc_question_section,
 from custom_schedule
 where crdc_subject_group = 'Data Science'
+
+union all
+
+-- ap courses that have correct tags on PS
+select *, 'APIB-4' as crdc_question_section,
+from custom_schedule
+where ap_tag_mismatch and crdc_ap_group is not null
+
+union all
+
+-- ap courses that have incorrect tags on PS
+select *, 'APIB-4' as crdc_question_section,
+from custom_schedule
+where not ap_tag_mismatch and is_ap_course and crdc_ap_group is not null
