@@ -109,6 +109,11 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: credential
+              - name: AIRBYTE_WORKSPACE_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-airbyte-api
+                    key: workspace-id
               - name: AMPLIFY_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -199,6 +204,11 @@ locations:
                   secretKeyRef:
                     name: op-fivetran-api
                     key: api-secret
+              - name: FIVETRAN_ACCOUNT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-fivetran-api
+                    key: account-id
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -487,6 +497,11 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: credential
+              - name: AIRBYTE_WORKSPACE_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-airbyte-api
+                    key: workspace-id
               - name: AMPLIFY_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -562,6 +577,11 @@ locations:
                   secretKeyRef:
                     name: op-fivetran-api
                     key: api-secret
+              - name: FIVETRAN_ACCOUNT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-fivetran-api
+                    key: account-id
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:

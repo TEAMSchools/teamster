@@ -1,5 +1,5 @@
 from dagster import ScheduleEvaluationContext, SkipReason, job, schedule
-from dagster_fivetran import FivetranResource
+from dagster_fivetran import FivetranWorkspace
 
 
 def build_fivetran_start_sync_schedule(
@@ -16,31 +16,12 @@ def build_fivetran_start_sync_schedule(
         job=_job,
     )
     def _schedule(
-        context: ScheduleEvaluationContext, fivetran: FivetranResource
+        context: ScheduleEvaluationContext, fivetran: FivetranWorkspace
     ) -> SkipReason:
-        fivetran.start_sync(connector_id=connector_id)
-        return SkipReason("This schedule doesn't actually return any runs.")
+        fivetran_client = fivetran.get_client()
 
-    return _schedule
+        fivetran_client.start_sync(connector_id)
 
-
-def build_fivetran_start_resync_schedule(
-    code_location, connector_id, connector_name, cron_schedule, execution_timezone
-):
-    @job(name=f"{code_location}_fivetran_resync_{connector_name}_job")
-    def _job():
-        """Placehoder job"""
-
-    @schedule(
-        name=f"{_job.name}_schedule",
-        cron_schedule=cron_schedule,
-        execution_timezone=execution_timezone,
-        job=_job,
-    )
-    def _schedule(
-        context: ScheduleEvaluationContext, fivetran: FivetranResource
-    ) -> SkipReason:
-        fivetran.start_resync(connector_id=connector_id)
         return SkipReason("This schedule doesn't actually return any runs.")
 
     return _schedule

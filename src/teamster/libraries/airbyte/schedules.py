@@ -1,5 +1,6 @@
-from dagster import ScheduleEvaluationContext, SkipReason, _check, job, schedule
-from dagster_airbyte import AirbyteCloudResource
+from dagster import ScheduleEvaluationContext, SkipReason, job, schedule
+from dagster_airbyte import AirbyteCloudWorkspace
+from dagster_airbyte.translator import AirbyteJob
 
 
 def build_airbyte_start_sync_schedule(
@@ -15,17 +16,14 @@ def build_airbyte_start_sync_schedule(
         execution_timezone=execution_timezone,
         job=_job,
     )
-    def _schedule(context: ScheduleEvaluationContext, airbyte: AirbyteCloudResource):
-        job_sync = _check.not_none(
-            airbyte.make_request(
-                endpoint="/jobs",
-                data={"connectionId": connection_id, "jobType": "sync"},
-            )
-        )
+    def _schedule(context: ScheduleEvaluationContext, airbyte: AirbyteCloudWorkspace):
+        airbyte_client = airbyte.get_client()
 
-        context.log.info(
-            f"Job {job_sync['jobId']} {job_sync['status']} for {connection_id}"
-        )
+        start_job_details = airbyte_client.start_sync_job(connection_id)
+
+        job = AirbyteJob.from_job_details(job_details=start_job_details)
+
+        context.log.info(f"{job.id=} initialized for {connection_id=}.")
 
         return SkipReason("This schedule doesn't actually return any runs.")
 
