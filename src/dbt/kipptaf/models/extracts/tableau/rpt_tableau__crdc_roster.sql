@@ -112,13 +112,32 @@ union all
 select *, 'COUR-7' as crdc_question_section,
 from custom_schedule
 where
-    crdc_course_group in (
+    crdc_subject_group in (
         'Algebra I',
         'Geometry',
         'Algebra II',
         'Advanced Mathematics',
         'Calculus',
-        'Algebra I / Algebra II',
-        'Algebra I / Geometry',
-        'Algebra II / Geometry'
+        'Algebra I / Algebra II'
     )
+
+union all
+
+-- hs science courses
+select *, 'COUR-14' as crdc_question_section,
+from custom_schedule
+where crdc_subject_group in ('Biology', 'Chemistry', 'Physics')
+
+union all
+
+-- hs computer science courses
+select *, 'COUR-18' as crdc_question_section,
+from custom_schedule
+where crdc_subject_group = 'Computer Science'
+
+union all
+
+-- hs data science courses
+select *, 'COUR-20' as crdc_question_section,
+from custom_schedule
+where crdc_subject_group = 'Data Science'
