@@ -4,8 +4,8 @@ with
         from {{ ref("base_powerschool__student_enrollments") }}
         where
             -- submission is always for the previous school year, but retention is
-            -- from the year prior to the submission year
-            academic_year = {{ var("current_academic_year") - 2 }}
+            -- tracked only on the submission year + 1 (current academic year)
+            academic_year = {{ var("current_academic_year") }}
             and grade_level != 99
             and is_retained_year
             -- miami does their own submission
@@ -14,29 +14,43 @@ with
 
     enrollment as (
         select
-            _dbt_source_relation,
-            academic_year,
-            schoolid,
+            e._dbt_source_relation,
+            e.academic_year,
+            e.schoolid,
+            e.school_abbreviation,
 
-            studentid,
-            student_number,
-            grade_level,
-            grade_level_prev,
-            entrydate,
-            exitdate,
-            enroll_status,
+            e.studentid,
+            e.student_number,
+            e.grade_level,
+            e.grade_level_prev,
+            e.entrydate,
+            e.exitdate,
+            e.enroll_status,
 
-            rn_year,
+            e.rn_year,
+            e.is_enrolled_oct01,
 
-            gender,
-            ethnicity,
-        from {{ ref("base_powerschool__student_enrollments") }}
+            e.gender,
+            e.ethnicity,
+            e.gifted_and_talented,
+            e.is_504,
+            e.spedlep,
+            e.lep_status,
+
+            adb.contact_id,
+
+            if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
+        from {{ ref("base_powerschool__student_enrollments") }} as e
+        left join
+            {{ ref("int_kippadb__roster") }} as adb
+            on e.student_number = adb.student_number
         where
             -- submission is always for the previous school year
-            academic_year = {{ var("current_academic_year") - 1 }}
-            and grade_level != 99
+            e.academic_year = {{ var("current_academic_year") - 1 }}
+            and e.grade_level != 99
             -- miami does their own submission
-            and region != 'Miami'
+            and e.region != 'Miami'
     ),
 
     custom_schedule as (
