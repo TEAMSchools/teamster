@@ -1,4 +1,13 @@
 with
+    enrollment as (
+        select *
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where
+            academic_year = {{ var("current_academic_year") - 1 }}
+            -- miami does their own submission
+            and regexp_extract(_dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
+    ),
+
     custom_schedule as (
         select
             c._dbt_source_relation,
@@ -80,78 +89,87 @@ with
         -- submission is always for the previous school year
         where
             c.cc_academic_year = {{ var("current_academic_year") - 1 }}
+            -- miami does their own submission
             and regexp_extract(c._dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
 
+    ),
+
+    -- this CTE is appending the different versions/groupings i need for reporting on
+    -- course data
+    -- dual enrolled students
+    final_schedule as (
+        select *, 'PENR-4' as crdc_question_section,
+        from custom_schedule
+        where is_dual_enrollment
+
+        union all
+
+        -- credit recovery students
+        select *, 'PENR-6' as crdc_question_section,
+        from custom_schedule
+        where is_credit_recovery
+
+        union all
+
+        -- algebra classes for MS; we dont' do geometry, so there will be no cte check
+        -- for it
+        select *, 'COUR-1' as crdc_question_section,
+        from custom_schedule
+        -- alg 1 ms courses use a special code
+        where sced_code_courses = '52052'
+
+        union all
+
+        -- hs math courses
+        select *, 'COUR-7' as crdc_question_section,
+        from custom_schedule
+        where
+            crdc_subject_group in (
+                'Algebra I',
+                'Geometry',
+                'Algebra II',
+                'Advanced Mathematics',
+                'Calculus',
+                'Algebra I / Algebra II'
+            )
+
+        union all
+
+        -- hs science courses
+        select *, 'COUR-14' as crdc_question_section,
+        from custom_schedule
+        where crdc_subject_group in ('Biology', 'Chemistry', 'Physics')
+
+        union all
+
+        -- hs computer science courses
+        select *, 'COUR-18' as crdc_question_section,
+        from custom_schedule
+        where crdc_subject_group = 'Computer Science'
+
+        union all
+
+        -- hs data science courses
+        select *, 'COUR-20' as crdc_question_section,
+        from custom_schedule
+        where crdc_subject_group = 'Data Science'
+
+        union all
+
+        -- ap courses that have correct tags on PS
+        select *, 'APIB-4' as crdc_question_section,
+        from custom_schedule
+        -- crdc ap group is needed to not count the AP courses crdc doesnt like
+        where ap_tag_mismatch and crdc_ap_group is not null
+
+        union all
+
+        -- ap courses that have incorrect tags on PS
+        select *, 'APIB-4' as crdc_question_section,
+        from custom_schedule
+        -- crdc ap group is needed to not count the AP courses crdc doesnt like
+        where not ap_tag_mismatch and is_ap_course and crdc_ap_group is not null
     )
 
--- this CTE is appending the different versions/groupings i need for reporting on
--- course data
--- dual enrolled students
-select *, 'PENR-4' as crdc_question_section,
-from custom_schedule
-where is_dual_enrollment
-
-union all
-
--- credit recovery students
-select *, 'PENR-6' as crdc_question_section,
-from custom_schedule
-where is_credit_recovery
-
-union all
-
--- algebra classes for MS; we dont' do geometry, so there will be no cte check for it
-select *, 'COUR-1' as crdc_question_section,
-from custom_schedule
--- alg 1 ms courses use a special code
-where sced_code_courses = '52052'
-
-union all
-
--- hs math courses
-select *, 'COUR-7' as crdc_question_section,
-from custom_schedule
-where
-    crdc_subject_group in (
-        'Algebra I',
-        'Geometry',
-        'Algebra II',
-        'Advanced Mathematics',
-        'Calculus',
-        'Algebra I / Algebra II'
-    )
-
-union all
-
--- hs science courses
-select *, 'COUR-14' as crdc_question_section,
-from custom_schedule
-where crdc_subject_group in ('Biology', 'Chemistry', 'Physics')
-
-union all
-
--- hs computer science courses
-select *, 'COUR-18' as crdc_question_section,
-from custom_schedule
-where crdc_subject_group = 'Computer Science'
-
-union all
-
--- hs data science courses
-select *, 'COUR-20' as crdc_question_section,
-from custom_schedule
-where crdc_subject_group = 'Data Science'
-
-union all
-
--- ap courses that have correct tags on PS
-select *, 'APIB-4' as crdc_question_section,
-from custom_schedule
-where ap_tag_mismatch and crdc_ap_group is not null
-
-union all
-
--- ap courses that have incorrect tags on PS
-select *, 'APIB-4' as crdc_question_section,
-from custom_schedule
-where not ap_tag_mismatch and is_ap_course and crdc_ap_group is not null
+select *
+from enrollment
