@@ -1,6 +1,7 @@
 with
     retained as (
-        select student_number, is_retained_year,
+        -- reason for distinct: for students with multiple enrollments
+        select distinct student_number, is_retained_year,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
             -- submission is always for the previous school year, but retention is
