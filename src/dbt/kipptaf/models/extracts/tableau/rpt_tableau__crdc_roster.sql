@@ -86,6 +86,15 @@ with
 
 -- this CTE is appending the different versions/groupings i need for reporting on
 -- course data
+
+-- dual enrolled students
 select *, 'PENR-4' as crdc_question_section,
 from custom_schedule
 where is_dual_enrollment
+
+union all
+
+-- credit recovery students
+select *, 'PENR-6' as crdc_question_section,
+from custom_schedule
+where is_credit_recovery
