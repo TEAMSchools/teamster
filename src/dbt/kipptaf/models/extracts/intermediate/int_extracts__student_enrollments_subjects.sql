@@ -161,6 +161,15 @@ with
             ) as rn_year,
         from {{ ref("int_amplify__all_assessments") }}
         where mclass_measure_standard = 'Composite'
+    ),
+
+    tutoring as (
+        select _dbt_source_relation, studentid, academic_year,
+        from {{ ref("int_powerschool__spenrollments") }}
+        where
+            specprog_name = 'Tutoring'
+            and current_date('{{ var("local_timezone") }}')
+            between enter_date and exit_date
     )
 
 select
@@ -232,6 +241,8 @@ select
         then true
         else false
     end as is_exempt_state_testing,
+
+    if(t.studentid is not null, true, false) as is_tutoring,
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -288,4 +299,9 @@ left join
     and co.academic_year = ps.academic_year
     and sj.discipline = ps.discipline
     and co.grade_level = 10
+left join
+    tutoring as t
+    on co.studentid = t.studentid
+    and co.academic_year = t.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="t") }}
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
