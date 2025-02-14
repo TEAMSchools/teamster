@@ -37,6 +37,8 @@ with
 
             adb.contact_id,
 
+            coalesce(r.is_retained_year, false) as is_retained_year,
+
             if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             if(e.spedlep like 'SPED%' and not is_504, true, false) as iep_only,
@@ -49,6 +51,7 @@ with
         left join
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
+        left join retained as r on e.student_number = r.student_number
         where
             -- submission is always for the previous school year
             e.academic_year = {{ var("current_academic_year") - 1 }}
