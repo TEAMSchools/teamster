@@ -15,7 +15,7 @@ select
 
     ldap.employee_number as respondent_employee_number,
 
-    sr.preferred_name_lastfirst as respondent_preferred_name,
+    sr.formatted_name as respondent_preferred_name,
     sr.sam_account_name as respondent_samaccountname,
     sr.user_principal_name as respondent_userprincipalname,
 
@@ -43,7 +43,7 @@ left join
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
     and rt.type = 'SURVEY'
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on ldap.employee_number = sr.employee_number
 
 union all

@@ -5,7 +5,7 @@ with
             item_id,
             effective_date_start,
             effective_date_end,
-            effective_date_timestamp,
+            effective_date_start_timestamp,
             is_current_record,
             name_code__code_value,
             name_code__long_name,
@@ -26,7 +26,7 @@ select
     item_id,
     effective_date_start,
     effective_date_end,
-    effective_date_timestamp,
+    effective_date_start_timestamp,
     is_current_record,
 
     code_value_assignedbusinessunit
