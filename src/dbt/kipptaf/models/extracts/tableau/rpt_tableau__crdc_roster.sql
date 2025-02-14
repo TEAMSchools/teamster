@@ -105,3 +105,20 @@ select *, 'COUR-1' as crdc_question_section,
 from custom_schedule
 -- alg 1 ms courses use a special code
 where sced_code_courses = '52052'
+
+union all
+
+-- hs math courses
+select *, 'COUR-7' as crdc_question_section,
+from custom_schedule
+where
+    crdc_course_group in (
+        'Algebra I',
+        'Geometry',
+        'Algebra II',
+        'Advanced Mathematics',
+        'Calculus',
+        'Algebra I / Algebra II',
+        'Algebra I / Geometry',
+        'Algebra II / Geometry'
+    )
