@@ -5,8 +5,6 @@ from dagster import AssetKey, AssetSpec
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 
-config_dir = pathlib.Path(__file__).parent / "config"
-
 
 def build_fivetran_asset_specs(
     config_file: pathlib.Path, code_location: str, kinds: list[str] | None = None
@@ -48,6 +46,8 @@ def build_fivetran_asset_specs(
 
     return specs
 
+
+config_dir = pathlib.Path(__file__).parent / "config"
 
 illuminate_xmin_assets = build_fivetran_asset_specs(
     config_file=config_dir / "illuminate_xmin.yaml",
