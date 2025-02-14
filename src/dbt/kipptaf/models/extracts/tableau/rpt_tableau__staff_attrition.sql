@@ -22,17 +22,18 @@ with
     terminations as (
         select
             position_id,
-            assignment_status_effective_date as termination_effective_date,
+            assignment_status__effective_date as termination_effective_date,
 
             coalesce(
-                assignment_status_reason_long_name, assignment_status_reason_short_name
+                assignment_status__reason_code__long_name,
+                assignment_status__reason_code__short_name
             ) as termination_reason,
 
-            lag(assignment_status_effective_date) over (
-                partition by position_id order by assignment_status_effective_date
+            lag(assignment_status__effective_date) over (
+                partition by position_id order by assignment_status__effective_date
             ) as termination_effective_date_prev,
-        from {{ source("adp_workforce_now", "work_assignment_history") }}
-        where assignment_status_long_name = 'Terminated'
+        from {{ ref("stg_adp_workforce_now__workers__work_assignments") }}
+        where assignment_status__status_code__long_name = 'Terminated'
     ),
 
     /* final termination record */
