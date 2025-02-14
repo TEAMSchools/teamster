@@ -1,11 +1,42 @@
 with
-    enrollment as (
-        select *
+    retained as (
+        select student_number, is_retained_year,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
-            academic_year = {{ var("current_academic_year") - 1 }}
+            -- submission is always for the previous school year, but retention is
+            -- from the year prior to the submission year
+            academic_year = {{ var("current_academic_year") - 2 }}
+            and grade_level != 99
+            and is_retained_year
             -- miami does their own submission
-            and regexp_extract(_dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
+            and region != 'Miami'
+    ),
+
+    enrollment as (
+        select
+            _dbt_source_relation,
+            academic_year,
+            schoolid,
+
+            studentid,
+            student_number,
+            grade_level,
+            grade_level_prev,
+            entrydate,
+            exitdate,
+            enroll_status,
+
+            rn_year,
+
+            gender,
+            ethnicity,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where
+            -- submission is always for the previous school year
+            academic_year = {{ var("current_academic_year") - 1 }}
+            and grade_level != 99
+            -- miami does their own submission
+            and region != 'Miami'
     ),
 
     custom_schedule as (
