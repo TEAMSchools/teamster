@@ -100,7 +100,7 @@ where is_credit_recovery
 
 union all
 
--- algebra classes for MS
+-- algebra classes for MS; we dont' do geometry, so there will be no cte check for it
 select *, 'COUR-1' as crdc_question_section,
 from custom_schedule
 -- alg 1 ms courses use a special code
