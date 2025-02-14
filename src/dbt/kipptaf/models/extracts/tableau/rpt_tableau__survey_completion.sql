@@ -18,6 +18,7 @@ select
     sl.assignment,
     sl.academic_year,
     sl.survey_round,
+    sl.is_current,
 
     if(sr.date_submitted is not null, 1, 0) as completion,
 
@@ -50,4 +51,5 @@ group by
     sl.assignment,
     sr.date_submitted,
     sl.academic_year,
-    sl.survey_round
+    sl.survey_round,
+    sl.is_current

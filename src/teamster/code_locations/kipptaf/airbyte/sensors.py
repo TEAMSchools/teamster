@@ -1,16 +1,14 @@
 import json
 from datetime import datetime, timezone
-from urllib.parse import urlencode
 
 from dagster import (
     AssetKey,
     AssetMaterialization,
     SensorEvaluationContext,
     SensorResult,
-    _check,
     sensor,
 )
-from dagster_airbyte import AirbyteCloudResource
+from dagster_airbyte import AirbyteCloudWorkspace
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.airbyte.assets import asset_specs
@@ -20,18 +18,16 @@ ASSET_KEYS = [a.key for a in asset_specs]
 
 @sensor(name=f"{CODE_LOCATION}_airbyte_asset", minimum_interval_seconds=(60 * 5))
 def airbyte_job_status_sensor(
-    context: SensorEvaluationContext, airbyte: AirbyteCloudResource
+    context: SensorEvaluationContext, airbyte: AirbyteCloudWorkspace
 ):
     now_timestamp = datetime.now(timezone.utc).timestamp()
 
     asset_events = []
     cursor: dict = json.loads(context.cursor or "{}")
 
-    connections = _check.not_none(
-        airbyte.make_request(endpoint="/connections", method="GET")
-    )
+    airbyte_client = airbyte.get_client()
 
-    for connection in _check.inst(connections["data"], list):
+    for connection in airbyte_client.get_connections()["data"]:
         if connection["status"] == "inactive":
             continue
 
@@ -42,16 +38,15 @@ def airbyte_job_status_sensor(
             timestamp=cursor.get(connection_id, 0), tz=timezone.utc
         )
 
-        params = urlencode(
-            query={
+        jobs_response = airbyte_client._make_request(
+            endpoint="jobs",
+            method="GET",
+            base_url=airbyte_client.rest_api_base_url,
+            params={
                 "connectionId": connection_id,
                 "updatedAtStart": last_updated.isoformat(),
                 "status": "succeeded",
-            }
-        )
-
-        jobs_response = _check.not_none(
-            airbyte.make_request(endpoint=f"/jobs?{params}", method="GET")
+            },
         )
 
         if jobs_response.get("data"):

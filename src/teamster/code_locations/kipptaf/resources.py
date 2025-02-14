@@ -1,7 +1,7 @@
-from dagster import EnvVar
-from dagster_airbyte import AirbyteCloudResource
+from dagster import EnvVar, _check
+from dagster_airbyte import AirbyteCloudWorkspace
 from dagster_dlt import DagsterDltResource
-from dagster_fivetran import FivetranResource
+from dagster_fivetran import FivetranWorkspace
 
 from teamster.libraries.adp.workforce_manager.resources import (
     AdpWorkforceManagerResource,
@@ -44,8 +44,10 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
     masked=False,
 )
 
-AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
-    client_id=EnvVar("AIRBYTE_CLIENT_ID"), client_secret=EnvVar("AIRBYTE_CLIENT_SECRET")
+AIRBYTE_CLOUD_RESOURCE = AirbyteCloudWorkspace(
+    workspace_id=EnvVar("AIRBYTE_WORKSPACE_ID"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 
 COUPA_RESOURCE = CoupaResource(
@@ -61,10 +63,10 @@ DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
 
 DLT_RESOURCE = DagsterDltResource()
 
-FIVETRAN_RESOURCE = FivetranResource(
+FIVETRAN_RESOURCE = FivetranWorkspace(
+    account_id=EnvVar("FIVETRAN_ACCOUNT_ID"),
     api_key=EnvVar("FIVETRAN_API_KEY"),
     api_secret=EnvVar("FIVETRAN_API_SECRET"),
-    request_max_retries=5,
 )
 
 GOOGLE_DRIVE_RESOURCE = GoogleDriveResource(
@@ -124,49 +126,56 @@ SSH resources
 
 SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
     remote_host=EnvVar("ADP_SFTP_HOST_IP"),
+    remote_port=22,
     username=EnvVar("ADP_SFTP_USERNAME"),
     password=EnvVar("ADP_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_CLEVER = SSHResource(
     remote_host=EnvVar("CLEVER_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("CLEVER_SFTP_USERNAME"),
     password=EnvVar("CLEVER_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_COUPA = SSHResource(
     remote_host=EnvVar("COUPA_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("COUPA_SFTP_USERNAME"),
     password=EnvVar("COUPA_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_DEANSLIST = SSHResource(
     remote_host=EnvVar("DEANSLIST_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("DEANSLIST_SFTP_USERNAME"),
     password=EnvVar("DEANSLIST_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_EGENCIA = SSHResource(
     remote_host=EnvVar("EGENCIA_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("EGENCIA_SFTP_USERNAME"),
     key_file="/etc/secret-volume/id_rsa_egencia",
 )
 
 SSH_RESOURCE_ILLUMINATE = SSHResource(
     remote_host=EnvVar("ILLUMINATE_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("ILLUMINATE_SFTP_USERNAME"),
     password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_IDAUTO = SSHResource(
     remote_host=EnvVar("KTAF_SFTP_HOST_IP"),
+    remote_port=22,
     username=EnvVar("KTAF_SFTP_USERNAME"),
     password=EnvVar("KTAF_SFTP_PASSWORD"),
 )
 
 SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_host=EnvVar("LITTLESIS_SFTP_HOST"),
-    remote_port=EnvVar("LITTLESIS_SFTP_PORT"),
+    remote_port=int(_check.not_none(value=EnvVar("LITTLESIS_SFTP_PORT").get_value())),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
 )

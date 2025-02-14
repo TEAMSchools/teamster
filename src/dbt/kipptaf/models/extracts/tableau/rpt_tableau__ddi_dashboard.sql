@@ -272,9 +272,14 @@ select
 
     sf.dibels_most_recent_composite,
     sf.state_test_proficiency,
+    sf.is_exempt_iready,
 
-    ip.total_iready_lessons_passed_reading,
-    ip.total_iready_lessons_passed_math,
+    coalesce(
+        ip.total_iready_lessons_passed_reading, 0
+    ) as total_iready_lessons_passed_reading,
+    coalesce(
+        ip.total_iready_lessons_passed_math, 0
+    ) as total_iready_lessons_passed_math,
 
     coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
 
@@ -377,6 +382,7 @@ select
 
     null as dibels_most_recent_composite,
     null as state_test_proficiency,
+    null as is_exempt_iready,
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
 
@@ -478,7 +484,7 @@ select
     null as homeroom_section,
     null as homeroom_teachernumber,
 
-    r.report_to_user_principal_name as homeroom_teacher_name,
+    r.reports_to_user_principal_name as homeroom_teacher_name,
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
@@ -506,6 +512,7 @@ select
     null as organization_goal,
     null as dibels_most_recent_composite,
     null as state_test_proficiency,
+    null as is_exempt_iready,
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
     null as nj_student_tier,
@@ -516,7 +523,7 @@ select
     null as is_passed_iready_4plus_math_int,
 from {{ ref("int_performance_management__observation_details") }} as o
 inner join
-    {{ ref("base_people__staff_roster") }} as r on o.employee_number = r.employee_number
+    {{ ref("int_people__staff_roster") }} as r on o.employee_number = r.employee_number
 left join
     {{ ref("int_powerschool__teachers") }} as t
     on r.powerschool_teacher_number = t.teachernumber

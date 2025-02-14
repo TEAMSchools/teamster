@@ -2,6 +2,8 @@ version: 2
 
 sources:
   - name: adp_workforce_now
+    config:
+      enabled: false
     tables:
       - name: business_communication
       - name: groups

@@ -22,17 +22,18 @@ with
     terminations as (
         select
             position_id,
-            assignment_status_effective_date as termination_effective_date,
+            assignment_status__effective_date as termination_effective_date,
 
             coalesce(
-                assignment_status_reason_long_name, assignment_status_reason_short_name
+                assignment_status__reason_code__long_name,
+                assignment_status__reason_code__short_name
             ) as termination_reason,
 
-            lag(assignment_status_effective_date) over (
-                partition by position_id order by assignment_status_effective_date
+            lag(assignment_status__effective_date) over (
+                partition by position_id order by assignment_status__effective_date
             ) as termination_effective_date_prev,
-        from {{ source("adp_workforce_now", "work_assignment_history") }}
-        where assignment_status_long_name = 'Terminated'
+        from {{ ref("stg_adp_workforce_now__workers__work_assignments") }}
+        where assignment_status__status_code__long_name = 'Terminated'
     ),
 
     /* final termination record */
@@ -54,15 +55,15 @@ with
 
     roster_terminations as (
         select
-            r.work_assignment_id,
+            r.item_id,
             r.employee_number,
             r.worker_id,
             r.position_id,
             r.assignment_status,
-            r.preferred_name_given_name,
-            r.preferred_name_family_name,
-            r.ethnicity_long_name,
-            r.gender_long_name,
+            r.given_name,
+            r.family_name_1,
+            r.ethnicity_code,
+            r.gender_code,
             r.worker_original_hire_date,
             r.worker_rehire_date,
             r.home_work_location_grade_band,
@@ -93,7 +94,7 @@ with
                 date(9999, 12, 31)
             ) as most_recent_termination_date,
             coalesce(t.termination_reason, r.assignment_status_reason) as status_reason,
-        from {{ ref("base_people__staff_roster") }} as r
+        from {{ ref("int_people__staff_roster") }} as r
         left join
             {{ ref("int_people__years_experience") }} as y
             on r.employee_number = y.employee_number
@@ -161,8 +162,8 @@ with
     worker_history_clean as (
         select
             employee_number,
-            business_unit_home_name,
-            department_home_name,
+            home_business_unit_name,
+            home_department_name,
             home_work_location_name,
             job_title,
             safe_cast(
@@ -178,7 +179,7 @@ with
                     date(9999, 12, 31)
                 ) as date
             ) as assignment_status_effective_date_end,
-        from {{ ref("base_people__staff_roster_history") }}
+        from {{ ref("int_people__staff_roster_history") }}
         where primary_indicator
     ),
 
@@ -186,9 +187,9 @@ with
         select
             rys.*,
 
-            w.business_unit_home_name,
+            w.home_business_unit_name,
             w.home_work_location_name,
-            w.department_home_name,
+            w.home_department_name,
             w.job_title,
 
             lead(rys.academic_year_exitdate, 1) over (
@@ -215,10 +216,10 @@ with
 
 select
     wd.employee_number as df_employee_number,
-    wd.preferred_name_given_name as preferred_first_name,
-    wd.preferred_name_family_name as preferred_last_name,
-    wd.ethnicity_long_name as primary_ethnicity,
-    wd.gender_long_name as gender_reporting,
+    wd.given_name as preferred_first_name,
+    wd.family_name_1 as preferred_last_name,
+    wd.ethnicity_code as primary_ethnicity,
+    wd.gender_code as gender_reporting,
     wd.academic_year,
     wd.academic_year_entrydate,
     wd.academic_year_exitdate,
@@ -251,7 +252,7 @@ select
     if(wd.attrition_exitdate <= wd.attrition_date, 1.0, 0.0) as is_attrition,
 
     coalesce(
-        wd.business_unit_home_name, sr.business_unit_home_name
+        wd.home_business_unit_name, sr.home_business_unit_name
     ) as legal_entity_name,
 
     coalesce(
@@ -266,7 +267,7 @@ select
     ) as primary_site_reporting_schoolid,
 
     coalesce(
-        wd.department_home_name, sr.department_home_name
+        wd.home_department_name, sr.home_department_name
     ) as primary_on_site_department,
 
     coalesce(wd.job_title, sr.job_title) as primary_job,
@@ -286,5 +287,5 @@ select
     / 365.25 as years_experience_total,
 from with_dates as wd
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on wd.employee_number = sr.employee_number

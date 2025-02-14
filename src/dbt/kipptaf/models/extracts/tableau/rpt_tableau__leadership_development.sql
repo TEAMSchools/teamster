@@ -96,14 +96,14 @@ select
 
     c.round_completion,
 
-    r.preferred_name_lastfirst,
+    r.formatted_name as preferred_name_lastfirst,
     r.sam_account_name,
     r.job_title,
-    r.business_unit_home_name as entity,
+    r.home_business_unit_name as entity,
     r.home_work_location_name as `location`,
-    r.department_home_name as department,
-    r.report_to_preferred_name_lastfirst as manager,
-    r.report_to_sam_account_name,
+    r.home_department_name as department,
+    r.reports_to_formatted_name as manager,
+    r.reports_to_sam_account_name as report_to_sam_account_name,
     r.assignment_status,
 
     case when m.bucket = 'Goals' then p.notes_boy else m.description end as description,
@@ -119,4 +119,4 @@ left join
     and p.column_name = c.column_name
 left join metrics_lookup as m on p.metric_id = m.metric_id
 left join
-    {{ ref("base_people__staff_roster") }} as r on p.employee_number = r.employee_number
+    {{ ref("int_people__staff_roster") }} as r on p.employee_number = r.employee_number

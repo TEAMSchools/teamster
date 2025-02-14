@@ -6,19 +6,19 @@ select
     s.overall_tier,
     s.eval_date,
 
-    sr.preferred_name_lastfirst as teammate,
-    sr.business_unit_home_name as entity,
+    sr.formatted_name as teammate,
+    sr.home_business_unit_name as entity,
     sr.home_work_location_name as `location`,
     sr.home_work_location_grade_band as grade_band,
     sr.home_work_location_powerschool_school_id,
-    sr.department_home_name as department,
+    sr.home_department_name as department,
     sr.job_title,
-    sr.report_to_preferred_name_lastfirst as manager,
+    sr.reports_to_formatted_name as manager,
     sr.worker_original_hire_date,
     sr.assignment_status,
     sr.gender_identity,
     sr.race_ethnicity_reporting,
-    sr.base_remuneration_annual_rate_amount_amount_value as annual_salary,
+    sr.base_remuneration_annual_rate_amount as annual_salary,
     sr.alumni_status,
     sr.community_professional_exp,
 
@@ -33,10 +33,9 @@ select
     null as so_tier,
 from {{ ref("int_performance_management__observations") }} as s
 inner join
-    {{ ref("base_people__staff_roster_history") }} as sr
+    {{ ref("int_people__staff_roster_history") }} as sr
     on s.employee_number = sr.employee_number
-    and s.eval_date
-    between sr.work_assignment_start_date and sr.work_assignment_end_date
+    and s.eval_date between sr.effective_date_start and sr.effective_date_end
     and sr.primary_indicator
     and sr.assignment_status not in ('Terminated', 'Deceased')
 left join
