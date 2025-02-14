@@ -40,6 +40,10 @@ with
 
             coalesce(r.is_retained_year, false) as is_retained_year,
 
+            if(
+                e.exitdate = date(e.academic_year + 1, 06, 30), true, false
+            ) as is_last_day_enrolled,
+
             if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             if(e.spedlep like 'SPED%' and not is_504, true, false) as iep_only,
