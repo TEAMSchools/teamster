@@ -43,7 +43,9 @@ with
 
             if(grade like 'F%', false, true) as passed_course,
 
-            if(c.courses_course_name like '%(DE)', true, false) as is_dual_enrollment,
+            if(
+                c.courses_course_name like '%(DE)' and not c.is_ap_course, true, false
+            ) as is_dual_enrollment,
 
             if(
                 c.courses_course_name like '%(CR)'
