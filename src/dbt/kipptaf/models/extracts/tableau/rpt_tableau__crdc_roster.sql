@@ -22,7 +22,6 @@ with
             e.studentid,
             e.student_number,
             e.grade_level,
-            e.grade_level_prev,
             e.entrydate,
             e.exitdate,
             e.enroll_status,
@@ -34,12 +33,17 @@ with
             e.ethnicity,
             e.gifted_and_talented,
             e.is_504,
-            e.spedlep,
             e.lep_status,
 
             adb.contact_id,
 
             if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
+            if(e.spedlep like 'SPED%' and not is_504, true, false) as iep_only,
+
+            if(e.spedlep like 'SPED%' and is_504, true, false) as iep_and_c504,
+
+            if(e.spedlep not like 'SPED%' and is_504, true, false) as c504_only,
 
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
