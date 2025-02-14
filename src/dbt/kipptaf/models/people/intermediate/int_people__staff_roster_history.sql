@@ -109,8 +109,8 @@ with
 
             effective_end_date as effective_date_end,
             effective_end_timestamp as effective_date_end_timestamp,
-            is_active as is_current_record,
 
+            false as is_current_record,
             null as worker_id,
 
             original_hire_date as worker_original_hire_date,
