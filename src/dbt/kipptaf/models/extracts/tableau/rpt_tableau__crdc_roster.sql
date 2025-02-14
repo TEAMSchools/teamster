@@ -41,6 +41,10 @@ with
 
             concat(c.nces_subject_area, c.nces_course_id) as sced_code_courses,
 
+            if(
+                c.is_ap_course != coalesce(x.ap_tag, false), true, false
+            ) as ap_tag_mismatch,
+
             if(grade like 'F%', false, true) as passed_course,
 
             if(
@@ -78,5 +82,5 @@ with
 
     )
 
-select *, if(is_ap_course != ap_tag, true, false) as ap_tag_mismatch,
+select *,
 from custom_schedule
