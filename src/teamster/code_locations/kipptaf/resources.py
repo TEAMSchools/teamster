@@ -1,7 +1,7 @@
 from dagster import EnvVar, _check
-from dagster_airbyte import AirbyteCloudResource
+from dagster_airbyte import AirbyteCloudWorkspace
 from dagster_dlt import DagsterDltResource
-from dagster_fivetran import FivetranResource
+from dagster_fivetran import FivetranWorkspace
 
 from teamster.libraries.adp.workforce_manager.resources import (
     AdpWorkforceManagerResource,
@@ -44,8 +44,10 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
     masked=False,
 )
 
-AIRBYTE_CLOUD_RESOURCE = AirbyteCloudResource(
-    client_id=EnvVar("AIRBYTE_CLIENT_ID"), client_secret=EnvVar("AIRBYTE_CLIENT_SECRET")
+AIRBYTE_CLOUD_RESOURCE = AirbyteCloudWorkspace(
+    workspace_id=EnvVar("AIRBYTE_WORKSPACE_ID"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 
 COUPA_RESOURCE = CoupaResource(
@@ -61,10 +63,10 @@ DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
 
 DLT_RESOURCE = DagsterDltResource()
 
-FIVETRAN_RESOURCE = FivetranResource(
+FIVETRAN_RESOURCE = FivetranWorkspace(
+    account_id=EnvVar("FIVETRAN_ACCOUNT_ID"),
     api_key=EnvVar("FIVETRAN_API_KEY"),
     api_secret=EnvVar("FIVETRAN_API_SECRET"),
-    request_max_retries=5,
 )
 
 GOOGLE_DRIVE_RESOURCE = GoogleDriveResource(
