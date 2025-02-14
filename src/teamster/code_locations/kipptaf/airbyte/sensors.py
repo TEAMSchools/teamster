@@ -1,13 +1,11 @@
 import json
 from datetime import datetime, timezone
-from urllib.parse import urlencode
 
 from dagster import (
     AssetKey,
     AssetMaterialization,
     SensorEvaluationContext,
     SensorResult,
-    _check,
     sensor,
 )
 from dagster_airbyte import AirbyteCloudWorkspace
@@ -27,11 +25,9 @@ def airbyte_job_status_sensor(
     asset_events = []
     cursor: dict = json.loads(context.cursor or "{}")
 
-    connections = _check.not_none(
-        airbyte.make_request(endpoint="/connections", method="GET")
-    )
+    airbyte_client = airbyte.get_client()
 
-    for connection in _check.inst(connections["data"], list):
+    for connection in airbyte_client.get_connections()["data"]:
         if connection["status"] == "inactive":
             continue
 
@@ -42,16 +38,15 @@ def airbyte_job_status_sensor(
             timestamp=cursor.get(connection_id, 0), tz=timezone.utc
         )
 
-        params = urlencode(
-            query={
+        jobs_response = airbyte_client._make_request(
+            endpoint="jobs",
+            method="GET",
+            base_url=airbyte_client.rest_api_base_url,
+            params={
                 "connectionId": connection_id,
                 "updatedAtStart": last_updated.isoformat(),
                 "status": "succeeded",
-            }
-        )
-
-        jobs_response = _check.not_none(
-            airbyte.make_request(endpoint=f"/jobs?{params}", method="GET")
+            },
         )
 
         if jobs_response.get("data"):

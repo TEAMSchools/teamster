@@ -10,6 +10,7 @@ from dagster import (
     sensor,
 )
 from dagster_fivetran import FivetranWorkspace
+from dagster_fivetran.translator import FivetranConnector
 from dagster_gcp import BigQueryResource
 from google.cloud.bigquery import DatasetReference, TableReference
 
@@ -36,32 +37,33 @@ def build_fivetran_connector_sync_status_sensor(
             s=context.cursor or json.dumps(obj={"connectors": {}, "assets": {}})
         )
 
+        fivetran_client = fivetran.get_client()
+
         for connector_id, connector_assets in groupby(
             iterable=asset_selection, key=lambda a: a.metadata["connector_id"]
         ):
-            cursor_last_sync_completion_timestamp = cursor["connectors"].get(
-                connector_id, 0
-            )
+            previous_sync_completed_at = cursor["connectors"].get(connector_id, 0)
 
-            curr_last_sync_completion, curr_last_sync_succeeded, curr_sync_state = (
-                fivetran.get_connector_sync_status(connector_id)
+            connector = FivetranConnector.from_connector_details(
+                connector_details=fivetran_client.get_connector_details(connector_id)
             )
 
             context.log.info(
-                f"{connector_id}: "
-                f"{'Succeeded' if curr_last_sync_succeeded else 'Failed'} "
-                f"{curr_last_sync_completion.strftime('%c')}\t{curr_sync_state}"
+                msg=(
+                    f"{connector.name}: "
+                    f"{'Succeeded' if connector.is_last_sync_successful else 'Failed'} "
+                    f"{connector.last_sync_completed_at}"
+                )
             )
 
-            curr_last_sync_completion_timestamp = curr_last_sync_completion.timestamp()
+            last_sync_completed_at_ts = connector.last_sync_completed_at.timestamp()
 
             if (
-                curr_last_sync_succeeded
-                and curr_last_sync_completion_timestamp
-                > cursor_last_sync_completion_timestamp
+                connector.is_last_sync_successful
+                and last_sync_completed_at_ts > previous_sync_completed_at
             ):
                 connector_updated_assets.extend(connector_assets)
-                cursor["connectors"][connector_id] = curr_last_sync_completion_timestamp
+                cursor["connectors"][connector_id] = last_sync_completed_at_ts
 
         if connector_updated_assets:
             with db_bigquery.get_client() as bq:
@@ -89,9 +91,7 @@ def build_fivetran_connector_sync_status_sensor(
                 table_modified_timestamp = table.modified.timestamp()
 
             if table_modified_timestamp > cursor_table_modified_timestamp:
-                context.log.info(
-                    msg=f"{python_identifier}:\t{table_modified_timestamp}"
-                )
+                context.log.info(msg=f"{assets_def.key}:\t{table_modified_timestamp}")
                 asset_events.append(AssetMaterialization(asset_key=assets_def.key))
                 cursor["assets"][python_identifier] = table_modified_timestamp
 

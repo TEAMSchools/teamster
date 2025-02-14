@@ -8,7 +8,9 @@ from dagster_airbyte import AirbyteCloudWorkspace
 def test_resource():
     with build_resources(
         resources={
-            "airbyte": AirbyteCloudWorkspace(client_id=EnvVar(), client_secret=EnvVar())
+            "airbyte": AirbyteCloudWorkspace(
+                workspace_id=EnvVar(), client_id=EnvVar(), client_secret=EnvVar()
+            )
         }
     ) as resources:
         airbyte: AirbyteCloudWorkspace = resources.airbyte

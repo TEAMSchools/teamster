@@ -45,7 +45,9 @@ ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
 )
 
 AIRBYTE_CLOUD_RESOURCE = AirbyteCloudWorkspace(
-    client_id=EnvVar("AIRBYTE_CLIENT_ID"), client_secret=EnvVar("AIRBYTE_CLIENT_SECRET")
+    workspace_id=EnvVar("AIRBYTE_WORKSPACE_ID"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 
 COUPA_RESOURCE = CoupaResource(
@@ -62,7 +64,9 @@ DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
 DLT_RESOURCE = DagsterDltResource()
 
 FIVETRAN_RESOURCE = FivetranWorkspace(
-    api_key=EnvVar("FIVETRAN_API_KEY"), api_secret=EnvVar("FIVETRAN_API_SECRET")
+    account_id=EnvVar("FIVETRAN_ACCOUNT_ID"),
+    api_key=EnvVar("FIVETRAN_API_KEY"),
+    api_secret=EnvVar("FIVETRAN_API_SECRET"),
 )
 
 GOOGLE_DRIVE_RESOURCE = GoogleDriveResource(
