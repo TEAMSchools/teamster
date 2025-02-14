@@ -78,9 +78,14 @@ with
             {{ ref("stg_crdc__sced_code_crosswalk") }} as x
             on concat(c.nces_subject_area, c.nces_course_id) = x.sced_code
         -- submission is always for the previous school year
-        where c.cc_academic_year = {{ var("current_academic_year") - 1 }}
+        where
+            c.cc_academic_year = {{ var("current_academic_year") - 1 }}
+            and regexp_extract(c._dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
 
     )
 
-select *,
+-- this CTE is appending the different versions/groupings i need for reporting on
+-- course data
+select *, 'PENR-4' as crdc_question_section,
 from custom_schedule
+where is_dual_enrollment
