@@ -229,6 +229,14 @@ with
             and is_ap_course
             and crdc_ap_group is not null
             and is_oct_01_course
+    ),
+
+    act_sat as (
+        -- this count(*) serves no purpose other than avoiding a distinct lol
+        select contact, count(*) as attempts
+        from {{ ref("int_kippadb__standardized_test_unpivot") }}
+        where score_type in ('act_composite', 'sat_total_score')
+        group by all
     )
 
 select *
