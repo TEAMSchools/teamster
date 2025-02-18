@@ -948,7 +948,7 @@ with
             if(mc.student_number is null, false, true) as student_manual_check,
 
             if(
-                e.exitdate = date(e.academic_year + 1, 06, 30), 1, 0
+                e.exitdate = date(e.academic_year + 1, 06, 30), true, false
             ) as is_last_day_enrolled,
 
             if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
@@ -1258,7 +1258,6 @@ select
     lep_status,
 
     is_enrolled_oct01,
-    is_last_day_enrolled,
     is_retained_year,
 
     'ENRL-1' as crdc_question_section,
