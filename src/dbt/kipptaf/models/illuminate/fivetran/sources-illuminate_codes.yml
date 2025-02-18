@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: illuminate
     schema: illuminate_codes
+    config:
+      enabled: false
     tables:
       - name: dna_scopes
         meta:
