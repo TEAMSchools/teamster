@@ -1237,6 +1237,7 @@ with
         group by dli.student_school_id, dli.create_ts_academic_year
     )
 
+/*
 -- ENRL-1, 2a,2b, 3, and 4 dups may be present because of
 -- students changing schools or grade level midyear
 select
@@ -1283,8 +1284,7 @@ select
 from enrollment
 where is_enrolled_oct01
 
-union all
-
+union all*/
 -- PENR-4
 select
     e._dbt_source_relation,
@@ -1333,7 +1333,4 @@ inner join
     on e.schoolid = f.cc_schoolid
     and e.student_number = f.students_student_number
     and e.crdc_question_section_manual_check = f.crdc_question_section
-where
-    e.is_enrolled_oct01
-    and e.crdc_question_section_manual_check = 'PENR-4'
-    and e.grade_level >= 9
+where e.is_enrolled_oct01 and e.grade_level >= 9
