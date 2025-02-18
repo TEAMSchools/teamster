@@ -1,3 +1,42 @@
+with
+    approvals as (
+        select
+            subject_employee_number,
+            campaign_academic_year,
+            max(
+                if(
+                    approval_level = 'School Leader/DSO',
+                    coalesce(respondent_preferred_name, respondent_email),
+                    null
+                )
+            ) as sl_dso_approval_name,
+            max(
+                if(
+                    approval_level = 'ER',
+                    coalesce(respondent_preferred_name, respondent_email),
+                    null
+                )
+            ) as er_approval_name,
+            max(
+                if(
+                    approval_level = 'HOS/MDO',
+                    coalesce(respondent_preferred_name, respondent_email),
+                    null
+                )
+            ) as hos_mdo_approval_name,
+            max(
+                if(approval_level = 'School Leader/DSO', date_submitted, null)
+            ) as sl_dso_approval_date,
+            max(if(approval_level = 'ER', date_submitted, null)) as er_approval_date,
+            max(
+                if(approval_level = 'HOS/MDO', date_submitted, null)
+            ) as hos_mdo_approval_date,
+        from {{ ref("int_surveys__renewal_responses_feed") }}
+        where rn_level_approval = 1 and valid_approval = 'Valid Approval'
+
+        group by subject_employee_number, campaign_academic_year, rn_level_approval
+    )
+
 select
     b.employee_number as df_employee_number,
     b.legal_given_name as first_name,
@@ -42,6 +81,29 @@ select
     s.ny_salary,
     s.salary_rule,
 
+    rf.salary,
+    rf.salary_modification_explanation,
+    rf.renewal_decision,
+    rf.dept_and_job,
+    rf.add_comp_amt_1,
+    rf.add_comp_amt_2,
+    rf.add_comp_amt_3,
+    rf.add_comp_amt_4,
+    rf.add_comp_amt_5,
+    rf.add_comp_name_1,
+    rf.add_comp_name_2,
+    rf.add_comp_name_3,
+    rf.add_comp_name_4,
+    rf.add_comp_name_5,
+    rf.concated_add_comp,
+
+    ap.sl_dso_approval_name,
+    ap.er_approval_name,
+    ap.hos_mdo_approval_name,
+    ap.sl_dso_approval_date,
+    ap.er_approval_date,
+    ap.hos_mdo_approval_date,
+
     concat(b.family_name_1, ', ', b.given_name) as preferred_name,
 
     concat(m.family_name_1, ', ', m.given_name) as manager_name,
@@ -53,3 +115,12 @@ left join
     {{ ref("int_people__renewal_status") }} as s
     on b.employee_number = s.employee_number
     and s.academic_year = {{ var("current_academic_year") }}
+left join
+    {{ ref("int_surveys__renewal_responses_feed") }} as rf
+    on s.academic_year = rf.campaign_academic_year
+    and b.employee_number = rf.subject_employee_number
+    and rf.rn_approval = 1
+left join
+    approvals as ap
+    on s.academic_year = ap.campaign_academic_year
+    and b.employee_number = ap.subject_employee_number
