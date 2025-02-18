@@ -1272,9 +1272,5 @@ select
     crdc_demographic,
     crdc_gender,
 
-    count(student_number) over (
-        partition by region, crdc_demographic, crdc_gender
-    ) as crdc_count,
-
 from enrollment
 where is_enrolled_oct01
