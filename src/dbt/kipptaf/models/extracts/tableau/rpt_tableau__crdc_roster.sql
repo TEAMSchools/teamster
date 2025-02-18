@@ -1,3 +1,6 @@
+-- enter the student numbers on the first array, and their matching crdc question
+-- group on the second array. order is important for the loop to work properly in the
+-- allocated cte
 {% set arrests_student_numbers = [201150, 105805, 106658, 106658, 201150, 105805] %}
 {% set arrests_crdc_question_section = [
     "ARRS-1",
@@ -271,6 +274,7 @@ with
         group by all
     ),
 
+    -- tracks discipline, ISS/OSS and restraints
     discipline_rollup as (
         select
             dli.student_school_id as student_number,
