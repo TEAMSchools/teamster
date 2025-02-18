@@ -948,7 +948,7 @@ with
             if(mc.student_number is null, false, true) as student_manual_check,
 
             if(
-                e.exitdate = date(e.academic_year + 1, 06, 30), true, false
+                e.exitdate = date(e.academic_year + 1, 06, 30), 1, 0
             ) as is_last_day_enrolled,
 
             if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
