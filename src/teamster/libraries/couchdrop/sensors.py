@@ -14,13 +14,11 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     StaticPartitionsDefinition,
     _check,
     define_asset_job,
     sensor,
 )
-from paramiko.ssh_exception import AuthenticationException, SSHException
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -67,34 +65,9 @@ def build_couchdrop_sftp_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            files = ssh_couchdrop.listdir_attr_r(
-                remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
-            )
-        except Exception as e:
-            exception_str = str(e)
-
-            context.log.error(msg=exception_str)
-
-            if isinstance(e, SSHException) and (
-                "Error reading SSH protocol banner" in exception_str
-                or "Server connection dropped" in exception_str
-            ):
-                return SkipReason(exception_str)
-            elif (
-                isinstance(e, AuthenticationException)
-                and "Authentication timeout" in exception_str
-            ):
-                return SkipReason(exception_str)
-            elif (
-                isinstance(e, FileNotFoundError)
-                and "[Errno 2] no such file" in exception_str
-            ):
-                return SkipReason(exception_str)
-            elif isinstance(e, TimeoutError) and "timed out" in exception_str:
-                return SkipReason(exception_str)
-            else:
-                raise e
+        files = ssh_couchdrop.listdir_attr_r(
+            remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
+        )
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()

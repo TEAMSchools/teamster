@@ -10,9 +10,10 @@ with
             application_status,
             reason_for_rejection,
             phone_interview_score,
-            resume_score,
+            subject_preference,
             status_type,
             date_val,
+            coalesce(resume_score, star_score) as resume_score,
         from
             {{ ref("stg_smartrecruiters__applications") }} unpivot (
                 date_val for status_type in (
@@ -36,6 +37,7 @@ select
     a.reason_for_rejection,
     a.phone_interview_score,
     a.resume_score,
+    a.subject_preference,
     a.status_type,
     a.date_val,
 

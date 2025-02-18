@@ -25,12 +25,12 @@ from teamster.core.resources import (
     GCS_RESOURCE,
     SSH_COUCHDROP,
     SSH_IREADY,
-    SSH_POWERSCHOOL,
     SSH_RENLEARN,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
+    get_powerschool_ssh_resource,
 )
 
 defs = Definitions(
@@ -72,7 +72,7 @@ defs = Definitions(
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_iready": SSH_IREADY,
-        "ssh_powerschool": SSH_POWERSCHOOL,
+        "ssh_powerschool": get_powerschool_ssh_resource(),
         "ssh_renlearn": SSH_RENLEARN,
     },
 )

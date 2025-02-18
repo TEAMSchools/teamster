@@ -4,10 +4,9 @@ from dagster import _check, materialize
 from dagster._core.events import StepMaterializationData
 
 from teamster.core.resources import (
-    get_db_powerschool_resource,
     get_io_manager_gcs_file,
-    get_ssh_powerschool_resource,
 )
+from tests.utils import get_db_powerschool_resource, get_ssh_powerschool_resource
 
 
 def _test_asset(assets, asset_name, ssh_powerschool, db_powerschool):

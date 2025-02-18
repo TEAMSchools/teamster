@@ -36,7 +36,7 @@ with
                 partition by employee_number
                 order by assignment_status_effective_date asc
             ) as rn_employee_status_date_asc,
-        from {{ ref("base_people__staff_roster_history") }}
+        from {{ ref("int_people__staff_roster_history") }}
     ),
 
     with_end_date as (
@@ -106,7 +106,7 @@ with
                 )
             }} as academic_year,
         from with_end_date_corrected as srh
-        inner join
+        cross join
             unnest(
                 generate_date_array(
                     srh.assignment_status_effective_date_start,
