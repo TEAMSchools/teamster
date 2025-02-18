@@ -1,4 +1,4 @@
-{% macro illuminate_repository_unpivot(model_name) %}
+{# {% macro illuminate_repository_unpivot(model_name) %}
     with
         dbt_unpivot as (
             {{
@@ -25,10 +25,8 @@
         ) as repository_id,
     from dbt_unpivot
     where not _fivetran_deleted
-{% endmacro %}
-
-{#
-{%- macro illuminate_repository_unpivot(model_name) -%}
+{% endmacro %} #}
+{% macro illuminate_repository_unpivot(model_name) %}
     {%- set repository_id = model_name | replace(
         "stg_illuminate__dna_repositories__repository_", ""
     ) -%}
@@ -65,6 +63,4 @@
 
         {{ repository_id }} as repository_id,
     from dbt_unpivot
-{%- endmacro -%}
-#}
-
+{% endmacro %}
