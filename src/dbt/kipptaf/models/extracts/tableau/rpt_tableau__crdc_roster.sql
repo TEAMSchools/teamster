@@ -1237,8 +1237,8 @@ with
         group by dli.student_school_id, dli.create_ts_academic_year
     )
 
--- ENRL-3, by ethnicity/gender. dups may be present because of students changing
--- schools or grade level midyear
+-- ENRL-1, 2a,2b, 3, and 4 by ethnicity/gender. dups may be present because of
+-- students changing schools or grade level midyear
 select
     _dbt_source_relation,
     academic_year,
