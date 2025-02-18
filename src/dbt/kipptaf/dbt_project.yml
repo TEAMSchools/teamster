@@ -144,11 +144,19 @@ models:
             group: google_appsheet
     illuminate:
       +schema: illuminate
-      +materialized: table
-      staging:
-        repositories:
-          archive:
-            +enabled: false
+      dlt:
+        +enabled: false
+        staging:
+          repositories:
+            +materialized: table
+        intermediate:
+          +materialized: table
+      fivetran:
+        +materialized: table
+        staging:
+          repositories:
+            archive:
+              +enabled: false
     instagram:
       +enabled: false
       business:
