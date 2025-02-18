@@ -810,7 +810,7 @@ with
                 {% for i in range(dual_enroll_student_numbers | length) %}
                     select
                         '{{ dual_enroll_student_numbers[i] }}' as student,
-                        'PENR-4a' as crdc_question_section
+                        'PENR-4' as crdc_question_section
                     {% if not loop.last %}
                         union all
                     {% endif %}
@@ -1330,9 +1330,9 @@ select
     'Dual Enrollment' as crdc_question_description,
 
 from enrollment as e
-inner join
+left join
     final_schedule as f
     on e.schoolid = f.cc_schoolid
     and e.student_number = f.students_student_number
-    and f.crdc_question_section = 'PENR-4'
+    and e.crdc_question_section_manual_check = f.crdc_question_section
 where e.is_enrolled_oct01 and e.grade_level >= 9
