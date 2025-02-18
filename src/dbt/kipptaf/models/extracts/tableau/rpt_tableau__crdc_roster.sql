@@ -1237,7 +1237,7 @@ with
         group by dli.student_school_id, dli.create_ts_academic_year
     )
 
--- ENRL-3
+-- ENRL-3, by ethnicity/gender
 select
     _dbt_source_relation,
     region,
