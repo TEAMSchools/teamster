@@ -4,7 +4,7 @@ select
     gsa_id,
     group_id,
     student_id,
-    start_date,
+    `start_date`,
     end_date,
     eligibility_start_date,
     eligibility_end_date,
