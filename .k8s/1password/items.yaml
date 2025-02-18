@@ -2,22 +2,6 @@
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: onepassword-token
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/hltg4twkgkf6xc23n6pc7dqvee/credential
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
-  name: op-achieve3k-sftp
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/Achieve 3000 SFTP
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
   name: op-adp-wfn-sftp
   namespace: dagster-cloud
 spec:
