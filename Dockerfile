@@ -10,9 +10,10 @@ ENV UV_LINK_MODE=copy
 ENV UV_COMPILE_BYTECODE=1
 
 # install system deps & create non-root user
+# trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        openssh-client=1:9.2p1-2+deb12u3 sshpass=1.09-1* \
+        openssh-client sshpass \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -g 1234 teamster \

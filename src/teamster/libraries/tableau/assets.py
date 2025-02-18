@@ -61,7 +61,7 @@ def build_tableau_workbook_refresh_asset(
         kinds={"tableau"},
         group_name="tableau",
         output_required=False,
-        op_tags={"dagster/concurrency_key": "tableau_pat_session_limit"},
+        pool="tableau_pat_session_limit",
     )
     def _asset(context: AssetExecutionContext, tableau: TableauServerResource):
         workbook = tableau._server.workbooks.get_by_id(
@@ -94,10 +94,8 @@ def build_tableau_workbook_stats_asset(
         io_manager_key="io_manager_gcs_avro",
         kinds={"tableau"},
         group_name="tableau",
-        op_tags={
-            "dagster/concurrency_key": "tableau_pat_session_limit",
-            "dagster/priority": "-1",
-        },
+        pool="tableau_pat_session_limit",
+        op_tags={"dagster/priority": "-1"},
     )
     def _asset(context: AssetExecutionContext, tableau: TableauServerResource):
         partition_key = _check.inst(context.partition_key, MultiPartitionKey)

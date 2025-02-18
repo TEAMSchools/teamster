@@ -118,55 +118,105 @@ with
                 )
             )
 
+    ),
+
+    clean_responses as (
+
+        select
+            sc.survey_id,
+            sc.survey_title,
+            sc.survey_response_id,
+            sc.respondent_email,
+            sc.campaign_academic_year,
+            sc.campaign_name,
+            sc.campaign_reporting_term,
+            sc.respondent_employee_number,
+            sc.subject_employee_number,
+            sc.approval_level,
+            sc.date_started,
+            sc.date_submitted,
+            sc.rn_level_approval,
+            sc.rn_approval,
+            sc.respondent_preferred_name,
+            sc.respondent_samaccountname,
+            sc.respondent_userprincipalname,
+            sc.subject_preferred_name,
+            sc.subject_samaccountname,
+            sc.subject_userprincipalname,
+
+            pr.dept_and_job,
+            pr.final_confirmation,
+            pr.next_year_seat,
+            pr.renewal_decision,
+            pr.salary,
+            pr.salary_confirmation,
+            pr.salary_modification_explanation,
+            pr.salary_rule,
+            pr.add_comp_amt_1,
+            pr.add_comp_amt_2,
+            pr.add_comp_amt_3,
+            pr.add_comp_amt_4,
+            pr.add_comp_amt_5,
+            pr.add_comp_name_1,
+            pr.add_comp_name_2,
+            pr.add_comp_name_3,
+            pr.add_comp_name_4,
+            pr.add_comp_name_5,
+
+            concat(
+                coalesce(
+                    concat(pr.add_comp_name_1, ': $', pr.add_comp_amt_1, '; '), ''
+                ),
+                coalesce(
+                    concat(pr.add_comp_name_2, ': $', pr.add_comp_amt_2, '; '), ''
+                ),
+                coalesce(
+                    concat(pr.add_comp_name_3, ': $', pr.add_comp_amt_3, '; '), ''
+                ),
+                coalesce(
+                    concat(pr.add_comp_name_4, ': $', pr.add_comp_amt_4, '; '), ''
+                ),
+                coalesce(concat(pr.add_comp_name_5, ': $', pr.add_comp_amt_5, '; '), '')
+            ) as concated_add_comp,
+        from submissions_counter as sc
+        inner join
+            pivoted_responses as pr on sc.survey_response_id = pr.survey_response_id
     )
 
 select
-    sc.survey_id,
-    sc.survey_title,
-    sc.survey_response_id,
-    sc.respondent_email,
-    sc.campaign_academic_year,
-    sc.campaign_name,
-    sc.campaign_reporting_term,
-    sc.respondent_employee_number,
-    sc.subject_employee_number,
-    sc.approval_level,
-    sc.date_started,
-    sc.date_submitted,
-    sc.rn_level_approval,
-    sc.rn_approval,
-    sc.respondent_preferred_name,
-    sc.respondent_samaccountname,
-    sc.respondent_userprincipalname,
-    sc.subject_preferred_name,
-    sc.subject_samaccountname,
-    sc.subject_userprincipalname,
+    *,
+    case
+        when rn_approval = 1
+        then 'Valid Approval'
+        when
+            lag(renewal_decision) over (
+                partition by campaign_academic_year, subject_employee_number
+                order by rn_approval
+            )
+            != renewal_decision
+        then 'Overriden Approval - Renewal Decision'
+        when
+            lag(dept_and_job) over (
+                partition by campaign_academic_year, subject_employee_number
+                order by rn_approval
+            )
+            != dept_and_job
+        then 'Overriden Approval - Job/Dept'
+        when
+            lag(salary) over (
+                partition by campaign_academic_year, subject_employee_number
+                order by rn_approval
+            )
+            != salary
+        then 'Overriden Approval - Salary'
+        when
+            lag(concated_add_comp) over (
+                partition by campaign_academic_year, subject_employee_number
+                order by rn_approval
+            )
+            != concated_add_comp
+        then 'Overriden Approval - Additional Compensation'
+        else 'Valid Approval'
+    end as valid_approval,
 
-    pr.dept_and_job,
-    pr.final_confirmation,
-    pr.next_year_seat,
-    pr.renewal_decision,
-    pr.salary,
-    pr.salary_confirmation,
-    pr.salary_modification_explanation,
-    pr.salary_rule,
-    pr.add_comp_amt_1,
-    pr.add_comp_amt_2,
-    pr.add_comp_amt_3,
-    pr.add_comp_amt_4,
-    pr.add_comp_amt_5,
-    pr.add_comp_name_1,
-    pr.add_comp_name_2,
-    pr.add_comp_name_3,
-    pr.add_comp_name_4,
-    pr.add_comp_name_5,
-
-    concat(
-        coalesce(concat(pr.add_comp_name_1, ': $', pr.add_comp_amt_1, '; '), ''),
-        coalesce(concat(pr.add_comp_name_2, ': $', pr.add_comp_amt_2, '; '), ''),
-        coalesce(concat(pr.add_comp_name_3, ': $', pr.add_comp_amt_3, '; '), ''),
-        coalesce(concat(pr.add_comp_name_4, ': $', pr.add_comp_amt_4, '; '), ''),
-        coalesce(concat(pr.add_comp_name_5, ': $', pr.add_comp_amt_5, '; '), '')
-    ) as concated_add_comp,
-from submissions_counter as sc
-inner join pivoted_responses as pr on sc.survey_response_id = pr.survey_response_id
+from clean_responses
