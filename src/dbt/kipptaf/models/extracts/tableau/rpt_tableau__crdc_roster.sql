@@ -1335,4 +1335,4 @@ left join
     on e.schoolid = f.cc_schoolid
     and e.student_number = f.students_student_number
     and e.crdc_question_section_manual_check = f.crdc_question_section
-where e.is_enrolled_oct01 and e.grade_level >= 9
+where e.is_enrolled_oct01 and e.grade_level >= 9 and f.courses_course_name is not null
