@@ -39,8 +39,8 @@ ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
 ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
     client_id=EnvVar("ADP_WFN_CLIENT_ID"),
     client_secret=EnvVar("ADP_WFN_CLIENT_SECRET"),
-    cert_filepath="/etc/secret-volume/adp_wfn_cert",
-    key_filepath="/etc/secret-volume/adp_wfn_key",
+    cert_filepath="/etc/secret-volume/adp_wfn_api.cer",
+    key_filepath="/etc/secret-volume/adp_wfn_api.key",
     masked=False,
 )
 

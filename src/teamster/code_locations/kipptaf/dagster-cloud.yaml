@@ -19,13 +19,13 @@ locations:
                 - secret:
                     name: op-adp-wfn-api
                     items:
-                      - key: KTAF_Mutual_SSL.pem
-                        path: adp_wfn_cert
+                      - key: adp_wfn_api.cer
+                        path: adp_wfn_api.cer
                 - secret:
                     name: op-adp-wfn-api
                     items:
-                      - key: kipptaf_auth.key
-                        path: adp_wfn_key
+                      - key: adp_wfn_api.key
+                        path: adp_wfn_api.key
                 - secret:
                     name: op-egencia-sftp
                     items:
