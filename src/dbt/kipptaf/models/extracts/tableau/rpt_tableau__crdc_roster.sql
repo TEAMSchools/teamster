@@ -1332,5 +1332,5 @@ inner join
     final_schedule as f
     on e.schoolid = f.cc_schoolid
     and e.student_number = f.students_student_number
-    and e.crdc_question_section_manual_check = f.crdc_question_section
+    and f.crdc_question_section = 'PENR-4'
 where e.is_enrolled_oct01 and e.grade_level >= 9
