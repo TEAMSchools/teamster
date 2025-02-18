@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: illuminate
     schema: illuminate_dna_assessments
+    config:
+      enabled: false
     tables:
       - name: assessment_grade_levels
         meta:

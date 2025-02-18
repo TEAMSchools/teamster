@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: illuminate
     schema: illuminate_standards
+    config:
+      enabled: false
     tables:
       - name: standards
         meta:

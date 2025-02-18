@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: illuminate
     schema: illuminate_national_assessments
+    config:
+      enabled: false
     tables:
       - name: psat_2023
         meta:

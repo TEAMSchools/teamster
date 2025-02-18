@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: illuminate
     schema: illuminate_xmin_dna_assessments
+    config:
+      enabled: false
     tables:
       - name: agg_student_responses
         meta:
