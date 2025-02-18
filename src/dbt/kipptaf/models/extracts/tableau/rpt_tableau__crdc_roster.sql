@@ -1237,11 +1237,14 @@ with
         group by dli.student_school_id, dli.create_ts_academic_year
     )
 
--- ENRL-3, by ethnicity/gender
+-- ENRL-3, by ethnicity/gender. dups may be present because of students changing
+-- schools or grade level midyear
 select
     _dbt_source_relation,
     academic_year,
     region,
+    schoolid,
+    school_abbreviation,
 
     studentid,
     student_number,
@@ -1257,20 +1260,19 @@ select
     c504_only,
     lep_status,
 
+    entrydate,
+    exitdate,
+    enroll_status,
     is_enrolled_oct01,
+    is_last_day_enrolled,
     is_retained_year,
+    rn_year,
 
-    'ENRL-1' as crdc_question_section,
-    'Student Enrollment' as crdc_question_description,
     crdc_demographic,
     crdc_gender,
 
-    max(entrydate) as max_entrydate,
-    max(exitdate) as max_exitdate,
-    max(is_last_day_enrolled) as max_is_last_day_enrolled,
-    max(enroll_status) as max_enroll_status,
-    max(rn_year) as max_rn_year,
+    'ENRL-1' as crdc_question_section,
+    'Student Enrollment' as crdc_question_description,
 
 from enrollment
 where is_enrolled_oct01
-group by all
