@@ -881,6 +881,9 @@ with
             and region != 'Miami'
     ),
 
+    -- because of the manual check cte, this cte will have dups, but they will be
+    -- addressed in the main select statement when the question group counts are
+    -- calculated
     enrollment as (
         select
             e._dbt_source_relation,
@@ -996,8 +999,7 @@ with
             if(
                 c.courses_course_name like '%(CR)'
                 -- any other school would be a credit recovery course taken
-                -- outside of
-                -- KTAF
+                -- outside of KTAF
                 and g.schoolname = 'KIPP Summer School',
                 true,
                 false
@@ -1033,9 +1035,7 @@ with
     ),
 
     -- this CTE is appending the different versions/groupings i need for reporting
-    -- on
-    -- course data
-    -- dual enrolled students
+    -- on course data dual enrolled students
     final_schedule as (
         select *, 'PENR-4' as crdc_question_section,
         from custom_schedule
