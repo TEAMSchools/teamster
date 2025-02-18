@@ -1,10 +1,10 @@
 select
     field_id,
     repository_id,
-    name,
+    `name`,
     label,
     seq,
-    type,
+    `type`,
     calculation,
     `values`,
     expression_id,

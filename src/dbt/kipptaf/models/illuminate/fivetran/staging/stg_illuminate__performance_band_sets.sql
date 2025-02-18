@@ -1,8 +1,8 @@
 select
     performance_band_set_id,
-    description,
+    `description`,
     district_default,
-    hidden,
+    `hidden`,
     user_id,
     created_at,
     updated_at,
