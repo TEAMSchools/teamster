@@ -1237,6 +1237,53 @@ with
         group by dli.student_school_id, dli.create_ts_academic_year
     )
 
+-- DSED-2 dups may be present because of students changing schools or grade level
+-- midyear
+select
+    _dbt_source_relation,
+    academic_year,
+    region,
+    schoolid,
+    school_abbreviation,
+
+    studentid,
+    student_number,
+    contact_id,
+    grade_level,
+    gender,
+    ethnicity,
+    gifted_and_talented,
+    iep_status,
+    is_504,
+    iep_only,
+    iep_and_c504,
+    c504_only,
+    lep_status,
+
+    entrydate,
+    exitdate,
+    enroll_status,
+    is_enrolled_oct01,
+    is_last_day_enrolled,
+    is_retained_year,
+    rn_year,
+
+    crdc_demographic,
+    crdc_gender,
+
+    null as courses_course_name,
+    null as sced_course_name,
+    null as crdc_course_group,
+    null as crdc_subject_group,
+    null as crdc_ap_group,
+    null as sced_code_xwalk,
+
+    'DSED-2' as crdc_question_section,
+    'Distance Education Enrollment' as crdc_question_description,
+
+from enrollment
+where crdc_question_section_manual_check = 'DSED-2'
+
 -- ENRL-1, 2a,2b, 3, and 4 dups may be present because of
 -- students changing schools or grade level midyear
 select
