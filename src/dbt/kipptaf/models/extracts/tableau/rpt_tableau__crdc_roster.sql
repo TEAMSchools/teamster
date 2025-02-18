@@ -1259,10 +1259,6 @@ select
     c504_only,
     lep_status,
 
-    entrydate,
-    exitdate,
-    enroll_status,
-    rn_year,
     is_enrolled_oct01,
     is_last_day_enrolled,
     is_retained_year,
@@ -1272,5 +1268,11 @@ select
     crdc_demographic,
     crdc_gender,
 
+    max(entrydate) as max_entrydate,
+    max(exitdate) as max_exitdate,
+    max(enroll_status) as max_enroll_status,
+    max(rn_year) as max_rn_year,
+
 from enrollment
 where is_enrolled_oct01
+group by all
