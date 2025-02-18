@@ -1,41 +1,41 @@
-with
-    approvals as (
-        select
-            subject_employee_number,
-            campaign_academic_year,
-            max(
-                if(
-                    approval_level = 'School Leader/DSO',
-                    coalesce(respondent_preferred_name, respondent_email),
-                    null
-                )
-            ) as sl_dso_approval_name,
-            max(
-                if(
-                    approval_level = 'ER',
-                    coalesce(respondent_preferred_name, respondent_email),
-                    null
-                )
-            ) as er_approval_name,
-            max(
-                if(
-                    approval_level = 'HOS/MDO',
-                    coalesce(respondent_preferred_name, respondent_email),
-                    null
-                )
-            ) as hos_mdo_approval_name,
-            max(
-                if(approval_level = 'School Leader/DSO', date_submitted, null)
-            ) as sl_dso_approval_date,
-            max(if(approval_level = 'ER', date_submitted, null)) as er_approval_date,
-            max(
-                if(approval_level = 'HOS/MDO', date_submitted, null)
-            ) as hos_mdo_approval_date,
-        from `teamster-332318.kipptaf_surveys.int_surveys__renewal_responses_feed`
-        where rn_level_approval = 1 and valid_approval = 'Valid Approval'
+-- with
+--     approvals as (
+--         select
+--             subject_employee_number,
+--             campaign_academic_year,
+--             max(
+--                 if(
+--                     approval_level = 'School Leader/DSO',
+--                     coalesce(respondent_preferred_name, respondent_email),
+--                     null
+--                 )
+--             ) as sl_dso_approval_name,
+--             max(
+--                 if(
+--                     approval_level = 'ER',
+--                     coalesce(respondent_preferred_name, respondent_email),
+--                     null
+--                 )
+--             ) as er_approval_name,
+--             max(
+--                 if(
+--                     approval_level = 'HOS/MDO',
+--                     coalesce(respondent_preferred_name, respondent_email),
+--                     null
+--                 )
+--             ) as hos_mdo_approval_name,
+--             max(
+--                 if(approval_level = 'School Leader/DSO', date_submitted, null)
+--             ) as sl_dso_approval_date,
+--             max(if(approval_level = 'ER', date_submitted, null)) as er_approval_date,
+--             max(
+--                 if(approval_level = 'HOS/MDO', date_submitted, null)
+--             ) as hos_mdo_approval_date,
+--         from `teamster-332318.kipptaf_surveys.int_surveys__renewal_responses_feed`
+--         where rn_level_approval = 1 and valid_approval = 'Valid Approval'
 
-        group by subject_employee_number, campaign_academic_year, rn_level_approval
-    )
+--         group by subject_employee_number, campaign_academic_year, rn_level_approval
+--     )
 
 select
     b.employee_number as df_employee_number,
@@ -81,12 +81,12 @@ select
     s.ny_salary,
     s.salary_rule,
 
-    ap.sl_dso_approval_name,
-    ap.er_approval_name,
-    ap.hos_mdo_approval_name,
-    ap.sl_dso_approval_date,
-    ap.er_approval_date,
-    ap.hos_mdo_approval_date,
+    -- ap.sl_dso_approval_name,
+    -- ap.er_approval_name,
+    -- ap.hos_mdo_approval_name,
+    -- ap.sl_dso_approval_date,
+    -- ap.er_approval_date,
+    -- ap.hos_mdo_approval_date,
 
     concat(b.family_name_1, ', ', b.given_name) as preferred_name,
 
@@ -104,7 +104,7 @@ left join
     on s.academic_year = rf.campaign_academic_year
     and b.employee_number = rf.subject_employee_number
     and rf.rn_approval = 1
-left join
-    approvals as ap
-    on s.academic_year = ap.campaign_academic_year
-    and b.employee_number = ap.subject_employee_number
+-- left join
+--     approvals as ap
+--     on s.academic_year = ap.campaign_academic_year
+--     and b.employee_number = ap.subject_employee_number
