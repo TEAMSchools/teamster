@@ -901,9 +901,19 @@ with
 
             adb.contact_id,
 
+            ar.crdc_question_section as arrest_crdc_question_section,
+
             coalesce(r.is_retained_year, false) as is_retained_year,
 
             if(ded.student_number is null, false, true) as distance_ed_manual,
+
+            if(de.student_number is null, false, true) as dual_enroll_manual,
+
+            if(cr.student_number is null, false, true) as credit_recovery_manual,
+
+            if(ath.student_number is null, false, true) as athletics_manual,
+
+            if(ar.student_number is null, false, true) as arrests_manual,
 
             if(
                 e.exitdate = date(e.academic_year + 1, 06, 30), true, false
@@ -922,7 +932,11 @@ with
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
         left join retained as r on e.student_number = r.student_number
-        left join distance_ed as ded on ded.student_number = r.student_number
+        left join distance_ed as ded on e.student_number = ded.student_number
+        left join dual_enroll as de on e.student_number = de.student_number
+        left join credit_recovery as cr on e.student_number = cr.student_number
+        left join athletics as ath on e.student_number = ath.student_number
+        left join arrests as ar on e.student_number = ar.student_number
         where
             -- submission is always for the previous school year
             e.academic_year = {{ var("current_academic_year") - 1 }}
