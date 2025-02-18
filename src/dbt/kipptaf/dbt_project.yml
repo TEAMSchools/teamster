@@ -145,7 +145,6 @@ models:
     illuminate:
       +schema: illuminate
       dlt:
-        +enabled: false
         staging:
           repositories:
             +materialized: table
@@ -153,6 +152,7 @@ models:
           +materialized: table
       fivetran:
         +materialized: table
+        +enabled: false
         staging:
           repositories:
             archive:
