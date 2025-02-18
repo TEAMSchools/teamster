@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: illuminate
     schema: illuminate_dna_repositories
+    config:
+      enabled: false
     tables:
       - name: repository_425
         meta:

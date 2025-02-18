@@ -1,0 +1,262 @@
+version: 2
+
+sources:
+  - name: illuminate_codes
+    schema: dagster_kipptaf_dlt_illuminate_codes
+    tables:
+      - name: dna_scopes
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - codes
+              - dna_scopes
+      - name: dna_subject_areas
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - codes
+              - dna_subject_areas
+  - name: illuminate_dna_assessments
+    schema: dagster_kipptaf_dlt_illuminate_dna_assessments
+    tables:
+      - name: agg_student_responses
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_assessments
+              - agg_student_responses
+      - name: agg_student_responses_group
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_assessments
+              - agg_student_responses_group
+      - name: agg_student_responses_standard
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_assessments
+              - agg_student_responses_standard
+      - name: assessment_grade_levels
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_assessments
+              - assessment_grade_levels
+      - name: assessment_standards
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_assessments
+              - assessment_standards
+      - name: assessments
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_assessments
+              - assessments
+      - name: assessments_reporting_groups
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_assessments
+              - assessments_reporting_groups
+      - name: performance_band_sets
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_assessments
+              - performance_band_sets
+      - name: performance_bands
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_assessments
+              - performance_bands
+      - name: reporting_groups
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_assessments
+              - reporting_groups
+      - name: students_assessments
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_assessments
+              - students_assessments
+  - name: illuminate_national_assessments
+    schema: dagster_kipptaf_dlt_illuminate_national_assessments
+    tables:
+      - name: psat_2023
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - national_assessments
+              - psat_2023
+      - name: psat_2024
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - national_assessments
+              - psat_2024
+      - name: psat89_2025
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - national_assessments
+              - psat89_2025
+  - name: illuminate_public
+    schema: dagster_kipptaf_dlt_illuminate_public
+    tables:
+      - name: sessions
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - public
+              - sessions
+      - name: student_session_aff
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - public
+              - student_session_aff
+      - name: students
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - public
+              - students
+      - name: users
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - public
+              - users
+  - name: illuminate_standards
+    schema: dagster_kipptaf_dlt_illuminate_standards
+    tables:
+      - name: standards
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - standards
+              - standards
+  - name: illuminate_dna_repositories
+    schema: dagster_kipptaf_dlt_illuminate_dna_repositories
+    tables:
+      - name: repositories
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_repositories
+              - repositories
+      - name: repository_grade_levels
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_repositories
+              - repository_grade_levels
+      - name: repository_fields
+        identifier: fields
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - dlt
+              - illuminate
+              - dna_repositories
+              - fields
