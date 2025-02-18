@@ -36,3 +36,22 @@ sources:
               - kipptaf
               - crdc
               - sced_code_crosswalk
+      - name: src_crdc__student_numbers
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1pDwUdnK3Kcqjk_Bwp6-8Wz9Kr55AmEC7rA-EGuU6jGA
+            sheet_range: src_crdc__student_numbers
+            skip_leading_rows: 1
+        columns:
+          - name: crdc_question_section
+            data_type: string
+          - name: student_number
+            data_type: numeric
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - crdc
+              - student_numbers
