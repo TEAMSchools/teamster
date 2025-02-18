@@ -19,13 +19,13 @@ locations:
                 - secret:
                     name: op-adp-wfn-api
                     items:
-                      - key: KTAF_Mutual_SSL.pem
-                        path: adp_wfn_cert
+                      - key: adp_wfn_api.cer
+                        path: adp_wfn_api.cer
                 - secret:
                     name: op-adp-wfn-api
                     items:
-                      - key: kipptaf_auth.key
-                        path: adp_wfn_key
+                      - key: adp_wfn_api.key
+                        path: adp_wfn_api.key
                 - secret:
                     name: op-egencia-sftp
                     items:
@@ -399,11 +399,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: OVERGRAD_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-overgrad-api
-                    key: credential
               - name: SLACK_TOKEN
                 valueFrom:
                   secretKeyRef:
@@ -787,11 +782,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: OVERGRAD_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-overgrad-api-kippnewark
-                    key: credential
               - name: SLACK_TOKEN
                 valueFrom:
                   secretKeyRef:

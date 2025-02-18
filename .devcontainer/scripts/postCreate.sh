@@ -25,13 +25,13 @@ sudo mkdir -p /etc/secret-volume
 op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env
 
 # save secrets to file
-op inject -f --in-file=.devcontainer/tpl/adp_wfn_cert.tpl \
-  --out-file=env/adp_wfn_cert &&
-  sudo mv -f env/adp_wfn_cert /etc/secret-volume/adp_wfn_cert
+op inject -f --in-file=.devcontainer/tpl/adp_wfn_api.cer.tpl \
+  --out-file=env/adp_wfn_api.cer &&
+  sudo mv -f env/adp_wfn_api.cer /etc/secret-volume/adp_wfn_api.cer
 
-op inject -f --in-file=.devcontainer/tpl/adp_wfn_key.tpl \
-  --out-file=env/adp_wfn_key &&
-  sudo mv -f env/adp_wfn_key /etc/secret-volume/adp_wfn_key
+op inject -f --in-file=.devcontainer/tpl/adp_wfn_api.key.tpl \
+  --out-file=env/adp_wfn_api.key &&
+  sudo mv -f env/adp_wfn_api.key /etc/secret-volume/adp_wfn_api.key
 
 op inject -f --in-file=.devcontainer/tpl/dbt_user_creds_json.tpl \
   --out-file=env/dbt_user_creds_json &&
