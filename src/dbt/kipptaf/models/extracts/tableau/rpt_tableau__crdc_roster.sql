@@ -903,6 +903,8 @@ with
 
             coalesce(r.is_retained_year, false) as is_retained_year,
 
+            if(ded.student_number is null, false, true) as distance_ed_manual,
+
             if(
                 e.exitdate = date(e.academic_year + 1, 06, 30), true, false
             ) as is_last_day_enrolled,
@@ -920,6 +922,7 @@ with
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
         left join retained as r on e.student_number = r.student_number
+        left join distance_ed as ded on ded.student_number = r.student_number
         where
             -- submission is always for the previous school year
             e.academic_year = {{ var("current_academic_year") - 1 }}
@@ -1193,4 +1196,4 @@ with
     )
 
 select *
-from athletics
+from enrollment
