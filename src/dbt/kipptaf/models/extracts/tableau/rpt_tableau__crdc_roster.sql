@@ -1242,8 +1242,6 @@ select
     _dbt_source_relation,
     region,
     academic_year,
-    schoolid,
-    school_abbreviation,
 
     studentid,
     student_number,
