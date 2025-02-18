@@ -235,7 +235,9 @@ with
         -- this count(*) serves no purpose other than avoiding a distinct lol
         select contact, count(*) as attempts
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
-        where score_type in ('act_composite', 'sat_total_score')
+        where
+            score_type in ('act_composite', 'sat_total_score')
+            and `date` between '2023-08-15' and '2024-06-13'
         group by all
     ),
 
