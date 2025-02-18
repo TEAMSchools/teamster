@@ -53,8 +53,6 @@ def build_illuminate_dlt_assets(
     if op_tags is None:
         op_tags = {}
 
-    op_tags.update({"dagster/concurrency_key": f"dlt_illuminate_{code_location}"})
-
     dlt_source = sql_database.with_args(name="illuminate", parallelized=True)(
         credentials=sql_database_credentials,
         schema=schema,
@@ -78,8 +76,9 @@ def build_illuminate_dlt_assets(
         dlt_source=dlt_source,
         dlt_pipeline=dlt_pipeline,
         name=f"{code_location}__dlt__illuminate__{schema}__{table_name}",
-        group_name="illuminate",
         dagster_dlt_translator=IlluminateDagsterDltTranslator(code_location),
+        group_name="illuminate",
+        pool=f"dlt_illuminate_{code_location}",
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
