@@ -78,6 +78,7 @@ defs = Definitions(
         *adp.schedules,
         *airbyte.schedules,
         *amplify.schedules,
+        *coupa.schedules,
         *extracts.schedules,
         *fivetran.schedules,
         *ldap.schedules,
