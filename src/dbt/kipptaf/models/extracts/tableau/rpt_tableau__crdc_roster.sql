@@ -1240,8 +1240,8 @@ with
 -- ENRL-3, by ethnicity/gender
 select
     _dbt_source_relation,
-    region,
     academic_year,
+    region,
 
     studentid,
     student_number,
@@ -1268,6 +1268,7 @@ select
 
     max(entrydate) as max_entrydate,
     max(exitdate) as max_exitdate,
+    max(is_last_day_enrolled) as max_is_last_day_enrolled,
     max(enroll_status) as max_enroll_status,
     max(rn_year) as max_rn_year,
 
