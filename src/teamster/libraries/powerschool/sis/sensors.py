@@ -19,7 +19,6 @@ from dagster import (
     sensor,
 )
 from dateutil.relativedelta import relativedelta
-from oracledb.exceptions import DatabaseError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
@@ -31,7 +30,8 @@ def build_powerschool_asset_sensor(
     code_location: str,
     execution_timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
-    minimum_interval_seconds=None,
+    minimum_interval_seconds: int | None = None,
+    max_runtime_seconds: int = (60 * 5),
 ):
     jobs = []
     keys_by_partitions_def = defaultdict(set[AssetKey])
@@ -337,16 +337,6 @@ def build_powerschool_asset_sensor(
                                 }
                             )
                             continue
-        except DatabaseError as e:
-            e_str = str(e)
-
-            if "DPY-4011" in e_str:
-                return SkipReason(e_str)
-            else:
-                raise e
-        except Exception as e:
-            context.log.exception(msg=e)
-            raise e
         finally:
             connection.close()
             ssh_tunnel.kill()
@@ -362,7 +352,7 @@ def build_powerschool_asset_sensor(
                     job_name=job_name,
                     partition_key=partition_key,
                     asset_selection=[g["asset_key"] for g in group],
-                    tags={MAX_RUNTIME_SECONDS_TAG: (60 * 5)},
+                    tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
                 )
             )
 

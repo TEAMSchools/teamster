@@ -19,13 +19,13 @@ locations:
                 - secret:
                     name: op-adp-wfn-api
                     items:
-                      - key: KTAF_Mutual_SSL.pem
-                        path: adp_wfn_cert
+                      - key: adp_wfn_api.cer
+                        path: adp_wfn_api.cer
                 - secret:
                     name: op-adp-wfn-api
                     items:
-                      - key: kipptaf_auth.key
-                        path: adp_wfn_key
+                      - key: adp_wfn_api.key
+                        path: adp_wfn_api.key
                 - secret:
                     name: op-egencia-sftp
                     items:
@@ -109,6 +109,11 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: credential
+              - name: AIRBYTE_WORKSPACE_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-airbyte-api
+                    key: workspace-id
               - name: AMPLIFY_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -159,6 +164,21 @@ locations:
                   secretKeyRef:
                     name: op-coupa-sftp
                     key: username
+              - name: COUPA_API_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: username
+              - name: COUPA_API_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: credential
+              - name: COUPA_API_INSTANCE_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: hostname
               - name: DEANSLIST_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -184,6 +204,11 @@ locations:
                   secretKeyRef:
                     name: op-fivetran-api
                     key: api-secret
+              - name: FIVETRAN_ACCOUNT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-fivetran-api
+                    key: account-id
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -254,6 +279,11 @@ locations:
                   secretKeyRef:
                     name: op-smartrecruiters-api
                     key: smart-token
+              - name: ZENDESK_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-zendesk-api
+                    key: subdomain
               - name: ZENDESK_EMAIL
                 valueFrom:
                   secretKeyRef:
@@ -369,11 +399,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: OVERGRAD_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-overgrad-api
-                    key: credential
               - name: SLACK_TOKEN
                 valueFrom:
                   secretKeyRef:
@@ -467,6 +492,11 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: credential
+              - name: AIRBYTE_WORKSPACE_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-airbyte-api
+                    key: workspace-id
               - name: AMPLIFY_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -542,6 +572,11 @@ locations:
                   secretKeyRef:
                     name: op-fivetran-api
                     key: api-secret
+              - name: FIVETRAN_ACCOUNT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-fivetran-api
+                    key: account-id
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -612,6 +647,11 @@ locations:
                   secretKeyRef:
                     name: op-smartrecruiters-api
                     key: smart-token
+              - name: ZENDESK_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-zendesk-api
+                    key: subdomain
               - name: ZENDESK_EMAIL
                 valueFrom:
                   secretKeyRef:
@@ -652,6 +692,21 @@ locations:
                   secretKeyRef:
                     name: op-coupa-sftp
                     key: host
+              - name: COUPA_API_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: username
+              - name: COUPA_API_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: credential
+              - name: COUPA_API_INSTANCE_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: hostname
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:
@@ -727,11 +782,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: OVERGRAD_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-overgrad-api-kippnewark
-                    key: credential
               - name: SLACK_TOKEN
                 valueFrom:
                   secretKeyRef:

@@ -47,34 +47,23 @@ select
     co.gifted_and_talented,
     co.gender,
     co.ethnicity,
+    co.nj_student_tier,
+    co.hos,
 
     sw.value,
-
-    nj.nj_student_tier,
-
-    hos.head_of_school_preferred_name_lastfirst as hos,
 
     false as is_replacement,
 from swq
 inner join
-    {{ ref("int_tableau__student_enrollments") }} as co
-    on swq.grade_level = co.grade_level
-    and swq.academic_year = co.academic_year
-    and co.is_enrolled_recent
+    {{ ref("int_extracts__student_enrollments_subjects") }} as co
+    on swq.academic_year = co.academic_year
+    and swq.grade_level = co.grade_level
+    and co.iready_subject = 'Reading'
 left join
     {{ ref("int_illuminate__repository_data") }} as sw
-    on co.student_number = sw.local_student_id
-    and swq.repository_id = sw.repository_id
+    on swq.repository_id = sw.repository_id
     and swq.label = sw.field_label
-left join
-    {{ ref("int_reporting__student_filters") }} as nj
-    on co.academic_year = nj.academic_year
-    and co.student_number = nj.student_number
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
-    and nj.iready_subject = 'Reading'
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as hos
-    on co.schoolid = hos.home_work_location_powerschool_school_id
+    and co.student_number = sw.local_student_id
 
 union all
 
@@ -99,12 +88,10 @@ select
     co.gifted_and_talented,
     co.gender,
     co.ethnicity,
+    co.nj_student_tier,
+    co.hos,
 
     sw.value,
-
-    nj.nj_student_tier,
-
-    hos.head_of_school_preferred_name_lastfirst as hos,
 
     true as is_replacement,
 from swq
@@ -113,17 +100,9 @@ inner join
     on swq.repository_id = sw.repository_id
     and swq.label = sw.field_label
 inner join
-    {{ ref("int_tableau__student_enrollments") }} as co
-    on sw.local_student_id = co.student_number
-    and swq.academic_year = co.academic_year
+    {{ ref("int_extracts__student_enrollments_subjects") }} as co
+    on swq.academic_year = co.academic_year
     and swq.grade_level != co.grade_level
+    and sw.local_student_id = co.student_number
     and co.is_enrolled_recent
-left join
-    {{ ref("int_reporting__student_filters") }} as nj
-    on co.academic_year = nj.academic_year
-    and co.student_number = nj.student_number
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
-    and nj.iready_subject = 'Reading'
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as hos
-    on co.schoolid = hos.home_work_location_powerschool_school_id
+    and co.iready_subject = 'Reading'

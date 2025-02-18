@@ -16,6 +16,7 @@ pension_and_benefits_enrollments = build_sftp_file_asset(
     remote_file_regex=r"pension_and_benefits_enrollments\.csv",
     ssh_resource_key=ssh_resource_key,
     avro_schema=PENSION_AND_BENEFITS_ENROLLMENTS_SCHEMA,
+    group_name="adp_workforce_now",
     exclude_dirs=[r"\./payroll"],
 )
 
@@ -25,6 +26,7 @@ comprehensive_benefits_report = build_sftp_file_asset(
     remote_file_regex=r"comprehensive_benefits_report\.csv",
     ssh_resource_key=ssh_resource_key,
     avro_schema=COMPREHENSIVE_BENEFITS_REPORT_SCHEMA,
+    group_name="adp_workforce_now",
     exclude_dirs=[r"\./payroll"],
 )
 
@@ -34,6 +36,7 @@ additional_earnings_report = build_sftp_file_asset(
     remote_file_regex=r"additional_earnings_report\.csv",
     ssh_resource_key=ssh_resource_key,
     avro_schema=ADDITIONAL_EARNINGS_REPORT_SCHEMA,
+    group_name="adp_workforce_now",
     exclude_dirs=[r"\./payroll"],
 )
 

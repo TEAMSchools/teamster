@@ -2,7 +2,6 @@ with
     combined_years as (
         select
             student_id,
-
             psat89_2025_id as id,
             psat89_2025_formcode as form_code,
             psat89_2025_newdistrict_id as new_district_id,
@@ -84,7 +83,6 @@ select
     form_code,
     cb_student_id,
     district_student_id,
-    local_student_id,
     state_student_id,
     new_district_id,
     new_ssid,
@@ -136,6 +134,8 @@ select
     ap_phys_ii,
     ap_seminar,
     ap_world_hist,
+
+    safe_cast(local_student_id as int) as local_student_id,
 
     safe_cast(selection_index as numeric) as selection_index,
     safe_cast(total_score as numeric) as total_score,

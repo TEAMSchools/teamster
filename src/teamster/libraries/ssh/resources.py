@@ -3,74 +3,11 @@ from stat import S_ISDIR, S_ISREG
 
 from dagster import _check
 from dagster_ssh import SSHResource as DagsterSSHResource
-from paramiko import AutoAddPolicy, SFTPAttributes, SFTPClient, SSHClient
+from paramiko import SFTPAttributes, SFTPClient
 
 
 class SSHResource(DagsterSSHResource):
-    # trunk-ignore(pyright/reportIncompatibleVariableOverride)
-    remote_port: str = "22"
     tunnel_remote_host: str | None = None
-
-    def get_connection(self) -> SSHClient:
-        client = SSHClient()
-        client.load_system_host_keys()
-
-        if not self.allow_host_key_change:
-            self.log.warning(
-                (
-                    "Remote Identification Change is not verified. This won't protect "
-                    "against Man-In-The-Middle attacks"
-                )
-            )
-            client.load_system_host_keys()
-
-        if self.no_host_key_check:
-            self.log.warning(
-                msg=(
-                    "No Host Key Verification. This won't protect against "
-                    "Man-In-The-Middle attacks"
-                )
-            )
-            # Default is RejectPolicy
-            client.set_missing_host_key_policy(AutoAddPolicy())
-
-        if self.password and self.password.strip():
-            client.connect(
-                hostname=self.remote_host,
-                username=self.username,
-                password=self.password,
-                key_filename=self.key_file,
-                pkey=self._key_obj,
-                timeout=self.timeout,
-                auth_timeout=self.timeout,
-                banner_timeout=self.timeout,
-                channel_timeout=self.timeout,
-                compress=self.compress,
-                port=int(self.remote_port),
-                sock=self._host_proxy,
-                look_for_keys=False,
-            )
-        else:
-            client.connect(
-                hostname=self.remote_host,
-                username=self.username,
-                key_filename=self.key_file,
-                pkey=self._key_obj,
-                timeout=self.timeout,
-                auth_timeout=self.timeout,
-                banner_timeout=self.timeout,
-                channel_timeout=self.timeout,
-                compress=self.compress,
-                port=int(self.remote_port),
-                sock=self._host_proxy,
-            )
-
-        if self.keepalive_interval:
-            transport = _check.not_none(client.get_transport())
-
-            transport.set_keepalive(self.keepalive_interval)
-
-        return client
 
     def listdir_attr_r(
         self, remote_dir: str = ".", exclude_dirs: list[str] | None = None

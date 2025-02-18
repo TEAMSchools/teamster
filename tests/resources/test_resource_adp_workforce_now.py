@@ -1,34 +1,32 @@
 import json
 import pathlib
 
-from dagster import EnvVar, build_resources
+from dagster import build_resources
 
+from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 
-with build_resources(
-    resources={
-        "adp_wfn": AdpWorkforceNowResource(
-            client_id=EnvVar("ADP_WFN_CLIENT_ID"),
-            client_secret=EnvVar("ADP_WFN_CLIENT_SECRET"),
-            cert_filepath="/etc/secret-volume/adp_wfn_cert",
-            key_filepath="/etc/secret-volume/adp_wfn_key",
-            masked=False,
-        ),
-    }
-) as resources:
-    ADP_WFN: AdpWorkforceNowResource = resources.adp_wfn
+
+def get_adp_wfn_resource() -> AdpWorkforceNowResource:
+    with build_resources(
+        resources={"adp_wfn": ADP_WORKFORCE_NOW_RESOURCE}
+    ) as resources:
+        return resources.adp_wfn
 
 
 def test_event_notification():
-    r = ADP_WFN._request(
-        method="GET",
-        url=f"{ADP_WFN._service_root}/core/v1/event-notification-messages",
+    adp_wfn = get_adp_wfn_resource()
+
+    r = adp_wfn._request(
+        method="GET", url=f"{adp_wfn._service_root}/core/v1/event-notification-messages"
     )
 
     print(r.json())
 
 
 def _test_get_worker(aoid: str | None = None, as_of_date: str | None = None):
+    adp_wfn = get_adp_wfn_resource()
+
     params = {
         "asOfDate": as_of_date,
         "$select": ",".join(
@@ -60,10 +58,10 @@ def _test_get_worker(aoid: str | None = None, as_of_date: str | None = None):
     }
 
     if aoid is not None:
-        data = ADP_WFN.get(endpoint=f"hr/v2/workers/{aoid}", params=params).json()
+        data = adp_wfn.get(endpoint=f"hr/v2/workers/{aoid}", params=params).json()
         filepath = pathlib.Path(f"env/test/adp/{aoid}.json")
     else:
-        data = ADP_WFN.get_records(endpoint="hr/v2/workers", params=params)
+        data = adp_wfn.get_records(endpoint="hr/v2/workers", params=params)
         filepath = pathlib.Path("env/test/adp/workers.json")
 
     filepath.parent.mkdir(parents=True, exist_ok=True)

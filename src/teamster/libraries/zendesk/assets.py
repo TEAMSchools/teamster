@@ -80,7 +80,7 @@ def build_ticket_metrics_archive(code_location, timezone, avro_schema):
                     strict_allow_default=True,
                 )
             except RecordNotFoundException as e:
-                context.log.exception(e)
+                context.log.exception(msg=e)
                 continue
 
         fo.close()

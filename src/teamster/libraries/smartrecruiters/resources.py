@@ -27,7 +27,7 @@ class SmartRecruitersResource(ConfigurableResource):
             response.raise_for_status()
             return response
         except HTTPError as e:
-            self._log.exception(e)
+            self._log.exception(msg=e)
             raise HTTPError(response.text) from e
 
     def get(self, endpoint, *args, **kwargs):

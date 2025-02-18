@@ -42,15 +42,15 @@ with
                 app.application_admission_type = 'Early Decision', true, false
             ) as is_early_decision,
 
-            if(app.honors_special_program_name = 'EOF', true, false) as is_eof,
+            if(app.honors_special_program_name like '%EOF%', true, false) as is_eof,
             if(
-                app.honors_special_program_name = 'EOF'
+                app.honors_special_program_name like '%EOF%'
                 and app.honors_special_program_status in ('Applied', 'Accepted'),
                 true,
                 false
             ) as is_eof_applied,
             if(
-                app.honors_special_program_name = 'EOF'
+                app.honors_special_program_name like '%EOF%'
                 and app.honors_special_program_status = 'Accepted',
                 true,
                 false

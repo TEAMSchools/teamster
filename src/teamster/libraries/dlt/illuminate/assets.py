@@ -1,7 +1,6 @@
-import json
 from datetime import date
 
-from dagster import AssetExecutionContext, AssetKey, EnvVar, _check
+from dagster import AssetExecutionContext, AssetKey
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
@@ -10,40 +9,31 @@ from dlt.destinations import bigquery
 from dlt.sources.sql_database import remove_nullability_adapter, sql_database
 from sqlalchemy.sql import Select, TableClause
 
-CREDENTIALS = ConnectionStringCredentials(
-    {
-        "drivername": _check.not_none(
-            value=EnvVar("ILLUMINATE_DB_DRIVERNAME").get_value()
-        ),
-        "database": EnvVar("ILLUMINATE_DB_DATABASE").get_value(),
-        "password": EnvVar("ILLUMINATE_DB_PASSWORD").get_value(),
-        "username": EnvVar("ILLUMINATE_DB_USERNAME").get_value(),
-        "host": EnvVar("ILLUMINATE_DB_HOST").get_value(),
-    }
-)
-
 
 class IlluminateDagsterDltTranslator(DagsterDltTranslator):
     def __init__(self, code_location: str):
         self.code_location = code_location
         return super().__init__()
 
-    def get_asset_key(self, resource):
-        return AssetKey(
-            [
-                self.code_location,
-                "dlt",
-                "illuminate",
-                resource.explicit_args["schema"],
-                resource.explicit_args["table"],
-            ]
+    def get_asset_spec(self, data):
+        asset_spec = super().get_asset_spec(data)
+
+        asset_spec = asset_spec.replace_attributes(
+            key=AssetKey(
+                [
+                    self.code_location,
+                    "dlt",
+                    "illuminate",
+                    data.resource.explicit_args["schema"],
+                    data.resource.explicit_args["table"],
+                ]
+            ),
+            deps=[],
         )
 
-    def get_deps_asset_keys(self, resource):
-        return []
+        asset_spec = asset_spec.merge_attributes(kinds={"postgresql"})
 
-    def get_kinds(self, resource, destination):
-        return {"dlt", "postgresql", destination.destination_name}
+        return asset_spec
 
 
 def filter_date_taken_callback(query: Select, table: TableClause):
@@ -52,6 +42,8 @@ def filter_date_taken_callback(query: Select, table: TableClause):
 
 
 def build_illuminate_dlt_assets(
+    sql_database_credentials: ConnectionStringCredentials,
+    dlt_credentials: dict,
     code_location: str,
     schema: str,
     table_name: str,
@@ -61,11 +53,8 @@ def build_illuminate_dlt_assets(
     if op_tags is None:
         op_tags = {}
 
-    op_tags.update({"dagster/concurrency_key": f"dlt_illuminate_{code_location}"})
-
-    # trunk-ignore(pyright/reportArgumentType)
     dlt_source = sql_database.with_args(name="illuminate", parallelized=True)(
-        credentials=CREDENTIALS,
+        credentials=sql_database_credentials,
         schema=schema,
         table_names=[table_name],
         defer_table_reflect=True,
@@ -75,9 +64,6 @@ def build_illuminate_dlt_assets(
             filter_date_taken_callback if filter_date_taken else None
         ),
     )
-
-    # bigquery cannot load data type 'json' from 'parquet' files
-    # os.environ["DESTINATION__BIGQUERY__AUTODETECT_SCHEMA"] = "true"
 
     dlt_pipeline = pipeline(
         pipeline_name="illuminate",
@@ -90,17 +76,14 @@ def build_illuminate_dlt_assets(
         dlt_source=dlt_source,
         dlt_pipeline=dlt_pipeline,
         name=f"{code_location}__dlt__illuminate__{schema}__{table_name}",
-        group_name="illuminate",
         dagster_dlt_translator=IlluminateDagsterDltTranslator(code_location),
+        group_name="illuminate",
+        pool=f"dlt_illuminate_{code_location}",
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
         yield from dlt.run(
-            context=context,
-            credentials=json.load(
-                fp=open(file="/etc/secret-volume/gcloud_teamster_dlt_keyfile.json")
-            ),
-            write_disposition="replace",
+            context=context, credentials=dlt_credentials, write_disposition="replace"
         )
 
     return _assets

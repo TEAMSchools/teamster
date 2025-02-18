@@ -2,7 +2,7 @@ with
     -- trunk-ignore(sqlfluff/ST03)
     staff_roster_active as (
         select *,
-        from {{ ref("base_people__staff_roster_history") }}
+        from {{ ref("int_people__staff_roster_history") }}
         where work_assignment__fivetran_active
     ),
 

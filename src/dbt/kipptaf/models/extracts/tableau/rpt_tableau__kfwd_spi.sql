@@ -38,6 +38,11 @@ select
     null as application_status,
     null as application_submission_status,
     null as matriculation_decision,
+    null as is_early_action_decision,
+    null as is_early_action,
+    null as is_early_decision,
+    null as is_ed_ea,
+    null as student_aid_index,
 
     if(e.status = 'Graduated', true, false) as is_graduated,
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
@@ -178,6 +183,12 @@ select
     a.application_status,
     a.application_submission_status,
     a.matriculation_decision,
+    a.is_early_action_decision,
+    a.is_early_action,
+    a.is_early_decision,
+
+    r.is_ed_ea,
+    r.student_aid_index,
 
     false as is_graduated,
     null as is_ecc_enrollment,
