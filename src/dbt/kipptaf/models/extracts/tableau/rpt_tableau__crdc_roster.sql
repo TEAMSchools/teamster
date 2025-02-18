@@ -1,4 +1,30 @@
+{% set arrests_student_numbers = [201150, 105805, 106658, 106658, 201150, 105805] %}
+{% set arrests_crdc_question_section = [
+    "ARRS-1",
+    "ARRS-1",
+    "ARRS-1",
+    "ARRS-2",
+    "ARRS-3",
+    "ARRS-3",
+] %}
+
 with
+    arrests as (
+        select student_number, crdc_question_section,
+        from
+            (
+                {% for i in range(arrests_student_numbers | length) %}
+                    select
+                        '{{ arrests_student_numbers[i] }}' as student_number,
+                        '{{ arrests_crdc_question_section[i] }}'
+                        as crdc_question_section
+                    {% if not loop.last %}
+                        union all
+                    {% endif %}
+                {% endfor %}
+            ) as matched_data
+    ),
+
     retained as (
         -- reason for distinct: for students with multiple enrollments
         select distinct student_number, is_retained_year,
@@ -119,17 +145,21 @@ with
 
             if(
                 c.courses_course_name like '%(CR)'
+                -- any other school would be a credit recovery course taken outside of
+                -- KTAF
                 and g.schoolname = 'KIPP Summer School',
                 true,
                 false
             ) as is_credit_recovery,
 
+            -- some data is needed as of fall snapshot
             if(
                 c.cc_dateenrolled <= '2023-10-02' and c.cc_dateleft >= '2023-10-02',
                 true,
                 false
             ) as is_oct_01_course,
 
+            -- some data is needed as of the last day of school
             if(c.cc_dateleft >= c.terms_lastday, true, false) as is_last_day_course,
 
         from {{ ref("base_powerschool__course_enrollments") }} as c
@@ -168,7 +198,7 @@ with
 
         union all
 
-        -- algebra classes for MS; we don't do geometry, so there will be no cte check
+        -- algebra classes for MS; we don't do geometry, so there will be no cte for it
         -- for it
         select *, 'COUR-1' as crdc_question_section,
         from custom_schedule
@@ -325,4 +355,4 @@ with
     )
 
 select *
-from enrollment
+from arrests
