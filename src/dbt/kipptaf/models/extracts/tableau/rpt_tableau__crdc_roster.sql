@@ -787,12 +787,12 @@
 
 with
     distance_ed as (
-        select student_number, crdc_question_section,
+        select cast(student as numeric) as student_number, crdc_question_section,
         from
             (
                 {% for i in range(distance_ed_student_numbers | length) %}
                     select
-                        '{{ distance_ed_student_numbers[i] }}' as student_number,
+                        '{{ distance_ed_student_numbers[i] }}' as student,
                         'DSED-2' as crdc_question_section
                     {% if not loop.last %}
                         union all
@@ -802,12 +802,12 @@ with
     ),
 
     dual_enroll as (
-        select student_number, crdc_question_section,
+        select cast(student as numeric) as student_number, crdc_question_section,
         from
             (
                 {% for i in range(dual_enroll_student_numbers | length) %}
                     select
-                        '{{ dual_enroll_student_numbers[i] }}' as student_number,
+                        '{{ dual_enroll_student_numbers[i] }}' as student,
                         'PENR-4a' as crdc_question_section
                     {% if not loop.last %}
                         union all
@@ -817,12 +817,12 @@ with
     ),
 
     credit_recovery as (
-        select student_number, crdc_question_section,
+        select cast(student as numeric) as student_number, crdc_question_section,
         from
             (
                 {% for i in range(credit_recovery_student_numbers | length) %}
                     select
-                        '{{ credit_recovery_student_numbers[i] }}' as student_number,
+                        '{{ credit_recovery_student_numbers[i] }}' as student,
                         'PENR-6' as crdc_question_section
                     {% if not loop.last %}
                         union all
@@ -832,12 +832,12 @@ with
     ),
 
     athletics as (
-        select student_number, crdc_question_section,
+        select cast(student as numeric) as student_number, crdc_question_section,
         from
             (
                 {% for i in range(athletics_student_numbers | length) %}
                     select
-                        '{{ athletics_student_numbers[i] }}' as student_number,
+                        '{{ athletics_student_numbers[i] }}' as student,
                         'ATHL-3' as crdc_question_section
                     {% if not loop.last %}
                         union all
@@ -847,12 +847,12 @@ with
     ),
 
     arrests as (
-        select student_number, crdc_question_section,
+        select cast(student as numeric) as student_number, crdc_question_section,
         from
             (
                 {% for i in range(arrests_student_numbers | length) %}
                     select
-                        '{{ arrests_student_numbers[i] }}' as student_number,
+                        '{{ arrests_student_numbers[i] }}' as student,
                         '{{ arrests_crdc_question_section[i] }}'
                         as crdc_question_section
                     {% if not loop.last %}
