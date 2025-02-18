@@ -888,6 +888,7 @@ with
         select
             e._dbt_source_relation,
             e.academic_year,
+            e.region,
             e.schoolid,
             e.school_abbreviation,
 
@@ -913,6 +914,34 @@ with
             mc.crdc_question_section as crdc_question_section_manual_check,
 
             coalesce(r.is_retained_year, false) as is_retained_year,
+
+            case
+                e.gender
+                when 'F'
+                then 'Female'
+                when 'M'
+                then 'Male'
+                when 'X'
+                then 'Nonbinary'
+            end as crdc_gender,
+
+            case
+                e.ethnicity
+                when 'H'
+                then 'Hispanic or Latino of any race'
+                when 'I'
+                then 'American Indian or Alaska Native'
+                when 'A'
+                then 'Asian'
+                when 'P'
+                then 'Native Hawaiian or Other Pacific Islander'
+                when 'B'
+                then 'Black or African American'
+                when 'W'
+                then 'White'
+                when 'T'
+                then 'Two or more races'
+            end as crdc_demographic,
 
             -- bring over the manual entry student numbers that match the crdc
             -- question tag
@@ -1208,5 +1237,44 @@ with
         group by dli.student_school_id, dli.create_ts_academic_year
     )
 
-select *
+-- ENRL-3
+select
+    _dbt_source_relation,
+    region,
+    academic_year,
+    schoolid,
+    school_abbreviation,
+
+    studentid,
+    student_number,
+    contact_id,
+    grade_level,
+    gender,
+    ethnicity,
+    gifted_and_talented,
+    iep_status,
+    is_504,
+    iep_only,
+    iep_and_c504,
+    c504_only,
+    lep_status,
+
+    entrydate,
+    exitdate,
+    enroll_status,
+    rn_year,
+    is_enrolled_oct01,
+    is_last_day_enrolled,
+    is_retained_year,
+
+    'ENRL-1' as crdc_question_section,
+    'Student Enrollment' as crdc_question_description,
+    crdc_demographic,
+    crdc_gender,
+
+    count(student_number) over (
+        partition by region, crdc_demographic, crdc_gender
+    ) as crdc_count,
+
 from enrollment
+where is_enrolled_oct01
