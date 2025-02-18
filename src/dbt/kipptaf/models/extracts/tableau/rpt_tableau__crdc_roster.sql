@@ -786,7 +786,8 @@
 ] %}
 
 with
-    distance_ed as (
+    manual_check as (
+        -- distance ed students
         select cast(student as numeric) as student_number, crdc_question_section,
         from
             (
@@ -799,9 +800,10 @@ with
                     {% endif %}
                 {% endfor %}
             ) as matched_data
-    ),
 
-    dual_enroll as (
+        union all
+
+        -- dual enroll students
         select cast(student as numeric) as student_number, crdc_question_section,
         from
             (
@@ -814,9 +816,10 @@ with
                     {% endif %}
                 {% endfor %}
             ) as matched_data
-    ),
 
-    credit_recovery as (
+        union all
+
+        -- credit recovery students
         select cast(student as numeric) as student_number, crdc_question_section,
         from
             (
@@ -829,9 +832,10 @@ with
                     {% endif %}
                 {% endfor %}
             ) as matched_data
-    ),
 
-    athletics as (
+        union all
+
+        -- athletics
         select cast(student as numeric) as student_number, crdc_question_section,
         from
             (
@@ -844,9 +848,10 @@ with
                     {% endif %}
                 {% endfor %}
             ) as matched_data
-    ),
 
-    arrests as (
+        union all
+
+        -- arrests
         select cast(student as numeric) as student_number, crdc_question_section,
         from
             (
@@ -901,19 +906,14 @@ with
 
             adb.contact_id,
 
-            ar.crdc_question_section as arrest_crdc_question_section,
+            -- tag the manual entry checks to their crdc question
+            mc.crdc_question_section as crdc_question_section_manual_check,
 
             coalesce(r.is_retained_year, false) as is_retained_year,
 
-            if(ded.student_number is null, false, true) as distance_ed_manual,
-
-            if(de.student_number is null, false, true) as dual_enroll_manual,
-
-            if(cr.student_number is null, false, true) as credit_recovery_manual,
-
-            if(ath.student_number is null, false, true) as athletics_manual,
-
-            if(ar.student_number is null, false, true) as arrests_manual,
+            -- bring over the manual entry student numbers that match the crdc
+            -- question tag
+            if(mc.student_number is null, false, true) as student_manual_check,
 
             if(
                 e.exitdate = date(e.academic_year + 1, 06, 30), true, false
@@ -932,11 +932,7 @@ with
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
         left join retained as r on e.student_number = r.student_number
-        left join distance_ed as ded on e.student_number = ded.student_number
-        left join dual_enroll as de on e.student_number = de.student_number
-        left join credit_recovery as cr on e.student_number = cr.student_number
-        left join athletics as ath on e.student_number = ath.student_number
-        left join arrests as ar on e.student_number = ar.student_number
+        left join manual_check as mc on e.student_number = mc.student_number
         where
             -- submission is always for the previous school year
             e.academic_year = {{ var("current_academic_year") - 1 }}
@@ -999,7 +995,8 @@ with
 
             if(
                 c.courses_course_name like '%(CR)'
-                -- any other school would be a credit recovery course taken outside of
+                -- any other school would be a credit recovery course taken
+                -- outside of
                 -- KTAF
                 and g.schoolname = 'KIPP Summer School',
                 true,
@@ -1035,7 +1032,8 @@ with
 
     ),
 
-    -- this CTE is appending the different versions/groupings i need for reporting on
+    -- this CTE is appending the different versions/groupings i need for reporting
+    -- on
     -- course data
     -- dual enrolled students
     final_schedule as (
@@ -1052,7 +1050,8 @@ with
 
         union all
 
-        -- algebra classes for MS; we don't do geometry, so there will be no cte for it
+        -- algebra classes for MS; we don't do geometry, so there will be no cte
+        -- for it
         -- for it
         select *, 'COUR-1' as crdc_question_section,
         from custom_schedule
