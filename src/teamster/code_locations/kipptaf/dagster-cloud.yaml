@@ -399,11 +399,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: OVERGRAD_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-overgrad-api
-                    key: credential
               - name: SLACK_TOKEN
                 valueFrom:
                   secretKeyRef:
@@ -787,11 +782,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: OVERGRAD_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-overgrad-api-kippnewark
-                    key: credential
               - name: SLACK_TOKEN
                 valueFrom:
                   secretKeyRef:
