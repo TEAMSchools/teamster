@@ -1272,6 +1272,7 @@ select
     crdc_demographic,
     crdc_gender,
 
+    null as courses_course_name,
     null as sced_course_name,
     null as crdc_course_group,
     null as crdc_subject_group,
@@ -1318,6 +1319,7 @@ select
     e.crdc_demographic,
     e.crdc_gender,
 
+    f.courses_course_name,
     f.sced_course_name,
     f.crdc_course_group,
     f.crdc_subject_group,
