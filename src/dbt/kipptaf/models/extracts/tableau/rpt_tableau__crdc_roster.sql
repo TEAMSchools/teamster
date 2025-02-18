@@ -37,7 +37,7 @@
     104483,
 ] %}
 
--- enter the student numbers below for PENR-4a
+-- enter the student numbers below for PENR-4
 {% set dual_enroll_student_numbers = [
     17964,
     17491,
@@ -1237,7 +1237,6 @@ with
         group by dli.student_school_id, dli.create_ts_academic_year
     )
 
-/*
 -- ENRL-1, 2a,2b, 3, and 4 dups may be present because of
 -- students changing schools or grade level midyear
 select
@@ -1285,7 +1284,7 @@ select
 from enrollment
 where is_enrolled_oct01
 
-union all*/
+union all
 -- PENR-4
 select
     e._dbt_source_relation,
@@ -1330,7 +1329,7 @@ select
     'Dual Enrollment' as crdc_question_description,
 
 from enrollment as e
-left join
+inner join
     final_schedule as f
     on e.schoolid = f.cc_schoolid
     and e.student_number = f.students_student_number
