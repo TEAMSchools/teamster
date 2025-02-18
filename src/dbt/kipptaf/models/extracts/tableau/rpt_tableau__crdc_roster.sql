@@ -1278,11 +1278,13 @@ select
     null as crdc_ap_group,
     null as sced_code_xwalk,
 
-    'DSED-2' as crdc_question_section,
+    crdc_question_section_manual_check as crdc_question_section,
     'Distance Education Enrollment' as crdc_question_description,
 
 from enrollment
 where crdc_question_section_manual_check = 'DSED-2'
+
+union all
 
 -- ENRL-1, 2a,2b, 3, and 4 dups may be present because of
 -- students changing schools or grade level midyear
