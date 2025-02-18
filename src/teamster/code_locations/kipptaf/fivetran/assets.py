@@ -53,6 +53,20 @@ coupa_assets = build_fivetran_asset_specs(
     config_file=config_dir / "coupa.yaml", code_location=CODE_LOCATION
 )
 
+illuminate_xmin_assets = build_fivetran_asset_specs(
+    config_file=config_dir / "illuminate_xmin.yaml",
+    code_location=CODE_LOCATION,
+    kinds=["postgresql"],
+)
+
+illuminate_assets = build_fivetran_asset_specs(
+    config_file=config_dir / "illuminate.yaml",
+    code_location=CODE_LOCATION,
+    kinds=["postgresql"],
+)
+
 asset_specs = [
     *coupa_assets,
+    *illuminate_xmin_assets,
+    *illuminate_assets,
 ]

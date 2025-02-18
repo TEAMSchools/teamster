@@ -21,6 +21,9 @@ select
         partition by ssa.student_id, s.academic_year
         order by ssa.entry_date desc, ssa.leave_date desc
     ) as rn_student_session_desc,
-from {{ ref("stg_illuminate__public__student_session_aff") }} as ssa
+from {{ source("illuminate", "student_session_aff") }} as ssa
 inner join
-    {{ ref("stg_illuminate__public__sessions") }} as s on ssa.session_id = s.session_id
+    {{ source("illuminate", "sessions") }} as s
+    on ssa.session_id = s.session_id
+    and not s._fivetran_deleted
+where not ssa._fivetran_deleted
