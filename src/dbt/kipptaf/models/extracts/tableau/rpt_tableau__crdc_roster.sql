@@ -1237,7 +1237,7 @@ with
         group by dli.student_school_id, dli.create_ts_academic_year
     )
 
--- ENRL-1, 2a,2b, 3, and 4 by ethnicity/gender. dups may be present because of
+-- ENRL-1, 2a,2b, 3, and 4 dups may be present because of
 -- students changing schools or grade level midyear
 select
     _dbt_source_relation,
@@ -1271,8 +1271,69 @@ select
     crdc_demographic,
     crdc_gender,
 
-    'ENRL-1' as crdc_question_section,
+    null as sced_course_name,
+    null as crdc_course_group,
+    null as crdc_subject_group,
+    null as crdc_ap_group,
+    null as sced_code_xwalk,
+
+    'ENRL' as crdc_question_section,
     'Student Enrollment' as crdc_question_description,
 
 from enrollment
 where is_enrolled_oct01
+
+union all
+
+-- PENR-4
+select
+    e._dbt_source_relation,
+    e.academic_year,
+    e.region,
+    e.schoolid,
+    e.school_abbreviation,
+
+    e.studentid,
+    e.student_number,
+    e.contact_id,
+    e.grade_level,
+    e.gender,
+    e.ethnicity,
+    e.gifted_and_talented,
+    e.iep_status,
+    e.is_504,
+    e.iep_only,
+    e.iep_and_c504,
+    e.c504_only,
+    e.lep_status,
+
+    e.entrydate,
+    e.exitdate,
+    e.enroll_status,
+    e.is_enrolled_oct01,
+    e.is_last_day_enrolled,
+    e.is_retained_year,
+    e.rn_year,
+
+    e.crdc_demographic,
+    e.crdc_gender,
+
+    f.sced_course_name,
+    f.crdc_course_group,
+    f.crdc_subject_group,
+    f.crdc_ap_group,
+    f.sced_code_xwalk,
+
+    f.crdc_question_section,
+    'Dual Enrollment' as crdc_question_description,
+
+from enrollment as e
+inner join
+    final_schedule as f
+    on e.schoolid = f.cc_schoolid
+    and e.student_number = f.students_student_number
+    and e.crdc_question_section_manual_check = f.crdc_question_section
+where
+    e.is_enrolled_oct01
+    and e.crdc_question_section_manual_check = 'PENR-4'
+    and e.grade_level >= 9
