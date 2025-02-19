@@ -581,4 +581,4 @@ where
     -- timeframe is any part of the year + summer
     e.grade_level >= 9
     and e.crdc_question_section = 'PENR-6'
-    and f.courses_course_name is not nulll
+    and f.courses_course_name is not null
