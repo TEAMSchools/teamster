@@ -2,25 +2,16 @@ with
     psat as (
         select
             cb_id,
-            powerschool_student_number as local_student_id,
-
+            powerschool_student_number,
+            academic_year,
+            latest_psat_date,
+            administration_round,
             score,
+            test_type,
 
             concat(
                 test_name, '_', regexp_extract(score_type, r'^[^_]+_(.+)')
             ) as score_type,
-
-            safe_cast(latest_psat_date as date) as `date`,
-
-            case
-                test_type
-                when 'PSATNM'
-                then 'PSAT NMSQT'
-                when 'PSAT89'
-                then 'PSAT 8/9'
-                when 'PSAT10'
-                then 'PSAT10'
-            end as test_type,
 
             case
                 score_type
@@ -32,6 +23,13 @@ with
                 then 'EBRW'
             end as test_subject,
 
+            case
+                score_type
+                when 'latest_psat_ebrw'
+                then 'ENG'
+                when 'latest_psat_math_section'
+                then 'MATH'
+            end as course_discipline,
         from
             {{ ref("int_collegeboard__psat") }} unpivot (
                 score for score_type
@@ -41,14 +39,18 @@ with
 
 select
     cb_id,
-    local_student_id,
-    `date`,
-    score_type,
-    score,
+    powerschool_student_number,
+    academic_year,
+    administration_round,
+    latest_psat_date,
     test_type,
     test_subject,
+    course_discipline,
+    score_type,
+    score,
 
     row_number() over (
-        partition by local_student_id, test_type, score_type order by score desc
+        partition by powerschool_student_number, test_type, score_type
+        order by score desc
     ) as rn_highest,
 from psat
