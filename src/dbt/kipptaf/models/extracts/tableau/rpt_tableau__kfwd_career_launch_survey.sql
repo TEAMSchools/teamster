@@ -70,6 +70,7 @@ with
             r.contact_expected_college_graduation as expected_college_grad_date,
             r.contact_actual_college_graduation_date as actual_college_grad_date,
             r.contact_current_kipp_student as current_kipp_student,
+            r.contact_owner_name,
 
             e.pursuing_degree_type,
             e.type,
