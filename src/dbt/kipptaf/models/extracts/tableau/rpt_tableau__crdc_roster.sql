@@ -282,7 +282,7 @@ with
 
         -- algebra classes for MS; we don't do MS geometry, so there will be no cte
         -- for it
-        select *, 'COUR-1' as crdc_question_section,
+        select *, 'COUR' as crdc_question_section,
         from custom_schedule
         -- alg 1 ms courses use a special code
         where sced_code_courses = '52052'
@@ -479,6 +479,9 @@ select
     null as crdc_ap_group,
     null as sced_code_xwalk,
 
+    null as is_oct_01_course,
+    null as is_last_day_course,
+
     crdc_question_section,
     'Distance Education Enrollment' as crdc_question_description,
 
@@ -529,6 +532,9 @@ select
     null as crdc_ap_group,
     null as sced_code_xwalk,
 
+    null as is_oct_01_course,
+    null as is_last_day_course,
+
     'ENRL' as crdc_question_section,
     'Student Enrollment' as crdc_question_description,
 
@@ -577,6 +583,9 @@ select
     f.crdc_subject_group,
     f.crdc_ap_group,
     f.sced_code_xwalk,
+
+    f.is_oct_01_course,
+    f.is_last_day_course,
 
     f.crdc_question_section,
     'Dual Enrollment' as crdc_question_description,
@@ -634,6 +643,9 @@ select
     f.crdc_ap_group,
     f.sced_code_xwalk,
 
+    f.is_oct_01_course,
+    f.is_last_day_course,
+
     f.crdc_question_section,
     'Credit Recovery' as crdc_question_description,
 
@@ -645,3 +657,63 @@ inner join
 where
     -- timeframe is any part of the year + summer
     e.grade_level >= 9 and f.courses_course_name is not null
+
+union all
+-- COUR 1 to COUR 4-b - there might be dups here if students took more than one credit
+-- recovery
+-- course
+select
+    e._dbt_source_relation,
+    e.academic_year,
+    e.region,
+    e.schoolid,
+    e.school_abbreviation,
+
+    e.studentid,
+    e.student_number,
+    e.contact_id,
+    e.grade_level,
+    e.gender,
+    e.ethnicity,
+    e.gifted_and_talented,
+    e.iep_status,
+    e.is_504,
+    e.iep_only,
+    e.iep_and_c504,
+    e.c504_only,
+    e.lep_status,
+    e.lep_parent_refusal,
+
+    e.entrydate,
+    e.exitdate,
+    e.enroll_status,
+    e.is_enrolled_oct01,
+    e.is_last_day_enrolled,
+    e.is_retained_year,
+    e.rn_year,
+
+    e.crdc_demographic,
+    e.crdc_gender,
+
+    f.courses_course_name,
+    f.sced_course_name,
+    f.crdc_course_group,
+    f.crdc_subject_group,
+    f.crdc_ap_group,
+    f.sced_code_xwalk,
+
+    f.is_oct_01_course,
+    f.is_last_day_course,
+
+    f.crdc_question_section,
+    'Algebra I 7/8' as crdc_question_description,
+
+from enrollment as e
+inner join
+    final_schedule as f
+    on e.schoolid = f.cc_schoolid
+    and e.student_number = f.students_student_number
+    and f.crdc_question_section = 'COUR'
+where
+    -- timeframe is fall snapshot for classes count, but eoy for demo and passing
+    e.grade_level between 7 and 8 and f.courses_course_name is not null
