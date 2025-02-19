@@ -199,8 +199,9 @@ with
     ),
 
     -- this CTE is appending the different versions/groupings i need for reporting
-    -- on course data dual enrolled students
+    -- courses
     final_schedule as (
+        -- data dual enrolled students
         select *, 'PENR-4' as crdc_question_section,
         from custom_schedule
         where is_dual_enrollment and is_oct_01_course and not ap_tag
@@ -215,7 +216,6 @@ with
         union all
 
         -- algebra classes for MS; we don't do geometry, so there will be no cte
-        -- for it
         -- for it
         select *, 'COUR-1' as crdc_question_section,
         from custom_schedule
@@ -469,7 +469,7 @@ from enrollment
 where is_enrolled_oct01
 
 union all
--- PENR-4 - there might be dups here if students are taking more than 1 distance
+-- PENR-4: there might be dups here if students are taking more than 1 distance
 -- learning course
 select
     e._dbt_source_relation,
@@ -519,4 +519,66 @@ inner join
     on e.schoolid = f.cc_schoolid
     and e.student_number = f.students_student_number
     and e.crdc_question_section = f.crdc_question_section
-where e.is_enrolled_oct01 and e.grade_level >= 9 and f.courses_course_name is not null
+where
+    -- timeframe is fall snapshot
+    e.is_enrolled_oct01
+    and e.grade_level >= 9
+    and e.crdc_question_section = 'PENR-4'
+    and f.courses_course_name is not null
+
+union all
+-- PENR-6 - there might be dups here if students took more than one credit recovery
+-- course
+select
+    e._dbt_source_relation,
+    e.academic_year,
+    e.region,
+    e.schoolid,
+    e.school_abbreviation,
+
+    e.studentid,
+    e.student_number,
+    e.contact_id,
+    e.grade_level,
+    e.gender,
+    e.ethnicity,
+    e.gifted_and_talented,
+    e.iep_status,
+    e.is_504,
+    e.iep_only,
+    e.iep_and_c504,
+    e.c504_only,
+    e.lep_status,
+
+    e.entrydate,
+    e.exitdate,
+    e.enroll_status,
+    e.is_enrolled_oct01,
+    e.is_last_day_enrolled,
+    e.is_retained_year,
+    e.rn_year,
+
+    e.crdc_demographic,
+    e.crdc_gender,
+
+    f.courses_course_name,
+    f.sced_course_name,
+    f.crdc_course_group,
+    f.crdc_subject_group,
+    f.crdc_ap_group,
+    f.sced_code_xwalk,
+
+    f.crdc_question_section,
+    'Credit Recovery' as crdc_question_description,
+
+from enrollment as e
+inner join
+    final_schedule as f
+    on e.schoolid = f.cc_schoolid
+    and e.student_number = f.students_student_number
+    and e.crdc_question_section = f.crdc_question_section
+where
+    -- timeframe is any part of the year + summer
+    e.grade_level >= 9
+    and e.crdc_question_section = 'PENR-6'
+    and f.courses_course_name is not nulll
