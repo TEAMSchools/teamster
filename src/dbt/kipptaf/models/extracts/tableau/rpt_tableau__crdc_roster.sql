@@ -90,6 +90,8 @@ with
 
             if(e.spedlep not like 'SPED%' and is_504, true, false) as c504_only,
 
+            if(lep.liep_parent_refusal_date is null, false, true) as lep_parent_refusal,
+
         from {{ ref("base_powerschool__student_enrollments") }} as e
         left join
             {{ ref("int_kippadb__roster") }} as adb
@@ -98,6 +100,12 @@ with
         left join
             {{ ref("stg_crdc__student_numbers") }} as me
             on e.student_number = me.student_number
+        left join
+            {{ ref("stg_powerschool__s_nj_stu_x") }} as lep
+            on e.students_dcid = lep.studentsdcid
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="lep") }}
+            and lep.lep_tf = 1
+            and lep.liep_parent_refusal_date is not null
         where
             -- submission is always for the previous school year
             e.academic_year = {{ var("current_academic_year") - 1 }}
@@ -451,6 +459,7 @@ select
     iep_and_c504,
     c504_only,
     lep_status,
+    lep_parent_refusal,
 
     entrydate,
     exitdate,
@@ -500,6 +509,7 @@ select
     iep_and_c504,
     c504_only,
     lep_status,
+    lep_parent_refusal,
 
     entrydate,
     exitdate,
@@ -526,8 +536,8 @@ from enrollment
 where is_enrolled_oct01
 
 union all
--- PENR-4: there might be dups here if students are taking more than 1 distance
--- learning course
+-- PENR-4: there might be dups here if students are taking more than 1 dual
+-- enrollment course
 select
     e._dbt_source_relation,
     e.academic_year,
@@ -548,6 +558,7 @@ select
     e.iep_and_c504,
     e.c504_only,
     e.lep_status,
+    e.lep_parent_refusal,
 
     e.entrydate,
     e.exitdate,
@@ -603,6 +614,7 @@ select
     e.iep_and_c504,
     e.c504_only,
     e.lep_status,
+    e.lep_parent_refusal,
 
     e.entrydate,
     e.exitdate,
@@ -628,8 +640,7 @@ select
 from enrollment as e
 inner join
     final_schedule as f
-    on e.schoolid = f.cc_schoolid
-    and e.student_number = f.students_student_number
+    on e.student_number = f.students_student_number
     and f.crdc_question_section = 'PENR-6'
 where
     -- timeframe is any part of the year + summer
