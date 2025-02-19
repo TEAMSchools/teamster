@@ -99,36 +99,32 @@ class TaxRegistration(BaseModel):
     updated_at: UserBase | None = None
 
 
-class VatCountry(BaseModel):
-    id: int | None = None
-    code: str | None = None
-    name: str | None = None
-
-
 class Address(BaseModel):
     id: int | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
     name: str | None = None
+    location_code: str | None = None
     street1: str | None = None
     street2: str | None = None
     street3: str | None = None
     street4: str | None = None
     city: str | None = None
     state: str | None = None
+    postal_code: str | None = None
     attention: str | None = None
     active: bool | None = None
-    type: str | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-    location_code: str | None = None
-    postal_code: str | None = None
     business_group_name: str | None = None
     vat_number: str | None = None
     local_tax_number: str | None = None
+    type: str | None = None
+    address_type: str | None = None
+    default: bool | None = None
 
     country: Country | None = None
     created_by: UserBase | None = None
     updated_by: UserBase | None = None
-    vat_country: VatCountry | None = None
+    vat_country: Country | None = None
 
     purposes: list[str] | None = None
     content_groups: list[ContentGroup] | None = None
@@ -359,6 +355,7 @@ class User(UserBase):
     employee_payment_channel: str | None = None
     allow_employee_payment_account_creation: bool | None = None
     category_planner_user: bool | None = None
+    intake_user: bool | None = None
 
     custom_fields: UserCustomFields | None = None
     default_account: Account | None = None
