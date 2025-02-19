@@ -223,7 +223,14 @@ select
                 ' ',
                 coalesce(ny_title, ''),
                 '&entry.1125263358=',
-                coalesce(salary_rule, ''),
+                coalesce(
+                    if(
+                        ay_job_title = ny_title,
+                        salary_rule,
+                        'Changing Job - Please Look up New Salary'
+                    ),
+                    ''
+                ),
                 '&entry.1309133590=',
                 coalesce(
                     safe_cast(ny_salary_from_form as string),
