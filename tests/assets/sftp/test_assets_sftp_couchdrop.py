@@ -178,7 +178,13 @@ def test_tableau_traffic_to_views_kipptaf():
     _test_asset(asset=view_count_per_view)
 
 
-def test_collegeboard_psat_kipptaf():
+def test_collegeboard_psat_kipptaf_psatnm():
     from teamster.code_locations.kipptaf.collegeboard.assets import psat
 
     _test_asset(asset=psat, partition_key="PSATNM")
+
+
+def test_collegeboard_psat_kipptaf_psat10():
+    from teamster.code_locations.kipptaf.collegeboard.assets import psat
+
+    _test_asset(asset=psat, partition_key="PSAT10")
