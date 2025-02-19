@@ -21,6 +21,7 @@ select
     y.academic_year,
 
     h.home_business_unit_name as ay_business_unit,
+    h.home_department_name as ay_department,
     h.job_title as ay_job_title,
     h.home_work_location_name as ay_location,
     h.base_remuneration_annual_rate_amount as ay_salary,
@@ -41,9 +42,14 @@ select
     s.adp_location as ny_location,
     s.adp_dept as ny_dept,
     s.adp_title as ny_title,
+    s.entity as ny_entity,
+    s.edited_at as seat_tracker_last_edited,
+    s.status_detail as ny_status,
 
     stp.nonrenewal_reason,
     stp.nonrenewal_notes,
+    stp.gutcheck,
+
 from {{ ref("int_people__staff_roster") }} as c
 inner join
     years as y
