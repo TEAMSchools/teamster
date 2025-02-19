@@ -1,3 +1,5 @@
+{{ config(enabled=false) }}
+
 with
     user_role_mapping as (
         select

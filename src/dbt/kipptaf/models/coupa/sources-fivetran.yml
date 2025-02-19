@@ -2,6 +2,8 @@ version: 2
 
 sources:
   - name: coupa
+    config:
+      enabled: false
     tables:
       - name: address
       - name: business_group
