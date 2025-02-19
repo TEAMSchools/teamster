@@ -1,28 +1,28 @@
 with
     roles_union as (
-        select urm.user_id, r.name as role_name,
-        from {{ ref("stg_coupa__user_role_mapping") }} as urm
-        inner join {{ source("coupa", "role") }} as r on urm.role_id = r.id
+        select user_id, role_name,
+        from {{ ref("stg_coupa__users__roles") }}
 
         union distinct
 
-        select u.id as user_id, 'Expense User' as role_name,
-        from {{ source("coupa", "user") }} as u
+        select id as user_id, 'Expense User' as role_name,
+        from {{ ref("stg_coupa__users") }}
     ),
 
     roles as (
-        select user_id, string_agg(role_name) as roles,
+        select user_id, string_agg(role_name order by role_name asc) as roles,
         from roles_union
         group by user_id
     ),
 
     business_groups as (
-        select ubgm.user_id, string_agg(bg.name, ', ') as business_group_names,
-        from {{ source("coupa", "user_business_group_mapping") }} as ubgm
-        inner join
-            {{ source("coupa", "business_group") }} as bg
-            on ubgm.business_group_id = bg.id
-        group by ubgm.user_id
+        select
+            user_id,
+            string_agg(
+                content_group_name order by content_group_name asc
+            ) as business_group_names,
+        from {{ ref("stg_coupa__users__content_groups") }}
+        group by user_id
     ),
 
     all_users as (
@@ -61,8 +61,8 @@ with
             end as purchasing_user,
         from {{ ref("int_people__staff_roster") }} as sr
         inner join
-            {{ source("coupa", "user") }} as cu
-            on sr.employee_number = safe_cast(cu.employee_number as int)
+            {{ ref("stg_coupa__users") }} as cu
+            on sr.employee_number = cu.employee_number
         inner join roles as r on cu.id = r.user_id
         left join business_groups as bg on cu.id = bg.user_id
         where
@@ -101,8 +101,8 @@ with
             'No' as purchasing_user,
         from {{ ref("int_people__staff_roster") }} as sr
         left join
-            {{ source("coupa", "user") }} as cu
-            on sr.employee_number = safe_cast(cu.employee_number as int)
+            {{ ref("stg_coupa__users") }} as cu
+            on sr.employee_number = cu.employee_number
         where
             not sr.is_prestart
             and sr.assignment_status not in ('Terminated', 'Deceased')
@@ -135,14 +135,13 @@ with
             x.sage_intacct_department,
 
             a.location_code,
-            a.street_1,
+            a.name as address_name,
+            a.attention,
+            a.street1 as street_1,
+            a.street2 as street_2,
             a.city,
             a.state,
             a.postal_code,
-            a.name as address_name,
-
-            nullif(a.street_2, '') as street_2,
-            nullif(a.attention, '') as attention,
 
             case
                 /* no interns */
@@ -192,7 +191,7 @@ with
             on coalesce(x.home_work_location_name, au.home_work_location_name)
             = anc.adp_home_work_location_name
         left join
-            {{ source("coupa", "address") }} as a
+            {{ ref("stg_coupa__addresses") }} as a
             on anc.coupa_address_name = a.name
             and a.active
     )
