@@ -28,7 +28,6 @@ with
             os.school__name as overgrad_students_school,
 
             cf.is_ed_ea,
-            cf.student_aid_index,
 
             concat(
                 os.assigned_counselor__last_name,
