@@ -206,7 +206,9 @@ select
         then 'https://www.appsheet.com/start/da7c51f8-1985-4c8d-b786-2aaf816ae1d2'
         else
             concat(
-                'https://docs.google.com/forms/d/e/1FAIpQLSc5df2oBp3aM5QbBWn80WwNUsFzyubt-lCZWmRB-tV76beMSQ/viewform?entry.1301005781=',
+                'https://docs.google.com/forms/d/e/',
+                '1FAIpQLSc5df2oBp3aM5QbBWn80WwNUsFzyubt-lCZWmRB-tV76beMSQ/',
+                'viewform?entry.1301005781=',
                 preferred_name,
                 ' - ',
                 ay_location,
