@@ -1,10 +1,12 @@
 with
     parsed_dates as (
         select
-            number,
-            status,
+            `number`,
+            `status`,
             status_reason_description,
-            safe_cast(base_salary as numeric) as base_salary,
+
+            cast(base_salary as numeric) as base_salary,
+
             extract(
                 date
                 from
@@ -12,6 +14,7 @@ with
                         '%Y-%m-%dT%H:%M:%S%Ez', effective_start
                     ) at time zone 'America/New_York'
             ) as effective_start,
+
             coalesce(
                 extract(
                     date
@@ -28,18 +31,20 @@ with
     with_prev as (
         select
             *,
+
             lag(effective_end, 1) over (
-                partition by number order by effective_end asc
+                partition by `number` order by effective_end asc
             ) as effective_end_prev,
         from parsed_dates
     )
 
 select
-    number as employee_number,
-    status,
+    `number` as employee_number,
+    `status`,
     status_reason_description,
     base_salary,
     effective_end as status_effective_end_date,
+
     if(
         effective_start = effective_end_prev,
         date_add(effective_start, interval 1 day),

@@ -1,0 +1,92 @@
+select
+    _dagster_partition_key as test_type,
+
+    cb_id,
+    state_student_id,
+    name_first,
+    name_mi,
+    name_last,
+    cohort_year,
+    grad_date,
+    birth_date,
+    gender,
+    hs_student,
+    yrs_9to12,
+
+    district_name,
+    ai_code,
+    ai_name,
+
+    latest_record_locator,
+    latest_psat_date,
+    latest_psat_total,
+    latest_psat_math_section,
+    latest_psat_ebrw,
+
+    ebrw_ccr_benchmark,
+    math_ccr_benchmark,
+    national_merit,
+    selection_index,
+    gpo,
+
+    percentile_country_math,
+    percentile_country_rw,
+    percentile_country_total,
+    percentile_natrep_psat_ebrw,
+    percentile_natrep_psat_math_section,
+    percentile_natrep_psat_total,
+    percentile_natuser_psat_ebrw,
+    percentile_natuser_psat_math_section,
+    percentile_natuser_psat_total,
+    percentile_state_math,
+    percentile_state_rw,
+    percentile_state_total,
+
+    ap_arthis,
+    ap_bio,
+    ap_calc,
+    ap_chem,
+    ap_compgovpol,
+    ap_compsci,
+    ap_compsciprin,
+    ap_englang,
+    ap_englit,
+    ap_envsci,
+    ap_eurhist,
+    ap_humgeo,
+    ap_macecon,
+    ap_micecon,
+    ap_music,
+    ap_physi,
+    ap_physmag,
+    ap_physmech,
+    ap_psych,
+    ap_seminar,
+    ap_stat,
+    ap_usgovpol,
+    ap_ushist,
+    ap_wrldhist,
+
+    latest_psat_ks_math_advanced,
+    latest_psat_ks_math_algebra,
+    latest_psat_ks_math_geometry,
+    latest_psat_ks_math_problemsolving,
+    latest_psat_ks_math_section,
+    latest_psat_ks_reading_craft,
+    latest_psat_ks_reading_expression,
+    latest_psat_ks_reading_information,
+    latest_psat_ks_reading_section,
+    latest_psat_ks_reading_standard,
+
+    report_date,
+
+    coalesce(
+        district_student_id.long_value, cast(district_student_id.double_value as int)
+    ) as district_student_id,
+    coalesce(
+        secondary_id.long_value, cast(secondary_id.double_value as int)
+    ) as secondary_id,
+    coalesce(
+        latest_psat_grade.long_value, cast(latest_psat_grade.double_value as int)
+    ) as latest_psat_grade,
+from {{ source("collegeboard", "src_collegeboard__psat") }}

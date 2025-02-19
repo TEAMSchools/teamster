@@ -51,8 +51,8 @@ class AdpWorkforceNowResource(ConfigurableResource):
             response.raise_for_status()
             return response
         except HTTPError as e:
-            self._log.error(response.text)
-            raise HTTPError() from e
+            self._log.error(msg=response.text)
+            raise e
 
     def post(self, endpoint, subresource, verb, payload):
         return self._request(
@@ -81,7 +81,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
         params.update({"$top": page_size, "$skip": 0})
 
         while True:
-            self._log.debug(params)
+            self._log.debug(msg=params)
             response = self.get(endpoint=endpoint, params=params)
 
             if response.status_code == 204:

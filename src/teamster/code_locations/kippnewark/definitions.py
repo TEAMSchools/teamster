@@ -30,13 +30,13 @@ from teamster.core.resources import (
     SSH_COUCHDROP,
     SSH_EDPLAN,
     SSH_IREADY,
-    SSH_POWERSCHOOL,
     SSH_RENLEARN,
     SSH_TITAN,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
+    get_powerschool_ssh_resource,
 )
 
 defs = Definitions(
@@ -86,7 +86,7 @@ defs = Definitions(
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_edplan": SSH_EDPLAN,
         "ssh_iready": SSH_IREADY,
-        "ssh_powerschool": SSH_POWERSCHOOL,
+        "ssh_powerschool": get_powerschool_ssh_resource(),
         "ssh_renlearn": SSH_RENLEARN,
         "ssh_titan": SSH_TITAN,
     },

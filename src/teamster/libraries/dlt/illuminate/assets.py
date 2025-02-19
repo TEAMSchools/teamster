@@ -15,26 +15,25 @@ class IlluminateDagsterDltTranslator(DagsterDltTranslator):
         self.code_location = code_location
         return super().__init__()
 
-    def get_asset_key(self, resource):
-        return AssetKey(
-            [
-                self.code_location,
-                "dlt",
-                "illuminate",
-                resource.explicit_args["schema"],
-                resource.explicit_args["table"],
-            ]
+    def get_asset_spec(self, data):
+        asset_spec = super().get_asset_spec(data)
+
+        asset_spec = asset_spec.replace_attributes(
+            key=AssetKey(
+                [
+                    self.code_location,
+                    "dlt",
+                    "illuminate",
+                    data.resource.explicit_args["schema"],
+                    data.resource.explicit_args["table"],
+                ]
+            ),
+            deps=[],
         )
 
-    def get_deps_asset_keys(self, resource):
-        return []
+        asset_spec = asset_spec.merge_attributes(kinds={"postgresql"})
 
-    def get_kinds(self, resource, destination):
-        kinds = super().get_kinds(resource, destination)
-
-        kinds.add("postgresql")
-
-        return kinds
+        return asset_spec
 
 
 def filter_date_taken_callback(query: Select, table: TableClause):
@@ -53,8 +52,6 @@ def build_illuminate_dlt_assets(
 ):
     if op_tags is None:
         op_tags = {}
-
-    op_tags.update({"dagster/concurrency_key": f"dlt_illuminate_{code_location}"})
 
     dlt_source = sql_database.with_args(name="illuminate", parallelized=True)(
         credentials=sql_database_credentials,
@@ -79,8 +76,9 @@ def build_illuminate_dlt_assets(
         dlt_source=dlt_source,
         dlt_pipeline=dlt_pipeline,
         name=f"{code_location}__dlt__illuminate__{schema}__{table_name}",
-        group_name="illuminate",
         dagster_dlt_translator=IlluminateDagsterDltTranslator(code_location),
+        group_name="illuminate",
+        pool=f"dlt_illuminate_{code_location}",
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):

@@ -1,50 +1,126 @@
+with
+    approvals as (
+        select
+            subject_employee_number,
+            campaign_academic_year,
+            max(
+                if(
+                    approval_level = 'School Leader/DSO',
+                    coalesce(respondent_preferred_name, respondent_email),
+                    null
+                )
+            ) as sl_dso_approval_name,
+            max(
+                if(
+                    approval_level = 'ER',
+                    coalesce(respondent_preferred_name, respondent_email),
+                    null
+                )
+            ) as er_approval_name,
+            max(
+                if(
+                    approval_level = 'HOS/MDO',
+                    coalesce(respondent_preferred_name, respondent_email),
+                    null
+                )
+            ) as hos_mdo_approval_name,
+            max(
+                if(approval_level = 'School Leader/DSO', date_submitted, null)
+            ) as sl_dso_approval_date,
+            max(if(approval_level = 'ER', date_submitted, null)) as er_approval_date,
+            max(
+                if(approval_level = 'HOS/MDO', date_submitted, null)
+            ) as hos_mdo_approval_date,
+        from {{ ref("int_surveys__renewal_responses_feed") }}
+        where rn_level_approval = 1 and valid_approval = 'Valid Approval'
+
+        group by subject_employee_number, campaign_academic_year, rn_level_approval
+    )
+
 select
     b.employee_number as df_employee_number,
-    b.legal_name_given_name as first_name,
-    b.legal_name_family_name as last_name,
-    b.preferred_name_given_name as preferred_first,
-    b.preferred_name_family_name as preferred_last,
-    b.preferred_name_lastfirst as preferred_name,
-    b.business_unit_home_name as legal_entity_name,
-    b.home_work_location_name as location_description,
-    b.department_home_name as home_department_description,
-    b.job_title as job_title_description,
+    b.legal_given_name as first_name,
+    b.legal_family_name as last_name,
+    b.given_name as preferred_first,
+    b.family_name_1 as preferred_last,
     b.assignment_status as position_status,
     b.worker_original_hire_date as original_hire_date,
     b.worker_rehire_date as rehire_date,
     b.worker_termination_date as termination_date,
-    b.worker_type as worker_category_description,
-    b.worker_group_value as benefits_eligibility_class_description,
-    b.wage_law_coverage_short_name as flsa_description,
-    b.ethnicity_long_name as eeo_ethnic_description,
+    b.worker_type_code as worker_category_description,
+    b.wage_law_coverage as benefits_eligibility_class_description,
+    b.wage_law_name as flsa_description,
+    b.race_ethnicity as eeo_ethnic_description,
     b.mail,
     b.user_principal_name as userprincipalname,
-    b.report_to_employee_number as manager_df_employee_number,
-    b.report_to_preferred_name_lastfirst as manager_name,
-    b.report_to_mail as manager_mail,
+
     b.race_ethnicity_reporting,
     b.gender_identity,
-    b.base_remuneration_annual_rate_amount_amount_value as base_salary,
 
-    s.salary_rule,
+    m.employee_number as manager_df_employee_number,
+    m.mail as manager_mail,
+
+    s.ay_business_unit,
+    s.ay_job_title,
+    s.ay_location,
+    s.ay_salary,
+    s.academic_year,
+    s.ay_pm4_overall_score,
+    s.ay_pm4_overall_tier,
+    s.ay_primary_grade_level_taught,
     s.scale_cy_salary,
     s.scale_ny_salary,
     s.scale_step,
+    s.pm_salary_increase,
+    s.seat_tracker_id_number,
+    s.ny_location,
+    s.ny_dept,
+    s.ny_title,
+    s.nonrenewal_reason,
+    s.nonrenewal_notes,
+    s.ny_salary,
+    s.salary_rule,
 
-    p.final_score as pm4_overall_score,
+    rf.salary,
+    rf.salary_modification_explanation,
+    rf.renewal_decision,
+    rf.dept_and_job,
+    rf.add_comp_amt_1,
+    rf.add_comp_amt_2,
+    rf.add_comp_amt_3,
+    rf.add_comp_amt_4,
+    rf.add_comp_amt_5,
+    rf.add_comp_name_1,
+    rf.add_comp_name_2,
+    rf.add_comp_name_3,
+    rf.add_comp_name_4,
+    rf.add_comp_name_5,
+    rf.concated_add_comp,
 
-    tgl.grade_level as primary_grade_level_taught,
-from {{ ref("base_people__staff_roster") }} as b
+    ap.sl_dso_approval_name,
+    ap.er_approval_name,
+    ap.hos_mdo_approval_name,
+    ap.sl_dso_approval_date,
+    ap.er_approval_date,
+    ap.hos_mdo_approval_date,
+
+    concat(b.family_name_1, ', ', b.given_name) as preferred_name,
+
+    concat(m.family_name_1, ', ', m.given_name) as manager_name,
+from {{ ref("int_people__staff_roster") }} as b
 left join
-    {{ ref("int_people__expected_next_year_salary") }} as s
+    {{ ref("int_people__staff_roster") }} as m
+    on b.reports_to_employee_number = m.employee_number
+left join
+    {{ ref("int_people__renewal_status") }} as s
     on b.employee_number = s.employee_number
+    and s.academic_year = {{ var("current_academic_year") }}
 left join
-    {{ ref("int_performance_management__overall_scores") }} as p
-    on b.employee_number = p.employee_number
-    and p.academic_year = {{ var("current_academic_year") }}
+    {{ ref("int_surveys__renewal_responses_feed") }} as rf
+    on s.academic_year = rf.campaign_academic_year
+    and b.employee_number = rf.subject_employee_number
+    and rf.rn_approval = 1
 left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
-    on b.powerschool_teacher_number = tgl.teachernumber
-    and tgl.academic_year = {{ var("current_academic_year") }}
-    and tgl.grade_level_rank = 1
-where b.assignment_status not in ('Terminated', 'Deceased')
+    approvals as ap
+    on s.academic_year = ap.campaign_academic_year
+    and b.employee_number = ap.subject_employee_number
