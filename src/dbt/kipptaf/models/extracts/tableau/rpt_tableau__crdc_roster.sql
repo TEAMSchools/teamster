@@ -40,12 +40,12 @@ with
             e.is_504,
             e.lep_status,
 
+            -- need this to join to act/sat scores
             adb.contact_id,
 
             -- tag the manual entry for student numbers on the crdc student crosswalk
             -- g-sheet feed
-            mc.crdc_question_section,
-
+            me.crdc_question_section,
             coalesce(r.is_retained_year, false) as is_retained_year,
 
             case
@@ -97,7 +97,9 @@ with
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
         left join retained as r on e.student_number = r.student_number
-        left join {{ ref('src_crcd__student_numbers') }} as me on e.student_number = me.student_number
+        left join
+            {{ ref("stg_crdc__student_numbers") }} as me
+            on e.student_number = me.student_number
         where
             -- submission is always for the previous school year
             e.academic_year = {{ var("current_academic_year") - 1 }}
@@ -411,11 +413,11 @@ select
     null as crdc_ap_group,
     null as sced_code_xwalk,
 
-    crdc_question_section_manual_check as crdc_question_section,
+    crdc_question_section,
     'Distance Education Enrollment' as crdc_question_description,
 
 from enrollment
-where crdc_question_section_manual_check = 'DSED-2'
+where crdc_question_section = 'DSED-2'
 
 union all
 
@@ -467,7 +469,8 @@ from enrollment
 where is_enrolled_oct01
 
 union all
--- PENR-4
+-- PENR-4 - there might be dups here if students are taking more than 1 distance
+-- learning course
 select
     e._dbt_source_relation,
     e.academic_year,
@@ -515,5 +518,5 @@ inner join
     final_schedule as f
     on e.schoolid = f.cc_schoolid
     and e.student_number = f.students_student_number
-    and e.crdc_question_section_manual_check = f.crdc_question_section
+    and e.crdc_question_section = f.crdc_question_section
 where e.is_enrolled_oct01 and e.grade_level >= 9 and f.courses_course_name is not null
