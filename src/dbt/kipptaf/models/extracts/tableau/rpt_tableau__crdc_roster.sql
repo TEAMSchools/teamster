@@ -154,20 +154,11 @@ with
                 c.is_ap_course != coalesce(x.ap_tag, false), true, false
             ) as ap_tag_mismatch,
 
-            if(grade like 'F%', false, true) as passed_course,
-
             if(
                 c.courses_course_name like '%(DE)' and not c.is_ap_course, true, false
             ) as is_dual_enrollment,
 
-            if(
-                c.courses_course_name like '%(CR)'
-                -- any other school would be a credit recovery course taken
-                -- outside of KTAF
-                and g.schoolname = 'KIPP Summer School',
-                true,
-                false
-            ) as is_credit_recovery,
+            false as is_credit_recovery,
 
             -- some data is needed as of fall snapshot
             if(
@@ -179,7 +170,11 @@ with
             -- some data is needed as of the last day of school
             if(c.cc_dateleft >= c.terms_lastday, true, false) as is_last_day_course,
 
+            if(g.grade like 'F%', false, true) as passed_course,
+
         from {{ ref("base_powerschool__course_enrollments") }} as c
+        -- left rather than inner to be able to see students who attempted but didnt
+        -- earn a y1 grade
         left join
             {{ ref("stg_powerschool__storedgrades") }} as g
             on c.cc_academic_year = g.academic_year
@@ -190,11 +185,76 @@ with
         left join
             {{ ref("stg_crdc__sced_code_crosswalk") }} as x
             on concat(c.nces_subject_area, c.nces_course_id) = x.sced_code
-        -- submission is always for the previous school year
         where
+            -- submission is always for the previous school year
             c.cc_academic_year = {{ var("current_academic_year") - 1 }}
             -- miami does their own submission
             and regexp_extract(c._dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
+
+        union all
+        -- credit recovry courses, which only exist in storedgrades
+        select
+            _dbt_source_relation,
+            academic_year,
+            schoolid,
+
+            studentid,
+            null as students_student_number,
+            null as cc_dateenrolled,
+            null as cc_dateleft,
+
+            course_number,
+            course_name,
+            null as sections_dcid,
+            sectionid,
+            null as ections_external_expression,
+
+            null as is_dropped_course,
+            null as s_dropped_section,
+
+            null as ap_course_subject,
+            null as is_ap_course,
+            null as courses_isfitnesscourse,
+
+            null as rn_credittype_year,
+            null as rn_course_number_year,
+
+            null as terms_lastday,
+
+            null as ced_course_name,
+            null as crdc_course_group,
+            null as crdc_subject_group,
+            null as crdc_ap_group,
+            null as sced_code_xwalk,
+
+            grade,
+            is_transfer_grade,
+
+            null as ap_tag,
+
+            null as sced_code_courses,
+
+            null as ap_tag_mismatch,
+
+            null as is_dual_enrollment,
+
+            true as is_credit_recovery,
+
+            null as is_oct_01_course,
+
+            null as is_last_day_course,
+
+            if(grade like 'F%', false, true) as passed_course,
+
+        from {{ ref("stg_powerschool__storedgrades") }}
+        where
+            -- submission is always for the previous school year
+            academic_year = {{ var("current_academic_year") - 1 }}
+            and course_name like '%(CR)'
+            and schoolname = 'KIPP Summer School'
+            and storecode = 'Y1'
+            -- miami does their own submission
+            and regexp_extract(_dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
 
     ),
 
@@ -371,7 +431,7 @@ with
         where dli.is_active
         group by dli.student_school_id, dli.create_ts_academic_year
     )
-
+/*
 -- DSED-2 dups may be present because of students changing schools or grade level
 -- midyear
 select
@@ -576,4 +636,6 @@ inner join
     and f.crdc_question_section = 'PENR-6'
 where
     -- timeframe is any part of the year + summer
-    e.grade_level >= 9 and f.courses_course_name is not null
+    e.grade_level >= 9 and f.courses_course_name is not null*/
+select distinct is_credit_recovery
+from custom_schedule
