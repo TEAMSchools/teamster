@@ -21,7 +21,7 @@ assets:
                 requests:
                   cpu: 500m
                 limits:
-                  cpu: 1000m
+                  cpu: 1250m
       - table_name: assessment_grade_levels
       - table_name: assessment_standards
       - table_name: assessments
