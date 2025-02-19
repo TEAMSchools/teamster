@@ -2,9 +2,7 @@ select
     _dagster_partition_key as test_type,
 
     cb_id,
-    secondary_id,
     state_student_id,
-    district_student_id,
     name_first,
     name_mi,
     name_last,
@@ -21,7 +19,6 @@ select
 
     latest_record_locator,
     latest_psat_date,
-    latest_psat_grade,
     latest_psat_total,
     latest_psat_math_section,
     latest_psat_ebrw,
@@ -82,4 +79,14 @@ select
     latest_psat_ks_reading_standard,
 
     report_date,
+
+    coalesce(
+        district_student_id.long_value, cast(district_student_id.double_value as int)
+    ) as district_student_id,
+    coalesce(
+        secondary_id.long_value, cast(secondary_id.double_value as int)
+    ) as secondary_id,
+    coalesce(
+        latest_psat_grade.long_value, cast(latest_psat_grade.double_value as int)
+    ) as latest_psat_grade,
 from {{ source("collegeboard", "src_collegeboard__psat") }}
