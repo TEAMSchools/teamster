@@ -1,85 +1,4 @@
 with
-    manual_check as (
-        -- distance ed students
-        select cast(student as numeric) as student_number, crdc_question_section,
-        from
-            (
-                {% for i in range(distance_ed_student_numbers | length) %}
-                    select
-                        '{{ distance_ed_student_numbers[i] }}' as student,
-                        'DSED-2' as crdc_question_section
-                    {% if not loop.last %}
-                        union all
-                    {% endif %}
-                {% endfor %}
-            ) as matched_data
-
-        union all
-
-        -- dual enroll students
-        select cast(student as numeric) as student_number, crdc_question_section,
-        from
-            (
-                {% for i in range(dual_enroll_student_numbers | length) %}
-                    select
-                        '{{ dual_enroll_student_numbers[i] }}' as student,
-                        'PENR-4' as crdc_question_section
-                    {% if not loop.last %}
-                        union all
-                    {% endif %}
-                {% endfor %}
-            ) as matched_data
-
-        union all
-
-        -- credit recovery students
-        select cast(student as numeric) as student_number, crdc_question_section,
-        from
-            (
-                {% for i in range(credit_recovery_student_numbers | length) %}
-                    select
-                        '{{ credit_recovery_student_numbers[i] }}' as student,
-                        'PENR-6' as crdc_question_section
-                    {% if not loop.last %}
-                        union all
-                    {% endif %}
-                {% endfor %}
-            ) as matched_data
-
-        union all
-
-        -- athletics
-        select cast(student as numeric) as student_number, crdc_question_section,
-        from
-            (
-                {% for i in range(athletics_student_numbers | length) %}
-                    select
-                        '{{ athletics_student_numbers[i] }}' as student,
-                        'ATHL-3' as crdc_question_section
-                    {% if not loop.last %}
-                        union all
-                    {% endif %}
-                {% endfor %}
-            ) as matched_data
-
-        union all
-
-        -- arrests
-        select cast(student as numeric) as student_number, crdc_question_section,
-        from
-            (
-                {% for i in range(arrests_student_numbers | length) %}
-                    select
-                        '{{ arrests_student_numbers[i] }}' as student,
-                        '{{ arrests_crdc_question_section[i] }}'
-                        as crdc_question_section
-                    {% if not loop.last %}
-                        union all
-                    {% endif %}
-                {% endfor %}
-            ) as matched_data
-    ),
-
     retained as (
         -- reason for distinct: for students with multiple enrollments
         select distinct student_number, is_retained_year,
@@ -123,8 +42,9 @@ with
 
             adb.contact_id,
 
-            -- tag the manual entry checks to their crdc question
-            mc.crdc_question_section as crdc_question_section_manual_check,
+            -- tag the manual entry for student numbers on the crdc student crosswalk
+            -- g-sheet feed
+            mc.crdc_question_section,
 
             coalesce(r.is_retained_year, false) as is_retained_year,
 
@@ -158,7 +78,7 @@ with
 
             -- bring over the manual entry student numbers that match the crdc
             -- question tag
-            if(mc.student_number is null, false, true) as student_manual_check,
+            if(me.student_number is null, false, true) as crdc_question_section_status,
 
             if(
                 e.exitdate = date(e.academic_year + 1, 06, 30), true, false
@@ -177,7 +97,7 @@ with
             {{ ref("int_kippadb__roster") }} as adb
             on e.student_number = adb.student_number
         left join retained as r on e.student_number = r.student_number
-        left join manual_check as mc on e.student_number = mc.student_number
+        left join {{ ref('src_crcd__student_numbers') }} as me on e.student_number = me.student_number
         where
             -- submission is always for the previous school year
             e.academic_year = {{ var("current_academic_year") - 1 }}
