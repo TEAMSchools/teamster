@@ -217,7 +217,12 @@ select
                 ')&entry.1650580574=',
                 ny_status,
                 '&entry.678233722=',
-                coalesce(seat_tracker_id_number, ''),
+                coalesce(
+                    concat(
+                        ny_entity, ' - ', ny_location, ' - ', ny_dept, ' ', ny_title
+                    ),
+                    ''
+                ),
                 '&entry.1584291699=',
                 coalesce(ny_dept, ''),
                 ' ',
