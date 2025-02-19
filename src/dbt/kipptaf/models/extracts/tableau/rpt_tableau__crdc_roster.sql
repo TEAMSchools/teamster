@@ -203,7 +203,7 @@ with
     final_schedule as (
         select *, 'PENR-4' as crdc_question_section,
         from custom_schedule
-        where is_dual_enrollment and is_oct_01_course
+        where is_dual_enrollment and is_oct_01_course and not ap_tag
 
         union all
 
