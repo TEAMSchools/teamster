@@ -44,9 +44,9 @@ select
     td.hours,
 
     sr.employee_number as df_employee_number,
-    sr.preferred_name_lastfirst as preferred_name,
+    sr.formatted_name as preferred_name,
     sr.assignment_status as employee_status,
-    sr.business_unit_home_name as legal_entity_current,
+    sr.home_business_unit_name as legal_entity_current,
     sr.home_work_location_name as location_current,
     sr.home_work_location_reporting_name as site_name_clean,
     sr.home_work_location_abbreviation as site_abbreviation,
@@ -55,8 +55,8 @@ select
     sr.worker_rehire_date as rehire_date,
     sr.worker_termination_date as termination_date,
     sr.sam_account_name as staff_samaccountname,
-    sr.report_to_preferred_name_lastfirst as manager_name,
-    sr.report_to_sam_account_name as manager_samaccountname,
+    sr.reports_to_formatted_name as manager_name,
+    sr.reports_to_sam_account_name as manager_samaccountname,
 
     sl.sam_account_name as sl_samaccountname,
 
@@ -128,9 +128,9 @@ select
         else 0
     end as present_status,
 from {{ ref("stg_adp_workforce_manager__time_details") }} as td
-left join {{ ref("base_people__staff_roster") }} as sr on td.worker_id = sr.worker_id
+left join {{ ref("int_people__staff_roster") }} as sr on td.worker_id = sr.worker_id
 left join
-    {{ ref("base_people__staff_roster") }} as sl
+    {{ ref("int_people__staff_roster") }} as sl
     on sr.home_work_location_name = sl.home_work_location_name
     and sl.job_title = 'School Leader'
     and sl.assignment_status != 'Terminated'
@@ -156,11 +156,11 @@ where
     and td.transaction_type not in ('Historical Correction', 'Worked Holiday Edit')
     and (
         (
-            sr.business_unit_home_name != 'KIPP Miami'
+            sr.home_business_unit_name != 'KIPP Miami'
             and td.transaction_apply_date >= '{{ var("current_academic_year") }}-08-12'
         )
         or (
-            sr.business_unit_home_name = 'KIPP Miami'
+            sr.home_business_unit_name = 'KIPP Miami'
             and td.transaction_apply_date >= '{{ var("current_academic_year") }}-10-31'
         )
     )

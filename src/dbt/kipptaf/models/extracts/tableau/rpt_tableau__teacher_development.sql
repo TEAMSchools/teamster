@@ -184,24 +184,24 @@ select
     td.glow_notes,
     td.growth_notes,
 
-    srh.preferred_name_lastfirst as teammate,
-    srh.business_unit_home_name as entity,
+    srh.formatted_name as teammate,
+    srh.home_business_unit_name as entity,
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
-    srh.department_home_name as department,
+    srh.home_department_name as department,
     srh.job_title,
-    srh.report_to_preferred_name_lastfirst as manager,
+    srh.reports_to_formatted_name as manager,
     srh.worker_original_hire_date,
     srh.assignment_status,
     srh.sam_account_name,
-    srh.report_to_sam_account_name,
+    srh.reports_to_sam_account_name as report_to_sam_account_name,
 
     tgl.grade_level as grade_taught,
 
     os.final_score as performance_management_final_score,
     os.final_tier as performance_management_final_tier,
 
-    sr.preferred_name_lastfirst as observer_name,
+    sr.formatted_name as observer_name,
 
     pm.pm1,
     pm.pm2,
@@ -224,16 +224,15 @@ select
     (etr.pm3 * .8 + so.pm3 * .2) as tir_pm3,
 
     if(
-        sr.department_home_name = 'New Teacher Development', 'TDT', 'NTNC'
+        sr.home_department_name = 'New Teacher Development', 'TDT', 'NTNC'
     ) as observer_team,
     -- trunk-ignore(sqlfluff/LT01) 
     date_trunc(td.observed_at, week(monday)) as week_start,
 from observations_td_union as td
 left join
-    {{ ref("base_people__staff_roster_history") }} as srh
+    {{ ref("int_people__staff_roster_history") }} as srh
     on td.employee_number = srh.employee_number
-    and td.observed_at
-    between srh.work_assignment_start_date and srh.work_assignment_end_date
+    and td.observed_at between srh.effective_date_start and srh.effective_date_end
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
@@ -244,7 +243,7 @@ left join
     on td.employee_number = os.employee_number
     and td.academic_year = os.academic_year
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on td.observer_employee_number = sr.employee_number
 left join
     pm_scores as pm

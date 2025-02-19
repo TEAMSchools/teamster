@@ -113,7 +113,7 @@ class DeansListResource(ConfigurableResource):
         all_data: list[dict] = []
 
         data_filepath = pathlib.Path(
-            f"env/deanslist/{endpoint}/{params["UpdatedSince"]}/{school_id}/data.avro"
+            f"env/deanslist/{endpoint}/{params['UpdatedSince']}/{school_id}/data.avro"
         ).absolute()
 
         url = self._get_url(*args, api_version=api_version, endpoint=endpoint)

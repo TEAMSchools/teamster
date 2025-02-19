@@ -27,6 +27,8 @@ with
             os.graduation_year as overgrad_students_graduation_year,
             os.school__name as overgrad_students_school,
 
+            cf.is_ed_ea,
+
             concat(
                 os.assigned_counselor__last_name,
                 ', ',
@@ -109,6 +111,10 @@ with
         left join
             {{ ref("stg_overgrad__students") }} as os
             on c.contact_id = os.external_student_id
+        left join
+            {{ ref("int_overgrad__custom_fields_pivot") }} as cf
+            on os.id = cf.id
+            and cf._dbt_source_model = 'stg_overgrad__students'
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

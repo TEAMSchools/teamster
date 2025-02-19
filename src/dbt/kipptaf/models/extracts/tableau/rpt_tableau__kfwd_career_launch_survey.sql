@@ -42,6 +42,13 @@ with
 
             max(if(a.name = 'Project BASTA', true, false)) as is_basta,
             max(if(a.name = 'Braven', true, false)) as is_braven,
+            max(
+                if(
+                    a.name in ('KIPP New Jersey - Camden', 'KIPP New Jersey - Newark'),
+                    true,
+                    false
+                )
+            ) as is_kippnj_internship,
         from {{ ref("stg_kippadb__internships_programs") }} as p
         inner join
             {{ ref("stg_kippadb__account") }} as a
@@ -70,6 +77,7 @@ with
             r.contact_expected_college_graduation as expected_college_grad_date,
             r.contact_actual_college_graduation_date as actual_college_grad_date,
             r.contact_current_kipp_student as current_kipp_student,
+            r.contact_owner_name,
 
             e.pursuing_degree_type,
             e.type,
@@ -84,8 +92,10 @@ with
             sr.survey_response_id as reconciliation_response_id,
 
             p.college_programs,
-            p.is_basta,
-            p.is_braven,
+
+            coalesce(p.is_basta, false) as is_basta,
+            coalesce(p.is_braven, false) as is_braven,
+            coalesce(p.is_kippnj_internship, false) as is_kippnj_internship,
 
             case
                 when r.contact_college_match_display_gpa >= 3.50

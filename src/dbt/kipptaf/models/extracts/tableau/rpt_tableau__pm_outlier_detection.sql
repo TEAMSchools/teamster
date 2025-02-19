@@ -64,20 +64,20 @@ with
             obs.academic_year,
             obs.term_code,
 
-            srh.department_home_name,
+            srh.home_department_name,
             srh.job_title,
             srh.home_work_location_name,
-            srh.preferred_name_lastfirst,
-            srh.report_to_preferred_name_lastfirst,
+            srh.formatted_name,
+            srh.reports_to_formatted_name,
 
             avg(obs.observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }} as obs
         inner join
-            {{ ref("base_people__staff_roster_history") }} as srh
+            {{ ref("int_people__staff_roster_history") }} as srh
             on obs.employee_number = srh.employee_number
             and obs.observed_at_timestamp
-            between srh.work_assignment_start_timestamp
-            and srh.work_assignment_end_timestamp
+            between srh.effective_date_start_timestamp
+            and srh.effective_date_end_timestamp
             and obs.rubric_name
             in ('Coach ETR', 'Coach ETR and Reflection: Part 1 - Scores')
         group by
@@ -85,11 +85,11 @@ with
             obs.observer_employee_number,
             obs.academic_year,
             obs.term_code,
-            srh.department_home_name,
+            srh.home_department_name,
             srh.job_title,
             srh.home_work_location_name,
-            srh.preferred_name_lastfirst,
-            srh.report_to_preferred_name_lastfirst
+            srh.formatted_name,
+            srh.reports_to_formatted_name
     )
 
 select
@@ -133,18 +133,18 @@ select
     sd.so7,
     sd.so8,
 
-    srh.preferred_name_lastfirst as observer_name,
-    srh.department_home_name as observer_department,
+    srh.formatted_name as observer_name,
+    srh.home_department_name as observer_department,
     srh.job_title as observer_job_title,
     srh.home_work_location_name as observer_location,
-    srh.report_to_preferred_name_lastfirst as observer_manager,
+    srh.reports_to_formatted_name as observer_manager,
 
     sa.employee_number as teacher_employee_number,
-    sa.preferred_name_lastfirst as teacher_name,
-    sa.department_home_name as teacher_department,
+    sa.formatted_name as teacher_name,
+    sa.home_department_name as teacher_department,
     sa.job_title as teacher_job_title,
     sa.home_work_location_name as teacher_location,
-    sa.report_to_preferred_name_lastfirst as teacher_manager,
+    sa.reports_to_formatted_name as teacher_manager,
     sa.overall_score as teacher_overall_score,
 
     if(sd.is_iqr_outlier_current, 'outlier', 'not outlier') as iqr_current,
@@ -155,10 +155,10 @@ select
     if(sd.tree_outlier_global = -1, 'outlier', 'not outlier') as tree_global,
 from score_dates as sd
 inner join
-    {{ ref("base_people__staff_roster_history") }} as srh
+    {{ ref("int_people__staff_roster_history") }} as srh
     on sd.observer_employee_number = srh.employee_number
     and sd.end_date_timestamp
-    between srh.work_assignment_start_timestamp and srh.work_assignment_end_timestamp
+    between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
 inner join
     score_aggs as sa
     on sd.observer_employee_number = sa.observer_employee_number

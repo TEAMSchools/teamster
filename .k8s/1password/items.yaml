@@ -2,14 +2,6 @@
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-achieve3k-sftp
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/Achieve 3000 SFTP
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
   name: op-adp-wfn-sftp
   namespace: dagster-cloud
 spec:
@@ -78,6 +70,14 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Coupa SFTP
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-coupa-api
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Coupa API
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem

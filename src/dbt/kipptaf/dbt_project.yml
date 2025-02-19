@@ -47,6 +47,21 @@ models:
     act:
       +schema: act
     adp:
+      workforce_now:
+        +schema: adp_workforce_now
+        +meta:
+          dagster:
+            group: adp_workforce_now
+        api:
+          staging:
+            +materialized: table
+        sftp:
+          staging:
+            +materialized: table
+        fivetran:
+          +enabled: false
+          staging:
+            +materialized: table
       payroll:
         +schema: adp_payroll
         staging:
@@ -57,16 +72,6 @@ models:
           dagster:
             group: adp_workforce_manager
         +materialized: table
-      workforce_now:
-        +schema: adp_workforce_now
-        +meta:
-          dagster:
-            group: adp_workforce_now
-        staging:
-          +materialized: table
-        workers:
-          staging:
-            +materialized: table
     alchemer:
       +schema: alchemer
       +enabled: false
@@ -83,9 +88,6 @@ models:
       +schema: collegeboard
       staging:
         +materialized: table
-      psat:
-        staging:
-          +materialized: table
     coupa:
       +schema: coupa
       staging:
@@ -96,8 +98,7 @@ models:
         +materialized: table
     dayforce:
       +schema: dayforce
-      staging:
-        +materialized: table
+      +materialized: table
     deanslist:
       +schema: deanslist
     edplan:
@@ -140,11 +141,19 @@ models:
             group: google_appsheet
     illuminate:
       +schema: illuminate
-      +materialized: table
-      staging:
-        repositories:
-          archive:
-            +enabled: false
+      dlt:
+        staging:
+          repositories:
+            +materialized: table
+        intermediate:
+          +materialized: table
+      fivetran:
+        +materialized: table
+        +enabled: false
+        staging:
+          repositories:
+            archive:
+              +enabled: false
     instagram:
       +enabled: false
       business:
@@ -170,6 +179,8 @@ models:
     people:
       +schema: people
       +materialized: table
+      base:
+        +enabled: false
     performance_management:
       +schema: performance_management
       +materialized: table
