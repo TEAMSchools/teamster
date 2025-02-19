@@ -215,7 +215,7 @@ with
 
         union all
 
-        -- algebra classes for MS; we don't do geometry, so there will be no cte
+        -- algebra classes for MS; we don't do MS geometry, so there will be no cte
         -- for it
         select *, 'COUR-1' as crdc_question_section,
         from custom_schedule
@@ -518,13 +518,10 @@ inner join
     final_schedule as f
     on e.schoolid = f.cc_schoolid
     and e.student_number = f.students_student_number
-    and e.crdc_question_section = f.crdc_question_section
+    and f.crdc_question_section = 'PENR-4'
 where
     -- timeframe is fall snapshot
-    e.is_enrolled_oct01
-    and e.grade_level >= 9
-    and e.crdc_question_section = 'PENR-4'
-    and f.courses_course_name is not null
+    e.is_enrolled_oct01 and e.grade_level >= 9 and f.courses_course_name is not null
 
 union all
 -- PENR-6 - there might be dups here if students took more than one credit recovery
@@ -576,9 +573,7 @@ inner join
     final_schedule as f
     on e.schoolid = f.cc_schoolid
     and e.student_number = f.students_student_number
-    and e.crdc_question_section = f.crdc_question_section
+    and f.crdc_question_section = 'PENR-6'
 where
     -- timeframe is any part of the year + summer
-    e.grade_level >= 9
-    and e.crdc_question_section = 'PENR-6'
-    and f.courses_course_name is not null
+    e.grade_level >= 9 and f.courses_course_name is not null
