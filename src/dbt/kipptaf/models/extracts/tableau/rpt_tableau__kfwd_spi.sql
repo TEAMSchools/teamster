@@ -188,7 +188,7 @@ select
     a.is_early_decision,
 
     r.is_ed_ea,
-    r.contact_efc_from_fafsa,
+    r.contact_efc_from_fafsa as student_aid_index,
 
     false as is_graduated,
     null as is_ecc_enrollment,
