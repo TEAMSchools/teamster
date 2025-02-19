@@ -652,7 +652,8 @@ select
 from enrollment as e
 inner join
     final_schedule as f
-    on e.student_number = f.students_student_number
+    on e.studentid = f.cc_studentid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="f") }}
     and f.crdc_question_section = 'PENR-6'
 where
     -- timeframe is any part of the year + summer
