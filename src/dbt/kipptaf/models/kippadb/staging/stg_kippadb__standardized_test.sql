@@ -125,6 +125,10 @@ select
     lastvieweddate as last_viewed_date,
     systemmodstamp as system_modstamp,
 
+    concat(
+        format_date('%b', date__c), ' ', format_date('%g', date__c)
+    ) as administration_round,
+
     if(act_composite__c = 0, null, act_composite__c) as act_composite,
     if(act_ela__c = 0, null, act_ela__c) as act_ela,
     if(act_english__c = 0, null, act_english__c) as act_english,
@@ -202,5 +206,8 @@ select
     if(
         psat_writing_pre_2016__c = 0, null, psat_writing_pre_2016__c
     ) as psat_writing_pre_2016,
+
+    {{ date_to_fiscal_year(date_field="date__c", start_month=7, year_source="start") }}
+    as academic_year,
 from {{ source("kippadb", "standardized_test") }}
 where not isdeleted
