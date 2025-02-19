@@ -13,9 +13,7 @@ with
             and region != 'Miami'
     ),
 
-    -- because of the manual check cte, this cte will have dups, but they will be
-    -- addressed in the main select statement when the question group counts are
-    -- calculated
+    -- "dups" will exist because of multiple enrollments
     enrollment as (
         select
             e._dbt_source_relation,
@@ -255,7 +253,6 @@ with
             and storecode = 'Y1'
             -- miami does their own submission
             and regexp_extract(_dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
-
     ),
 
     -- this CTE is appending the different versions/groupings i need for reporting
@@ -431,7 +428,7 @@ with
         where dli.is_active
         group by dli.student_school_id, dli.create_ts_academic_year
     )
-/*
+
 -- DSED-2 dups may be present because of students changing schools or grade level
 -- midyear
 select
@@ -636,6 +633,4 @@ inner join
     and f.crdc_question_section = 'PENR-6'
 where
     -- timeframe is any part of the year + summer
-    e.grade_level >= 9 and f.courses_course_name is not null*/
-select distinct is_credit_recovery
-from custom_schedule
+    e.grade_level >= 9 and f.courses_course_name is not null
