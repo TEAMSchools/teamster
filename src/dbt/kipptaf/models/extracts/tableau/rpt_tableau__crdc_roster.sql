@@ -348,7 +348,7 @@ with
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
             score_type in ('act_composite', 'sat_total_score')
-            and `date` between '2023-08-15' and '2024-06-13'
+            and academic_year = {{ var("current_academic_year") - 1 }}
         group by all
     ),
 
@@ -432,7 +432,9 @@ with
             {{ ref("int_deanslist__incidents__custom_fields__pivot") }} as cf
             on dli.incident_id = cf.incident_id
             and {{ union_dataset_join_clause(left_alias="dli", right_alias="cf") }}
-        where dli.is_active
+        where
+            dli.is_active
+            and dli.create_ts_academic_year = {{ var("current_academic_year") - 1 }}
         group by dli.student_school_id, dli.create_ts_academic_year
     )
 
@@ -488,7 +490,7 @@ where crdc_question_section = 'DSED-2'
 
 union all
 
--- ENRL-1, 2a,2b, 3, and 4 dups may be present because of
+-- ENRL-1, 2a,2b, 3, and 4;and RETN. dups may be present because of
 -- students changing schools or grade level midyear
 select
     _dbt_source_relation,
@@ -883,7 +885,62 @@ inner join
     final_schedule as f
     on e.schoolid = f.cc_schoolid
     and e.student_number = f.students_student_number
+    and f.crdc_ap_group is not null
     and f.crdc_question_section = 'APIB-4'
 where
     -- timeframe is fall snapshot for everything
     is_enrolled_oct01 and e.grade_level >= 9 and f.courses_course_name is not null
+
+union all
+-- act/sat attempts
+select
+    e._dbt_source_relation,
+    e.academic_year,
+    e.region,
+    e.schoolid,
+    e.school_abbreviation,
+
+    e.studentid,
+    e.student_number,
+    e.contact_id,
+    e.grade_level,
+    e.gender,
+    e.ethnicity,
+    e.gifted_and_talented,
+    e.iep_status,
+    e.is_504,
+    e.iep_only,
+    e.iep_and_c504,
+    e.c504_only,
+    e.lep_status,
+    e.lep_parent_refusal,
+
+    e.entrydate,
+    e.exitdate,
+    e.enroll_status,
+    e.is_enrolled_oct01,
+    e.is_last_day_enrolled,
+    e.is_retained_year,
+    e.rn_year,
+
+    e.crdc_demographic,
+    e.crdc_gender,
+
+    null as courses_course_name,
+    null as sced_course_name,
+    null as crdc_course_group,
+    null as crdc_subject_group,
+    null as crdc_ap_group,
+    null as sced_code_xwalk,
+
+    null as is_oct_01_course,
+    null as is_last_day_course,
+
+    'EXAM-1' as crdc_question_section,
+    'ACT/SAT' as crdc_question_description,
+
+from enrollment as e
+inner join act_sat as a on e.contact_id = a.contact
+where
+    -- timeframe is school year + summer
+    e.grade_level >= 9
