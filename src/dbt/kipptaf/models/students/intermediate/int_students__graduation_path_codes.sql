@@ -61,30 +61,25 @@ with
 
     act_sat_official as (
         select
-            contact,
-            test_type,
+            salesforce_id,
+            scope,
+            course_discipline,
 
             case
-                when score_type in ('act_reading', 'sat_reading_test_score', 'sat_ebrw')
-                then 'ELA'
-                when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
-                then 'Math'
-            end as discipline,
-
-            case
-                when score_type in ('act_reading', 'act_math') and score >= 17
+                when score_type in ('act_reading', 'act_math') and scale_score >= 17
                 then true
-                when score_type = 'sat_reading_test_score' and score >= 23
+                when score_type = 'sat_reading_test_score' and scale_score >= 23
                 then true
-                when score_type = 'sat_math_test_score' and score >= 22
+                when score_type = 'sat_math_test_score' and scale_score >= 22
                 then true
-                when score_type = 'sat_math' and score >= 440
+                when score_type = 'sat_math' and scale_score >= 440
                 then true
-                when score_type = 'sat_ebrw' and score >= 450
+                when score_type = 'sat_ebrw' and scale_score >= 450
                 then true
                 else false
             end as met_pathway_requirement,
-        from {{ ref("int_kippadb__standardized_test_unpivot") }}
+
+        from {{ ref("int_assessments__college_assessment") }}
         where
             rn_highest = 1
             and score_type in (
@@ -98,51 +93,46 @@ with
     ),
 
     act_sat_pivot as (
-        select contact, discipline, act, sat,
+        select salesforce_id, course_discipline, act, sat,
         from
             act_sat_official
-            pivot (max(met_pathway_requirement) for test_type in ('ACT', 'SAT'))
+            pivot (max(met_pathway_requirement) for scope in ('ACT', 'SAT'))
     ),
 
     psat_official as (
         select
-            safe_cast(local_student_id as int) as local_student_id,
-
-            if(
-                score_type
-                in ('psat_eb_read_write_section_score', 'psat_reading_test_score'),
-                'ELA',
-                'Math'
-            ) as discipline,
+            safe_cast(student_number as int) as local_student_id,
+            course_discipline,
 
             case
                 when
-                    score_type in ('psat_reading_test_score', 'psat_math_test_score')
-                    and score >= 21
-                then true
-                when
-                    score_type
-                    in ('psat_math_section_score', 'psat_eb_read_write_section_score')
-                    and score >= 420
+                    score_type in (
+                        'psat10_psat_math_section',
+                        'psatnmsqt_psat_math_section',
+                        'psat10_psat_ebrw',
+                        'psatnmsqt_psat_ebrw'
+                    )
+                    and scale_score >= 420
                 then true
                 else false
             end as met_pathway_requirement,
-        from {{ ref("int_illuminate__psat_unpivot") }}
+
+        from {{ ref("int_assessments__college_assessment") }}
         where
             rn_highest = 1
             and score_type in (
-                'psat_eb_read_write_section_score',
-                'psat_math_test_score',
-                'psat_math_section_score',
-                'psat_reading_test_score'
+                'psat10_psat_math_section',
+                'psatnmsqt_psat_math_section',
+                'psat10_psat_ebrw',
+                'psatnmsqt_psat_ebrw'
             )
-            and test_name != 'PSAT89'
     ),
 
     psat_rollup as (
-        select local_student_id, discipline, max(met_pathway_requirement) as psat,
+        select
+            local_student_id, course_discipline, max(met_pathway_requirement) as psat,
         from psat_official
-        group by local_student_id, discipline
+        group by local_student_id, course_discipline
     ),
 
     njgpa as (
@@ -209,12 +199,12 @@ with
             and {{ union_dataset_join_clause(left_alias="r", right_alias="n") }}
         left join
             act_sat_pivot as o1
-            on r.kippadb_contact_id = o1.contact
-            and r.discipline = o1.discipline
+            on r.kippadb_contact_id = o1.salesforce_id
+            and r.discipline = o1.course_discipline
         left join
             psat_rollup as o2
             on r.student_number = o2.local_student_id
-            and r.discipline = o2.discipline
+            and r.discipline = o2.course_discipline
     )
 
 select
