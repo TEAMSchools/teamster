@@ -198,7 +198,7 @@ with
             and regexp_extract(c._dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
 
         union all
-        -- credit recovry courses, which only exist in storedgrades
+        -- credit recovery courses, which only exist in storedgrades
         select
             _dbt_source_relation,
             academic_year,
@@ -263,8 +263,7 @@ with
             and regexp_extract(_dbt_source_relation, r'(kipp\w+)_') != 'kippmiami'
     ),
 
-    -- this CTE is appending the different versions/groupings i need for reporting
-    -- courses
+    -- this CTE is appending the different course versions/groupings needed
     final_schedule as (
         -- data dual enrolled students
         select *, 'PENR-4' as crdc_question_section,
@@ -280,8 +279,7 @@ with
 
         union all
 
-        -- algebra classes for MS; we don't do MS geometry, so there will be no cte
-        -- for it
+        -- algebra classes for MS; but no MS geometry
         select *, 'COUR' as crdc_question_section,
         from custom_schedule
         -- alg 1 ms courses use a special code
@@ -437,8 +435,7 @@ with
         group by dli.student_school_id, dli.create_ts_academic_year
     )
 
--- DSED-2 dups may be present because of students changing schools or grade level
--- midyear
+-- DSED-2 dups may be present because of students changing schools/gl midyear
 select
     _dbt_source_relation,
     academic_year,
@@ -601,8 +598,7 @@ where
     e.is_enrolled_oct01 and e.grade_level >= 9 and f.courses_course_name is not null
 
 union all
--- PENR-6 - there might be dups here if students took more than one credit recovery
--- course
+-- PENR-6 - might be dups here if students took > 1 credit recovery courses
 select
     e._dbt_source_relation,
     e.academic_year,
@@ -660,9 +656,7 @@ where
     e.grade_level >= 9 and f.courses_course_name is not null
 
 union all
--- COUR 1 to COUR 4-b - there might be dups here if students took more than one credit
--- recovery
--- course
+-- COUR 1 to COUR 4-b - might be dups here if students took > 1 credit recovery courses
 select
     e._dbt_source_relation,
     e.academic_year,
@@ -718,3 +712,61 @@ inner join
 where
     -- timeframe is fall snapshot for classes count, but eoy for demo and passing
     e.grade_level between 7 and 8 and f.courses_course_name is not null
+
+union all
+-- COUR 7 to COUR 13 - might be dups here if students took multiple math courses
+select
+    e._dbt_source_relation,
+    e.academic_year,
+    e.region,
+    e.schoolid,
+    e.school_abbreviation,
+
+    e.studentid,
+    e.student_number,
+    e.contact_id,
+    e.grade_level,
+    e.gender,
+    e.ethnicity,
+    e.gifted_and_talented,
+    e.iep_status,
+    e.is_504,
+    e.iep_only,
+    e.iep_and_c504,
+    e.c504_only,
+    e.lep_status,
+    e.lep_parent_refusal,
+
+    e.entrydate,
+    e.exitdate,
+    e.enroll_status,
+    e.is_enrolled_oct01,
+    e.is_last_day_enrolled,
+    e.is_retained_year,
+    e.rn_year,
+
+    e.crdc_demographic,
+    e.crdc_gender,
+
+    f.courses_course_name,
+    f.sced_course_name,
+    f.crdc_course_group,
+    f.crdc_subject_group,
+    f.crdc_ap_group,
+    f.sced_code_xwalk,
+
+    f.is_oct_01_course,
+    f.is_last_day_course,
+
+    f.crdc_question_section,
+    'HS Math Courses' as crdc_question_description,
+
+from enrollment as e
+inner join
+    final_schedule as f
+    on e.schoolid = f.cc_schoolid
+    and e.student_number = f.students_student_number
+    and f.crdc_question_section = 'COUR-7'
+where
+    -- timeframe is fall snapshot for classes count, but eoy for demo and passing
+    e.grade_level > = 9 and f.courses_course_name is not null
