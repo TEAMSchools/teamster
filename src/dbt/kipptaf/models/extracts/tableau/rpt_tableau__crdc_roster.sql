@@ -829,3 +829,61 @@ inner join
 where
     -- timeframe is fall snapshot for everything
     is_enrolled_oct01 and e.grade_level >= 9 and f.courses_course_name is not null
+
+union all
+-- AP - might be dups here if students took multiple AP courses
+select
+    e._dbt_source_relation,
+    e.academic_year,
+    e.region,
+    e.schoolid,
+    e.school_abbreviation,
+
+    e.studentid,
+    e.student_number,
+    e.contact_id,
+    e.grade_level,
+    e.gender,
+    e.ethnicity,
+    e.gifted_and_talented,
+    e.iep_status,
+    e.is_504,
+    e.iep_only,
+    e.iep_and_c504,
+    e.c504_only,
+    e.lep_status,
+    e.lep_parent_refusal,
+
+    e.entrydate,
+    e.exitdate,
+    e.enroll_status,
+    e.is_enrolled_oct01,
+    e.is_last_day_enrolled,
+    e.is_retained_year,
+    e.rn_year,
+
+    e.crdc_demographic,
+    e.crdc_gender,
+
+    f.courses_course_name,
+    f.sced_course_name,
+    f.crdc_course_group,
+    f.crdc_subject_group,
+    f.crdc_ap_group,
+    f.sced_code_xwalk,
+
+    f.is_oct_01_course,
+    f.is_last_day_course,
+
+    f.crdc_question_section,
+    'HS AP Courses' as crdc_question_description,
+
+from enrollment as e
+inner join
+    final_schedule as f
+    on e.schoolid = f.cc_schoolid
+    and e.student_number = f.students_student_number
+    and f.crdc_question_section = 'APIB-4'
+where
+    -- timeframe is fall snapshot for everything
+    is_enrolled_oct01 and e.grade_level >= 9 and f.courses_course_name is not null
