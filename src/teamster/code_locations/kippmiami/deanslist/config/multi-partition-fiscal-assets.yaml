@@ -1,3 +1,6 @@
 endpoints:
   - endpoint: comm-log
+    params:
+      IncludeSentReports: "yes"
+      IncludeTwoWayTexts: "yes"
   - endpoint: followups
