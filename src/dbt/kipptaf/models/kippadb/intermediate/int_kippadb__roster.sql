@@ -28,6 +28,7 @@ with
             os.school__name as overgrad_students_school,
 
             cf.is_ed_ea,
+            cf.best_guess_pathway,
 
             concat(
                 os.assigned_counselor__last_name,
