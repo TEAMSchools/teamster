@@ -299,6 +299,7 @@ with
                 'Calculus',
                 'Algebra I / Algebra II'
             )
+            and not is_dual_enrollment
 
         union all
 
