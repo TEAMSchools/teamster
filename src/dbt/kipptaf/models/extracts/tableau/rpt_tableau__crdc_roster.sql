@@ -490,10 +490,11 @@ select
         then 'Distance Education Enrollment'
         when 'ATHL-3'
         then 'Athletics'
+        else 'Arrests'
     end as crdc_question_description,
 
 from enrollment
-where crdc_question_section in ('DSED-2', 'ATHL-3')
+where crdc_question_section in ('DSED-2', 'ATHL-3', 'ARRS-1', 'ARRS-2', 'ARRS-3')
 
 union all
 
