@@ -6,19 +6,29 @@ with
         group by ticket_id
     ),
 
+    ticket_audit_create as (
+        select
+            ticket_id,
+
+            max(group_name) as group_name,
+            max(assignee_email) as assignee_email,
+        from {{ ref("int_zendesk__ticket_events") }}
+        where event_type = 'Audit' and child_event_type = 'Create'
+        group by ticket_id
+    ),
+
     original_value as (
         select
-            te.ticket_id,
-            te.group_name,
+            tac.ticket_id,
+            tac.group_name,
 
-            oad.formatted_name,
-            oad.job_title,
-            oad.home_department_name,
-        from {{ ref("int_zendesk__ticket_events") }} as te
+            a.formatted_name,
+            a.job_title,
+            a.home_department_name,
+        from ticket_audit_create as tac
         left join
-            {{ ref("int_people__staff_roster") }} as oad
-            on te.assignee_email = oad.user_principal_name
-        where te.event_type = 'Audit' and te.child_event_type = 'Create'
+            {{ ref("int_people__staff_roster") }} as a
+            on tac.assignee_email = a.user_principal_name
     )
 
 select
