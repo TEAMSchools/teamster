@@ -10,13 +10,13 @@ from teamster.code_locations.kipptaf._dlt.zendesk.schedules import (
 )
 
 assets = [
-    illuminate_assets,
-    zendesk_assets,
+    *illuminate_assets,
+    *zendesk_assets,
 ]
 
 schedules = [
-    illuminate_schedules,
-    zendesk_schedules,
+    *illuminate_schedules,
+    *zendesk_schedules,
 ]
 
 __all__ = [
