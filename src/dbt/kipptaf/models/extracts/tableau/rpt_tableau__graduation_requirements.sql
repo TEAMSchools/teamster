@@ -229,7 +229,7 @@ with
             a.subject_area,
             a.scope as test_type,
 
-            'ACT/SAT/PSAT' as pathway_option,
+            'ACT/SAT' as pathway_option,
 
             cast(a.scale_score as string) as `value`,
 
@@ -237,6 +237,24 @@ with
 
         from roster as r
         inner join act_sat_psat_official as a on r.kippadb_contact_id = a.salesforce_id
+
+        union all
+
+        select
+            r.student_number,
+
+            a.course_discipline,
+            a.subject_area,
+            a.scope as test_type,
+
+            'PSAT' as pathway_option,
+
+            cast(a.scale_score as string) as `value`,
+
+            a.met_pathway_requirement,
+
+        from roster as r
+        inner join act_sat_psat_official as a on r.student_number = a.student_number
 
         union all
 
