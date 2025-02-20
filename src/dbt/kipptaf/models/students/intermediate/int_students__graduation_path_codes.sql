@@ -101,21 +101,10 @@ with
 
     psat_official as (
         select
-            safe_cast(student_number as int) as local_student_id,
             course_discipline,
+            safe_cast(student_number as int) as local_student_id,
 
-            case
-                when
-                    score_type in (
-                        'psat10_psat_math_section',
-                        'psatnmsqt_psat_math_section',
-                        'psat10_psat_ebrw',
-                        'psatnmsqt_psat_ebrw'
-                    )
-                    and scale_score >= 420
-                then true
-                else false
-            end as met_pathway_requirement,
+            if(scale_score >= 420, true, false) as met_pathway_requirement,
 
         from {{ ref("int_assessments__college_assessment") }}
         where
