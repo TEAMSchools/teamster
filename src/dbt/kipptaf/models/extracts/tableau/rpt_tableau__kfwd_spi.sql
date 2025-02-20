@@ -43,6 +43,7 @@ select
     null as is_early_decision,
     null as is_ed_ea,
     null as student_aid_index,
+    null as best_guess_pathway,
 
     if(e.status = 'Graduated', true, false) as is_graduated,
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
@@ -189,6 +190,7 @@ select
 
     r.is_ed_ea,
     r.contact_efc_from_fafsa as student_aid_index,
+    r.best_guess_pathway,
 
     false as is_graduated,
     null as is_ecc_enrollment,
