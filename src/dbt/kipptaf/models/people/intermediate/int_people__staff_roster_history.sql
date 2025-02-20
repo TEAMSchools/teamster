@@ -272,16 +272,20 @@ select
     w.benefits_eligibility_class,
     w.worker_hire_date_recent,
 
-    lc.region as home_work_location_region,
-    lc.dagster_code_location as home_work_location_dagster_code_location,
-    lc.clean_name as home_work_location_reporting_name,
-    lc.abbreviation as home_work_location_abbreviation,
-    lc.grade_band as home_work_location_grade_band,
-    lc.reporting_school_id as home_work_location_reporting_school_id,
-    lc.powerschool_school_id as home_work_location_powerschool_school_id,
-    lc.deanslist_school_id as home_work_location_deanslist_school_id,
-    lc.is_campus as home_work_location_is_campus,
-    lc.is_pathways as home_work_location_is_pathways,
+    lc.location_region as home_work_location_region,
+    lc.location_dagster_code_location as home_work_location_dagster_code_location,
+    lc.location_clean_name as home_work_location_reporting_name,
+    lc.location_abbreviation as home_work_location_abbreviation,
+    lc.location_grade_band as home_work_location_grade_band,
+    lc.location_reporting_school_id as home_work_location_reporting_school_id,
+    lc.location_powerschool_school_id as home_work_location_powerschool_school_id,
+    lc.location_deanslist_school_id as home_work_location_deanslist_school_id,
+    lc.location_is_campus as home_work_location_is_campus,
+    lc.location_is_pathways as home_work_location_is_pathways,
+    lc.location_head_of_schools_employee_number
+    as home_work_location_head_of_schools_employee_number,
+    lc.campus_name as home_work_location_campus_name,
+    lc.head_of_schools_sam_account_name,
 
     ldap.physical_delivery_office_name,
     ldap.uac_account_disable,
@@ -345,8 +349,8 @@ left join
     on w.reports_to_worker_id = rten.adp_associate_id
     and rten.is_active
 left join
-    {{ ref("stg_people__location_crosswalk") }} as lc
-    on w.home_work_location_name = lc.name
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on w.home_work_location_name = lc.location_name
 left join
     {{ ref("stg_ldap__user_person") }} as ldap
     on w.employee_number = ldap.employee_number
