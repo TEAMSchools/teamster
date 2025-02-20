@@ -145,6 +145,7 @@ left join
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
+    and e.academic_year = o.academic_year
 left join
     course_subjects_roster as c
     on e.student_number = c.student_number
@@ -217,6 +218,7 @@ left join
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
+    and e.academic_year = o.academic_year
 left join
     course_subjects_roster as c
     on e.student_number = c.student_number
