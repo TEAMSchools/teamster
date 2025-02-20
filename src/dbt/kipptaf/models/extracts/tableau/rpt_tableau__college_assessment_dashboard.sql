@@ -30,7 +30,6 @@ with
             t.subject_area as expected_subject_area,
 
             if(e.iep_status = 'No IEP', 0, 1) as sped,
-
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -71,7 +70,6 @@ with
             if(
                 s.courses_course_number = 'MAT02056D3', true, false
             ) as is_math_double_blocked,
-
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -82,95 +80,6 @@ with
             and s.courses_credittype in ('ENG', 'MATH')
             and not s.is_dropped_section
         where e.school_level = 'HS'
-    ),
-
-    college_assessments_official as (
-        select
-            contact,
-            test_type as scope,
-            date as test_date,
-            score as scale_score,
-            rn_highest,
-
-            'Official' as test_type,
-
-            concat(
-                format_date('%b', date), ' ', format_date('%g', date)
-            ) as administration_round,
-
-            case
-                score_type
-                when 'sat_total_score'
-                then 'Composite'
-                when 'sat_reading_test_score'
-                then 'Reading Test'
-                when 'sat_math_test_score'
-                then 'Math Test'
-                else test_subject
-            end as subject_area,
-
-            case
-                when
-                    score_type in (
-                        'act_reading',
-                        'act_english',
-                        'sat_reading_test_score',
-                        'sat_ebrw'
-                    )
-                then 'ENG'
-                when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
-                then 'MATH'
-                else 'NA'
-            end as course_discipline,
-
-            {{
-                date_to_fiscal_year(
-                    date_field="date", start_month=7, year_source="start"
-                )
-            }} as test_academic_year,
-        from {{ ref("int_kippadb__standardized_test_unpivot") }}
-        where
-            score_type in (
-                'act_composite',
-                'act_reading',
-                'act_math',
-                'act_english',
-                'act_science',
-                'sat_total_score',
-                'sat_reading_test_score',
-                'sat_math_test_score',
-                'sat_math',
-                'sat_ebrw'
-            )
-
-        union all
-
-        select
-            safe_cast(local_student_id as string) as contact,
-            test_type as scope,
-            date as test_date,
-            score as scale_score,
-            rn_highest,
-
-            'Official' as test_type,
-
-            concat(
-                format_date('%b', date), ' ', format_date('%g', date)
-            ) as administration_round,
-
-            test_subject as subject_area,
-
-            case
-                test_subject when 'EBRW' then 'ENG' when 'Math' then 'MATH' else 'NA'
-            end as course_discipline,
-
-            {{
-                date_to_fiscal_year(
-                    date_field="date", start_month=7, year_source="start"
-                )
-            }} as test_academic_year,
-
-        from {{ ref("int_collegeboard__psat_unpivot") }}
     )
 
 select
@@ -231,15 +140,15 @@ select
     coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
 from roster as e
 left join
-    college_assessments_official as o
-    on e.contact_id = o.contact
+    {{ ref("int_assessments__college_assessment") }} as o
+    on e.contact_id = o.salesforce_id
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
 left join
     course_subjects_roster as c
-    on o.contact = c.contact_id
-    and o.test_academic_year = c.academic_year
+    on e.student_number = c.student_number
+    and e.academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
 where e.expected_test_type = 'Official' and e.expected_scope in ('ACT', 'SAT')
 
@@ -303,15 +212,15 @@ select
     coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
 from roster as e
 left join
-    college_assessments_official as o
-    on safe_cast(e.student_number as string) = o.contact
+    {{ ref("int_assessments__college_assessment") }} as o
+    on e.student_number = o.student_number
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
 left join
     course_subjects_roster as c
-    on o.contact = c.contact_id
-    and o.test_academic_year = c.academic_year
+    on e.student_number = c.student_number
+    and e.academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
 where
     e.expected_test_type = 'Official' and e.expected_scope in ('PSAT NMSQT', 'PSAT 8/9')

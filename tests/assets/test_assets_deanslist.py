@@ -117,7 +117,11 @@ def test_asset_deanslist_comm_log_kippnewark():
         fiscal_multi_partitions_assets,
     )
 
-    _test_asset(assets=fiscal_multi_partitions_assets, asset_name="comm_log")
+    _test_asset(
+        assets=fiscal_multi_partitions_assets,
+        asset_name="comm_log",
+        partition_key="2024-07-01|522",
+    )
 
 
 def test_asset_deanslist_followups_kippnewark():
