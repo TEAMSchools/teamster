@@ -192,7 +192,7 @@ with
             end as course_discipline,
 
             -- in some places, we need to know if the score is 10 or NMSQT. not here
-            if(test_type in ('ACT', 'SAT'), test_type, 'PSAT') as test_type,
+            if(scope in ('ACT', 'SAT'), test_type, 'PSAT') as test_type,
 
         from {{ ref("int_assessments__college_assessment") }}
         where
