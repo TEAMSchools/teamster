@@ -1,8 +1,10 @@
 version: 2
 
 sources:
-  - name: zendesk
+  - name: airbyte_zendesk
     schema: kipptaf_zendesk
+    config:
+      enabled: false
     tables:
       - name: groups
       - name: ticket_audits

@@ -216,7 +216,11 @@ models:
     zendesk:
       +schema: zendesk
       airbyte:
+        +enabled: false
         staging:
           +materialized: table
       archive:
         +enabled: false
+      dlt:
+        staging:
+          +materialized: table
