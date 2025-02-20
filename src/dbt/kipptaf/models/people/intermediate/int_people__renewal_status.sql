@@ -50,6 +50,18 @@ select
     stp.nonrenewal_notes,
     stp.gutcheck,
 
+    ayl.abbreviation as ay_school_shortname,
+
+    nyl.abbreviation as ny_school_shortname,
+
+    ayc.name as ay_campus_name,
+
+    nyc.name as ny_campus_name,
+
+    ayhos.sam_account_name as ay_head_of_school_samaccount,
+
+    nyhos.sam_account_name as ny_head_of_school_samaccount,
+
 from {{ ref("int_people__staff_roster") }} as c
 inner join
     years as y
@@ -83,3 +95,21 @@ left join
     {{ ref("stg_people__seat_tracker_people") }} as stp
     on c.employee_number = stp.employee_number
     and y.academic_year = stp.academic_year
+
+left join
+    {{ ref("stg_people__location_crosswalk") }} as ayl
+    on h.home_work_location_name = ayl.name
+left join
+    {{ ref("stg_people__location_crosswalk") }} as nyl on s.adp_location = nyl.name
+left join
+    {{ ref("stg_people__campus_crosswalk") }} as ayc
+    on ayl.clean_name = ayc.location_name
+left join
+    {{ ref("stg_people__campus_crosswalk") }} as nyc
+    on nyl.clean_name = nyc.location_name
+left join
+    {{ ref("int_people__staff_roster") }} as ayhos
+    on ayl.head_of_schools_employee_number = ayhos.employee_number
+left join
+    {{ ref("int_people__staff_roster") }} as nyhos
+    on nyl.head_of_schools_employee_number = nyhos.employee_number

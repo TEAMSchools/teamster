@@ -86,6 +86,12 @@ with
             s.nonrenewal_notes,
             s.ny_salary,
             s.salary_rule,
+            s.ay_school_shortname,
+            s.ny_school_shortname,
+            s.ay_campus_name,
+            s.ny_campus_name,
+            s.ay_head_of_school_samaccount,
+            s.ny_head_of_school_samaccount,
 
             rf.salary as ny_salary_from_form,
             rf.salary_modification_explanation,
@@ -109,18 +115,6 @@ with
             ap.sl_dso_approval_date,
             ap.er_approval_date,
             ap.hos_mdo_approval_date,
-
-            ayl.abbreviation as ay_school_shortname,
-
-            nyl.abbreviation as ny_school_shortname,
-
-            ayc.name as ay_campus_name,
-
-            nyc.name as ny_campus_name,
-
-            ayhos.sam_account_name as ay_head_of_school_samaccount,
-
-            nyhos.sam_account_name as ny_head_of_school_samaccount,
 
             concat(b.family_name_1, ', ', b.given_name) as preferred_name,
             concat(m.family_name_1, ', ', m.given_name) as manager_name,
@@ -171,24 +165,6 @@ with
             approvals as ap
             on s.academic_year = ap.campaign_academic_year
             and b.employee_number = ap.subject_employee_number
-        left join
-            {{ ref("stg_people__location_crosswalk") }} as ayl
-            on s.ay_location = ayl.name
-        left join
-            {{ ref("stg_people__location_crosswalk") }} as nyl
-            on s.ny_location = nyl.name
-        left join
-            {{ ref("stg_people__campus_crosswalk") }} as ayc
-            on ayl.clean_name = ayc.location_name
-        left join
-            {{ ref("stg_people__campus_crosswalk") }} as nyc
-            on nyl.clean_name = nyc.location_name
-        left join
-            {{ ref("int_people__staff_roster") }} as ayhos
-            on ayl.head_of_schools_employee_number = ayhos.employee_number
-        left join
-            {{ ref("int_people__staff_roster") }} as nyhos
-            on nyl.head_of_schools_employee_number = nyhos.employee_number
     )
 
 select
