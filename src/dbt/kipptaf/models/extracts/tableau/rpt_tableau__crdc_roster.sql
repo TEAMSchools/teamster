@@ -944,3 +944,55 @@ inner join act_sat as a on e.contact_id = a.contact
 where
     -- timeframe is school year + summer
     e.grade_level >= 9
+
+union all
+
+-- ATHL-3 dups may be present because of students changing schools/gl midyear
+select
+    _dbt_source_relation,
+    academic_year,
+    region,
+    schoolid,
+    school_abbreviation,
+
+    studentid,
+    student_number,
+    contact_id,
+    grade_level,
+    gender,
+    ethnicity,
+    gifted_and_talented,
+    iep_status,
+    is_504,
+    iep_only,
+    iep_and_c504,
+    c504_only,
+    lep_status,
+    lep_parent_refusal,
+
+    entrydate,
+    exitdate,
+    enroll_status,
+    is_enrolled_oct01,
+    is_last_day_enrolled,
+    is_retained_year,
+    rn_year,
+
+    crdc_demographic,
+    crdc_gender,
+
+    null as courses_course_name,
+    null as sced_course_name,
+    null as crdc_course_group,
+    null as crdc_subject_group,
+    null as crdc_ap_group,
+    null as sced_code_xwalk,
+
+    null as is_oct_01_course,
+    null as is_last_day_course,
+
+    crdc_question_section,
+    'Athletics' as crdc_question_description,
+
+from enrollment
+where crdc_question_section = 'ATHL-3'
