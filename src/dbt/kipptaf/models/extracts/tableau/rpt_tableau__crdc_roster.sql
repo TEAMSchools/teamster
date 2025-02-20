@@ -769,4 +769,4 @@ inner join
     and f.crdc_question_section = 'COUR-7'
 where
     -- timeframe is fall snapshot for classes count, but eoy for demo and passing
-    e.grade_level > = 9 and f.courses_course_name is not null
+    e.grade_level >= 9 and f.courses_course_name is not null
