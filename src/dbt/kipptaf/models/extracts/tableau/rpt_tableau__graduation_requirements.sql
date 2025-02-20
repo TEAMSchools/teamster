@@ -161,6 +161,7 @@ with
     act_sat_psat_official as (
         select
             salesforce_id,
+            student_number,
             test_type,
             scale_score,
             subject_area,
