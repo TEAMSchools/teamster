@@ -160,102 +160,45 @@ with
 
     act_sat_psat_official as (
         select
-            contact,
-            test_type,
-            score,
+            salesforce_id,
+            scale_score,
+            subject_area,
 
             case
-                when score_type in ('act_reading', 'sat_reading_test_score', 'sat_ebrw')
-                then 'ELA'
-                when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
-                then 'Math'
-            end as discipline,
-
-            case
-                when score_type in ('act_reading', 'sat_reading_test_score')
-                then 'Reading'
-                when score_type in ('act_math', 'sat_math')
-                then 'Math'
-                when score_type = 'sat_math_test_score'
-                then 'Math Test'
-                when score_type = 'sat_ebrw'
-                then 'EBRW'
-            end as `subject`,
-
-            case
-                when score_type in ('act_reading', 'act_math') and score >= 17
+                when score_type in ('act_reading', 'act_math') and scale_score >= 17
                 then true
-                when score_type = 'sat_reading_test_score' and score >= 23
+                when score_type = 'sat_reading_test_score' and scale_score >= 23
                 then true
-                when score_type = 'sat_math_test_score' and score >= 22
+                when score_type = 'sat_math_test_score' and scale_score >= 22
                 then true
-                when score_type = 'sat_math' and score >= 440
+                when score_type = 'sat_math' and scale_score >= 440
                 then true
-                when score_type = 'sat_ebrw' and score >= 450
+                when score_type = 'sat_ebrw' and scale_score >= 450
+                then true
+                when
+                    score_type in (
+                        'psat10_psat_math_section',
+                        'psatnmsqt_psat_math_section',
+                        'psat10_psat_ebrw',
+                        'psatnmsqt_psat_ebrw'
+                    )
+                    and scale_score >= 420
                 then true
                 else false
             end as met_pathway_requirement,
-        from {{ ref("int_kippadb__standardized_test_unpivot") }}
-        where
-            rn_highest = 1
-            and score_type in (
-                'act_reading',
-                'act_math',
-                'sat_math_test_score',
-                'sat_math',
-                'sat_reading_test_score',
-                'sat_ebrw'
-            )
-
-        union all
-
-        select
-            cast(local_student_id as string) as contact,
-
-            'PSAT' as test_type,
-
-            score,
-
-            if(
-                score_type
-                in ('psat_eb_read_write_section_score', 'psat_reading_test_score'),
-                'ELA',
-                'Math'
-            ) as discipline,
 
             case
-                when score_type = 'psat_reading_test_score'
-                then 'Reading'
-                when score_type = 'psat_math_section_score'
-                then 'Math'
-                when score_type = 'psat_math_test_score'
-                then 'Math Test'
-                when score_type = 'psat_eb_read_write_section_score'
-                then 'EBRW'
-            end as `subject`,
+                course_discipline when 'MATH' then 'Math' when 'ENG' then 'ELA'
+            end as course_discipline,
 
-            case
-                when
-                    score_type in ('psat_reading_test_score', 'psat_math_test_score')
-                    and score >= 21
-                then true
-                when
-                    score_type
-                    in ('psat_math_section_score', 'psat_eb_read_write_section_score')
-                    and score >= 420
-                then true
-                else false
-            end as met_pathway_requirement,
-        from {{ ref("int_illuminate__psat_unpivot") }}
+            -- in some places, we need to know if the score is 10 or NMSQT. not here
+            if(test_type in ('ACT', 'SAT'), test_type, 'PSAT') as test_type,
+
+        from {{ ref("int_assessments__college_assessment") }}
         where
             rn_highest = 1
-            and score_type in (
-                'psat_eb_read_write_section_score',
-                'psat_math_test_score',
-                'psat_math_section_score',
-                'psat_reading_test_score'
-            )
-            and test_name != 'PSAT89'
+            and course_discipline in ('MATH', 'ENG')
+            and scope != 'PSAT89'
     ),
 
     grad_options_append_final as (
@@ -271,6 +214,7 @@ with
             cast(a.testscalescore as string) as `value`,
 
             if(a.testscalescore >= 725, true, false) as met_pathway_requirement,
+
         from roster as r
         inner join njgpa_rollup as a on r.state_studentnumber = a.statestudentidentifier
 
@@ -279,37 +223,18 @@ with
         select
             r.student_number,
 
-            a.discipline,
-            a.subject,
+            a.course_discipline,
+            a.subject_area,
             a.test_type,
 
-            'ACT/SAT' as pathway_option,
+            'ACT/SAT/PSAT' as pathway_option,
 
-            cast(a.score as string) as `value`,
-
-            a.met_pathway_requirement,
-        from roster as r
-        inner join act_sat_psat_official as a on r.kippadb_contact_id = a.contact
-        where a.test_type in ('ACT', 'SAT')
-
-        union all
-
-        select
-            r.student_number,
-
-            a.discipline,
-            a.subject,
-            a.test_type,
-
-            'PSAT' as pathway_option,
-
-            cast(a.score as string) as `value`,
+            cast(a.scale_score as string) as `value`,
 
             a.met_pathway_requirement,
+
         from roster as r
-        inner join
-            act_sat_psat_official as a on cast(r.student_number as string) = a.contact
-        where a.test_type = 'PSAT'
+        inner join act_sat_psat_official as a on r.kippadb_contact_id = a.salesforce_id
 
         union all
 
