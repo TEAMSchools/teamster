@@ -239,18 +239,4 @@ assets:
       - [kipptaf, tableau, rpt_tableau__survey_completion]
     metadata:
       id: b11542a2-6780-4feb-a1dd-534ffe724faf
-      cron_schedule: 0 * * * *
-  # - name: Master Renewal Tracking Tool
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__staff_performance_compliance_history]
-  #   metadata:
-  #     id: 1b363885-e6b2-4396-afff-ece0f8c6c77a
-  # - name: "Marketing Data: Social Media"
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__marketing_facebook_page]
-  #     - [kipptaf, tableau, rpt_tableau__marketing_facebook_post]
-  #     - [kipptaf, tableau, rpt_tableau__marketing_instagram_page]
-  #     - [kipptaf, tableau, rpt_tableau__marketing_instagram_post]
-  #   metadata:
-  #     id: f6aa0647-55a0-425b-b991-160965f6f2ad
-  #     cron_schedule: 0 7 * * *
+      # cron_schedule: 0 * * * *
