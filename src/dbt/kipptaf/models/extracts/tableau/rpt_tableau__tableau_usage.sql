@@ -10,13 +10,13 @@ select
     srh.home_department_name as department,
     srh.reports_to_formatted_name as manager,
 
-    vc.name_hist_projects as project,
+    vc.name_hist_projects as `project`,
     vc.name_hist_workbooks as workbook,
     vc.name_hist_views as `view`,
     vc.`action`,
     vc.created_at_local_new_york as viewed_at,
     vc.id as view_count_id,
-    concat("https://tableau.kipp.org/t/KIPPNJ/views/", view_url, "?:embed=y") as url,
+    concat('https://tableau.kipp.org/t/KIPPNJ/views/', vc.view_url, '?:embed=y') as url,
 from {{ ref("stg_tableau__view_count_per_view") }} as vc
 left join
     {{ ref("int_people__staff_roster_history") }} as srh
