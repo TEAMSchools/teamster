@@ -215,5 +215,8 @@ models:
       +schema: titan
     zendesk:
       +schema: zendesk
-      staging:
-        +materialized: table
+      airbyte:
+        staging:
+          +materialized: table
+      archive:
+        +enabled: false

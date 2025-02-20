@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: zendesk
     schema: kipptaf_zendesk
+    config:
+      enabled: false
     tables:
       - name: src_zendesk__ticket_metrics_archive
         config:
