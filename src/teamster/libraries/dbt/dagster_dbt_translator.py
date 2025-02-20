@@ -45,23 +45,25 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                 | AutomationCondition.newly_missing()
             )
         else:
+            ignore_selection = AssetSelection.keys(
+                *automation_condition_config.get("ignore", {}).get("keys", {})
+            )
+
             return (
                 # forked from AutomationCondition.eager()
                 # added configurable ignore on any_deps_updated()
-                AutomationCondition.in_latest_time_window()
-                & (
-                    AutomationCondition.newly_missing()
-                    | AutomationCondition.any_deps_updated().ignore(
-                        AssetSelection.keys(
-                            *automation_condition_config.get("ignore", {}).get(
-                                "keys", {}
-                            )
+                (
+                    AutomationCondition.in_latest_time_window()
+                    & (
+                        AutomationCondition.newly_missing()
+                        | AutomationCondition.any_deps_updated().ignore(
+                            ignore_selection
                         )
-                    )
-                ).since_last_handled()
-                & ~AutomationCondition.any_deps_missing()
-                & ~AutomationCondition.any_deps_in_progress()
-                & ~AutomationCondition.in_progress()
+                    ).since_last_handled()
+                    & ~AutomationCondition.any_deps_missing()
+                    & ~AutomationCondition.any_deps_in_progress()
+                    & ~AutomationCondition.in_progress()
+                )
                 | AutomationCondition.code_version_changed()
             )
 
