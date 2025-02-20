@@ -39,5 +39,4 @@ select
     add_comp_name_5,
     concated_add_comp,
     valid_approval,
-
 from {{ ref("int_surveys__renewal_responses_feed") }}
