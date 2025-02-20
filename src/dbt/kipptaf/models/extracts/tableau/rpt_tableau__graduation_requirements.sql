@@ -161,6 +161,7 @@ with
     act_sat_psat_official as (
         select
             salesforce_id,
+            test_type,
             scale_score,
             subject_area,
 
@@ -192,7 +193,7 @@ with
             end as course_discipline,
 
             -- in some places, we need to know if the score is 10 or NMSQT. not here
-            if(scope in ('ACT', 'SAT'), test_type, 'PSAT') as test_type,
+            if(scope in ('ACT', 'SAT'), scope, 'PSAT') as scope,
 
         from {{ ref("int_assessments__college_assessment") }}
         where
@@ -225,7 +226,7 @@ with
 
             a.course_discipline,
             a.subject_area,
-            a.test_type,
+            a.scope as test_type,
 
             'ACT/SAT/PSAT' as pathway_option,
 
