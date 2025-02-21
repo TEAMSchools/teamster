@@ -23,3 +23,23 @@ def get_db_powerschool_resource(code_location: str):
         port=EnvVar(f"PS_DB_PORT_{code_location}"),
         service_name=EnvVar(f"PS_DB_DATABASE_{code_location}"),
     )
+
+
+def get_titan_ssh_resource(code_location: str):
+    code_location = code_location.upper()
+
+    return SSHResource(
+        remote_host="sftp.titank12.com",
+        username=EnvVar(f"TITAN_SFTP_USERNAME_{code_location}"),
+        password=EnvVar(f"TITAN_SFTP_PASSWORD_{code_location}"),
+    )
+
+
+def get_renlearn_ssh_resource(code_location: str):
+    code_location = code_location.upper()
+
+    return SSHResource(
+        remote_host="sftp.renaissance.com",
+        username=EnvVar(f"RENLEARN_SFTP_USERNAME_{code_location}"),
+        password=EnvVar(f"RENLEARN_SFTP_PASSWORD_{code_location}"),
+    )
