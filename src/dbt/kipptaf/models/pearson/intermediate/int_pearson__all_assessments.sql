@@ -25,6 +25,7 @@ with
                     "nativehawaiianorotherpacificislander",
                     "period",
                     "statestudentidentifier",
+                    "localstudentidentifier",
                     "studentwithdisabilities",
                     "subject",
                     "testcode",
