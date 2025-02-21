@@ -63,7 +63,10 @@ with
         select
             salesforce_id,
             scope,
-            course_discipline,
+
+            case
+                course_discipline when 'ENG' then 'ELA' when 'MATH' then 'Math'
+            end as course_discipline,
 
             case
                 when score_type in ('act_reading', 'act_math') and scale_score >= 17
@@ -101,7 +104,10 @@ with
 
     psat_official as (
         select
-            course_discipline,
+            case
+                course_discipline when 'ENG' then 'ELA' when 'MATH' then 'Math'
+            end as course_discipline,
+
             safe_cast(student_number as int) as local_student_id,
 
             if(scale_score >= 420, true, false) as met_pathway_requirement,
