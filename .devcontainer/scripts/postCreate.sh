@@ -67,6 +67,7 @@ op inject -f --in-file=.devcontainer/tpl/powerschool_ssh_password.txt.tpl \
 curl -LsSf https://astral.sh/uv/install.sh | sh || true
 
 # install dependencies
+uv tool install datamodel-code-generator
 uv sync --frozen
 
 # prepare dbt projects
