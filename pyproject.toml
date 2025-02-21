@@ -37,7 +37,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["dagster-webserver", "pytest", "datamodel-code-generator"]
+dev = ["dagster-webserver", "pytest>=8.3.4"]
 
 [build-system]
 requires = ["hatchling"]
