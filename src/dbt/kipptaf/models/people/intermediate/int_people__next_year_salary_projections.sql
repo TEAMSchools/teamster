@@ -36,15 +36,15 @@ select
             when h.base_remuneration_annual_rate_amount < 60000
             then
                 h.base_remuneration_annual_rate_amount
-                + h.base_remuneration_annual_rate_amount * 0.5
+                + h.base_remuneration_annual_rate_amount * 0.05
             when h.base_remuneration_annual_rate_amount < 100000
             then
                 h.base_remuneration_annual_rate_amount
-                + h.base_remuneration_annual_rate_amount * 0.4
+                + h.base_remuneration_annual_rate_amount * 0.04
             when h.base_remuneration_annual_rate_amount >= 100000
             then
                 h.base_remuneration_annual_rate_amount
-                + h.base_remuneration_annual_rate_amount * 0.3
+                + h.base_remuneration_annual_rate_amount * 0.03
         end
     ) as ny_salary,
 from {{ ref("int_people__staff_roster") }} as c
