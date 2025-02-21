@@ -21,7 +21,7 @@ with
             e.academic_year,
             e.region,
             e.schoolid,
-            e.school_abbreviation,
+            e.school,
 
             e.studentid,
             e.student_number,
@@ -291,6 +291,7 @@ with
                 'Calculus',
                 'Algebra I / Algebra II'
             )
+            -- had to add this due to miscoded courses
             and not is_dual_enrollment
 
         union all
@@ -344,13 +345,13 @@ with
         group by all
     )
 
--- DSED-2 and ATHL dups may be present because of students changing schools/gl midyear
+-- DSED-2 and ATHL
 select
     _dbt_source_relation,
     academic_year,
     region,
     schoolid,
-    school_abbreviation,
+    school,
 
     studentid,
     student_number,
@@ -371,7 +372,7 @@ select
     exitdate,
     enroll_status,
     is_enrolled_oct01,
-    is_last_day_enrolled,
+    is_enrolled_recent,
     is_retained_year,
     rn_year,
 
@@ -404,14 +405,13 @@ where crdc_question_section in ('DSED-2', 'ATHL-3', 'ARRS-1', 'ARRS-2', 'ARRS-3'
 
 union all
 
--- ENRL-1, 2a,2b, 3, and 4;and RETN. dups may be present because of
--- students changing schools or grade level midyear
+-- ENRL-1, 2a,2b, 3, and 4;and RETN
 select
     _dbt_source_relation,
     academic_year,
     region,
     schoolid,
-    school_abbreviation,
+    school,
 
     studentid,
     student_number,
@@ -432,7 +432,7 @@ select
     exitdate,
     enroll_status,
     is_enrolled_oct01,
-    is_last_day_enrolled,
+    is_enrolled_recent,
     is_retained_year,
     rn_year,
 
@@ -463,7 +463,7 @@ select
     e.academic_year,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
 
     e.studentid,
     e.student_number,
@@ -484,7 +484,7 @@ select
     e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
-    e.is_last_day_enrolled,
+    e.is_enrolled_recent,
     e.is_retained_year,
     e.rn_year,
 
@@ -521,7 +521,7 @@ select
     e.academic_year,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
 
     e.studentid,
     e.student_number,
@@ -542,7 +542,7 @@ select
     e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
-    e.is_last_day_enrolled,
+    e.is_enrolled_recent,
     e.is_retained_year,
     e.rn_year,
 
@@ -579,7 +579,7 @@ select
     e.academic_year,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
 
     e.studentid,
     e.student_number,
@@ -600,7 +600,7 @@ select
     e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
-    e.is_last_day_enrolled,
+    e.is_enrolled_recent,
     e.is_retained_year,
     e.rn_year,
 
@@ -637,7 +637,7 @@ select
     e.academic_year,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
 
     e.studentid,
     e.student_number,
@@ -658,7 +658,7 @@ select
     e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
-    e.is_last_day_enrolled,
+    e.is_enrolled_recent,
     e.is_retained_year,
     e.rn_year,
 
@@ -695,7 +695,7 @@ select
     e.academic_year,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
 
     e.studentid,
     e.student_number,
@@ -716,7 +716,7 @@ select
     e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
-    e.is_last_day_enrolled,
+    e.is_enrolled_recent,
     e.is_retained_year,
     e.rn_year,
 
@@ -753,7 +753,7 @@ select
     e.academic_year,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
 
     e.studentid,
     e.student_number,
@@ -774,7 +774,7 @@ select
     e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
-    e.is_last_day_enrolled,
+    e.is_enrolled_recent,
     e.is_retained_year,
     e.rn_year,
 
@@ -812,7 +812,7 @@ select
     e.academic_year,
     e.region,
     e.schoolid,
-    e.school_abbreviation,
+    e.school,
 
     e.studentid,
     e.student_number,
@@ -833,7 +833,7 @@ select
     e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
-    e.is_last_day_enrolled,
+    e.is_enrolled_recent,
     e.is_retained_year,
     e.rn_year,
 
