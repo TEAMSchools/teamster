@@ -26,8 +26,6 @@ with
             e.studentid,
             e.student_number,
             e.grade_level,
-            e.entrydate,
-            e.exitdate,
             e.enroll_status,
 
             e.rn_year,
@@ -39,9 +37,10 @@ with
             e.gifted_and_talented,
             e.is_504,
             e.lep_status,
+            e.iep_status,
 
             -- need this to join to act/sat scores
-            adb.contact_id,
+            e.salesforce_id,
 
             -- tag the manual entry for student numbers on the crdc student crosswalk
             -- g-sheet feed
@@ -80,8 +79,6 @@ with
             -- question tag
             if(me.student_number is null, false, true) as crdc_question_section_status,
 
-            if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
-
             if(e.spedlep like 'SPED%' and not is_504, true, false) as iep_only,
 
             if(e.spedlep like 'SPED%' and is_504, true, false) as iep_and_c504,
@@ -90,10 +87,7 @@ with
 
             if(lep.liep_parent_refusal_date is null, false, true) as lep_parent_refusal,
 
-        from {{ ref("base_powerschool__student_enrollments") }} as e
-        left join
-            {{ ref("int_kippadb__roster") }} as adb
-            on e.student_number = adb.student_number
+        from {{ ref("int_extracts__student_enrollments") }} as e
         left join retained as r on e.student_number = r.student_number
         left join
             {{ ref("stg_crdc__student_numbers") }} as me
