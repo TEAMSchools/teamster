@@ -2,14 +2,13 @@ with
     retained as (
         -- reason for distinct: for students with multiple enrollments
         select student_number, is_retained_year,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_extracts__student_enrollments") }}
         where
             -- submission is always for the previous school year, but retention is
             -- tracked only on the submission year + 1 (current academic year)
             academic_year = {{ var("current_academic_year") }}
             and grade_level != 99
             and is_retained_year
-            and rn_year = 1
             -- miami does their own submission
             and region != 'Miami'
     ),
@@ -28,7 +27,6 @@ with
             e.grade_level,
             e.enroll_status,
 
-            e.rn_year,
             e.is_enrolled_oct01,
             e.is_enrolled_recent,
 
@@ -79,11 +77,11 @@ with
             -- question tag
             if(me.student_number is null, false, true) as crdc_question_section_status,
 
-            if(e.spedlep like 'SPED%' and not is_504, true, false) as iep_only,
+            if(e.iep_status = 'Has IEP' and not is_504, true, false) as iep_only,
 
-            if(e.spedlep like 'SPED%' and is_504, true, false) as iep_and_c504,
+            if(e.iep_status = 'Has IEP' and is_504, true, false) as iep_and_c504,
 
-            if(e.spedlep not like 'SPED%' and is_504, true, false) as c504_only,
+            if(e.iep_status = 'Has IEP' and is_504, true, false) as c504_only,
 
             if(lep.liep_parent_refusal_date is null, false, true) as lep_parent_refusal,
 
@@ -355,7 +353,7 @@ select
 
     studentid,
     student_number,
-    contact_id,
+    salesforce_id,
     grade_level,
     gender,
     ethnicity,
@@ -368,13 +366,10 @@ select
     lep_status,
     lep_parent_refusal,
 
-    entrydate,
-    exitdate,
     enroll_status,
     is_enrolled_oct01,
     is_enrolled_recent,
     is_retained_year,
-    rn_year,
 
     crdc_demographic,
     crdc_gender,
@@ -415,7 +410,7 @@ select
 
     studentid,
     student_number,
-    contact_id,
+    salesforce_id,
     grade_level,
     gender,
     ethnicity,
@@ -428,13 +423,10 @@ select
     lep_status,
     lep_parent_refusal,
 
-    entrydate,
-    exitdate,
     enroll_status,
     is_enrolled_oct01,
     is_enrolled_recent,
     is_retained_year,
-    rn_year,
 
     crdc_demographic,
     crdc_gender,
@@ -467,7 +459,7 @@ select
 
     e.studentid,
     e.student_number,
-    e.contact_id,
+    e.salesforce_id,
     e.grade_level,
     e.gender,
     e.ethnicity,
@@ -480,13 +472,10 @@ select
     e.lep_status,
     e.lep_parent_refusal,
 
-    e.entrydate,
-    e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
     e.is_enrolled_recent,
     e.is_retained_year,
-    e.rn_year,
 
     e.crdc_demographic,
     e.crdc_gender,
@@ -525,7 +514,7 @@ select
 
     e.studentid,
     e.student_number,
-    e.contact_id,
+    e.salesforce_id,
     e.grade_level,
     e.gender,
     e.ethnicity,
@@ -538,13 +527,10 @@ select
     e.lep_status,
     e.lep_parent_refusal,
 
-    e.entrydate,
-    e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
     e.is_enrolled_recent,
     e.is_retained_year,
-    e.rn_year,
 
     e.crdc_demographic,
     e.crdc_gender,
@@ -583,7 +569,7 @@ select
 
     e.studentid,
     e.student_number,
-    e.contact_id,
+    e.salesforce_id,
     e.grade_level,
     e.gender,
     e.ethnicity,
@@ -596,13 +582,10 @@ select
     e.lep_status,
     e.lep_parent_refusal,
 
-    e.entrydate,
-    e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
     e.is_enrolled_recent,
     e.is_retained_year,
-    e.rn_year,
 
     e.crdc_demographic,
     e.crdc_gender,
@@ -641,7 +624,7 @@ select
 
     e.studentid,
     e.student_number,
-    e.contact_id,
+    e.salesforce_id,
     e.grade_level,
     e.gender,
     e.ethnicity,
@@ -654,13 +637,10 @@ select
     e.lep_status,
     e.lep_parent_refusal,
 
-    e.entrydate,
-    e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
     e.is_enrolled_recent,
     e.is_retained_year,
-    e.rn_year,
 
     e.crdc_demographic,
     e.crdc_gender,
@@ -699,7 +679,7 @@ select
 
     e.studentid,
     e.student_number,
-    e.contact_id,
+    e.salesforce_id,
     e.grade_level,
     e.gender,
     e.ethnicity,
@@ -712,13 +692,10 @@ select
     e.lep_status,
     e.lep_parent_refusal,
 
-    e.entrydate,
-    e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
     e.is_enrolled_recent,
     e.is_retained_year,
-    e.rn_year,
 
     e.crdc_demographic,
     e.crdc_gender,
@@ -757,7 +734,7 @@ select
 
     e.studentid,
     e.student_number,
-    e.contact_id,
+    e.salesforce_id,
     e.grade_level,
     e.gender,
     e.ethnicity,
@@ -770,13 +747,10 @@ select
     e.lep_status,
     e.lep_parent_refusal,
 
-    e.entrydate,
-    e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
     e.is_enrolled_recent,
     e.is_retained_year,
-    e.rn_year,
 
     e.crdc_demographic,
     e.crdc_gender,
@@ -816,7 +790,7 @@ select
 
     e.studentid,
     e.student_number,
-    e.contact_id,
+    e.salesforce_id,
     e.grade_level,
     e.gender,
     e.ethnicity,
@@ -829,13 +803,10 @@ select
     e.lep_status,
     e.lep_parent_refusal,
 
-    e.entrydate,
-    e.exitdate,
     e.enroll_status,
     e.is_enrolled_oct01,
     e.is_enrolled_recent,
     e.is_retained_year,
-    e.rn_year,
 
     e.crdc_demographic,
     e.crdc_gender,
@@ -854,7 +825,7 @@ select
     'ACT/SAT' as crdc_question_description,
 
 from enrollment as e
-inner join act_sat as a on e.contact_id = a.contact
+inner join act_sat as a on e.salesforce_id = a.contact
 where
     -- timeframe is school year + summer
     e.grade_level >= 9
