@@ -104,6 +104,8 @@ with
 
     psat_official as (
         select
+            'PSAT' as scope,
+
             case
                 course_discipline when 'ENG' then 'ELA' when 'MATH' then 'Math'
             end as course_discipline,
@@ -125,9 +127,12 @@ with
 
     psat_rollup as (
         select
-            local_student_id, course_discipline, max(met_pathway_requirement) as psat,
+            local_student_id,
+            scope,
+            course_discipline,
+            max(met_pathway_requirement) as psat,
         from psat_official
-        group by local_student_id, course_discipline
+        group by local_student_id, course_discipline, scope
     ),
 
     njgpa as (
