@@ -32,6 +32,7 @@ with
 
             e.rn_year,
             e.is_enrolled_oct01,
+            e.is_enrolled_recent,
 
             e.gender,
             e.ethnicity,
@@ -78,10 +79,6 @@ with
             -- bring over the manual entry student numbers that match the crdc
             -- question tag
             if(me.student_number is null, false, true) as crdc_question_section_status,
-
-            if(
-                e.exitdate = date(e.academic_year + 1, 06, 30), true, false
-            ) as is_last_day_enrolled,
 
             if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
