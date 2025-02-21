@@ -1,0 +1,4598 @@
+version: 2
+models:
+  - name: stg_powerschool__assignmentcategoryassoc
+    columns:
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_date
+        data_type: date
+      - name: _dagster_partition_hour
+        data_type: int64
+      - name: _dagster_partition_minute
+        data_type: int64
+      - name: assignmentcategoryassocid
+        data_type: int64
+      - name: assignmentsectionid
+        data_type: int64
+      - name: teachercategoryid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: isprimary
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+  - name: stg_powerschool__assignmentscore
+    columns:
+      - name: actualscoreentered
+        data_type: string
+      - name: actualscorekind
+        data_type: string
+      - name: scorelettergrade
+        data_type: string
+      - name: scoreentrydate
+        data_type: timestamp
+      - name: altalphagrade
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_date
+        data_type: date
+      - name: _dagster_partition_hour
+        data_type: int64
+      - name: _dagster_partition_minute
+        data_type: int64
+      - name: actualscoregradescaledcid
+        data_type: int64
+      - name: altscoregradescaledcid
+        data_type: int64
+      - name: assignmentscoreid
+        data_type: int64
+      - name: assignmentsectionid
+        data_type: int64
+      - name: authoredbyuc
+        data_type: int64
+      - name: hasretake
+        data_type: int64
+      - name: isabsent
+        data_type: int64
+      - name: iscollected
+        data_type: int64
+      - name: isexempt
+        data_type: int64
+      - name: isincomplete
+        data_type: int64
+      - name: islate
+        data_type: int64
+      - name: ismissing
+        data_type: int64
+      - name: scoregradescaledcid
+        data_type: int64
+      - name: studentsdcid
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: altnumericgrade
+        data_type: numeric
+      - name: scorenumericgrade
+        data_type: numeric
+      - name: scorepercent
+        data_type: numeric
+      - name: scorepoints
+        data_type: float64
+  - name: stg_powerschool__assignmentsection
+    columns:
+      - name: name
+        data_type: string
+      - name: duedate
+        data_type: date
+      - name: description
+        data_type: string
+      - name: scoretype
+        data_type: string
+      - name: publishoption
+        data_type: string
+      - name: publishonspecificdate
+        data_type: date
+      - name: publisheddate
+        data_type: date
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_date
+        data_type: date
+      - name: _dagster_partition_hour
+        data_type: int64
+      - name: _dagster_partition_minute
+        data_type: int64
+      - name: assignmentid
+        data_type: int64
+      - name: assignmentsectionid
+        data_type: int64
+      - name: extracreditpoints
+        data_type: numeric
+      - name: iscountedinfinalgrade
+        data_type: int64
+      - name: isscorespublish
+        data_type: int64
+      - name: isscoringneeded
+        data_type: int64
+      - name: maxretakeallowed
+        data_type: int64
+      - name: publishdaysbeforedue
+        data_type: int64
+      - name: publishedscoretypeid
+        data_type: int64
+      - name: relatedgradescaleitemdcid
+        data_type: int64
+      - name: sectionsdcid
+        data_type: int64
+      - name: weight
+        data_type: numeric
+      - name: whomodifiedid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: scoreentrypoints
+        data_type: float64
+      - name: totalpointvalue
+        data_type: float64
+  - name: stg_powerschool__attendance
+    columns:
+      - name: att_mode_code
+        data_type: string
+      - name: att_comment
+        data_type: string
+      - name: prog_crse_type
+        data_type: string
+      - name: transaction_type
+        data_type: string
+      - name: att_date
+        data_type: date
+      - name: psguid
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_date
+        data_type: date
+      - name: _dagster_partition_hour
+        data_type: int64
+      - name: _dagster_partition_minute
+        data_type: int64
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: attendance_codeid
+        data_type: int64
+      - name: calendar_dayid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: ccid
+        data_type: int64
+      - name: periodid
+        data_type: int64
+      - name: parent_attendanceid
+        data_type: int64
+      - name: att_interval
+        data_type: int64
+      - name: lock_teacher_yn
+        data_type: int64
+      - name: lock_reporting_yn
+        data_type: int64
+      - name: total_minutes
+        data_type: int64
+      - name: ada_value_code
+        data_type: float64
+      - name: ada_value_time
+        data_type: float64
+      - name: adm_value
+        data_type: float64
+      - name: programid
+        data_type: int64
+      - name: att_flags
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+  - name: stg_powerschool__attendance_code
+    columns:
+      - name: att_code
+        data_type: string
+      - name: alternate_code
+        data_type: string
+      - name: description
+        data_type: string
+      - name: presence_status_cd
+        data_type: string
+      - name: unused1
+        data_type: string
+      - name: attendancecodeinfo_guid
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: lock_teacher_yn
+        data_type: record
+      - name: lock_teacher_yn.int_value
+        data_type: int64
+      - name: lock_teacher_yn.double_value
+        data_type: float64
+      - name: lock_teacher_yn.bytes_decimal_value
+        data_type: numeric
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: course_credit_points
+        data_type: float64
+      - name: assignment_filter_yn
+        data_type: int64
+      - name: calculate_ada_yn
+        data_type: int64
+      - name: calculate_adm_yn
+        data_type: int64
+      - name: sortorder
+        data_type: int64
+  - name: stg_powerschool__attendance_conversion_items
+    columns:
+      - name: comment_value
+        data_type: string
+      - name: conversion_mode_code
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: attendance_conversion_id
+        data_type: int64
+      - name: input_value
+        data_type: int64
+      - name: attendance_value
+        data_type: float64
+      - name: fteid
+        data_type: int64
+      - name: unused
+        data_type: int64
+      - name: daypartid
+        data_type: int64
+  - name: stg_powerschool__bell_schedule
+    columns:
+      - name: name
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: year_id
+        data_type: int64
+      - name: attendance_conversion_id
+        data_type: int64
+  - name: stg_powerschool__calendar_day
+    columns:
+      - name: date_value
+        data_type: date
+      - name: scheduleid
+        data_type: string
+      - name: note
+        data_type: string
+      - name: type
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: a
+        data_type: int64
+      - name: b
+        data_type: int64
+      - name: c
+        data_type: int64
+      - name: d
+        data_type: int64
+      - name: e
+        data_type: int64
+      - name: f
+        data_type: int64
+      - name: insession
+        data_type: int64
+      - name: membershipvalue
+        data_type: float64
+      - name: cycle_day_id
+        data_type: int64
+      - name: bell_schedule_id
+        data_type: int64
+      - name: week_num
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: week_start_date
+        data_type: date
+      - name: week_end_date
+        data_type: date
+  - name: stg_powerschool__cc
+    columns:
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: sectionid
+        data_type: int64
+      - name: section_number
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: studyear
+        data_type: int64
+      - name: termid
+        data_type: int64
+      - name: dateenrolled
+        data_type: date
+      - name: dateleft
+        data_type: date
+      - name: course_number
+        data_type: string
+      - name: teacherid
+        data_type: int64
+      - name: currentabsences
+        data_type: int64
+      - name: currenttardies
+        data_type: int64
+      - name: abs_termid
+        data_type: int64
+      - name: abs_sectionid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: fiscal_year
+        data_type: int64
+  - name: stg_powerschool__codeset
+    columns:
+      - name: codetype
+        data_type: string
+      - name: code
+        data_type: string
+      - name: displayvalue
+        data_type: string
+      - name: description
+        data_type: string
+      - name: codeorigin
+        data_type: string
+      - name: reportedvalue
+        data_type: string
+      - name: alternatecode1
+        data_type: string
+      - name: alternatecode2
+        data_type: string
+      - name: effectivestartdate
+        data_type: date
+      - name: effectiveenddate
+        data_type: date
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: originalcodetype
+        data_type: string
+      - name: changevalidation
+        data_type: string
+      - name: codesetid
+        data_type: int64
+      - name: parentcodesetid
+        data_type: int64
+      - name: uidisplayorder
+        data_type: int64
+      - name: isvisible
+        data_type: int64
+      - name: ismodifiable
+        data_type: int64
+      - name: isdeletable
+        data_type: int64
+      - name: excludefromstatereporting
+        data_type: int64
+  - name: stg_powerschool__courses
+    columns:
+      - name: course_number
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: code
+        data_type: string
+      - name: prerequisitesvalue
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: corequisites
+        data_type: string
+      - name: powerlink
+        data_type: string
+      - name: powerlinkspan
+        data_type: string
+      - name: reggradelevels
+        data_type: string
+      - name: regteachers
+        data_type: string
+      - name: regcoursegroup
+        data_type: string
+      - name: multiterm
+        data_type: string
+      - name: termsoffered
+        data_type: string
+      - name: credittype
+        data_type: string
+      - name: sched_department
+        data_type: string
+      - name: sched_coursesubjectareacode
+        data_type: string
+      - name: sched_fullcatalogdescription
+        data_type: string
+      - name: sched_coursepkgcontents
+        data_type: string
+      - name: sched_scheduletypecode
+        data_type: string
+      - name: sched_validstartperiods
+        data_type: string
+      - name: sched_validdaycombinations
+        data_type: string
+      - name: validextradaycombinations
+        data_type: string
+      - name: sched_extradayscheduletypecode
+        data_type: string
+      - name: sched_facilities
+        data_type: string
+      - name: sched_loadtype
+        data_type: string
+      - name: sched_globalsubstitution1
+        data_type: string
+      - name: sched_globalsubstitution2
+        data_type: string
+      - name: sched_globalsubstitution3
+        data_type: string
+      - name: sched_balancepriority
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: credit_hours
+        data_type: float64
+      - name: add_to_gpa
+        data_type: float64
+      - name: schoolid
+        data_type: int64
+      - name: regavailable
+        data_type: int64
+      - name: targetclasssize
+        data_type: int64
+      - name: maxclasssize
+        data_type: int64
+      - name: sectionstooffer
+        data_type: int64
+      - name: schoolgroup
+        data_type: int64
+      - name: vocational
+        data_type: int64
+      - name: status
+        data_type: int64
+      - name: crhrweight
+        data_type: float64
+      - name: sched_year
+        data_type: int64
+      - name: sched_coursepackage
+        data_type: int64
+      - name: sched_scheduled
+        data_type: int64
+      - name: sched_sectionsoffered
+        data_type: int64
+      - name: sched_teachercount
+        data_type: int64
+      - name: sched_periodspermeeting
+        data_type: int64
+      - name: sched_frequency
+        data_type: int64
+      - name: sched_maximumperiodsperday
+        data_type: int64
+      - name: sched_minimumperiodsperday
+        data_type: int64
+      - name: sched_maximumdayspercycle
+        data_type: int64
+      - name: sched_minimumdayspercycle
+        data_type: int64
+      - name: sched_consecutiveperiods
+        data_type: int64
+      - name: sched_blockstart
+        data_type: int64
+      - name: sched_lengthinnumberofterms
+        data_type: int64
+      - name: sched_consecutiveterms
+        data_type: int64
+      - name: sched_balanceterms
+        data_type: int64
+      - name: sched_maximumenrollment
+        data_type: int64
+      - name: sched_concurrentflag
+        data_type: int64
+      - name: sched_multiplerooms
+        data_type: int64
+      - name: sched_labflag
+        data_type: int64
+      - name: sched_labfrequency
+        data_type: int64
+      - name: sched_labperiodspermeeting
+        data_type: int64
+      - name: sched_repeatsallowed
+        data_type: int64
+      - name: sched_loadpriority
+        data_type: int64
+      - name: sched_substitutionallowed
+        data_type: int64
+      - name: sched_usepreestablishedteams
+        data_type: int64
+      - name: sched_closesectionaftermax
+        data_type: int64
+      - name: sched_usesectiontypes
+        data_type: int64
+      - name: sched_periodspercycle
+        data_type: int64
+      - name: gradescaleid
+        data_type: int64
+      - name: gpa_addedvalue
+        data_type: float64
+      - name: excludefromgpa
+        data_type: int64
+      - name: excludefromclassrank
+        data_type: int64
+      - name: excludefromhonorroll
+        data_type: int64
+      - name: sched_lunchcourse
+        data_type: int64
+      - name: sched_do_not_print
+        data_type: int64
+      - name: exclude_ada
+        data_type: int64
+      - name: programid
+        data_type: int64
+      - name: excludefromstoredgrades
+        data_type: int64
+      - name: maxcredit
+        data_type: float64
+      - name: iscareertech
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: isfitnesscourse
+        data_type: int64
+      - name: ispewaiver
+        data_type: int64
+  - name: stg_powerschool__cycle_day
+    columns:
+      - name: letter
+        data_type: string
+      - name: abbreviation
+        data_type: string
+      - name: day_name
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: year_id
+        data_type: int64
+      - name: day_number
+        data_type: int64
+      - name: sortorder
+        data_type: int64
+  - name: stg_powerschool__districtteachercategory
+    columns:
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: color
+        data_type: string
+      - name: defaultpublishstate
+        data_type: string
+      - name: defaultpublishoption
+        data_type: string
+      - name: defaultscoretype
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: districtteachercategoryid
+        data_type: int64
+      - name: isinfinalgrades
+        data_type: int64
+      - name: isactive
+        data_type: int64
+      - name: isusermodifiable
+        data_type: int64
+      - name: displayposition
+        data_type: int64
+      - name: defaultscoreentrypoints
+        data_type: numeric
+      - name: defaultextracreditpoints
+        data_type: numeric
+      - name: defaultweight
+        data_type: numeric
+      - name: defaulttotalvalue
+        data_type: numeric
+      - name: isdefaultpublishscores
+        data_type: int64
+      - name: defaultdaysbeforedue
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+  - name: stg_powerschool__emailaddress
+    columns:
+      - name: emailaddress
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: emailaddressid
+        data_type: int64
+  - name: stg_powerschool__fte
+    columns:
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: dflt_att_mode_code
+        data_type: string
+      - name: dflt_conversion_mode_code
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: fte_value
+        data_type: float64
+  - name: stg_powerschool__gen
+    columns:
+      - name: cat
+        data_type: string
+      - name: name
+        data_type: string
+      - name: value
+        data_type: string
+      - name: valuet
+        data_type: string
+      - name: value2
+        data_type: string
+      - name: valuet2
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: powerlink
+        data_type: string
+      - name: powerlinkspan
+        data_type: string
+      - name: date_value
+        data_type: date
+      - name: date2
+        data_type: date
+      - name: log
+        data_type: string
+      - name: value_x
+        data_type: bytes
+      - name: psguid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: valueli
+        data_type: int64
+      - name: valueli2
+        data_type: int64
+      - name: valuer
+        data_type: float64
+      - name: sortorder
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: valueli3
+        data_type: int64
+      - name: valuer2
+        data_type: float64
+      - name: time1
+        data_type: int64
+      - name: time2
+        data_type: int64
+      - name: spedindicator
+        data_type: int64
+      - name: valueli4
+        data_type: int64
+      - name: yearid
+        data_type: int64
+  - name: stg_powerschool__gpnode
+    columns:
+      - name: name
+        data_type: string
+      - name: minimumgrade
+        data_type: string
+      - name: gpamethod
+        data_type: string
+      - name: minimumgpa
+        data_type: record
+      - name: minimumgpa.int_value
+        data_type: int64
+      - name: minimumgpa.double_value
+        data_type: float64
+      - name: minimumgpa.bytes_decimal_value
+        data_type: numeric
+      - name: minimumgradepercentage
+        data_type: record
+      - name: minimumgradepercentage.int_value
+        data_type: int64
+      - name: minimumgradepercentage.double_value
+        data_type: float64
+      - name: minimumgradepercentage.bytes_decimal_value
+        data_type: numeric
+      - name: requirementcount
+        data_type: record
+      - name: requirementcount.int_value
+        data_type: int64
+      - name: requirementcount.double_value
+        data_type: float64
+      - name: requirementcount.bytes_decimal_value
+        data_type: numeric
+      - name: verifyminimumgradefirst
+        data_type: record
+      - name: verifyminimumgradefirst.int_value
+        data_type: int64
+      - name: verifyminimumgradefirst.double_value
+        data_type: float64
+      - name: verifyminimumgradefirst.bytes_decimal_value
+        data_type: numeric
+      - name: allowanyof
+        data_type: int64
+      - name: allowwaiver
+        data_type: int64
+      - name: altcompletioncount
+        data_type: int64
+      - name: completioncount
+        data_type: int64
+      - name: gpversionid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: ishidden
+        data_type: int64
+      - name: issinglesitting
+        data_type: int64
+      - name: issummation
+        data_type: int64
+      - name: nodetype
+        data_type: int64
+      - name: sortorder
+        data_type: int64
+      - name: creditcapacity
+        data_type: float64
+      - name: parentid
+        data_type: int64
+  - name: stg_powerschool__gpprogresssubject
+    columns:
+      - name: isgroupsatisfied
+        data_type: record
+      - name: isgroupsatisfied.int_value
+        data_type: int64
+      - name: isgroupsatisfied.double_value
+        data_type: float64
+      - name: isgroupsatisfied.bytes_decimal_value
+        data_type: numeric
+      - name: istestgroupwaived
+        data_type: record
+      - name: istestgroupwaived.int_value
+        data_type: int64
+      - name: istestgroupwaived.double_value
+        data_type: float64
+      - name: istestgroupwaived.bytes_decimal_value
+        data_type: numeric
+      - name: mingpamet
+        data_type: record
+      - name: mingpamet.int_value
+        data_type: int64
+      - name: mingpamet.double_value
+        data_type: float64
+      - name: mingpamet.bytes_decimal_value
+        data_type: numeric
+      - name: nodegpa
+        data_type: record
+      - name: nodegpa.int_value
+        data_type: int64
+      - name: nodegpa.double_value
+        data_type: float64
+      - name: nodegpa.bytes_decimal_value
+        data_type: numeric
+      - name: testnodepassed
+        data_type: record
+      - name: testnodepassed.int_value
+        data_type: int64
+      - name: testnodepassed.double_value
+        data_type: float64
+      - name: testnodepassed.bytes_decimal_value
+        data_type: numeric
+      - name: appliedwaivedcredits
+        data_type: float64
+      - name: earnedcredits
+        data_type: float64
+      - name: enrolledcredits
+        data_type: float64
+      - name: gpnodeid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: isadvancedplan
+        data_type: int64
+      - name: issinglesitting
+        data_type: int64
+      - name: issummation
+        data_type: int64
+      - name: nodetype
+        data_type: int64
+      - name: requestedcredits
+        data_type: float64
+      - name: requiredcredits
+        data_type: float64
+      - name: studentsdcid
+        data_type: int64
+      - name: waivedcredits
+        data_type: float64
+  - name: stg_powerschool__gpprogresssubjectwaived
+    columns:
+      - name: gpprogresssubjectid
+        data_type: int64
+      - name: gpstudentwaiverid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: waivedcredits
+        data_type: float64
+  - name: stg_powerschool__gpstudentwaiver
+    columns:
+      - name: authorizedby
+        data_type: string
+      - name: waiveddate
+        data_type: timestamp
+      - name: gpwaiverconfigidforsource
+        data_type: record
+      - name: gpwaiverconfigidforsource.int_value
+        data_type: int64
+      - name: gpwaiverconfigidforsource.double_value
+        data_type: float64
+      - name: gpwaiverconfigidforsource.bytes_decimal_value
+        data_type: numeric
+      - name: gpwaiverconfigidforreason
+        data_type: record
+      - name: gpwaiverconfigidforreason.int_value
+        data_type: int64
+      - name: gpwaiverconfigidforreason.double_value
+        data_type: float64
+      - name: gpwaiverconfigidforreason.bytes_decimal_value
+        data_type: numeric
+      - name: id
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: gpnodeidforwaived
+        data_type: int64
+      - name: gpnodeidforelective
+        data_type: int64
+      - name: gpwaiverconfigidfortype
+        data_type: int64
+      - name: credithourswaived
+        data_type: float64
+  - name: stg_powerschool__gpversion
+    columns:
+      - name: gpamethod
+        data_type: string
+      - name: minimumgrade
+        data_type: string
+      - name: minimumgpa
+        data_type: record
+      - name: minimumgpa.int_value
+        data_type: int64
+      - name: minimumgpa.double_value
+        data_type: float64
+      - name: minimumgpa.bytes_decimal_value
+        data_type: numeric
+      - name: sourceid
+        data_type: record
+      - name: sourceid.int_value
+        data_type: int64
+      - name: sourceid.double_value
+        data_type: float64
+      - name: sourceid.bytes_decimal_value
+        data_type: numeric
+      - name: useallcoursesforgpacalc
+        data_type: record
+      - name: useallcoursesforgpacalc.int_value
+        data_type: int64
+      - name: useallcoursesforgpacalc.double_value
+        data_type: float64
+      - name: useallcoursesforgpacalc.bytes_decimal_value
+        data_type: numeric
+      - name: id
+        data_type: int64
+      - name: gradplanid
+        data_type: int64
+      - name: startyear
+        data_type: int64
+      - name: endyear
+        data_type: int64
+      - name: minimumgradepercentage
+        data_type: float64
+      - name: verifyminimumgradefirst
+        data_type: int64
+      - name: isadvancedplan
+        data_type: int64
+  - name: stg_powerschool__gradecalcformulaweight
+    columns:
+      - name: storecode
+        data_type: string
+      - name: type
+        data_type: string
+      - name: stndcalculationmetric
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: gradecalcformulaweightid
+        data_type: int64
+      - name: gradecalculationtypeid
+        data_type: int64
+      - name: teachercategoryid
+        data_type: int64
+      - name: districtteachercategoryid
+        data_type: int64
+      - name: assignmentid
+        data_type: int64
+      - name: weight
+        data_type: numeric
+  - name: stg_powerschool__gradecalcschoolassoc
+    columns:
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: gradecalcschoolassocid
+        data_type: int64
+      - name: gradecalculationtypeid
+        data_type: int64
+      - name: schoolsdcid
+        data_type: int64
+  - name: stg_powerschool__gradecalculationtype
+    columns:
+      - name: abbreviation
+        data_type: string
+      - name: storecode
+        data_type: string
+      - name: type
+        data_type: string
+      - name: droplowscoreoption
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: gradecalculationtypeid
+        data_type: int64
+      - name: gradeformulasetid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: isnograde
+        data_type: int64
+      - name: isdroplowstudentfavor
+        data_type: int64
+      - name: isalternatepointsused
+        data_type: int64
+      - name: iscalcformulaeditable
+        data_type: int64
+      - name: isdropscoreeditable
+        data_type: int64
+  - name: stg_powerschool__gradeformulaset
+    columns:
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: type
+        data_type: string
+      - name: gradeformulasetid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: iscoursegradecalculated
+        data_type: int64
+      - name: isreporttermsetupsame
+        data_type: int64
+      - name: sectionsdcid
+        data_type: int64
+  - name: stg_powerschool__gradescaleitem
+    columns:
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: gradescaletype
+        data_type: string
+      - name: color
+        data_type: string
+      - name: numericextras
+        data_type: string
+      - name: conversiontonumeric
+        data_type: string
+      - name: altfinalnumericrange
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: numericmode
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: gradescaleid
+        data_type: int64
+      - name: isforcoursegrade
+        data_type: int64
+      - name: isforstandards
+        data_type: int64
+      - name: isgpashown
+        data_type: int64
+      - name: countsingpa
+        data_type: int64
+      - name: displayposition
+        data_type: int64
+      - name: grade_points
+        data_type: float64
+      - name: addedvalue
+        data_type: int64
+      - name: graduationcredit
+        data_type: int64
+      - name: teacherscale
+        data_type: int64
+      - name: cutoffpercentage
+        data_type: float64
+      - name: value
+        data_type: int64
+      - name: colorlevels
+        data_type: int64
+      - name: isproficient
+        data_type: int64
+      - name: isscorecodeonassignments
+        data_type: int64
+      - name: modify_code
+        data_type: int64
+      - name: numericmin
+        data_type: int64
+      - name: numericmax
+        data_type: int64
+      - name: numericdecimals
+        data_type: int64
+      - name: numericcutoff
+        data_type: numeric
+      - name: numericvalue
+        data_type: numeric
+      - name: hasspecialgrades
+        data_type: int64
+      - name: specialgradescaledcid
+        data_type: int64
+      - name: hasrelatedscales
+        data_type: int64
+      - name: altconvertgradescaledcid
+        data_type: int64
+      - name: altfinalnumericcutoff
+        data_type: numeric
+      - name: istermweightingshown
+        data_type: int64
+      - name: alt_grade_points
+        data_type: int64
+      - name: cutoffpoints
+        data_type: int64
+      - name: excludefromafg
+        data_type: int64
+      - name: grade_replacement_policy
+        data_type: int64
+      - name: parentgradescaledcid
+        data_type: int64
+  - name: stg_powerschool__gradeschoolconfig
+    columns:
+      - name: gradecalcpreferenceorder
+        data_type: string
+      - name: defaultroundingrule
+        data_type: string
+      - name: calculationmetric
+        data_type: string
+      - name: higherlevelstndmetric
+        data_type: string
+      - name: recentscoreweightlist
+        data_type: string
+      - name: calcmetricschoolfromstd
+        data_type: string
+      - name: sectionnames
+        data_type: string
+      - name: standardtraditionalorder
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: gradeschoolconfigid
+        data_type: int64
+      - name: schoolsdcid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: defaultdecimalcount
+        data_type: int64
+      - name: iscalcformulaeditable
+        data_type: int64
+      - name: isdropscoreeditable
+        data_type: int64
+      - name: iscalcprecisioneditable
+        data_type: int64
+      - name: iscalcmetriceditable
+        data_type: int64
+      - name: isrecentscoreeditable
+        data_type: int64
+      - name: ishigherstndautocalc
+        data_type: int64
+      - name: ishigherstndcalceditable
+        data_type: int64
+      - name: ishighstandardeditable
+        data_type: int64
+      - name: iscalcmetricschooledit
+        data_type: int64
+      - name: isstandardsshown
+        data_type: int64
+      - name: isstandardsshownonasgmt
+        data_type: int64
+      - name: istraditionalgradeshown
+        data_type: int64
+      - name: iscitizenshipdisplayed
+        data_type: int64
+      - name: termbinlockoffset
+        data_type: int64
+      - name: lockwarningoffset
+        data_type: int64
+      - name: issectstndweighteditable
+        data_type: int64
+      - name: minimumassignmentvalue
+        data_type: int64
+      - name: isgradescaleteachereditable
+        data_type: int64
+      - name: isstandardslimited
+        data_type: int64
+      - name: isstandardslimitededitable
+        data_type: int64
+      - name: isusingpercentforstndautocalc
+        data_type: int64
+  - name: stg_powerschool__gradeschoolformulaassoc
+    columns:
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: gradeschoolformulaassocid
+        data_type: int64
+      - name: gradeformulasetid
+        data_type: int64
+      - name: gradeschoolconfigid
+        data_type: int64
+      - name: isdefaultformulaset
+        data_type: int64
+  - name: stg_powerschool__gradesectionconfig
+    columns:
+      - name: type
+        data_type: string
+      - name: defaultroundingrule
+        data_type: string
+      - name: stndcalculationmetric
+        data_type: string
+      - name: recentscoreweightlist
+        data_type: string
+      - name: higherlevelstndmetric
+        data_type: string
+      - name: calcmetricsectionfromstnd
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: gradesectionconfigid
+        data_type: int64
+      - name: sectionsdcid
+        data_type: int64
+      - name: gradeformulasetid
+        data_type: int64
+      - name: defaultdecimalcount
+        data_type: int64
+      - name: iscalcformulaeditable
+        data_type: int64
+      - name: isdropscoreeditable
+        data_type: int64
+      - name: iscalcprecisioneditable
+        data_type: int64
+      - name: isstndcalcmeteditable
+        data_type: int64
+      - name: isstndrcntscoreeditable
+        data_type: int64
+      - name: ishigherlvlstndeditable
+        data_type: int64
+      - name: ishigherstndautocalc
+        data_type: int64
+      - name: ishigherstndcalceditable
+        data_type: int64
+      - name: iscalcsectionfromstndedit
+        data_type: int64
+      - name: issectstndweighteditable
+        data_type: int64
+      - name: minimumassignmentvalue
+        data_type: int64
+      - name: isgradescaleteachereditable
+        data_type: int64
+      - name: isusingpercentforstndautocalc
+        data_type: int64
+  - name: stg_powerschool__gradplan
+    columns:
+      - name: name
+        data_type: string
+      - name: id
+        data_type: int64
+      - name: plantype
+        data_type: int64
+  - name: stg_powerschool__log
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: logtypeid
+        data_type: int64
+      - name: entry_date
+        data_type: date
+      - name: entry
+        data_type: string
+  - name: stg_powerschool__originalcontactmap
+    columns:
+      - name: originalcontacttype
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: originalcontactmapid
+        data_type: int64
+      - name: studentcontactassocid
+        data_type: int64
+  - name: stg_powerschool__person
+    columns:
+      - name: firstname
+        data_type: string
+      - name: middlename
+        data_type: string
+      - name: lastname
+        data_type: string
+      - name: statecontactid
+        data_type: string
+      - name: employer
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: prefixcodesetid
+        data_type: int64
+      - name: suffixcodesetid
+        data_type: int64
+      - name: gendercodesetid
+        data_type: int64
+      - name: statecontactnumber
+        data_type: int64
+      - name: isactive
+        data_type: int64
+      - name: excludefromstatereporting
+        data_type: int64
+  - name: stg_powerschool__personaddress
+    columns:
+      - name: street
+        data_type: string
+      - name: linetwo
+        data_type: string
+      - name: city
+        data_type: string
+      - name: postalcode
+        data_type: string
+      - name: unit
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: personaddressid
+        data_type: int64
+      - name: statescodesetid
+        data_type: int64
+      - name: countrycodesetid
+        data_type: int64
+      - name: geocodelatitude
+        data_type: numeric
+      - name: geocodelongitude
+        data_type: numeric
+  - name: stg_powerschool__personaddressassoc
+    columns:
+      - name: startdate
+        data_type: date
+      - name: enddate
+        data_type: date
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: personaddressassocid
+        data_type: int64
+      - name: personid
+        data_type: int64
+      - name: personaddressid
+        data_type: int64
+      - name: addresstypecodesetid
+        data_type: int64
+      - name: addresspriorityorder
+        data_type: int64
+  - name: stg_powerschool__personemailaddressassoc
+    columns:
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: personemailaddressassocid
+        data_type: int64
+      - name: personid
+        data_type: int64
+      - name: emailaddressid
+        data_type: int64
+      - name: emailtypecodesetid
+        data_type: int64
+      - name: isprimaryemailaddress
+        data_type: int64
+      - name: emailaddresspriorityorder
+        data_type: int64
+  - name: stg_powerschool__personphonenumberassoc
+    columns:
+      - name: phonenumberasentered
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: personphonenumberassocid
+        data_type: int64
+      - name: personid
+        data_type: int64
+      - name: phonenumberid
+        data_type: int64
+      - name: phonetypecodesetid
+        data_type: int64
+      - name: phonenumberpriorityorder
+        data_type: int64
+      - name: ispreferred
+        data_type: int64
+  - name: stg_powerschool__pgfinalgrades
+    columns:
+      - name: finalgradename
+        data_type: string
+      - name: startdate
+        data_type: date
+      - name: enddate
+        data_type: date
+      - name: lastgradeupdate
+        data_type: date
+      - name: overridefg
+        data_type: string
+      - name: calculatedgrade
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_date
+        data_type: date
+      - name: _dagster_partition_hour
+        data_type: int64
+      - name: _dagster_partition_minute
+        data_type: int64
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: sectionid
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: points
+        data_type: float64
+      - name: pointspossible
+        data_type: float64
+      - name: varcredit
+        data_type: float64
+      - name: gradebooktype
+        data_type: int64
+      - name: calculatedpercent
+        data_type: float64
+      - name: isincomplete
+        data_type: int64
+      - name: isexempt
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: grade
+        data_type: string
+      - name: citizenship
+        data_type: string
+      - name: comment_value
+        data_type: string
+      - name: percent
+        data_type: float64
+      - name: percent_decimal
+        data_type: float64
+      - name: percent_decimal_adjusted
+        data_type: float64
+      - name: grade_adjusted
+        data_type: string
+  - name: stg_powerschool__phonenumber
+    columns:
+      - name: phonenumber
+        data_type: string
+      - name: phonenumberext
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: phonenumberid
+        data_type: int64
+      - name: issms
+        data_type: int64
+  - name: stg_powerschool__prefs
+    columns:
+      - name: name
+        data_type: string
+      - name: value
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: userid
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+  - name: stg_powerschool__reenrollments
+    columns:
+      - name: entrydate
+        data_type: date
+      - name: entrycode
+        data_type: string
+      - name: entrycomment
+        data_type: string
+      - name: exitdate
+        data_type: date
+      - name: exitcode
+        data_type: string
+      - name: exitcomment
+        data_type: string
+      - name: track
+        data_type: string
+      - name: districtofresidence
+        data_type: string
+      - name: enrollmenttype
+        data_type: string
+      - name: lunchstatus
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: withdrawal_reason_code
+        data_type: string
+      - name: studentschlenrl_guid
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: type
+        data_type: int64
+      - name: enrollmentcode
+        data_type: int64
+      - name: fulltimeequiv_obsolete
+        data_type: float64
+      - name: membershipshare
+        data_type: float64
+      - name: tuitionpayer
+        data_type: int64
+      - name: fteid
+        data_type: int64
+  - name: stg_powerschool__roledef
+    columns:
+      - name: name
+        data_type: string
+      - name: rolekey
+        data_type: string
+      - name: description
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: id
+        data_type: int64
+      - name: rolemoduleid
+        data_type: int64
+      - name: islocked
+        data_type: int64
+      - name: isvisible
+        data_type: int64
+      - name: isenabled
+        data_type: int64
+      - name: sortorder
+        data_type: int64
+  - name: stg_powerschool__s_nj_crs_x
+    columns:
+      - name: cte_test_name_code
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: block_schedule_session
+        data_type: string
+      - name: ap_course_subject
+        data_type: string
+      - name: course_level
+        data_type: string
+      - name: course_sequence_code
+        data_type: string
+      - name: course_span
+        data_type: string
+      - name: course_type
+        data_type: string
+      - name: ctecollegecredits
+        data_type: string
+      - name: ctetestdevelopercode
+        data_type: string
+      - name: ctetestname
+        data_type: string
+      - name: nces_course_id
+        data_type: string
+      - name: nces_subject_area
+        data_type: string
+      - name: county_code_override
+        data_type: string
+      - name: district_code_override
+        data_type: string
+      - name: school_code_override
+        data_type: string
+      - name: dual_institution
+        data_type: string
+      - name: coursesdcid
+        data_type: int64
+      - name: exclude_course_submission_tf
+        data_type: int64
+      - name: sla_include_tf
+        data_type: int64
+  - name: stg_powerschool__s_nj_ren_x
+    columns:
+      - name: lepbegindate
+        data_type: date
+      - name: lependdate
+        data_type: date
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: liep_type
+        data_type: string
+      - name: withdrawal_date
+        data_type: date
+      - name: alternativeeducationprogram_yn
+        data_type: string
+      - name: city
+        data_type: string
+      - name: countycodeattending
+        data_type: string
+      - name: countycodereceiving
+        data_type: string
+      - name: countycoderesident
+        data_type: string
+      - name: districtcodeattending
+        data_type: string
+      - name: districtcodereceiving
+        data_type: string
+      - name: districtcoderesident
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string
+      - name: homeless_code
+        data_type: string
+      - name: indistrictplacement
+        data_type: string
+      - name: liep_languageofinstruction
+        data_type: string
+      - name: nonpublic
+        data_type: string
+      - name: programtypecode
+        data_type: string
+      - name: residentmunicipalcode
+        data_type: string
+      - name: schoolcodeattending
+        data_type: string
+      - name: schoolcodereceiving
+        data_type: string
+      - name: schoolcoderesident
+        data_type: string
+      - name: shared_time_code
+        data_type: string
+      - name: studentslearningmodel
+        data_type: string
+      - name: titleilanguage_yn
+        data_type: string
+      - name: titleimath_yn
+        data_type: string
+      - name: titleiscience_yn
+        data_type: string
+      - name: reportedsharedvoc_yn
+        data_type: string
+      - name: schoolentrydate
+        data_type: date
+      - name: specialed_classification
+        data_type: string
+      - name: tuition_code
+        data_type: string
+      - name: deafhardofhearing_yn
+        data_type: string
+      - name: district_status_override
+        data_type: string
+      - name: districtentrydate
+        data_type: date
+      - name: gradelevelcode
+        data_type: string
+      - name: sid_entrydate
+        data_type: date
+      - name: sid_exitdate
+        data_type: date
+      - name: declassificationspeddate
+        data_type: date
+      - name: homelessinstrucservice
+        data_type: string
+      - name: homelesssupportservice
+        data_type: string
+      - name: mddisablingcondition1
+        data_type: string
+      - name: mddisablingcondition2
+        data_type: string
+      - name: mddisablingcondition3
+        data_type: string
+      - name: mddisablingcondition4
+        data_type: string
+      - name: mddisablingcondition5
+        data_type: string
+      - name: titleiindicator
+        data_type: string
+      - name: eligible_for_liep
+        data_type: string
+      - name: elp_screener_date
+        data_type: date
+      - name: home_language2
+        data_type: string
+      - name: home_language3
+        data_type: string
+      - name: home_language4
+        data_type: string
+      - name: home_language5
+        data_type: string
+      - name: home_language_name2
+        data_type: string
+      - name: home_language_name3
+        data_type: string
+      - name: home_language_name4
+        data_type: string
+      - name: home_language_name5
+        data_type: string
+      - name: lepbegindate2
+        data_type: date
+      - name: liep_parent_refusal_date
+        data_type: date
+      - name: liependdate2
+        data_type: date
+      - name: sld_basic_reading_yn
+        data_type: string
+      - name: sld_listen_comp_yn
+        data_type: string
+      - name: sld_math_cal_yn
+        data_type: string
+      - name: sld_math_prob_solve_yn
+        data_type: string
+      - name: sld_oral_expresn_yn
+        data_type: string
+      - name: sld_read_fluency_yn
+        data_type: string
+      - name: sld_reading_comp_yn
+        data_type: string
+      - name: sld_writn_exprsn_yn
+        data_type: string
+      - name: reenrollmentsdcid
+        data_type: int64
+      - name: lep_tf
+        data_type: int64
+      - name: cumulativedaysabsent
+        data_type: int64
+      - name: cumulativedayspresent
+        data_type: int64
+      - name: cumulativestateabs
+        data_type: int64
+      - name: daysopen
+        data_type: int64
+      - name: deviceowner
+        data_type: int64
+      - name: devicetype
+        data_type: int64
+      - name: homelessprimarynighttimeres
+        data_type: int64
+      - name: internetconnectivity
+        data_type: int64
+      - name: remotedaysabsent
+        data_type: int64
+      - name: remotedayspresent
+        data_type: int64
+      - name: learningenvironment
+        data_type: int64
+      - name: retained_tf
+        data_type: int64
+      - name: languageacquisition
+        data_type: int64
+      - name: lep_completion_date_refused
+        data_type: int64
+      - name: sid_excludeenrollment
+        data_type: int64
+      - name: pid_504_tf
+        data_type: boolean
+  - name: stg_powerschool__s_nj_stu_x
+    columns:
+      - name: examiner_smid
+        data_type: string
+      - name: parcc_braille_paper
+        data_type: string
+      - name: parcc_ela_test_code
+        data_type: string
+      - name: parcc_ell_paper_accom
+        data_type: string
+      - name: parcc_examiner_smid_ela
+        data_type: string
+      - name: parcc_examiner_smid_math
+        data_type: string
+      - name: parcc_exempt_from_passing
+        data_type: string
+      - name: parcc_iep_paper_accom
+        data_type: string
+      - name: parcc_large_print_paper
+        data_type: string
+      - name: parcc_math_test_code
+        data_type: string
+      - name: parcc_reader_signer_for_paper
+        data_type: string
+      - name: parcc_retest
+        data_type: string
+      - name: parcc_sec504_paper_accom
+        data_type: string
+      - name: parcc_session_location_ela
+        data_type: string
+      - name: parcc_session_location_math
+        data_type: string
+      - name: parcc_test_format
+        data_type: string
+      - name: parcc_testing_site_county
+        data_type: string
+      - name: parcc_testing_site_district
+        data_type: string
+      - name: parcc_testing_site_school
+        data_type: string
+      - name: parcc_translation_math_paper
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: asmt_alt_rep_paper
+        data_type: string
+      - name: asmt_alternate_location
+        data_type: string
+      - name: asmt_answer_masking
+        data_type: string
+      - name: asmt_answers_recorded_paper
+        data_type: string
+      - name: asmt_asl_video
+        data_type: string
+      - name: asmt_braille_response
+        data_type: string
+      - name: asmt_braille_tactile_paper
+        data_type: string
+      - name: asmt_closed_caption_ela
+        data_type: string
+      - name: asmt_color_contrast
+        data_type: string
+      - name: asmt_dictionary
+        data_type: string
+      - name: asmt_directions_aloud
+        data_type: string
+      - name: asmt_directions_clarified
+        data_type: string
+      - name: asmt_emergency_accommodation
+        data_type: string
+      - name: asmt_extended_time
+        data_type: string
+      - name: asmt_frequent_breaks
+        data_type: string
+      - name: asmt_human_signer
+        data_type: string
+      - name: asmt_humanreader_signer
+        data_type: string
+      - name: asmt_math_response
+        data_type: string
+      - name: asmt_math_response_el
+        data_type: string
+      - name: asmt_monitor_response
+        data_type: string
+      - name: asmt_non_screen_reader
+        data_type: string
+      - name: asmt_read_aloud
+        data_type: string
+      - name: asmt_refresh_braille_ela
+        data_type: string
+      - name: asmt_screen_reader
+        data_type: string
+      - name: asmt_selected_response_ela
+        data_type: string
+      - name: asmt_small_group
+        data_type: string
+      - name: asmt_special_equip
+        data_type: string
+      - name: asmt_specified_area
+        data_type: string
+      - name: asmt_text_to_speech
+        data_type: string
+      - name: asmt_time_of_day
+        data_type: string
+      - name: asmt_unique_accommodation
+        data_type: string
+      - name: asmt_word_prediction
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string
+      - name: parcc_class_name_override_ela
+        data_type: string
+      - name: parcc_class_name_override_math
+        data_type: string
+      - name: parcc_constructed_response_ela
+        data_type: string
+      - name: parcc_math_tools
+        data_type: string
+      - name: parcc_staff_smid_override_ela
+        data_type: string
+      - name: parcc_staff_smid_override_math
+        data_type: string
+      - name: parcc_student_identifier
+        data_type: string
+      - name: state_lep_status
+        data_type: string
+      - name: access_test_format_override
+        data_type: string
+      - name: access_tier_paper_tests
+        data_type: string
+      - name: alternate_access
+        data_type: string
+      - name: asmt_ac
+        data_type: string
+      - name: asmt_at
+        data_type: string
+      - name: asmt_bw
+        data_type: string
+      - name: asmt_em
+        data_type: string
+      - name: asmt_es
+        data_type: string
+      - name: asmt_et
+        data_type: string
+      - name: asmt_ih
+        data_type: string
+      - name: asmt_length_in_ell
+        data_type: string
+      - name: asmt_lh
+        data_type: string
+      - name: asmt_mc
+        data_type: string
+      - name: asmt_ns
+        data_type: string
+      - name: asmt_ra
+        data_type: string
+      - name: asmt_rd
+        data_type: string
+      - name: asmt_ri
+        data_type: string
+      - name: asmt_rl
+        data_type: string
+      - name: asmt_sd
+        data_type: string
+      - name: asmt_wd
+        data_type: string
+      - name: asmt_first_enroll_in_us_school
+        data_type: date
+      - name: calculation_device_math_tools
+        data_type: string
+      - name: math_state_assessment_name
+        data_type: string
+      - name: state_assessment_name
+        data_type: string
+      - name: state_ell_status
+        data_type: string
+      - name: parcc_text_to_speech
+        data_type: string
+      - name: annual_iep_review_meeting_date
+        data_type: date
+      - name: counseling_services_yn
+        data_type: string
+      - name: determined_ineligible_yn
+        data_type: string
+      - name: early_intervention_yn
+        data_type: string
+      - name: eligibility_determ_date
+        data_type: date
+      - name: iep_begin_date
+        data_type: date
+      - name: iep_end_date
+        data_type: date
+      - name: iep_level
+        data_type: string
+      - name: initial_iep_meeting_date
+        data_type: date
+      - name: initial_process_delay_reason
+        data_type: string
+      - name: nonpublic
+        data_type: string
+      - name: occupational_therapy_serv_yn
+        data_type: string
+      - name: other_related_services_yn
+        data_type: string
+      - name: parent_consent_intial_iep_date
+        data_type: date
+      - name: parent_consent_obtain_code
+        data_type: string
+      - name: parental_consent_eval_date
+        data_type: date
+      - name: physical_therapy_services_yn
+        data_type: string
+      - name: reevaluation_date
+        data_type: date
+      - name: referral_date
+        data_type: date
+      - name: special_education_placement
+        data_type: string
+      - name: specialed_classification
+        data_type: string
+      - name: speech_lang_theapy_services_yn
+        data_type: string
+      - name: time_in_regular_program
+        data_type: string
+      - name: block_schedule_session_ela
+        data_type: string
+      - name: block_schedule_session_math
+        data_type: string
+      - name: parcc_text_to_speech_math
+        data_type: string
+      - name: asmt_extended_time_math
+        data_type: string
+      - name: pid_testformat
+        data_type: string
+      - name: pid_brailletest_yn
+        data_type: string
+      - name: pid_contentareatutoring_yn
+        data_type: string
+      - name: pid_contentbasedesl_yn
+        data_type: string
+      - name: pid_developbilingual_yn
+        data_type: string
+      - name: pid_heritagelanguage_yn
+        data_type: string
+      - name: pid_inclusionarysupport_yn
+        data_type: string
+      - name: pid_largeprint_yn
+        data_type: string
+      - name: pid_noadditionalservices_yn
+        data_type: string
+      - name: pid_notapplicable_yn
+        data_type: string
+      - name: pid_parentalrefusal_yn
+        data_type: string
+      - name: pid_pullout_yn
+        data_type: string
+      - name: pid_pulloutesl_yn
+        data_type: string
+      - name: pid_scribedresponse_yn
+        data_type: string
+      - name: pid_selfcontained_yn
+        data_type: string
+      - name: pid_shelteredenginstruct_yn
+        data_type: string
+      - name: pid_structengimmersion_yn
+        data_type: string
+      - name: pid_transbilingual_yn
+        data_type: string
+      - name: pid_twowayimmersion_yn
+        data_type: string
+      - name: ctepostsecondaryinstitution
+        data_type: string
+      - name: cteprogramofstudy_yn
+        data_type: string
+      - name: cteprogramstatus
+        data_type: string
+      - name: ctesingleparentstatus_yn
+        data_type: string
+      - name: ctetestskillassesment
+        data_type: string
+      - name: primarycipcode
+        data_type: string
+      - name: access_accountablecounty
+        data_type: string
+      - name: access_accountabledistrict
+        data_type: string
+      - name: access_accountableschool
+        data_type: string
+      - name: access_testingsitecounty
+        data_type: string
+      - name: access_testingsitedistrict
+        data_type: string
+      - name: access_testingsiteschool
+        data_type: string
+      - name: districttimeless1year_yn
+        data_type: string
+      - name: pid_sendingcds
+        data_type: string
+      - name: schooltimeless1year_yn
+        data_type: string
+      - name: school_disabled
+        data_type: string
+      - name: special_status
+        data_type: string
+      - name: pid_title3status
+        data_type: string
+      - name: ask_specialcodesa
+        data_type: string
+      - name: ask_specialcodesb
+        data_type: string
+      - name: ask_specialcodesc
+        data_type: string
+      - name: ask_specialcodesd
+        data_type: string
+      - name: datelastleadtest
+        data_type: date
+      - name: datelastmedexam
+        data_type: date
+      - name: dateofpolioimmun
+        data_type: date
+      - name: district_studentid
+        data_type: string
+      - name: examinersmid1
+        data_type: string
+      - name: examinersmid2
+        data_type: string
+      - name: examinersmid3
+        data_type: string
+      - name: examinersmid4
+        data_type: string
+      - name: examinersmid5
+        data_type: string
+      - name: leadlevel
+        data_type: string
+      - name: native_language
+        data_type: string
+      - name: pid_apatestingcds
+        data_type: string
+      - name: pid_audioamplification
+        data_type: string
+      - name: pid_classroom
+        data_type: string
+      - name: pid_computerassisted
+        data_type: string
+      - name: pid_lowvisionaids
+        data_type: string
+      - name: pid_modifiedtestdirections
+        data_type: string
+      - name: pid_nativelang
+        data_type: string
+      - name: pid_otherapproved
+        data_type: string
+      - name: pid_presentationformat
+        data_type: string
+      - name: pid_settingformat
+        data_type: string
+      - name: pid_timingscheduling
+        data_type: string
+      - name: spedtier
+        data_type: string
+      - name: supplementaleduserv
+        data_type: string
+      - name: programtypecode
+        data_type: string
+      - name: cityofbirth
+        data_type: string
+      - name: countryofbirth
+        data_type: string
+      - name: countycodeattending
+        data_type: string
+      - name: countycodereceiving
+        data_type: string
+      - name: countycoderesident
+        data_type: string
+      - name: districtcodeattending
+        data_type: string
+      - name: districtcodereceiving
+        data_type: string
+      - name: districtcoderesident
+        data_type: string
+      - name: firstentrydateintoausschool
+        data_type: date
+      - name: generationcodesuffix
+        data_type: string
+      - name: gradelevelcode
+        data_type: string
+      - name: immigrantstatus_yn
+        data_type: string
+      - name: lepbegindate
+        data_type: date
+      - name: lependdate
+        data_type: date
+      - name: residentmunicipalcode
+        data_type: string
+      - name: schoolcodeattending
+        data_type: string
+      - name: schoolcodereceiving
+        data_type: string
+      - name: schoolcoderesident
+        data_type: string
+      - name: shared_time_code
+        data_type: string
+      - name: stateofbirth
+        data_type: string
+      - name: tuition_code
+        data_type: string
+      - name: alternativeeducationprogram_yn
+        data_type: string
+      - name: eighthtechlit
+        data_type: string
+      - name: healthinsprovider
+        data_type: string
+      - name: healthinsstatus_yn
+        data_type: string
+      - name: home_language
+        data_type: string
+      - name: home_language_name
+        data_type: string
+      - name: titleilanguage_yn
+        data_type: string
+      - name: titleimath_yn
+        data_type: string
+      - name: titleiscience_yn
+        data_type: string
+      - name: pid_supplementaleduserv
+        data_type: string
+      - name: pid_timeinlep2
+        data_type: string
+      - name: charter_assigned_school
+        data_type: string
+      - name: charter_date
+        data_type: date
+      - name: charter_school_loc
+        data_type: string
+      - name: charter_school_name
+        data_type: string
+      - name: ctetestdevelopercode
+        data_type: string
+      - name: ctetestname
+        data_type: string
+      - name: nces_course_id
+        data_type: string
+      - name: nces_subject_area
+        data_type: string
+      - name: graduation_pathway_ela
+        data_type: string
+      - name: graduation_pathway_math
+        data_type: string
+      - name: former_iep
+        data_type: string
+      - name: liep_classification
+        data_type: string
+      - name: liep_data
+        data_type: string
+      - name: liep_refusal
+        data_type: string
+      - name: secondary_disability
+        data_type: string
+      - name: sla_class_name_override
+        data_type: string
+      - name: sla_retest
+        data_type: string
+      - name: sla_session_loc_override
+        data_type: string
+      - name: sla_test_code
+        data_type: string
+      - name: sla_test_format
+        data_type: string
+      - name: sla_testing_site_county
+        data_type: string
+      - name: sla_testing_site_district
+        data_type: string
+      - name: sla_testing_site_school
+        data_type: string
+      - name: student_type
+        data_type: string
+      - name: sla_accountable_site_county
+        data_type: string
+      - name: sla_accountable_site_district
+        data_type: string
+      - name: sla_accountable_site_school
+        data_type: string
+      - name: sla_braille_response
+        data_type: string
+      - name: sla_braille_tactile_paper
+        data_type: string
+      - name: sla_color_contrast
+        data_type: string
+      - name: sla_constructed_response
+        data_type: string
+      - name: sla_directions_aloud
+        data_type: string
+      - name: sla_emergency_accommodation
+        data_type: string
+      - name: sla_examiner_smid
+        data_type: string
+      - name: sla_extended_time
+        data_type: string
+      - name: sla_humanreader_signer
+        data_type: string
+      - name: sla_science_response_el
+        data_type: string
+      - name: sla_selected_response
+        data_type: string
+      - name: sla_spanish_trans
+        data_type: string
+      - name: sla_staffoverride_smid
+        data_type: string
+      - name: sla_text_to_speech
+        data_type: string
+      - name: family_care_release_yn
+        data_type: string
+      - name: indistrictplacement
+        data_type: string
+      - name: liep_type
+        data_type: string
+      - name: stureporting_name
+        data_type: string
+      - name: biliterate_yn
+        data_type: string
+      - name: worldlang_assessed1
+        data_type: string
+      - name: worldlang_assessed1_name
+        data_type: string
+      - name: worldlang_assessed2
+        data_type: string
+      - name: worldlang_assessed2_name
+        data_type: string
+      - name: worldlang_assessed3
+        data_type: string
+      - name: worldlang_assessed3_name
+        data_type: string
+      - name: worldlang_assessed4
+        data_type: string
+      - name: worldlang_assessed4_name
+        data_type: string
+      - name: worldlang_assessed5
+        data_type: string
+      - name: worldlang_assessed5_name
+        data_type: string
+      - name: worldlang_assessment1
+        data_type: string
+      - name: worldlang_assessment2
+        data_type: string
+      - name: worldlang_assessment3
+        data_type: string
+      - name: worldlang_assessment4
+        data_type: string
+      - name: worldlang_assessment5
+        data_type: string
+      - name: assessmt_ms_accomm_resp
+        data_type: string
+      - name: birthplace_refusal
+        data_type: string
+      - name: ctewblearning
+        data_type: string
+      - name: withdrawal_date
+        data_type: date
+      - name: firsthsmathassessment_yn
+        data_type: string
+      - name: remotelearninghelpline_yn
+        data_type: string
+      - name: speassessmentparticipant_yn
+        data_type: string
+      - name: speassignmentsubmissions_yn
+        data_type: string
+      - name: specoachingorcheckin_yn
+        data_type: string
+      - name: speechtotextwordprediction
+        data_type: string
+      - name: speelectroniccomm_yn
+        data_type: string
+      - name: speonlinelearningplatforms
+        data_type: string
+      - name: speother_yn
+        data_type: string
+      - name: spesynchonlineclass_yn
+        data_type: string
+      - name: studentslearningmodel
+        data_type: string
+      - name: bridge_year
+        data_type: string
+      - name: federalhsmathtestingreq
+        data_type: string
+      - name: iepgradcourserequirement
+        data_type: string
+      - name: iepgraduationattendance
+        data_type: string
+      - name: typeofearnedcollegecredits
+        data_type: string
+      - name: typeofworkbasedlearning
+        data_type: string
+      - name: liep_languageofinstruction
+        data_type: string
+      - name: reportedsharedvoc_yn
+        data_type: string
+      - name: science_test_name
+        data_type: string
+      - name: deafhardofhearing_yn
+        data_type: string
+      - name: district_status_override
+        data_type: string
+      - name: sid_entrydate
+        data_type: date
+      - name: sid_exitdate
+        data_type: date
+      - name: proofofage
+        data_type: string
+      - name: declassificationspeddate
+        data_type: date
+      - name: homelessinstrucservice
+        data_type: string
+      - name: homelesssupportservice
+        data_type: string
+      - name: lunchstatusoverride
+        data_type: string
+      - name: mddisablingcondition1
+        data_type: string
+      - name: mddisablingcondition2
+        data_type: string
+      - name: mddisablingcondition3
+        data_type: string
+      - name: mddisablingcondition4
+        data_type: string
+      - name: mddisablingcondition5
+        data_type: string
+      - name: titleiindicator
+        data_type: string
+      - name: eligible_for_liep
+        data_type: string
+      - name: elp_screener_date
+        data_type: date
+      - name: home_language2
+        data_type: string
+      - name: home_language3
+        data_type: string
+      - name: home_language4
+        data_type: string
+      - name: home_language5
+        data_type: string
+      - name: home_language_name2
+        data_type: string
+      - name: home_language_name3
+        data_type: string
+      - name: home_language_name4
+        data_type: string
+      - name: home_language_name5
+        data_type: string
+      - name: lepbegindate2
+        data_type: date
+      - name: liep_parent_refusal_date
+        data_type: date
+      - name: liependdate2
+        data_type: date
+      - name: sld_basic_reading_yn
+        data_type: string
+      - name: sld_listen_comp_yn
+        data_type: string
+      - name: sld_math_cal_yn
+        data_type: string
+      - name: sld_math_prob_solve_yn
+        data_type: string
+      - name: sld_oral_expresn_yn
+        data_type: string
+      - name: sld_read_fluency_yn
+        data_type: string
+      - name: sld_reading_comp_yn
+        data_type: string
+      - name: sld_writn_exprsn_yn
+        data_type: string
+      - name: studentsdcid
+        data_type: int64
+      - name: lep_completion_date_refused
+        data_type: int64
+      - name: military_connected_indicator
+        data_type: int64
+      - name: asmt_exclude_ela
+        data_type: int64
+      - name: asmt_exclude_math
+        data_type: int64
+      - name: iep_exemptpassinglal_tf
+        data_type: int64
+      - name: iep_exemptpassingmath_tf
+        data_type: int64
+      - name: iep_exempttakinglal_tf
+        data_type: int64
+      - name: iep_exempttakingmath_tf
+        data_type: int64
+      - name: pid_title1langartslit_tf
+        data_type: int64
+      - name: pid_title1math_tf
+        data_type: int64
+      - name: ctecollegecredits
+        data_type: int64
+      - name: pid_504_tf
+        data_type: int64
+      - name: pid_accommodations_a_tf
+        data_type: int64
+      - name: pid_accommodations_b_tf
+        data_type: int64
+      - name: pid_accommodations_c_tf
+        data_type: int64
+      - name: pid_accommodations_d_tf
+        data_type: int64
+      - name: pid_apascience_tf
+        data_type: int64
+      - name: adulths_nb_credits
+        data_type: numeric
+      - name: pid_lepexemptlal_tf
+        data_type: int64
+      - name: pid_apalangartsliteracy_tf
+        data_type: int64
+      - name: pid_apamath_tf
+        data_type: int64
+      - name: pid_madetape_tf
+        data_type: int64
+      - name: pid_outofdistplacement_tf
+        data_type: int64
+      - name: pid_outresidenceplacement_tf
+        data_type: int64
+      - name: pid_shortsegmenttestadmin_tf
+        data_type: int64
+      - name: pid_title1science_tf
+        data_type: int64
+      - name: title1_status_tf
+        data_type: int64
+      - name: tiv_serv_aide_tf
+        data_type: int64
+      - name: tiv_serv_assist_tf
+        data_type: int64
+      - name: tiv_serv_extyear_tf
+        data_type: int64
+      - name: tiv_serv_ind_instr_tf
+        data_type: int64
+      - name: tiv_serv_indnursing_tf
+        data_type: int64
+      - name: tiv_serv_intensive_tf
+        data_type: int64
+      - name: tiv_serv_interpreter_tf
+        data_type: int64
+      - name: tiv_serv_pupil_tf
+        data_type: int64
+      - name: tiv_serv_resplacement_tf
+        data_type: int64
+      - name: lep_tf
+        data_type: int64
+      - name: retained_tf
+        data_type: int64
+      - name: cumdaysinmembershipaddto_tf
+        data_type: int64
+      - name: cumdayspresentaddto_tf
+        data_type: int64
+      - name: cumdaystowardtruancyaddto_tf
+        data_type: int64
+      - name: cumulativedaysinmembership
+        data_type: numeric
+      - name: cumulativedayspresent
+        data_type: numeric
+      - name: cumulativedaystowardtruancy
+        data_type: numeric
+      - name: homelessprimarynighttimeres
+        data_type: int64
+      - name: migrant_tf
+        data_type: int64
+      - name: includeinctereport_tf
+        data_type: int64
+      - name: includeinnjsmart_tf
+        data_type: int64
+      - name: includeinstucourse_tf
+        data_type: int64
+      - name: eoc_title1biology_tf
+        data_type: int64
+      - name: iep_exemptpassingbiology_tf
+        data_type: int64
+      - name: iep_exempttakingbiology_tf
+        data_type: int64
+      - name: sla_alt_rep_paper
+        data_type: int64
+      - name: sla_alternate_location
+        data_type: int64
+      - name: sla_answer_masking
+        data_type: int64
+      - name: sla_answers_recorded_paper
+        data_type: int64
+      - name: sla_asl_video
+        data_type: int64
+      - name: sla_closed_caption
+        data_type: int64
+      - name: sla_dictionary
+        data_type: int64
+      - name: sla_directions_clarified
+        data_type: int64
+      - name: sla_exclude_tf
+        data_type: int64
+      - name: sla_frequent_breaks
+        data_type: int64
+      - name: sla_human_signer
+        data_type: int64
+      - name: sla_large_print_paper
+        data_type: int64
+      - name: sla_monitor_response
+        data_type: int64
+      - name: sla_non_screen_reader
+        data_type: int64
+      - name: sla_read_aloud
+        data_type: int64
+      - name: sla_refresh_braille
+        data_type: int64
+      - name: sla_screen_reader
+        data_type: int64
+      - name: sla_small_group
+        data_type: int64
+      - name: sla_special_equip
+        data_type: int64
+      - name: sla_specified_area
+        data_type: int64
+      - name: sla_time_of_day
+        data_type: int64
+      - name: sla_unique_accommodation
+        data_type: int64
+      - name: sla_word_prediction
+        data_type: int64
+      - name: includeinassareport_tf
+        data_type: int64
+      - name: caresactfunds
+        data_type: int64
+      - name: deviceowner
+        data_type: int64
+      - name: devicetype
+        data_type: int64
+      - name: internetconnectivity
+        data_type: int64
+      - name: learningenvironment
+        data_type: int64
+      - name: remotedaysmembership
+        data_type: numeric
+      - name: remotedayspresent
+        data_type: numeric
+      - name: remotepercentageofday
+        data_type: int64
+      - name: cumulativedaysabsent
+        data_type: numeric
+      - name: cumulativestateabs
+        data_type: int64
+      - name: daysopen
+        data_type: int64
+      - name: remotedaysabsent
+        data_type: numeric
+      - name: languageacquisition
+        data_type: int64
+      - name: collegecreditsearned
+        data_type: int64
+      - name: cteworkbasedlearning
+        data_type: int64
+      - name: sid_excludeenrollment
+        data_type: int64
+  - name: stg_powerschool__s_nj_usr_x
+    columns:
+      - name: local_teacher_id
+        data_type: string
+      - name: smart_first_name
+        data_type: string
+      - name: smart_last_name
+        data_type: string
+      - name: staffmemberid
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: formername
+        data_type: string
+      - name: generationcodesuffix
+        data_type: string
+      - name: smart_alternaterouteprog
+        data_type: string
+      - name: smart_certificationstatus
+        data_type: string
+      - name: smart_districtbegindate
+        data_type: date
+      - name: smart_districtentrycode
+        data_type: string
+      - name: smart_districtexitdate
+        data_type: date
+      - name: smart_districtexitreason
+        data_type: string
+      - name: smart_ellinstructorcredtype
+        data_type: string
+      - name: smart_highestleveled
+        data_type: string
+      - name: smart_languagespoken
+        data_type: string
+      - name: smart_mepsessiontype
+        data_type: string
+      - name: smart_migrantedprogramcat
+        data_type: string
+      - name: smart_nameprefix
+        data_type: string
+      - name: smart_nationalboardaward
+        data_type: date
+      - name: smart_seprogramcontrcat
+        data_type: string
+      - name: smart_titleiprogramcat
+        data_type: string
+      - name: smart_traditionalrouteprog
+        data_type: string
+      - name: smart_employmentsepatyp
+        data_type: string
+      - name: smart_employmentstatus
+        data_type: string
+      - name: usersdcid
+        data_type: int64
+      - name: smart_salary
+        data_type: int64
+      - name: smart_yearsinlea
+        data_type: int64
+      - name: smart_yearsinnj
+        data_type: int64
+      - name: smart_yearsofexp
+        data_type: int64
+      - name: excl_frm_smart_stf_submissn
+        data_type: int64
+      - name: smart_stafcompenanualsup
+        data_type: int64
+      - name: smart_stafcompnsatnbassal
+        data_type: int64
+  - name: stg_powerschool__schools
+    columns:
+      - name: name
+        data_type: string
+      - name: address
+        data_type: string
+      - name: pscomm_path
+        data_type: string
+      - name: abbreviation
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: activecrslist
+        data_type: string
+      - name: bulletinemail
+        data_type: string
+      - name: sysemailfrom
+        data_type: string
+      - name: tchrlogentrto
+        data_type: string
+      - name: portalid
+        data_type: string
+      - name: schooladdress
+        data_type: string
+      - name: schoolcity
+        data_type: string
+      - name: schoolstate
+        data_type: string
+      - name: schoolzip
+        data_type: string
+      - name: schoolphone
+        data_type: string
+      - name: schoolfax
+        data_type: string
+      - name: schoolcountry
+        data_type: string
+      - name: principal
+        data_type: string
+      - name: principalphone
+        data_type: string
+      - name: principalemail
+        data_type: string
+      - name: asstprincipalphone
+        data_type: string
+      - name: asstprincipalemail
+        data_type: string
+      - name: countyname
+        data_type: string
+      - name: countynbr
+        data_type: string
+      - name: asstprincipal
+        data_type: string
+      - name: schedulewhichschool
+        data_type: string
+      - name: schoolinfo_guid
+        data_type: string
+      - name: sif_stateprid
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: district_number
+        data_type: int64
+      - name: school_number
+        data_type: int64
+      - name: low_grade
+        data_type: int64
+      - name: high_grade
+        data_type: int64
+      - name: sortorder
+        data_type: int64
+      - name: schoolgroup
+        data_type: int64
+      - name: hist_low_grade
+        data_type: int64
+      - name: hist_high_grade
+        data_type: int64
+      - name: dfltnextschool
+        data_type: int64
+      - name: view_in_portal
+        data_type: int64
+      - name: state_excludefromreporting
+        data_type: int64
+      - name: alternate_school_number
+        data_type: int64
+      - name: fee_exemption_status
+        data_type: int64
+      - name: issummerschool
+        data_type: int64
+      - name: schoolcategorycodesetid
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: school_level
+        data_type: string
+  - name: stg_powerschool__schoolstaff
+    columns:
+      - name: classpua
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: log
+        data_type: string
+      - name: sched_gender
+        data_type: string
+      - name: sched_classroom
+        data_type: string
+      - name: sched_homeroom
+        data_type: string
+      - name: sched_department
+        data_type: string
+      - name: sched_housecode
+        data_type: string
+      - name: sched_buildingcode
+        data_type: string
+      - name: sched_activitystatuscode
+        data_type: string
+      - name: sched_primaryschoolcode
+        data_type: string
+      - name: sched_team
+        data_type: string
+      - name: notes
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: users_dcid
+        data_type: int64
+      - name: balance1
+        data_type: float64
+      - name: balance2
+        data_type: float64
+      - name: balance3
+        data_type: float64
+      - name: balance4
+        data_type: float64
+      - name: noofcurclasses
+        data_type: int64
+      - name: staffstatus
+        data_type: int64
+      - name: status
+        data_type: int64
+      - name: sched_maximumcourses
+        data_type: int64
+      - name: sched_maximumduty
+        data_type: int64
+      - name: sched_maximumfree
+        data_type: int64
+      - name: sched_totalcourses
+        data_type: int64
+      - name: sched_maximumconsecutive
+        data_type: int64
+      - name: sched_isteacherfree
+        data_type: int64
+      - name: sched_teachermoreoneschool
+        data_type: int64
+      - name: sched_substitute
+        data_type: int64
+      - name: sched_scheduled
+        data_type: int64
+      - name: sched_usebuilding
+        data_type: int64
+      - name: sched_usehouse
+        data_type: int64
+      - name: sched_lunch
+        data_type: int64
+      - name: sched_maxpers
+        data_type: int64
+      - name: sched_maxpreps
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+  - name: stg_powerschool__sections
+    columns:
+      - name: section_number
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: period_obsolete
+        data_type: string
+      - name: room
+        data_type: string
+      - name: fastperlist
+        data_type: string
+      - name: ccrnarray
+        data_type: string
+      - name: attendance
+        data_type: string
+      - name: lastattupdate
+        data_type: date
+      - name: custom
+        data_type: string
+      - name: pgflags
+        data_type: string
+      - name: days_obsolete
+        data_type: string
+      - name: gradeprofile
+        data_type: string
+      - name: log
+        data_type: string
+      - name: teacherdescr
+        data_type: string
+      - name: blockperiods_obsolete
+        data_type: string
+      - name: dependent_secs
+        data_type: string
+      - name: expression
+        data_type: string
+      - name: bitmap
+        data_type: bytes
+      - name: original_expression
+        data_type: string
+      - name: comment_value
+        data_type: string
+      - name: section_type
+        data_type: string
+      - name: team
+        data_type: string
+      - name: house
+        data_type: string
+      - name: instruction_lang
+        data_type: string
+      - name: sectioninfo_guid
+        data_type: string
+      - name: att_mode_code
+        data_type: string
+      - name: max_load_status
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: external_expression
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: teacher
+        data_type: int64
+      - name: termid
+        data_type: int64
+      - name: no_of_students
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: noofterms
+        data_type: int64
+      - name: trackteacheratt
+        data_type: int64
+      - name: maxenrollment
+        data_type: int64
+      - name: distuniqueid
+        data_type: int64
+      - name: wheretaught
+        data_type: int64
+      - name: rostermodser
+        data_type: int64
+      - name: pgversion
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: campusid
+        data_type: int64
+      - name: exclude_ada
+        data_type: int64
+      - name: gradescaleid
+        data_type: int64
+      - name: excludefromgpa
+        data_type: int64
+      - name: buildid
+        data_type: int64
+      - name: schedulesectionid
+        data_type: int64
+      - name: wheretaughtdistrict
+        data_type: int64
+      - name: excludefromclassrank
+        data_type: int64
+      - name: excludefromhonorroll
+        data_type: int64
+      - name: parent_section_id
+        data_type: int64
+      - name: attendance_type_code
+        data_type: int64
+      - name: maxcut
+        data_type: int64
+      - name: exclude_state_rpt_yn
+        data_type: int64
+      - name: sortorder
+        data_type: int64
+      - name: programid
+        data_type: int64
+      - name: excludefromstoredgrades
+        data_type: int64
+      - name: gradebooktype
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+  - name: stg_powerschool__sectionteacher
+    columns:
+      - name: start_date
+        data_type: timestamp
+      - name: end_date
+        data_type: timestamp
+      - name: notes
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: sectionnickname
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: id
+        data_type: int64
+      - name: teacherid
+        data_type: int64
+      - name: sectionid
+        data_type: int64
+      - name: roleid
+        data_type: int64
+      - name: allocation
+        data_type: numeric
+      - name: priorityorder
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+  - name: stg_powerschool__spenrollments
+    columns:
+      - name: enter_date
+        data_type: date
+      - name: exit_date
+        data_type: date
+      - name: code1
+        data_type: string
+      - name: code2
+        data_type: string
+      - name: exitcode
+        data_type: string
+      - name: sp_comment
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: programid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: gradelevel
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+  - name: stg_powerschool__storedgrades
+    columns:
+      - name: dcid
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: sectionid
+        data_type: int64
+      - name: termid
+        data_type: int64
+      - name: percent
+        data_type: float64
+      - name: absences
+        data_type: float64
+      - name: tardies
+        data_type: float64
+      - name: potentialcrhrs
+        data_type: float64
+      - name: earnedcrhrs
+        data_type: float64
+      - name: grade_level
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: excludefromgpa
+        data_type: int64
+      - name: gpa_points
+        data_type: float64
+      - name: gpa_addedvalue
+        data_type: float64
+      - name: gpa_custom2
+        data_type: float64
+      - name: excludefromclassrank
+        data_type: int64
+      - name: excludefromhonorroll
+        data_type: int64
+      - name: isearnedcrhrsfromgb
+        data_type: int64
+      - name: ispotentialcrhrsfromgb
+        data_type: int64
+      - name: excludefromtranscripts
+        data_type: int64
+      - name: replaced_dcid
+        data_type: int64
+      - name: excludefromgraduation
+        data_type: int64
+      - name: excludefromgradesuppression
+        data_type: int64
+      - name: gradereplacementpolicy_id
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: storecode
+        data_type: string
+      - name: datestored
+        data_type: date
+      - name: grade
+        data_type: string
+      - name: behavior
+        data_type: string
+      - name: comment_value
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: credit_type
+        data_type: string
+      - name: log
+        data_type: string
+      - name: course_equiv
+        data_type: string
+      - name: schoolname
+        data_type: string
+      - name: gradescale_name
+        data_type: string
+      - name: teacher_name
+        data_type: string
+      - name: gpa_custom1
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: ab_course_cmp_fun_flg
+        data_type: string
+      - name: ab_course_cmp_ext_crd
+        data_type: string
+      - name: ab_course_cmp_fun_sch
+        data_type: string
+      - name: ab_course_cmp_met_cd
+        data_type: string
+      - name: ab_course_eva_pro_cd
+        data_type: string
+      - name: ab_course_cmp_sta_cd
+        data_type: string
+      - name: ab_pri_del_met_cd
+        data_type: string
+      - name: ab_lng_cd
+        data_type: string
+      - name: ab_dipl_exam_mark
+        data_type: string
+      - name: ab_final_mark
+        data_type: string
+      - name: termbinsname
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: replaced_grade
+        data_type: string
+      - name: replaced_equivalent_course
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: percent_decimal
+        data_type: float64
+      - name: storecode_type
+        data_type: string
+      - name: yearid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: fiscal_year
+        data_type: int64
+      - name: gradescale_name_unweighted
+        data_type: string
+  - name: stg_powerschool__studentcontactassoc
+    columns:
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: studentcontactassocid
+        data_type: int64
+      - name: studentdcid
+        data_type: int64
+      - name: personid
+        data_type: int64
+      - name: contactpriorityorder
+        data_type: int64
+      - name: currreltypecodesetid
+        data_type: int64
+  - name: stg_powerschool__studentcontactdetail
+    columns:
+      - name: relationshipnote
+        data_type: string
+      - name: startdate
+        data_type: date
+      - name: enddate
+        data_type: date
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: studentcontactdetailid
+        data_type: int64
+      - name: studentcontactassocid
+        data_type: int64
+      - name: relationshiptypecodesetid
+        data_type: int64
+      - name: isactive
+        data_type: int64
+      - name: isemergency
+        data_type: int64
+      - name: iscustodial
+        data_type: int64
+      - name: liveswithflg
+        data_type: int64
+      - name: schoolpickupflg
+        data_type: int64
+      - name: receivesmailflg
+        data_type: int64
+      - name: excludefromstatereportingflg
+        data_type: int64
+      - name: generalcommflag
+        data_type: int64
+      - name: confidentialcommflag
+        data_type: int64
+  - name: stg_powerschool__studentcorefields
+    columns:
+      - name: act_composite
+        data_type: string
+      - name: act_date
+        data_type: string
+      - name: act_english
+        data_type: string
+      - name: act_math
+        data_type: string
+      - name: act_reading
+        data_type: string
+      - name: act_science
+        data_type: string
+      - name: afdc
+        data_type: string
+      - name: afdcappnum
+        data_type: string
+      - name: allergies
+        data_type: string
+      - name: area
+        data_type: string
+      - name: ate_skill_cert
+        data_type: string
+      - name: dateofentryintousa
+        data_type: string
+      - name: dentist_name
+        data_type: string
+      - name: dentist_phone
+        data_type: string
+      - name: emerg_1_ptype
+        data_type: string
+      - name: emerg_1_rel
+        data_type: string
+      - name: emerg_2_ptype
+        data_type: string
+      - name: emerg_2_rel
+        data_type: string
+      - name: emerg_3_phone
+        data_type: string
+      - name: emerg_3_ptype
+        data_type: string
+      - name: emerg_3_rel
+        data_type: string
+      - name: emerg_contact_3
+        data_type: string
+      - name: equipstudent
+        data_type: string
+      - name: esl_placement
+        data_type: string
+      - name: family_rep
+        data_type: string
+      - name: father_employer
+        data_type: string
+      - name: father_home_phone
+        data_type: string
+      - name: fatherdayphone
+        data_type: string
+      - name: graduation_year
+        data_type: string
+      - name: guardian
+        data_type: string
+      - name: guardian_fn
+        data_type: string
+      - name: guardian_ln
+        data_type: string
+      - name: guardian_mn
+        data_type: string
+      - name: guardiandayphone
+        data_type: string
+      - name: guardianrelcode
+        data_type: string
+      - name: guardianship
+        data_type: string
+      - name: hln
+        data_type: string
+      - name: homeless_code
+        data_type: string
+      - name: ildp
+        data_type: string
+      - name: immunizaton_dpt
+        data_type: string
+      - name: immunizaton_mmr
+        data_type: string
+      - name: immunizaton_polio
+        data_type: string
+      - name: lep_exit_date
+        data_type: string
+      - name: lpac_date
+        data_type: string
+      - name: medical_considerations
+        data_type: string
+      - name: mesa
+        data_type: string
+      - name: monitor_date
+        data_type: string
+      - name: mother_employer
+        data_type: string
+      - name: mother_home_phone
+        data_type: string
+      - name: motherdayphone
+        data_type: string
+      - name: parttimestudent
+        data_type: string
+      - name: phlote
+        data_type: string
+      - name: prevstudentid
+        data_type: string
+      - name: primarylanguage
+        data_type: string
+      - name: sat
+        data_type: string
+      - name: secondarylanguage
+        data_type: string
+      - name: singleparenthshldflag
+        data_type: string
+      - name: tracker
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: autosend_attendancedetail
+        data_type: string
+      - name: autosend_balancealert
+        data_type: string
+      - name: autosend_gradedetail
+        data_type: string
+      - name: autosend_howoften
+        data_type: string
+      - name: autosend_schoolannouncements
+        data_type: string
+      - name: autosend_summary
+        data_type: string
+      - name: awards
+        data_type: string
+      - name: c_504_information
+        data_type: string
+      - name: career_goal
+        data_type: string
+      - name: cip_code
+        data_type: string
+      - name: competencies
+        data_type: string
+      - name: crt_7thmath
+        data_type: string
+      - name: crt_7thscience
+        data_type: string
+      - name: crt_8thscience
+        data_type: string
+      - name: crt_applemath2
+        data_type: string
+      - name: crt_applmath1
+        data_type: string
+      - name: crt_biology
+        data_type: string
+      - name: crt_chemistry
+        data_type: string
+      - name: crt_earthsys
+        data_type: string
+      - name: crt_elemalg
+        data_type: string
+      - name: crt_elemmath
+        data_type: string
+      - name: crt_elemread
+        data_type: string
+      - name: crt_humanbiol
+        data_type: string
+      - name: crt_interalg
+        data_type: string
+      - name: crt_physics
+        data_type: string
+      - name: crt_prealg
+        data_type: string
+      - name: crt_secmath
+        data_type: string
+      - name: crt_secscience
+        data_type: string
+      - name: ec_athletics
+        data_type: string
+      - name: ec_clubs
+        data_type: string
+      - name: ec_community
+        data_type: string
+      - name: ec_leadership
+        data_type: string
+      - name: ipt_oral_curdate
+        data_type: string
+      - name: ipt_oral_currentscore
+        data_type: string
+      - name: ipt_oral_origdate
+        data_type: string
+      - name: ipt_oral_origscore
+        data_type: string
+      - name: ipt_reading_curdate
+        data_type: string
+      - name: ipt_reading_currentscore
+        data_type: string
+      - name: ipt_reading_origdate
+        data_type: string
+      - name: ipt_reading_origscore
+        data_type: string
+      - name: ipt_writing_curdate
+        data_type: string
+      - name: ipt_writing_currentscore
+        data_type: string
+      - name: ipt_writing_origdate
+        data_type: string
+      - name: ipt_writing_origscore
+        data_type: string
+      - name: language_form
+        data_type: string
+      - name: lunchapplicno
+        data_type: string
+      - name: post_secondary_objectives
+        data_type: string
+      - name: primary_pathway
+        data_type: string
+      - name: secondary_pathway
+        data_type: string
+      - name: seop_notes
+        data_type: string
+      - name: spedlep
+        data_type: string
+      - name: test_comments
+        data_type: string
+      - name: pscore_legal_first_name
+        data_type: string
+      - name: pscore_legal_gender
+        data_type: string
+      - name: pscore_legal_last_name
+        data_type: string
+      - name: pscore_legal_middle_name
+        data_type: string
+      - name: pscore_legal_suffix
+        data_type: string
+      - name: photolastupdated
+        data_type: string
+      - name: studentsdcid
+        data_type: int64
+      - name: lep_status
+        data_type: boolean
+      - name: is_homeless
+        data_type: boolean
+  - name: stg_powerschool__studentrace
+    columns:
+      - name: racecd
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whomodified
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whenmodified
+        data_type: timestamp
+      - name: psguid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: studentid
+        data_type: int64
+  - name: stg_powerschool__students
+    columns:
+      - name: lastfirst
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: entrydate
+        data_type: date
+      - name: exitdate
+        data_type: date
+      - name: web_id
+        data_type: string
+      - name: web_password
+        data_type: string
+      - name: dob
+        data_type: date
+      - name: street
+        data_type: string
+      - name: city
+        data_type: string
+      - name: state
+        data_type: string
+      - name: zip
+        data_type: string
+      - name: guardianemail
+        data_type: string
+      - name: transfercomment
+        data_type: string
+      - name: guardianfax
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: ssn
+        data_type: string
+      - name: entrycode
+        data_type: string
+      - name: exitcode
+        data_type: string
+      - name: lunchstatus
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: lastmeal
+        data_type: string
+      - name: pl_language
+        data_type: string
+      - name: family_ident
+        data_type: string
+      - name: log
+        data_type: string
+      - name: track
+        data_type: string
+      - name: gradreqset
+        data_type: string
+      - name: applic_submitted_date
+        data_type: date
+      - name: applic_response_recvd_date
+        data_type: date
+      - name: student_web_id
+        data_type: string
+      - name: student_web_password
+        data_type: string
+      - name: bus_route
+        data_type: string
+      - name: bus_stop
+        data_type: string
+      - name: doctor_name
+        data_type: string
+      - name: doctor_phone
+        data_type: string
+      - name: emerg_contact_1
+        data_type: string
+      - name: emerg_contact_2
+        data_type: string
+      - name: emerg_phone_1
+        data_type: string
+      - name: emerg_phone_2
+        data_type: string
+      - name: father
+        data_type: string
+      - name: home_phone
+        data_type: string
+      - name: home_room
+        data_type: string
+      - name: locker_combination
+        data_type: string
+      - name: locker_number
+        data_type: string
+      - name: mailing_city
+        data_type: string
+      - name: mailing_street
+        data_type: string
+      - name: mailing_state
+        data_type: string
+      - name: mailing_zip
+        data_type: string
+      - name: mother
+        data_type: string
+      - name: wm_status
+        data_type: string
+      - name: wm_statusdate
+        data_type: date
+      - name: wm_address
+        data_type: string
+      - name: wm_password
+        data_type: string
+      - name: wm_createdate
+        data_type: date
+      - name: sched_nextyearhouse
+        data_type: string
+      - name: sched_nextyearbuilding
+        data_type: string
+      - name: sched_nextyearteam
+        data_type: string
+      - name: sched_nextyearhomeroom
+        data_type: string
+      - name: sched_nextyearbus
+        data_type: string
+      - name: wm_ta_flag
+        data_type: string
+      - name: wm_ta_date
+        data_type: date
+      - name: districtentrydate
+        data_type: date
+      - name: schoolentrydate
+        data_type: date
+      - name: graduated_schoolname
+        data_type: string
+      - name: alert_discipline
+        data_type: string
+      - name: alert_disciplineexpires
+        data_type: date
+      - name: alert_guardian
+        data_type: string
+      - name: alert_guardianexpires
+        data_type: date
+      - name: alert_medical
+        data_type: string
+      - name: alert_medicalexpires
+        data_type: date
+      - name: alert_other
+        data_type: string
+      - name: alert_otherexpires
+        data_type: date
+      - name: state_studentnumber
+        data_type: string
+      - name: districtofresidence
+        data_type: string
+      - name: enrollmenttype
+        data_type: string
+      - name: enrollment_transfer_date_pend
+        data_type: date
+      - name: enrollment_transfer_info
+        data_type: bytes
+      - name: exitcomment
+        data_type: string
+      - name: team
+        data_type: string
+      - name: house
+        data_type: string
+      - name: building
+        data_type: string
+      - name: withdrawal_reason_code
+        data_type: string
+      - name: guardian_studentcont_guid
+        data_type: string
+      - name: father_studentcont_guid
+        data_type: string
+      - name: mother_studentcont_guid
+        data_type: string
+      - name: studentpers_guid
+        data_type: string
+      - name: studentpict_guid
+        data_type: string
+      - name: studentschlenrl_guid
+        data_type: string
+      - name: summerschoolnote
+        data_type: string
+      - name: geocode
+        data_type: string
+      - name: mailing_geocode
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: allowwebaccess
+        data_type: int64
+      - name: balance1
+        data_type: float64
+      - name: balance2
+        data_type: float64
+      - name: balance3
+        data_type: float64
+      - name: balance4
+        data_type: float64
+      - name: campusid
+        data_type: int64
+      - name: classof
+        data_type: int64
+      - name: cumulative_gpa
+        data_type: float64
+      - name: cumulative_pct
+        data_type: float64
+      - name: customrank_gpa
+        data_type: float64
+      - name: dcid
+        data_type: int64
+      - name: districtentrygradelevel
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: enrollment_schoolid
+        data_type: int64
+      - name: enrollmentcode
+        data_type: int64
+      - name: enrollmentid
+        data_type: int64
+      - name: exclude_fr_rank
+        data_type: int64
+      - name: fedethnicity
+        data_type: int64
+      - name: fedracedecline
+        data_type: int64
+      - name: fee_exemption_status
+        data_type: int64
+      - name: fteid
+        data_type: int64
+      - name: fulltimeequiv_obsolete
+        data_type: float64
+      - name: gpentryyear
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: gradreqsetid
+        data_type: int64
+      - name: graduated_rank
+        data_type: int64
+      - name: graduated_schoolid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: ismigrated
+        data_type: int64
+      - name: ldapenabled
+        data_type: int64
+      - name: lunch_id
+        data_type: float64
+      - name: membershipshare
+        data_type: float64
+      - name: next_school
+        data_type: int64
+      - name: person_id
+        data_type: int64
+      - name: phone_id
+        data_type: int64
+      - name: photoflag
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: sched_loadlock
+        data_type: int64
+      - name: sched_lockstudentschedule
+        data_type: int64
+      - name: sched_nextyeargrade
+        data_type: int64
+      - name: sched_priority
+        data_type: int64
+      - name: sched_scheduled
+        data_type: int64
+      - name: sched_yearofgraduation
+        data_type: int64
+      - name: schoolentrygradelevel
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: sdatarn
+        data_type: int64
+      - name: simple_gpa
+        data_type: float64
+      - name: simple_pct
+        data_type: float64
+      - name: state_enrollflag
+        data_type: int64
+      - name: state_excludefromreporting
+        data_type: int64
+      - name: student_allowwebaccess
+        data_type: int64
+      - name: summerschoolid
+        data_type: int64
+      - name: teachergroupid
+        data_type: int64
+      - name: tuitionpayer
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: wm_createtime
+        data_type: int64
+      - name: wm_tier
+        data_type: int64
+      - name: gender_code
+        data_type: string
+      - name: ethnicity_code
+        data_type: string
+  - name: stg_powerschool__studenttest
+    columns:
+      - name: dcid
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: termid
+        data_type: int64
+      - name: testid
+        data_type: int64
+      - name: test_date
+        data_type: date
+      - name: psguid
+        data_type: string
+  - name: stg_powerschool__studenttestscore
+    columns:
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: testscoreid
+        data_type: int64
+      - name: studenttestid
+        data_type: int64
+      - name: numscore
+        data_type: float64
+      - name: percentscore
+        data_type: float64
+      - name: readonly
+        data_type: int64
+      - name: alphascore
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: notes
+        data_type: string
+  - name: stg_powerschool__teachercategory
+    columns:
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: categorytype
+        data_type: string
+      - name: color
+        data_type: string
+      - name: defaultpublishstate
+        data_type: string
+      - name: defaultpublishoption
+        data_type: string
+      - name: defaultscoretype
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: teachercategoryid
+        data_type: int64
+      - name: districtteachercategoryid
+        data_type: int64
+      - name: usersdcid
+        data_type: int64
+      - name: isinfinalgrades
+        data_type: int64
+      - name: isactive
+        data_type: int64
+      - name: isusermodifiable
+        data_type: int64
+      - name: teachermodified
+        data_type: int64
+      - name: displayposition
+        data_type: int64
+      - name: defaultscoreentrypoints
+        data_type: numeric
+      - name: defaultextracreditpoints
+        data_type: numeric
+      - name: defaultweight
+        data_type: numeric
+      - name: defaulttotalvalue
+        data_type: numeric
+      - name: isdefaultpublishscores
+        data_type: int64
+      - name: defaultdaysbeforedue
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+  - name: stg_powerschool__termbins
+    columns:
+      - name: storecode
+        data_type: string
+      - name: date1
+        data_type: date
+      - name: creditstring
+        data_type: string
+      - name: collectiondate
+        data_type: date
+      - name: description
+        data_type: string
+      - name: date2
+        data_type: date
+      - name: citasmt
+        data_type: string
+      - name: changegradeto
+        data_type: string
+      - name: excludedmarks
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: termid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: creditpct
+        data_type: float64
+      - name: collect
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: showonspreadsht
+        data_type: int64
+      - name: currentgrade
+        data_type: int64
+      - name: storegrades
+        data_type: int64
+      - name: numattpoints
+        data_type: float64
+      - name: suppressltrgrd
+        data_type: int64
+      - name: gradescaleid
+        data_type: int64
+      - name: suppresspercentscr
+        data_type: int64
+      - name: aregradeslocked
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: storecode_type
+        data_type: string
+      - name: storecode_order
+        data_type: string
+  - name: stg_powerschool__terms
+    columns:
+      - name: name
+        data_type: string
+      - name: firstday
+        data_type: date
+      - name: lastday
+        data_type: date
+      - name: abbreviation
+        data_type: string
+      - name: importmap
+        data_type: string
+      - name: terminfo_guid
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: noofdays
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: yearlycredithrs
+        data_type: float64
+      - name: termsinyear
+        data_type: int64
+      - name: portion
+        data_type: int64
+      - name: autobuildbin
+        data_type: int64
+      - name: isyearrec
+        data_type: int64
+      - name: periods_per_day
+        data_type: int64
+      - name: days_per_cycle
+        data_type: int64
+      - name: attendance_calculation_code
+        data_type: int64
+      - name: sterms
+        data_type: int64
+      - name: suppresspublicview
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: fiscal_year
+        data_type: int64
+  - name: stg_powerschool__test
+    columns:
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: importcode
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: test_type
+        data_type: int64
+  - name: stg_powerschool__testscore
+    columns:
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: importcode
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: testid
+        data_type: int64
+      - name: sortorder
+        data_type: int64
+  - name: stg_powerschool__u_clg_et_stu
+    columns:
+      - name: exit_code
+        data_type: string
+      - name: exit_date
+        data_type: date
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: id
+        data_type: int64
+      - name: studentsdcid
+        data_type: int64
+      - name: when_modified_or_created
+        data_type: timestamp
+  - name: stg_powerschool__u_clg_et_stu_alt
+    columns:
+      - name: exit_code
+        data_type: string
+      - name: exit_date
+        data_type: date
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: id
+        data_type: int64
+      - name: studentsdcid
+        data_type: int64
+      - name: when_modified_or_created
+        data_type: timestamp
+  - name: stg_powerschool__u_studentsuserfields
+    columns:
+      - name: cr_prevschoolname
+        data_type: string
+      - name: infosnap_id
+        data_type: string
+      - name: infosnap_opt_in
+        data_type: string
+      - name: media_release
+        data_type: string
+      - name: newark_enrollment_number
+        data_type: string
+      - name: rides_staff
+        data_type: string
+      - name: studentsdcid
+        data_type: int64
+      - name: c_504_status
+        data_type: int64
+      - name: is_504
+        data_type: boolean
+  - name: stg_powerschool__users
+    columns:
+      - name: lastfirst
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: title
+        data_type: string
+      - name: homeroom
+        data_type: string
+      - name: email_addr
+        data_type: string
+      - name: password
+        data_type: string
+      - name: ipaddrrestrict
+        data_type: string
+      - name: accessvalue
+        data_type: string
+      - name: homepage
+        data_type: string
+      - name: loginid
+        data_type: string
+      - name: defaultstudscrn
+        data_type: string
+      - name: teachernumber
+        data_type: string
+      - name: ssn
+        data_type: string
+      - name: home_phone
+        data_type: string
+      - name: school_phone
+        data_type: string
+      - name: street
+        data_type: string
+      - name: city
+        data_type: string
+      - name: state
+        data_type: string
+      - name: zip
+        data_type: string
+      - name: periodsavail
+        data_type: string
+      - name: powergradepw
+        data_type: string
+      - name: canchangeschool
+        data_type: string
+      - name: teacherloginpw
+        data_type: string
+      - name: nameasimported
+        data_type: string
+      - name: teacherloginid
+        data_type: string
+      - name: teacherloginip
+        data_type: string
+      - name: wm_status
+        data_type: string
+      - name: wm_statusdate
+        data_type: date
+      - name: wm_address
+        data_type: string
+      - name: wm_password
+        data_type: string
+      - name: wm_createdate
+        data_type: date
+      - name: wm_ta_flag
+        data_type: string
+      - name: wm_ta_date
+        data_type: date
+      - name: wm_alias
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: preferredname
+        data_type: string
+      - name: lastmeal
+        data_type: string
+      - name: staffpers_guid
+        data_type: string
+      - name: sif_stateprid
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: homeschoolid
+        data_type: int64
+      - name: photo
+        data_type: int64
+      - name: numlogins
+        data_type: int64
+      - name: allowloginstart
+        data_type: int64
+      - name: allowloginend
+        data_type: int64
+      - name: psaccess
+        data_type: int64
+      - name: groupvalue
+        data_type: int64
+      - name: lunch_id
+        data_type: float64
+      - name: supportcontact
+        data_type: int64
+      - name: wm_tier
+        data_type: int64
+      - name: wm_createtime
+        data_type: int64
+      - name: wm_exclude
+        data_type: int64
+      - name: adminldapenabled
+        data_type: int64
+      - name: teacherldapenabled
+        data_type: int64
+      - name: maximum_load
+        data_type: int64
+      - name: gradebooktype
+        data_type: int64
+      - name: fedethnicity
+        data_type: int64
+      - name: fedracedecline
+        data_type: int64
+      - name: ptaccess
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+  - name: stg_powerschool__userscorefields
+    columns:
+      - name: dob
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: photolastupdated
+        data_type: string
+      - name: pscore_legal_first_name
+        data_type: string
+      - name: pscore_legal_gender
+        data_type: string
+      - name: pscore_legal_last_name
+        data_type: string
+      - name: pscore_legal_middle_name
+        data_type: string
+      - name: pscore_legal_suffix
+        data_type: string
+      - name: usersdcid
+        data_type: int64
