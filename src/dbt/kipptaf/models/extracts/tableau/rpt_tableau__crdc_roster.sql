@@ -1,7 +1,7 @@
 with
     retained as (
         -- reason for distinct: for students with multiple enrollments
-        select distinct student_number, is_retained_year,
+        select student_number, is_retained_year,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
             -- submission is always for the previous school year, but retention is
@@ -9,6 +9,7 @@ with
             academic_year = {{ var("current_academic_year") }}
             and grade_level != 99
             and is_retained_year
+            and rn_year = 1
             -- miami does their own submission
             and region != 'Miami'
     ),
