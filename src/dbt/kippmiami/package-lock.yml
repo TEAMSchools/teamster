@@ -5,6 +5,8 @@ packages:
   - local: ../renlearn
   - package: dbt-labs/dbt_external_tables
     version: 0.11.1
+  - package: dbt-labs/codegen
+    version: 0.13.1
   - package: dbt-labs/dbt_utils
     version: 1.3.0
-sha1_hash: 76354f935d6896e32681fd42cc01f77e7d5a7419
+sha1_hash: 0d8c55805158322f989c7b4ea61d1d6aaa5db0d1
