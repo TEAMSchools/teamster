@@ -1,6 +1,5 @@
 with
     retained as (
-        -- reason for distinct: for students with multiple enrollments
         select student_number, is_retained_year,
         from {{ ref("int_extracts__student_enrollments") }}
         where
@@ -13,7 +12,6 @@ with
             and region != 'Miami'
     ),
 
-    -- "dups" will exist because of multiple enrollments
     enrollment as (
         select
             e._dbt_source_relation,
@@ -273,7 +271,7 @@ with
         select *, 'COUR' as crdc_question_section,
         from custom_schedule
         -- alg 1 ms courses use a special code
-        where sced_code_courses = '52052'
+        where sced_code_courses in ('52052', '02052')
 
         union all
 
@@ -375,6 +373,7 @@ select
     crdc_gender,
 
     null as courses_course_name,
+    null as sections_dcid,
     null as sced_course_name,
     null as crdc_course_group,
     null as crdc_subject_group,
@@ -432,6 +431,7 @@ select
     crdc_gender,
 
     null as courses_course_name,
+    null as sections_dcid,
     null as sced_course_name,
     null as crdc_course_group,
     null as crdc_subject_group,
@@ -481,6 +481,7 @@ select
     e.crdc_gender,
 
     f.courses_course_name,
+    f.sections_dcid,
     f.sced_course_name,
     f.crdc_course_group,
     f.crdc_subject_group,
@@ -536,6 +537,7 @@ select
     e.crdc_gender,
 
     f.courses_course_name,
+    f.sections_dcid,
     f.sced_course_name,
     f.crdc_course_group,
     f.crdc_subject_group,
@@ -591,6 +593,7 @@ select
     e.crdc_gender,
 
     f.courses_course_name,
+    f.sections_dcid,
     f.sced_course_name,
     f.crdc_course_group,
     f.crdc_subject_group,
@@ -646,6 +649,7 @@ select
     e.crdc_gender,
 
     f.courses_course_name,
+    f.sections_dcid,
     f.sced_course_name,
     f.crdc_course_group,
     f.crdc_subject_group,
@@ -701,6 +705,7 @@ select
     e.crdc_gender,
 
     f.courses_course_name,
+    f.sections_dcid,
     f.sced_course_name,
     f.crdc_course_group,
     f.crdc_subject_group,
@@ -756,6 +761,7 @@ select
     e.crdc_gender,
 
     f.courses_course_name,
+    f.sections_dcid,
     f.sced_course_name,
     f.crdc_course_group,
     f.crdc_subject_group,
@@ -812,6 +818,7 @@ select
     e.crdc_gender,
 
     null as courses_course_name,
+    null as sections_dcid,
     null as sced_course_name,
     null as crdc_course_group,
     null as crdc_subject_group,
