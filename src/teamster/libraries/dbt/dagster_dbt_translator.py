@@ -51,7 +51,8 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
 
             return (
                 # forked from AutomationCondition.eager()
-                # added configurable ignore on any_deps_updated()
+                # - added configurable ignore on any_deps_updated()
+                # - replaced since_last_handled() to allow initial_evaluation()
                 (
                     AutomationCondition.in_latest_time_window()
                     & (
@@ -59,7 +60,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                         | AutomationCondition.any_deps_updated().ignore(
                             ignore_selection
                         )
-                    ).since_last_handled()
+                    ).since(
+                        AutomationCondition.newly_requested()
+                        | AutomationCondition.newly_updated()
+                    )
                     & ~AutomationCondition.any_deps_missing()
                     & ~AutomationCondition.any_deps_in_progress()
                     & ~AutomationCondition.in_progress()
