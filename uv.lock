@@ -433,18 +433,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-fivetran"
-version = "0.26.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "dagster" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bd/e3/ba4abdace2b856bead6c585988e1ac2ddab1cfd9930c768f551045ea3d2b/dagster-fivetran-0.26.2.tar.gz", hash = "sha256:135c34830096e942a361ec2bac4c6f9ffc9c5fb6a2f1d5f613058d85391a57f5", size = 32373 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/23/de/a81297a4a3058f72fe42a3f9a210906795f55d27bd661d2c5890822e1937/dagster_fivetran-0.26.2-py3-none-any.whl", hash = "sha256:80ef350354e26431626cf8c8ee9804b60b7570c06407864cdccc2ebfa9678d48", size = 37821 },
-]
-
-[[package]]
 name = "dagster-gcp"
 version = "0.26.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2694,7 +2682,6 @@ dependencies = [
     { name = "dagster-cloud" },
     { name = "dagster-dbt" },
     { name = "dagster-dlt" },
-    { name = "dagster-fivetran" },
     { name = "dagster-gcp" },
     { name = "dagster-k8s" },
     { name = "dagster-slack" },
@@ -2730,7 +2717,6 @@ requires-dist = [
     { name = "dagster-cloud" },
     { name = "dagster-dbt" },
     { name = "dagster-dlt" },
-    { name = "dagster-fivetran" },
     { name = "dagster-gcp" },
     { name = "dagster-k8s" },
     { name = "dagster-slack" },

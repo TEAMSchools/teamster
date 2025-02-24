@@ -90,8 +90,16 @@ models:
         +materialized: table
     coupa:
       +schema: coupa
-      staging:
-        +materialized: table
+      api:
+        staging:
+          +materialized: table
+      drive:
+        staging:
+          +materialized: table
+      fivetran:
+        +enabled: false
+        staging:
+          +materialized: table
     crdc:
       +schema: crdc
       staging:
