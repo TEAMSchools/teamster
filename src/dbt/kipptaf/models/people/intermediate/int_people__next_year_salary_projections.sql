@@ -35,11 +35,12 @@ select
         h.base_remuneration_annual_rate_amount
     ) as ay_hourly_salary_rate,
 
-    coalesce(pss.salary_rule, tss.salary_rule, 'Annual Adjustment') as salary_rule,
+    coalesce(pss.salary_rule, tss.salary_rule, mss.salary_rule, 'Annual Adjustment') as salary_rule,
 
     coalesce(
         pss.scale_ny_salary,
         tss.scale_ny_salary + h.base_remuneration_annual_rate_amount,
+        if(mss.salary_rule = 'PM Increase - Missing PM',h.base_remuneration_annual_rate_amount + mss.scale_ny_salary,null),
         case
             when h.base_remuneration_annual_rate_amount < 60000
             then
@@ -95,3 +96,10 @@ left join
     and h.job_title = tss.job_title
     and h.home_business_unit_name = tss.region
     and p.final_tier = tss.scale_step
+left join
+    {{ ref("stg_people__salary_scale")}} as mss
+    on y.academic_year = mss.academic_year
+    and h.job_title = mss.job_title
+    and h.home_business_unit_name = mss.region
+    and p.ay_pm4_overall_tier is null
+    and mss.salary_rule = 'PM Increase - Missing PM'
