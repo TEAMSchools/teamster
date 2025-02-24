@@ -17,7 +17,9 @@ select
     y.academic_year,
 
     h.home_business_unit_name,
+    h.wf_mgr_pay_rule,
     h.base_remuneration_annual_rate_amount as ay_salary,
+    h.base_remuneration_hourly_rate_amount as ay_hourly,
 
     p.final_tier as ay_pm4_overall_tier,
 
@@ -26,6 +28,12 @@ select
     pss.scale_step,
 
     tss.scale_ny_salary as pm_salary_increase,
+
+    if(
+        regexp_contains(h.wf_mgr_pay_rule, r'Hourly'),
+        h.base_remuneration_hourly_rate_amount,
+        h.base_remuneration_annual_rate_amount
+    ) as ay_hourly_salary_rate,
 
     coalesce(pss.salary_rule, tss.salary_rule, 'Annual Adjustment') as salary_rule,
 
