@@ -251,6 +251,7 @@ select
     w.wage_law_name,
     w.wage_law_coverage,
     w.base_remuneration_annual_rate_amount,
+    w.base_remuneration_hourly_rate_amount,
     w.additional_remunerations_rate_amount,
     w.personal_cell,
     w.personal_email,
