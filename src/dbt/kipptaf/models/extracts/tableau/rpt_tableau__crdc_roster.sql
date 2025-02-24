@@ -383,6 +383,8 @@ select
     null as is_oct_01_course,
     null as is_last_day_course,
 
+    null as passed_course,
+
     crdc_question_section,
 
     case
@@ -441,6 +443,8 @@ select
     null as is_oct_01_course,
     null as is_last_day_course,
 
+    null as passed_course,
+
     'ENRL' as crdc_question_section,
     'Student Enrollment' as crdc_question_description,
 
@@ -490,6 +494,8 @@ select
 
     f.is_oct_01_course,
     f.is_last_day_course,
+
+    f.passed_course,
 
     f.crdc_question_section,
     'Dual Enrollment' as crdc_question_description,
@@ -547,6 +553,8 @@ select
     f.is_oct_01_course,
     f.is_last_day_course,
 
+    f.passed_course,
+
     f.crdc_question_section,
     'Credit Recovery' as crdc_question_description,
 
@@ -602,6 +610,8 @@ select
 
     f.is_oct_01_course,
     f.is_last_day_course,
+
+    f.passed_course,
 
     f.crdc_question_section,
     'Algebra I 7/8' as crdc_question_description,
@@ -659,6 +669,8 @@ select
     f.is_oct_01_course,
     f.is_last_day_course,
 
+    f.passed_course,
+
     f.crdc_question_section,
     'HS Math Courses' as crdc_question_description,
 
@@ -714,6 +726,8 @@ select
 
     f.is_oct_01_course,
     f.is_last_day_course,
+
+    f.passed_course,
 
     f.crdc_question_section,
     'HS Science Courses' as crdc_question_description,
@@ -771,6 +785,8 @@ select
     f.is_oct_01_course,
     f.is_last_day_course,
 
+    f.passed_course,
+
     f.crdc_question_section,
     'HS AP Courses' as crdc_question_description,
 
@@ -827,6 +843,8 @@ select
 
     null as is_oct_01_course,
     null as is_last_day_course,
+
+    null as passed_course,
 
     'EXAM-1' as crdc_question_section,
     'ACT/SAT' as crdc_question_description,
