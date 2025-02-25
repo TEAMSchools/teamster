@@ -29,6 +29,15 @@ dagsterCloud:
   # expects this secret to already exist when it is installed.
   agentTokenSecretName: "dagster-cloud-agent-token"
 
+  # Specify the name of the environment variable provided by the secret "agentTokenSecretName", if the
+  # agentTokenValue is not set.
+  # This environment variable will be provided to the Dagster instance configuration
+  # to authenticate with Dagster Cloud servers from both the agent and user code. It needs
+  # to be propagated to the agent pod and any pods that the agent creates to run Dagster code.
+  # The default value does not need to be changed in most installations, unless the provided secret
+  # uses a different name for this variable.
+  # agentTokenEnvVarName: "DAGSTER_CLOUD_AGENT_TOKEN"
+
   # You can also set agentTokenValue to the value of a Dagster Cloud agent token instead of using
   # agentTokenSecretName for authentication. However, if this value is set, the agent token's will
   # be visible in plaintext in the description of the agent pod, as well as other pods that it creates.
@@ -136,14 +145,27 @@ dagsterCloudAgent:
   #     maxSurge: 200%
 
   # Additional environment variables to set.
-  # A Kubernetes ConfigMap will be created with these environment variables. See:
+  #
+  # Supports two distinct types of input.
+  # 1) dict[str, str] - a dictionary of key, value that will be set both in the agent's container. Additionally,
+  # a Kubernetes ConfigMap will be created with these environment variables. See:
   # https://kubernetes.io/docs/concepts/configuration/configmap/
   #
-  # Example:
+  # 2) A list of Kubernetes EnvVar that will be available to the agent only.
+  # See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvar-v1-core
   #
-  # env:
+  # Examples:
+  #
+  # 1. env:
   #   ENV_ONE: one
   #   ENV_TWO: two
+  #
+  # 2. env:
+  #    - name: DAGSTER_TOKEN
+  #      valueFrom:
+  #        secretKeyRef:
+  #          name: dagster
+  #          key: dagsterAgentToken
   env: {}
 
   # Additional sources of environment variables on the agent container. Follows the

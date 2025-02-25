@@ -45,6 +45,8 @@ with
             w.wage_law_coverage__coverage_code__name as wage_law_coverage,
             w.base_remuneration__annual_rate_amount__amount_value
             as base_remuneration_annual_rate_amount,
+            w.base_remuneration__hourly_rate_amount__amount_value
+            as base_remuneration_hourly_rate_amount,
             w.additional_remunerations__rate__amount_value__sum
             as additional_remunerations_rate_amount,
             w.communication__personal_cell__formatted_number as personal_cell,
@@ -163,6 +165,8 @@ with
             flsa_status_name as wage_law_coverage,
             base_salary as base_remuneration_annual_rate_amount,
 
+            null as base_remuneration_hourly_rate_amount,
+
             null as additional_remunerations_rate_amount,
 
             mobile_number as personal_cell,
@@ -247,6 +251,7 @@ select
     w.wage_law_name,
     w.wage_law_coverage,
     w.base_remuneration_annual_rate_amount,
+    w.base_remuneration_hourly_rate_amount,
     w.additional_remunerations_rate_amount,
     w.personal_cell,
     w.personal_email,
