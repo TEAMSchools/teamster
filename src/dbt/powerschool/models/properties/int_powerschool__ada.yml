@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: int_powerschool__ada
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: days_in_membership
+        data_type: float64
+      - name: days_present
+        data_type: float64
+      - name: days_absent_unexcused
+        data_type: float64
+      - name: ada
+        data_type: float64
