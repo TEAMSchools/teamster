@@ -1,0 +1,138 @@
+version: 2
+models:
+  - name: rpt_tableau__ddi_dashboard
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: region
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: school_level
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: week_start_monday
+        data_type: date
+      - name: week_end_sunday
+        data_type: date
+      - name: days_in_session
+        data_type: int64
+      - name: term
+        data_type: string
+      - name: title
+        data_type: string
+      - name: subject_area
+        data_type: string
+      - name: administered_at
+        data_type: date
+      - name: module_type
+        data_type: string
+      - name: module_code
+        data_type: string
+      - name: date_taken
+        data_type: date
+      - name: response_type
+        data_type: string
+      - name: response_type_code
+        data_type: string
+      - name: response_type_description
+        data_type: string
+      - name: response_type_root_description
+        data_type: string
+      - name: percent_correct
+        data_type: float64
+      - name: is_mastery
+        data_type: boolean
+      - name: performance_band_label_number
+        data_type: float64
+      - name: performance_band_label
+        data_type: string
+      - name: is_replacement
+        data_type: boolean
+      - name: standard_domain
+        data_type: string
+      - name: course_section
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: course_credittype
+        data_type: string
+      - name: course_teachernumber
+        data_type: string
+      - name: course_teacher_name
+        data_type: string
+      - name: homeroom_section
+        data_type: string
+      - name: homeroom_teachernumber
+        data_type: string
+      - name: homeroom_teacher_name
+        data_type: string
+      - name: head_of_school
+        data_type: string
+      - name: ml_status
+        data_type: string
+      - name: status_504
+        data_type: string
+      - name: self_contained_status
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string
+      - name: is_current_week
+        data_type: boolean
+      - name: assessment_id
+        data_type: string
+      - name: is_mastery_int
+        data_type: float64
+      - name: is_complete
+        data_type: int64
+      - name: qbl
+        data_type: string
+      - name: grade_goal
+        data_type: float64
+      - name: school_goal
+        data_type: float64
+      - name: region_goal
+        data_type: float64
+      - name: organization_goal
+        data_type: float64
+      - name: dibels_most_recent_composite
+        data_type: string
+      - name: state_test_proficiency
+        data_type: string
+      - name: is_exempt_iready
+        data_type: boolean
+      - name: total_iready_lessons_passed_reading
+        data_type: float64
+      - name: total_iready_lessons_passed_math
+        data_type: float64
+      - name: nj_student_tier
+        data_type: string
+      - name: is_qbl
+        data_type: boolean
+      - name: is_passed_iready_2plus_reading_int
+        data_type: int64
+      - name: is_passed_iready_4plus_reading_int
+        data_type: int64
+      - name: is_passed_iready_2plus_math_int
+        data_type: int64
+      - name: is_passed_iready_4plus_math_int
+        data_type: int64

@@ -1,0 +1,52 @@
+version: 2
+models:
+  - name: rpt_illuminate__courses
+    columns:
+      - name: 01 course id
+        data_type: string
+      - name: 02 full name
+        data_type: string
+      - name: 03 short name
+        data_type: string
+      - name: 04 department name
+        data_type: string
+      - name: 05 low grade level id
+        data_type: int64
+      - name: 06 high grade level id
+        data_type: int64
+      - name: 07 site id list
+        data_type: int64
+      - name: 08 active
+        data_type: int64
+      - name: 09 a - g requirement category
+        data_type: int64
+      - name: 10 course weight
+        data_type: int64
+      - name: 11 course description
+        data_type: int64
+      - name: 12 credits possible
+        data_type: int64
+      - name: 13 variable credit class
+        data_type: int64
+      - name: 14 maximum credits
+        data_type: int64
+      - name: 15 special education course
+        data_type: int64
+      - name: 16 max capacity
+        data_type: int64
+      - name: 17 intervention course
+        data_type: int64
+      - name: 18 nclb instructional level
+        data_type: int64
+      - name: 19 course content
+        data_type: int64
+      - name: 20 education service
+        data_type: int64
+      - name: 21 instructional strategy
+        data_type: int64
+      - name: 22 program funding source
+        data_type: int64
+      - name: 23 cte funding provider
+        data_type: int64
+      - name: 24 tech prep
+        data_type: int64

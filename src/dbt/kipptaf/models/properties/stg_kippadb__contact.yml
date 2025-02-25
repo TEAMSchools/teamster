@@ -1,0 +1,571 @@
+version: 2
+models:
+  - name: stg_kippadb__contact
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: account_id
+        data_type: string
+      - name: assistant_name
+        data_type: string
+      - name: assistant_phone
+        data_type: string
+      - name: birthdate
+        data_type: date
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: department
+        data_type: string
+      - name: email
+        data_type: string
+      - name: email_bounced_date
+        data_type: timestamp
+      - name: email_bounced_reason
+        data_type: string
+      - name: fax
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: has_opted_out_of_email
+        data_type: boolean
+      - name: home_phone
+        data_type: string
+      - name: is_email_bounced
+        data_type: boolean
+      - name: jigsaw
+        data_type: string
+      - name: jigsaw_contact_id
+        data_type: string
+      - name: last_activity_date
+        data_type: date
+      - name: last_cu_request_date
+        data_type: timestamp
+      - name: last_cu_update_date
+        data_type: timestamp
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: last_name
+        data_type: string
+      - name: last_referenced_date
+        data_type: timestamp
+      - name: last_viewed_date
+        data_type: timestamp
+      - name: lead_source
+        data_type: string
+      - name: mailing_address
+        data_type: json
+      - name: mailing_city
+        data_type: string
+      - name: mailing_country
+        data_type: string
+      - name: mailing_geocode_accuracy
+        data_type: string
+      - name: mailing_latitude
+        data_type: numeric
+      - name: mailing_longitude
+        data_type: numeric
+      - name: mailing_postal_code
+        data_type: string
+      - name: mailing_state
+        data_type: string
+      - name: mailing_street
+        data_type: string
+      - name: master_record_id
+        data_type: string
+      - name: mobile_phone
+        data_type: string
+      - name: other_address
+        data_type: json
+      - name: other_city
+        data_type: string
+      - name: other_country
+        data_type: string
+      - name: other_geocode_accuracy
+        data_type: string
+      - name: other_latitude
+        data_type: numeric
+      - name: other_longitude
+        data_type: numeric
+      - name: other_phone
+        data_type: string
+      - name: other_postal_code
+        data_type: string
+      - name: other_state
+        data_type: string
+      - name: other_street
+        data_type: string
+      - name: owner_id
+        data_type: string
+      - name: phone
+        data_type: string
+      - name: photo_url
+        data_type: string
+      - name: record_type_id
+        data_type: string
+      - name: reports_to_id
+        data_type: string
+      - name: salutation
+        data_type: string
+      - name: system_modstamp
+        data_type: timestamp
+      - name: title
+        data_type: string
+      - name: academic_status
+        data_type: string
+      - name: academics
+        data_type: numeric
+      - name: accumulated_credits_college
+        data_type: numeric
+      - name: accumulated_credits_hs
+        data_type: numeric
+      - name: actual_college_graduation_date
+        data_type: date
+      - name: actual_hs_graduation_date
+        data_type: date
+      - name: advising_provider
+        data_type: string
+      - name: any_college_admin
+        data_type: numeric
+      - name: any_kipp_hs_enrollment
+        data_type: boolean
+      - name: associate_degree_grad_count
+        data_type: numeric
+      - name: attending_college_enrollments
+        data_type: numeric
+      - name: attending_hs_enrollments
+        data_type: numeric
+      - name: bach_degree_admin
+        data_type: string
+      - name: brag_sheet_submitted
+        data_type: date
+      - name: campus_staff_type
+        data_type: string
+      - name: career_training_program_status
+        data_type: string
+      - name: carrier
+        data_type: string
+      - name: class_quartile
+        data_type: numeric
+      - name: class_rank
+        data_type: numeric
+      - name: class_rank_percentile
+        data_type: numeric
+      - name: collaborative_advising_student
+        data_type: boolean
+      - name: college_apps_accepted
+        data_type: numeric
+      - name: college_apps_in_progress_wishlist
+        data_type: numeric
+      - name: college_apps_submitted
+        data_type: numeric
+      - name: college_counselor
+        data_type: string
+      - name: college_credits_attempted
+        data_type: numeric
+      - name: college_cumulative_credits_attempted
+        data_type: numeric
+      - name: college_cumulative_credits_earned
+        data_type: numeric
+      - name: college_graduated_from
+        data_type: string
+      - name: college_level
+        data_type: string
+      - name: college_match_display_gpa
+        data_type: numeric
+      - name: college_recommendation_complete
+        data_type: date
+      - name: college_status
+        data_type: string
+      - name: college_cte_attending_matric_enrollments
+        data_type: numeric
+      - name: contact_count
+        data_type: numeric
+      - name: counselor_s_school_name
+        data_type: string
+      - name: count_active_enrollments
+        data_type: numeric
+      - name: count_hs_graduated_enrollment
+        data_type: numeric
+      - name: count_of_bach_degree
+        data_type: numeric
+      - name: credits_accumlated_hs
+        data_type: numeric
+      - name: credits_accumulated_college
+        data_type: numeric
+      - name: cumulative_gpa
+        data_type: numeric
+      - name: cumulative_gpa_lookup
+        data_type: string
+      - name: current_academic_status
+        data_type: string
+      - name: current_college_cumulative_gpa
+        data_type: numeric
+      - name: current_college_semester_gpa
+        data_type: numeric
+      - name: current_college_standing
+        data_type: string
+      - name: current_cumulative_gpa
+        data_type: numeric
+      - name: current_kipp_student
+        data_type: string
+      - name: current_level
+        data_type: string
+      - name: current_transcript_date
+        data_type: date
+      - name: current_transcript_term
+        data_type: string
+      - name: currently_enrolled_school
+        data_type: string
+      - name: date_last_opt_in_request
+        data_type: date
+      - name: date_no_postsec_pathway_confirmed
+        data_type: date
+      - name: date_of_mass_text_opt_in
+        data_type: date
+      - name: date_of_out_of_country_move
+        data_type: date
+      - name: dep_post_hs_simple_admin
+        data_type: string
+      - name: df_has_fafsa
+        data_type: string
+      - name: df_has_fafsa4caster
+        data_type: string
+      - name: df_has_gpa
+        data_type: string
+      - name: dual_enrollment
+        data_type: boolean
+      - name: earned_to_attempted_college_credits
+        data_type: numeric
+      - name: education_level
+        data_type: string
+      - name: efc_from_fafsa
+        data_type: numeric
+      - name: efc_from_fafsa4caster
+        data_type: numeric
+      - name: enlisted_in_military
+        data_type: string
+      - name: enrolled_at_ambassador_college
+        data_type: boolean
+      - name: enrolled_at_partner_college
+        data_type: boolean
+      - name: enrolled_in_kipp_hs_at_least_1_year
+        data_type: boolean
+      - name: ethnicity
+        data_type: string
+      - name: expected_college_graduation
+        data_type: date
+      - name: expected_hs_graduation
+        data_type: date
+      - name: external_student
+        data_type: boolean
+      - name: external_student_affiliation
+        data_type: string
+      - name: family_income_bracket
+        data_type: string
+      - name: financial
+        data_type: numeric
+      - name: financial_status
+        data_type: string
+      - name: first_generation_college_student
+        data_type: boolean
+      - name: flag_for_benchmark_follow_up
+        data_type: boolean
+      - name: frpl_eligible
+        data_type: string
+      - name: full_name
+        data_type: string
+      - name: full_time_employed
+        data_type: numeric
+      - name: gender
+        data_type: string
+      - name: gpa_in_major
+        data_type: numeric
+      - name: grad_school_attended
+        data_type: string
+      - name: grade_level
+        data_type: string
+      - name: has_active_collaborative_consent_form
+        data_type: boolean
+      - name: has_any_college_admin
+        data_type: string
+      - name: has_app_in_progress_wishlist
+        data_type: string
+      - name: has_applied_to_a_college
+        data_type: string
+      - name: has_been_accepted_to_college
+        data_type: string
+      - name: has_high_school_enrollment
+        data_type: string
+      - name: has_hs_graduated_enrollment
+        data_type: string
+      - name: has_linked_in_profile
+        data_type: boolean
+      - name: has_matric_college_enrollment
+        data_type: string
+      - name: has_taken_placement_test
+        data_type: string
+      - name: high_school_apps_accepted
+        data_type: numeric
+      - name: high_school_apps_in_progress_wishlist
+        data_type: numeric
+      - name: high_school_apps_submitted
+        data_type: numeric
+      - name: high_school_enrollments_count
+        data_type: numeric
+      - name: high_school_graduated_from
+        data_type: string
+      - name: high_school_status
+        data_type: string
+      - name: highest_act_diagnostic_score
+        data_type: numeric
+      - name: highest_act_score
+        data_type: numeric
+      - name: highest_psat_score
+        data_type: numeric
+      - name: highest_sat_score
+        data_type: numeric
+      - name: highest_sat_score_before_march_2016
+        data_type: numeric
+      - name: hs_recommendation_complete
+        data_type: date
+      - name: informed_consent
+        data_type: boolean
+      - name: intent_to_enlist
+        data_type: boolean
+      - name: kca_kipp_id
+        data_type: string
+      - name: kipp_college_class
+        data_type: string
+      - name: kipp_foundation_id
+        data_type: string
+      - name: kipp_hs_graduate
+        data_type: boolean
+      - name: kipp_ms_graduate
+        data_type: boolean
+      - name: kipp_region_name
+        data_type: string
+      - name: kipp_region_school
+        data_type: string
+      - name: language_spoken_at_home
+        data_type: string
+      - name: last_advisor_activity
+        data_type: date
+      - name: last_alumni_survey_completion_date
+        data_type: date
+      - name: last_outreach
+        data_type: date
+      - name: last_successful_advisor_contact
+        data_type: date
+      - name: last_successful_advisor_contact_range
+        data_type: string
+      - name: last_successful_contact
+        data_type: date
+      - name: last_successful_contact_range
+        data_type: string
+      - name: latest_fafsa_date
+        data_type: date
+      - name: latest_pfs_date
+        data_type: date
+      - name: latest_resume
+        data_type: date
+      - name: latest_state_financial_aid_app_date
+        data_type: date
+      - name: latest_transcript
+        data_type: date
+      - name: legal_status
+        data_type: string
+      - name: linked_in_profile_url
+        data_type: string
+      - name: maiden_name
+        data_type: string
+      - name: marital_status
+        data_type: string
+      - name: mass_text_opt_in_status
+        data_type: string
+      - name: matriculating_to_ambassador_college
+        data_type: boolean
+      - name: matriculating_to_partner_college
+        data_type: boolean
+      - name: media_release
+        data_type: boolean
+      - name: metro_card_sites
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: middle_school_attended
+        data_type: string
+      - name: middle_skilling_trade_military_interest
+        data_type: string
+      - name: military_enlistments
+        data_type: numeric
+      - name: military_status
+        data_type: string
+      - name: most_advanced_app_status
+        data_type: string
+      - name: most_advanced_hsp
+        data_type: string
+      - name: most_recent
+        data_type: date
+      - name: most_recent_benchmark_status
+        data_type: string
+      - name: most_recent_college_application
+        data_type: string
+      - name: most_recent_college_benchmark
+        data_type: date
+      - name: most_recent_college_city
+        data_type: string
+      - name: most_recent_college_competitiveness
+        data_type: string
+      - name: most_recent_college_degree_type
+        data_type: string
+      - name: most_recent_college_enrollment
+        data_type: string
+      - name: most_recent_college_enrollment_id
+        data_type: string
+      - name: most_recent_college_enrollment_name
+        data_type: string
+      - name: most_recent_college_enrollment_status
+        data_type: string
+      - name: most_recent_college_gpa
+        data_type: string
+      - name: most_recent_college_graduation_rate
+        data_type: string
+      - name: most_recent_college_housing_from_app
+        data_type: string
+      - name: most_recent_college_is_hbcu
+        data_type: string
+      - name: most_recent_college_is_hsi
+        data_type: string
+      - name: most_recent_college_state
+        data_type: string
+      - name: most_recent_college_type
+        data_type: string
+      - name: most_recent_college_unmet_need_from_app
+        data_type: numeric
+      - name: most_recent_iep_date
+        data_type: date
+      - name: ms_gpa
+        data_type: numeric
+      - name: ms_teacher_recommendation
+        data_type: string
+      - name: nera_participant
+        data_type: boolean
+      - name: non_cognitive
+        data_type: numeric
+      - name: non_cognitive_status
+        data_type: string
+      - name: non_custodial_parent_letter_submitted
+        data_type: date
+      - name: not_pursuing_higher_ed_at_this_time
+        data_type: boolean
+      - name: nudge_texting_region
+        data_type: string
+      - name: number_in_household
+        data_type: numeric
+      - name: number_of_current_kipp_enrollments
+        data_type: numeric
+      - name: old_system_id
+        data_type: string
+      - name: opt_in_source
+        data_type: string
+      - name: opt_out_college_connections
+        data_type: boolean
+      - name: opt_out_national_contact
+        data_type: boolean
+      - name: opt_out_regional_contact
+        data_type: boolean
+      - name: other_gender
+        data_type: string
+      - name: out_of_country
+        data_type: boolean
+      - name: outreach_student
+        data_type: boolean
+      - name: overall_benchmark_status
+        data_type: string
+      - name: overgrad_time_last_synched
+        data_type: timestamp
+      - name: parent_education_level
+        data_type: string
+      - name: partial_hs_class
+        data_type: numeric
+      - name: passion_purpose_plan
+        data_type: string
+      - name: pell_eligible
+        data_type: boolean
+      - name: personal_essay_completed
+        data_type: date
+      - name: picture
+        data_type: string
+      - name: picture_id
+        data_type: string
+      - name: post_hs_plan
+        data_type: string
+      - name: post_hs_status
+        data_type: string
+      - name: postsec_advisor
+        data_type: string
+      - name: postsecondary_status
+        data_type: string
+      - name: prevent_overgrad_synch
+        data_type: boolean
+      - name: primary_partnership_contact
+        data_type: boolean
+      - name: profile_goals
+        data_type: string
+      - name: qualified_asvab
+        data_type: numeric
+      - name: qualified_physical_training
+        data_type: numeric
+      - name: reason_for_prevent_overgrad_synch
+        data_type: string
+      - name: salesforce_id
+        data_type: string
+      - name: sat_superscore
+        data_type: numeric
+      - name: school_sis_id
+        data_type: string
+      - name: secondary_email
+        data_type: string
+      - name: socio_emotional
+        data_type: numeric
+      - name: socio_emotional_status
+        data_type: string
+      - name: student_disengagement_status
+        data_type: string
+      - name: student_level
+        data_type: numeric
+      - name: student_s_school
+        data_type: string
+      - name: student_segment_for_career_program
+        data_type: string
+      - name: tax_returns_submitted
+        data_type: date
+      - name: transcript_release
+        data_type: boolean
+      - name: undergrad_attended
+        data_type: string
+      - name: working_papers
+        data_type: string
+      - name: x2year_college_enrollments
+        data_type: numeric
+      - name: x8th_grade_promotion_date
+        data_type: date
+      - name: ytd_gpa
+        data_type: numeric
+      - name: kipp_hs_class
+        data_type: int64
+      - name: school_specific_id
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                where: school_specific_id is not null
+                store_failures: true

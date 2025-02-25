@@ -1,0 +1,62 @@
+version: 2
+models:
+  - name: stg_powerschool__gen
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: cat
+        data_type: string
+      - name: name
+        data_type: string
+      - name: value
+        data_type: string
+      - name: valuet
+        data_type: string
+      - name: value2
+        data_type: string
+      - name: valuet2
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: powerlink
+        data_type: string
+      - name: powerlinkspan
+        data_type: string
+      - name: date_value
+        data_type: date
+      - name: date2
+        data_type: date
+      - name: log
+        data_type: string
+      - name: value_x
+        data_type: bytes
+      - name: psguid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: valueli
+        data_type: int64
+      - name: valueli2
+        data_type: int64
+      - name: valuer
+        data_type: float64
+      - name: sortorder
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: valueli3
+        data_type: int64
+      - name: valuer2
+        data_type: float64
+      - name: time1
+        data_type: int64
+      - name: time2
+        data_type: int64
+      - name: spedindicator
+        data_type: int64
+      - name: valueli4
+        data_type: int64
+      - name: yearid
+        data_type: int64

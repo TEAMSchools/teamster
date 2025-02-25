@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: stg_schoolmint_grow__observations__observation_scores
+    columns:
+      - name: observation_id
+        data_type: string
+      - name: last_modified
+        data_type: string
+      - name: measurement
+        data_type: string
+      - name: measurement_group
+        data_type: string
+      - name: percentage
+        data_type: float64
+      - name: value_score
+        data_type: int64
+      - name: value_text
+        data_type: string
+      - name: text_boxes
+        data_type: record
+      - name: text_boxes.key
+        data_type: string
+      - name: text_boxes.label
+        data_type: string
+      - name: text_boxes.value
+        data_type: string
+      - name: checkboxes
+        data_type: record
+      - name: checkboxes.label
+        data_type: string
+      - name: checkboxes.value
+        data_type: boolean

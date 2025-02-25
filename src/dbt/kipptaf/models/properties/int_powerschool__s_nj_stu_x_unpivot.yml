@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: int_powerschool__s_nj_stu_x_unpivot
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: studentsdcid
+        data_type: int64
+      - name: name_column
+        data_type: string
+      - name: values_column
+        data_type: string
+      - name: is_portfolio_eligible
+        data_type: boolean
+      - name: is_iep_eligible
+        data_type: boolean
+      - name: met_requirement
+        data_type: boolean
+      - name: value_type
+        data_type: string
+      - name: discipline
+        data_type: string

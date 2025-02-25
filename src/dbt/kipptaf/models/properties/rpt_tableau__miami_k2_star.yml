@@ -1,0 +1,66 @@
+version: 2
+models:
+  - name: rpt_tableau__miami_k2_star
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: gender
+        data_type: string
+      - name: race_ethnicity
+        data_type: string
+      - name: advisory
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: iready_subject
+        data_type: string
+      - name: ps_credittype
+        data_type: string
+      - name: administration_round
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: section_number
+        data_type: string
+      - name: teacher_name
+        data_type: string
+      - name: star_category_level
+        data_type: float64
+      - name: star_category_name
+        data_type: string
+      - name: star_proficient
+        data_type: string
+      - name: scaled_score
+        data_type: int64
+      - name: unified_score
+        data_type: int64
+      - name: current_sgp
+        data_type: float64
+      - name: completed_date
+        data_type: string
+      - name: star_domain
+        data_type: string
+      - name: domain_percent_mastery
+        data_type: float64
+      - name: standard_name
+        data_type: string
+      - name: standard_description
+        data_type: string
+      - name: standard_mastery_level
+        data_type: string
+      - name: standard_percent_mastery
+        data_type: int64
+      - name: star_subject
+        data_type: string
+      - name: rn_subject_round_star
+        data_type: int64

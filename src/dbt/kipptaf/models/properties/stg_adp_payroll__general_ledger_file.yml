@@ -1,0 +1,55 @@
+version: 2
+models:
+  - name: stg_adp_payroll__general_ledger_file
+    meta:
+      dagster:
+        group: adp_payroll
+        automation_condition:
+          enabled: false
+    columns:
+      - name: journal
+        data_type: string
+      - name: reference_no
+        data_type: int64
+      - name: state
+        data_type: string
+      - name: source_entity
+        data_type: string
+      - name: line_no
+        data_type: int64
+      - name: document
+        data_type: string
+      - name: debit
+        data_type: float64
+      - name: credit
+        data_type: float64
+      - name: memo
+        data_type: string
+      - name: gl_dim_function
+        data_type: string
+      - name: gl_dim_donor_restriction
+        data_type: string
+      - name: position_id
+        data_type: string
+      - name: employee_name
+        data_type: string
+      - name: _dagster_partition_date
+        data_type: int64
+      - name: _dagster_partition_group_code
+        data_type: string
+      - name: date
+        data_type: date
+      - name: acct_no
+        data_type: int64
+      - name: dept_id
+        data_type: int64
+      - name: file_number
+        data_type: int64
+      - name: gl_entry_class_id
+        data_type: int64
+      - name: gl_entry_project_id
+        data_type: int64
+      - name: job_title
+        data_type: int64
+      - name: location_id
+        data_type: int64
