@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: stg_powerschool__s_nj_crs_x
+    columns:
+      - name: cte_test_name_code
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: block_schedule_session
+        data_type: string
+      - name: ap_course_subject
+        data_type: string
+      - name: course_level
+        data_type: string
+      - name: course_sequence_code
+        data_type: string
+      - name: course_span
+        data_type: string
+      - name: course_type
+        data_type: string
+      - name: ctecollegecredits
+        data_type: string
+      - name: ctetestdevelopercode
+        data_type: string
+      - name: ctetestname
+        data_type: string
+      - name: nces_course_id
+        data_type: string
+      - name: nces_subject_area
+        data_type: string
+      - name: county_code_override
+        data_type: string
+      - name: district_code_override
+        data_type: string
+      - name: school_code_override
+        data_type: string
+      - name: dual_institution
+        data_type: string
+      - name: coursesdcid
+        data_type: int64
+      - name: exclude_course_submission_tf
+        data_type: int64
+      - name: sla_include_tf
+        data_type: int64

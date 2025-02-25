@@ -1,0 +1,90 @@
+version: 2
+models:
+  - name: stg_overgrad__admissions
+    columns:
+      - name: id
+        data_type: int64
+      - name: created_at
+        data_type: string
+      - name: updated_at
+        data_type: string
+      - name: applied_on
+        data_type: string
+      - name: application_source
+        data_type: string
+      - name: status
+        data_type: string
+      - name: status_updated_at
+        data_type: string
+      - name: waitlisted
+        data_type: boolean
+      - name: deferred
+        data_type: boolean
+      - name: academic_fit
+        data_type: string
+      - name: probability_of_acceptance
+        data_type: float64
+      - name: student__id
+        data_type: int64
+      - name: student__external_student_id
+        data_type: string
+      - name: university__id
+        data_type: int64
+      - name: university__ipeds_id
+        data_type: int64
+      - name: due_date__date
+        data_type: string
+      - name: due_date__type
+        data_type: string
+      - name: award_letter__status
+        data_type: string
+      - name: award_letter__tuition_and_fees
+        data_type: float64
+      - name: award_letter__housing_and_meals
+        data_type: float64
+      - name: award_letter__books_and_supplies
+        data_type: float64
+      - name: award_letter__transportation
+        data_type: float64
+      - name: award_letter__other_education_costs
+        data_type: float64
+      - name: award_letter__grants_and_scholarships_from_school
+        data_type: float64
+      - name: award_letter__federal_pell_grant
+        data_type: float64
+      - name: award_letter__grants_from_state
+        data_type: float64
+      - name: award_letter__other_scholarships
+        data_type: float64
+      - name: award_letter__work_study
+        data_type: float64
+      - name: award_letter__federal_perkins_loan
+        data_type: float64
+      - name: award_letter__federal_direct_subsidized_loan
+        data_type: float64
+      - name: award_letter__federal_direct_unsubsidized_loan
+        data_type: float64
+      - name: award_letter__parent_plus_loan
+        data_type: float64
+      - name: award_letter__military_benefits
+        data_type: float64
+      - name: award_letter__private_loan
+        data_type: float64
+      - name: award_letter__cost_of_attendance
+        data_type: float64
+      - name: award_letter__grants_and_scholarships
+        data_type: float64
+      - name: award_letter__net_cost
+        data_type: float64
+      - name: award_letter__loans
+        data_type: float64
+      - name: award_letter__other_options
+        data_type: float64
+      - name: award_letter__out_of_pocket
+        data_type: float64
+      - name: award_letter__unmet_need
+        data_type: float64
+      - name: award_letter__unmet_need_with_max_family_contribution
+        data_type: float64
+      - name: award_letter__seog
+        data_type: float64
