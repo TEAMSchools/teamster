@@ -5,32 +5,32 @@
 
 import argparse
 import json
+import pathlib
 import re
 import subprocess
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(add_help=False)
 
     parser.add_argument("command")
     parser.add_argument("project")
-    parser.add_argument("select", nargs="*")
-    parser.add_argument("--full-refresh", action="store_true")
+    parser.add_argument("--select", nargs="*")
     parser.add_argument("--prod", action="store_true")
 
     args = parser.parse_args()
 
-    if args.command == "help":
-        subprocess.run(args=["/workspaces/teamster/.venv/bin/dbt", "-h"])
-    elif args.command == "sxs":
+    dbt_path = "/workspaces/teamster/.venv/bin/dbt"
+
+    if args.command == "sxs":
         cloud_storage_uri_base = (
             "gs://teamster-"
             + (args.project if args.prod else "test")
-            + f"/dagster/{args.project}"
+            + f"{args.project}/dagster/{args.project}"
         )
 
         run_args = [
-            "/workspaces/teamster/.venv/bin/dbt",
+            dbt_path,
             "run-operation",
             "stage_external_sources",
             f"--project-dir=src/dbt/{args.project}",
@@ -42,55 +42,52 @@ def main() -> None:
 
         subprocess.run(args=run_args)
     elif args.command == "yaml":
-        select = args.select[0]
+        project_dir = pathlib.Path(f"src/dbt/{args.project}")
 
-        output_split = subprocess.check_output(
-            args=[
-                "/workspaces/teamster/.venv/bin/dbt",
-                "list",
-                f"--project-dir=src/dbt/{args.project}",
-                "--resource-type",
-                "model",
-                "--select",
-                select,
-                "--output",
-                "name",
-            ]
-        ).split(b"\n")
-
-        model_names = [
-            o.decode()
-            for o in output_split
-            if re.match(pattern=r"(\w+)", string=o.decode())
-        ]
-
-        run_args = [
-            "/workspaces/teamster/.venv/bin/dbt",
-            "run-operation",
-            "generate_model_yaml",
-            f"--project-dir=src/dbt/{args.project}",
-            "--args",
-            json.dumps({"model_names": model_names}),
-        ]
-
-        yaml = subprocess.check_output(args=run_args).decode()
-
-        with open("properties.yml", "w") as f:
-            f.write(yaml)
-    else:
-        run_args = [
-            "/workspaces/teamster/.venv/bin/dbt",
-            args.command,
-            f"--project-dir=src/dbt/{args.project}",
+        list_args = [
+            dbt_path,
+            "list",
+            f"--project-dir={project_dir}",
+            "--resource-type=model",
+            "--output=name",
         ]
 
         if args.select:
-            run_args.extend(["--select", *args.select])
+            list_args.extend(["--select", " ".join(*args.select)])
 
-        if args.full_refresh:
-            run_args.append("--full-refresh")
+        print(" ".join(list_args))
+        model_names = [
+            o.decode()
+            for o in subprocess.check_output(args=list_args).split(b"\n")
+            if re.match(pattern=r"(\w+)", string=o.decode())
+        ]
 
-        subprocess.run(args=run_args)
+        for model_name in model_names:
+            run_args = [
+                dbt_path,
+                "run-operation",
+                "generate_model_yaml",
+                f"--project-dir={project_dir}",
+                "--args",
+                json.dumps({"model_names": [model_name]}),
+            ]
+
+            print(" ".join(run_args))
+            yaml = subprocess.check_output(args=run_args).decode()
+
+            yaml = "\n".join(
+                [
+                    line
+                    for line in yaml.splitlines()[3:]
+                    if line.strip() not in ["", 'description: ""']
+                ]
+            )
+
+            file_parent = project_dir / "models/properties"
+
+            file_parent.mkdir(parents=True, exist_ok=True)
+            with open(file=f"{file_parent}/{model_name}.yml", mode="w") as f:
+                f.write(yaml)
 
 
 if __name__ == "__main__":
