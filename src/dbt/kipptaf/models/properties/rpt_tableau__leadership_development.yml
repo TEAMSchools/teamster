@@ -1,0 +1,52 @@
+version: 2
+models:
+  - name: rpt_tableau__leadership_development
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: term
+        data_type: string
+      - name: assignment_id
+        data_type: string
+      - name: active_assignment
+        data_type: boolean
+      - name: column_name
+        data_type: string
+      - name: column_value
+        data_type: string
+      - name: active_title
+        data_type: boolean
+      - name: metric_id
+        data_type: string
+      - name: region
+        data_type: string
+      - name: bucket
+        data_type: string
+      - name: type
+        data_type: string
+      - name: fiscal_year
+        data_type: int64
+      - name: round_completion
+        data_type: int64
+      - name: preferred_name_lastfirst
+        data_type: string
+      - name: sam_account_name
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: entity
+        data_type: string
+      - name: location
+        data_type: string
+      - name: department
+        data_type: string
+      - name: manager
+        data_type: string
+      - name: report_to_sam_account_name
+        data_type: string
+      - name: assignment_status
+        data_type: string
+      - name: description
+        data_type: string

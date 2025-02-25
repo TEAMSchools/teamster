@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: stg_illuminate__dna_assessments__agg_student_responses_overall
+    columns:
+      - name: student_assessment_id
+        data_type: int64
+      - name: assessment_id
+        data_type: int64
+      - name: version_id
+        data_type: int64
+      - name: student_id
+        data_type: int64
+      - name: date_taken
+        data_type: date
+      - name: performance_band_id
+        data_type: int64
+      - name: performance_band_level
+        data_type: int64
+      - name: mastered
+        data_type: boolean
+      - name: points
+        data_type: numeric
+      - name: points_possible
+        data_type: numeric
+      - name: answered
+        data_type: int64
+      - name: percent_correct
+        data_type: numeric
+      - name: number_of_questions
+        data_type: int64

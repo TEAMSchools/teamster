@@ -1,0 +1,72 @@
+version: 2
+models:
+  - name: rpt_tableau__ap_assessment_dashboard
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_display
+        data_type: string
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: entrydate
+        data_type: date
+      - name: exitdate
+        data_type: date
+      - name: cohort
+        data_type: int64
+      - name: advisory
+        data_type: string
+      - name: is_enrolled_recent
+        data_type: boolean
+      - name: is_enrolled_y1
+        data_type: boolean
+      - name: c_504_status
+        data_type: boolean
+      - name: lep_status
+        data_type: boolean
+      - name: gifted_and_talented
+        data_type: string
+      - name: contact_id
+        data_type: string
+      - name: ktc_cohort
+        data_type: int64
+      - name: ap_date_enrolled
+        data_type: date
+      - name: ap_date_left
+        data_type: date
+      - name: ap_course_section
+        data_type: string
+      - name: ap_teacher_name
+        data_type: string
+      - name: ap_course_subject
+        data_type: string
+      - name: administration_round
+        data_type: string
+      - name: test_date
+        data_type: date
+      - name: scale_score
+        data_type: numeric
+      - name: rn_highest
+        data_type: int64
+      - name: sped
+        data_type: int64
+      - name: ap_course_name
+        data_type: string
+      - name: expected_scope
+        data_type: string
+      - name: expected_test_type
+        data_type: string
+      - name: test_subject_area
+        data_type: string

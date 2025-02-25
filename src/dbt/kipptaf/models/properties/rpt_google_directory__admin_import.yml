@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: rpt_google_directory__admin_import
+    columns:
+      - name: google_email
+        data_type: string
+      - name: org_unit_path
+        data_type: string
+      - name: assignedto
+        data_type: string
+      - name: roleid
+        data_type: string
+      - name: orgunitid
+        data_type: string
+      - name: scopetype
+        data_type: string

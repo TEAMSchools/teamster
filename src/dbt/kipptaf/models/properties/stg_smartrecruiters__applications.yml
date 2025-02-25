@@ -1,0 +1,56 @@
+version: 2
+models:
+  - name: stg_smartrecruiters__applications
+    columns:
+      - name: application_id
+        data_type: string
+      - name: candidate_id
+        data_type: string
+      - name: department_internal
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: job_city
+        data_type: string
+      - name: recruiters
+        data_type: string
+      - name: application_status
+        data_type: string
+      - name: phone_interview_score
+        data_type: float64
+      - name: resume_score
+        data_type: float64
+      - name: star_score
+        data_type: float64
+      - name: subject_preference
+        data_type: string
+      - name: reason_for_rejection
+        data_type: string
+      - name: reason_for_withdrawal
+        data_type: string
+      - name: hired_datetime
+        data_type: datetime
+      - name: new_datetime
+        data_type: datetime
+      - name: offer_datetime
+        data_type: datetime
+      - name: rejected_datetime
+        data_type: datetime
+      - name: demo_datetime
+        data_type: datetime
+      - name: phone_screen_complete_datetime
+        data_type: datetime
+      - name: phone_screen_requested_datetime
+        data_type: datetime
+      - name: new_date
+        data_type: date
+      - name: phone_screen_complete_date
+        data_type: date
+      - name: phone_screen_requested_date
+        data_type: date
+      - name: demo_date
+        data_type: date
+      - name: offer_date
+        data_type: date
+      - name: hired_date
+        data_type: date

@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: rpt_clever__schools
+    columns:
+      - name: school_id
+        data_type: string
+      - name: school_name
+        data_type: string
+      - name: school_number
+        data_type: string
+      - name: state_id
+        data_type: int64
+      - name: low_grade
+        data_type: string
+      - name: high_grade
+        data_type: string
+      - name: principal
+        data_type: string
+      - name: principal_email
+        data_type: string
+      - name: school_address
+        data_type: string
+      - name: school_city
+        data_type: string
+      - name: school_state
+        data_type: string
+      - name: school_zip
+        data_type: string
+      - name: school_phone
+        data_type: int64

@@ -1,0 +1,596 @@
+version: 2
+models:
+  - name: base_kippadb__contact
+    columns:
+      - name: contact_id
+        data_type: string
+      - name: contact_name
+        data_type: string
+      - name: contact_description
+        data_type: string
+      - name: contact_account_id
+        data_type: string
+      - name: contact_assistant_name
+        data_type: string
+      - name: contact_assistant_phone
+        data_type: string
+      - name: contact_birthdate
+        data_type: date
+      - name: contact_created_by_id
+        data_type: string
+      - name: contact_created_date
+        data_type: timestamp
+      - name: contact_department
+        data_type: string
+      - name: contact_email
+        data_type: string
+      - name: contact_email_bounced_date
+        data_type: timestamp
+      - name: contact_email_bounced_reason
+        data_type: string
+      - name: contact_fax
+        data_type: string
+      - name: contact_first_name
+        data_type: string
+      - name: contact_has_opted_out_of_email
+        data_type: boolean
+      - name: contact_home_phone
+        data_type: string
+      - name: contact_is_email_bounced
+        data_type: boolean
+      - name: contact_jigsaw
+        data_type: string
+      - name: contact_jigsaw_contact_id
+        data_type: string
+      - name: contact_last_activity_date
+        data_type: date
+      - name: contact_last_cu_request_date
+        data_type: timestamp
+      - name: contact_last_cu_update_date
+        data_type: timestamp
+      - name: contact_last_modified_by_id
+        data_type: string
+      - name: contact_last_modified_date
+        data_type: timestamp
+      - name: contact_last_name
+        data_type: string
+      - name: contact_last_referenced_date
+        data_type: timestamp
+      - name: contact_last_viewed_date
+        data_type: timestamp
+      - name: contact_lead_source
+        data_type: string
+      - name: contact_mailing_address
+        data_type: json
+      - name: contact_mailing_city
+        data_type: string
+      - name: contact_mailing_country
+        data_type: string
+      - name: contact_mailing_geocode_accuracy
+        data_type: string
+      - name: contact_mailing_latitude
+        data_type: numeric
+      - name: contact_mailing_longitude
+        data_type: numeric
+      - name: contact_mailing_postal_code
+        data_type: string
+      - name: contact_mailing_state
+        data_type: string
+      - name: contact_mailing_street
+        data_type: string
+      - name: contact_master_record_id
+        data_type: string
+      - name: contact_mobile_phone
+        data_type: string
+      - name: contact_other_address
+        data_type: json
+      - name: contact_other_city
+        data_type: string
+      - name: contact_other_country
+        data_type: string
+      - name: contact_other_geocode_accuracy
+        data_type: string
+      - name: contact_other_latitude
+        data_type: numeric
+      - name: contact_other_longitude
+        data_type: numeric
+      - name: contact_other_phone
+        data_type: string
+      - name: contact_other_postal_code
+        data_type: string
+      - name: contact_other_state
+        data_type: string
+      - name: contact_other_street
+        data_type: string
+      - name: contact_owner_id
+        data_type: string
+      - name: contact_phone
+        data_type: string
+      - name: contact_photo_url
+        data_type: string
+      - name: contact_record_type_id
+        data_type: string
+      - name: contact_reports_to_id
+        data_type: string
+      - name: contact_salutation
+        data_type: string
+      - name: contact_system_modstamp
+        data_type: timestamp
+      - name: contact_title
+        data_type: string
+      - name: contact_academic_status
+        data_type: string
+      - name: contact_academics
+        data_type: numeric
+      - name: contact_accumulated_credits_college
+        data_type: numeric
+      - name: contact_accumulated_credits_hs
+        data_type: numeric
+      - name: contact_actual_college_graduation_date
+        data_type: date
+      - name: contact_actual_hs_graduation_date
+        data_type: date
+      - name: contact_advising_provider
+        data_type: string
+      - name: contact_any_college_admin
+        data_type: numeric
+      - name: contact_any_kipp_hs_enrollment
+        data_type: boolean
+      - name: contact_associate_degree_grad_count
+        data_type: numeric
+      - name: contact_attending_college_enrollments
+        data_type: numeric
+      - name: contact_attending_hs_enrollments
+        data_type: numeric
+      - name: contact_bach_degree_admin
+        data_type: string
+      - name: contact_brag_sheet_submitted
+        data_type: date
+      - name: contact_campus_staff_type
+        data_type: string
+      - name: contact_career_training_program_status
+        data_type: string
+      - name: contact_carrier
+        data_type: string
+      - name: contact_class_quartile
+        data_type: numeric
+      - name: contact_class_rank
+        data_type: numeric
+      - name: contact_class_rank_percentile
+        data_type: numeric
+      - name: contact_collaborative_advising_student
+        data_type: boolean
+      - name: contact_college_apps_accepted
+        data_type: numeric
+      - name: contact_college_apps_in_progress_wishlist
+        data_type: numeric
+      - name: contact_college_apps_submitted
+        data_type: numeric
+      - name: contact_college_counselor
+        data_type: string
+      - name: contact_college_credits_attempted
+        data_type: numeric
+      - name: contact_college_cumulative_credits_attempted
+        data_type: numeric
+      - name: contact_college_cumulative_credits_earned
+        data_type: numeric
+      - name: contact_college_graduated_from
+        data_type: string
+      - name: contact_college_level
+        data_type: string
+      - name: contact_college_match_display_gpa
+        data_type: numeric
+      - name: contact_college_recommendation_complete
+        data_type: date
+      - name: contact_college_status
+        data_type: string
+      - name: contact_college_cte_attending_matric_enrollments
+        data_type: numeric
+      - name: contact_contact_count
+        data_type: numeric
+      - name: contact_counselor_s_school_name
+        data_type: string
+      - name: contact_count_active_enrollments
+        data_type: numeric
+      - name: contact_count_hs_graduated_enrollment
+        data_type: numeric
+      - name: contact_count_of_bach_degree
+        data_type: numeric
+      - name: contact_credits_accumlated_hs
+        data_type: numeric
+      - name: contact_credits_accumulated_college
+        data_type: numeric
+      - name: contact_cumulative_gpa
+        data_type: numeric
+      - name: contact_cumulative_gpa_lookup
+        data_type: string
+      - name: contact_current_academic_status
+        data_type: string
+      - name: contact_current_college_cumulative_gpa
+        data_type: numeric
+      - name: contact_current_college_semester_gpa
+        data_type: numeric
+      - name: contact_current_college_standing
+        data_type: string
+      - name: contact_current_cumulative_gpa
+        data_type: numeric
+      - name: contact_current_kipp_student
+        data_type: string
+      - name: contact_current_level
+        data_type: string
+      - name: contact_current_transcript_date
+        data_type: date
+      - name: contact_current_transcript_term
+        data_type: string
+      - name: contact_currently_enrolled_school
+        data_type: string
+      - name: contact_date_last_opt_in_request
+        data_type: date
+      - name: contact_date_no_postsec_pathway_confirmed
+        data_type: date
+      - name: contact_date_of_mass_text_opt_in
+        data_type: date
+      - name: contact_date_of_out_of_country_move
+        data_type: date
+      - name: contact_dep_post_hs_simple_admin
+        data_type: string
+      - name: contact_df_has_fafsa
+        data_type: string
+      - name: contact_df_has_fafsa4caster
+        data_type: string
+      - name: contact_df_has_gpa
+        data_type: string
+      - name: contact_dual_enrollment
+        data_type: boolean
+      - name: contact_earned_to_attempted_college_credits
+        data_type: numeric
+      - name: contact_education_level
+        data_type: string
+      - name: contact_efc_from_fafsa
+        data_type: numeric
+      - name: contact_efc_from_fafsa4caster
+        data_type: numeric
+      - name: contact_enlisted_in_military
+        data_type: string
+      - name: contact_enrolled_at_ambassador_college
+        data_type: boolean
+      - name: contact_enrolled_at_partner_college
+        data_type: boolean
+      - name: contact_enrolled_in_kipp_hs_at_least_1_year
+        data_type: boolean
+      - name: contact_ethnicity
+        data_type: string
+      - name: contact_expected_college_graduation
+        data_type: date
+      - name: contact_expected_hs_graduation
+        data_type: date
+      - name: contact_external_student
+        data_type: boolean
+      - name: contact_external_student_affiliation
+        data_type: string
+      - name: contact_family_income_bracket
+        data_type: string
+      - name: contact_financial
+        data_type: numeric
+      - name: contact_financial_status
+        data_type: string
+      - name: contact_first_generation_college_student
+        data_type: boolean
+      - name: contact_flag_for_benchmark_follow_up
+        data_type: boolean
+      - name: contact_frpl_eligible
+        data_type: string
+      - name: contact_full_name
+        data_type: string
+      - name: contact_full_time_employed
+        data_type: numeric
+      - name: contact_gender
+        data_type: string
+      - name: contact_gpa_in_major
+        data_type: numeric
+      - name: contact_grad_school_attended
+        data_type: string
+      - name: contact_grade_level
+        data_type: string
+      - name: contact_has_active_collaborative_consent_form
+        data_type: boolean
+      - name: contact_has_any_college_admin
+        data_type: string
+      - name: contact_has_app_in_progress_wishlist
+        data_type: string
+      - name: contact_has_applied_to_a_college
+        data_type: string
+      - name: contact_has_been_accepted_to_college
+        data_type: string
+      - name: contact_has_high_school_enrollment
+        data_type: string
+      - name: contact_has_hs_graduated_enrollment
+        data_type: string
+      - name: contact_has_linked_in_profile
+        data_type: boolean
+      - name: contact_has_matric_college_enrollment
+        data_type: string
+      - name: contact_has_taken_placement_test
+        data_type: string
+      - name: contact_high_school_apps_accepted
+        data_type: numeric
+      - name: contact_high_school_apps_in_progress_wishlist
+        data_type: numeric
+      - name: contact_high_school_apps_submitted
+        data_type: numeric
+      - name: contact_high_school_enrollments_count
+        data_type: numeric
+      - name: contact_high_school_graduated_from
+        data_type: string
+      - name: contact_high_school_status
+        data_type: string
+      - name: contact_highest_act_diagnostic_score
+        data_type: numeric
+      - name: contact_highest_act_score
+        data_type: numeric
+      - name: contact_highest_psat_score
+        data_type: numeric
+      - name: contact_highest_sat_score
+        data_type: numeric
+      - name: contact_highest_sat_score_before_march_2016
+        data_type: numeric
+      - name: contact_hs_recommendation_complete
+        data_type: date
+      - name: contact_informed_consent
+        data_type: boolean
+      - name: contact_intent_to_enlist
+        data_type: boolean
+      - name: contact_kca_kipp_id
+        data_type: string
+      - name: contact_kipp_college_class
+        data_type: string
+      - name: contact_kipp_foundation_id
+        data_type: string
+      - name: contact_kipp_hs_graduate
+        data_type: boolean
+      - name: contact_kipp_ms_graduate
+        data_type: boolean
+      - name: contact_kipp_region_name
+        data_type: string
+      - name: contact_kipp_region_school
+        data_type: string
+      - name: contact_language_spoken_at_home
+        data_type: string
+      - name: contact_last_advisor_activity
+        data_type: date
+      - name: contact_last_alumni_survey_completion_date
+        data_type: date
+      - name: contact_last_outreach
+        data_type: date
+      - name: contact_last_successful_advisor_contact
+        data_type: date
+      - name: contact_last_successful_advisor_contact_range
+        data_type: string
+      - name: contact_last_successful_contact
+        data_type: date
+      - name: contact_last_successful_contact_range
+        data_type: string
+      - name: contact_latest_fafsa_date
+        data_type: date
+      - name: contact_latest_pfs_date
+        data_type: date
+      - name: contact_latest_resume
+        data_type: date
+      - name: contact_latest_state_financial_aid_app_date
+        data_type: date
+      - name: contact_latest_transcript
+        data_type: date
+      - name: contact_legal_status
+        data_type: string
+      - name: contact_linked_in_profile_url
+        data_type: string
+      - name: contact_maiden_name
+        data_type: string
+      - name: contact_marital_status
+        data_type: string
+      - name: contact_mass_text_opt_in_status
+        data_type: string
+      - name: contact_matriculating_to_ambassador_college
+        data_type: boolean
+      - name: contact_matriculating_to_partner_college
+        data_type: boolean
+      - name: contact_media_release
+        data_type: boolean
+      - name: contact_metro_card_sites
+        data_type: string
+      - name: contact_middle_name
+        data_type: string
+      - name: contact_middle_school_attended
+        data_type: string
+      - name: contact_middle_skilling_trade_military_interest
+        data_type: string
+      - name: contact_military_enlistments
+        data_type: numeric
+      - name: contact_military_status
+        data_type: string
+      - name: contact_most_advanced_app_status
+        data_type: string
+      - name: contact_most_advanced_hsp
+        data_type: string
+      - name: contact_most_recent
+        data_type: date
+      - name: contact_most_recent_benchmark_status
+        data_type: string
+      - name: contact_most_recent_college_application
+        data_type: string
+      - name: contact_most_recent_college_benchmark
+        data_type: date
+      - name: contact_most_recent_college_city
+        data_type: string
+      - name: contact_most_recent_college_competitiveness
+        data_type: string
+      - name: contact_most_recent_college_degree_type
+        data_type: string
+      - name: contact_most_recent_college_enrollment
+        data_type: string
+      - name: contact_most_recent_college_enrollment_id
+        data_type: string
+      - name: contact_most_recent_college_enrollment_name
+        data_type: string
+      - name: contact_most_recent_college_enrollment_status
+        data_type: string
+      - name: contact_most_recent_college_gpa
+        data_type: string
+      - name: contact_most_recent_college_graduation_rate
+        data_type: string
+      - name: contact_most_recent_college_housing_from_app
+        data_type: string
+      - name: contact_most_recent_college_is_hbcu
+        data_type: string
+      - name: contact_most_recent_college_is_hsi
+        data_type: string
+      - name: contact_most_recent_college_state
+        data_type: string
+      - name: contact_most_recent_college_type
+        data_type: string
+      - name: contact_most_recent_college_unmet_need_from_app
+        data_type: numeric
+      - name: contact_most_recent_iep_date
+        data_type: date
+      - name: contact_ms_gpa
+        data_type: numeric
+      - name: contact_ms_teacher_recommendation
+        data_type: string
+      - name: contact_nera_participant
+        data_type: boolean
+      - name: contact_non_cognitive
+        data_type: numeric
+      - name: contact_non_cognitive_status
+        data_type: string
+      - name: contact_non_custodial_parent_letter_submitted
+        data_type: date
+      - name: contact_not_pursuing_higher_ed_at_this_time
+        data_type: boolean
+      - name: contact_nudge_texting_region
+        data_type: string
+      - name: contact_number_in_household
+        data_type: numeric
+      - name: contact_number_of_current_kipp_enrollments
+        data_type: numeric
+      - name: contact_old_system_id
+        data_type: string
+      - name: contact_opt_in_source
+        data_type: string
+      - name: contact_opt_out_college_connections
+        data_type: boolean
+      - name: contact_opt_out_national_contact
+        data_type: boolean
+      - name: contact_opt_out_regional_contact
+        data_type: boolean
+      - name: contact_other_gender
+        data_type: string
+      - name: contact_out_of_country
+        data_type: boolean
+      - name: contact_outreach_student
+        data_type: boolean
+      - name: contact_overall_benchmark_status
+        data_type: string
+      - name: contact_overgrad_time_last_synched
+        data_type: timestamp
+      - name: contact_parent_education_level
+        data_type: string
+      - name: contact_partial_hs_class
+        data_type: numeric
+      - name: contact_passion_purpose_plan
+        data_type: string
+      - name: contact_pell_eligible
+        data_type: boolean
+      - name: contact_personal_essay_completed
+        data_type: date
+      - name: contact_picture
+        data_type: string
+      - name: contact_picture_id
+        data_type: string
+      - name: contact_post_hs_plan
+        data_type: string
+      - name: contact_post_hs_status
+        data_type: string
+      - name: contact_postsec_advisor
+        data_type: string
+      - name: contact_postsecondary_status
+        data_type: string
+      - name: contact_prevent_overgrad_synch
+        data_type: boolean
+      - name: contact_primary_partnership_contact
+        data_type: boolean
+      - name: contact_profile_goals
+        data_type: string
+      - name: contact_qualified_asvab
+        data_type: numeric
+      - name: contact_qualified_physical_training
+        data_type: numeric
+      - name: contact_reason_for_prevent_overgrad_synch
+        data_type: string
+      - name: contact_salesforce_id
+        data_type: string
+      - name: contact_sat_superscore
+        data_type: numeric
+      - name: contact_school_sis_id
+        data_type: string
+      - name: contact_secondary_email
+        data_type: string
+      - name: contact_socio_emotional
+        data_type: numeric
+      - name: contact_socio_emotional_status
+        data_type: string
+      - name: contact_student_disengagement_status
+        data_type: string
+      - name: contact_student_level
+        data_type: numeric
+      - name: contact_student_s_school
+        data_type: string
+      - name: contact_student_segment_for_career_program
+        data_type: string
+      - name: contact_tax_returns_submitted
+        data_type: date
+      - name: contact_transcript_release
+        data_type: boolean
+      - name: contact_undergrad_attended
+        data_type: string
+      - name: contact_working_papers
+        data_type: string
+      - name: contact_x2year_college_enrollments
+        data_type: numeric
+      - name: contact_x8th_grade_promotion_date
+        data_type: date
+      - name: contact_ytd_gpa
+        data_type: numeric
+      - name: contact_kipp_hs_class
+        data_type: int64
+      - name: contact_school_specific_id
+        data_type: int64
+      - name: contact_owner_name
+        data_type: string
+      - name: contact_owner_email
+        data_type: string
+      - name: contact_owner_phone
+        data_type: string
+      - name: record_type_name
+        data_type: string
+      - name: record_type_description
+        data_type: string
+      - name: record_type_last_modified_date
+        data_type: timestamp
+      - name: record_type_is_active
+        data_type: boolean
+      - name: record_type_business_process_id
+        data_type: string
+      - name: record_type_system_modstamp
+        data_type: timestamp
+      - name: record_type_sobject_type
+        data_type: string
+      - name: record_type_created_by_id
+        data_type: string
+      - name: record_type_created_date
+        data_type: timestamp
+      - name: record_type_developer_name
+        data_type: string
+      - name: record_type_last_modified_by_id
+        data_type: string
+      - name: record_type_namespace_prefix
+        data_type: string

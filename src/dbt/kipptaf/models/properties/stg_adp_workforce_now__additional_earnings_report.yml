@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: stg_adp_workforce_now__additional_earnings_report
+    columns:
+      - name: additional_earnings_code
+        data_type: string
+      - name: cost_number_description
+        data_type: string
+      - name: cost_number
+        data_type: string
+      - name: file_number_pay_statements
+        data_type: int64
+      - name: payroll_company_code
+        data_type: string
+      - name: position_status
+        data_type: string
+      - name: additional_earnings_description
+        data_type: string
+      - name: employee_number
+        data_type: int64
+      - name: position_id
+        data_type: string
+      - name: pay_date
+        data_type: date
+      - name: check_voucher_number
+        data_type: string
+      - name: gross_pay
+        data_type: numeric
+      - name: academic_year
+        data_type: int64

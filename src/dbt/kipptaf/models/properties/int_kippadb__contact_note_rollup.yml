@@ -1,0 +1,174 @@
+version: 2
+models:
+  - name: int_kippadb__contact_note_rollup
+    columns:
+      - name: contact_id
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: as1_date
+        data_type: date
+      - name: as2_date
+        data_type: date
+      - name: as3_date
+        data_type: date
+      - name: as4_date
+        data_type: date
+      - name: as5_date
+        data_type: date
+      - name: as6_date
+        data_type: date
+      - name: as7_date
+        data_type: date
+      - name: as8_date
+        data_type: date
+      - name: as9_date
+        data_type: date
+      - name: as10_date
+        data_type: date
+      - name: as11_date
+        data_type: date
+      - name: as12_date
+        data_type: date
+      - name: as13_date
+        data_type: date
+      - name: as14_date
+        data_type: date
+      - name: as15_date
+        data_type: date
+      - name: as16_date
+        data_type: date
+      - name: as17_date
+        data_type: date
+      - name: as18_date
+        data_type: date
+      - name: as19_date
+        data_type: date
+      - name: as20_date
+        data_type: date
+      - name: as21_date
+        data_type: date
+      - name: as22_date
+        data_type: date
+      - name: as23_date
+        data_type: date
+      - name: as24_date
+        data_type: date
+      - name: cc1_date
+        data_type: date
+      - name: cc2_date
+        data_type: date
+      - name: cc3_date
+        data_type: date
+      - name: cc4_date
+        data_type: date
+      - name: cc5_date
+        data_type: date
+      - name: as1
+        data_type: int64
+      - name: as2
+        data_type: int64
+      - name: as3
+        data_type: int64
+      - name: as4
+        data_type: int64
+      - name: as5
+        data_type: int64
+      - name: as6
+        data_type: int64
+      - name: as7
+        data_type: int64
+      - name: as8
+        data_type: int64
+      - name: as9
+        data_type: int64
+      - name: as10
+        data_type: int64
+      - name: as11
+        data_type: int64
+      - name: as12
+        data_type: int64
+      - name: as13
+        data_type: int64
+      - name: as14
+        data_type: int64
+      - name: as15
+        data_type: int64
+      - name: as16
+        data_type: int64
+      - name: as17
+        data_type: int64
+      - name: as18
+        data_type: int64
+      - name: as19
+        data_type: int64
+      - name: as20
+        data_type: int64
+      - name: as21
+        data_type: int64
+      - name: as22
+        data_type: int64
+      - name: as23
+        data_type: int64
+      - name: as24
+        data_type: int64
+      - name: bbb
+        data_type: int64
+      - name: bgp_2year
+        data_type: int64
+      - name: bgp_4year
+        data_type: int64
+      - name: bgp_cte
+        data_type: int64
+      - name: bgp_military
+        data_type: int64
+      - name: bgp_unknown
+        data_type: int64
+      - name: bgp_workforce
+        data_type: int64
+      - name: bm
+        data_type: int64
+      - name: cc1
+        data_type: int64
+      - name: cc2
+        data_type: int64
+      - name: cc3
+        data_type: int64
+      - name: cc4
+        data_type: int64
+      - name: cc5
+        data_type: int64
+      - name: ccdm
+        data_type: int64
+      - name: dp_2year
+        data_type: int64
+      - name: dp_4year
+        data_type: int64
+      - name: dp_cte
+        data_type: int64
+      - name: dp_military
+        data_type: int64
+      - name: dp_unknown
+        data_type: int64
+      - name: dp_workforce
+        data_type: int64
+      - name: gp
+        data_type: int64
+      - name: hd_nr
+        data_type: int64
+      - name: hd_p
+        data_type: int64
+      - name: hv
+        data_type: int64
+      - name: mc1
+        data_type: int64
+      - name: mc2
+        data_type: int64
+      - name: psc
+        data_type: int64
+      - name: sc
+        data_type: int64
+      - name: td_nr
+        data_type: int64
+      - name: td_p
+        data_type: int64

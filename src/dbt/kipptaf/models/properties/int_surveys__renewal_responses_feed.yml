@@ -1,0 +1,84 @@
+version: 2
+models:
+  - name: int_surveys__renewal_responses_feed
+    columns:
+      - name: survey_id
+        data_type: string
+      - name: survey_title
+        data_type: string
+      - name: survey_response_id
+        data_type: string
+      - name: respondent_email
+        data_type: string
+      - name: campaign_academic_year
+        data_type: int64
+      - name: campaign_name
+        data_type: string
+      - name: campaign_reporting_term
+        data_type: string
+      - name: respondent_employee_number
+        data_type: int64
+      - name: subject_employee_number
+        data_type: int64
+      - name: approval_level
+        data_type: string
+      - name: date_started
+        data_type: timestamp
+      - name: date_submitted
+        data_type: timestamp
+      - name: rn_level_approval
+        data_type: int64
+      - name: rn_approval
+        data_type: int64
+      - name: respondent_preferred_name
+        data_type: string
+      - name: respondent_samaccountname
+        data_type: string
+      - name: respondent_userprincipalname
+        data_type: string
+      - name: subject_preferred_name
+        data_type: string
+      - name: subject_samaccountname
+        data_type: string
+      - name: subject_userprincipalname
+        data_type: string
+      - name: dept_and_job
+        data_type: string
+      - name: final_confirmation
+        data_type: string
+      - name: next_year_seat
+        data_type: string
+      - name: renewal_decision
+        data_type: string
+      - name: salary
+        data_type: string
+      - name: salary_confirmation
+        data_type: string
+      - name: salary_modification_explanation
+        data_type: string
+      - name: salary_rule
+        data_type: string
+      - name: add_comp_amt_1
+        data_type: string
+      - name: add_comp_amt_2
+        data_type: string
+      - name: add_comp_amt_3
+        data_type: string
+      - name: add_comp_amt_4
+        data_type: string
+      - name: add_comp_amt_5
+        data_type: string
+      - name: add_comp_name_1
+        data_type: string
+      - name: add_comp_name_2
+        data_type: string
+      - name: add_comp_name_3
+        data_type: string
+      - name: add_comp_name_4
+        data_type: string
+      - name: add_comp_name_5
+        data_type: string
+      - name: concated_add_comp
+        data_type: string
+      - name: valid_approval
+        data_type: string

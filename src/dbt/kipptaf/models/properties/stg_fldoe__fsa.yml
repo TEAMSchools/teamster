@@ -1,0 +1,92 @@
+version: 2
+models:
+  - name: stg_fldoe__fsa
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: district_id
+        data_type: int64
+      - name: school_id
+        data_type: int64
+      - name: test_grade
+        data_type: int64
+      - name: school_year
+        data_type: int64
+      - name: score_flag
+        data_type: int64
+      - name: season
+        data_type: string
+      - name: fleid
+        data_type: string
+      - name: test_name
+        data_type: string
+      - name: pass
+        data_type: string
+      - name: district_name
+        data_type: string
+      - name: school_name
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: mi
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: report_status
+        data_type: string
+      - name: condition_code
+        data_type: string
+      - name: score_flag_w
+        data_type: string
+      - name: score_flag_r
+        data_type: int64
+      - name: scale_score
+        data_type: int64
+      - name: performance_level
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: earn1
+        data_type: int64
+      - name: ptpos1
+        data_type: int64
+      - name: earn2
+        data_type: int64
+      - name: ptpos2
+        data_type: int64
+      - name: earn3
+        data_type: int64
+      - name: ptpos3
+        data_type: int64
+      - name: earn4
+        data_type: int64
+      - name: ptpos4
+        data_type: int64
+      - name: earn5
+        data_type: int64
+      - name: ptpos5
+        data_type: int64
+      - name: earn_wd1
+        data_type: int64
+      - name: ptpos_wd1
+        data_type: int64
+      - name: earn_wd2
+        data_type: int64
+      - name: ptpos_wd2
+        data_type: int64
+      - name: earn_wd3
+        data_type: int64
+      - name: ptpos_wd3
+        data_type: int64
+      - name: administration_window
+        data_type: string
+      - name: is_proficient
+        data_type: boolean
+      - name: achievement_level
+        data_type: string
+      - name: test_code
+        data_type: string
+      - name: discipline
+        data_type: string
+      - name: assessment_subject
+        data_type: string

@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: stg_overgrad__universities
+    columns:
+      - name: id
+        data_type: int64
+      - name: ipeds_id
+        data_type: int64
+      - name: city
+        data_type: string
+      - name: name
+        data_type: string
+      - name: object
+        data_type: string
+      - name: state
+        data_type: string
+      - name: status
+        data_type: string

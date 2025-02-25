@@ -1,0 +1,518 @@
+version: 2
+models:
+  - name: stg_pearson__njsla
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: accountabledistrictcode
+        data_type: int64
+      - name: accountabledistrictname
+        data_type: string
+      - name: accountableorganizationaltype
+        data_type: int64
+      - name: accountableschoolcode
+        data_type: int64
+      - name: accountableschoolname
+        data_type: string
+      - name: administrationdirectionsclarifiedinstudentsnativelanguage
+        data_type: string
+      - name: administrationdirectionsreadaloudinstudentsnativelanguage
+        data_type: string
+      - name: alternaterepresentationpapertest
+        data_type: string
+      - name: americanindianoralaskanative
+        data_type: string
+      - name: answermasking
+        data_type: string
+      - name: answersrecordedintest_booklet
+        data_type: string
+      - name: answersrecordedintestbooklet
+        data_type: string
+      - name: asian
+        data_type: string
+      - name: aslvideo
+        data_type: string
+      - name: assessmentgrade
+        data_type: string
+      - name: assessmentyear
+        data_type: string
+      - name: assistivetechnologynonscreenreader
+        data_type: string
+      - name: assistivetechnologyscreenreader
+        data_type: string
+      - name: batteryformid
+        data_type: string
+      - name: birthdate
+        data_type: string
+      - name: blackorafricanamerican
+        data_type: string
+      - name: braillewithtactilegraphics
+        data_type: string
+      - name: calculationdeviceandmathematicstools
+        data_type: string
+      - name: claimcode
+        data_type: string
+      - name: classname
+        data_type: string
+      - name: closedcaptioningforela
+        data_type: string
+      - name: closedcaptioningforelal
+        data_type: string
+      - name: colorcontrast
+        data_type: float64
+      - name: critiquingpracticesperformancelevel
+        data_type: string
+      - name: datefirstenrolledinusschool
+        data_type: string
+      - name: earthandspacescienceperformancelevel
+        data_type: string
+      - name: economicdisadvantagestatus
+        data_type: string
+      - name: elaccommodation
+        data_type: string
+      - name: elaconstructedresponse
+        data_type: float64
+      - name: elalconstructedresponse
+        data_type: float64
+      - name: elalselectedresponseortechnologyenhanceditems
+        data_type: float64
+      - name: elaselectedresponseortechnologyenhanceditems
+        data_type: float64
+      - name: electronicbrailleresponse
+        data_type: string
+      - name: elexemptfromtakingela
+        data_type: string
+      - name: elexemptfromtakingelal
+        data_type: string
+      - name: emergencyaccommodation
+        data_type: float64
+      - name: englishlearneraccommodatedresponses
+        data_type: float64
+      - name: extendedtime
+        data_type: string
+      - name: federalraceethnicity
+        data_type: int64
+      - name: first_high_school_math_assessment
+        data_type: string
+      - name: firsthighschoolmathassessment
+        data_type: string
+      - name: firstname
+        data_type: string
+      - name: formeriep
+        data_type: string
+      - name: formid
+        data_type: string
+      - name: frequentbreaks
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: gradelevelwhenassessed
+        data_type: int64
+      - name: hispanicorlatinoethnicity
+        data_type: string
+      - name: home_language
+        data_type: string
+      - name: homelanguage
+        data_type: string
+      - name: homeless
+        data_type: string
+      - name: homelessprimarynighttimeresidence
+        data_type: float64
+      - name: humanreaderorhumansigner
+        data_type: float64
+      - name: humansignerfortestdirections
+        data_type: string
+      - name: iepexemptfrompassing
+        data_type: string
+      - name: investigatingpracticesperformancelevel
+        data_type: string
+      - name: languagecode
+        data_type: string
+      - name: largeprint
+        data_type: string
+      - name: lastorsurname
+        data_type: string
+      - name: lifescienceperformancelevel
+        data_type: string
+      - name: localstudentidentifier
+        data_type: float64
+      - name: mathematics_scienceaccommodatedresponse
+        data_type: float64
+      - name: mathematicsscienceaccommodatedresponse
+        data_type: float64
+      - name: middlename
+        data_type: string
+      - name: migrantstatus
+        data_type: string
+      - name: mlaccommodation
+        data_type: string
+      - name: mlexemptfromtakingela
+        data_type: string
+      - name: monitortestresponse
+        data_type: string
+      - name: multilinguallearneraccommodatedresponses
+        data_type: float64
+      - name: multipletestregistration
+        data_type: string
+      - name: nativehawaiianorotherpacificislander
+        data_type: string
+      - name: njelstatus
+        data_type: string
+      - name: njmlstatus
+        data_type: string
+      - name: njnotattemptflag
+        data_type: string
+      - name: nottestedcode
+        data_type: string
+      - name: nottestedreason
+        data_type: float64
+      - name: onlinepcr1
+        data_type: string
+      - name: onlinepcr2
+        data_type: string
+      - name: paperattemptcreatedate
+        data_type: string
+      - name: paperformid
+        data_type: string
+      - name: paperpcr1
+        data_type: float64
+      - name: paperpcr2
+        data_type: float64
+      - name: papersection1numberofattempteditems
+        data_type: float64
+      - name: papersection1totaltestitems
+        data_type: float64
+      - name: papersection2numberofattempteditems
+        data_type: float64
+      - name: papersection2totaltestitems
+        data_type: float64
+      - name: papersection3numberofattempteditems
+        data_type: float64
+      - name: papersection3totaltestitems
+        data_type: float64
+      - name: papersection4numberofattempteditems
+        data_type: float64
+      - name: papersection4totaltestitems
+        data_type: float64
+      - name: period
+        data_type: string
+      - name: physicalscienceperformancelevel
+        data_type: string
+      - name: primarydisabilitytype
+        data_type: string
+      - name: refreshablebrailledisplay
+        data_type: string
+      - name: reportsuppressionaction
+        data_type: string
+      - name: reportsuppressioncode
+        data_type: string
+      - name: retest
+        data_type: string
+      - name: rosterflag
+        data_type: string
+      - name: sensemakingpracticesperformancelevel
+        data_type: string
+      - name: separatealternatelocation
+        data_type: string
+      - name: sex
+        data_type: string
+      - name: shipreportdistrictcode
+        data_type: int64
+      - name: shipreportschoolcode
+        data_type: int64
+      - name: smallgrouptesting
+        data_type: string
+      - name: spanishtransadaptation
+        data_type: string
+      - name: specialeducationplacement
+        data_type: float64
+      - name: specializedequipmentorfurniture
+        data_type: string
+      - name: specifiedareaorsetting
+        data_type: string
+      - name: speechtotextandwordprediction
+        data_type: string
+      - name: statestudentidentifier
+        data_type: int64
+      - name: studentassessmentidentifier
+        data_type: string
+      - name: studentreadsassessmentaloudtoself
+        data_type: string
+      - name: studenttestuuid
+        data_type: string
+      - name: studentunit1testuuid
+        data_type: string
+      - name: studentunit2testuuid
+        data_type: string
+      - name: studentunit3testuuid
+        data_type: string
+      - name: studentuuid
+        data_type: string
+      - name: studentwithdisabilities
+        data_type: string
+      - name: subclaim1category
+        data_type: float64
+      - name: subclaim1categoryifnotattempted
+        data_type: string
+      - name: subclaim2category
+        data_type: float64
+      - name: subclaim2categoryifnotattempted
+        data_type: string
+      - name: subclaim3category
+        data_type: float64
+      - name: subclaim3categoryifnotattempted
+        data_type: string
+      - name: subclaim4category
+        data_type: float64
+      - name: subclaim4categoryifnotattempted
+        data_type: string
+      - name: subclaim5category
+        data_type: float64
+      - name: subclaim5categoryifnotattempted
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: summativeflag
+        data_type: string
+      - name: testadministration
+        data_type: string
+      - name: testattemptednessflag
+        data_type: string
+      - name: testcode
+        data_type: string
+      - name: testcsemprobablerange
+        data_type: float64
+      - name: testcsemprobablerangeifnotattempted
+        data_type: string
+      - name: testformat
+        data_type: string
+      - name: testingdistrictcode
+        data_type: int64
+      - name: testingdistrictname
+        data_type: string
+      - name: testingorganizationaltype
+        data_type: int64
+      - name: testingschoolcode
+        data_type: int64
+      - name: testingschoolname
+        data_type: string
+      - name: testperformancelevel
+        data_type: float64
+      - name: testperformancelevelifnotattempted
+        data_type: string
+      - name: testreadingcsem
+        data_type: float64
+      - name: testreadingcsemifnotattempted
+        data_type: string
+      - name: testreadingscalescore
+        data_type: float64
+      - name: testreadingscalescoreifnotattempted
+        data_type: string
+      - name: testscalescore
+        data_type: float64
+      - name: testscalescoreifnotattempted
+        data_type: string
+      - name: testscorecomplete
+        data_type: float64
+      - name: teststatus
+        data_type: string
+      - name: testwritingcsem
+        data_type: float64
+      - name: testwritingcsemifnotattempted
+        data_type: string
+      - name: testwritingscalescore
+        data_type: float64
+      - name: testwritingscalescoreifnotattempted
+        data_type: string
+      - name: texttospeech
+        data_type: float64
+      - name: timeofday
+        data_type: string
+      - name: totaltestitems
+        data_type: float64
+      - name: totaltestitemsattempted
+        data_type: float64
+      - name: twoormoreraces
+        data_type: string
+      - name: uniqueaccommodation
+        data_type: string
+      - name: unit1formid
+        data_type: string
+      - name: unit1numberofattempteditems
+        data_type: float64
+      - name: unit1onlinetestenddatetime
+        data_type: string
+      - name: unit1onlineteststartdatetime
+        data_type: string
+      - name: unit1totaltestitems
+        data_type: float64
+      - name: unit2formid
+        data_type: string
+      - name: unit2numberofattempteditems
+        data_type: float64
+      - name: unit2onlinetestenddatetime
+        data_type: string
+      - name: unit2onlineteststartdatetime
+        data_type: string
+      - name: unit2totaltestitems
+        data_type: float64
+      - name: unit3formid
+        data_type: string
+      - name: unit3numberofattempteditems
+        data_type: float64
+      - name: unit3onlinetestenddatetime
+        data_type: string
+      - name: unit3onlineteststartdatetime
+        data_type: string
+      - name: unit3totaltestitems
+        data_type: float64
+      - name: unit4onlinetestenddatetime
+        data_type: string
+      - name: unit4onlineteststartdatetime
+        data_type: string
+      - name: voidscorecode
+        data_type: string
+      - name: voidscorereason
+        data_type: float64
+      - name: white
+        data_type: string
+      - name: wordprediction
+        data_type: string
+      - name: wordtoworddictionaryenglishnativelanguage
+        data_type: string
+      - name: percentofitemsattempted
+        data_type: record
+      - name: percentofitemsattempted.long_value
+        data_type: int64
+      - name: percentofitemsattempted.double_value
+        data_type: float64
+      - name: filler_86
+        data_type: string
+      - name: filler1
+        data_type: string
+      - name: filler10
+        data_type: string
+      - name: filler11
+        data_type: string
+      - name: filler12
+        data_type: string
+      - name: filler13
+        data_type: string
+      - name: filler14
+        data_type: string
+      - name: filler15
+        data_type: string
+      - name: filler16
+        data_type: string
+      - name: filler17
+        data_type: string
+      - name: filler18
+        data_type: string
+      - name: filler19
+        data_type: string
+      - name: filler2
+        data_type: string
+      - name: filler20
+        data_type: string
+      - name: filler21
+        data_type: string
+      - name: filler22
+        data_type: string
+      - name: filler23
+        data_type: string
+      - name: filler24
+        data_type: string
+      - name: filler25
+        data_type: string
+      - name: filler26
+        data_type: string
+      - name: filler27
+        data_type: string
+      - name: filler28
+        data_type: string
+      - name: filler29
+        data_type: string
+      - name: filler3
+        data_type: string
+      - name: filler30
+        data_type: string
+      - name: filler31
+        data_type: string
+      - name: filler32
+        data_type: string
+      - name: filler33
+        data_type: string
+      - name: filler34
+        data_type: string
+      - name: filler35
+        data_type: string
+      - name: filler36
+        data_type: string
+      - name: filler37
+        data_type: string
+      - name: filler38
+        data_type: string
+      - name: filler39
+        data_type: string
+      - name: filler4
+        data_type: string
+      - name: filler5
+        data_type: string
+      - name: filler6
+        data_type: string
+      - name: filler7
+        data_type: string
+      - name: filler8
+        data_type: string
+      - name: fillerfield_1
+        data_type: string
+      - name: fillerfield_10
+        data_type: string
+      - name: fillerfield_11
+        data_type: string
+      - name: fillerfield_12
+        data_type: string
+      - name: fillerfield_13
+        data_type: string
+      - name: fillerfield_14
+        data_type: string
+      - name: fillerfield_15
+        data_type: string
+      - name: fillerfield_2
+        data_type: string
+      - name: fillerfield_3
+        data_type: string
+      - name: fillerfield_4
+        data_type: string
+      - name: fillerfield_5
+        data_type: string
+      - name: fillerfield_6
+        data_type: string
+      - name: fillerfield_7
+        data_type: string
+      - name: fillerfield_8
+        data_type: string
+      - name: fillerfield_9
+        data_type: string
+      - name: fillerfield
+        data_type: string
+      - name: _dagster_partition_key
+        data_type: int64
+      - name: assessment_name
+        data_type: string
+      - name: staffmemberidentifier
+        data_type: string
+      - name: testadministrator
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: test_grade
+        data_type: int64
+      - name: englishlearnerel
+        data_type: string
+      - name: discipline
+        data_type: string
+      - name: is_proficient
+        data_type: boolean
+      - name: testperformancelevel_text
+        data_type: string
