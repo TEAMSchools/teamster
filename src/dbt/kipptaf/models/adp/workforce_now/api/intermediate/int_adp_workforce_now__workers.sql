@@ -35,6 +35,7 @@ select
     wa.assignment_status__reason_code__name,
     wa.assignment_status__status_code__name,
     wa.base_remuneration__annual_rate_amount__amount_value,
+    wa.base_remuneration__hourly_rate_amount__amount_value,
     wa.home_work_location__name_code__name,
     wa.management_position_indicator,
     wa.payroll_file_number,
