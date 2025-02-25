@@ -6,7 +6,7 @@ select
     s.exitdate as actual_end_date,
     s.grade_level as exit_grade_level,
 
-    'Transferred Out' as status,
+    'Transferred Out' as `status`,
 from {{ ref("stg_kippadb__enrollment") }} as e
 inner join {{ ref("stg_kippadb__contact") }} as r on e.student = r.id
 inner join
