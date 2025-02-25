@@ -223,11 +223,7 @@ select
                 '&entry.1309133590=',
                 coalesce(
                     safe_cast(ny_salary_from_form as string),
-                    if(
-                        salary_or_hourly = 'Hourly',
-                        safe_cast(ny_hourly as string),
-                        safe_cast(ny_salary as string)
-                    ),
+                    safe_cast(ny_rate as string),
                     ''
                 ),
                 '&entry.1059490956=',
