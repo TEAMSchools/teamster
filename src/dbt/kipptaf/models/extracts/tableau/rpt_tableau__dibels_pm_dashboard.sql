@@ -5,7 +5,7 @@ with
             mclass_student_number,
             mclass_assessment_grade_int,
             mclass_pm_season,
-            pm_eligible,
+            max(pm_eligible) as pm_eligible,
         from
             {{ ref("int_amplify__all_assessments") }} unpivot (
                 pm_eligible
@@ -17,6 +17,7 @@ with
             and mclass_assessment_grade_int <= 2
             and mclass_academic_year >= 2024
             and mclass_measure_standard = 'Composite'
+        group by all
     ),
 
     students as (
@@ -81,15 +82,16 @@ with
             end as expected_mclass_measure_name,
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            eligible_students as s
-            on e.student_number = s.mclass_student_number
-            and e.grade_level = s.mclass_assessment_grade_int
-            and s.pm_eligible = 'Yes'
-        inner join
             {{ ref("stg_amplify__dibels_pm_expectations") }} as a
             on e.academic_year = a.academic_year
             and e.region = a.region
             and e.grade_level = a.grade_level
+        inner join
+            eligible_students as s
+            on e.student_number = s.mclass_student_number
+            and e.grade_level = s.mclass_assessment_grade_int
+            and a.period = s.mclass_pm_season
+            and s.pm_eligible = 'Yes'
         where
             not e.is_self_contained
             and e.academic_year >= 2024
