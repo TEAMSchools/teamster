@@ -25,6 +25,7 @@ select
     h.job_title as ay_job_title,
     h.home_work_location_name as ay_location,
     h.base_remuneration_annual_rate_amount as ay_salary,
+    h.base_remuneration_hourly_rate_amount as ay_hourly,
     h.home_work_location_abbreviation as ay_school_shortname,
     h.home_work_location_campus_name as ay_campus_name,
     h.head_of_schools_sam_account_name as ay_head_of_school_samaccount,
@@ -34,11 +35,13 @@ select
 
     tgl.grade_level as ay_primary_grade_level_taught,
 
+    sp.salary_or_hourly,
     sp.scale_cy_salary,
     sp.scale_ny_salary,
     sp.scale_step,
     sp.scale_ny_salary as pm_salary_increase,
     sp.ny_salary,
+    sp.ny_hourly,
     sp.salary_rule,
 
     s.staffing_model_id as seat_tracker_id_number,
