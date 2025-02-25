@@ -63,6 +63,12 @@ def main() -> None:
         ]
 
         for model_name in model_names:
+            file_path = project_dir / f"models/properties/{model_name}.yml"
+
+            # skip if file has already been created
+            if file_path.exists():
+                continue
+
             run_args = [
                 dbt_path,
                 "run-operation",
@@ -83,11 +89,10 @@ def main() -> None:
                 ]
             )
 
-            file_parent = project_dir / "models/properties"
+            file_path.parent.mkdir(parents=True, exist_ok=True)
 
-            file_parent.mkdir(parents=True, exist_ok=True)
-            with open(file=f"{file_parent}/{model_name}.yml", mode="w") as f:
-                f.write(yaml)
+            with open(file=file_path, mode="w") as io_wrapper:
+                io_wrapper.write(yaml)
 
 
 if __name__ == "__main__":
