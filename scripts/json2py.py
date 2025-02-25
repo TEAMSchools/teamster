@@ -19,7 +19,7 @@ def main() -> None:
 
     subprocess.run(
         args=[
-            "/workspaces/teamster/.venv/bin/datamodel-codegen",
+            "datamodel-codegen",
             f"--input={input_file}",
             "--input-file-type=json",
             f"--output={input_file.parent}/{input_file.stem}.py",

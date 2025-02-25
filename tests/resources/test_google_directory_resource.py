@@ -4,72 +4,102 @@ from dagster import build_resources
 
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 
-with build_resources(
-    resources={
-        "directory": GoogleDirectoryResource(
-            customer_id="C029u7m0n",
-            service_account_file_path="/etc/secret-volume/gcloud_service_account_json",
-            delegated_account="dagster@apps.teamschools.org",
-        )
-    }
-) as resources:
-    DIRECTORY: GoogleDirectoryResource = resources.directory
+
+def get_google_directory_resource() -> GoogleDirectoryResource:
+    with build_resources(
+        resources={
+            "directory": GoogleDirectoryResource(
+                customer_id="C029u7m0n",
+                service_account_file_path=(
+                    "/etc/secret-volume/gcloud_service_account_json"
+                ),
+                delegated_account="dagster@apps.teamschools.org",
+            )
+        }
+    ) as resources:
+        return resources.directory
 
 
 def test_list_orgunits():
-    data = DIRECTORY.list_orgunits(org_unit_type="all")
+    google_directory = get_google_directory_resource()
+
+    data = google_directory.list_orgunits(org_unit_type="all")
 
     with open(file="env/orgunits.json", mode="w") as f:
         json.dump([data], f)
 
 
 def test_get_orgunit():
-    data = DIRECTORY.get_orgunit(org_unit_path="")
-    print(data)
+    google_directory = get_google_directory_resource()
+
+    data = google_directory.get_orgunit(org_unit_path="")
+
+    with open(file="env/org_unit.json", mode="w") as f:
+        json.dump(data, f)
 
 
 def test_list_roles():
-    data = DIRECTORY.list_roles()
+    google_directory = get_google_directory_resource()
+
+    data = google_directory.list_roles()
 
     with open(file="env/roles.json", mode="w") as f:
         json.dump(data, f)
 
 
 def test_list_role_assignments():
-    data = DIRECTORY.list_role_assignments()
+    google_directory = get_google_directory_resource()
+
+    data = google_directory.list_role_assignments()
 
     with open(file="env/role_assignments.json", mode="w") as f:
         json.dump(data, f)
 
 
 def test_list_members():
-    data = DIRECTORY.list_members(group_key="group-students-miami@teamstudents.org")
+    google_directory = get_google_directory_resource()
+
+    data = google_directory.list_members(
+        group_key="group-students-miami@teamstudents.org"
+    )
 
     with open(file="env/members.json", mode="w") as f:
         json.dump(data, f)
 
 
 def test_list_groups():
-    data = DIRECTORY.list_groups()
+    google_directory = get_google_directory_resource()
+
+    data = google_directory.list_groups()
 
     with open(file="env/groups.json", mode="w") as f:
         json.dump(data, f)
 
 
 def test_get_user():
-    data = DIRECTORY.get_user(user_key="113203151440162455385")
-    print(data)
+    user_key = "113203151440162455385"
+
+    google_directory = get_google_directory_resource()
+
+    data = google_directory.get_user(user_key=user_key)
+
+    with open(file=f"env/user_{user_key}.json", mode="w") as f:
+        json.dump(data, f)
 
 
 def test_list_users():
-    data = DIRECTORY.list_users(projection="full")
+    google_directory = get_google_directory_resource()
+
+    data = google_directory.list_users(projection="full")
 
     with open(file="env/users.json", mode="w") as f:
         json.dump(data, f)
 
 
 def test_batch_insert_users():
-    DIRECTORY.batch_insert_users(
+    google_directory = get_google_directory_resource()
+
+    google_directory.batch_insert_users(
         [
             {
                 "primaryEmail": "datarobot_test_1@apps.teamschools.org",
@@ -94,7 +124,9 @@ def test_batch_insert_users():
 
 
 def test_batch_update_users():
-    DIRECTORY.batch_update_users(
+    google_directory = get_google_directory_resource()
+
+    google_directory.batch_update_users(
         [
             {
                 "primaryEmail": "datarobot_test_1@apps.teamschools.org",
@@ -111,7 +143,7 @@ def test_batch_update_users():
         ]
     )
 
-    DIRECTORY.batch_update_users(
+    google_directory.batch_update_users(
         [
             {
                 "primaryEmail": "datarobot_test_1@apps.teamschools.org",
@@ -130,7 +162,9 @@ def test_batch_update_users():
 
 
 def test_batch_insert_members():
-    DIRECTORY.batch_insert_members(
+    google_directory = get_google_directory_resource()
+
+    google_directory.batch_insert_members(
         [
             {
                 "groupKey": "datatest@apps.teamschools.org",
@@ -147,7 +181,9 @@ def test_batch_insert_members():
 
 
 def test_batch_insert_role_assignments():
-    DIRECTORY.batch_insert_role_assignments(
+    google_directory = get_google_directory_resource()
+
+    google_directory.batch_insert_role_assignments(
         [
             {
                 "assignedTo": "102120740905198094274",

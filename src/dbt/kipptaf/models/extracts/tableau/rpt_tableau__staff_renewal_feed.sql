@@ -66,6 +66,8 @@ with
             s.ay_job_title,
             s.ay_department,
             s.ay_location,
+            s.salary_or_hourly,
+            s.ay_hourly,
             s.ay_salary,
             s.academic_year,
             s.ay_pm4_overall_score,
@@ -85,6 +87,7 @@ with
             s.nonrenewal_reason,
             s.nonrenewal_notes,
             s.ny_salary,
+            s.ny_hourly,
             s.salary_rule,
             s.ay_school_shortname,
             s.ny_school_shortname,
@@ -147,6 +150,11 @@ with
                 then 'Renew'
                 else 'Seat Tracker Error'
             end as ny_status,
+            if(
+                s.salary_rule = 'Annual Adjustment' and s.salary_or_hourly = 'Hourly',
+                s.ny_hourly,
+                s.ny_salary
+            ) as ny_rate,
 
         from {{ ref("int_people__staff_roster") }} as b
         left join
@@ -215,7 +223,7 @@ select
                 '&entry.1309133590=',
                 coalesce(
                     safe_cast(ny_salary_from_form as string),
-                    safe_cast(ny_salary as string),
+                    safe_cast(ny_rate as string),
                     ''
                 ),
                 '&entry.1059490956=',

@@ -17,7 +17,9 @@ select
     y.academic_year,
 
     h.home_business_unit_name,
+    h.wf_mgr_pay_rule,
     h.base_remuneration_annual_rate_amount as ay_salary,
+    h.base_remuneration_hourly_rate_amount as ay_hourly,
 
     p.final_tier as ay_pm4_overall_tier,
 
@@ -26,27 +28,58 @@ select
     pss.scale_step,
 
     tss.scale_ny_salary as pm_salary_increase,
+    if(
+        regexp_contains(h.wf_mgr_pay_rule, r'Hourly'), 'Hourly', 'Salary'
+    ) as salary_or_hourly,
 
-    coalesce(pss.salary_rule, tss.salary_rule, 'Annual Adjustment') as salary_rule,
+    if(
+        regexp_contains(h.wf_mgr_pay_rule, r'Hourly'),
+        h.base_remuneration_hourly_rate_amount,
+        h.base_remuneration_annual_rate_amount
+    ) as ay_hourly_salary_rate,
+
+    coalesce(
+        pss.salary_rule, tss.salary_rule, mss.salary_rule, 'Annual Adjustment'
+    ) as salary_rule,
 
     coalesce(
         pss.scale_ny_salary,
         tss.scale_ny_salary + h.base_remuneration_annual_rate_amount,
+        if(
+            mss.salary_rule = 'PM Increase - Missing PM',
+            h.base_remuneration_annual_rate_amount + mss.scale_ny_salary,
+            null
+        ),
         case
             when h.base_remuneration_annual_rate_amount < 60000
             then
                 h.base_remuneration_annual_rate_amount
-                + h.base_remuneration_annual_rate_amount * 0.5
+                + h.base_remuneration_annual_rate_amount * 0.05
             when h.base_remuneration_annual_rate_amount < 100000
             then
                 h.base_remuneration_annual_rate_amount
-                + h.base_remuneration_annual_rate_amount * 0.4
+                + h.base_remuneration_annual_rate_amount * 0.04
             when h.base_remuneration_annual_rate_amount >= 100000
             then
                 h.base_remuneration_annual_rate_amount
-                + h.base_remuneration_annual_rate_amount * 0.3
+                + h.base_remuneration_annual_rate_amount * 0.03
         end
     ) as ny_salary,
+
+    case
+        when h.base_remuneration_annual_rate_amount < 60000
+        then
+            h.base_remuneration_hourly_rate_amount
+            + h.base_remuneration_hourly_rate_amount * 0.05
+        when h.base_remuneration_annual_rate_amount < 100000
+        then
+            h.base_remuneration_hourly_rate_amount
+            + h.base_remuneration_hourly_rate_amount * 0.04
+        when h.base_remuneration_annual_rate_amount >= 100000
+        then
+            h.base_remuneration_hourly_rate_amount
+            + h.base_remuneration_hourly_rate_amount * 0.03
+    end as ny_hourly,
 from {{ ref("int_people__staff_roster") }} as c
 inner join
     years as y
@@ -87,3 +120,10 @@ left join
     and h.job_title = tss.job_title
     and h.home_business_unit_name = tss.region
     and p.final_tier = tss.scale_step
+left join
+    {{ ref("stg_people__salary_scale") }} as mss
+    on y.academic_year = mss.academic_year
+    and h.job_title = mss.job_title
+    and h.home_business_unit_name = mss.region
+    and p.final_tier is null
+    and mss.salary_rule = 'PM Increase - Missing PM'
