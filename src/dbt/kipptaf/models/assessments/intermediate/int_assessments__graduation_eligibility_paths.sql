@@ -61,11 +61,15 @@ with
     ),
 
     scores as (
+        -- njgpa transfer scores
         select
             s.student_number,
             s.state_studentnumber,
             s.salesforce_id,
-            x.testscalescore,
+            x.testscalescore as scale_score,
+            x.testcode as score_type,
+
+            'NJGPA' as pathway_option,
 
             x.discipline,
 
@@ -76,11 +80,15 @@ with
 
         union all
 
+        -- njgpa scores from file
         select
             s.student_number,
             s.state_studentnumber,
             s.salesforce_id,
-            n.testscalescore,
+            n.testscalescore as scale_score,
+            n.testcode as score_type,
+
+            'NJGPA' as pathway_option,
 
             if(n.testcode = 'ELAGP', 'ELA', 'Math') as discipline,
 
@@ -89,28 +97,61 @@ with
             {{ ref("stg_pearson__njgpa") }} as n
             on s.state_studentnumber_int = n.statestudentidentifier
         where n.testscorecomplete = 1 and n.testcode in ('ELAGP', 'MATGP')
-    )
-/*
-    njgpa_rollup as (
-        select state_studentnumber, discipline, max(testscalescore) as testscalescore,
-        from njgpa
-        group by state_studentnumber, discipline
-    )
 
-    act_sat_psat_official as (
-        select s.state_studentnumber,
+        union all
+
+        -- act/sat scores
+        select
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            a.scale_score,
+            a.score_type,
+
+            a.scope as pathway_option,
+
+            if(a.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
+
         from students as s
         inner join
             {{ ref("int_assessments__college_assessment") }} as a
             on s.salesforce_id = a.salesforce_id
+            and a.scope in ('ACT', 'SAT')
+            and a.course_discipline in ('MATH', 'ENG')
 
         union all
 
-        select *
+        -- psat scores
+        select
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            a.scale_score,
+            a.score_type,
+
+            a.scope as pathway_option,
+
+            if(a.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
+
         from students as s
         inner join
             {{ ref("int_assessments__college_assessment") }} as a
-            on s.student_number = a.student_number
-    )*/
-select *
-from scores
+            on s.salesforce_id = a.salesforce_id
+            and a.scope in ('PSAT10', 'PSAT NMSQT')
+            and a.course_discipline in ('MATH', 'ENG')
+    )
+
+select
+    s.*,
+
+    p.pathway_option,
+    p.score_type,
+    p.scale_score,
+
+    row_number() over (
+        partition by s.student_number, p.score_type order by p.scale_score desc
+    ) as rn_highest,
+
+from students as s
+left join
+    scores as p on s.student_number = p.student_number and s.discipline = p.discipline
