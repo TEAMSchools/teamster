@@ -136,33 +136,112 @@ with
         from students as s
         inner join
             {{ ref("int_assessments__college_assessment") }} as p
-            on s.salesforce_id = p.salesforce_id
+            on s.student_number = p.student_number
             and s.powerschool_credittype = p.course_discipline
             and p.scope in ('PSAT10', 'PSAT NMSQT')
             and p.course_discipline in ('MATH', 'ENG')
+    ),
+
+    lookup_table as (
+        select
+            s.* except (state_studentnumber_int),
+
+            p.pathway_option,
+            p.score_type,
+            p.scale_score,
+
+            c.code as pathway_code,
+            c.cutoff,
+
+            if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
+
+            row_number() over (
+                partition by s.student_number, p.score_type order by p.scale_score desc
+            ) as rn_highest,
+
+        from students as s
+        left join
+            scores as p
+            on s.student_number = p.student_number
+            and s.discipline = p.discipline
+        inner join
+            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
+            on p.discipline = c.discipline
+            and p.pathway_option = c.type
+            and p.score_type = c.subject
+            and s.cohort = c.cohort
+            and c.`domain` = 'Graduation Pathways'
+    ),
+
+    -- having to collapse the unpivot 
+    unpivot_calcs as (
+        select
+            _dbt_source_relation,
+            student_number,
+            salesforce_id,
+            state_studentnumber,
+            grade_level,
+            cohort,
+            has_fafsa,
+            discipline,
+            powerschool_credittype,
+            ps_grad_path_code,
+            njgpa_date_11th,
+            is_before_fafsa_12th,
+
+            max(met_njgpa) as met_njgpa,
+            max(met_act) as met_act,
+            max(met_sat) as met_sat,
+            max(met_psat10) as met_psat10,
+            max(met_psat_nmsqt) as met_psat_nmsqt,
+
+        from
+            lookup_table pivot (
+                max(met_pathway_cutoff)
+                for pathway_option in (
+                    'NJGPA' as met_njgpa,
+                    'ACT' as met_act,
+                    'SAT' as met_sat,
+                    'PSAT10' as met_psat10,
+                    'PSAT NMSQT' as met_psat_nmsqt
+                )
+            )
+        where rn_highest = 1
+        group by all
     )
 
 select
-    s.* except (state_studentnumber_int),
+    *,
 
-    p.pathway_option,
-    p.score_type,
-    p.scale_score,
+    case
+        when grade_level != 12
+        then ps_grad_path_code
+        when ps_grad_path_code in ('M', 'N', 'O', 'P')
+        then ps_grad_path_code
+        when met_njgpa
+        then 'S'
+        when met_njgpa is not null and not met_njgpa and met_act
+        then 'E'
+        when met_njgpa is not null and not met_njgpa and not met_act and met_sat
+        then 'D'
+        when
+            met_njgpa is not null
+            and not met_njgpa
+            and not met_act
+            and not met_sat
+            and met_psat10
+        then 'J'
+        when
+            met_njgpa is not null
+            and not met_njgpa
+            and not met_act
+            and not met_sat
+            and not met_psat10
+            and met_psat_nmsqt
+        then 'K'
+        else 'R'
+    end as final_grad_path,
 
-    c.code as pathway_code,
-    c.cutoff,
+    if(met_njgpa is not null, true, false) as njgpa_attempt,
 
-    row_number() over (
-        partition by s.student_number, p.score_type order by p.scale_score desc
-    ) as rn_highest,
-
-from students as s
-left join
-    scores as p on s.student_number = p.student_number and s.discipline = p.discipline
-inner join
-    {{ ref("stg_reporting__promo_status_cutoffs") }} as c
-    on p.discipline = c.discipline
-    and p.pathway_option = c.type
-    and p.score_type = c.subject
-    and s.cohort = c.cohort
-    and c.`domain` = 'Graduation Pathways'
+from unpivot_calcs
