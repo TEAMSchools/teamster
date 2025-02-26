@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: adp_workforce_manager
-    schema: kipptaf_adp_workforce_manager
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_adp_workforce_manager
     tables:
       - name: src_adp_workforce_manager__accrual_reporting_period_summary
         external:

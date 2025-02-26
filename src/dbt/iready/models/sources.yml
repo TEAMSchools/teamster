@@ -2,8 +2,9 @@ version: 2
 
 sources:
   - name: iready
-    schema: "{{ var('iready_schema', env_var('DBT_DEV_IREADY_SCHEMA', 'iready')) }}"
-    database: "{{ var('iready_database', target.database) }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('iready_schema', project_name + '_iready') }}
     tables:
       - name: src_iready__diagnostic_results
         meta:

@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: adp_payroll
-    schema: kipptaf_adp_payroll
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_adp_payroll
     tables:
       - name: src_adp_payroll__general_ledger_file
         external:

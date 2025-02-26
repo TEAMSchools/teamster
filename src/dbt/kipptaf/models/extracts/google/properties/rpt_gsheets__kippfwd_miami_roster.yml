@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: rpt_ghseets__kippfwd_miami_roster
+  - name: rpt_gsheets__kippfwd_miami_roster
     columns:
       - name: academic_year
         data_type: int64

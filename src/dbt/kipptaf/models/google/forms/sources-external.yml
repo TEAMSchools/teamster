@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: google_forms
-    schema: kipptaf_google_forms
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_google_forms
     tables:
       - name: src_google_forms__form
         external:

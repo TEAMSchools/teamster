@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: dayforce
-    schema: kipptaf_dayforce
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_dayforce
     tables:
       - name: src_dayforce__employees
         external:

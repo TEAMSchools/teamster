@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: deanslist
-    schema: kipptaf_deanslist
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_deanslist
     tables:
       - name: src_deanslist__reconcile_attendance
         external:
