@@ -14,12 +14,12 @@ select
     vc.name_hist_workbooks as workbook,
     vc.name_hist_views as `view`,
     vc.`action`,
-    vc.created_at_local_new_york as viewed_at,
+    vc.created_at_local as viewed_at,
     vc.id as view_count_id,
-    concat('https://tableau.kipp.org/t/KIPPNJ/views/', vc.view_url, '?:embed=y') as url,
+    vc.url,
 from {{ ref("stg_tableau__view_count_per_view") }} as vc
 left join
     {{ ref("int_people__staff_roster_history") }} as srh
-    on lower(vc.`user_name`) = lower(srh.sam_account_name)
-    and vc.created_at_local_new_york
+    on vc.user_name_lower = srh.sam_account_name
+    and vc.created_at
     between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
