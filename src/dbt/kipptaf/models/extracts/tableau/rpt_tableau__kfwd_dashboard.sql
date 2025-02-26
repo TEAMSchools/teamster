@@ -304,6 +304,7 @@ select
     gc.is_4yr_ugrad_grad_int,
     gc.is_5yr_ugrad_grad_int,
     gc.is_6yr_ugrad_grad_int,
+    gc.is_6yr_grad_any_int,
 
     apps.name as application_name,
     apps.account_type as application_account_type,
