@@ -1,4 +1,5 @@
 # hard-coded
+DBT_CLOUD_ENVIRONMENT_TYPE=dev
 DBT_DEV_CLOUD_STORAGE_URI_BASE=gs://teamster-test/dagster/kippnewark
 DBT_DEV_DEANSLIST_SCHEMA=z_dev_deanslist
 DBT_DEV_EDPLAN_SCHEMA=z_dev_edplan
@@ -8,7 +9,6 @@ DBT_DEV_PEARSON_SCHEMA=z_dev_pearson
 DBT_DEV_POWERSCHOOL_SCHEMA=z_dev_powerschool
 DBT_DEV_RENLEARN_SCHEMA=z_dev_renlearn
 DBT_DEV_TITAN_SCHEMA=z_dev_titan
-DBT_DEV=true
 # OP
 ADP_SFTP_HOST_IP=op://Data Team/ADP Workforce Now SFTP/ip
 ADP_SFTP_PASSWORD=op://Data Team/ADP Workforce Now SFTP/password
