@@ -149,6 +149,10 @@ select
     p.score_type,
     p.scale_score,
 
+    c.cohort as lookup_cohort,
+    c.code as pathway_code,
+    c.cutoff,
+
     row_number() over (
         partition by s.student_number, p.score_type order by p.scale_score desc
     ) as rn_highest,
@@ -156,3 +160,10 @@ select
 from students as s
 left join
     scores as p on s.student_number = p.student_number and s.discipline = p.discipline
+inner join
+    {{ ref("stg_reporting__promo_status_cutoffs") }} as c
+    on p.discipline = c.discipline
+    and p.pathway_option = c.type
+    and p.score_type = c.subject
+    and s.cohort = c.cohort
+    and c.`domain` = 'Graduation Pathways'
