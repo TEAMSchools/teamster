@@ -30,6 +30,7 @@ with
             e.cohort,
             e.has_fafsa,
             e.discipline,
+            e.powerschool_credittype,
 
             -- this is not their final code, but it is used to calculate their final
             -- code
@@ -68,8 +69,7 @@ with
             s.salesforce_id,
             x.testscalescore as scale_score,
             x.testcode as score_type,
-
-            'NJGPA' as pathway_option,
+            x.test_name as pathway_option,
 
             x.discipline,
 
@@ -77,6 +77,7 @@ with
         inner join
             {{ ref("int_powerschool__state_assessments_transfer_scores") }} as x
             on s.state_studentnumber = x.state_studentnumber
+            and s.discipline = x.discipline
 
         union all
 
@@ -87,15 +88,15 @@ with
             s.salesforce_id,
             n.testscalescore as scale_score,
             n.testcode as score_type,
+            n.assessment_name as pathway_option,
 
-            'NJGPA' as pathway_option,
-
-            if(n.testcode = 'ELAGP', 'ELA', 'Math') as discipline,
+            n.discipline,
 
         from students as s
         inner join
             {{ ref("stg_pearson__njgpa") }} as n
             on s.state_studentnumber_int = n.statestudentidentifier
+            and s.discipline = n.discipline
         where n.testscorecomplete = 1 and n.testcode in ('ELAGP', 'MATGP')
 
         union all
@@ -107,7 +108,6 @@ with
             s.salesforce_id,
             a.scale_score,
             a.score_type,
-
             a.scope as pathway_option,
 
             if(a.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
@@ -116,6 +116,7 @@ with
         inner join
             {{ ref("int_assessments__college_assessment") }} as a
             on s.salesforce_id = a.salesforce_id
+            and s.powerschool_credittype = a.course_discipline
             and a.scope in ('ACT', 'SAT')
             and a.course_discipline in ('MATH', 'ENG')
 
@@ -126,19 +127,19 @@ with
             s.student_number,
             s.state_studentnumber,
             s.salesforce_id,
-            a.scale_score,
-            a.score_type,
+            p.scale_score,
+            p.score_type,
+            p.scope as pathway_option,
 
-            a.scope as pathway_option,
-
-            if(a.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
+            if(p.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
 
         from students as s
         inner join
-            {{ ref("int_assessments__college_assessment") }} as a
-            on s.salesforce_id = a.salesforce_id
-            and a.scope in ('PSAT10', 'PSAT NMSQT')
-            and a.course_discipline in ('MATH', 'ENG')
+            {{ ref("int_assessments__college_assessment") }} as p
+            on s.salesforce_id = p.salesforce_id
+            and s.powerschool_credittype = p.course_discipline
+            and p.scope in ('PSAT10', 'PSAT NMSQT')
+            and p.course_discipline in ('MATH', 'ENG')
     )
 
 select
