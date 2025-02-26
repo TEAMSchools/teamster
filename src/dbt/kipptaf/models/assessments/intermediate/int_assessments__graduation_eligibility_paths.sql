@@ -31,6 +31,8 @@ with
             e.has_fafsa,
             e.discipline,
 
+            -- this is not their final code, but it is used to calculate their final
+            -- code
             u.values_column as ps_grad_path_code,
 
             -- this is the date we start holding 11th graders accountable to
@@ -46,9 +48,6 @@ with
                 false
             ) as is_before_fafsa_12th,
 
-            max(e.grade_level) as grade_level,
-            max(e.cohort) as cohort,
-
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
             {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as u
@@ -56,8 +55,7 @@ with
             and e.discipline = u.discipline
             and {{ union_dataset_join_clause(left_alias="e", right_alias="u") }}
             and u.value_type = 'Graduation Pathway'
-        where e.region != 'Miami' and grade_level >= 8
-        -- and rn_all = 1
+        where e.region != 'Miami' and grade_level >= 8 and rn_undergrad = 1
     )
 
 select *
