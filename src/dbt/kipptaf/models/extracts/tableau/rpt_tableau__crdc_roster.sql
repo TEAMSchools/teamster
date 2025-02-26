@@ -79,7 +79,7 @@ with
 
             if(e.iep_status = 'Has IEP' and is_504, true, false) as iep_and_c504,
 
-            if(e.iep_status = 'Has IEP' and is_504, true, false) as c504_only,
+            if(e.iep_status = 'No IEP' and is_504, true, false) as c504_only,
 
             if(lep.liep_parent_refusal_date is null, false, true) as lep_parent_refusal,
 
