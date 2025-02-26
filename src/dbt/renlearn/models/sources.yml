@@ -2,9 +2,9 @@ version: 2
 
 sources:
   - name: renlearn
-    schema: "{{ var('renlearn_schema', env_var('DBT_DEV_RENLEARN_SCHEMA', 'renlearn')) }}"
-    database:
-      "{% if target.type != 'spark' %}{{ var('renlearn_database', target.database) }}{% endif %}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('renlearn_schema', project_name + '_renlearn') }}
     tables:
       - name: src_renlearn__accelerated_reader
         meta:

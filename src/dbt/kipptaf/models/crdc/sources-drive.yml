@@ -3,9 +3,8 @@ version: 2
 sources:
   - name: crdc
     schema: |
-      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kipptaf_crdc
-      {%- else -%}kipptaf_crdc
-      {%- endif %}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_crdc
     tables:
       - name: src_crdc__sced_code_crosswalk
         external:

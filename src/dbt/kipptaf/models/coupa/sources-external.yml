@@ -3,9 +3,8 @@ version: 2
 sources:
   - name: coupa
     schema: |
-      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kipptaf_coupa
-      {%- else -%}kipptaf_coupa
-      {%- endif %}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_coupa
     tables:
       - name: src_coupa__addresses
         external:

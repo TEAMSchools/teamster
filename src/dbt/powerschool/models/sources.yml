@@ -2,8 +2,9 @@ version: 2
 
 sources:
   - name: powerschool
-    schema: "{{ var('powerschool_schema', env_var('DBT_DEV_POWERSCHOOL_SCHEMA', 'powerschool')) }}"
-    database: "{{ var('powerschool_database', target.database) }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('powerschool_schema', project_name + '_powerschool') }}
     tables:
       - name: src_powerschool__assignmentscore
         meta:

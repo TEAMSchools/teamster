@@ -2,8 +2,9 @@ version: 2
 
 sources:
   - name: deanslist
-    schema: "{{ var('deanslist_schema', env_var('DBT_DEV_DEANSLIST_SCHEMA', 'deanslist')) }}"
-    database: "{{ var('deanslist_database', target.database) }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('deanslist_schema', project_name + '_deanslist') }}
     tables:
       - name: src_deanslist__behavior
         meta:

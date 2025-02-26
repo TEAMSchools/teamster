@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: ldap
-    schema: kipptaf_ldap
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_ldap
     tables:
       - name: src_ldap__user_person
         external:

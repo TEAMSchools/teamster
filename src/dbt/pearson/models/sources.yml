@@ -2,9 +2,9 @@ version: 2
 
 sources:
   - name: pearson
-    schema: "{{ var('pearson_schema', env_var('DBT_DEV_PEARSON_SCHEMA', 'pearson')) }}"
-    database:
-      "{% if target.type != 'spark' %}{{ var('pearson_database', target.database) }}{% endif %}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('pearson_schema', project_name + '_pearson') }}
     tables:
       - name: src_pearson__njgpa
         meta:
