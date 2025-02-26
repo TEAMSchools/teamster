@@ -142,7 +142,7 @@ with
     )
 
 select
-    s.*,
+    s.* except (state_studentnumber_int),
 
     p.pathway_option,
     p.score_type,
