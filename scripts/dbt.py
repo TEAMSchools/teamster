@@ -24,9 +24,8 @@ def main() -> None:
 
     if args.command == "sxs":
         cloud_storage_uri_base = (
-            "gs://teamster-"
-            + (args.project if args.prod else "test")
-            + f"{args.project}/dagster/{args.project}"
+            f"gs://teamster-{args.project if args.prod else 'test'}"
+            f"/dagster/{args.project}"
         )
 
         run_args = [
