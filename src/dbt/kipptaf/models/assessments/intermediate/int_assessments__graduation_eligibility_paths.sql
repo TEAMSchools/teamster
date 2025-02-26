@@ -149,7 +149,6 @@ select
     p.score_type,
     p.scale_score,
 
-    c.cohort as lookup_cohort,
     c.code as pathway_code,
     c.cutoff,
 
