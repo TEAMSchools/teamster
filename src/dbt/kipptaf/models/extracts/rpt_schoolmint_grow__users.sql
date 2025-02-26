@@ -1,4 +1,19 @@
 with
+    instructional_managers as (
+        select distinct sr.reports_to_employee_number,
+        from {{ ref("int_people__staff_roster") }} as sr
+        join
+            {{ ref("int_people__staff_roster") }} as srm
+            on sr.reports_to_employee_number = srm.employee_number
+        where
+            sr.assignment_status in ('Active', 'Leave')
+            and (
+                contains_substr(sr.job_title, 'Teacher')
+                or contains_substr(sr.job_title, 'Learning Specialist')
+            )
+            or srm.home_department_name
+            in ('School Support', 'Student Support', 'KIPP Forward')
+    ),
     people as (
         select
             sr.employee_number as user_internal_id,
@@ -53,13 +68,8 @@ with
                 then 'School Assistant Admin'
                 /* basic roles */
                 when
-                    sr.management_position_indicator
-                    and (
-                        sr.job_title like '%Teacher%'
-                        or sr.job_title like '%Learning%'
-                        or sr.home_department_name
-                        in ('School Support', 'Student Support', 'KIPP Forward')
-                    )
+                    sr.employee_number
+                    in (select reports_to_employee_number from instructional_managers)
                 then 'Coach'
                 when (sr.job_title like '%Teacher%' or sr.job_title like '%Learning%')
                 then 'Teacher'
