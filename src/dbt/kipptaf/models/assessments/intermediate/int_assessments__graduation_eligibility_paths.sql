@@ -189,11 +189,13 @@ with
             njgpa_date_11th,
             is_before_fafsa_12th,
 
-            max(met_njgpa) as met_njgpa,
-            max(met_act) as met_act,
-            max(met_sat) as met_sat,
-            max(met_psat10) as met_psat10,
-            max(met_psat_nmsqt) as met_psat_nmsqt,
+            if(max(met_njgpa) is not null, true, false) as njgpa_attempt,
+
+            coalesce(max(met_njgpa), false) as met_njgpa,
+            coalesce(max(met_act), false) as met_act,
+            coalesce(max(met_sat), false) as met_sat,
+            coalesce(max(met_psat10), false) as met_psat10,
+            coalesce(max(met_psat_nmsqt), false) as met_psat_nmsqt,
 
         from
             lookup_table pivot (
@@ -220,19 +222,19 @@ select
         then ps_grad_path_code
         when met_njgpa
         then 'S'
-        when met_njgpa is not null and not met_njgpa and met_act
+        when njgpa_attempt and not met_njgpa and met_act
         then 'E'
-        when met_njgpa is not null and not met_njgpa and not met_act and met_sat
+        when njgpa_attempt and not met_njgpa and not met_act and met_sat
         then 'D'
         when
-            met_njgpa is not null
+            njgpa_attempt
             and not met_njgpa
             and not met_act
             and not met_sat
             and met_psat10
         then 'J'
         when
-            met_njgpa is not null
+            njgpa_attempt
             and not met_njgpa
             and not met_act
             and not met_sat
@@ -241,7 +243,5 @@ select
         then 'K'
         else 'R'
     end as final_grad_path,
-
-    if(met_njgpa is not null, true, false) as njgpa_attempt,
 
 from unpivot_calcs
