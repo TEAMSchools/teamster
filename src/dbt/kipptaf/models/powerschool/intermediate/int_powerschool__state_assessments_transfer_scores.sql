@@ -1,4 +1,4 @@
--- purpose of this view: this CTE is used, as is, in 2 views -
+-- purpose of this view: this CTE is used in 2 views -
 -- int_students__graduation_path_codes and rpt_tableau__graduation_requirements. this
 -- chunk brings over NJGPA scores of students who enrolled with us AFTER they
 -- attempted the test. we dont get score files for them because they didnt test with
@@ -18,10 +18,16 @@ select
     t.alphascore as testperformancelevel,
 
     r.name as testcode,
+
+    n.student_number,
+    n.state_studentnumber,
+
     case r.name when 'ELAGP' then 'ELA' when 'MATGP' then 'Math' end as discipline,
+
     case
         r.name when 'ELAGP' then 'English Language Arts' when 'MATGP' then 'Mathematics'
     end as `subject`,
+
 from {{ ref("stg_powerschool__test") }} as b
 inner join
     {{ ref("stg_powerschool__studenttest") }} as s
@@ -37,4 +43,8 @@ inner join
     on s.testid = r.testid
     and t.testscoreid = r.id
     and {{ union_dataset_join_clause(left_alias="s", right_alias="r") }}
+inner join
+    {{ ref("stg_powerschool__students") }} as n
+    on s.studentid = n.id
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="n") }}
 where b.name = 'NJGPA'
