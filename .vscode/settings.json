@@ -54,5 +54,10 @@
     "UV_ENV_FILE": "/workspaces/teamster/env/.env",
     "UV_LINK_MODE": "copy",
     "UV_RESOLUTION": "highest"
+  },
+  "dbt.deferConfigPerProject": {
+    "src/dbt/kipptaf": {
+      "deferToProduction": true
+    }
   }
 }
