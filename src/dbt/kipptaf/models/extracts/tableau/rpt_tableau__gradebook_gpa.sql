@@ -496,7 +496,7 @@ left join
     course_enrollments as ce
     on s.studentid = ce.studentid
     and s.yearid = ce.yearid
-    -- and s.term_start_date >= ce.date_enrolled
+    and s.term_start_date >= ce.date_enrolled
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
 left join
     {{ ref("int_people__staff_roster") }} as r
