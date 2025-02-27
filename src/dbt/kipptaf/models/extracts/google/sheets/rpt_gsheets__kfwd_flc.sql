@@ -24,24 +24,6 @@ with
             row_number() over (partition by applicant order by id asc) as rn_applicant,
         from {{ ref("base_kippadb__application") }}
         where matriculation_decision = 'Matriculated (Intent to Enroll)'
-    ),
-
-    bgp as (
-        select
-            contact,
-            `subject` as bgp,
-
-            row_number() over (partition by contact order by `date` desc) as rn_bgp,
-        from {{ ref("stg_kippadb__contact_note") }}
-        where
-            `subject` in (
-                'BGP: 2-year',
-                'BGP: 4-year',
-                'BGP: CTE',
-                'BGP: Workforce',
-                'BGP: Unknown',
-                'BGP: Military'
-            )
     )
 
 -- trunk-ignore(sqlfluff/ST06)
@@ -60,6 +42,7 @@ select
     kt.contact_owner_name as counselor_name,
     kt.contact_college_match_display_gpa,
     kt.contact_highest_act_score,
+    kt.best_guess_pathway,
 
     coalesce(kt.contact_id, 'not in salesforce') as sf_id,
 
@@ -100,8 +83,6 @@ select
 
     co.grade_level,
 
-    coalesce(bg.bgp, 'No BGP') as bgp,
-
     kt.contact_expected_hs_graduation,
 
     coalesce(cn.ccdm, 0) as ccdm_complete,
@@ -137,7 +118,6 @@ left join act_valid as act on kt.contact_id = act.contact_id
 left join early as e on kt.contact_id = e.applicant
 left join
     matriculated_application as m on kt.contact_id = m.applicant and m.rn_applicant = 1
-left join bgp as bg on kt.contact_id = bg.contact and bg.rn_bgp = 1
 left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cn
     on kt.contact_id = cn.contact_id
