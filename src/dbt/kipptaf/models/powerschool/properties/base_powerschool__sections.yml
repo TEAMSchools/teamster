@@ -1,0 +1,384 @@
+version: 2
+models:
+  - name: base_powerschool__sections
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: sections_section_number
+        data_type: string
+      - name: sections_course_number
+        data_type: string
+      - name: sections_period_obsolete
+        data_type: string
+      - name: sections_room
+        data_type: string
+      - name: sections_fastperlist
+        data_type: string
+      - name: sections_ccrnarray
+        data_type: string
+      - name: sections_attendance
+        data_type: string
+      - name: sections_lastattupdate
+        data_type: date
+      - name: sections_custom
+        data_type: string
+      - name: sections_pgflags
+        data_type: string
+      - name: sections_days_obsolete
+        data_type: string
+      - name: sections_gradeprofile
+        data_type: string
+      - name: sections_log
+        data_type: string
+      - name: sections_teacherdescr
+        data_type: string
+      - name: sections_blockperiods_obsolete
+        data_type: string
+      - name: sections_dependent_secs
+        data_type: string
+      - name: sections_expression
+        data_type: string
+      - name: sections_bitmap
+        data_type: bytes
+      - name: sections_original_expression
+        data_type: string
+      - name: sections_comment_value
+        data_type: string
+      - name: sections_section_type
+        data_type: string
+      - name: sections_team
+        data_type: string
+      - name: sections_house
+        data_type: string
+      - name: sections_instruction_lang
+        data_type: string
+      - name: sections_sectioninfo_guid
+        data_type: string
+      - name: sections_att_mode_code
+        data_type: string
+      - name: sections_max_load_status
+        data_type: string
+      - name: sections_psguid
+        data_type: string
+      - name: sections_external_expression
+        data_type: string
+      - name: sections_ip_address
+        data_type: string
+      - name: sections_whomodifiedtype
+        data_type: string
+      - name: sections_transaction_date
+        data_type: timestamp
+      - name: sections_executionid
+        data_type: string
+      - name: sections_dcid
+        data_type: int64
+      - name: sections_id
+        data_type: int64
+      - name: sections_teacher
+        data_type: int64
+      - name: sections_termid
+        data_type: int64
+      - name: sections_no_of_students
+        data_type: int64
+      - name: sections_schoolid
+        data_type: int64
+      - name: sections_noofterms
+        data_type: int64
+      - name: sections_trackteacheratt
+        data_type: int64
+      - name: sections_maxenrollment
+        data_type: int64
+      - name: sections_distuniqueid
+        data_type: int64
+      - name: sections_wheretaught
+        data_type: int64
+      - name: sections_rostermodser
+        data_type: int64
+      - name: sections_pgversion
+        data_type: int64
+      - name: sections_grade_level
+        data_type: int64
+      - name: sections_campusid
+        data_type: int64
+      - name: sections_exclude_ada
+        data_type: int64
+      - name: sections_gradescaleid
+        data_type: int64
+      - name: sections_excludefromgpa
+        data_type: int64
+      - name: sections_buildid
+        data_type: int64
+      - name: sections_schedulesectionid
+        data_type: int64
+      - name: sections_wheretaughtdistrict
+        data_type: int64
+      - name: sections_excludefromclassrank
+        data_type: int64
+      - name: sections_excludefromhonorroll
+        data_type: int64
+      - name: sections_parent_section_id
+        data_type: int64
+      - name: sections_attendance_type_code
+        data_type: int64
+      - name: sections_maxcut
+        data_type: int64
+      - name: sections_exclude_state_rpt_yn
+        data_type: int64
+      - name: sections_sortorder
+        data_type: int64
+      - name: sections_programid
+        data_type: int64
+      - name: sections_excludefromstoredgrades
+        data_type: int64
+      - name: sections_gradebooktype
+        data_type: int64
+      - name: sections_whomodifiedid
+        data_type: int64
+      - name: courses_course_number
+        data_type: string
+      - name: courses_course_name
+        data_type: string
+      - name: courses_code
+        data_type: string
+      - name: courses_prerequisitesvalue
+        data_type: string
+      - name: courses_custom
+        data_type: string
+      - name: courses_corequisites
+        data_type: string
+      - name: courses_powerlink
+        data_type: string
+      - name: courses_powerlinkspan
+        data_type: string
+      - name: courses_reggradelevels
+        data_type: string
+      - name: courses_regteachers
+        data_type: string
+      - name: courses_regcoursegroup
+        data_type: string
+      - name: courses_multiterm
+        data_type: string
+      - name: courses_termsoffered
+        data_type: string
+      - name: courses_credittype
+        data_type: string
+      - name: courses_sched_department
+        data_type: string
+      - name: courses_sched_coursesubjectareacode
+        data_type: string
+      - name: courses_sched_fullcatalogdescription
+        data_type: string
+      - name: courses_sched_coursepkgcontents
+        data_type: string
+      - name: courses_sched_scheduletypecode
+        data_type: string
+      - name: courses_sched_validstartperiods
+        data_type: string
+      - name: courses_sched_validdaycombinations
+        data_type: string
+      - name: courses_validextradaycombinations
+        data_type: string
+      - name: courses_sched_extradayscheduletypecode
+        data_type: string
+      - name: courses_sched_facilities
+        data_type: string
+      - name: courses_sched_loadtype
+        data_type: string
+      - name: courses_sched_globalsubstitution1
+        data_type: string
+      - name: courses_sched_globalsubstitution2
+        data_type: string
+      - name: courses_sched_globalsubstitution3
+        data_type: string
+      - name: courses_sched_balancepriority
+        data_type: string
+      - name: courses_psguid
+        data_type: string
+      - name: courses_ip_address
+        data_type: string
+      - name: courses_whomodifiedtype
+        data_type: string
+      - name: courses_transaction_date
+        data_type: timestamp
+      - name: courses_executionid
+        data_type: string
+      - name: courses_dcid
+        data_type: int64
+      - name: courses_id
+        data_type: int64
+      - name: courses_credit_hours
+        data_type: float64
+      - name: courses_add_to_gpa
+        data_type: float64
+      - name: courses_schoolid
+        data_type: int64
+      - name: courses_regavailable
+        data_type: int64
+      - name: courses_targetclasssize
+        data_type: int64
+      - name: courses_maxclasssize
+        data_type: int64
+      - name: courses_sectionstooffer
+        data_type: int64
+      - name: courses_schoolgroup
+        data_type: int64
+      - name: courses_vocational
+        data_type: int64
+      - name: courses_status
+        data_type: int64
+      - name: courses_crhrweight
+        data_type: float64
+      - name: courses_sched_year
+        data_type: int64
+      - name: courses_sched_coursepackage
+        data_type: int64
+      - name: courses_sched_scheduled
+        data_type: int64
+      - name: courses_sched_sectionsoffered
+        data_type: int64
+      - name: courses_sched_teachercount
+        data_type: int64
+      - name: courses_sched_periodspermeeting
+        data_type: int64
+      - name: courses_sched_frequency
+        data_type: int64
+      - name: courses_sched_maximumperiodsperday
+        data_type: int64
+      - name: courses_sched_minimumperiodsperday
+        data_type: int64
+      - name: courses_sched_maximumdayspercycle
+        data_type: int64
+      - name: courses_sched_minimumdayspercycle
+        data_type: int64
+      - name: courses_sched_consecutiveperiods
+        data_type: int64
+      - name: courses_sched_blockstart
+        data_type: int64
+      - name: courses_sched_lengthinnumberofterms
+        data_type: int64
+      - name: courses_sched_consecutiveterms
+        data_type: int64
+      - name: courses_sched_balanceterms
+        data_type: int64
+      - name: courses_sched_maximumenrollment
+        data_type: int64
+      - name: courses_sched_concurrentflag
+        data_type: int64
+      - name: courses_sched_multiplerooms
+        data_type: int64
+      - name: courses_sched_labflag
+        data_type: int64
+      - name: courses_sched_labfrequency
+        data_type: int64
+      - name: courses_sched_labperiodspermeeting
+        data_type: int64
+      - name: courses_sched_repeatsallowed
+        data_type: int64
+      - name: courses_sched_loadpriority
+        data_type: int64
+      - name: courses_sched_substitutionallowed
+        data_type: int64
+      - name: courses_sched_usepreestablishedteams
+        data_type: int64
+      - name: courses_sched_closesectionaftermax
+        data_type: int64
+      - name: courses_sched_usesectiontypes
+        data_type: int64
+      - name: courses_sched_periodspercycle
+        data_type: int64
+      - name: courses_gradescaleid
+        data_type: int64
+      - name: courses_gpa_addedvalue
+        data_type: float64
+      - name: courses_excludefromgpa
+        data_type: int64
+      - name: courses_excludefromclassrank
+        data_type: int64
+      - name: courses_excludefromhonorroll
+        data_type: int64
+      - name: courses_sched_lunchcourse
+        data_type: int64
+      - name: courses_sched_do_not_print
+        data_type: int64
+      - name: courses_exclude_ada
+        data_type: int64
+      - name: courses_programid
+        data_type: int64
+      - name: courses_excludefromstoredgrades
+        data_type: int64
+      - name: courses_maxcredit
+        data_type: float64
+      - name: courses_iscareertech
+        data_type: int64
+      - name: courses_whomodifiedid
+        data_type: int64
+      - name: courses_isfitnesscourse
+        data_type: int64
+      - name: courses_ispewaiver
+        data_type: int64
+      - name: terms_name
+        data_type: string
+      - name: terms_firstday
+        data_type: date
+      - name: terms_lastday
+        data_type: date
+      - name: terms_abbreviation
+        data_type: string
+      - name: terms_importmap
+        data_type: string
+      - name: terms_terminfo_guid
+        data_type: string
+      - name: terms_psguid
+        data_type: string
+      - name: terms_ip_address
+        data_type: string
+      - name: terms_whomodifiedtype
+        data_type: string
+      - name: terms_transaction_date
+        data_type: timestamp
+      - name: terms_executionid
+        data_type: string
+      - name: terms_dcid
+        data_type: int64
+      - name: terms_id
+        data_type: int64
+      - name: terms_yearid
+        data_type: int64
+      - name: terms_noofdays
+        data_type: int64
+      - name: terms_schoolid
+        data_type: int64
+      - name: terms_yearlycredithrs
+        data_type: float64
+      - name: terms_termsinyear
+        data_type: int64
+      - name: terms_portion
+        data_type: int64
+      - name: terms_autobuildbin
+        data_type: int64
+      - name: terms_isyearrec
+        data_type: int64
+      - name: terms_periods_per_day
+        data_type: int64
+      - name: terms_days_per_cycle
+        data_type: int64
+      - name: terms_attendance_calculation_code
+        data_type: int64
+      - name: terms_sterms
+        data_type: int64
+      - name: terms_suppresspublicview
+        data_type: int64
+      - name: terms_whomodifiedid
+        data_type: int64
+      - name: terms_academic_year
+        data_type: int64
+      - name: terms_fiscal_year
+        data_type: int64
+      - name: teachernumber
+        data_type: string
+      - name: teacher_lastfirst
+        data_type: string
+      - name: courses_gradescaleid_unweighted
+        data_type: int64
+      - name: is_ap_course
+        data_type: boolean

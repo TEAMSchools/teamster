@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_deanslist__dff_stats
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: school_id
+        data_type: int64
+      - name: student_count
+        data_type: int64
+      - name: student_with_guardian_count
+        data_type: int64

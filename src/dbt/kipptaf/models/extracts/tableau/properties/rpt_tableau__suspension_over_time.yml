@@ -1,0 +1,62 @@
+version: 2
+models:
+  - name: rpt_tableau__suspension_over_time
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: lastfirst
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: team
+        data_type: string
+      - name: entrydate
+        data_type: date
+      - name: exitdate
+        data_type: date
+      - name: special_education_code
+        data_type: string
+      - name: is_504
+        data_type: boolean
+      - name: lep_status
+        data_type: boolean
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: is_out_of_district
+        data_type: boolean
+      - name: is_self_contained
+        data_type: boolean
+      - name: date_day
+        data_type: date
+      - name: first_suspension_date
+        data_type: date
+      - name: first_suspension_date_iss
+        data_type: date
+      - name: first_suspension_date_oss
+        data_type: date
+      - name: iep_status
+        data_type: string
+      - name: is_susp_running
+        data_type: int64
+      - name: is_iss_running
+        data_type: int64
+      - name: is_oss_running
+        data_type: int64
+      - name: total_suspended_days_running
+        data_type: float64
+      - name: oss_suspended_days_running
+        data_type: float64
+      - name: iss_suspended_days_running
+        data_type: float64
+      - name: total_suspension_incidents_running
+        data_type: int64

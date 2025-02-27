@@ -22,7 +22,7 @@
     {%- endif -%}
 {%- endif -%}
 
-{% if env_var("DBT_DEV", "") == "true" %}
+{% if env_var("DBT_CLOUD_ENVIRONMENT_TYPE", "") == "dev" %}
     select student_number, username, default_password, google_email,
     from kipptaf_people.stg_people__student_logins
 {% elif is_incremental() %}

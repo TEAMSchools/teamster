@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: int_assessments__course_enrollments
+    columns:
+      - name: powerschool_student_number
+        data_type: int64
+      - name: courses_credittype
+        data_type: string
+      - name: powerschool_school_id
+        data_type: int64
+      - name: cc_dateenrolled
+        data_type: date
+      - name: cc_dateleft
+        data_type: date
+      - name: illuminate_subject_area
+        data_type: string
+      - name: is_foundations
+        data_type: boolean
+      - name: region
+        data_type: string
+      - name: illuminate_academic_year
+        data_type: int64
+      - name: illuminate_grade_level_id
+        data_type: int64
+      - name: is_advanced_math_student
+        data_type: boolean

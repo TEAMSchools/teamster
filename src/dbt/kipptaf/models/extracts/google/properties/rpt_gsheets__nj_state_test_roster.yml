@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: rpt_gsheets__nj_state_test_roster
+    columns:
+      - name: region
+        data_type: string
+      - name: school_abbreviation
+        data_type: string
+      - name: student
+        data_type: string
+      - name: enroll_status
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: advisory_name
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: state_studentnumber
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: string
+      - name: status_504
+        data_type: string
+      - name: test_code
+        data_type: string
+      - name: has_extended_time
+        data_type: boolean
+      - name: sn_test_hash
+        data_type: string
+      - name: session_name
+        data_type: string

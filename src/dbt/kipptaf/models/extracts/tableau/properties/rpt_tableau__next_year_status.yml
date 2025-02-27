@@ -1,0 +1,64 @@
+version: 2
+models:
+  - name: rpt_tableau__next_year_status
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: state_studentnumber
+        data_type: string
+      - name: lastfirst
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: entrydate
+        data_type: date
+      - name: exitdate
+        data_type: date
+      - name: gender
+        data_type: string
+      - name: dob
+        data_type: date
+      - name: spedlep
+        data_type: string
+      - name: is_retained_ever
+        data_type: boolean
+      - name: is_retained_year
+        data_type: boolean
+      - name: year_in_school
+        data_type: int64
+      - name: home_phone
+        data_type: string
+      - name: contact_1_phone_mobile
+        data_type: string
+      - name: contact_2_phone_mobile
+        data_type: string
+      - name: contact_1_email_current
+        data_type: string
+      - name: next_school
+        data_type: int64
+      - name: boy_status
+        data_type: string
+      - name: sched_nextyeargrade
+        data_type: int64
+      - name: tel_home_phone
+        data_type: string
+      - name: tel_mother_cell
+        data_type: string
+      - name: tel_father_cell
+        data_type: string
+      - name: student_address
+        data_type: string
+      - name: gmaps_address
+        data_type: string

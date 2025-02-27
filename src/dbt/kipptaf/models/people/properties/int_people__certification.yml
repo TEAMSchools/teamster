@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: int_people__certification
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: date_submitted
+        data_type: timestamp
+      - name: cert_state
+        data_type: string
+      - name: cert_endoresement
+        data_type: string
+      - name: cert_type
+        data_type: string
+      - name: cert_issue_date
+        data_type: date
+      - name: cert_expiration_date
+        data_type: date
+      - name: cert_document_link
+        data_type: string
+      - name: cert_number
+        data_type: int64

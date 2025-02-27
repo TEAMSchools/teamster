@@ -1,0 +1,54 @@
+version: 2
+models:
+  - name: int_powerschool__gpa_term
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: studentid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: term_name
+        data_type: string
+      - name: semester
+        data_type: string
+      - name: is_current
+        data_type: boolean
+      - name: gpa_points_total_term
+        data_type: float64
+      - name: gpa_term
+        data_type: float64
+      - name: gpa_points_total_y1
+        data_type: float64
+      - name: gpa_y1
+        data_type: float64
+      - name: gpa_y1_unweighted
+        data_type: float64
+      - name: n_failing_y1
+        data_type: int64
+      - name: total_credit_hours_term
+        data_type: float64
+      - name: total_credit_hours_y1
+        data_type: float64
+      - name: grade_avg_term
+        data_type: float64
+      - name: grade_avg_y1
+        data_type: float64
+      - name: weighted_gpa_points_term
+        data_type: float64
+      - name: weighted_gpa_points_y1
+        data_type: float64
+      - name: weighted_gpa_points_y1_unweighted
+        data_type: float64
+      - name: gpa_points_total_semester
+        data_type: float64
+      - name: weighted_gpa_points_semester
+        data_type: float64
+      - name: total_credit_hours_semester
+        data_type: float64
+      - name: grade_avg_semester
+        data_type: float64
+      - name: gpa_semester
+        data_type: float64

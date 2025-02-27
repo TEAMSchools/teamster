@@ -1,0 +1,88 @@
+version: 2
+models:
+  - name: rpt_tableau__smartrecruiters
+    columns:
+      - name: application_id
+        data_type: string
+      - name: job_city
+        data_type: string
+      - name: recruiters
+        data_type: string
+      - name: department_internal
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: application_status
+        data_type: string
+      - name: reason_for_rejection
+        data_type: string
+      - name: phone_interview_score
+        data_type: float64
+      - name: resume_score
+        data_type: float64
+      - name: subject_preference
+        data_type: string
+      - name: status_type
+        data_type: string
+      - name: date_val
+        data_type: date
+      - name: candidate_email
+        data_type: string
+      - name: candidate_first_and_last_name
+        data_type: string
+      - name: candidate_first_name
+        data_type: string
+      - name: candidate_id
+        data_type: string
+      - name: candidate_last_name
+        data_type: string
+      - name: candidate_source_subtype
+        data_type: string
+      - name: candidate_source_type
+        data_type: string
+      - name: candidate_source
+        data_type: string
+      - name: candidate_tags_values
+        data_type: string
+      - name: current_employer
+        data_type: string
+      - name: teacher_certification_endorsement_question
+        data_type: string
+      - name: city_of_interest
+        data_type: string
+      - name: how_did_you_hear_about_kipp_nj_miami
+        data_type: string
+      - name: out_of_state_teacher_certification_sped_credits
+        data_type: string
+      - name: kf_are_you_alumnus
+        data_type: string
+      - name: kf_gender
+        data_type: string
+      - name: kf_in_which_regions_alumnus
+        data_type: string
+      - name: kf_race
+        data_type: string
+      - name: taf_affiliated_orgs
+        data_type: string
+      - name: taf_current_or_former_kipp_employee
+        data_type: string
+      - name: taf_current_or_former_kipp_nj_miami_employee
+        data_type: string
+      - name: taf_expected_salary
+        data_type: string
+      - name: taf_other_orgs
+        data_type: string
+      - name: nj_out_of_state_sped_credits
+        data_type: string
+      - name: candidate_last_first
+        data_type: string
+      - name: school_shared_with
+        data_type: string
+      - name: undergrad_gpa
+        data_type: string
+      - name: grad_gpa
+        data_type: string
+      - name: certification_in_state
+        data_type: string
+      - name: certification_out_of_state
+        data_type: string

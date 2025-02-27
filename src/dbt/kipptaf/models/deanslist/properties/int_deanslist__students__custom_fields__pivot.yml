@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: int_deanslist__students__custom_fields__pivot
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: student_school_id
+        data_type: string
+      - name: 10th_hours
+        data_type: string
+      - name: 11th_hours
+        data_type: string
+      - name: 12th_hours
+        data_type: string
+      - name: 9th_hours
+        data_type: string
+      - name: asset_tag
+        data_type: string
+      - name: date_deployed
+        data_type: string
+      - name: example_checkbox
+        data_type: string
+      - name: graduation_date
+        data_type: string
+      - name: hotspot_info
+        data_type: string
+      - name: locker_combo
+        data_type: string
+      - name: locker_number
+        data_type: string

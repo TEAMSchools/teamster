@@ -1,0 +1,42 @@
+version: 2
+models:
+  - name: rpt_tableau__school_community_diagnostic
+    columns:
+      - name: survey_id
+        data_type: string
+      - name: survey_title
+        data_type: string
+      - name: survey_response_id
+        data_type: string
+      - name: question_shortname
+        data_type: string
+      - name: date_submitted
+        data_type: timestamp
+      - name: academic_year
+        data_type: int64
+      - name: question_text
+        data_type: string
+      - name: answer_text
+        data_type: string
+      - name: answer_value
+        data_type: int64
+      - name: staff_job_title
+        data_type: string
+      - name: student_spedlep
+        data_type: string
+      - name: respondent_number
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: location
+        data_type: string
+      - name: race_ethnicity
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: grade_band
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: survey_audience
+        data_type: string

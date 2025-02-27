@@ -1,0 +1,20 @@
+version: 2
+models:
+  - name: rpt_gsheets__kippmiami_payout_roster
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: group
+        data_type: string
+      - name: grade_level
+        data_type: string
+      - name: measure
+        data_type: string
+      - name: criteria_cutoff
+        data_type: float64
+      - name: payout_potential
+        data_type: float64
+      - name: criteria_actual
+        data_type: float64
+      - name: payout_actual
+        data_type: float64
