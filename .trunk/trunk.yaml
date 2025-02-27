@@ -12,7 +12,7 @@ lint:
     - git-diff-check
     - gitleaks@8.24.0
     - hadolint@2.12.1-beta
-    - isort@6.0.0
+    - isort@6.0.1
     - markdownlint@0.44.0
     - osv-scanner@1.9.2
     - oxipng@9.1.4
