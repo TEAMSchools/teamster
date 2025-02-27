@@ -37,11 +37,11 @@ def build_dbt_assets(
         ]
 
         # filter upstream nodes for external sources
-        external_source_selection = [
+        external_source_selection = {
             f"{sources[node]['source_name']}.{sources[node]['name']}"
             for node in selection_depends_on_nodes
             if sources.get(node, {}).get("external")
-        ]
+        }
 
         # stage external sources
         if external_source_selection:
