@@ -1,0 +1,28 @@
+version: 2
+models:
+  - name: stg_collegeboard__psat
+    columns:
+      - name: cb_id
+        data_type: int64
+      - name: latest_psat_total
+        data_type: int64
+      - name: latest_psat_math_section
+        data_type: int64
+      - name: latest_psat_ebrw
+        data_type: int64
+      - name: latest_psat_date
+        data_type: date
+      - name: district_student_id
+        data_type: int64
+      - name: secondary_id
+        data_type: int64
+      - name: latest_psat_grade
+        data_type: int64
+      - name: test_name
+        data_type: string
+      - name: test_type
+        data_type: string
+      - name: administration_round
+        data_type: string
+      - name: academic_year
+        data_type: int64

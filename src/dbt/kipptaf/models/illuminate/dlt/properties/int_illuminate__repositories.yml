@@ -1,0 +1,46 @@
+version: 2
+models:
+  - name: int_illuminate__repositories
+    columns:
+      - name: repository_id
+        data_type: int64
+      - name: title
+        data_type: string
+      - name: description
+        data_type: string
+      - name: user_id
+        data_type: int64
+      - name: type
+        data_type: string
+      - name: created_at
+        data_type: timestamp
+      - name: updated_at
+        data_type: timestamp
+      - name: code_subject_area_id
+        data_type: int64
+      - name: repository_type
+        data_type: string
+      - name: code_scope_id
+        data_type: int64
+      - name: db_virtual_table_id
+        data_type: int64
+      - name: local_repository_id
+        data_type: string
+      - name: guid
+        data_type: string
+      - name: date_administered
+        data_type: date
+      - name: creator_local_user_id
+        data_type: string
+      - name: creator_username
+        data_type: string
+      - name: creator_first_name
+        data_type: string
+      - name: creator_last_name
+        data_type: string
+      - name: creator_email_1
+        data_type: string
+      - name: scope
+        data_type: string
+      - name: subject_area
+        data_type: string

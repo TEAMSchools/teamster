@@ -1,0 +1,74 @@
+version: 2
+models:
+  - name: int_people__renewal_status
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: ay_business_unit
+        data_type: string
+      - name: ay_department
+        data_type: string
+      - name: ay_job_title
+        data_type: string
+      - name: ay_location
+        data_type: string
+      - name: ay_salary
+        data_type: numeric
+      - name: ay_hourly
+        data_type: numeric
+      - name: ay_school_shortname
+        data_type: string
+      - name: ay_campus_name
+        data_type: string
+      - name: ay_head_of_school_samaccount
+        data_type: string
+      - name: ay_pm4_overall_score
+        data_type: float64
+      - name: ay_pm4_overall_tier
+        data_type: int64
+      - name: ay_primary_grade_level_taught
+        data_type: int64
+      - name: salary_or_hourly
+        data_type: string
+      - name: scale_cy_salary
+        data_type: int64
+      - name: scale_ny_salary
+        data_type: int64
+      - name: scale_step
+        data_type: int64
+      - name: pm_salary_increase
+        data_type: int64
+      - name: ny_salary
+        data_type: numeric
+      - name: ny_hourly
+        data_type: numeric
+      - name: salary_rule
+        data_type: string
+      - name: seat_tracker_id_number
+        data_type: string
+      - name: ny_location
+        data_type: string
+      - name: ny_dept
+        data_type: string
+      - name: ny_title
+        data_type: string
+      - name: ny_entity
+        data_type: string
+      - name: seat_tracker_last_edited
+        data_type: timestamp
+      - name: ny_status
+        data_type: string
+      - name: ny_school_shortname
+        data_type: string
+      - name: ny_campus_name
+        data_type: string
+      - name: ny_head_of_school_samaccount
+        data_type: string
+      - name: nonrenewal_reason
+        data_type: string
+      - name: nonrenewal_notes
+        data_type: string
+      - name: gutcheck
+        data_type: string

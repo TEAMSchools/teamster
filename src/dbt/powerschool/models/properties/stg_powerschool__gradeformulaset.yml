@@ -1,0 +1,28 @@
+version: 2
+models:
+  - name: stg_powerschool__gradeformulaset
+    columns:
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: type
+        data_type: string
+      - name: gradeformulasetid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: iscoursegradecalculated
+        data_type: int64
+      - name: isreporttermsetupsame
+        data_type: int64
+      - name: sectionsdcid
+        data_type: int64

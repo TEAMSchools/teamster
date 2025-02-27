@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: stg_illuminate__dna_assessments__students_assessments
+    columns:
+      - name: student_assessment_id
+        data_type: int64
+      - name: student_id
+        data_type: int64
+      - name: assessment_id
+        data_type: int64
+      - name: date_taken
+        data_type: date
+      - name: created_at
+        data_type: timestamp
+      - name: updated_at
+        data_type: timestamp
+      - name: version_id
+        data_type: int64

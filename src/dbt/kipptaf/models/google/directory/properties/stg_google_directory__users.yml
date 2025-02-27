@@ -1,0 +1,116 @@
+version: 2
+models:
+  - name: stg_google_directory__users
+    columns:
+      - name: id
+        data_type: string
+      - name: primary_email
+        data_type: string
+      - name: org_unit_path
+        data_type: string
+      - name: recovery_email
+        data_type: string
+      - name: recovery_phone
+        data_type: string
+      - name: suspension_reason
+        data_type: string
+      - name: last_login_time
+        data_type: string
+      - name: creation_time
+        data_type: string
+      - name: is_admin
+        data_type: boolean
+      - name: is_delegated_admin
+        data_type: boolean
+      - name: is_enforced_in_2sv
+        data_type: boolean
+      - name: is_enrolled_in_2sv
+        data_type: boolean
+      - name: is_mailbox_setup
+        data_type: boolean
+      - name: agreed_to_terms
+        data_type: boolean
+      - name: archived
+        data_type: boolean
+      - name: suspended
+        data_type: boolean
+      - name: change_password_at_next_login
+        data_type: boolean
+      - name: include_in_global_address_list
+        data_type: boolean
+      - name: ip_whitelisted
+        data_type: boolean
+      - name: thumbnail_photo_etag
+        data_type: string
+      - name: thumbnail_photo_url
+        data_type: string
+      - name: customer_id
+        data_type: string
+      - name: etag
+        data_type: string
+      - name: kind
+        data_type: string
+      - name: gender__type
+        data_type: string
+      - name: name__family_name
+        data_type: string
+      - name: name__full_name
+        data_type: string
+      - name: name__given_name
+        data_type: string
+      - name: notes__value
+        data_type: string
+      - name: custom_schemas__student_attributes__student_number
+        data_type: int64
+      - name: aliases
+        data_type: string
+      - name: non_editable_aliases
+        data_type: string
+      - name: emails
+        data_type: record
+      - name: emails.address
+        data_type: string
+      - name: emails.primary
+        data_type: boolean
+      - name: emails.type
+        data_type: string
+      - name: emails.customtype
+        data_type: string
+      - name: external_ids
+        data_type: record
+      - name: external_ids.value
+        data_type: string
+      - name: external_ids.type
+        data_type: string
+      - name: languages
+        data_type: record
+      - name: languages.languagecode
+        data_type: string
+      - name: languages.preference
+        data_type: string
+      - name: organizations
+        data_type: record
+      - name: organizations.primary
+        data_type: boolean
+      - name: organizations.customtype
+        data_type: string
+      - name: organizations.title
+        data_type: string
+      - name: organizations.department
+        data_type: string
+      - name: organizations.description
+        data_type: string
+      - name: organizations.costcenter
+        data_type: string
+      - name: phones
+        data_type: record
+      - name: phones.value
+        data_type: string
+      - name: phones.type
+        data_type: string
+      - name: relations
+        data_type: record
+      - name: relations.value
+        data_type: string
+      - name: relations.type
+        data_type: string

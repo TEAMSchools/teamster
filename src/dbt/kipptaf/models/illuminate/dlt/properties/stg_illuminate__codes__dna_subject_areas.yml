@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: stg_illuminate__codes__dna_subject_areas
+    columns:
+      - name: code_id
+        data_type: int64
+      - name: code_key
+        data_type: string
+      - name: code_translation
+        data_type: string
+      - name: site_id
+        data_type: int64
+      - name: sort_order
+        data_type: int64
+      - name: system_state_id
+        data_type: int64
+      - name: system_key_translation
+        data_type: string

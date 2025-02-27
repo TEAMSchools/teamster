@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: rpt_egencia__users
+    columns:
+      - name: username
+        data_type: string
+      - name: email
+        data_type: string
+      - name: single sign on id
+        data_type: string
+      - name: employee id
+        data_type: int64
+      - name: status
+        data_type: string
+      - name: first name
+        data_type: string
+      - name: last name
+        data_type: string
+      - name: role
+        data_type: string
+      - name: traveler group
+        data_type: string

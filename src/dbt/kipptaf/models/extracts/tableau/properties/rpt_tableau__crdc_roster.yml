@@ -1,0 +1,78 @@
+version: 2
+models:
+  - name: rpt_tableau__crdc_roster
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: studentid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: salesforce_id
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: is_504
+        data_type: boolean
+      - name: iep_only
+        data_type: boolean
+      - name: iep_and_c504
+        data_type: boolean
+      - name: c504_only
+        data_type: boolean
+      - name: lep_status
+        data_type: boolean
+      - name: lep_parent_refusal
+        data_type: boolean
+      - name: enroll_status
+        data_type: int64
+      - name: is_enrolled_oct01
+        data_type: boolean
+      - name: is_enrolled_recent
+        data_type: boolean
+      - name: is_retained_year
+        data_type: boolean
+      - name: crdc_demographic
+        data_type: string
+      - name: crdc_gender
+        data_type: string
+      - name: courses_course_name
+        data_type: string
+      - name: sections_dcid
+        data_type: int64
+      - name: sced_course_name
+        data_type: string
+      - name: crdc_course_group
+        data_type: string
+      - name: crdc_subject_group
+        data_type: string
+      - name: crdc_ap_group
+        data_type: string
+      - name: sced_code_xwalk
+        data_type: string
+      - name: is_oct_01_course
+        data_type: boolean
+      - name: is_last_day_course
+        data_type: boolean
+      - name: passed_course
+        data_type: boolean
+      - name: crdc_question_section
+        data_type: string
+      - name: crdc_question_description
+        data_type: string

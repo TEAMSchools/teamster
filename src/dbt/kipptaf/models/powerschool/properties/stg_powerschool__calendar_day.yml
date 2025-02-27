@@ -1,0 +1,54 @@
+version: 2
+models:
+  - name: stg_powerschool__calendar_day
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: date_value
+        data_type: date
+      - name: scheduleid
+        data_type: string
+      - name: note
+        data_type: string
+      - name: type
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: a
+        data_type: int64
+      - name: b
+        data_type: int64
+      - name: c
+        data_type: int64
+      - name: d
+        data_type: int64
+      - name: e
+        data_type: int64
+      - name: f
+        data_type: int64
+      - name: insession
+        data_type: int64
+      - name: membershipvalue
+        data_type: float64
+      - name: cycle_day_id
+        data_type: int64
+      - name: bell_schedule_id
+        data_type: int64
+      - name: week_num
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: week_start_date
+        data_type: date
+      - name: week_end_date
+        data_type: date

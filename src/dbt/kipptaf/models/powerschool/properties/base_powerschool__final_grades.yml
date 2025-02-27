@@ -1,0 +1,130 @@
+version: 2
+models:
+  - name: base_powerschool__final_grades
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: studentid
+        data_type: int64
+      - name: sectionid
+        data_type: int64
+      - name: course_number
+        data_type: string
+      - name: yearid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: termid
+        data_type: int64
+      - name: dateenrolled
+        data_type: date
+      - name: dateleft
+        data_type: date
+      - name: schoolid
+        data_type: int64
+      - name: course_name
+        data_type: string
+      - name: credittype
+        data_type: string
+      - name: is_dropped_section
+        data_type: boolean
+      - name: storecode
+        data_type: string
+      - name: term_percent_grade
+        data_type: float64
+      - name: sg_percent
+        data_type: float64
+      - name: fg_percent
+        data_type: float64
+      - name: term_letter_grade
+        data_type: string
+      - name: sg_letter_grade
+        data_type: string
+      - name: fg_letter_grade
+        data_type: string
+      - name: term_percent_grade_adjusted
+        data_type: float64
+      - name: fg_percent_adjusted
+        data_type: float64
+      - name: term_letter_grade_adjusted
+        data_type: string
+      - name: fg_letter_grade_adjusted
+        data_type: string
+      - name: y1_percent_grade
+        data_type: float64
+      - name: y1_percent_grade_adjusted
+        data_type: float64
+      - name: term_grade_points
+        data_type: float64
+      - name: sg_grade_points
+        data_type: float64
+      - name: fg_grade_points
+        data_type: float64
+      - name: courses_gradescaleid
+        data_type: int64
+      - name: courses_gradescaleid_unweighted
+        data_type: int64
+      - name: termbin_start_date
+        data_type: date
+      - name: termbin_end_date
+        data_type: date
+      - name: termbin_is_current
+        data_type: boolean
+      - name: exclude_from_gpa
+        data_type: int64
+      - name: sg_exclude_from_gpa
+        data_type: int64
+      - name: courses_excludefromgpa
+        data_type: int64
+      - name: exclude_from_graduation
+        data_type: int64
+      - name: sg_exclude_from_graduation
+        data_type: int64
+      - name: potential_credit_hours
+        data_type: float64
+      - name: sg_potential_credit_hours
+        data_type: float64
+      - name: courses_credit_hours
+        data_type: float64
+      - name: term_weighted_points_possible
+        data_type: float64
+      - name: term_weighted_points_earned
+        data_type: float64
+      - name: term_weighted_points_earned_adjusted
+        data_type: float64
+      - name: term_weighted_points_earned_adjusted_running
+        data_type: float64
+      - name: y1_weighted_points_possible
+        data_type: float64
+      - name: y1_weighted_points_possible_running
+        data_type: float64
+      - name: y1_weighted_points_earned_running
+        data_type: float64
+      - name: y1_weighted_points_earned_adjusted_running
+        data_type: float64
+      - name: y1_weighted_points_valid_running
+        data_type: float64
+      - name: lastgradeupdate
+        data_type: date
+      - name: whomodified_teachernumber
+        data_type: string
+      - name: citizenship
+        data_type: string
+      - name: comment_value
+        data_type: string
+      - name: y1_grade_points
+        data_type: float64
+      - name: y1_letter_grade
+        data_type: string
+      - name: y1_grade_points_unweighted
+        data_type: float64
+      - name: y1_letter_grade_adjusted
+        data_type: string
+      - name: need_90
+        data_type: float64
+      - name: need_80
+        data_type: float64
+      - name: need_70
+        data_type: float64
+      - name: need_60
+        data_type: float64

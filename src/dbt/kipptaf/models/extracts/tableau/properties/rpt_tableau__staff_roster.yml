@@ -1,0 +1,138 @@
+version: 2
+models:
+  - name: rpt_tableau__staff_roster
+    columns:
+      - name: df_employee_number
+        data_type: int64
+      - name: associate_id
+        data_type: string
+      - name: position_id
+        data_type: string
+      - name: file_number
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: preferred_first
+        data_type: string
+      - name: preferred_last
+        data_type: string
+      - name: preferred_name
+        data_type: string
+      - name: legal_entity_name
+        data_type: string
+      - name: location_description
+        data_type: string
+      - name: home_department_description
+        data_type: string
+      - name: job_title_description
+        data_type: string
+      - name: is_management
+        data_type: boolean
+      - name: position_status
+        data_type: string
+      - name: termination_reason_description
+        data_type: string
+      - name: original_hire_date
+        data_type: date
+      - name: rehire_date
+        data_type: date
+      - name: termination_date
+        data_type: date
+      - name: position_start_date
+        data_type: date
+      - name: payroll_company_code
+        data_type: string
+      - name: worker_category_description
+        data_type: string
+      - name: benefits_eligibility_class_description
+        data_type: string
+      - name: flsa_description
+        data_type: string
+      - name: eeo_ethnic_description
+        data_type: string
+      - name: birth_date
+        data_type: date
+      - name: address
+        data_type: string
+      - name: primary_address_city
+        data_type: string
+      - name: primary_address_state_territory_code
+        data_type: string
+      - name: primary_address_zip_postal_code
+        data_type: string
+      - name: personal_contact_personal_mobile
+        data_type: string
+      - name: mail
+        data_type: string
+      - name: userprincipalname
+        data_type: string
+      - name: manager_df_employee_number
+        data_type: int64
+      - name: manager_custom_assoc_id
+        data_type: string
+      - name: manager_name
+        data_type: string
+      - name: manager_mail
+        data_type: string
+      - name: race_ethnicity
+        data_type: string
+      - name: is_hispanic
+        data_type: boolean
+      - name: race_ethnicity_reporting
+        data_type: string
+      - name: gender_identity
+        data_type: string
+      - name: relay_status
+        data_type: string
+      - name: community_grew_up
+        data_type: string
+      - name: community_professional_exp
+        data_type: string
+      - name: alumni_status
+        data_type: string
+      - name: path_to_education
+        data_type: string
+      - name: level_of_education
+        data_type: string
+      - name: base_salary
+        data_type: numeric
+      - name: years_at_kipp_total
+        data_type: float64
+      - name: years_teaching_total
+        data_type: float64
+      - name: years_experience_total
+        data_type: float64
+      - name: primary_grade_level_taught
+        data_type: int64
+      - name: salesforce_job_position_name_custom
+        data_type: int64
+      - name: is_regional_staff
+        data_type: int64
+      - name: maiden_name
+        data_type: int64
+      - name: eeo_ethnic_code
+        data_type: int64
+      - name: subject_dept_custom
+        data_type: int64
+      - name: job_title_custom
+        data_type: int64
+      - name: location_custom
+        data_type: int64
+      - name: this_is_a_management_position
+        data_type: int64
+      - name: reports_to_name
+        data_type: int64
+      - name: gender
+        data_type: int64
+      - name: grades_taught_custom
+        data_type: int64
+      - name: school_leader_mail
+        data_type: string
+      - name: school_leader_preferred_name_lastfirst
+        data_type: string
+      - name: dso_mail
+        data_type: string
+      - name: dso_preferred_name_lastfirst
+        data_type: string
