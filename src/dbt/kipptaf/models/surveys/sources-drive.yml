@@ -9,9 +9,6 @@ sources:
       - name: src_surveys__scd_question_crosswalk
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             sheet_range: scd_question_crosswalk
             skip_leading_rows: 1
@@ -31,9 +28,6 @@ sources:
       - name: src_surveys__scd_answer_crosswalk
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             sheet_range: scd_answer_crosswalk
             skip_leading_rows: 1
@@ -48,9 +42,6 @@ sources:
       - name: src_surveys__manager_survey_detail_archive
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: CSV
             skip_leading_rows: 1
             uris:
@@ -64,9 +55,6 @@ sources:
       - name: src_surveys__staff_info_archive
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: CSV
             skip_leading_rows: 1
             uris:
@@ -80,9 +68,6 @@ sources:
       - name: src_surveys__cmo_engagement_regional_survey_detail_archive
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: CSV
             skip_leading_rows: 1
             uris:

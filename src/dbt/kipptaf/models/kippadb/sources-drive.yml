@@ -9,9 +9,6 @@ sources:
       - name: src_kippadb__nsc_crosswalk
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1smCSUKz2SXwnohmz59LNptoN5jHzYD2TfZNHZwK7Dts

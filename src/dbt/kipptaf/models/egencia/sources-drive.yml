@@ -9,9 +9,6 @@ sources:
       - name: src_egencia__traveler_groups
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
@@ -35,9 +32,6 @@ sources:
       - name: src_egencia__travel_managers
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
@@ -55,9 +49,6 @@ sources:
       - name: src_egencia__traveler_group_exceptions
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
