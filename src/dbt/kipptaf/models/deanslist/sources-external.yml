@@ -10,6 +10,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/reconcile_attendance/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -22,6 +25,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/deanslist/reconcile_suspensions/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:

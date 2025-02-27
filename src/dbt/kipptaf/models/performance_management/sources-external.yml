@@ -10,6 +10,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/performance_management/outlier_detection/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/performance_management/outlier_detection/"
             format: AVRO
@@ -25,6 +28,9 @@ sources:
           location:
             "{{ var('cloud_storage_uri_base') }}/performance_management/observation_details/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/performance_management/observation_details/"
             format: AVRO
