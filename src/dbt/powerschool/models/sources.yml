@@ -1249,3 +1249,20 @@ sources:
             max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
+      - name: src_powerschool__u_storedgrades_de
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - u_storedgrades_de
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/u_storedgrades_de/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
+            format: AVRO
+            enable_logical_types: true
