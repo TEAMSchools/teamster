@@ -419,7 +419,7 @@ union all
 /* walkthrough data */
 select
     null as student_number,
-    null as student_name,
+    r.user_principal_name as student_name,
 
     w.academic_year,
 
