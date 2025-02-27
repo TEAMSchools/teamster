@@ -167,7 +167,8 @@ with
             and a.mclass_client_date between s.start_date and s.end_date
             and a.assessment_type = 'PM'
         where
-            s.goal_filter in ('1BOY->MOY3', '1BOY->MOY4', '0BOY->MOY4')
+            s.goal_filter
+            in ('1BOY->MOY3', '1BOY->MOY4', '0BOY->MOY4', '1MOY->EOY7', '2MOY->EOY7')
             and a.mclass_measure_standard_score is not null
     ),
 
@@ -182,8 +183,16 @@ with
             max(psf) as psf,
             max(cls) as cls,
             max(wrc) as wrc,
+            max(orf_acc) as orf_acc,
+            max(orf) as orf,
 
-            if(max(psf) or (max(cls) and max(wrc)), true, false) as met_overall_goal,
+            case
+                when max(psf) or (max(cls) and max(wrc))
+                then true
+                when max(orf_acc) and max(orf) and max(cls) and max(wrc)
+                then true
+                else false
+            end as met_overall_goal,
 
         from
             met_overall_goal_or_bm_modified pivot (
@@ -191,7 +200,9 @@ with
                 for expected_mclass_measure_standard in (
                     'Phonemic Awareness (PSF)' as psf,
                     'Letter Sounds (NWF-CLS)' as cls,
-                    'Decoding (NWF-WRC)' as wrc
+                    'Decoding (NWF-WRC)' as wrc,
+                    'Reading Accuracy (ORF-Accu)' as orf_acc,
+                    'Reading Fluency (ORF)' as orf
                 )
             ) as pvt
         group by all
@@ -208,8 +219,16 @@ with
             max(psf) as psf,
             max(cls) as cls,
             max(wrc) as wrc,
+            max(orf_acc) as orf_acc,
+            max(orf) as orf,
 
-            if(max(psf) or (max(cls) and max(wrc)), true, false) as met_bm_benchmark,
+            case
+                when max(psf) or (max(cls) and max(wrc))
+                then true
+                when max(orf_acc) and max(orf) and max(cls) and max(wrc)
+                then true
+                else false
+            end as met_bm_benchmark,
 
         from
             met_overall_goal_or_bm_modified pivot (
@@ -217,7 +236,9 @@ with
                 for expected_mclass_measure_standard in (
                     'Phonemic Awareness (PSF)' as psf,
                     'Letter Sounds (NWF-CLS)' as cls,
-                    'Decoding (NWF-WRC)' as wrc
+                    'Decoding (NWF-WRC)' as wrc,
+                    'Reading Accuracy (ORF-Accu)' as orf_acc,
+                    'Reading Fluency (ORF)' as orf
                 )
             ) as pvt
         group by all
@@ -326,6 +347,30 @@ select
             and s.expected_round = '4'
             and a.mclass_measure_standard_score is null
         then null
+        when
+            s.grade_level = '1'
+            and s.expected_test = 'MOY->EOY'
+            and s.expected_round = '7'
+            and a.mclass_measure_standard_score is not null
+        then mod.met_overall_goal
+        when
+            s.grade_level = '1'
+            and s.expected_test = 'MOY->EOY'
+            and s.expected_round = '7'
+            and a.mclass_measure_standard_score is null
+        then null
+        when
+            s.grade_level = '2'
+            and s.expected_test = 'MOY->EOY'
+            and s.expected_round = '7'
+            and a.mclass_measure_standard_score is not null
+        then mod.met_overall_goal
+        when
+            s.grade_level = '2'
+            and s.expected_test = 'MOY->EOY'
+            and s.expected_round = '7'
+            and a.mclass_measure_standard_score is null
+        then null
         when a.mclass_measure_standard_score is null
         then null
         when a.mclass_measure_standard_score >= s.goal
@@ -355,6 +400,30 @@ select
             s.grade_level = '0'
             and s.expected_test = 'BOY->MOY'
             and s.expected_round = '4'
+            and a.mclass_measure_standard_score is null
+        then null
+        when
+            s.grade_level = '1'
+            and s.expected_test = 'MOY->EOY'
+            and s.expected_round = '7'
+            and a.mclass_measure_standard_score is not null
+        then bm_mod.met_bm_benchmark
+        when
+            s.grade_level = '1'
+            and s.expected_test = 'MOY->EOY'
+            and s.expected_round = '7'
+            and a.mclass_measure_standard_score is null
+        then null
+        when
+            s.grade_level = '2'
+            and s.expected_test = 'MOY->EOY'
+            and s.expected_round = '7'
+            and a.mclass_measure_standard_score is not null
+        then bm_mod.met_bm_benchmark
+        when
+            s.grade_level = '2'
+            and s.expected_test = 'MOY->EOY'
+            and s.expected_round = '7'
             and a.mclass_measure_standard_score is null
         then null
         when a.mclass_measure_standard_score is null
