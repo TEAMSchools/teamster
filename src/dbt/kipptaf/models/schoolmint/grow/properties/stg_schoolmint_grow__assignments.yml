@@ -1,0 +1,64 @@
+version: 2
+models:
+  - name: stg_schoolmint_grow__assignments
+    columns:
+      - name: assignment_id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: coaching_activity
+        data_type: boolean
+      - name: exclude_from_bank
+        data_type: boolean
+      - name: goal_type
+        data_type: string
+      - name: locked
+        data_type: boolean
+      - name: private
+        data_type: boolean
+      - name: type
+        data_type: string
+      - name: observation
+        data_type: string
+      - name: user_id
+        data_type: string
+      - name: user_name
+        data_type: string
+      - name: user_email
+        data_type: string
+      - name: creator_id
+        data_type: string
+      - name: creator_name
+        data_type: string
+      - name: creator_email
+        data_type: string
+      - name: parent_id
+        data_type: string
+      - name: parent_name
+        data_type: string
+      - name: progress_id
+        data_type: string
+      - name: progress_assigner
+        data_type: string
+      - name: progress_justification
+        data_type: string
+      - name: progress_percent
+        data_type: int64
+      - name: progress_date
+        data_type: string
+      - name: tags
+        data_type: record
+      - name: tags.name
+        data_type: string
+      - name: tags._id
+        data_type: string
+      - name: tags.url
+        data_type: string
+      - name: created
+        data_type: timestamp
+      - name: last_modified
+        data_type: timestamp
+      - name: archived_at
+        data_type: timestamp
+      - name: created_date_local
+        data_type: date

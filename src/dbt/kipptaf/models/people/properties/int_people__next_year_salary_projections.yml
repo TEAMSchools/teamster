@@ -1,0 +1,36 @@
+version: 2
+models:
+  - name: int_people__next_year_salary_projections
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: home_business_unit_name
+        data_type: string
+      - name: wf_mgr_pay_rule
+        data_type: string
+      - name: ay_salary
+        data_type: numeric
+      - name: ay_hourly
+        data_type: numeric
+      - name: ay_pm4_overall_tier
+        data_type: int64
+      - name: scale_cy_salary
+        data_type: int64
+      - name: scale_ny_salary
+        data_type: int64
+      - name: scale_step
+        data_type: int64
+      - name: pm_salary_increase
+        data_type: int64
+      - name: salary_or_hourly
+        data_type: string
+      - name: ay_hourly_salary_rate
+        data_type: numeric
+      - name: salary_rule
+        data_type: string
+      - name: ny_salary
+        data_type: numeric
+      - name: ny_hourly
+        data_type: numeric

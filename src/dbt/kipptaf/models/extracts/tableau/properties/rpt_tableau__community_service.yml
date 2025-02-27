@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: rpt_tableau__community_service
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: c_504_status
+        data_type: boolean
+      - name: grade_level
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: advisor_name
+        data_type: string
+      - name: guardian_email
+        data_type: string
+      - name: student_email
+        data_type: string
+      - name: school_name
+        data_type: string
+      - name: behavior_date
+        data_type: date
+      - name: behavior
+        data_type: string
+      - name: notes
+        data_type: string
+      - name: cs_hours
+        data_type: int64
+      - name: staff_name
+        data_type: string
+      - name: grade_9_hours
+        data_type: numeric
+      - name: grade_10_hours
+        data_type: numeric
+      - name: grade_11_hours
+        data_type: numeric
+      - name: grade_12_hours
+        data_type: numeric

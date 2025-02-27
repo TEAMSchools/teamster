@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: stg_schoolmint_grow__observations__observation_scores__text_boxes
+    columns:
+      - name: observation_id
+        data_type: string
+      - name: measurement
+        data_type: string
+      - name: key
+        data_type: string
+      - name: value
+        data_type: string
+      - name: value_clean
+        data_type: string

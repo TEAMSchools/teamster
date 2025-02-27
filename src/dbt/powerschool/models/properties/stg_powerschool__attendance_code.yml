@@ -1,0 +1,44 @@
+version: 2
+models:
+  - name: stg_powerschool__attendance_code
+    columns:
+      - name: att_code
+        data_type: string
+      - name: alternate_code
+        data_type: string
+      - name: description
+        data_type: string
+      - name: presence_status_cd
+        data_type: string
+      - name: unused1
+        data_type: string
+      - name: attendancecodeinfo_guid
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: lock_teacher_yn
+        data_type: record
+      - name: lock_teacher_yn.int_value
+        data_type: int64
+      - name: lock_teacher_yn.double_value
+        data_type: float64
+      - name: lock_teacher_yn.bytes_decimal_value
+        data_type: numeric
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: course_credit_points
+        data_type: float64
+      - name: assignment_filter_yn
+        data_type: int64
+      - name: calculate_ada_yn
+        data_type: int64
+      - name: calculate_adm_yn
+        data_type: int64
+      - name: sortorder
+        data_type: int64

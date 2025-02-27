@@ -1,9 +1,0 @@
-version: 2
-
-models:
-  - name: stg_adp_payroll__general_ledger_file
-    meta:
-      dagster:
-        group: adp_payroll
-        automation_condition:
-          enabled: false

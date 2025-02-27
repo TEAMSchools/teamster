@@ -1,0 +1,104 @@
+version: 2
+models:
+  - name: stg_overgrad__students
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: id
+        data_type: int64
+      - name: external_student_id
+        data_type: string
+      - name: created_at
+        data_type: string
+      - name: updated_at
+        data_type: string
+      - name: email
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: graduation_year
+        data_type: int64
+      - name: telephone
+        data_type: string
+      - name: address
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: birth_date
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: family_income
+        data_type: string
+      - name: fafsa_completed
+        data_type: boolean
+      - name: student_aid_index
+        data_type: float64
+      - name: maximum_family_contribution
+        data_type: float64
+      - name: pell_grant
+        data_type: float64
+      - name: post_high_school_plan
+        data_type: string
+      - name: first_generation
+        data_type: boolean
+      - name: fathers_education
+        data_type: string
+      - name: mothers_education
+        data_type: string
+      - name: awards
+        data_type: string
+      - name: extracurricular_activities
+        data_type: string
+      - name: interests
+        data_type: string
+      - name: target_grad_rate
+        data_type: float64
+      - name: ideal_grad_rate
+        data_type: float64
+      - name: school__id
+        data_type: int64
+      - name: school__object
+        data_type: string
+      - name: school__name
+        data_type: string
+      - name: assigned_counselor__id
+        data_type: int64
+      - name: assigned_counselor__first_name
+        data_type: string
+      - name: assigned_counselor__last_name
+        data_type: string
+      - name: assigned_counselor__email
+        data_type: string
+      - name: academics__unweighted_gpa
+        data_type: float64
+      - name: academics__weighted_gpa
+        data_type: float64
+      - name: academics__projected_act
+        data_type: int64
+      - name: academics__projected_sat
+        data_type: int64
+      - name: academics__act_superscore
+        data_type: int64
+      - name: academics__sat_superscore
+        data_type: int64
+      - name: academics__highest_act
+        data_type: int64
+      - name: academics__highest_preact
+        data_type: int64
+      - name: academics__highest_preact_8_9
+        data_type: int64
+      - name: academics__highest_aspire_10
+        data_type: int64
+      - name: academics__highest_aspire_9
+        data_type: int64
+      - name: academics__highest_sat
+        data_type: int64
+      - name: academics__highest_psat_nmsqt
+        data_type: int64
+      - name: academics__highest_psat_10
+        data_type: int64
+      - name: academics__highest_psat_8_9
+        data_type: int64

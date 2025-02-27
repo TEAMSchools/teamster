@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_dayforce__employee_manager
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: manager_employee_number
+        data_type: int64
+      - name: manager_effective_start_date
+        data_type: date
+      - name: manager_effective_end_date
+        data_type: date

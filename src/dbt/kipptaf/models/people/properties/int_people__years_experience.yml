@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: int_people__years_experience
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: years_teaching_at_kipp
+        data_type: float64
+      - name: years_teaching_in_njfl
+        data_type: numeric
+      - name: years_teaching_outside_njfl
+        data_type: numeric
+      - name: years_exp_outside_kipp
+        data_type: numeric
+      - name: years_at_kipp_total
+        data_type: float64
+      - name: years_experience_total
+        data_type: float64
+      - name: years_teaching_total
+        data_type: float64

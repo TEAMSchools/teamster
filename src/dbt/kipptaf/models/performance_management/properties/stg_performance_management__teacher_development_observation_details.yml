@@ -1,0 +1,20 @@
+version: 2
+models:
+  - name: stg_performance_management__teacher_development_observation_details
+    columns:
+      - name: row_id
+        data_type: string
+      - name: observation_id
+        data_type: string
+      - name: employee_number
+        data_type: int64
+      - name: microgoal_id
+        data_type: string
+      - name: text_box
+        data_type: string
+      - name: row_score
+        data_type: int64
+      - name: measurement_name
+        data_type: string
+      - name: strand_name
+        data_type: string
