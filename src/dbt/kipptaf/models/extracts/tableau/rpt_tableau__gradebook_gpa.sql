@@ -496,7 +496,6 @@ left join
     course_enrollments as ce
     on s.studentid = ce.studentid
     and s.yearid = ce.yearid
-    and s.term_start_date >= ce.date_enrolled
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
 left join
     {{ ref("int_people__staff_roster") }} as r
@@ -525,7 +524,9 @@ left join
     and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
     and ce.sectionid = c.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="c") }}
-where s.term_start_date <= current_date('{{ var("local_timezone") }}')
+where
+    s.term_start_date <= current_date('{{ var("local_timezone") }}')
+    and s.term_start_date >= ce.date_enrolled
 
 union all
 
