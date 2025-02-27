@@ -32,8 +32,13 @@ with
             end as course_discipline,
         from
             {{ ref("int_collegeboard__psat") }} unpivot (
-                score for score_type
-                in (latest_psat_total, latest_psat_math_section, latest_psat_ebrw)
+                score for score_type in (
+                    latest_psat_total,
+                    latest_psat_math_section,
+                    latest_psat_ebrw,
+                    latest_psat_reading,
+                    latest_psat_math_test
+                )
             )
     )
 
