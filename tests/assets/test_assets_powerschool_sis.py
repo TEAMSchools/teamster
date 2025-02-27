@@ -234,3 +234,15 @@ def test_userscorefields_kippnewark():
         ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
         db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
     )
+
+
+def test_u_storedgrades_de_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="u_storedgrades_de",
+        ssh_powerschool=get_ssh_powerschool_resource(CODE_LOCATION.upper()),
+        db_powerschool=get_db_powerschool_resource(CODE_LOCATION.upper()),
+    )
