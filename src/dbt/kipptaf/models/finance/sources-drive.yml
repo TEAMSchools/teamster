@@ -9,6 +9,9 @@ sources:
       - name: src_finance__enrollment_targets
         external:
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1yCW2pmQYwLQuTel72QWCyq83qlyQEemYbONLPAIvy7c
@@ -23,6 +26,9 @@ sources:
       - name: src_finance__payroll_code_mapping
         external:
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1yCW2pmQYwLQuTel72QWCyq83qlyQEemYbONLPAIvy7c

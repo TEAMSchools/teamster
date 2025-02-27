@@ -15,6 +15,9 @@ sources:
               - njsmart_powerschool_archive
         external:
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: CSV
             skip_leading_rows: 1
             uris:

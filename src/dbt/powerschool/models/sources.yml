@@ -18,6 +18,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/assignmentscore/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/powerschool/assignmentscore/"
@@ -35,6 +38,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/attendance/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/powerschool/attendance/"
@@ -52,6 +58,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/pgfinalgrades/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/powerschool/pgfinalgrades/"
@@ -69,6 +78,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/storedgrades/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/powerschool/storedgrades/"
@@ -86,6 +98,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/assignmentcategoryassoc/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
             hive_partition_uri_prefix:
@@ -103,6 +118,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/assignmentsection/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
             hive_partition_uri_prefix:
@@ -120,6 +138,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/cc/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__codeset
@@ -134,6 +155,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/codeset/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__courses
@@ -148,6 +172,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/courses/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__districtteachercategory
@@ -162,6 +189,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/districtteachercategory/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__emailaddress
@@ -176,6 +206,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/emailaddress/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalcformulaweight
@@ -190,6 +223,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gradecalcformulaweight/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalcschoolassoc
@@ -204,6 +240,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gradecalcschoolassoc/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalculationtype
@@ -218,6 +257,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gradecalculationtype/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeformulaset
@@ -232,6 +274,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gradeformulaset/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradescaleitem
@@ -246,6 +291,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gradescaleitem/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeschoolconfig
@@ -260,6 +308,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gradeschoolconfig/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeschoolformulaassoc
@@ -274,6 +325,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gradeschoolformulaassoc/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradesectionconfig
@@ -288,6 +342,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gradesectionconfig/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__originalcontactmap
@@ -302,6 +359,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/originalcontactmap/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__person
@@ -316,6 +376,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/person/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personaddress
@@ -330,6 +393,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/personaddress/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personaddressassoc
@@ -344,6 +410,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/personaddressassoc/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personemailaddressassoc
@@ -358,6 +427,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/personemailaddressassoc/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personphonenumberassoc
@@ -372,6 +444,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/personphonenumberassoc/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__phonenumber
@@ -386,6 +461,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/phonenumber/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__prefs
@@ -400,6 +478,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/prefs/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__roledef
@@ -414,6 +495,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/roledef/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_crs_x
@@ -428,6 +512,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/s_nj_crs_x/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_ren_x
@@ -442,6 +529,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/s_nj_ren_x/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_stu_x
@@ -456,6 +546,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/s_nj_stu_x/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_usr_x
@@ -470,6 +563,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/s_nj_usr_x/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__schools
@@ -484,6 +580,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/schools/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__schoolstaff
@@ -498,6 +597,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/schoolstaff/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__sections
@@ -512,6 +614,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/sections/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__sectionteacher
@@ -526,6 +631,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/sectionteacher/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcontactassoc
@@ -540,6 +648,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/studentcontactassoc/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcontactdetail
@@ -554,6 +665,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/studentcontactdetail/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcorefields
@@ -568,6 +682,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/studentcorefields/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentrace
@@ -582,6 +699,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/studentrace/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__students
@@ -596,6 +716,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/students/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__teachercategory
@@ -610,6 +733,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/teachercategory/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__termbins
@@ -624,6 +750,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/termbins/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__terms
@@ -638,6 +767,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/terms/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_clg_et_stu
@@ -652,6 +784,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/u_clg_et_stu/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_clg_et_stu_alt
@@ -666,6 +801,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/u_clg_et_stu_alt/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_def_ext_students
@@ -680,6 +818,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/u_def_ext_students/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_studentsuserfields
@@ -694,6 +835,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/u_studentsuserfields/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__users
@@ -708,6 +852,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/users/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       # not-partitionable
@@ -723,6 +870,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/attendance_code/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance_conversion_items
@@ -737,6 +887,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/attendance_conversion_items/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__bell_schedule
@@ -751,6 +904,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/bell_schedule/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__calendar_day
@@ -765,6 +921,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/calendar_day/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__cycle_day
@@ -779,6 +938,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/cycle_day/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__fte
@@ -793,6 +955,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/fte/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gen
@@ -807,6 +972,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gen/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__log
@@ -821,6 +989,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/log/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__period
@@ -835,6 +1006,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/period/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__reenrollments
@@ -849,6 +1023,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/reenrollments/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__spenrollments
@@ -863,6 +1040,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/spenrollments/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__test
@@ -877,6 +1057,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/test/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__testscore
@@ -891,6 +1074,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/testscore/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studenttest
@@ -905,6 +1091,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/studenttest/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studenttestscore
@@ -919,6 +1108,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/studenttestscore/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__sced_code_mapping
@@ -933,6 +1125,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/sced_code_mapping/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpnode
@@ -947,6 +1142,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gpnode/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpprogresssubject
@@ -961,6 +1159,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gpprogresssubject/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpprogresssubjectwaived
@@ -975,6 +1176,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gpprogresssubjectwaived/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpstudentwaiver
@@ -989,6 +1193,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gpstudentwaiver/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpversion
@@ -1003,6 +1210,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gpversion/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradplan
@@ -1017,6 +1227,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/gradplan/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__userscorefields
@@ -1031,5 +1244,8 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/powerschool/userscorefields/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true

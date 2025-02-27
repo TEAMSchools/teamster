@@ -12,6 +12,9 @@ sources:
             "{{ var('cloud_storage_uri_base')
             }}/adp_workforce_manager/accrual_reporting_period_summary/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base')
               }}/adp_workforce_manager/accrual_reporting_period_summary/"
@@ -27,6 +30,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/adp_workforce_manager/time_details/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/adp_workforce_manager/time_details/"
             format: AVRO

@@ -11,6 +11,9 @@ sources:
           location:
             "{{ var('cloud_storage_uri_base') }}/adp/workforce_now/additional_earnings_report/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -26,6 +29,9 @@ sources:
             "{{ var('cloud_storage_uri_base')
             }}/adp/workforce_now/pension_and_benefits_enrollments/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -42,6 +48,9 @@ sources:
           location:
             "{{ var('cloud_storage_uri_base') }}/adp/workforce_now/comprehensive_benefits_report/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:

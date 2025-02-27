@@ -9,6 +9,9 @@ sources:
       - name: src_performance_management__leadership_development_metrics
         external:
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             sheet_range: src_performance_management__leadership_development_metrics
             skip_leading_rows: 1
@@ -23,6 +26,9 @@ sources:
       - name: src_performance_management__scores_overall_archive
         external:
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: CSV
             skip_leading_rows: 1
             uris:
@@ -36,6 +42,9 @@ sources:
       - name: src_performance_management__scores_detail_archive
         external:
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: CSV
             skip_leading_rows: 1
             uris:

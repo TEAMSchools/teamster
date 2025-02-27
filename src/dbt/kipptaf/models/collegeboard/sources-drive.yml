@@ -9,6 +9,9 @@ sources:
       - name: src_collegeboard__id_crosswalk
         external:
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE
