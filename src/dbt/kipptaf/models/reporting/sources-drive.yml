@@ -9,9 +9,6 @@ sources:
       - name: src_reporting__terms
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
@@ -53,9 +50,6 @@ sources:
       - name: src_reporting__gradebook_expectations
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
@@ -70,9 +64,6 @@ sources:
       - name: src_reporting__promo_status_cutoffs
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1bRd3cI3WlTdizm5ja7IxGxGjJDzXrOX6i2G731h9yr8
@@ -87,9 +78,6 @@ sources:
       - name: src_reporting__gradebook_flags
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0

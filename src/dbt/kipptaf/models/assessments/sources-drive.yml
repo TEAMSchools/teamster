@@ -9,9 +9,6 @@ sources:
       - name: src_assessments__ap_course_crosswalk
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1bMHQ2qaVdOcz4fDsl5CnWUBmVwl-JkDD_aj-sHfgn5I
@@ -35,9 +32,6 @@ sources:
       - name: src_assessments__course_subject_crosswalk
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
@@ -52,9 +46,6 @@ sources:
       - name: src_assessments__iready_crosswalk
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
@@ -69,9 +60,6 @@ sources:
       - name: src_assessments__academic_goals
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
@@ -86,9 +74,6 @@ sources:
       - name: src_assessments__act_scale_score_key
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
@@ -103,9 +88,6 @@ sources:
       - name: src_assessments__qbls_power_standards
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
@@ -120,9 +102,6 @@ sources:
       - name: src_assessments__standard_domains
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
@@ -142,9 +121,6 @@ sources:
       - name: src_assessments__state_test_comparison
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
@@ -159,9 +135,6 @@ sources:
       - name: src_assessments__assessment_expectations
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
@@ -178,9 +151,6 @@ sources:
           enabled: false
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
@@ -197,9 +167,6 @@ sources:
           enabled: false
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE

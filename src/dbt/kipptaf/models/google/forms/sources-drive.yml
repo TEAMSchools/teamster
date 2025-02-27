@@ -9,9 +9,6 @@ sources:
       - name: src_google_forms__form_items_extension
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1OvJ95fuDCWVu9YQoVZnjauC8mdpgL4BmqdfqvgT7gAw

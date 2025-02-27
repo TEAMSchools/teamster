@@ -9,9 +9,6 @@ sources:
       - name: src_crdc__sced_code_crosswalk
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1pDwUdnK3Kcqjk_Bwp6-8Wz9Kr55AmEC7rA-EGuU6jGA
@@ -41,9 +38,6 @@ sources:
       - name: src_crdc__student_numbers
         external:
           options:
-            connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1pDwUdnK3Kcqjk_Bwp6-8Wz9Kr55AmEC7rA-EGuU6jGA
