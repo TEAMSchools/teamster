@@ -1,0 +1,76 @@
+version: 2
+models:
+  - name: rpt_tableau__finance_accounting_people_model
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: effective_start_date
+        data_type: date
+      - name: effective_end_date
+        data_type: date
+      - name: position_status
+        data_type: string
+      - name: business_unit
+        data_type: string
+      - name: location
+        data_type: string
+      - name: home_department
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: annual_salary
+        data_type: numeric
+      - name: academic_year
+        data_type: int64
+      - name: adp_associate_id
+        data_type: string
+      - name: position_id
+        data_type: string
+      - name: current_status
+        data_type: string
+      - name: company_code
+        data_type: string
+      - name: file_number
+        data_type: string
+      - name: preferred_first_name
+        data_type: string
+      - name: preferred_last_name
+        data_type: string
+      - name: legal_first_name
+        data_type: string
+      - name: legal_last_name
+        data_type: string
+      - name: primary_race_ethnicity_reporting
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: is_manager
+        data_type: boolean
+      - name: original_hire_date
+        data_type: date
+      - name: rehire_date
+        data_type: date
+      - name: termination_date
+        data_type: date
+      - name: most_recent_pm_score
+        data_type: float64
+      - name: most_recent_pm_tier
+        data_type: int64
+      - name: years_at_kipp_total_current
+        data_type: float64
+      - name: additional_earnings_summed
+        data_type: numeric
+      - name: original_salary_upon_hire
+        data_type: int64
+      - name: is_currently_certified_nj_only
+        data_type: int64
+      - name: years_teaching_total
+        data_type: float64
+      - name: last_year_business_unit
+        data_type: string
+      - name: last_year_job_title
+        data_type: string
+      - name: last_year_salary
+        data_type: numeric
+      - name: rn_curr
+        data_type: int64

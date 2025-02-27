@@ -1,0 +1,40 @@
+version: 2
+models:
+  - name: int_adp_workforce_now__workers__work_assignments__organizational_units__pivot
+    columns:
+      - name: associate_oid
+        data_type: string
+      - name: item_id
+        data_type: string
+      - name: effective_date_start
+        data_type: date
+      - name: effective_date_end
+        data_type: date
+      - name: effective_date_start_timestamp
+        data_type: timestamp
+      - name: is_current_record
+        data_type: boolean
+      - name: organizational_unit__assigned__business_unit__code_value
+        data_type: string
+      - name: organizational_unit__assigned__cost_number__code_value
+        data_type: string
+      - name: organizational_unit__assigned__department__code_value
+        data_type: string
+      - name: organizational_unit__home__business_unit__code_value
+        data_type: string
+      - name: organizational_unit__home__cost_number__code_value
+        data_type: string
+      - name: organizational_unit__home__department__code_value
+        data_type: string
+      - name: organizational_unit__assigned__business_unit__name
+        data_type: string
+      - name: organizational_unit__assigned__cost_number__name
+        data_type: string
+      - name: organizational_unit__assigned__department__name
+        data_type: string
+      - name: organizational_unit__home__business_unit__name
+        data_type: string
+      - name: organizational_unit__home__cost_number__name
+        data_type: string
+      - name: organizational_unit__home__department__name
+        data_type: string

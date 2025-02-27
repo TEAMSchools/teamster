@@ -1,0 +1,1414 @@
+version: 2
+models:
+  - name: stg_adp_workforce_now__workers
+    columns:
+      - name: associate_oid
+        data_type: string
+      - name: effective_date_start
+        data_type: date
+      - name: worker_id__id_value
+        data_type: string
+      - name: worker_id__scheme_code__code_value
+        data_type: string
+      - name: worker_id__scheme_code__long_name
+        data_type: string
+      - name: worker_id__scheme_code__short_name
+        data_type: string
+      - name: worker_status__status_code__code_value
+        data_type: string
+      - name: worker_status__status_code__long_name
+        data_type: string
+      - name: worker_status__status_code__short_name
+        data_type: string
+      - name: language_code__code_value
+        data_type: string
+      - name: language_code__long_name
+        data_type: string
+      - name: language_code__short_name
+        data_type: string
+      - name: person__disabled_indicator
+        data_type: boolean
+      - name: person__military_discharge_date
+        data_type: string
+      - name: person__tobacco_user_indicator
+        data_type: boolean
+      - name: person__birth_name__formatted_name
+        data_type: string
+      - name: person__birth_name__given_name
+        data_type: string
+      - name: person__birth_name__middle_name
+        data_type: string
+      - name: person__birth_name__family_name_1
+        data_type: string
+      - name: person__birth_name__nick_name
+        data_type: string
+      - name: person__birth_name__generation_affix_code__code_value
+        data_type: string
+      - name: person__birth_name__generation_affix_code__long_name
+        data_type: string
+      - name: person__birth_name__generation_affix_code__short_name
+        data_type: string
+      - name: person__birth_name__qualification_affix_code__code_value
+        data_type: string
+      - name: person__birth_name__qualification_affix_code__long_name
+        data_type: string
+      - name: person__birth_name__qualification_affix_code__short_name
+        data_type: string
+      - name: person__legal_name__family_name_1
+        data_type: string
+      - name: person__legal_name__formatted_name
+        data_type: string
+      - name: person__legal_name__given_name
+        data_type: string
+      - name: person__legal_name__middle_name
+        data_type: string
+      - name: person__legal_name__nick_name
+        data_type: string
+      - name: person__legal_name__generation_affix_code__code_value
+        data_type: string
+      - name: person__legal_name__generation_affix_code__long_name
+        data_type: string
+      - name: person__legal_name__generation_affix_code__short_name
+        data_type: string
+      - name: person__legal_name__qualification_affix_code__code_value
+        data_type: string
+      - name: person__legal_name__qualification_affix_code__long_name
+        data_type: string
+      - name: person__legal_name__qualification_affix_code__short_name
+        data_type: string
+      - name: person__preferred_name__formatted_name
+        data_type: string
+      - name: person__preferred_name__given_name
+        data_type: string
+      - name: person__preferred_name__middle_name
+        data_type: string
+      - name: person__preferred_name__family_name_1
+        data_type: string
+      - name: person__preferred_name__nick_name
+        data_type: string
+      - name: person__preferred_name__generation_affix_code__code_value
+        data_type: string
+      - name: person__preferred_name__generation_affix_code__long_name
+        data_type: string
+      - name: person__preferred_name__generation_affix_code__short_name
+        data_type: string
+      - name: person__preferred_name__qualification_affix_code__code_value
+        data_type: string
+      - name: person__preferred_name__qualification_affix_code__long_name
+        data_type: string
+      - name: person__preferred_name__qualification_affix_code__short_name
+        data_type: string
+      - name: person__ethnicity_code__code_value
+        data_type: string
+      - name: person__ethnicity_code__long_name
+        data_type: string
+      - name: person__ethnicity_code__short_name
+        data_type: string
+      - name: person__gender_code__code_value
+        data_type: string
+      - name: person__gender_code__long_name
+        data_type: string
+      - name: person__gender_code__short_name
+        data_type: string
+      - name: person__gender_self_identity_code__code_value
+        data_type: string
+      - name: person__gender_self_identity_code__long_name
+        data_type: string
+      - name: person__gender_self_identity_code__short_name
+        data_type: string
+      - name: person__highest_education_level_code__code_value
+        data_type: string
+      - name: person__highest_education_level_code__long_name
+        data_type: string
+      - name: person__highest_education_level_code__short_name
+        data_type: string
+      - name: person__legal_address__item_id
+        data_type: string
+      - name: person__legal_address__line_one
+        data_type: string
+      - name: person__legal_address__line_two
+        data_type: string
+      - name: person__legal_address__line_three
+        data_type: string
+      - name: person__legal_address__city_name
+        data_type: string
+      - name: person__legal_address__postal_code
+        data_type: string
+      - name: person__legal_address__country_code
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_1__subdivision_type
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_1__code_value
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_1__long_name
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_1__short_name
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_2__subdivision_type
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_2__code_value
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_2__long_name
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_2__short_name
+        data_type: string
+      - name: person__legal_address__name_code__code_value
+        data_type: string
+      - name: person__legal_address__name_code__long_name
+        data_type: string
+      - name: person__legal_address__name_code__short_name
+        data_type: string
+      - name: person__legal_address__type_code__code_value
+        data_type: string
+      - name: person__legal_address__type_code__long_name
+        data_type: string
+      - name: person__legal_address__type_code__short_name
+        data_type: string
+      - name: person__marital_status_code__code_value
+        data_type: string
+      - name: person__marital_status_code__long_name
+        data_type: string
+      - name: person__marital_status_code__short_name
+        data_type: string
+      - name: person__military_status_code__code_value
+        data_type: string
+      - name: person__military_status_code__long_name
+        data_type: string
+      - name: person__military_status_code__short_name
+        data_type: string
+      - name: person__preferred_gender_pronoun_code__code_value
+        data_type: string
+      - name: person__preferred_gender_pronoun_code__long_name
+        data_type: string
+      - name: person__preferred_gender_pronoun_code__short_name
+        data_type: string
+      - name: person__race_code__code_value
+        data_type: string
+      - name: person__race_code__long_name
+        data_type: string
+      - name: person__race_code__short_name
+        data_type: string
+      - name: person__race_code__identification_method_code__code_value
+        data_type: string
+      - name: person__race_code__identification_method_code__long_name
+        data_type: string
+      - name: person__race_code__identification_method_code__short_name
+        data_type: string
+      - name: photos
+        data_type: record
+      - name: photos.links
+        data_type: record
+      - name: photos.links.href
+        data_type: string
+      - name: photos.links.mediatype
+        data_type: string
+      - name: photos.links.method
+        data_type: string
+      - name: work_assignments
+        data_type: record
+      - name: work_assignments.actualstartdate
+        data_type: string
+      - name: work_assignments.fulltimeequivalenceratio
+        data_type: float64
+      - name: work_assignments.hiredate
+        data_type: string
+      - name: work_assignments.itemid
+        data_type: string
+      - name: work_assignments.jobtitle
+        data_type: string
+      - name: work_assignments.managementpositionindicator
+        data_type: boolean
+      - name: work_assignments.payrollfilenumber
+        data_type: string
+      - name: work_assignments.payrollgroupcode
+        data_type: string
+      - name: work_assignments.payrollschedulegroupid
+        data_type: string
+      - name: work_assignments.positionid
+        data_type: string
+      - name: work_assignments.primaryindicator
+        data_type: boolean
+      - name: work_assignments.senioritydate
+        data_type: string
+      - name: work_assignments.terminationdate
+        data_type: string
+      - name: work_assignments.voluntaryindicator
+        data_type: boolean
+      - name: work_assignments.assignmentstatus
+        data_type: record
+      - name: work_assignments.assignmentstatus.effectivedate
+        data_type: string
+      - name: work_assignments.assignmentstatus.statuscode
+        data_type: record
+      - name: work_assignments.assignmentstatus.statuscode.codevalue
+        data_type: string
+      - name: work_assignments.assignmentstatus.statuscode.longname
+        data_type: string
+      - name: work_assignments.assignmentstatus.statuscode.shortname
+        data_type: string
+      - name: work_assignments.assignmentstatus.statuscode.effectivedate
+        data_type: string
+      - name: work_assignments.assignmentstatus.reasoncode
+        data_type: record
+      - name: work_assignments.assignmentstatus.reasoncode.codevalue
+        data_type: string
+      - name: work_assignments.assignmentstatus.reasoncode.longname
+        data_type: string
+      - name: work_assignments.assignmentstatus.reasoncode.shortname
+        data_type: string
+      - name: work_assignments.assignmentstatus.reasoncode.effectivedate
+        data_type: string
+      - name: work_assignments.baseremuneration
+        data_type: record
+      - name: work_assignments.baseremuneration.effectivedate
+        data_type: string
+      - name: work_assignments.baseremuneration.annualrateamount
+        data_type: record
+      - name: work_assignments.baseremuneration.annualrateamount.amountvalue
+        data_type: float64
+      - name: work_assignments.baseremuneration.annualrateamount.currencycode
+        data_type: string
+      - name: work_assignments.baseremuneration.annualrateamount.namecode
+        data_type: record
+      - name: work_assignments.baseremuneration.annualrateamount.namecode.codevalue
+        data_type: string
+      - name: work_assignments.baseremuneration.annualrateamount.namecode.longname
+        data_type: string
+      - name: work_assignments.baseremuneration.annualrateamount.namecode.shortname
+        data_type: string
+      - name: work_assignments.baseremuneration.annualrateamount.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.baseremuneration.payperiodrateamount
+        data_type: record
+      - name: work_assignments.baseremuneration.payperiodrateamount.amountvalue
+        data_type: float64
+      - name: work_assignments.baseremuneration.payperiodrateamount.currencycode
+        data_type: string
+      - name: work_assignments.baseremuneration.payperiodrateamount.namecode
+        data_type: record
+      - name: work_assignments.baseremuneration.payperiodrateamount.namecode.codevalue
+        data_type: string
+      - name: work_assignments.baseremuneration.payperiodrateamount.namecode.longname
+        data_type: string
+      - name: work_assignments.baseremuneration.payperiodrateamount.namecode.shortname
+        data_type: string
+      - name: work_assignments.baseremuneration.payperiodrateamount.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.baseremuneration.hourlyrateamount
+        data_type: record
+      - name: work_assignments.baseremuneration.hourlyrateamount.amountvalue
+        data_type: float64
+      - name: work_assignments.baseremuneration.hourlyrateamount.currencycode
+        data_type: string
+      - name: work_assignments.baseremuneration.hourlyrateamount.namecode
+        data_type: record
+      - name: work_assignments.baseremuneration.hourlyrateamount.namecode.codevalue
+        data_type: string
+      - name: work_assignments.baseremuneration.hourlyrateamount.namecode.longname
+        data_type: string
+      - name: work_assignments.baseremuneration.hourlyrateamount.namecode.shortname
+        data_type: string
+      - name: work_assignments.baseremuneration.hourlyrateamount.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.baseremuneration.dailyrateamount
+        data_type: record
+      - name: work_assignments.baseremuneration.dailyrateamount.amountvalue
+        data_type: float64
+      - name: work_assignments.baseremuneration.dailyrateamount.currencycode
+        data_type: string
+      - name: work_assignments.baseremuneration.dailyrateamount.namecode
+        data_type: record
+      - name: work_assignments.baseremuneration.dailyrateamount.namecode.codevalue
+        data_type: string
+      - name: work_assignments.baseremuneration.dailyrateamount.namecode.longname
+        data_type: string
+      - name: work_assignments.baseremuneration.dailyrateamount.namecode.shortname
+        data_type: string
+      - name: work_assignments.baseremuneration.dailyrateamount.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.customfieldgroup
+        data_type: record
+      - name: work_assignments.customfieldgroup.codefields
+        data_type: record
+      - name: work_assignments.customfieldgroup.codefields.codevalue
+        data_type: string
+      - name: work_assignments.customfieldgroup.codefields.longname
+        data_type: string
+      - name: work_assignments.customfieldgroup.codefields.shortname
+        data_type: string
+      - name: work_assignments.customfieldgroup.codefields.effectivedate
+        data_type: string
+      - name: work_assignments.customfieldgroup.codefields.itemid
+        data_type: string
+      - name: work_assignments.customfieldgroup.codefields.namecode
+        data_type: record
+      - name: work_assignments.customfieldgroup.codefields.namecode.codevalue
+        data_type: string
+      - name: work_assignments.customfieldgroup.codefields.namecode.longname
+        data_type: string
+      - name: work_assignments.customfieldgroup.codefields.namecode.shortname
+        data_type: string
+      - name: work_assignments.customfieldgroup.codefields.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.customfieldgroup.datefields
+        data_type: record
+      - name: work_assignments.customfieldgroup.datefields.itemid
+        data_type: string
+      - name: work_assignments.customfieldgroup.datefields.namecode
+        data_type: record
+      - name: work_assignments.customfieldgroup.datefields.namecode.codevalue
+        data_type: string
+      - name: work_assignments.customfieldgroup.datefields.namecode.longname
+        data_type: string
+      - name: work_assignments.customfieldgroup.datefields.namecode.shortname
+        data_type: string
+      - name: work_assignments.customfieldgroup.datefields.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.customfieldgroup.datefields.datevalue
+        data_type: string
+      - name: work_assignments.customfieldgroup.indicatorfields
+        data_type: record
+      - name: work_assignments.customfieldgroup.indicatorfields.itemid
+        data_type: string
+      - name: work_assignments.customfieldgroup.indicatorfields.namecode
+        data_type: record
+      - name: work_assignments.customfieldgroup.indicatorfields.namecode.codevalue
+        data_type: string
+      - name: work_assignments.customfieldgroup.indicatorfields.namecode.longname
+        data_type: string
+      - name: work_assignments.customfieldgroup.indicatorfields.namecode.shortname
+        data_type: string
+      - name: work_assignments.customfieldgroup.indicatorfields.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.customfieldgroup.indicatorfields.indicatorvalue
+        data_type: boolean
+      - name: work_assignments.customfieldgroup.multicodefields
+        data_type: record
+      - name: work_assignments.customfieldgroup.multicodefields.itemid
+        data_type: string
+      - name: work_assignments.customfieldgroup.multicodefields.namecode
+        data_type: record
+      - name: work_assignments.customfieldgroup.multicodefields.namecode.codevalue
+        data_type: string
+      - name: work_assignments.customfieldgroup.multicodefields.namecode.longname
+        data_type: string
+      - name: work_assignments.customfieldgroup.multicodefields.namecode.shortname
+        data_type: string
+      - name: work_assignments.customfieldgroup.multicodefields.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.customfieldgroup.multicodefields.codes
+        data_type: record
+      - name: work_assignments.customfieldgroup.multicodefields.codes.codevalue
+        data_type: string
+      - name: work_assignments.customfieldgroup.multicodefields.codes.longname
+        data_type: string
+      - name: work_assignments.customfieldgroup.multicodefields.codes.shortname
+        data_type: string
+      - name: work_assignments.customfieldgroup.multicodefields.codes.effectivedate
+        data_type: string
+      - name: work_assignments.customfieldgroup.numberfields
+        data_type: record
+      - name: work_assignments.customfieldgroup.numberfields.itemid
+        data_type: string
+      - name: work_assignments.customfieldgroup.numberfields.namecode
+        data_type: record
+      - name: work_assignments.customfieldgroup.numberfields.namecode.codevalue
+        data_type: string
+      - name: work_assignments.customfieldgroup.numberfields.namecode.longname
+        data_type: string
+      - name: work_assignments.customfieldgroup.numberfields.namecode.shortname
+        data_type: string
+      - name: work_assignments.customfieldgroup.numberfields.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.customfieldgroup.numberfields.numbervalue
+        data_type: float64
+      - name: work_assignments.customfieldgroup.stringfields
+        data_type: record
+      - name: work_assignments.customfieldgroup.stringfields.itemid
+        data_type: string
+      - name: work_assignments.customfieldgroup.stringfields.namecode
+        data_type: record
+      - name: work_assignments.customfieldgroup.stringfields.namecode.codevalue
+        data_type: string
+      - name: work_assignments.customfieldgroup.stringfields.namecode.longname
+        data_type: string
+      - name: work_assignments.customfieldgroup.stringfields.namecode.shortname
+        data_type: string
+      - name: work_assignments.customfieldgroup.stringfields.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.customfieldgroup.stringfields.stringvalue
+        data_type: string
+      - name: work_assignments.homeworklocation
+        data_type: record
+      - name: work_assignments.homeworklocation.address
+        data_type: record
+      - name: work_assignments.homeworklocation.address.cityname
+        data_type: string
+      - name: work_assignments.homeworklocation.address.countrycode
+        data_type: string
+      - name: work_assignments.homeworklocation.address.itemid
+        data_type: string
+      - name: work_assignments.homeworklocation.address.lineone
+        data_type: string
+      - name: work_assignments.homeworklocation.address.linetwo
+        data_type: string
+      - name: work_assignments.homeworklocation.address.linethree
+        data_type: string
+      - name: work_assignments.homeworklocation.address.postalcode
+        data_type: string
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel1
+        data_type: record
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel1.codevalue
+        data_type: string
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel1.longname
+        data_type: string
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel1.shortname
+        data_type: string
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel1.effectivedate
+        data_type: string
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel1.subdivisiontype
+        data_type: string
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel2
+        data_type: record
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel2.codevalue
+        data_type: string
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel2.longname
+        data_type: string
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel2.shortname
+        data_type: string
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel2.effectivedate
+        data_type: string
+      - name: work_assignments.homeworklocation.address.countrysubdivisionlevel2.subdivisiontype
+        data_type: string
+      - name: work_assignments.homeworklocation.address.namecode
+        data_type: record
+      - name: work_assignments.homeworklocation.address.namecode.codevalue
+        data_type: string
+      - name: work_assignments.homeworklocation.address.namecode.longname
+        data_type: string
+      - name: work_assignments.homeworklocation.address.namecode.shortname
+        data_type: string
+      - name: work_assignments.homeworklocation.address.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.homeworklocation.address.typecode
+        data_type: record
+      - name: work_assignments.homeworklocation.address.typecode.codevalue
+        data_type: string
+      - name: work_assignments.homeworklocation.address.typecode.longname
+        data_type: string
+      - name: work_assignments.homeworklocation.address.typecode.shortname
+        data_type: string
+      - name: work_assignments.homeworklocation.address.typecode.effectivedate
+        data_type: string
+      - name: work_assignments.homeworklocation.namecode
+        data_type: record
+      - name: work_assignments.homeworklocation.namecode.codevalue
+        data_type: string
+      - name: work_assignments.homeworklocation.namecode.longname
+        data_type: string
+      - name: work_assignments.homeworklocation.namecode.shortname
+        data_type: string
+      - name: work_assignments.homeworklocation.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.jobcode
+        data_type: record
+      - name: work_assignments.jobcode.codevalue
+        data_type: string
+      - name: work_assignments.jobcode.longname
+        data_type: string
+      - name: work_assignments.jobcode.shortname
+        data_type: string
+      - name: work_assignments.jobcode.effectivedate
+        data_type: string
+      - name: work_assignments.paycyclecode
+        data_type: record
+      - name: work_assignments.paycyclecode.codevalue
+        data_type: string
+      - name: work_assignments.paycyclecode.longname
+        data_type: string
+      - name: work_assignments.paycyclecode.shortname
+        data_type: string
+      - name: work_assignments.paycyclecode.effectivedate
+        data_type: string
+      - name: work_assignments.payrollprocessingstatuscode
+        data_type: record
+      - name: work_assignments.payrollprocessingstatuscode.codevalue
+        data_type: string
+      - name: work_assignments.payrollprocessingstatuscode.longname
+        data_type: string
+      - name: work_assignments.payrollprocessingstatuscode.shortname
+        data_type: string
+      - name: work_assignments.payrollprocessingstatuscode.effectivedate
+        data_type: string
+      - name: work_assignments.standardhours
+        data_type: record
+      - name: work_assignments.standardhours.hoursquantity
+        data_type: float64
+      - name: work_assignments.standardhours.unitcode
+        data_type: record
+      - name: work_assignments.standardhours.unitcode.codevalue
+        data_type: string
+      - name: work_assignments.standardhours.unitcode.longname
+        data_type: string
+      - name: work_assignments.standardhours.unitcode.shortname
+        data_type: string
+      - name: work_assignments.standardhours.unitcode.effectivedate
+        data_type: string
+      - name: work_assignments.standardpayperiodhours
+        data_type: record
+      - name: work_assignments.standardpayperiodhours.hoursquantity
+        data_type: float64
+      - name: work_assignments.wagelawcoverage
+        data_type: record
+      - name: work_assignments.wagelawcoverage.coveragecode
+        data_type: record
+      - name: work_assignments.wagelawcoverage.coveragecode.codevalue
+        data_type: string
+      - name: work_assignments.wagelawcoverage.coveragecode.longname
+        data_type: string
+      - name: work_assignments.wagelawcoverage.coveragecode.shortname
+        data_type: string
+      - name: work_assignments.wagelawcoverage.coveragecode.effectivedate
+        data_type: string
+      - name: work_assignments.wagelawcoverage.wagelawnamecode
+        data_type: record
+      - name: work_assignments.wagelawcoverage.wagelawnamecode.codevalue
+        data_type: string
+      - name: work_assignments.wagelawcoverage.wagelawnamecode.longname
+        data_type: string
+      - name: work_assignments.wagelawcoverage.wagelawnamecode.shortname
+        data_type: string
+      - name: work_assignments.wagelawcoverage.wagelawnamecode.effectivedate
+        data_type: string
+      - name: work_assignments.workertypecode
+        data_type: record
+      - name: work_assignments.workertypecode.codevalue
+        data_type: string
+      - name: work_assignments.workertypecode.longname
+        data_type: string
+      - name: work_assignments.workertypecode.shortname
+        data_type: string
+      - name: work_assignments.workertypecode.effectivedate
+        data_type: string
+      - name: work_assignments.additionalremunerations
+        data_type: record
+      - name: work_assignments.additionalremunerations.itemid
+        data_type: string
+      - name: work_assignments.additionalremunerations.effectivedate
+        data_type: string
+      - name: work_assignments.additionalremunerations.namecode
+        data_type: record
+      - name: work_assignments.additionalremunerations.namecode.codevalue
+        data_type: string
+      - name: work_assignments.additionalremunerations.namecode.longname
+        data_type: string
+      - name: work_assignments.additionalremunerations.namecode.shortname
+        data_type: string
+      - name: work_assignments.additionalremunerations.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.additionalremunerations.rate
+        data_type: record
+      - name: work_assignments.additionalremunerations.rate.amountvalue
+        data_type: float64
+      - name: work_assignments.additionalremunerations.rate.currencycode
+        data_type: string
+      - name: work_assignments.additionalremunerations.rate.namecode
+        data_type: record
+      - name: work_assignments.additionalremunerations.rate.namecode.codevalue
+        data_type: string
+      - name: work_assignments.additionalremunerations.rate.namecode.longname
+        data_type: string
+      - name: work_assignments.additionalremunerations.rate.namecode.shortname
+        data_type: string
+      - name: work_assignments.additionalremunerations.rate.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.assignedorganizationalunits
+        data_type: record
+      - name: work_assignments.assignedorganizationalunits.namecode
+        data_type: record
+      - name: work_assignments.assignedorganizationalunits.namecode.codevalue
+        data_type: string
+      - name: work_assignments.assignedorganizationalunits.namecode.longname
+        data_type: string
+      - name: work_assignments.assignedorganizationalunits.namecode.shortname
+        data_type: string
+      - name: work_assignments.assignedorganizationalunits.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.assignedorganizationalunits.typecode
+        data_type: record
+      - name: work_assignments.assignedorganizationalunits.typecode.codevalue
+        data_type: string
+      - name: work_assignments.assignedorganizationalunits.typecode.longname
+        data_type: string
+      - name: work_assignments.assignedorganizationalunits.typecode.shortname
+        data_type: string
+      - name: work_assignments.assignedorganizationalunits.typecode.effectivedate
+        data_type: string
+      - name: work_assignments.assignedworklocations
+        data_type: record
+      - name: work_assignments.assignedworklocations.address
+        data_type: record
+      - name: work_assignments.assignedworklocations.address.cityname
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.countrycode
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.itemid
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.lineone
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.linetwo
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.linethree
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.postalcode
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel1
+        data_type: record
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel1.codevalue
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel1.longname
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel1.shortname
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel1.effectivedate
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel1.subdivisiontype
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel2
+        data_type: record
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel2.codevalue
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel2.longname
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel2.shortname
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel2.effectivedate
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.countrysubdivisionlevel2.subdivisiontype
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.namecode
+        data_type: record
+      - name: work_assignments.assignedworklocations.address.namecode.codevalue
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.namecode.longname
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.namecode.shortname
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.typecode
+        data_type: record
+      - name: work_assignments.assignedworklocations.address.typecode.codevalue
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.typecode.longname
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.typecode.shortname
+        data_type: string
+      - name: work_assignments.assignedworklocations.address.typecode.effectivedate
+        data_type: string
+      - name: work_assignments.assignedworklocations.namecode
+        data_type: record
+      - name: work_assignments.assignedworklocations.namecode.codevalue
+        data_type: string
+      - name: work_assignments.assignedworklocations.namecode.longname
+        data_type: string
+      - name: work_assignments.assignedworklocations.namecode.shortname
+        data_type: string
+      - name: work_assignments.assignedworklocations.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.homeorganizationalunits
+        data_type: record
+      - name: work_assignments.homeorganizationalunits.namecode
+        data_type: record
+      - name: work_assignments.homeorganizationalunits.namecode.codevalue
+        data_type: string
+      - name: work_assignments.homeorganizationalunits.namecode.longname
+        data_type: string
+      - name: work_assignments.homeorganizationalunits.namecode.shortname
+        data_type: string
+      - name: work_assignments.homeorganizationalunits.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.homeorganizationalunits.typecode
+        data_type: record
+      - name: work_assignments.homeorganizationalunits.typecode.codevalue
+        data_type: string
+      - name: work_assignments.homeorganizationalunits.typecode.longname
+        data_type: string
+      - name: work_assignments.homeorganizationalunits.typecode.shortname
+        data_type: string
+      - name: work_assignments.homeorganizationalunits.typecode.effectivedate
+        data_type: string
+      - name: work_assignments.occupationalclassifications
+        data_type: record
+      - name: work_assignments.occupationalclassifications.namecode
+        data_type: record
+      - name: work_assignments.occupationalclassifications.namecode.codevalue
+        data_type: string
+      - name: work_assignments.occupationalclassifications.namecode.longname
+        data_type: string
+      - name: work_assignments.occupationalclassifications.namecode.shortname
+        data_type: string
+      - name: work_assignments.occupationalclassifications.namecode.effectivedate
+        data_type: string
+      - name: work_assignments.occupationalclassifications.classificationcode
+        data_type: record
+      - name: work_assignments.occupationalclassifications.classificationcode.codevalue
+        data_type: string
+      - name: work_assignments.occupationalclassifications.classificationcode.longname
+        data_type: string
+      - name: work_assignments.occupationalclassifications.classificationcode.shortname
+        data_type: string
+      - name: work_assignments.occupationalclassifications.classificationcode.effectivedate
+        data_type: string
+      - name: work_assignments.reportsto
+        data_type: record
+      - name: work_assignments.reportsto.associateoid
+        data_type: string
+      - name: work_assignments.reportsto.positionid
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername
+        data_type: record
+      - name: work_assignments.reportsto.reportstoworkername.formattedname
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.familyname1
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.givenname
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.middlename
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.nickname
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.generationaffixcode
+        data_type: record
+      - name: work_assignments.reportsto.reportstoworkername.generationaffixcode.codevalue
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.generationaffixcode.longname
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.generationaffixcode.shortname
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.generationaffixcode.effectivedate
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.qualificationaffixcode
+        data_type: record
+      - name: work_assignments.reportsto.reportstoworkername.qualificationaffixcode.codevalue
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.qualificationaffixcode.longname
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.qualificationaffixcode.shortname
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.qualificationaffixcode.effectivedate
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.preferredsalutations
+        data_type: record
+      - name: work_assignments.reportsto.reportstoworkername.preferredsalutations.salutationcode
+        data_type: record
+      - name: work_assignments.reportsto.reportstoworkername.preferredsalutations.salutationcode.codevalue
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.preferredsalutations.salutationcode.longname
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.preferredsalutations.salutationcode.shortname
+        data_type: string
+      - name: work_assignments.reportsto.reportstoworkername.preferredsalutations.salutationcode.effectivedate
+        data_type: string
+      - name: work_assignments.reportsto.workerid
+        data_type: record
+      - name: work_assignments.reportsto.workerid.idvalue
+        data_type: string
+      - name: work_assignments.reportsto.workerid.schemecode
+        data_type: record
+      - name: work_assignments.reportsto.workerid.schemecode.codevalue
+        data_type: string
+      - name: work_assignments.reportsto.workerid.schemecode.longname
+        data_type: string
+      - name: work_assignments.reportsto.workerid.schemecode.shortname
+        data_type: string
+      - name: work_assignments.reportsto.workerid.schemecode.effectivedate
+        data_type: string
+      - name: work_assignments.workergroups
+        data_type: record
+      - name: work_assignments.workergroups.groupcode
+        data_type: record
+      - name: work_assignments.workergroups.groupcode.codevalue
+        data_type: string
+      - name: work_assignments.workergroups.groupcode.longname
+        data_type: string
+      - name: work_assignments.workergroups.groupcode.shortname
+        data_type: string
+      - name: work_assignments.workergroups.groupcode.effectivedate
+        data_type: string
+      - name: work_assignments.workergroups.namecode
+        data_type: record
+      - name: work_assignments.workergroups.namecode.codevalue
+        data_type: string
+      - name: work_assignments.workergroups.namecode.longname
+        data_type: string
+      - name: work_assignments.workergroups.namecode.shortname
+        data_type: string
+      - name: work_assignments.workergroups.namecode.effectivedate
+        data_type: string
+      - name: business_communication__emails
+        data_type: record
+      - name: business_communication__emails.emailuri
+        data_type: string
+      - name: business_communication__emails.itemid
+        data_type: string
+      - name: business_communication__emails.notificationindicator
+        data_type: boolean
+      - name: business_communication__emails.namecode
+        data_type: record
+      - name: business_communication__emails.namecode.codevalue
+        data_type: string
+      - name: business_communication__emails.namecode.longname
+        data_type: string
+      - name: business_communication__emails.namecode.shortname
+        data_type: string
+      - name: business_communication__emails.namecode.effectivedate
+        data_type: string
+      - name: business_communication__landlines
+        data_type: record
+      - name: business_communication__landlines.areadialing
+        data_type: string
+      - name: business_communication__landlines.countrydialing
+        data_type: string
+      - name: business_communication__landlines.dialnumber
+        data_type: string
+      - name: business_communication__landlines.formattednumber
+        data_type: string
+      - name: business_communication__landlines.itemid
+        data_type: string
+      - name: business_communication__landlines.access
+        data_type: string
+      - name: business_communication__landlines.extension
+        data_type: string
+      - name: business_communication__landlines.namecode
+        data_type: record
+      - name: business_communication__landlines.namecode.codevalue
+        data_type: string
+      - name: business_communication__landlines.namecode.longname
+        data_type: string
+      - name: business_communication__landlines.namecode.shortname
+        data_type: string
+      - name: business_communication__landlines.namecode.effectivedate
+        data_type: string
+      - name: business_communication__mobiles
+        data_type: record
+      - name: business_communication__mobiles.areadialing
+        data_type: string
+      - name: business_communication__mobiles.countrydialing
+        data_type: string
+      - name: business_communication__mobiles.dialnumber
+        data_type: string
+      - name: business_communication__mobiles.formattednumber
+        data_type: string
+      - name: business_communication__mobiles.itemid
+        data_type: string
+      - name: business_communication__mobiles.access
+        data_type: string
+      - name: business_communication__mobiles.extension
+        data_type: string
+      - name: business_communication__mobiles.namecode
+        data_type: record
+      - name: business_communication__mobiles.namecode.codevalue
+        data_type: string
+      - name: business_communication__mobiles.namecode.longname
+        data_type: string
+      - name: business_communication__mobiles.namecode.shortname
+        data_type: string
+      - name: business_communication__mobiles.namecode.effectivedate
+        data_type: string
+      - name: custom_field_group__code_fields
+        data_type: record
+      - name: custom_field_group__code_fields.codevalue
+        data_type: string
+      - name: custom_field_group__code_fields.longname
+        data_type: string
+      - name: custom_field_group__code_fields.shortname
+        data_type: string
+      - name: custom_field_group__code_fields.effectivedate
+        data_type: string
+      - name: custom_field_group__code_fields.itemid
+        data_type: string
+      - name: custom_field_group__code_fields.namecode
+        data_type: record
+      - name: custom_field_group__code_fields.namecode.codevalue
+        data_type: string
+      - name: custom_field_group__code_fields.namecode.longname
+        data_type: string
+      - name: custom_field_group__code_fields.namecode.shortname
+        data_type: string
+      - name: custom_field_group__code_fields.namecode.effectivedate
+        data_type: string
+      - name: custom_field_group__date_fields
+        data_type: record
+      - name: custom_field_group__date_fields.itemid
+        data_type: string
+      - name: custom_field_group__date_fields.namecode
+        data_type: record
+      - name: custom_field_group__date_fields.namecode.codevalue
+        data_type: string
+      - name: custom_field_group__date_fields.namecode.longname
+        data_type: string
+      - name: custom_field_group__date_fields.namecode.shortname
+        data_type: string
+      - name: custom_field_group__date_fields.namecode.effectivedate
+        data_type: string
+      - name: custom_field_group__date_fields.datevalue
+        data_type: string
+      - name: custom_field_group__indicator_fields
+        data_type: record
+      - name: custom_field_group__indicator_fields.itemid
+        data_type: string
+      - name: custom_field_group__indicator_fields.namecode
+        data_type: record
+      - name: custom_field_group__indicator_fields.namecode.codevalue
+        data_type: string
+      - name: custom_field_group__indicator_fields.namecode.longname
+        data_type: string
+      - name: custom_field_group__indicator_fields.namecode.shortname
+        data_type: string
+      - name: custom_field_group__indicator_fields.namecode.effectivedate
+        data_type: string
+      - name: custom_field_group__indicator_fields.indicatorvalue
+        data_type: boolean
+      - name: custom_field_group__multi_code_fields
+        data_type: record
+      - name: custom_field_group__multi_code_fields.itemid
+        data_type: string
+      - name: custom_field_group__multi_code_fields.namecode
+        data_type: record
+      - name: custom_field_group__multi_code_fields.namecode.codevalue
+        data_type: string
+      - name: custom_field_group__multi_code_fields.namecode.longname
+        data_type: string
+      - name: custom_field_group__multi_code_fields.namecode.shortname
+        data_type: string
+      - name: custom_field_group__multi_code_fields.namecode.effectivedate
+        data_type: string
+      - name: custom_field_group__multi_code_fields.codes
+        data_type: record
+      - name: custom_field_group__multi_code_fields.codes.codevalue
+        data_type: string
+      - name: custom_field_group__multi_code_fields.codes.longname
+        data_type: string
+      - name: custom_field_group__multi_code_fields.codes.shortname
+        data_type: string
+      - name: custom_field_group__multi_code_fields.codes.effectivedate
+        data_type: string
+      - name: custom_field_group__number_fields
+        data_type: record
+      - name: custom_field_group__number_fields.itemid
+        data_type: string
+      - name: custom_field_group__number_fields.namecode
+        data_type: record
+      - name: custom_field_group__number_fields.namecode.codevalue
+        data_type: string
+      - name: custom_field_group__number_fields.namecode.longname
+        data_type: string
+      - name: custom_field_group__number_fields.namecode.shortname
+        data_type: string
+      - name: custom_field_group__number_fields.namecode.effectivedate
+        data_type: string
+      - name: custom_field_group__number_fields.numbervalue
+        data_type: float64
+      - name: custom_field_group__string_fields
+        data_type: record
+      - name: custom_field_group__string_fields.itemid
+        data_type: string
+      - name: custom_field_group__string_fields.namecode
+        data_type: record
+      - name: custom_field_group__string_fields.namecode.codevalue
+        data_type: string
+      - name: custom_field_group__string_fields.namecode.longname
+        data_type: string
+      - name: custom_field_group__string_fields.namecode.shortname
+        data_type: string
+      - name: custom_field_group__string_fields.namecode.effectivedate
+        data_type: string
+      - name: custom_field_group__string_fields.stringvalue
+        data_type: string
+      - name: person__disability_type_codes
+        data_type: record
+      - name: person__disability_type_codes.codevalue
+        data_type: string
+      - name: person__disability_type_codes.longname
+        data_type: string
+      - name: person__disability_type_codes.shortname
+        data_type: string
+      - name: person__disability_type_codes.effectivedate
+        data_type: string
+      - name: person__military_classification_codes
+        data_type: record
+      - name: person__military_classification_codes.codevalue
+        data_type: string
+      - name: person__military_classification_codes.longname
+        data_type: string
+      - name: person__military_classification_codes.shortname
+        data_type: string
+      - name: person__military_classification_codes.effectivedate
+        data_type: string
+      - name: person__other_personal_addresses
+        data_type: record
+      - name: person__other_personal_addresses.cityname
+        data_type: string
+      - name: person__other_personal_addresses.countrycode
+        data_type: string
+      - name: person__other_personal_addresses.itemid
+        data_type: string
+      - name: person__other_personal_addresses.lineone
+        data_type: string
+      - name: person__other_personal_addresses.linetwo
+        data_type: string
+      - name: person__other_personal_addresses.linethree
+        data_type: string
+      - name: person__other_personal_addresses.postalcode
+        data_type: string
+      - name: person__other_personal_addresses.countrysubdivisionlevel1
+        data_type: record
+      - name: person__other_personal_addresses.countrysubdivisionlevel1.codevalue
+        data_type: string
+      - name: person__other_personal_addresses.countrysubdivisionlevel1.longname
+        data_type: string
+      - name: person__other_personal_addresses.countrysubdivisionlevel1.shortname
+        data_type: string
+      - name: person__other_personal_addresses.countrysubdivisionlevel1.effectivedate
+        data_type: string
+      - name: person__other_personal_addresses.countrysubdivisionlevel1.subdivisiontype
+        data_type: string
+      - name: person__other_personal_addresses.countrysubdivisionlevel2
+        data_type: record
+      - name: person__other_personal_addresses.countrysubdivisionlevel2.codevalue
+        data_type: string
+      - name: person__other_personal_addresses.countrysubdivisionlevel2.longname
+        data_type: string
+      - name: person__other_personal_addresses.countrysubdivisionlevel2.shortname
+        data_type: string
+      - name: person__other_personal_addresses.countrysubdivisionlevel2.effectivedate
+        data_type: string
+      - name: person__other_personal_addresses.countrysubdivisionlevel2.subdivisiontype
+        data_type: string
+      - name: person__other_personal_addresses.namecode
+        data_type: record
+      - name: person__other_personal_addresses.namecode.codevalue
+        data_type: string
+      - name: person__other_personal_addresses.namecode.longname
+        data_type: string
+      - name: person__other_personal_addresses.namecode.shortname
+        data_type: string
+      - name: person__other_personal_addresses.namecode.effectivedate
+        data_type: string
+      - name: person__other_personal_addresses.typecode
+        data_type: record
+      - name: person__other_personal_addresses.typecode.codevalue
+        data_type: string
+      - name: person__other_personal_addresses.typecode.longname
+        data_type: string
+      - name: person__other_personal_addresses.typecode.shortname
+        data_type: string
+      - name: person__other_personal_addresses.typecode.effectivedate
+        data_type: string
+      - name: person__social_insurance_programs
+        data_type: record
+      - name: person__social_insurance_programs.coveredindicator
+        data_type: boolean
+      - name: person__social_insurance_programs.namecode
+        data_type: record
+      - name: person__social_insurance_programs.namecode.codevalue
+        data_type: string
+      - name: person__social_insurance_programs.namecode.longname
+        data_type: string
+      - name: person__social_insurance_programs.namecode.shortname
+        data_type: string
+      - name: person__social_insurance_programs.namecode.effectivedate
+        data_type: string
+      - name: person__birth_name__preferred_salutations
+        data_type: record
+      - name: person__birth_name__preferred_salutations.salutationcode
+        data_type: record
+      - name: person__birth_name__preferred_salutations.salutationcode.codevalue
+        data_type: string
+      - name: person__birth_name__preferred_salutations.salutationcode.longname
+        data_type: string
+      - name: person__birth_name__preferred_salutations.salutationcode.shortname
+        data_type: string
+      - name: person__birth_name__preferred_salutations.salutationcode.effectivedate
+        data_type: string
+      - name: person__communication__emails
+        data_type: record
+      - name: person__communication__emails.emailuri
+        data_type: string
+      - name: person__communication__emails.itemid
+        data_type: string
+      - name: person__communication__emails.notificationindicator
+        data_type: boolean
+      - name: person__communication__emails.namecode
+        data_type: record
+      - name: person__communication__emails.namecode.codevalue
+        data_type: string
+      - name: person__communication__emails.namecode.longname
+        data_type: string
+      - name: person__communication__emails.namecode.shortname
+        data_type: string
+      - name: person__communication__emails.namecode.effectivedate
+        data_type: string
+      - name: person__communication__landlines
+        data_type: record
+      - name: person__communication__landlines.areadialing
+        data_type: string
+      - name: person__communication__landlines.countrydialing
+        data_type: string
+      - name: person__communication__landlines.dialnumber
+        data_type: string
+      - name: person__communication__landlines.formattednumber
+        data_type: string
+      - name: person__communication__landlines.itemid
+        data_type: string
+      - name: person__communication__landlines.access
+        data_type: string
+      - name: person__communication__landlines.extension
+        data_type: string
+      - name: person__communication__landlines.namecode
+        data_type: record
+      - name: person__communication__landlines.namecode.codevalue
+        data_type: string
+      - name: person__communication__landlines.namecode.longname
+        data_type: string
+      - name: person__communication__landlines.namecode.shortname
+        data_type: string
+      - name: person__communication__landlines.namecode.effectivedate
+        data_type: string
+      - name: person__communication__mobiles
+        data_type: record
+      - name: person__communication__mobiles.areadialing
+        data_type: string
+      - name: person__communication__mobiles.countrydialing
+        data_type: string
+      - name: person__communication__mobiles.dialnumber
+        data_type: string
+      - name: person__communication__mobiles.formattednumber
+        data_type: string
+      - name: person__communication__mobiles.itemid
+        data_type: string
+      - name: person__communication__mobiles.access
+        data_type: string
+      - name: person__communication__mobiles.extension
+        data_type: string
+      - name: person__communication__mobiles.namecode
+        data_type: record
+      - name: person__communication__mobiles.namecode.codevalue
+        data_type: string
+      - name: person__communication__mobiles.namecode.longname
+        data_type: string
+      - name: person__communication__mobiles.namecode.shortname
+        data_type: string
+      - name: person__communication__mobiles.namecode.effectivedate
+        data_type: string
+      - name: person__custom_field_group__code_fields
+        data_type: record
+      - name: person__custom_field_group__code_fields.codevalue
+        data_type: string
+      - name: person__custom_field_group__code_fields.longname
+        data_type: string
+      - name: person__custom_field_group__code_fields.shortname
+        data_type: string
+      - name: person__custom_field_group__code_fields.effectivedate
+        data_type: string
+      - name: person__custom_field_group__code_fields.itemid
+        data_type: string
+      - name: person__custom_field_group__code_fields.namecode
+        data_type: record
+      - name: person__custom_field_group__code_fields.namecode.codevalue
+        data_type: string
+      - name: person__custom_field_group__code_fields.namecode.longname
+        data_type: string
+      - name: person__custom_field_group__code_fields.namecode.shortname
+        data_type: string
+      - name: person__custom_field_group__code_fields.namecode.effectivedate
+        data_type: string
+      - name: person__custom_field_group__date_fields
+        data_type: record
+      - name: person__custom_field_group__date_fields.itemid
+        data_type: string
+      - name: person__custom_field_group__date_fields.namecode
+        data_type: record
+      - name: person__custom_field_group__date_fields.namecode.codevalue
+        data_type: string
+      - name: person__custom_field_group__date_fields.namecode.longname
+        data_type: string
+      - name: person__custom_field_group__date_fields.namecode.shortname
+        data_type: string
+      - name: person__custom_field_group__date_fields.namecode.effectivedate
+        data_type: string
+      - name: person__custom_field_group__date_fields.datevalue
+        data_type: string
+      - name: person__custom_field_group__indicator_fields
+        data_type: record
+      - name: person__custom_field_group__indicator_fields.itemid
+        data_type: string
+      - name: person__custom_field_group__indicator_fields.namecode
+        data_type: record
+      - name: person__custom_field_group__indicator_fields.namecode.codevalue
+        data_type: string
+      - name: person__custom_field_group__indicator_fields.namecode.longname
+        data_type: string
+      - name: person__custom_field_group__indicator_fields.namecode.shortname
+        data_type: string
+      - name: person__custom_field_group__indicator_fields.namecode.effectivedate
+        data_type: string
+      - name: person__custom_field_group__indicator_fields.indicatorvalue
+        data_type: boolean
+      - name: person__custom_field_group__multi_code_fields
+        data_type: record
+      - name: person__custom_field_group__multi_code_fields.itemid
+        data_type: string
+      - name: person__custom_field_group__multi_code_fields.namecode
+        data_type: record
+      - name: person__custom_field_group__multi_code_fields.namecode.codevalue
+        data_type: string
+      - name: person__custom_field_group__multi_code_fields.namecode.longname
+        data_type: string
+      - name: person__custom_field_group__multi_code_fields.namecode.shortname
+        data_type: string
+      - name: person__custom_field_group__multi_code_fields.namecode.effectivedate
+        data_type: string
+      - name: person__custom_field_group__multi_code_fields.codes
+        data_type: record
+      - name: person__custom_field_group__multi_code_fields.codes.codevalue
+        data_type: string
+      - name: person__custom_field_group__multi_code_fields.codes.longname
+        data_type: string
+      - name: person__custom_field_group__multi_code_fields.codes.shortname
+        data_type: string
+      - name: person__custom_field_group__multi_code_fields.codes.effectivedate
+        data_type: string
+      - name: person__custom_field_group__number_fields
+        data_type: record
+      - name: person__custom_field_group__number_fields.itemid
+        data_type: string
+      - name: person__custom_field_group__number_fields.namecode
+        data_type: record
+      - name: person__custom_field_group__number_fields.namecode.codevalue
+        data_type: string
+      - name: person__custom_field_group__number_fields.namecode.longname
+        data_type: string
+      - name: person__custom_field_group__number_fields.namecode.shortname
+        data_type: string
+      - name: person__custom_field_group__number_fields.namecode.effectivedate
+        data_type: string
+      - name: person__custom_field_group__number_fields.numbervalue
+        data_type: float64
+      - name: person__custom_field_group__string_fields
+        data_type: record
+      - name: person__custom_field_group__string_fields.itemid
+        data_type: string
+      - name: person__custom_field_group__string_fields.namecode
+        data_type: record
+      - name: person__custom_field_group__string_fields.namecode.codevalue
+        data_type: string
+      - name: person__custom_field_group__string_fields.namecode.longname
+        data_type: string
+      - name: person__custom_field_group__string_fields.namecode.shortname
+        data_type: string
+      - name: person__custom_field_group__string_fields.namecode.effectivedate
+        data_type: string
+      - name: person__custom_field_group__string_fields.stringvalue
+        data_type: string
+      - name: person__legal_name__preferred_salutations
+        data_type: record
+      - name: person__legal_name__preferred_salutations.salutationcode
+        data_type: record
+      - name: person__legal_name__preferred_salutations.salutationcode.codevalue
+        data_type: string
+      - name: person__legal_name__preferred_salutations.salutationcode.longname
+        data_type: string
+      - name: person__legal_name__preferred_salutations.salutationcode.shortname
+        data_type: string
+      - name: person__legal_name__preferred_salutations.salutationcode.effectivedate
+        data_type: string
+      - name: person__preferred_name__preferred_salutations
+        data_type: record
+      - name: person__preferred_name__preferred_salutations.salutationcode
+        data_type: record
+      - name: person__preferred_name__preferred_salutations.salutationcode.codevalue
+        data_type: string
+      - name: person__preferred_name__preferred_salutations.salutationcode.longname
+        data_type: string
+      - name: person__preferred_name__preferred_salutations.salutationcode.shortname
+        data_type: string
+      - name: person__preferred_name__preferred_salutations.salutationcode.effectivedate
+        data_type: string
+      - name: worker_dates__original_hire_date
+        data_type: date
+      - name: worker_dates__rehire_date
+        data_type: date
+      - name: worker_dates__termination_date
+        data_type: date
+      - name: worker_id__scheme_code__effective_date
+        data_type: date
+      - name: worker_status__status_code__effective_date
+        data_type: date
+      - name: language_code__effective_date
+        data_type: date
+      - name: person__birth_name__generation_affix_code__effective_date
+        data_type: date
+      - name: person__birth_name__qualification_affix_code__effective_date
+        data_type: date
+      - name: person__legal_name__generation_affix_code__effective_date
+        data_type: date
+      - name: person__legal_name__qualification_affix_code__effective_date
+        data_type: date
+      - name: person__preferred_name__generation_affix_code__effective_date
+        data_type: date
+      - name: person__preferred_name__qualification_affix_code__effective_date
+        data_type: date
+      - name: person__ethnicity_code__effective_date
+        data_type: date
+      - name: person__gender_code__effective_date
+        data_type: date
+      - name: person__gender_self_identity_code__effective_date
+        data_type: date
+      - name: person__highest_education_level_code__effective_date
+        data_type: date
+      - name: person__legal_address__country_subdivision_level_1__effective_date
+        data_type: date
+      - name: person__legal_address__country_subdivision_level_2__effective_date
+        data_type: date
+      - name: person__legal_address__name_code__effective_date
+        data_type: date
+      - name: person__legal_address__type_code__effective_date
+        data_type: date
+      - name: person__marital_status_code__effective_date
+        data_type: date
+      - name: person__military_status_code__effective_date
+        data_type: date
+      - name: person__preferred_gender_pronoun_code__effective_date
+        data_type: date
+      - name: person__race_code__effective_date
+        data_type: date
+      - name: person__race_code__identification_method_code__effective_date
+        data_type: date
+      - name: person__birth_date
+        data_type: date
+      - name: effective_date_start_timestamp
+        data_type: timestamp
+      - name: worker_status__status_code__code_value_lag
+        data_type: string
+      - name: effective_date_end
+        data_type: date
+      - name: person__given_name
+        data_type: string
+      - name: person__family_name_1
+        data_type: string
+      - name: person__race_code_name
+        data_type: string
+      - name: person__ethnicity_code_name
+        data_type: string
+      - name: person__gender_code_name
+        data_type: string
+      - name: race_ethnicity_reporting
+        data_type: string
+      - name: effective_date_end_timestamp
+        data_type: timestamp
+      - name: is_prestart
+        data_type: boolean
+      - name: is_current_record
+        data_type: boolean

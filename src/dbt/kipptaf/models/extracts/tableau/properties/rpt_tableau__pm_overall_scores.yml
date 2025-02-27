@@ -1,0 +1,60 @@
+version: 2
+models:
+  - name: rpt_tableau__pm_overall_scores
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: pm_term
+        data_type: string
+      - name: overall_score
+        data_type: float64
+      - name: overall_tier
+        data_type: int64
+      - name: eval_date
+        data_type: date
+      - name: teammate
+        data_type: string
+      - name: entity
+        data_type: string
+      - name: location
+        data_type: string
+      - name: grade_band
+        data_type: string
+      - name: home_work_location_powerschool_school_id
+        data_type: int64
+      - name: department
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: manager
+        data_type: string
+      - name: worker_original_hire_date
+        data_type: date
+      - name: assignment_status
+        data_type: string
+      - name: gender_identity
+        data_type: string
+      - name: race_ethnicity_reporting
+        data_type: string
+      - name: annual_salary
+        data_type: numeric
+      - name: alumni_status
+        data_type: string
+      - name: community_professional_exp
+        data_type: string
+      - name: years_at_kipp
+        data_type: float64
+      - name: years_teaching
+        data_type: float64
+      - name: grade_taught
+        data_type: int64
+      - name: etr_score
+        data_type: int64
+      - name: so_score
+        data_type: int64
+      - name: etr_tier
+        data_type: int64
+      - name: so_tier
+        data_type: int64

@@ -1,0 +1,252 @@
+version: 2
+models:
+  - name: stg_tableau__view_count_per_view
+    columns:
+      - name: user_name
+        data_type: string
+      - name: default_site
+        data_type: string
+      - name: domain_name
+        data_type: string
+      - name: url_namespace_site_restricted_sites
+        data_type: string
+      - name: id_hist_views
+        data_type: int64
+      - name: action_views
+        data_type: string
+      - name: created_at_local
+        data_type: string
+      - name: name_hist_views
+        data_type: string
+      - name: name_hist_workbooks
+        data_type: string
+      - name: action
+        data_type: string
+      - name: created_at
+        data_type: string
+      - name: url_namespace
+        data_type: string
+      - name: id_hist_projects
+        data_type: int64
+      - name: number_of_records
+        data_type: int64
+      - name: tz_offset_days
+        data_type: float64
+      - name: sites_id
+        data_type: int64
+      - name: action_bridge
+        data_type: string
+      - name: action_type
+        data_type: string
+      - name: action_data
+        data_type: string
+      - name: action_datasource
+        data_type: string
+      - name: action_datasource_bridge
+        data_type: string
+      - name: action_spuser
+        data_type: string
+      - name: action_users
+        data_type: string
+      - name: action_view
+        data_type: string
+      - name: created_at_local_6_hour
+        data_type: string
+      - name: email
+        data_type: string
+      - name: extract_created
+        data_type: string
+      - name: get_names
+        data_type: string
+      - name: group_of_user_actions
+        data_type: string
+      - name: hist_actor_site_id
+        data_type: int64
+      - name: hist_actor_user_id
+        data_type: int64
+      - name: hist_project_id
+        data_type: int64
+      - name: hist_target_site_id
+        data_type: int64
+      - name: hist_view_id
+        data_type: int64
+      - name: hist_workbook_id
+        data_type: int64
+      - name: historical_event_type_id
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: id_hist_sites
+        data_type: int64
+      - name: id_hist_users
+        data_type: int64
+      - name: id_hist_workbooks
+        data_type: int64
+      - name: item_name
+        data_type: string
+      - name: l10n_accessinteract
+        data_type: string
+      - name: l10n_active
+        data_type: string
+      - name: l10n_original
+        data_type: string
+      - name: l10n_publishdownload
+        data_type: string
+      - name: l10n_subs
+        data_type: string
+      - name: l10n_total
+        data_type: string
+      - name: name_hist_projects
+        data_type: string
+      - name: name_site_restricted_sites
+        data_type: string
+      - name: project_id
+        data_type: int64
+      - name: repository_url_hist_views
+        data_type: string
+      - name: revision_hist_views
+        data_type: float64
+      - name: revision_hist_workbooks
+        data_type: float64
+      - name: site
+        data_type: string
+      - name: site_id
+        data_type: int64
+      - name: site_name
+        data_type: string
+      - name: site_role_id
+        data_type: int64
+      - name: size_hist_workbooks
+        data_type: int64
+      - name: status
+        data_type: string
+      - name: system_admin_level
+        data_type: int64
+      - name: system_user_id
+        data_type: int64
+      - name: type_id
+        data_type: int64
+      - name: user_id
+        data_type: int64
+      - name: view_hier
+        data_type: string
+      - name: view_id
+        data_type: int64
+      - name: view_name
+        data_type: string
+      - name: view_url
+        data_type: string
+      - name: workbook_hier
+        data_type: string
+      - name: workbook_id
+        data_type: int64
+      - name: workbook_url
+        data_type: string
+      - name: worker
+        data_type: string
+      - name: certification_note
+        data_type: string
+      - name: comment_id
+        data_type: int64
+      - name: comment
+        data_type: string
+      - name: content_version
+        data_type: string
+      - name: datasource_id
+        data_type: int64
+      - name: details_last_string
+        data_type: string
+      - name: details_status_code
+        data_type: string
+      - name: details_trailing_detail
+        data_type: string
+      - name: details
+        data_type: string
+      - name: duration_in_ms
+        data_type: string
+      - name: duration_of_refresh_seconds
+        data_type: string
+      - name: duration_seconds
+        data_type: string
+      - name: extract_name
+        data_type: string
+      - name: flow_id
+        data_type: int64
+      - name: hist_capability_id
+        data_type: int64
+      - name: hist_column_id
+        data_type: int64
+      - name: hist_comment_id
+        data_type: int64
+      - name: hist_config_id
+        data_type: int64
+      - name: hist_data_connection_id
+        data_type: int64
+      - name: hist_data_role_id
+        data_type: int64
+      - name: hist_database_id
+        data_type: int64
+      - name: hist_datasource_id
+        data_type: int64
+      - name: hist_flow_id
+        data_type: int64
+      - name: hist_group_id
+        data_type: int64
+      - name: hist_licensing_role_id_hist_users
+        data_type: string
+      - name: hist_licensing_role_id
+        data_type: int64
+      - name: hist_metric_id
+        data_type: int64
+      - name: hist_published_connection_id
+        data_type: int64
+      - name: hist_remote_agent_id
+        data_type: int64
+      - name: hist_schedule_id
+        data_type: int64
+      - name: hist_table_id
+        data_type: int64
+      - name: hist_tag_id
+        data_type: int64
+      - name: hist_target_user_id
+        data_type: int64
+      - name: hist_task_id
+        data_type: int64
+      - name: id_hist_comments
+        data_type: string
+      - name: id_hist_datasources
+        data_type: string
+      - name: id_hist_flows
+        data_type: string
+      - name: id_hist_metrics
+        data_type: string
+      - name: id_hist_remote_agents
+        data_type: string
+      - name: is_certified
+        data_type: string
+      - name: metric_id
+        data_type: int64
+      - name: name_hist_datasources
+        data_type: string
+      - name: name_hist_flows
+        data_type: string
+      - name: name_hist_metrics
+        data_type: string
+      - name: publisher_tristate
+        data_type: string
+      - name: remote_agent_id
+        data_type: int64
+      - name: repository_url
+        data_type: string
+      - name: revision
+        data_type: string
+      - name: site_admin_level
+        data_type: int64
+      - name: size_hist_flows
+        data_type: string
+      - name: size
+        data_type: string
+      - name: tableau_bridge_client_name
+        data_type: string
+      - name: using_remote_query_agent
+        data_type: string

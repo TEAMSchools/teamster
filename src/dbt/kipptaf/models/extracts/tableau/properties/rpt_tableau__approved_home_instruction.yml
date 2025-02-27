@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: rpt_tableau__approved_home_instruction
+    columns:
+      - name: school
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: student
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: dob
+        data_type: date
+      - name: is_504
+        data_type: boolean
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: grade_level
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: enter_date
+        data_type: date
+      - name: exit_date
+        data_type: date
+      - name: sp_comment
+        data_type: string
+      - name: hi_status
+        data_type: string

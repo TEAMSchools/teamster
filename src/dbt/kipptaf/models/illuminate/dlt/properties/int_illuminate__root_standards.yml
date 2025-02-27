@@ -1,0 +1,10 @@
+version: 2
+models:
+  - name: int_illuminate__root_standards
+    columns:
+      - name: root_standard_id
+        data_type: int64
+      - name: parent_standard_id
+        data_type: int64
+      - name: standard_id
+        data_type: int64

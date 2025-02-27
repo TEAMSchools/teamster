@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: stg_google_forms__responses__answers__text_answers
+    columns:
+      - name: form_id
+        data_type: string
+      - name: response_id
+        data_type: string
+      - name: question_id
+        data_type: string
+      - name: value
+        data_type: string
+      - name: is_null_value
+        data_type: boolean

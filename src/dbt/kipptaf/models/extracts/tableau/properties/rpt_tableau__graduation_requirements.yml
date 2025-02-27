@@ -1,0 +1,90 @@
+version: 2
+models:
+  - name: rpt_tableau__graduation_requirements
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_display
+        data_type: string
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school_name
+        data_type: string
+      - name: school
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: state_studentnumber
+        data_type: int64
+      - name: kippadb_contact_id
+        data_type: string
+      - name: students_dcid
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: student_first_name
+        data_type: string
+      - name: student_last_name
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: ktc_cohort
+        data_type: int64
+      - name: has_fafsa
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: iep_status
+        data_type: string
+      - name: is_504
+        data_type: boolean
+      - name: lep_status
+        data_type: boolean
+      - name: is_retained_year
+        data_type: boolean
+      - name: is_retained_ever
+        data_type: boolean
+      - name: student_email_google
+        data_type: string
+      - name: advisory
+        data_type: string
+      - name: ccr_course
+        data_type: string
+      - name: ccr_teacher
+        data_type: string
+      - name: ccr_period
+        data_type: string
+      - name: ccr_section_number
+        data_type: string
+      - name: discipline
+        data_type: string
+      - name: pathway_option
+        data_type: string
+      - name: test_type
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: value
+        data_type: string
+      - name: met_pathway_requirement
+        data_type: boolean
+      - name: code
+        data_type: string
+      - name: njgpa_attempt
+        data_type: boolean
+      - name: njgpa_pass
+        data_type: boolean
+      - name: act
+        data_type: boolean
+      - name: sat
+        data_type: boolean
+      - name: psat
+        data_type: boolean
+      - name: final_grad_path
+        data_type: string

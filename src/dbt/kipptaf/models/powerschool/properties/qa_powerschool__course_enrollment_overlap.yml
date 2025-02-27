@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: qa_powerschool__course_enrollment_overlap
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: cc_academic_year
+        data_type: int64
+      - name: cc_course_number
+        data_type: string
+      - name: cc_dateenrolled
+        data_type: date
+      - name: cc_dateleft
+        data_type: date
+      - name: sections_section_number
+        data_type: string
+      - name: students_student_number
+        data_type: int64

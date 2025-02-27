@@ -1,12 +1,12 @@
 -- depends_on: {{ ref('stg_adp_workforce_now__workers') }}
-{{-
+{{
     config(
         materialized="incremental",
         incremental_strategy="merge",
         unique_key="adp_associate_id",
         merge_update_columns=["adp_associate_id"],
     )
--}}
+}}
 
 {%- if execute -%}
     {%- if flags.FULL_REFRESH -%}
@@ -21,7 +21,7 @@
     {%- endif -%}
 {%- endif -%}
 
-{% if env_var("DBT_DEV", "") == "true" %}
+{% if env_var("DBT_CLOUD_ENVIRONMENT_TYPE", "") == "dev" %}
     select employee_number, adp_associate_id, adp_associate_id_legacy, is_active,
     from kipptaf_people.stg_people__employee_numbers
     where is_active

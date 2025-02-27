@@ -25,10 +25,7 @@ vars:
   current_academic_year: 2024
   current_fiscal_year: 2025
   cloud_storage_uri_base: gs://teamster-kippmiami/dagster/kippmiami
-  deanslist_schema: kippmiami_deanslist
-  iready_schema: kippmiami_iready
-  powerschool_schema: kippmiami_powerschool
-  renlearn_schema: kippmiami_renlearn
+  bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models

@@ -1,0 +1,106 @@
+version: 2
+models:
+  - name: stg_illuminate__public__users
+    columns:
+      - name: user_id
+        data_type: int64
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: suffix
+        data_type: string
+      - name: username
+        data_type: string
+      - name: password
+        data_type: string
+      - name: phone1
+        data_type: string
+      - name: phone2
+        data_type: string
+      - name: address
+        data_type: string
+      - name: city
+        data_type: string
+      - name: state
+        data_type: int64
+      - name: zip
+        data_type: string
+      - name: last_mod_by
+        data_type: int64
+      - name: email1
+        data_type: string
+      - name: email2
+        data_type: string
+      - name: credentials
+        data_type: string
+      - name: birth_date
+        data_type: date
+      - name: sign_attendance
+        data_type: boolean
+      - name: job_title
+        data_type: string
+      - name: staff_education_level
+        data_type: int64
+      - name: hire_date
+        data_type: date
+      - name: exit_date
+        data_type: date
+      - name: name_former_first
+        data_type: string
+      - name: name_former_middle
+        data_type: string
+      - name: name_former_last
+        data_type: string
+      - name: primary_ethnicity
+        data_type: int64
+      - name: allow_rollover
+        data_type: boolean
+      - name: state_id
+        data_type: string
+      - name: is_god
+        data_type: boolean
+      - name: is_hispanic
+        data_type: boolean
+      - name: ssn4
+        data_type: string
+      - name: active
+        data_type: boolean
+      - name: local_user_id
+        data_type: string
+      - name: local_user_concat_id
+        data_type: string
+      - name: password_expiration_date
+        data_type: date
+      - name: _last_login_time
+        data_type: timestamp
+      - name: bypass_remote_auth
+        data_type: boolean
+      - name: exclude_from_state_reporting
+        data_type: boolean
+      - name: _recent_login_count
+        data_type: int64
+      - name: creation_time
+        data_type: timestamp
+      - name: last_mod_time
+        data_type: timestamp
+      - name: badge_access_key
+        data_type: string
+      - name: password_version
+        data_type: int64
+      - name: user_guid
+        data_type: string
+      - name: illuminate_employee
+        data_type: boolean
+      - name: account_id
+        data_type: string
+      - name: resolved_user
+        data_type: boolean
+      - name: global_user_id
+        data_type: string
+      - name: ren_id
+        data_type: string

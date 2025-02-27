@@ -1,0 +1,206 @@
+version: 2
+models:
+  - name: stg_kippadb__college_persistence
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: last_activity_date
+        data_type: date
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: last_referenced_date
+        data_type: timestamp
+      - name: last_viewed_date
+        data_type: timestamp
+      - name: record_type_id
+        data_type: string
+      - name: system_modstamp
+        data_type: timestamp
+      - name: academic
+        data_type: string
+      - name: academic_category_score
+        data_type: string
+      - name: academic_color
+        data_type: string
+      - name: academic_notes
+        data_type: string
+      - name: academic_preparedness
+        data_type: numeric
+      - name: academic_score
+        data_type: numeric
+      - name: audit_date
+        data_type: date
+      - name: audit_tool
+        data_type: string
+      - name: basic_needs
+        data_type: string
+      - name: benchmark_date
+        data_type: date
+      - name: benchmark_location
+        data_type: string
+      - name: benchmark_path
+        data_type: string
+      - name: benchmark_period
+        data_type: string
+      - name: benchmark_status
+        data_type: string
+      - name: benchmark_type
+        data_type: string
+      - name: campus_integration
+        data_type: string
+      - name: career_development_plan
+        data_type: string
+      - name: career_exploration
+        data_type: string
+      - name: college_career_plan
+        data_type: string
+      - name: college_persistence_count
+        data_type: numeric
+      - name: college_term
+        data_type: string
+      - name: completed_initial_college_career_plan
+        data_type: string
+      - name: contact
+        data_type: string
+      - name: create_contact_note_from_benchmark_edit
+        data_type: boolean
+      - name: date_completed
+        data_type: date
+      - name: enrollment
+        data_type: string
+      - name: enrollment_matriculation
+        data_type: string
+      - name: enrollment_preparation
+        data_type: string
+      - name: entrance_exams_and_assessments
+        data_type: string
+      - name: family_support
+        data_type: string
+      - name: financial
+        data_type: string
+      - name: financial_aid
+        data_type: string
+      - name: financial_category_score
+        data_type: string
+      - name: financial_color
+        data_type: string
+      - name: financial_notes
+        data_type: string
+      - name: financial_score
+        data_type: numeric
+      - name: financial_stability
+        data_type: numeric
+      - name: future_focus
+        data_type: string
+      - name: gpa
+        data_type: string
+      - name: has_a_passion
+        data_type: string
+      - name: has_a_plan
+        data_type: string
+      - name: hs_academic_and_technical_profile
+        data_type: string
+      - name: hs_academic_profile
+        data_type: string
+      - name: internship_summer_plan
+        data_type: string
+      - name: job_school_balance
+        data_type: string
+      - name: job_school_personal_life_balance
+        data_type: string
+      - name: math_remedial_course_name
+        data_type: string
+      - name: math_remedial_course_status
+        data_type: string
+      - name: math_remediation
+        data_type: string
+      - name: mental_health
+        data_type: string
+      - name: next_steps
+        data_type: string
+      - name: non_cognitive_color
+        data_type: string
+      - name: non_cognitive_notes
+        data_type: string
+      - name: non_cognitive_preparedness
+        data_type: numeric
+      - name: on_track_towards_education_plan_goals
+        data_type: string
+      - name: overall_benchmark_status
+        data_type: string
+      - name: overall_score
+        data_type: string
+      - name: overall_student_score
+        data_type: numeric
+      - name: passion_purpose_plan
+        data_type: string
+      - name: passion_purpose_plan_category_score
+        data_type: string
+      - name: passion_purpose_plan_notes
+        data_type: string
+      - name: passion_purpose_plan_score
+        data_type: numeric
+      - name: placement_tests
+        data_type: string
+      - name: plan_to_pay
+        data_type: string
+      - name: pursuing_degree_type
+        data_type: string
+      - name: reading_or_english_remedial_course_name
+        data_type: string
+      - name: reading_or_english_remedial_course_statu
+        data_type: string
+      - name: reading_or_english_remediation
+        data_type: string
+      - name: remedial_developmental_courses
+        data_type: string
+      - name: resources_support_system
+        data_type: string
+      - name: self_advocacy
+        data_type: string
+      - name: self_advocacy_resources
+        data_type: string
+      - name: socio_emotional
+        data_type: string
+      - name: socio_emotional_category_score
+        data_type: string
+      - name: socio_emotional_color
+        data_type: string
+      - name: socio_emotional_notes
+        data_type: string
+      - name: socio_emotional_score
+        data_type: numeric
+      - name: socio_emotional_wellness
+        data_type: numeric
+      - name: stable_housing_commuting_plan
+        data_type: string
+      - name: strong_academic_habits
+        data_type: string
+      - name: strong_study_habits
+        data_type: string
+      - name: summer_plans
+        data_type: string
+      - name: support_systems_and_obligations
+        data_type: string
+      - name: transfer_applications_complete
+        data_type: string
+      - name: transfer_wishlist_and_application_plan
+        data_type: string
+      - name: urgent_follow_up_required
+        data_type: boolean
+      - name: writing_remedial_course_name
+        data_type: string
+      - name: writing_remedial_course_status
+        data_type: string
+      - name: writing_remediation
+        data_type: string
+      - name: academic_year
+        data_type: int64

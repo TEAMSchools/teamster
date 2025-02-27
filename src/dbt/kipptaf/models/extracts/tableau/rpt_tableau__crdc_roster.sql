@@ -79,7 +79,7 @@ with
 
             if(e.iep_status = 'Has IEP' and is_504, true, false) as iep_and_c504,
 
-            if(e.iep_status = 'Has IEP' and is_504, true, false) as c504_only,
+            if(e.iep_status = 'No IEP' and is_504, true, false) as c504_only,
 
             if(lep.liep_parent_refusal_date is null, false, true) as lep_parent_refusal,
 
@@ -397,7 +397,9 @@ select
     end as crdc_question_description,
 
 from enrollment
-where crdc_question_section in ('DSED-2', 'ATHL-3', 'ARRS-1', 'ARRS-2', 'ARRS-3')
+where
+    crdc_question_section
+    in ('DSED-2', 'ATHL-3', 'ARRS-1', 'ARRS-2', 'ARRS-3', 'ARRS-4', 'ARRS-5', 'ARRS-6')
 
 union all
 

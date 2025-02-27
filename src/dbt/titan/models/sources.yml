@@ -2,9 +2,9 @@ version: 2
 
 sources:
   - name: titan
-    schema: "{{ var('titan_schema', env_var('DBT_DEV_TITAN_SCHEMA', 'titan')) }}"
-    database:
-      "{% if target.type != 'spark' %}{{ var('titan_database', target.database) }}{% endif %}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('titan_schema', project_name + '_titan') }}
     tables:
       - name: src_titan__person_data
         meta:
@@ -18,6 +18,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/titan/person_data/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/titan/person_data/"
@@ -35,6 +38,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/titan/income_form_data/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/titan/income_form_data/"

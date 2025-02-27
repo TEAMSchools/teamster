@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: int_reporting__promotional_status
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: term_name
+        data_type: string
+      - name: ada_term_running
+        data_type: float64
+      - name: n_absences_y1_running
+        data_type: float64
+      - name: n_absences_y1_running_non_susp
+        data_type: float64
+      - name: iready_reading_recent
+        data_type: string
+      - name: iready_math_recent
+        data_type: string
+      - name: n_failing
+        data_type: int64
+      - name: n_failing_core
+        data_type: int64
+      - name: projected_credits_cum
+        data_type: float64
+      - name: projected_credits_y1_term
+        data_type: float64
+      - name: dibels_composite_level_recent_str
+        data_type: string
+      - name: dibels_composite_level_recent
+        data_type: int64
+      - name: star_math_level_recent
+        data_type: int64
+      - name: star_reading_level_recent
+        data_type: int64
+      - name: fast_ela_level_recent
+        data_type: int64
+      - name: fast_math_level_recent
+        data_type: int64
+      - name: attendance_status
+        data_type: string
+      - name: attendance_status_hs_detail
+        data_type: string
+      - name: academic_status
+        data_type: string
+      - name: exemption
+        data_type: string
+      - name: overall_status
+        data_type: string

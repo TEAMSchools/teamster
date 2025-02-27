@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: stg_illuminate__dna_repositories__repositories
+    columns:
+      - name: repository_id
+        data_type: int64
+      - name: title
+        data_type: string
+      - name: description
+        data_type: string
+      - name: user_id
+        data_type: int64
+      - name: type
+        data_type: string
+      - name: created_at
+        data_type: timestamp
+      - name: updated_at
+        data_type: timestamp
+      - name: deleted_at
+        data_type: timestamp
+      - name: code_subject_area_id
+        data_type: int64
+      - name: repository_type
+        data_type: string
+      - name: code_scope_id
+        data_type: int64
+      - name: db_virtual_table_id
+        data_type: int64
+      - name: local_repository_id
+        data_type: string
+      - name: guid
+        data_type: string
+      - name: date_administered
+        data_type: date

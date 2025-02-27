@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: int_illuminate__repository_data
+    columns:
+      - name: repository_id
+        data_type: int64
+      - name: repository_row_id
+        data_type: int64
+      - name: student_id
+        data_type: int64
+      - name: field_name
+        data_type: string
+      - name: value
+        data_type: string
+      - name: title
+        data_type: string
+      - name: scope
+        data_type: string
+      - name: subject_area
+        data_type: string
+      - name: date_administered
+        data_type: date
+      - name: field_label
+        data_type: string
+      - name: local_student_id
+        data_type: int64
