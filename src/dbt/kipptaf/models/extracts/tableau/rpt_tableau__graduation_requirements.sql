@@ -55,47 +55,6 @@ with
             )
     ),
 
-    transfer_scores as (
-        select
-            b._dbt_source_relation,
-            b.name as test_name,
-
-            s.studentid,
-            s.grade_level as assessment_grade_level,
-
-            t.numscore as testscalescore,
-            t.alphascore as testperformancelevel,
-
-            r.name as testcode,
-
-            case
-                r.name when 'ELAGP' then 'ELA' when 'MATGP' then 'Math'
-            end as discipline,
-            case
-                r.name
-                when 'ELAGP'
-                then 'English Language Arts'
-                when 'MATGP'
-                then 'Mathematics'
-            end as `subject`,
-        from {{ ref("stg_powerschool__test") }} as b
-        left join
-            {{ ref("stg_powerschool__studenttest") }} as s
-            on b.id = s.testid
-            and {{ union_dataset_join_clause(left_alias="b", right_alias="s") }}
-        left join
-            {{ ref("stg_powerschool__studenttestscore") }} as t
-            on s.studentid = t.studentid
-            and s.id = t.studenttestid
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="t") }}
-        left join
-            {{ ref("stg_powerschool__testscore") }} as r
-            on s.testid = r.testid
-            and t.testscoreid = r.id
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="r") }}
-        where b.name = 'NJGPA'
-    ),
-
     transfer_roster as (
         select
             e.student_number as localstudentidentifier,
@@ -108,7 +67,7 @@ with
             safe_cast(e.state_studentnumber as int) as statestudentidentifier,
         from roster as e
         left join
-            transfer_scores as x
+            {{ ref("int_powerschool__state_assessments_transfer_scores") }} as x
             on e.studentid = x.studentid
             and {{ union_dataset_join_clause(left_alias="e", right_alias="x") }}
         where x.studentid is not null
@@ -125,19 +84,21 @@ with
             case
                 when testcode = 'ELAGP' then 'ELA' when testcode = 'MATGP' then 'Math'
             end as discipline,
+
         from {{ ref("stg_pearson__njgpa") }}
         where testscorecomplete = 1 and testcode in ('ELAGP', 'MATGP')
 
         union all
 
         select
-            localstudentidentifier,
-            statestudentidentifier,
+            student_number as localstudentidentifier,
+            cast(state_studentnumber as numeric) as statestudentidentifier,
             `subject`,
             testcode,
             testscalescore,
             discipline,
-        from transfer_roster
+
+        from {{ ref("int_powerschool__state_assessments_transfer_scores") }}
     ),
 
     njgpa_rollup as (
@@ -160,102 +121,47 @@ with
 
     act_sat_psat_official as (
         select
-            contact,
+            salesforce_id,
+            student_number,
             test_type,
-            score,
+            scale_score,
+            subject_area,
 
             case
-                when score_type in ('act_reading', 'sat_reading_test_score', 'sat_ebrw')
-                then 'ELA'
-                when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
-                then 'Math'
-            end as discipline,
-
-            case
-                when score_type in ('act_reading', 'sat_reading_test_score')
-                then 'Reading'
-                when score_type in ('act_math', 'sat_math')
-                then 'Math'
-                when score_type = 'sat_math_test_score'
-                then 'Math Test'
-                when score_type = 'sat_ebrw'
-                then 'EBRW'
-            end as `subject`,
-
-            case
-                when score_type in ('act_reading', 'act_math') and score >= 17
+                when score_type in ('act_reading', 'act_math') and scale_score >= 17
                 then true
-                when score_type = 'sat_reading_test_score' and score >= 23
+                when score_type = 'sat_reading_test_score' and scale_score >= 23
                 then true
-                when score_type = 'sat_math_test_score' and score >= 22
+                when score_type = 'sat_math_test_score' and scale_score >= 22
                 then true
-                when score_type = 'sat_math' and score >= 440
+                when score_type = 'sat_math' and scale_score >= 440
                 then true
-                when score_type = 'sat_ebrw' and score >= 450
+                when score_type = 'sat_ebrw' and scale_score >= 450
+                then true
+                when
+                    score_type in (
+                        'psat10_psat_math_section',
+                        'psatnmsqt_psat_math_section',
+                        'psat10_psat_ebrw',
+                        'psatnmsqt_psat_ebrw'
+                    )
+                    and scale_score >= 420
                 then true
                 else false
             end as met_pathway_requirement,
-        from {{ ref("int_kippadb__standardized_test_unpivot") }}
-        where
-            rn_highest = 1
-            and score_type in (
-                'act_reading',
-                'act_math',
-                'sat_math_test_score',
-                'sat_math',
-                'sat_reading_test_score',
-                'sat_ebrw'
-            )
-
-        union all
-
-        select
-            cast(local_student_id as string) as contact,
-
-            'PSAT' as test_type,
-
-            score,
-
-            if(
-                score_type
-                in ('psat_eb_read_write_section_score', 'psat_reading_test_score'),
-                'ELA',
-                'Math'
-            ) as discipline,
 
             case
-                when score_type = 'psat_reading_test_score'
-                then 'Reading'
-                when score_type = 'psat_math_section_score'
-                then 'Math'
-                when score_type = 'psat_math_test_score'
-                then 'Math Test'
-                when score_type = 'psat_eb_read_write_section_score'
-                then 'EBRW'
-            end as `subject`,
+                course_discipline when 'MATH' then 'Math' when 'ENG' then 'ELA'
+            end as course_discipline,
 
-            case
-                when
-                    score_type in ('psat_reading_test_score', 'psat_math_test_score')
-                    and score >= 21
-                then true
-                when
-                    score_type
-                    in ('psat_math_section_score', 'psat_eb_read_write_section_score')
-                    and score >= 420
-                then true
-                else false
-            end as met_pathway_requirement,
-        from {{ ref("int_illuminate__psat_unpivot") }}
+            -- in some places, we need to know if the score is 10 or NMSQT. not here
+            if(scope in ('ACT', 'SAT'), scope, 'PSAT') as scope,
+
+        from {{ ref("int_assessments__college_assessment") }}
         where
             rn_highest = 1
-            and score_type in (
-                'psat_eb_read_write_section_score',
-                'psat_math_test_score',
-                'psat_math_section_score',
-                'psat_reading_test_score'
-            )
-            and test_name != 'PSAT89'
+            and course_discipline in ('MATH', 'ENG')
+            and scope != 'PSAT89'
     ),
 
     grad_options_append_final as (
@@ -271,6 +177,7 @@ with
             cast(a.testscalescore as string) as `value`,
 
             if(a.testscalescore >= 725, true, false) as met_pathway_requirement,
+
         from roster as r
         inner join njgpa_rollup as a on r.state_studentnumber = a.statestudentidentifier
 
@@ -279,37 +186,36 @@ with
         select
             r.student_number,
 
-            a.discipline,
-            a.subject,
-            a.test_type,
+            a.course_discipline,
+            a.subject_area,
+            a.scope as test_type,
 
             'ACT/SAT' as pathway_option,
 
-            cast(a.score as string) as `value`,
+            cast(a.scale_score as string) as `value`,
 
             a.met_pathway_requirement,
+
         from roster as r
-        inner join act_sat_psat_official as a on r.kippadb_contact_id = a.contact
-        where a.test_type in ('ACT', 'SAT')
+        inner join act_sat_psat_official as a on r.kippadb_contact_id = a.salesforce_id
 
         union all
 
         select
             r.student_number,
 
-            a.discipline,
-            a.subject,
-            a.test_type,
+            a.course_discipline,
+            a.subject_area,
+            a.scope as test_type,
 
             'PSAT' as pathway_option,
 
-            cast(a.score as string) as `value`,
+            cast(a.scale_score as string) as `value`,
 
             a.met_pathway_requirement,
+
         from roster as r
-        inner join
-            act_sat_psat_official as a on cast(r.student_number as string) = a.contact
-        where a.test_type = 'PSAT'
+        inner join act_sat_psat_official as a on r.student_number = a.student_number
 
         union all
 

@@ -1,0 +1,247 @@
+-- purpose of this view: some version of the nonsense below is repeated via CTEs in
+-- two views: the old version of this view (int_students__graduation_path_codes.sql) and
+-- rpt_tableau__graduation_requirements.sql. path_codes then feeds autocomm_students
+-- to send to PS the final graduation eligibility code. currently, the CTE versions
+-- require manual adjustments of the ACT SAT PSAT et al thresholds needed to
+-- calculate eligibility for graduation under these pathways IF a student tests for
+-- NJGPA. i can share a doc of the logic behind the checks, if that helps. the point
+-- is that these grad requirements can change even after a student has already been
+-- assigned a path, so we need to be able to check grad pathways at the academic year
+-- level (i.e. a student who is supposed to graduate this year may have different
+-- ACT/SAT/PSAT thredsholds than a student who is supposed to graduate next year). i
+-- started building a lookup table that allows me to customize the thresholds by
+-- cohort/test/score_type (subject). it currently lives on the same table where walters
+-- has the promo status cutoffs (stg_reporting__promo_status_cutoffs). im not married
+-- to this location, so if you think it goes better somewhere else, please move it.
+-- this view will also help us track the distribution of grad pathways over time to
+-- share with katie and co which pathways our students take the most, which can
+-- influence strategy decisions around which college readiness assessments serve our
+-- students best. thank you for coming to my tedtalk
+with
+    students as (
+        select
+            e._dbt_source_relation,
+            e.students_dcid,
+            e.studentid,
+            e.student_number,
+            e.state_studentnumber,
+            e.salesforce_id,
+            e.grade_level,
+            e.cohort,
+            e.has_fafsa,
+            e.discipline,
+            e.powerschool_credittype,
+
+            -- this is not their final code, but it is used to calculate their final
+            -- code
+            u.values_column as ps_grad_path_code,
+
+            safe_cast(e.state_studentnumber as numeric) as state_studentnumber_int,
+
+            -- this is the date we start holding 11th graders accountable to
+            -- fulfilling the NJGPA test requirement
+            date({{ var("current_academic_year") + 1 }}, 05, 31) as njgpa_date_11th,
+
+            -- this is the date we start holding 12th graders accountable to
+            -- fulfilling the FAFSA requirement
+            if(
+                current_date('{{ var("local_timezone") }}')
+                < date({{ var("current_academic_year") + 1 }}, 01, 01),
+                true,
+                false
+            ) as is_before_fafsa_12th,
+
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as e
+        left join
+            {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as u
+            on e.students_dcid = u.studentsdcid
+            and e.discipline = u.discipline
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="u") }}
+            and u.value_type = 'Graduation Pathway'
+        where e.region != 'Miami' and grade_level >= 8 and rn_undergrad = 1
+    ),
+
+    scores as (
+        -- njgpa transfer scores
+        select
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            x.testscalescore as scale_score,
+            x.testcode as score_type,
+            x.test_name as pathway_option,
+
+            x.discipline,
+
+        from students as s
+        inner join
+            {{ ref("int_powerschool__state_assessments_transfer_scores") }} as x
+            on s.state_studentnumber = x.state_studentnumber
+            and s.discipline = x.discipline
+
+        union all
+
+        -- njgpa scores from file
+        select
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            n.testscalescore as scale_score,
+            n.testcode as score_type,
+            n.assessment_name as pathway_option,
+
+            n.discipline,
+
+        from students as s
+        inner join
+            {{ ref("stg_pearson__njgpa") }} as n
+            on s.state_studentnumber_int = n.statestudentidentifier
+            and s.discipline = n.discipline
+        where n.testscorecomplete = 1 and n.testcode in ('ELAGP', 'MATGP')
+
+        union all
+
+        -- act/sat scores
+        select
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            a.scale_score,
+            a.score_type,
+            a.scope as pathway_option,
+
+            if(a.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
+
+        from students as s
+        inner join
+            {{ ref("int_assessments__college_assessment") }} as a
+            on s.salesforce_id = a.salesforce_id
+            and s.powerschool_credittype = a.course_discipline
+            and a.scope in ('ACT', 'SAT')
+            and a.course_discipline in ('MATH', 'ENG')
+
+        union all
+
+        -- psat scores
+        select
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            p.scale_score,
+            p.score_type,
+            p.scope as pathway_option,
+
+            if(p.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
+
+        from students as s
+        inner join
+            {{ ref("int_assessments__college_assessment") }} as p
+            on s.student_number = p.student_number
+            and s.powerschool_credittype = p.course_discipline
+            and p.scope in ('PSAT10', 'PSAT NMSQT')
+            and p.course_discipline in ('MATH', 'ENG')
+    ),
+
+    lookup_table as (
+        select
+            s.* except (state_studentnumber_int),
+
+            p.pathway_option,
+            p.score_type,
+            p.scale_score,
+
+            c.code as pathway_code,
+            c.cutoff,
+
+            if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
+
+            row_number() over (
+                partition by s.student_number, p.score_type order by p.scale_score desc
+            ) as rn_highest,
+
+        from students as s
+        left join
+            scores as p
+            on s.student_number = p.student_number
+            and s.discipline = p.discipline
+        inner join
+            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
+            on p.discipline = c.discipline
+            and p.pathway_option = c.type
+            and p.score_type = c.subject
+            and s.cohort = c.cohort
+            and c.`domain` = 'Graduation Pathways'
+    ),
+
+    -- having to collapse the unpivot 
+    unpivot_calcs as (
+        select
+            _dbt_source_relation,
+            student_number,
+            salesforce_id,
+            state_studentnumber,
+            grade_level,
+            cohort,
+            has_fafsa,
+            discipline,
+            powerschool_credittype,
+            ps_grad_path_code,
+            njgpa_date_11th,
+            is_before_fafsa_12th,
+
+            if(max(met_njgpa) is not null, true, false) as njgpa_attempt,
+
+            coalesce(max(met_njgpa), false) as met_njgpa,
+            coalesce(max(met_act), false) as met_act,
+            coalesce(max(met_sat), false) as met_sat,
+            coalesce(max(met_psat10), false) as met_psat10,
+            coalesce(max(met_psat_nmsqt), false) as met_psat_nmsqt,
+
+        from
+            lookup_table pivot (
+                max(met_pathway_cutoff)
+                for pathway_option in (
+                    'NJGPA' as met_njgpa,
+                    'ACT' as met_act,
+                    'SAT' as met_sat,
+                    'PSAT10' as met_psat10,
+                    'PSAT NMSQT' as met_psat_nmsqt
+                )
+            )
+        where rn_highest = 1
+        group by all
+    )
+
+select
+    *,
+
+    case
+        when grade_level != 12
+        then ps_grad_path_code
+        when ps_grad_path_code in ('M', 'N', 'O', 'P')
+        then ps_grad_path_code
+        when met_njgpa
+        then 'S'
+        when njgpa_attempt and not met_njgpa and met_act
+        then 'E'
+        when njgpa_attempt and not met_njgpa and not met_act and met_sat
+        then 'D'
+        when
+            njgpa_attempt
+            and not met_njgpa
+            and not met_act
+            and not met_sat
+            and met_psat10
+        then 'J'
+        when
+            njgpa_attempt
+            and not met_njgpa
+            and not met_act
+            and not met_sat
+            and not met_psat10
+            and met_psat_nmsqt
+        then 'K'
+        else 'R'
+    end as final_grad_path,
+
+from unpivot_calcs
