@@ -256,6 +256,8 @@ select
             discipline = 'ELA'
             and njgpa_attempt
             and (met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt)
+        then true
+        else false
     end as met_ela,
 
     case
@@ -263,6 +265,8 @@ select
             discipline = 'Math'
             and njgpa_attempt
             and (met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt)
+        then true
+        else false
     end as met_math
 
 from final_grad_path
