@@ -1,0 +1,36 @@
+version: 2
+models:
+  - name: rpt_illuminate__mastschd
+    columns:
+      - name: 01 section id
+        data_type: string
+      - name: 02 site id
+        data_type: int64
+      - name: 03 term name
+        data_type: string
+      - name: 04 course id
+        data_type: string
+      - name: 05 user id
+        data_type: string
+      - name: 06 period
+        data_type: string
+      - name: 07 academic year
+        data_type: string
+      - name: 08 room number
+        data_type: int64
+      - name: 09 session type id
+        data_type: int64
+      - name: 10 local term id
+        data_type: int64
+      - name: 11 quarter num
+        data_type: int64
+      - name: 12 user start date
+        data_type: date
+      - name: 13 user end date
+        data_type: date
+      - name: 14 primary teacher
+        data_type: int64
+      - name: 15 teacher competency level
+        data_type: int64
+      - name: 16 is attendance enabled
+        data_type: int64

@@ -1,0 +1,258 @@
+version: 2
+models:
+  - name: base_kippadb__application
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: record_type_id
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: last_activity_date
+        data_type: date
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: last_referenced_date
+        data_type: timestamp
+      - name: last_viewed_date
+        data_type: timestamp
+      - name: system_modstamp
+        data_type: timestamp
+      - name: abc_referral
+        data_type: boolean
+      - name: admission_term
+        data_type: string
+      - name: advisor_rank
+        data_type: string
+      - name: anticipated_housing_situation
+        data_type: string
+      - name: applicant
+        data_type: string
+      - name: application_admission_type
+        data_type: string
+      - name: application_count
+        data_type: numeric
+      - name: application_source
+        data_type: string
+      - name: application_status
+        data_type: string
+      - name: application_submission_status
+        data_type: string
+      - name: archived_application
+        data_type: boolean
+      - name: books_and_supplies
+        data_type: numeric
+      - name: calculated_due_date
+        data_type: date
+      - name: commitment_form_sent
+        data_type: boolean
+      - name: css_profile_submitted_to_college
+        data_type: boolean
+      - name: date_of_initial_interest
+        data_type: date
+      - name: days_until_due_date
+        data_type: numeric
+      - name: due_date
+        data_type: date
+      - name: due_date_status
+        data_type: string
+      - name: due_date_status_color
+        data_type: string
+      - name: early_action_due_date
+        data_type: date
+      - name: early_decision_due_date
+        data_type: date
+      - name: efc_from_fafsa
+        data_type: numeric
+      - name: english_teacher_recommendation_submitted
+        data_type: boolean
+      - name: expected_hs_graduation_date
+        data_type: date
+      - name: fafsa_submitted_to_college
+        data_type: boolean
+      - name: financial_aid_eligibility
+        data_type: numeric
+      - name: financial_aid_entered
+        data_type: string
+      - name: financial_aid_priority_due_date
+        data_type: date
+      - name: gpa
+        data_type: string
+      - name: gpa_type
+        data_type: string
+      - name: honors_special_program_name
+        data_type: string
+      - name: honors_special_program_status
+        data_type: string
+      - name: intended_degree_type
+        data_type: string
+      - name: intended_major
+        data_type: string
+      - name: intended_major_area
+        data_type: string
+      - name: interview_date
+        data_type: date
+      - name: interview_status
+        data_type: string
+      - name: match_type
+        data_type: string
+      - name: math_teacher_recommendation_submitted
+        data_type: boolean
+      - name: matriculation_decision
+        data_type: string
+      - name: miscellaneous_expenses
+        data_type: numeric
+      - name: net_cost_out_of_pocket
+        data_type: numeric
+      - name: odds_of_admission
+        data_type: numeric
+      - name: other_intended_major
+        data_type: string
+      - name: other_reason_for_not_attending
+        data_type: string
+      - name: parent_section_due_date
+        data_type: date
+      - name: parent_section_submitted
+        data_type: boolean
+      - name: primary_reason_for_not_attending
+        data_type: string
+      - name: principal_recommenation_submitted
+        data_type: boolean
+      - name: priority_application_due_date
+        data_type: date
+      - name: recruitment_activity_participation
+        data_type: string
+      - name: regular_decision_due_date
+        data_type: date
+      - name: required_forms
+        data_type: string
+      - name: required_forms_completed
+        data_type: boolean
+      - name: room_board
+        data_type: numeric
+      - name: school
+        data_type: string
+      - name: school_section_due_date
+        data_type: date
+      - name: school_section_submitted
+        data_type: boolean
+      - name: student_rank
+        data_type: string
+      - name: student_section_due_date
+        data_type: date
+      - name: student_section_submitted
+        data_type: boolean
+      - name: total_aid_accepted
+        data_type: numeric
+      - name: total_aid_available
+        data_type: numeric
+      - name: total_cost_of_attendance
+        data_type: numeric
+      - name: total_federal_loans
+        data_type: numeric
+      - name: total_gift_aid
+        data_type: numeric
+      - name: total_work_study
+        data_type: numeric
+      - name: transfer_application
+        data_type: boolean
+      - name: transportation
+        data_type: numeric
+      - name: tuition_and_fees
+        data_type: numeric
+      - name: type
+        data_type: string
+      - name: type_for_roll_ups
+        data_type: string
+      - name: unmet_need
+        data_type: numeric
+      - name: waitlist_placement
+        data_type: numeric
+      - name: year_aid_package_received
+        data_type: string
+      - name: starting_application_status
+        data_type: string
+      - name: is_college
+        data_type: boolean
+      - name: is_cte
+        data_type: boolean
+      - name: is_certificate
+        data_type: boolean
+      - name: is_ltr
+        data_type: boolean
+      - name: is_wishlist
+        data_type: boolean
+      - name: is_submitted
+        data_type: boolean
+      - name: is_accepted
+        data_type: boolean
+      - name: is_early_action
+        data_type: boolean
+      - name: is_early_decision
+        data_type: boolean
+      - name: is_eof
+        data_type: boolean
+      - name: is_eof_applied
+        data_type: boolean
+      - name: is_eof_accepted
+        data_type: boolean
+      - name: is_matriculated
+        data_type: boolean
+      - name: account_name
+        data_type: string
+      - name: account_type
+        data_type: string
+      - name: adjusted_6_year_minority_graduation_rate
+        data_type: numeric
+      - name: competitiveness_ranking
+        data_type: string
+      - name: act25
+        data_type: numeric
+      - name: act75
+        data_type: numeric
+      - name: act_composite_25_75
+        data_type: string
+      - name: adjusted_6_year_graduation_rate
+        data_type: numeric
+      - name: account_billing_state
+        data_type: string
+      - name: hbcu
+        data_type: boolean
+      - name: enrollment_status
+        data_type: string
+      - name: enrollment_pursuing_degree_type
+        data_type: string
+      - name: enrollment_start_date
+        data_type: date
+      - name: is_4yr_college
+        data_type: boolean
+      - name: is_2yr_college
+        data_type: boolean
+      - name: rn_app_enr
+        data_type: int64
+      - name: meets_full_need
+        data_type: boolean
+      - name: is_strong_oos_option
+        data_type: boolean
+      - name: is_early_action_decision
+        data_type: boolean
+      - name: is_submitted_aa
+        data_type: boolean
+      - name: is_submitted_ba
+        data_type: boolean
+      - name: is_submitted_certificate
+        data_type: boolean
+      - name: is_accepted_aa
+        data_type: boolean
+      - name: is_accepted_ba
+        data_type: boolean
+      - name: is_accepted_certificate
+        data_type: boolean
+      - name: rn_application_school
+        data_type: int64

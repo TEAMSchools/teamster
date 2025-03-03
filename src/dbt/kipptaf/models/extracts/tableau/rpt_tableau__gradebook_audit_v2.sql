@@ -184,7 +184,10 @@ left join
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
-where t.code_type = 'Gradebook Category' and t.cte_grouping = 'assignment_student'
+where
+    t.code_type = 'Gradebook Category'
+    and t.cte_grouping = 'assignment_student'
+    and t.audit_start_date <= current_date('{{ var("local_timezone") }}')
 
 union all
 
@@ -246,7 +249,9 @@ left join
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
-where t.cte_grouping = 'student_course_category'
+where
+    t.cte_grouping = 'student_course_category'
+    and t.audit_start_date <= current_date('{{ var("local_timezone") }}')
 
 union all
 
@@ -307,7 +312,10 @@ left join
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
-where t.code_type = 'Quarter' and t.cte_grouping != 'student_course_category'
+where
+    t.code_type = 'Quarter'
+    and t.cte_grouping != 'student_course_category'
+    and t.audit_start_date <= current_date('{{ var("local_timezone") }}')
 
 union all
 
@@ -371,7 +379,9 @@ left join
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
 where
-    t.code_type = 'Gradebook Category' and t.cte_grouping = 'class_category_assignment'
+    t.code_type = 'Gradebook Category'
+    and t.cte_grouping = 'class_category_assignment'
+    and t.audit_start_date <= current_date('{{ var("local_timezone") }}')
 
 union all
 
@@ -433,4 +443,7 @@ left join
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
-where t.code_type = 'Gradebook Category' and t.cte_grouping = 'class_category'
+where
+    t.code_type = 'Gradebook Category'
+    and t.cte_grouping = 'class_category'
+    and t.audit_start_date <= current_date('{{ var("local_timezone") }}')

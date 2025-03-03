@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: stg_dayforce__employee_work_assignment
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: legal_entity_name
+        data_type: string
+      - name: physical_location_name
+        data_type: string
+      - name: department_name
+        data_type: string
+      - name: job_name
+        data_type: string
+      - name: flsa_status_name
+        data_type: string
+      - name: job_family_name
+        data_type: string
+      - name: pay_class_name
+        data_type: string
+      - name: pay_type_name
+        data_type: string
+      - name: work_assignment_effective_end_date
+        data_type: date
+      - name: work_assignment_effective_start_date
+        data_type: date

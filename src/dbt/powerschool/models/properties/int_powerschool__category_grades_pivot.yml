@@ -1,0 +1,78 @@
+version: 2
+models:
+  - name: int_powerschool__category_grades_pivot
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: credittype
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: reporting_term
+        data_type: string
+      - name: is_current
+        data_type: boolean
+      - name: f_rt1
+        data_type: float64
+      - name: f_rt2
+        data_type: float64
+      - name: f_rt3
+        data_type: float64
+      - name: f_rt4
+        data_type: float64
+      - name: f_cur
+        data_type: float64
+      - name: f_y1
+        data_type: float64
+      - name: s_rt1
+        data_type: float64
+      - name: s_rt2
+        data_type: float64
+      - name: s_rt3
+        data_type: float64
+      - name: s_rt4
+        data_type: float64
+      - name: s_cur
+        data_type: float64
+      - name: s_y1
+        data_type: float64
+      - name: w_rt1
+        data_type: float64
+      - name: w_rt2
+        data_type: float64
+      - name: w_rt3
+        data_type: float64
+      - name: w_rt4
+        data_type: float64
+      - name: w_cur
+        data_type: float64
+      - name: w_y1
+        data_type: float64
+      - name: e_rt1
+        data_type: float64
+      - name: e_rt2
+        data_type: float64
+      - name: e_rt3
+        data_type: float64
+      - name: e_rt4
+        data_type: float64
+      - name: e_cur
+        data_type: float64
+      - name: e_y1
+        data_type: float64
+      - name: rn_credittype
+        data_type: int64
+      - name: ctz_rt1
+        data_type: string
+      - name: ctz_rt2
+        data_type: string
+      - name: ctz_rt3
+        data_type: string
+      - name: ctz_rt4
+        data_type: string
+      - name: ctz_cur
+        data_type: string

@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: stg_powerschool__test
+    columns:
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: importcode
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: test_type
+        data_type: int64

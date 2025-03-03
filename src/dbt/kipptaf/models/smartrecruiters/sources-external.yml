@@ -2,12 +2,17 @@ version: 2
 
 sources:
   - name: smartrecruiters
-    schema: kipptaf_smartrecruiters
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_smartrecruiters
     tables:
       - name: src_smartrecruiters__applicants
         external:
           location: "{{ var('cloud_storage_uri_base') }}/smartrecruiters/applicants/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -20,6 +25,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/smartrecruiters/applications/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:

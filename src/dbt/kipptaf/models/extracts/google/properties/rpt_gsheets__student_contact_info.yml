@@ -1,0 +1,98 @@
+version: 2
+models:
+  - name: rpt_gsheets__student_contact_info
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: newark_enrollment_number
+        data_type: string
+      - name: state_studentnumber
+        data_type: string
+      - name: lastfirst
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school_name
+        data_type: string
+      - name: grade_level
+        data_type: string
+      - name: team
+        data_type: string
+      - name: advisor_name
+        data_type: string
+      - name: entrydate
+        data_type: date
+      - name: boy_status
+        data_type: string
+      - name: dob
+        data_type: date
+      - name: gender
+        data_type: string
+      - name: lunchstatus
+        data_type: string
+      - name: lunch_app_status
+        data_type: string
+      - name: lunch_balance
+        data_type: float64
+      - name: home_phone
+        data_type: string
+      - name: mother_cell
+        data_type: string
+      - name: father_cell
+        data_type: string
+      - name: mother
+        data_type: string
+      - name: father
+        data_type: string
+      - name: release_1
+        data_type: string
+      - name: release_2
+        data_type: string
+      - name: release_3
+        data_type: string
+      - name: release_4
+        data_type: int64
+      - name: release_5
+        data_type: int64
+      - name: guardianemail
+        data_type: string
+      - name: address
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: student_web_id
+        data_type: string
+      - name: student_web_password
+        data_type: string
+      - name: family_web_id
+        data_type: string
+      - name: family_web_password
+        data_type: string
+      - name: media_release
+        data_type: string
+      - name: region
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: c_504_status
+        data_type: boolean
+      - name: is_homeless
+        data_type: boolean
+      - name: infosnap_opt_in
+        data_type: string
+      - name: city
+        data_type: string
+      - name: is_selfcontained
+        data_type: boolean
+      - name: infosnap_id
+        data_type: string
+      - name: rides_staff
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string
+      - name: salesforce_contact_id
+        data_type: string

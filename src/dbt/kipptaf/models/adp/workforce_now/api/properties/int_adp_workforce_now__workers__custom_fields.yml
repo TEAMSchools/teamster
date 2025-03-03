@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: int_adp_workforce_now__workers__custom_fields
+    columns:
+      - name: associate_oid
+        data_type: string
+      - name: item_id
+        data_type: string
+      - name: name_code__code_value
+        data_type: string
+      - name: name_code__long_name
+        data_type: string
+      - name: name_code__short_name
+        data_type: string
+      - name: name_code__effective_date
+        data_type: string
+      - name: date_value
+        data_type: string
+      - name: indicator_value
+        data_type: boolean
+      - name: number_value
+        data_type: float64
+      - name: string_value
+        data_type: string
+      - name: code_value
+        data_type: string
+      - name: long_name
+        data_type: string
+      - name: short_name
+        data_type: string
+      - name: effective_date
+        data_type: string

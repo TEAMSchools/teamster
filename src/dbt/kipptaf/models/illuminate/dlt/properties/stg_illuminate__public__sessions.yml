@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: stg_illuminate__public__sessions
+    columns:
+      - name: session_id
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: site_id
+        data_type: int64
+      - name: session_type_id
+        data_type: int64
+      - name: _positive_attendance
+        data_type: boolean
+      - name: district_reports
+        data_type: boolean
+      - name: attendance_program_set_id
+        data_type: int64
+      - name: schedule_id
+        data_type: int64
+      - name: is_high_poverty
+        data_type: boolean
+      - name: is_remote_and_necessary
+        data_type: boolean
+      - name: exclude_from_p223
+        data_type: boolean
+      - name: is_open_doors_youth_reengagement_program_school
+        data_type: boolean
+      - name: is_online_instruction
+        data_type: boolean
+      - name: ren_id
+        data_type: string
+      - name: elementary_grade_levels
+        data_type: string

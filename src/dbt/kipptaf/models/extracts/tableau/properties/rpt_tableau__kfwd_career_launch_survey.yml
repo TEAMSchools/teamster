@@ -1,0 +1,146 @@
+version: 2
+models:
+  - name: rpt_tableau__kfwd_career_launch_survey
+    columns:
+      - name: contact_id
+        data_type: string
+      - name: sf_first_name
+        data_type: string
+      - name: sf_last_name
+        data_type: string
+      - name: sf_lastfirst
+        data_type: string
+      - name: contact_kipp_ms_graduate
+        data_type: boolean
+      - name: contact_kipp_hs_graduate
+        data_type: boolean
+      - name: contact_kipp_hs_class
+        data_type: int64
+      - name: college_match_display_gpa
+        data_type: numeric
+      - name: kipp_region_name
+        data_type: string
+      - name: contact_description
+        data_type: string
+      - name: contact_gender
+        data_type: string
+      - name: contact_ethnicity
+        data_type: string
+      - name: expected_college_grad_date
+        data_type: date
+      - name: actual_college_grad_date
+        data_type: date
+      - name: current_kipp_student
+        data_type: string
+      - name: contact_owner_name
+        data_type: string
+      - name: pursuing_degree_type
+        data_type: string
+      - name: type
+        data_type: string
+      - name: start_date
+        data_type: date
+      - name: actual_end_date
+        data_type: date
+      - name: major
+        data_type: string
+      - name: status
+        data_type: string
+      - name: ecc
+        data_type: numeric
+      - name: institution
+        data_type: string
+      - name: reconciliation_response_id
+        data_type: string
+      - name: college_programs
+        data_type: string
+      - name: is_basta
+        data_type: boolean
+      - name: is_braven
+        data_type: boolean
+      - name: is_kippnj_internship
+        data_type: boolean
+      - name: hs_gpa_bands
+        data_type: string
+      - name: sf_email
+        data_type: string
+      - name: sf_secondary_email
+        data_type: string
+      - name: expected_grad_date_month
+        data_type: int64
+      - name: expected_grad_date_year
+        data_type: int64
+      - name: actual_end_date_month
+        data_type: int64
+      - name: actual_end_date_year
+        data_type: int64
+      - name: rn_graduated
+        data_type: int64
+      - name: survey_id
+        data_type: string
+      - name: survey_title
+        data_type: string
+      - name: response_id
+        data_type: string
+      - name: response_date_submitted
+        data_type: timestamp
+      - name: respondent_user_principal_name
+        data_type: string
+      - name: after_grad
+        data_type: string
+      - name: alumni_dob
+        data_type: string
+      - name: alumni_email
+        data_type: string
+      - name: alumni_phone
+        data_type: string
+      - name: cell_number
+        data_type: string
+      - name: company
+        data_type: string
+      - name: complete_program
+        data_type: string
+      - name: debt_amount
+        data_type: string
+      - name: debt_binary
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: grad_school_major
+        data_type: string
+      - name: grad_school_name
+        data_type: string
+      - name: highest_level_of_education
+        data_type: string
+      - name: job_sat
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: linkedin
+        data_type: string
+      - name: linkedin_link
+        data_type: string
+      - name: not_pursuing_plan
+        data_type: string
+      - name: reenrollment
+        data_type: string
+      - name: role
+        data_type: string
+      - name: satisfied_program
+        data_type: string
+      - name: search_focus
+        data_type: string
+      - name: annual_income
+        data_type: string
+      - name: benefits
+        data_type: string
+      - name: annual_income_clean
+        data_type: float64
+      - name: season_label_expected
+        data_type: string
+      - name: season_label
+        data_type: string
+      - name: is_unmatched_response
+        data_type: boolean
+      - name: rn_respondent
+        data_type: int64

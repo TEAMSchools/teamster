@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: int_powerschool__district_entry_date
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: entrydate
+        data_type: date
+      - name: exitdate
+        data_type: date
+      - name: entrycode
+        data_type: string
+      - name: exitcode_prev
+        data_type: string
+      - name: rn_entry
+        data_type: int64
+      - name: district_entry_date
+        data_type: date

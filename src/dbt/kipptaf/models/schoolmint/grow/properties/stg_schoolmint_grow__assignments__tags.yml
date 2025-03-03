@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_schoolmint_grow__assignments__tags
+    columns:
+      - name: assignment_id
+        data_type: string
+      - name: tag_id
+        data_type: string
+      - name: tag_name
+        data_type: string
+      - name: tag_url
+        data_type: string

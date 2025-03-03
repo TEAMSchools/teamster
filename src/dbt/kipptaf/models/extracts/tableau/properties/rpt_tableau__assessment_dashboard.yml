@@ -1,0 +1,102 @@
+version: 2
+models:
+  - name: rpt_tableau__assessment_dashboard
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: lastfirst
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: team
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: c_504_status
+        data_type: boolean
+      - name: is_pathways
+        data_type: boolean
+      - name: school
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: assessment_id
+        data_type: int64
+      - name: title
+        data_type: string
+      - name: scope
+        data_type: string
+      - name: subject_area
+        data_type: string
+      - name: term_administered
+        data_type: string
+      - name: administered_at
+        data_type: date
+      - name: term_taken
+        data_type: string
+      - name: date_taken
+        data_type: date
+      - name: module_type
+        data_type: string
+      - name: module_number
+        data_type: string
+      - name: response_type
+        data_type: string
+      - name: standard_code
+        data_type: string
+      - name: standard_description
+        data_type: string
+      - name: domain_description
+        data_type: string
+      - name: percent_correct
+        data_type: float64
+      - name: is_mastery
+        data_type: boolean
+      - name: performance_band_number
+        data_type: float64
+      - name: performance_band_label
+        data_type: string
+      - name: is_replacement
+        data_type: boolean
+      - name: is_normed_scope
+        data_type: boolean
+      - name: hr_teachernumber
+        data_type: string
+      - name: enr_teachernumber
+        data_type: string
+      - name: teacher_name
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: expression
+        data_type: string
+      - name: section_number
+        data_type: string
+      - name: is_foundations
+        data_type: boolean
+      - name: head_of_school
+        data_type: string
+      - name: power_standard_goal
+        data_type: int64
+      - name: is_power_standard
+        data_type: int64
+      - name: standard_domain
+        data_type: int64
+      - name: nj_student_tier
+        data_type: string
+      - name: tutoring_nj
+        data_type: boolean
+      - name: territory
+        data_type: string

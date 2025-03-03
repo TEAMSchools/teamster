@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: rpt_tableau__kfwd_contact_notes
+    columns:
+      - name: sf_contact_id
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: current_kipp_student
+        data_type: string
+      - name: kipp_region_name
+        data_type: string
+      - name: college_match_display_gpa
+        data_type: numeric
+      - name: currently_enrolled_school
+        data_type: string
+      - name: latest_fafsa_date
+        data_type: date
+      - name: latest_state_financial_aid_app_date
+        data_type: date
+      - name: last_successful_advisor_contact_date
+        data_type: date
+      - name: last_successful_contact_date
+        data_type: date
+      - name: last_outreach_date
+        data_type: date
+      - name: counselor_name
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: date
+        data_type: date
+      - name: comments
+        data_type: string
+      - name: next_steps
+        data_type: string
+      - name: status
+        data_type: string
+      - name: type
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: referral_date
+        data_type: date
+      - name: school_visit
+        data_type: int64

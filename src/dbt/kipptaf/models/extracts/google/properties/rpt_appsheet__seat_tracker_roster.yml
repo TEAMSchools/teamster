@@ -1,0 +1,54 @@
+version: 2
+models:
+  - name: rpt_appsheet__seat_tracker_roster
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: assignment_status
+        data_type: string
+      - name: preferred_name_lastfirst
+        data_type: string
+      - name: home_work_location_name
+        data_type: string
+      - name: home_work_location_grade_band
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: mail
+        data_type: string
+      - name: google_email
+        data_type: string
+      - name: report_to_mail
+        data_type: string
+      - name: report_to_google_email
+        data_type: string
+      - name: worker_original_hire_date
+        data_type: date
+      - name: business_unit_home_name
+        data_type: string
+      - name: worker_termination_date
+        data_type: date
+      - name: tableau_username
+        data_type: string
+      - name: tableau_manager_username
+        data_type: string
+      - name: itr_response
+        data_type: string
+      - name: certification_renewal_status
+        data_type: int64
+      - name: last_performance_management_score
+        data_type: int64
+      - name: smart_recruiter_id
+        data_type: int64
+      - name: grade_department
+        data_type: string
+      - name: location_entity
+        data_type: string
+      - name: location_shortname
+        data_type: string
+      - name: campus
+        data_type: string
+      - name: region_state
+        data_type: string
+      - name: permission_level
+        data_type: int64

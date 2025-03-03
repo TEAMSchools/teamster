@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: stg_powerschool__userscorefields
+    columns:
+      - name: dob
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: photolastupdated
+        data_type: string
+      - name: pscore_legal_first_name
+        data_type: string
+      - name: pscore_legal_gender
+        data_type: string
+      - name: pscore_legal_last_name
+        data_type: string
+      - name: pscore_legal_middle_name
+        data_type: string
+      - name: pscore_legal_suffix
+        data_type: string
+      - name: usersdcid
+        data_type: int64
