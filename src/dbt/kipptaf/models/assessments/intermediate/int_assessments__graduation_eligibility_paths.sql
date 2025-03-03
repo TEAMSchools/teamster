@@ -253,20 +253,10 @@ select
 
     case
         when
-            discipline = 'ELA'
-            and njgpa_attempt
+            njgpa_attempt
             and (met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt)
         then true
         else false
-    end as met_ela,
-
-    case
-        when
-            discipline = 'Math'
-            and njgpa_attempt
-            and (met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt)
-        then true
-        else false
-    end as met_math
+    end as met_subject,
 
 from final_grad_path
