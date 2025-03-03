@@ -210,38 +210,59 @@ with
             )
         where rn_highest = 1
         group by all
+    ),
+
+    final_grad_path as (
+        select
+            *,
+
+            case
+                when grade_level != 12
+                then ps_grad_path_code
+                when ps_grad_path_code in ('M', 'N', 'O', 'P')
+                then ps_grad_path_code
+                when met_njgpa
+                then 'S'
+                when njgpa_attempt and not met_njgpa and met_act
+                then 'E'
+                when njgpa_attempt and not met_njgpa and not met_act and met_sat
+                then 'D'
+                when
+                    njgpa_attempt
+                    and not met_njgpa
+                    and not met_act
+                    and not met_sat
+                    and met_psat10
+                then 'J'
+                when
+                    njgpa_attempt
+                    and not met_njgpa
+                    and not met_act
+                    and not met_sat
+                    and not met_psat10
+                    and met_psat_nmsqt
+                then 'K'
+                else 'R'
+            end as final_grad_path,
+
+        from unpivot_calcs
     )
 
 select
     *,
 
     case
-        when grade_level != 12
-        then ps_grad_path_code
-        when ps_grad_path_code in ('M', 'N', 'O', 'P')
-        then ps_grad_path_code
-        when met_njgpa
-        then 'S'
-        when njgpa_attempt and not met_njgpa and met_act
-        then 'E'
-        when njgpa_attempt and not met_njgpa and not met_act and met_sat
-        then 'D'
         when
-            njgpa_attempt
-            and not met_njgpa
-            and not met_act
-            and not met_sat
-            and met_psat10
-        then 'J'
-        when
-            njgpa_attempt
-            and not met_njgpa
-            and not met_act
-            and not met_sat
-            and not met_psat10
-            and met_psat_nmsqt
-        then 'K'
-        else 'R'
-    end as final_grad_path,
+            discipline = 'ELA'
+            and njgpa_attempt
+            and (met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt)
+    end as met_ela,
 
-from unpivot_calcs
+    case
+        when
+            discipline = 'Math'
+            and njgpa_attempt
+            and (met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt)
+    end as met_math
+
+from final_grad_path
