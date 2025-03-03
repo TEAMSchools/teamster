@@ -265,5 +265,21 @@ with
         inner join met_subject as m on u.student_number = m.student_number
     )
 
-select *
-from final_grad_path
+select
+    l.*,
+
+    f.njgpa_attempt,
+    f.met_njgpa,
+    f.met_act,
+    f.met_sat,
+    f.met_psat10,
+    f.met_psat_nmsqt,
+    f.final_grad_path,
+    f.met_ela,
+    f.met_math,
+
+from lookup_table as l
+left join
+    final_grad_path as f
+    on l.student_number = f.student_number
+    and l.discipline = f.discipline
