@@ -15,9 +15,11 @@ with
                 district_student_id.long_value,
                 cast(district_student_id.double_value as int)
             ) as district_student_id,
+
             coalesce(
                 secondary_id.long_value, cast(secondary_id.double_value as int)
             ) as secondary_id,
+
             coalesce(
                 latest_psat_grade.long_value,
                 cast(latest_psat_grade.double_value as int)
