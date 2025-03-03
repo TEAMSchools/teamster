@@ -1,0 +1,70 @@
+version: 2
+models:
+  - name: rpt_tableau__staff_attrition
+    columns:
+      - name: df_employee_number
+        data_type: int64
+      - name: preferred_first_name
+        data_type: string
+      - name: preferred_last_name
+        data_type: string
+      - name: primary_ethnicity
+        data_type: string
+      - name: gender_reporting
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_entrydate
+        data_type: date
+      - name: academic_year_exitdate
+        data_type: date
+      - name: original_hire_date
+        data_type: date
+      - name: rehire_date
+        data_type: date
+      - name: termination_date
+        data_type: date
+      - name: status_reason
+        data_type: string
+      - name: race_ethnicity
+        data_type: string
+      - name: is_hispanic
+        data_type: boolean
+      - name: race_ethnicity_reporting
+        data_type: string
+      - name: gender_identity
+        data_type: string
+      - name: relay_status
+        data_type: string
+      - name: community_grew_up
+        data_type: string
+      - name: community_professional_exp
+        data_type: string
+      - name: alumni_status
+        data_type: string
+      - name: path_to_education
+        data_type: string
+      - name: primary_grade_level_taught
+        data_type: int64
+      - name: next_academic_year_exitdate
+        data_type: date
+      - name: is_denominator
+        data_type: int64
+      - name: is_attrition
+        data_type: float64
+      - name: legal_entity_name
+        data_type: string
+      - name: primary_site_school_level
+        data_type: string
+      - name: primary_site
+        data_type: string
+      - name: primary_site_reporting_schoolid
+        data_type: int64
+      - name: primary_on_site_department
+        data_type: string
+      - name: primary_job
+        data_type: string
+      - name: years_at_kipp_total
+        data_type: float64
+      - name: years_experience_total
+        data_type: float64

@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: stg_powerschool__personaddress
+    columns:
+      - name: street
+        data_type: string
+      - name: linetwo
+        data_type: string
+      - name: city
+        data_type: string
+      - name: postalcode
+        data_type: string
+      - name: unit
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: personaddressid
+        data_type: int64
+      - name: statescodesetid
+        data_type: int64
+      - name: countrycodesetid
+        data_type: int64
+      - name: geocodelatitude
+        data_type: numeric
+      - name: geocodelongitude
+        data_type: numeric

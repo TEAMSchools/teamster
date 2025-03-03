@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_kippadb__user
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: email
+        data_type: string
+      - name: phone
+        data_type: string

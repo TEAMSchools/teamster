@@ -1,0 +1,72 @@
+version: 2
+models:
+  - name: stg_powerschool__pgfinalgrades
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: finalgradename
+        data_type: string
+      - name: startdate
+        data_type: date
+      - name: enddate
+        data_type: date
+      - name: lastgradeupdate
+        data_type: date
+      - name: overridefg
+        data_type: string
+      - name: calculatedgrade
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_date
+        data_type: date
+      - name: _dagster_partition_hour
+        data_type: int64
+      - name: _dagster_partition_minute
+        data_type: int64
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: sectionid
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: points
+        data_type: float64
+      - name: pointspossible
+        data_type: float64
+      - name: varcredit
+        data_type: float64
+      - name: gradebooktype
+        data_type: int64
+      - name: calculatedpercent
+        data_type: float64
+      - name: isincomplete
+        data_type: int64
+      - name: isexempt
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: grade
+        data_type: string
+      - name: citizenship
+        data_type: string
+      - name: comment_value
+        data_type: string
+      - name: percent
+        data_type: float64
+      - name: percent_decimal
+        data_type: float64
+      - name: percent_decimal_adjusted
+        data_type: float64
+      - name: grade_adjusted
+        data_type: string

@@ -1,0 +1,132 @@
+version: 2
+models:
+  - name: stg_powerschool__storedgrades
+    columns:
+      - name: dcid
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: sectionid
+        data_type: int64
+      - name: termid
+        data_type: int64
+      - name: percent
+        data_type: float64
+      - name: absences
+        data_type: float64
+      - name: tardies
+        data_type: float64
+      - name: potentialcrhrs
+        data_type: float64
+      - name: earnedcrhrs
+        data_type: float64
+      - name: grade_level
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: excludefromgpa
+        data_type: int64
+      - name: gpa_points
+        data_type: float64
+      - name: gpa_addedvalue
+        data_type: float64
+      - name: gpa_custom2
+        data_type: float64
+      - name: excludefromclassrank
+        data_type: int64
+      - name: excludefromhonorroll
+        data_type: int64
+      - name: isearnedcrhrsfromgb
+        data_type: int64
+      - name: ispotentialcrhrsfromgb
+        data_type: int64
+      - name: excludefromtranscripts
+        data_type: int64
+      - name: replaced_dcid
+        data_type: int64
+      - name: excludefromgraduation
+        data_type: int64
+      - name: excludefromgradesuppression
+        data_type: int64
+      - name: gradereplacementpolicy_id
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: storecode
+        data_type: string
+      - name: datestored
+        data_type: date
+      - name: grade
+        data_type: string
+      - name: behavior
+        data_type: string
+      - name: comment_value
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: credit_type
+        data_type: string
+      - name: log
+        data_type: string
+      - name: course_equiv
+        data_type: string
+      - name: schoolname
+        data_type: string
+      - name: gradescale_name
+        data_type: string
+      - name: teacher_name
+        data_type: string
+      - name: gpa_custom1
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: ab_course_cmp_fun_flg
+        data_type: string
+      - name: ab_course_cmp_ext_crd
+        data_type: string
+      - name: ab_course_cmp_fun_sch
+        data_type: string
+      - name: ab_course_cmp_met_cd
+        data_type: string
+      - name: ab_course_eva_pro_cd
+        data_type: string
+      - name: ab_course_cmp_sta_cd
+        data_type: string
+      - name: ab_pri_del_met_cd
+        data_type: string
+      - name: ab_lng_cd
+        data_type: string
+      - name: ab_dipl_exam_mark
+        data_type: string
+      - name: ab_final_mark
+        data_type: string
+      - name: termbinsname
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: replaced_grade
+        data_type: string
+      - name: replaced_equivalent_course
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: percent_decimal
+        data_type: float64
+      - name: storecode_type
+        data_type: string
+      - name: yearid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: fiscal_year
+        data_type: int64
+      - name: gradescale_name_unweighted
+        data_type: string

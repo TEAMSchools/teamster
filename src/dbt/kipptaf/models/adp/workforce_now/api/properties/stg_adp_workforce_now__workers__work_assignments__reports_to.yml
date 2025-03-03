@@ -1,0 +1,68 @@
+version: 2
+models:
+  - name: stg_adp_workforce_now__workers__work_assignments__reports_to
+    columns:
+      - name: associate_oid
+        data_type: string
+      - name: item_id
+        data_type: string
+      - name: effective_date_start
+        data_type: date
+      - name: effective_date_end
+        data_type: date
+      - name: effective_date_start_timestamp
+        data_type: timestamp
+      - name: is_current_record
+        data_type: boolean
+      - name: reports_to_associate_oid
+        data_type: string
+      - name: reports_to_position_id
+        data_type: string
+      - name: reports_to_worker_id__id_value
+        data_type: string
+      - name: reports_to_worker_id__scheme_code__code_value
+        data_type: string
+      - name: reports_to_worker_id__scheme_code__long_name
+        data_type: string
+      - name: reports_to_worker_id__scheme_code__short_name
+        data_type: string
+      - name: reports_to_worker_name__formatted_name
+        data_type: string
+      - name: reports_to_worker_name__given_name
+        data_type: string
+      - name: reports_to_worker_name__middle_name
+        data_type: string
+      - name: reports_to_worker_name__family_name_1
+        data_type: string
+      - name: reports_to_worker_name__nick_name
+        data_type: string
+      - name: reports_to_worker_name__generation_affix_code__code_value
+        data_type: string
+      - name: reports_to_worker_name__generation_affix_code__long_name
+        data_type: string
+      - name: reports_to_worker_name__generation_affix_code__short_name
+        data_type: string
+      - name: reports_to_worker_name__qualification_affix_code__code_value
+        data_type: string
+      - name: reports_to_worker_name__qualification_affix_code__long_name
+        data_type: string
+      - name: reports_to_worker_name__qualification_affix_code__short_name
+        data_type: string
+      - name: reports_to_worker_name__preferred_salutations
+        data_type: record
+      - name: reports_to_worker_name__preferred_salutations.salutationcode
+        data_type: record
+      - name: reports_to_worker_name__preferred_salutations.salutationcode.codevalue
+        data_type: string
+      - name: reports_to_worker_name__preferred_salutations.salutationcode.longname
+        data_type: string
+      - name: reports_to_worker_name__preferred_salutations.salutationcode.shortname
+        data_type: string
+      - name: reports_to_worker_name__preferred_salutations.salutationcode.effectivedate
+        data_type: string
+      - name: reports_to_worker_id__scheme_code__effective_date
+        data_type: date
+      - name: reports_to_worker_name__generation_affix_code__effective_date
+        data_type: date
+      - name: reports_to_worker_name__qualification_affix_code__effective_date
+        data_type: date

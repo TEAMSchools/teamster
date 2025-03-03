@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: rpt_schoolmint_grow__users
+    columns:
+      - name: user_internal_id
+        data_type: int64
+      - name: user_name
+        data_type: string
+      - name: user_email
+        data_type: string
+      - name: inactive
+        data_type: int64
+      - name: role_name
+        data_type: string
+      - name: school_id
+        data_type: string
+      - name: role_id
+        data_type: string
+      - name: user_id
+        data_type: string
+      - name: archived_at
+        data_type: string
+      - name: user_email_ws
+        data_type: string
+      - name: user_name_ws
+        data_type: string
+      - name: school_id_ws
+        data_type: string
+      - name: grade_id_ws
+        data_type: string
+      - name: course_id_ws
+        data_type: string
+      - name: coach_id_ws
+        data_type: string
+      - name: coach_id
+        data_type: string
+      - name: course_id
+        data_type: string
+      - name: grade_id
+        data_type: string
+      - name: role_id_ws
+        data_type: string
+      - name: inactive_ws
+        data_type: int64
+      - name: group_type
+        data_type: string
+      - name: surrogate_key_source
+        data_type: string
+      - name: surrogate_key_destination
+        data_type: string

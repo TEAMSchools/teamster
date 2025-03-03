@@ -1,0 +1,48 @@
+version: 2
+models:
+  - name: stg_schoolmint_grow__measurements
+    columns:
+      - name: measurement_id
+        data_type: string
+      - name: district
+        data_type: string
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: row_style
+        data_type: string
+      - name: scale_max
+        data_type: int64
+      - name: scale_min
+        data_type: int64
+      - name: text_boxes
+        data_type: record
+      - name: text_boxes.key
+        data_type: string
+      - name: text_boxes.label
+        data_type: string
+      - name: text_boxes.value
+        data_type: string
+      - name: measurement_options
+        data_type: record
+      - name: measurement_options.label
+        data_type: string
+      - name: measurement_options.description
+        data_type: string
+      - name: measurement_options.value
+        data_type: int64
+      - name: measurement_options.booleanvalue
+        data_type: boolean
+      - name: measurement_options.created
+        data_type: string
+      - name: measurement_options.percentage
+        data_type: float64
+      - name: measurement_options._id
+        data_type: string
+      - name: created
+        data_type: timestamp
+      - name: last_modified
+        data_type: timestamp
+      - name: archived_at
+        data_type: timestamp

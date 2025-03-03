@@ -2,8 +2,9 @@ version: 2
 
 sources:
   - name: iready
-    schema: "{{ var('iready_schema', env_var('DBT_DEV_IREADY_SCHEMA', 'iready')) }}"
-    database: "{{ var('iready_database', target.database) }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('iready_schema', project_name + '_iready') }}
     tables:
       - name: src_iready__diagnostic_results
         meta:
@@ -17,6 +18,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/iready/diagnostic_results/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/iready/diagnostic_results/"
@@ -34,6 +38,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/iready/diagnostic_and_instruction/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/iready/diagnostic_and_instruction/"
@@ -51,6 +58,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/iready/instructional_usage_data/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/iready/instructional_usage_data/"
@@ -68,6 +78,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/iready/personalized_instruction_by_lesson/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/iready/personalized_instruction_by_lesson/"
@@ -85,6 +98,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/iready/instruction_by_lesson/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/iready/instruction_by_lesson/"

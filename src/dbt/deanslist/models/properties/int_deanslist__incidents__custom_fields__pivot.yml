@@ -1,0 +1,86 @@
+version: 2
+models:
+  - name: int_deanslist__incidents__custom_fields__pivot
+    columns:
+      - name: incident_id
+        data_type: int64
+      - name: specific_behavior_incident_that_prompted_referral
+        data_type: string
+      - name: primary_area_of_concern
+        data_type: string
+      - name: level_of_concern
+        data_type: string
+      - name: approver_name
+        data_type: string
+      - name: behavior_category
+        data_type: string
+      - name: board_approval_date
+        data_type: string
+      - name: board_reconsideration_dates
+        data_type: string
+      - name: board_resolution_affirmation_date
+        data_type: string
+      - name: dcf_notes_follow_up
+        data_type: string
+      - name: dcf_officer_name
+        data_type: string
+      - name: doctor_approval
+        data_type: string
+      - name: fedex_tracking_for_determination
+        data_type: string
+      - name: fedex_tracking_for_notice
+        data_type: string
+      - name: final_approval
+        data_type: string
+      - name: hi_end_date
+        data_type: string
+      - name: hi_start_date
+        data_type: string
+      - name: hourly_rate
+        data_type: string
+      - name: hours_per_week
+        data_type: string
+      - name: initial_trigger_antecedent
+        data_type: string
+      - name: instructor_name
+        data_type: string
+      - name: instructor_source
+        data_type: string
+      - name: intervention
+        data_type: string
+      - name: logical_redirection
+        data_type: string
+      - name: mdr_date_if_iep_or_504
+        data_type: string
+      - name: nj_state_reporting
+        data_type: string
+      - name: non_student_witnesses_to_restraint
+        data_type: string
+      - name: others_involved
+        data_type: string
+      - name: parent_contacted
+        data_type: string
+      - name: perceived_motivation
+        data_type: string
+      - name: reporters_id_number
+        data_type: string
+      - name: restraint_duration
+        data_type: string
+      - name: restraint_notes
+        data_type: string
+      - name: restraint_type
+        data_type: string
+      - name: restraint_used
+        data_type: string
+      - name: ssds_incident_id
+        data_type: string
+      - name: staff_involved_in_restraint
+        data_type: string
+      - name: suspension_logged
+        data_type: string
+      - name: teacher_response
+        data_type: string
+      - name: referral_to_law_enforcement
+        data_type: string
+      - name: arrested_for_school_related_activity
+        data_type: string

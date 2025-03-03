@@ -1,0 +1,62 @@
+version: 2
+models:
+  - name: stg_illuminate__dna_assessments__assessments
+    columns:
+      - name: assessment_id
+        data_type: int64
+      - name: title
+        data_type: string
+      - name: description
+        data_type: string
+      - name: user_id
+        data_type: int64
+      - name: created_at
+        data_type: timestamp
+      - name: updated_at
+        data_type: timestamp
+      - name: deleted_at
+        data_type: timestamp
+      - name: administered_at
+        data_type: date
+      - name: code_scope_id
+        data_type: int64
+      - name: code_subject_area_id
+        data_type: int64
+      - name: reports_db_virtual_table_id
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: local_assessment_id
+        data_type: string
+      - name: intel_assess_guid
+        data_type: string
+      - name: guid
+        data_type: string
+      - name: tags
+        data_type: string
+      - name: edusoft_guid
+        data_type: string
+      - name: performance_band_set_id
+        data_type: int64
+      - name: als_guid
+        data_type: string
+      - name: curriculum_associate_guid
+        data_type: string
+      - name: allow_duplicates
+        data_type: boolean
+      - name: itembank_assessment_id
+        data_type: int64
+      - name: locked
+        data_type: boolean
+      - name: show_in_parent_portal
+        data_type: boolean
+      - name: administration_window_start_date
+        data_type: date
+      - name: administration_window_end_date
+        data_type: date
+      - name: is_hybrid_x_obsolete
+        data_type: boolean
+      - name: assessment_type
+        data_type: string
+      - name: duplicate_from_assessment_id
+        data_type: int64

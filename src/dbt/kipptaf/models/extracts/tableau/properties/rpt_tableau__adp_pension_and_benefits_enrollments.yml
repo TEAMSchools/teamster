@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: rpt_tableau__adp_pension_and_benefits_enrollments
+    columns:
+      - name: employee_number
+        data_type: float64
+      - name: plan_type
+        data_type: string
+      - name: plan_name
+        data_type: string
+      - name: coverage_level
+        data_type: string
+      - name: effective_date
+        data_type: string
+      - name: preferred_name
+        data_type: string
+      - name: position_status
+        data_type: string
+      - name: legal_entity_name
+        data_type: string
+      - name: primary_site
+        data_type: string
+      - name: primary_on_site_department
+        data_type: string
+      - name: primary_job
+        data_type: string
+      - name: primary_race_ethnicity_reporting
+        data_type: string
+      - name: gender
+        data_type: string

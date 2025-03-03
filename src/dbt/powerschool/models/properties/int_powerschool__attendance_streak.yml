@@ -1,0 +1,20 @@
+version: 2
+models:
+  - name: int_powerschool__attendance_streak
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: att_code
+        data_type: string
+      - name: streak_id
+        data_type: string
+      - name: streak_start_date
+        data_type: date
+      - name: streak_end_date
+        data_type: date
+      - name: streak_length_membership
+        data_type: int64
+      - name: streak_length_calendar
+        data_type: int64

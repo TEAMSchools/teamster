@@ -1,0 +1,252 @@
+version: 2
+models:
+  - name: stg_powerschool__studentcorefields
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: act_composite
+        data_type: string
+      - name: act_date
+        data_type: string
+      - name: act_english
+        data_type: string
+      - name: act_math
+        data_type: string
+      - name: act_reading
+        data_type: string
+      - name: act_science
+        data_type: string
+      - name: afdc
+        data_type: string
+      - name: afdcappnum
+        data_type: string
+      - name: allergies
+        data_type: string
+      - name: area
+        data_type: string
+      - name: ate_skill_cert
+        data_type: string
+      - name: dateofentryintousa
+        data_type: string
+      - name: dentist_name
+        data_type: string
+      - name: dentist_phone
+        data_type: string
+      - name: emerg_1_ptype
+        data_type: string
+      - name: emerg_1_rel
+        data_type: string
+      - name: emerg_2_ptype
+        data_type: string
+      - name: emerg_2_rel
+        data_type: string
+      - name: emerg_3_phone
+        data_type: string
+      - name: emerg_3_ptype
+        data_type: string
+      - name: emerg_3_rel
+        data_type: string
+      - name: emerg_contact_3
+        data_type: string
+      - name: equipstudent
+        data_type: string
+      - name: esl_placement
+        data_type: string
+      - name: family_rep
+        data_type: string
+      - name: father_employer
+        data_type: string
+      - name: father_home_phone
+        data_type: string
+      - name: fatherdayphone
+        data_type: string
+      - name: graduation_year
+        data_type: string
+      - name: guardian
+        data_type: string
+      - name: guardian_fn
+        data_type: string
+      - name: guardian_ln
+        data_type: string
+      - name: guardian_mn
+        data_type: string
+      - name: guardiandayphone
+        data_type: string
+      - name: guardianrelcode
+        data_type: string
+      - name: guardianship
+        data_type: string
+      - name: hln
+        data_type: string
+      - name: homeless_code
+        data_type: string
+      - name: ildp
+        data_type: string
+      - name: immunizaton_dpt
+        data_type: string
+      - name: immunizaton_mmr
+        data_type: string
+      - name: immunizaton_polio
+        data_type: string
+      - name: lep_exit_date
+        data_type: string
+      - name: lpac_date
+        data_type: string
+      - name: medical_considerations
+        data_type: string
+      - name: mesa
+        data_type: string
+      - name: monitor_date
+        data_type: string
+      - name: mother_employer
+        data_type: string
+      - name: mother_home_phone
+        data_type: string
+      - name: motherdayphone
+        data_type: string
+      - name: parttimestudent
+        data_type: string
+      - name: phlote
+        data_type: string
+      - name: prevstudentid
+        data_type: string
+      - name: primarylanguage
+        data_type: string
+      - name: sat
+        data_type: string
+      - name: secondarylanguage
+        data_type: string
+      - name: singleparenthshldflag
+        data_type: string
+      - name: tracker
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: autosend_attendancedetail
+        data_type: string
+      - name: autosend_balancealert
+        data_type: string
+      - name: autosend_gradedetail
+        data_type: string
+      - name: autosend_howoften
+        data_type: string
+      - name: autosend_schoolannouncements
+        data_type: string
+      - name: autosend_summary
+        data_type: string
+      - name: awards
+        data_type: string
+      - name: c_504_information
+        data_type: string
+      - name: career_goal
+        data_type: string
+      - name: cip_code
+        data_type: string
+      - name: competencies
+        data_type: string
+      - name: crt_7thmath
+        data_type: string
+      - name: crt_7thscience
+        data_type: string
+      - name: crt_8thscience
+        data_type: string
+      - name: crt_applemath2
+        data_type: string
+      - name: crt_applmath1
+        data_type: string
+      - name: crt_biology
+        data_type: string
+      - name: crt_chemistry
+        data_type: string
+      - name: crt_earthsys
+        data_type: string
+      - name: crt_elemalg
+        data_type: string
+      - name: crt_elemmath
+        data_type: string
+      - name: crt_elemread
+        data_type: string
+      - name: crt_humanbiol
+        data_type: string
+      - name: crt_interalg
+        data_type: string
+      - name: crt_physics
+        data_type: string
+      - name: crt_prealg
+        data_type: string
+      - name: crt_secmath
+        data_type: string
+      - name: crt_secscience
+        data_type: string
+      - name: ec_athletics
+        data_type: string
+      - name: ec_clubs
+        data_type: string
+      - name: ec_community
+        data_type: string
+      - name: ec_leadership
+        data_type: string
+      - name: ipt_oral_curdate
+        data_type: string
+      - name: ipt_oral_currentscore
+        data_type: string
+      - name: ipt_oral_origdate
+        data_type: string
+      - name: ipt_oral_origscore
+        data_type: string
+      - name: ipt_reading_curdate
+        data_type: string
+      - name: ipt_reading_currentscore
+        data_type: string
+      - name: ipt_reading_origdate
+        data_type: string
+      - name: ipt_reading_origscore
+        data_type: string
+      - name: ipt_writing_curdate
+        data_type: string
+      - name: ipt_writing_currentscore
+        data_type: string
+      - name: ipt_writing_origdate
+        data_type: string
+      - name: ipt_writing_origscore
+        data_type: string
+      - name: language_form
+        data_type: string
+      - name: lunchapplicno
+        data_type: string
+      - name: post_secondary_objectives
+        data_type: string
+      - name: primary_pathway
+        data_type: string
+      - name: secondary_pathway
+        data_type: string
+      - name: seop_notes
+        data_type: string
+      - name: spedlep
+        data_type: string
+      - name: test_comments
+        data_type: string
+      - name: pscore_legal_first_name
+        data_type: string
+      - name: pscore_legal_gender
+        data_type: string
+      - name: pscore_legal_last_name
+        data_type: string
+      - name: pscore_legal_middle_name
+        data_type: string
+      - name: pscore_legal_suffix
+        data_type: string
+      - name: photolastupdated
+        data_type: string
+      - name: studentsdcid
+        data_type: int64
+      - name: lep_status
+        data_type: boolean
+      - name: is_homeless
+        data_type: boolean

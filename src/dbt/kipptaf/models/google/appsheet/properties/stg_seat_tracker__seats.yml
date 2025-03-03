@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: stg_seat_tracker__seats
+    columns:
+      - name: culture
+        data_type: boolean
+      - name: flex
+        data_type: boolean
+      - name: entity
+        data_type: string
+      - name: grade_band
+        data_type: string
+      - name: recruitment_group
+        data_type: string
+      - name: adp_dept
+        data_type: string
+      - name: adp_title
+        data_type: string
+      - name: display_name
+        data_type: string
+      - name: adp_location
+        data_type: string
+      - name: short_name
+        data_type: string
+      - name: recruiter
+        data_type: int64
+      - name: teammate
+        data_type: int64
+      - name: plan_status
+        data_type: string
+      - name: staffing_status
+        data_type: string
+      - name: status_detail
+        data_type: string
+      - name: mid_year_hire
+        data_type: boolean
+      - name: recruiting_notes
+        data_type: string
+      - name: staffing_model_notes
+        data_type: string
+      - name: staffing_model_id
+        data_type: string
+      - name: edited_by
+        data_type: string
+      - name: edited_at
+        data_type: timestamp
+      - name: academic_year
+        data_type: int64
+      - name: surrogate_key
+        data_type: string

@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: int_fldoe__fte_pivot
+    columns:
+      - name: student_id
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: survey_1
+        data_type: numeric
+      - name: survey_2
+        data_type: numeric
+      - name: survey_3
+        data_type: numeric

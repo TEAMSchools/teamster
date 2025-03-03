@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: rpt_tableau__ddi_audit
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: assessment_id
+        data_type: int64
+      - name: assessment_title
+        data_type: string
+      - name: illuminate_subject_area
+        data_type: string
+      - name: date_first_administered
+        data_type: date
+      - name: assessment_type
+        data_type: string
+      - name: scope
+        data_type: string
+      - name: module_type
+        data_type: string
+      - name: module_number
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: custom_code
+        data_type: string
+      - name: description
+        data_type: string
+      - name: term_administered
+        data_type: string
+      - name: is_power_standard
+        data_type: boolean
+      - name: qbl
+        data_type: string

@@ -1,0 +1,276 @@
+version: 2
+models:
+  - name: stg_iready__instructional_usage_data
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: academic_year
+        data_type: string
+      - name: class_es
+        data_type: string
+      - name: class_teacher_s
+        data_type: string
+      - name: economically_disadvantaged
+        data_type: string
+      - name: english_language_learner
+        data_type: string
+      - name: enrolled
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: hispanic_or_latino
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: migrant
+        data_type: string
+      - name: race
+        data_type: string
+      - name: report_group_s
+        data_type: string
+      - name: school
+        data_type: string
+      - name: sex
+        data_type: string
+      - name: special_education
+        data_type: string
+      - name: student_id
+        data_type: int64
+      - name: subject
+        data_type: string
+      - name: user_name
+        data_type: string
+      - name: april_lessons_completed
+        data_type: int64
+      - name: april_lessons_passed
+        data_type: float64
+      - name: april_percent_lessons_passed
+        data_type: float64
+      - name: april_total_time_on_task_min
+        data_type: int64
+      - name: april_weekly_average_time_on_task_min
+        data_type: int64
+      - name: august_lessons_completed
+        data_type: int64
+      - name: august_lessons_passed
+        data_type: float64
+      - name: august_percent_lessons_passed
+        data_type: float64
+      - name: august_total_time_on_task_min
+        data_type: int64
+      - name: august_weekly_average_time_on_task_min
+        data_type: int64
+      - name: december_lessons_completed
+        data_type: int64
+      - name: december_lessons_passed
+        data_type: float64
+      - name: december_percent_lessons_passed
+        data_type: float64
+      - name: december_total_time_on_task_min
+        data_type: int64
+      - name: december_weekly_average_time_on_task_min
+        data_type: int64
+      - name: february_lessons_completed
+        data_type: int64
+      - name: february_lessons_passed
+        data_type: float64
+      - name: february_percent_lessons_passed
+        data_type: float64
+      - name: february_total_time_on_task_min
+        data_type: int64
+      - name: february_weekly_average_time_on_task_min
+        data_type: int64
+      - name: january_lessons_completed
+        data_type: int64
+      - name: january_lessons_passed
+        data_type: float64
+      - name: january_percent_lessons_passed
+        data_type: float64
+      - name: january_total_time_on_task_min
+        data_type: int64
+      - name: january_weekly_average_time_on_task_min
+        data_type: int64
+      - name: july_lessons_completed
+        data_type: int64
+      - name: july_lessons_passed
+        data_type: float64
+      - name: july_percent_lessons_passed
+        data_type: float64
+      - name: july_total_time_on_task_min
+        data_type: int64
+      - name: july_weekly_average_time_on_task_min
+        data_type: int64
+      - name: june_lessons_completed
+        data_type: int64
+      - name: june_lessons_passed
+        data_type: float64
+      - name: june_percent_lessons_passed
+        data_type: float64
+      - name: june_total_time_on_task_min
+        data_type: int64
+      - name: june_weekly_average_time_on_task_min
+        data_type: int64
+      - name: last_week_lessons_completed
+        data_type: int64
+      - name: last_week_lessons_passed
+        data_type: float64
+      - name: last_week_percent_lessons_passed
+        data_type: float64
+      - name: last_week_time_on_task_min
+        data_type: int64
+      - name: march_lessons_completed
+        data_type: int64
+      - name: march_lessons_passed
+        data_type: float64
+      - name: march_percent_lessons_passed
+        data_type: float64
+      - name: march_total_time_on_task_min
+        data_type: int64
+      - name: march_weekly_average_time_on_task_min
+        data_type: int64
+      - name: may_lessons_completed
+        data_type: int64
+      - name: may_lessons_passed
+        data_type: float64
+      - name: may_percent_lessons_passed
+        data_type: float64
+      - name: may_total_time_on_task_min
+        data_type: int64
+      - name: may_weekly_average_time_on_task_min
+        data_type: int64
+      - name: november_lessons_completed
+        data_type: int64
+      - name: november_lessons_passed
+        data_type: float64
+      - name: november_percent_lessons_passed
+        data_type: float64
+      - name: november_total_time_on_task_min
+        data_type: int64
+      - name: november_weekly_average_time_on_task_min
+        data_type: int64
+      - name: october_lessons_completed
+        data_type: int64
+      - name: october_lessons_passed
+        data_type: float64
+      - name: october_percent_lessons_passed
+        data_type: float64
+      - name: october_total_time_on_task_min
+        data_type: int64
+      - name: october_weekly_average_time_on_task_min
+        data_type: int64
+      - name: september_lessons_completed
+        data_type: int64
+      - name: september_lessons_passed
+        data_type: float64
+      - name: september_percent_lessons_passed
+        data_type: float64
+      - name: september_total_time_on_task_min
+        data_type: int64
+      - name: september_weekly_average_time_on_task_min
+        data_type: int64
+      - name: year_to_date_algebra_and_algebraic_thinking_lessons_completed
+        data_type: int64
+      - name: year_to_date_algebra_and_algebraic_thinking_lessons_passed
+        data_type: float64
+      - name: year_to_date_algebra_and_algebraic_thinking_percent_lessons_passed
+        data_type: float64
+      - name: year_to_date_algebra_and_algebraic_thinking_time_on_task_min
+        data_type: int64
+      - name: year_to_date_comprehension_close_reading_lessons_completed
+        data_type: int64
+      - name: year_to_date_comprehension_close_reading_lessons_passed
+        data_type: float64
+      - name: year_to_date_comprehension_close_reading_percent_lessons_passed
+        data_type: float64
+      - name: year_to_date_comprehension_close_reading_time_on_task_min
+        data_type: int64
+      - name: year_to_date_comprehension_lessons_completed
+        data_type: int64
+      - name: year_to_date_comprehension_lessons_passed
+        data_type: float64
+      - name: year_to_date_comprehension_percent_lessons_passed
+        data_type: float64
+      - name: year_to_date_comprehension_time_on_task_min
+        data_type: int64
+      - name: year_to_date_geometry_lessons_completed
+        data_type: int64
+      - name: year_to_date_geometry_lessons_passed
+        data_type: float64
+      - name: year_to_date_geometry_percent_lessons_passed
+        data_type: float64
+      - name: year_to_date_geometry_time_on_task_min
+        data_type: int64
+      - name: year_to_date_high_frequency_words_lessons_completed
+        data_type: int64
+      - name: year_to_date_high_frequency_words_lessons_passed
+        data_type: float64
+      - name: year_to_date_high_frequency_words_percent_lessons_passed
+        data_type: float64
+      - name: year_to_date_high_frequency_words_time_on_task_min
+        data_type: int64
+      - name: year_to_date_measurement_and_data_lessons_completed
+        data_type: int64
+      - name: year_to_date_measurement_and_data_lessons_passed
+        data_type: float64
+      - name: year_to_date_measurement_and_data_percent_lessons_passed
+        data_type: float64
+      - name: year_to_date_measurement_and_data_time_on_task_min
+        data_type: int64
+      - name: year_to_date_number_and_operations_lessons_completed
+        data_type: int64
+      - name: year_to_date_number_and_operations_lessons_passed
+        data_type: float64
+      - name: year_to_date_number_and_operations_percent_lessons_passed
+        data_type: float64
+      - name: year_to_date_number_and_operations_time_on_task_min
+        data_type: int64
+      - name: year_to_date_overall_lessons_completed
+        data_type: int64
+      - name: year_to_date_overall_lessons_passed
+        data_type: float64
+      - name: year_to_date_overall_percent_lessons_passed
+        data_type: float64
+      - name: year_to_date_overall_time_on_task_min
+        data_type: int64
+      - name: year_to_date_phonics_lessons_completed
+        data_type: int64
+      - name: year_to_date_phonics_lessons_passed
+        data_type: float64
+      - name: year_to_date_phonics_percent_lessons_passed
+        data_type: float64
+      - name: year_to_date_phonics_time_on_task_min
+        data_type: int64
+      - name: year_to_date_phonological_awareness_lessons_completed
+        data_type: int64
+      - name: year_to_date_phonological_awareness_lessons_passed
+        data_type: float64
+      - name: year_to_date_phonological_awareness_percent_lessons_passed
+        data_type: float64
+      - name: year_to_date_phonological_awareness_time_on_task_min
+        data_type: int64
+      - name: year_to_date_vocabulary_lessons_completed
+        data_type: int64
+      - name: year_to_date_vocabulary_lessons_passed
+        data_type: float64
+      - name: year_to_date_vocabulary_percent_lessons_passed
+        data_type: float64
+      - name: year_to_date_vocabulary_time_on_task_min
+        data_type: int64
+      - name: _dagster_partition_academic_year
+        data_type: int64
+      - name: _dagster_partition_subject
+        data_type: string
+      - name: academic_year_int
+        data_type: int64
+      - name: last_week_start_date
+        data_type: date
+      - name: last_week_end_date
+        data_type: date
+      - name: first_lesson_completion_date
+        data_type: date
+      - name: most_recent_lesson_completion_date
+        data_type: date
+      - name: student_grade
+        data_type: string
+      - name: surrogate_key
+        data_type: string

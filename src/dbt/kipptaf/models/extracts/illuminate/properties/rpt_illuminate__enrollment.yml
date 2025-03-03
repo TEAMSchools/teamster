@@ -1,0 +1,36 @@
+version: 2
+models:
+  - name: rpt_illuminate__enrollment
+    columns:
+      - name: 01 student id
+        data_type: int64
+      - name: 02 ssid
+        data_type: string
+      - name: 03 last name
+        data_type: string
+      - name: 04 first name
+        data_type: string
+      - name: 05 middle name
+        data_type: int64
+      - name: 06 birth date
+        data_type: date
+      - name: 07 site id
+        data_type: int64
+      - name: 08 entry date
+        data_type: date
+      - name: 09 leave date
+        data_type: date
+      - name: 10 grade level id
+        data_type: int64
+      - name: 11 academic year
+        data_type: string
+      - name: 12 is primary ada
+        data_type: int64
+      - name: 13 attendance program id
+        data_type: int64
+      - name: 14 exit code id
+        data_type: int64
+      - name: 15 session type id
+        data_type: int64
+      - name: 16 enrollment entry code
+        data_type: int64

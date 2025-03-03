@@ -1,0 +1,160 @@
+version: 2
+models:
+  - name: rpt_tableau__staff_renewal_feed
+    columns:
+      - name: df_employee_number
+        data_type: int64
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: preferred_first
+        data_type: string
+      - name: preferred_last
+        data_type: string
+      - name: position_status
+        data_type: string
+      - name: original_hire_date
+        data_type: date
+      - name: rehire_date
+        data_type: date
+      - name: termination_date
+        data_type: date
+      - name: worker_category_description
+        data_type: string
+      - name: benefits_eligibility_class_description
+        data_type: string
+      - name: flsa_description
+        data_type: string
+      - name: eeo_ethnic_description
+        data_type: string
+      - name: mail
+        data_type: string
+      - name: userprincipalname
+        data_type: string
+      - name: race_ethnicity_reporting
+        data_type: string
+      - name: gender_identity
+        data_type: string
+      - name: manager_df_employee_number
+        data_type: int64
+      - name: manager_mail
+        data_type: string
+      - name: ay_business_unit
+        data_type: string
+      - name: ay_job_title
+        data_type: string
+      - name: ay_department
+        data_type: string
+      - name: ay_location
+        data_type: string
+      - name: salary_or_hourly
+        data_type: string
+      - name: ay_hourly
+        data_type: numeric
+      - name: ay_salary
+        data_type: numeric
+      - name: academic_year
+        data_type: int64
+      - name: ay_pm4_overall_score
+        data_type: float64
+      - name: ay_pm4_overall_tier
+        data_type: int64
+      - name: ay_primary_grade_level_taught
+        data_type: int64
+      - name: scale_cy_salary
+        data_type: int64
+      - name: scale_ny_salary
+        data_type: int64
+      - name: scale_step
+        data_type: int64
+      - name: pm_salary_increase
+        data_type: int64
+      - name: seat_tracker_id_number
+        data_type: string
+      - name: seat_tracker_last_edited
+        data_type: timestamp
+      - name: seat_tracker_status
+        data_type: string
+      - name: ny_entity
+        data_type: string
+      - name: ny_location
+        data_type: string
+      - name: ny_dept
+        data_type: string
+      - name: ny_title
+        data_type: string
+      - name: nonrenewal_reason
+        data_type: string
+      - name: nonrenewal_notes
+        data_type: string
+      - name: ny_salary
+        data_type: numeric
+      - name: ny_hourly
+        data_type: numeric
+      - name: salary_rule
+        data_type: string
+      - name: ay_school_shortname
+        data_type: string
+      - name: ny_school_shortname
+        data_type: string
+      - name: ay_campus_name
+        data_type: string
+      - name: ny_campus_name
+        data_type: string
+      - name: ay_head_of_school_samaccount
+        data_type: string
+      - name: ny_head_of_school_samaccount
+        data_type: string
+      - name: ny_salary_from_form
+        data_type: string
+      - name: salary_modification_explanation
+        data_type: string
+      - name: renewal_decision_from_form
+        data_type: string
+      - name: dept_and_job_from_form
+        data_type: string
+      - name: add_comp_amt_1
+        data_type: string
+      - name: add_comp_amt_2
+        data_type: string
+      - name: add_comp_amt_3
+        data_type: string
+      - name: add_comp_amt_4
+        data_type: string
+      - name: add_comp_amt_5
+        data_type: string
+      - name: add_comp_name_1
+        data_type: string
+      - name: add_comp_name_2
+        data_type: string
+      - name: add_comp_name_3
+        data_type: string
+      - name: add_comp_name_4
+        data_type: string
+      - name: add_comp_name_5
+        data_type: string
+      - name: concated_add_comp
+        data_type: string
+      - name: sl_dso_approval_name
+        data_type: string
+      - name: er_approval_name
+        data_type: string
+      - name: hos_mdo_approval_name
+        data_type: string
+      - name: sl_dso_approval_date
+        data_type: timestamp
+      - name: er_approval_date
+        data_type: timestamp
+      - name: hos_mdo_approval_date
+        data_type: timestamp
+      - name: preferred_name
+        data_type: string
+      - name: manager_name
+        data_type: string
+      - name: ny_status
+        data_type: string
+      - name: ny_rate
+        data_type: numeric
+      - name: form_link
+        data_type: string

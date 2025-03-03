@@ -1,0 +1,108 @@
+version: 2
+models:
+  - name: stg_kippadb__employment
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: last_activity_date
+        data_type: date
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: system_modstamp
+        data_type: timestamp
+      - name: actual_job_duration
+        data_type: numeric
+      - name: anticipated_job_duration_in_weeks
+        data_type: numeric
+      - name: average_hours_per_week
+        data_type: numeric
+      - name: benefits
+        data_type: string
+      - name: bmt_end_date
+        data_type: date
+      - name: bmt_start_date
+        data_type: date
+      - name: career_readiness_and_college_ambassadors
+        data_type: string
+      - name: category
+        data_type: string
+      - name: contact
+        data_type: string
+      - name: currently_employed
+        data_type: boolean
+      - name: currently_seeking
+        data_type: boolean
+      - name: delayed_entry_enlistment_program_dep
+        data_type: string
+      - name: did_not_complete_bmt
+        data_type: boolean
+      - name: discharge_date
+        data_type: date
+      - name: discharge_type
+        data_type: string
+      - name: employed_by_kipp
+        data_type: boolean
+      - name: employer
+        data_type: string
+      - name: employer_organization_look_up
+        data_type: string
+      - name: employer_web_page
+        data_type: string
+      - name: employment_count
+        data_type: numeric
+      - name: end_date
+        data_type: date
+      - name: enlist_date
+        data_type: date
+      - name: hourly_rate
+        data_type: numeric
+      - name: ineligible_for_military_enlistment
+        data_type: string
+      - name: internship_type
+        data_type: string
+      - name: job
+        data_type: string
+      - name: job_lead_source
+        data_type: string
+      - name: last_verified_date
+        data_type: date
+      - name: meps_end_date
+        data_type: date
+      - name: meps_location
+        data_type: string
+      - name: meps_start_date
+        data_type: date
+      - name: military_branch
+        data_type: string
+      - name: military_notes
+        data_type: string
+      - name: military_occupational_specialty_mos
+        data_type: string
+      - name: notes
+        data_type: string
+      - name: other_ineligible_for_military_reason
+        data_type: string
+      - name: other_job_industry
+        data_type: string
+      - name: payment_type
+        data_type: string
+      - name: salary_annual
+        data_type: numeric
+      - name: self_sufficient
+        data_type: string
+      - name: source
+        data_type: string
+      - name: start_date
+        data_type: date
+      - name: status
+        data_type: string
+      - name: subcategory
+        data_type: string

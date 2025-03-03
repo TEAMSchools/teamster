@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: int_illuminate__performance_band_sets
+    columns:
+      - name: performance_band_set_id
+        data_type: int64
+      - name: description
+        data_type: string
+      - name: district_default
+        data_type: boolean
+      - name: hidden
+        data_type: boolean
+      - name: user_id
+        data_type: int64
+      - name: created_at
+        data_type: timestamp
+      - name: updated_at
+        data_type: timestamp
+      - name: deleted_at
+        data_type: timestamp
+      - name: performance_band_id
+        data_type: int64
+      - name: color
+        data_type: string
+      - name: is_mastery
+        data_type: boolean
+      - name: label
+        data_type: string
+      - name: label_number
+        data_type: numeric
+      - name: minimum_value
+        data_type: float64
+      - name: maximum_value
+        data_type: float64

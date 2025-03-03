@@ -1,0 +1,72 @@
+version: 2
+models:
+  - name: rpt_tableau__attendance_dashboard
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: calendardate
+        data_type: date
+      - name: membershipvalue
+        data_type: float64
+      - name: is_present
+        data_type: numeric
+      - name: is_absent
+        data_type: float64
+      - name: student_number
+        data_type: int64
+      - name: lastfirst
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school_abbreviation
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: team
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: c_504_status
+        data_type: boolean
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: is_self_contained
+        data_type: boolean
+      - name: section_number
+        data_type: string
+      - name: teacher_name
+        data_type: string
+      - name: att_code
+        data_type: string
+      - name: is_counselingservices
+        data_type: int64
+      - name: is_studentathlete
+        data_type: int64
+      - name: term
+        data_type: string
+      - name: ms_attended
+        data_type: string
+      - name: nj_overall_student_tier
+        data_type: string
+      - name: ada_running
+        data_type: numeric
+      - name: pct_ontime_running
+        data_type: float64
+      - name: is_oss_running
+        data_type: float64
+      - name: is_iss_running
+        data_type: float64
+      - name: is_suspended_running
+        data_type: float64

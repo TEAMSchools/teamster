@@ -1,0 +1,10 @@
+version: 2
+models:
+  - name: stg_ldap__group
+    columns:
+      - name: cn
+        data_type: string
+      - name: distinguished_name
+        data_type: string
+      - name: member
+        data_type: string
