@@ -1,0 +1,82 @@
+version: 2
+models:
+  - name: rpt_deanslist__final_grades
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: course_number
+        data_type: string
+      - name: sectionid
+        data_type: int64
+      - name: sections_dcid
+        data_type: int64
+      - name: section_number
+        data_type: string
+      - name: teacher_name
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: credit_hours
+        data_type: float64
+      - name: term
+        data_type: string
+      - name: include_grades_display
+        data_type: int64
+      - name: currentabsences
+        data_type: int64
+      - name: currenttardies
+        data_type: int64
+      - name: need_60
+        data_type: float64
+      - name: f_term
+        data_type: float64
+      - name: s_term
+        data_type: float64
+      - name: w_term
+        data_type: float64
+      - name: w_rt1
+        data_type: float64
+      - name: w_rt2
+        data_type: float64
+      - name: w_rt3
+        data_type: float64
+      - name: w_rt4
+        data_type: float64
+      - name: comment_value
+        data_type: string
+      - name: e1_pct
+        data_type: int64
+      - name: e2_pct
+        data_type: int64
+      - name: q1_pct
+        data_type: float64
+      - name: q1_letter
+        data_type: string
+      - name: q2_pct
+        data_type: float64
+      - name: q2_letter
+        data_type: string
+      - name: q3_pct
+        data_type: float64
+      - name: q3_letter
+        data_type: string
+      - name: q4_pct
+        data_type: float64
+      - name: q4_letter
+        data_type: string
+      - name: y1_pct
+        data_type: float64
+      - name: y1_letter
+        data_type: string
+      - name: ctz_cur
+        data_type: string
+      - name: ctz_rt1
+        data_type: string
+      - name: ctz_rt2
+        data_type: string
+      - name: ctz_rt3
+        data_type: string
+      - name: ctz_rt4
+        data_type: string

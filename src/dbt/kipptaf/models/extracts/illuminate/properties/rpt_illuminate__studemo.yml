@@ -1,0 +1,132 @@
+version: 2
+models:
+  - name: rpt_illuminate__studemo
+    columns:
+      - name: 01 import student id
+        data_type: int64
+      - name: 02 state student id
+        data_type: string
+      - name: 03 last name
+        data_type: string
+      - name: 04 first name
+        data_type: string
+      - name: 05 middle name
+        data_type: string
+      - name: 06 birth date
+        data_type: date
+      - name: 07 gender
+        data_type: int64
+      - name: 08 primary ethnicity
+        data_type: int64
+      - name: 09 secondary ethnicity
+        data_type: int64
+      - name: 10 tertiary ethnicity
+        data_type: int64
+      - name: 11 is hispanic
+        data_type: int64
+      - name: 12 primary language
+        data_type: int64
+      - name: 13 correspondence language
+        data_type: int64
+      - name: 14 english proficiency
+        data_type: int64
+      - name: 15 redesignation date
+        data_type: int64
+      - name: 16 primary disability
+        data_type: string
+      - name: 17 migrant ed student id
+        data_type: int64
+      - name: 18 lep date
+        data_type: int64
+      - name: 19 us entry date
+        data_type: int64
+      - name: 20 school enter date
+        data_type: int64
+      - name: 21 district enter date
+        data_type: int64
+      - name: 22 parent education level
+        data_type: int64
+      - name: 23 residential status
+        data_type: int64
+      - name: 24 special needs status
+        data_type: int64
+      - name: 25 sst date
+        data_type: int64
+      - name: 26 plan 504 accommodations
+        data_type: int64
+      - name: 27 plan 504 annual review date
+        data_type: int64
+      - name: 28 exit date
+        data_type: int64
+      - name: 29 birth city
+        data_type: int64
+      - name: 30 birth state
+        data_type: int64
+      - name: 31 birth country
+        data_type: int64
+      - name: 32 lunch id
+        data_type: int64
+      - name: 33 academic year
+        data_type: string
+      - name: 34 name suffix
+        data_type: int64
+      - name: 35 aka last name
+        data_type: int64
+      - name: 36 aka first name
+        data_type: int64
+      - name: 37 aka middle name
+        data_type: int64
+      - name: 38 aka name suffix
+        data_type: int64
+      - name: 39 lunch balance
+        data_type: int64
+      - name: 40 resident district site id
+        data_type: int64
+      - name: 41 operating district site id
+        data_type: int64
+      - name: 42 resident school site id
+        data_type: int64
+      - name: 43 birthdate verification
+        data_type: int64
+      - name: 44 homeless dwelling type
+        data_type: int64
+      - name: 45 photo release
+        data_type: int64
+      - name: 46 military recruitment
+        data_type: int64
+      - name: 47 internet release
+        data_type: int64
+      - name: 48 graduation date
+        data_type: int64
+      - name: 49 graduation status
+        data_type: int64
+      - name: 50 service learning hours
+        data_type: int64
+      - name: 51 us abroad
+        data_type: int64
+      - name: 52 military family
+        data_type: int64
+      - name: 53 home address verification date
+        data_type: int64
+      - name: 54 entry date
+        data_type: int64
+      - name: 55 secondary disability
+        data_type: int64
+      - name: 56 state school entry date
+        data_type: int64
+      - name: 57 us school entry date
+        data_type: int64
+      - name: 58 local student id
+        data_type: int64
+      - name: 59 school student id
+        data_type: int64
+      - name: 60 other student id
+        data_type: int64
+      - name: 61 graduation requirement year
+        data_type: int64
+      - name: 62 next school site id
+        data_type: int64
+      - name: 63 prior district
+        data_type: int64
+      - name: 64 prior school
+        data_type: int64

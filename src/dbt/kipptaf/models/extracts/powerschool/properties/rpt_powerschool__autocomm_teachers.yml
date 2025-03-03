@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: rpt_powerschool__autocomm_teachers
+    columns:
+      - name: teachernumber
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: email_addr
+        data_type: string
+      - name: status
+        data_type: int64
+      - name: home_work_location_dagster_code_location
+        data_type: string
+      - name: dob
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: homeschoolid
+        data_type: int64
+      - name: loginid
+        data_type: string
+      - name: teacherloginid
+        data_type: string
+      - name: teacherldapenabled
+        data_type: int64
+      - name: adminldapenabled
+        data_type: int64
+      - name: ptaccess
+        data_type: int64
+      - name: staffstatus
+        data_type: int64

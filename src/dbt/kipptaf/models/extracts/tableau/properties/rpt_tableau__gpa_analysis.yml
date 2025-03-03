@@ -1,0 +1,110 @@
+version: 2
+models:
+  - name: rpt_tableau__gpa_analysis
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: lastfirst
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: school_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: team
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: c_504_status
+        data_type: boolean
+      - name: is_pathways
+        data_type: boolean
+      - name: lunchstatus
+        data_type: string
+      - name: year_in_network
+        data_type: int64
+      - name: boy_status
+        data_type: string
+      - name: is_retained_year
+        data_type: boolean
+      - name: is_retained_ever
+        data_type: boolean
+      - name: rn_undergrad
+        data_type: int64
+      - name: salesforce_id
+        data_type: string
+      - name: reporting_term
+        data_type: int64
+      - name: term_name
+        data_type: string
+      - name: semester
+        data_type: string
+      - name: is_curterm
+        data_type: boolean
+      - name: gpa_term
+        data_type: float64
+      - name: gpa_points_total_term
+        data_type: float64
+      - name: weighted_gpa_points_term
+        data_type: float64
+      - name: grade_avg_term
+        data_type: float64
+      - name: gpa_semester
+        data_type: float64
+      - name: gpa_points_total_semester
+        data_type: float64
+      - name: weighted_gpa_points_semester
+        data_type: float64
+      - name: total_credit_hours_semester
+        data_type: float64
+      - name: grade_avg_semester
+        data_type: float64
+      - name: gpa_y1
+        data_type: float64
+      - name: gpa_y1_unweighted
+        data_type: float64
+      - name: gpa_points_total_y1
+        data_type: float64
+      - name: weighted_gpa_points_y1
+        data_type: float64
+      - name: total_credit_hours
+        data_type: float64
+      - name: grade_avg_y1
+        data_type: float64
+      - name: n_failing_y1
+        data_type: int64
+      - name: cumulative_y1_gpa
+        data_type: float64
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1
+        data_type: float64
+      - name: earned_credits_cum
+        data_type: float64
+      - name: earned_credits_cum_projected
+        data_type: float64
+      - name: earned_credits_cum_projected_s1
+        data_type: float64
+      - name: potential_credits_cum
+        data_type: float64
+      - name: core_cumulative_y1_gpa
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64

@@ -1,0 +1,20 @@
+version: 2
+models:
+  - name: int_fldoe__fast_standard_performance_unpivot
+    columns:
+      - name: student_id
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: administration_window
+        data_type: string
+      - name: assessment_grade
+        data_type: int64
+      - name: assessment_subject
+        data_type: string
+      - name: standard
+        data_type: string
+      - name: performance
+        data_type: string
+      - name: performance_int
+        data_type: int64

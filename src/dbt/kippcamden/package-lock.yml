@@ -7,6 +7,8 @@ packages:
   - local: ../titan
   - package: dbt-labs/dbt_external_tables
     version: 0.11.1
+  - package: dbt-labs/codegen
+    version: 0.13.1
   - package: dbt-labs/dbt_utils
     version: 1.3.0
-sha1_hash: ccd637062a574348cfcfcc96c5f4eea8285c1e48
+sha1_hash: d9bd5469b08439e1cc0757ac9494c024180bbbad

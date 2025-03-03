@@ -1,0 +1,72 @@
+version: 2
+models:
+  - name: stg_performance_management__observation_details_archive
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: form_type
+        data_type: string
+      - name: observation_id
+        data_type: string
+      - name: teacher_id
+        data_type: string
+      - name: rubric_id
+        data_type: string
+      - name: rubric_name
+        data_type: string
+      - name: measurement_name
+        data_type: string
+      - name: value_score
+        data_type: float64
+      - name: score_measurement_type
+        data_type: string
+      - name: score_measurement_id
+        data_type: string
+      - name: score_measurement_shortname
+        data_type: string
+      - name: text_box
+        data_type: string
+      - name: glows
+        data_type: string
+      - name: grows
+        data_type: string
+      - name: rn_submission
+        data_type: int64
+      - name: score
+        data_type: float64
+      - name: overall_tier
+        data_type: float64
+      - name: etr_score
+        data_type: float64
+      - name: etr_tier
+        data_type: float64
+      - name: so_score
+        data_type: float64
+      - name: final_score
+        data_type: float64
+      - name: locked
+        data_type: boolean
+      - name: observation_type
+        data_type: string
+      - name: observation_type_abbreviation
+        data_type: string
+      - name: term_name
+        data_type: string
+      - name: observed_at
+        data_type: timestamp
+      - name: observed_at_date_local
+        data_type: date
+      - name: term_code
+        data_type: string
+      - name: so_tier
+        data_type: int64
+      - name: final_tier
+        data_type: int64
+      - name: observer_employee_number
+        data_type: int64
+      - name: measurement_group_name
+        data_type: string
+      - name: eval_date
+        data_type: date

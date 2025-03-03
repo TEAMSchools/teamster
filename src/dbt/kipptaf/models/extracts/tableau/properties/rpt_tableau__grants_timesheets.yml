@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: rpt_tableau__grants_timesheets
+    columns:
+      - name: survey_id
+        data_type: int64
+      - name: survey_title
+        data_type: string
+      - name: survey_response_id
+        data_type: int64
+      - name: edit_link
+        data_type: string
+      - name: respondent_df_employee_number
+        data_type: int64
+      - name: respondent_userprincipalname
+        data_type: string
+      - name: respondent_legal_entity_name
+        data_type: string
+      - name: respondent_preferred_name
+        data_type: string
+      - name: respondent_primary_site
+        data_type: string
+      - name: respondent_primary_job
+        data_type: string
+      - name: approver_email
+        data_type: string
+      - name: teammate_signature
+        data_type: date
+      - name: approver_signature
+        data_type: date

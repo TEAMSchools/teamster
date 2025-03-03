@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: rpt_deanslist__iready_diagnostics
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: subject
+        data_type: string
+      - name: completion_date
+        data_type: date
+      - name: test_round
+        data_type: string
+      - name: test_round_date
+        data_type: string
+      - name: test_round_display
+        data_type: string
+      - name: test_round_display_short
+        data_type: string
+      - name: percentile
+        data_type: int64
+      - name: overall_placement
+        data_type: string
+      - name: overall_relative_placement
+        data_type: string
+      - name: overall_scale_score
+        data_type: int64
+      - name: overall_placement_display
+        data_type: string
+      - name: pct_progress_typical
+        data_type: float64
+      - name: pct_progress_stretch
+        data_type: float64
+      - name: score_display
+        data_type: string
+      - name: domain
+        data_type: string

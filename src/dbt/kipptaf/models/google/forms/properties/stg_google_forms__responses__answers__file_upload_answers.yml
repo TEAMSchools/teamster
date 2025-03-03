@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: stg_google_forms__responses__answers__file_upload_answers
+    columns:
+      - name: form_id
+        data_type: string
+      - name: response_id
+        data_type: string
+      - name: question_id
+        data_type: string
+      - name: file_id
+        data_type: string
+      - name: file_name
+        data_type: string
+      - name: mime_type
+        data_type: string

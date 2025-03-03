@@ -3,9 +3,8 @@ version: 2
 sources:
   - name: people
     schema: |
-      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kipptaf_people
-      {%- else -%}kipptaf_people
-      {%- endif %}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_people
     tables:
       - name: src_people__employee_numbers_archive
         external:

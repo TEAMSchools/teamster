@@ -1,0 +1,58 @@
+version: 2
+models:
+  - name: int_zendesk__tickets__custom_fields_pivot
+    columns:
+      - name: ticket_id
+        data_type: int64
+      - name: actual_received_date
+        data_type: string
+      - name: assignee_to
+        data_type: string
+      - name: assignee
+        data_type: string
+      - name: category
+        data_type: string
+      - name: check_cut_date
+        data_type: string
+      - name: date_ordered
+        data_type: string
+      - name: delivery_date
+        data_type: string
+      - name: department
+        data_type: string
+      - name: description
+        data_type: string
+      - name: due_date
+        data_type: string
+      - name: group
+        data_type: string
+      - name: location
+        data_type: string
+      - name: mycat
+        data_type: string
+      - name: mydate
+        data_type: string
+      - name: order_date
+        data_type: string
+      - name: po
+        data_type: string
+      - name: priority
+        data_type: string
+      - name: request_status
+        data_type: string
+      - name: status
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: tech_tier
+        data_type: string
+      - name: ticket_status
+        data_type: string
+      - name: time_spent_last_update_sec
+        data_type: string
+      - name: total_time_spent_sec
+        data_type: string
+      - name: type
+        data_type: string
+      - name: vendor
+        data_type: string

@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: stg_schoolmint_grow__rubrics__measurement_groups__measurements
+    columns:
+      - name: rubric_id
+        data_type: string
+      - name: measurement_group_id
+        data_type: string
+      - name: _id
+        data_type: string
+      - name: measurement_id
+        data_type: string
+      - name: key
+        data_type: string
+      - name: weight
+        data_type: float64
+      - name: is_private
+        data_type: boolean
+      - name: require
+        data_type: boolean
+      - name: exclude
+        data_type: boolean

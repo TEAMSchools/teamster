@@ -1,0 +1,66 @@
+version: 2
+models:
+  - name: rpt_tableau__okrts_behavior
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: lunch_status
+        data_type: string
+      - name: is_retained_year
+        data_type: boolean
+      - name: rn_year
+        data_type: int64
+      - name: term
+        data_type: string
+      - name: week_start_monday
+        data_type: date
+      - name: week_end_sunday
+        data_type: date
+      - name: days_in_session
+        data_type: int64
+      - name: category_type
+        data_type: string
+      - name: behavior
+        data_type: string
+      - name: entry_staff
+        data_type: string
+      - name: total_points
+        data_type: int64
+      - name: behavior_count
+        data_type: int64
+      - name: homeroom_section
+        data_type: string
+      - name: homeroom_teacher_name
+        data_type: string
+      - name: ml_status
+        data_type: string
+      - name: status_504
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: self_contained_status
+        data_type: string
+      - name: behavior_month
+        data_type: int64
+      - name: school_enrollment_by_week
+        data_type: int64

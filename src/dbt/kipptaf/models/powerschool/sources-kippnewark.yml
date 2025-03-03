@@ -3,9 +3,8 @@ version: 2
 sources:
   - name: kippnewark_powerschool
     schema: |
-      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kippnewark_powerschool
-      {%- else -%}kippnewark_powerschool
-      {%- endif %}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      kippnewark_powerschool
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         meta:

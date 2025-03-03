@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: stg_google_forms__responses__answers
+    columns:
+      - name: form_id
+        data_type: string
+      - name: response_id
+        data_type: string
+      - name: question_id
+        data_type: string
+      - name: grade__score
+        data_type: float64
+      - name: grade__correct
+        data_type: boolean
+      - name: grade__feedback__text
+        data_type: string
+      - name: text_answers
+        data_type: record
+      - name: text_answers.answers
+        data_type: record
+      - name: text_answers.answers.value
+        data_type: string
+      - name: file_upload_answers
+        data_type: record
+      - name: file_upload_answers.answers
+        data_type: record
+      - name: file_upload_answers.answers.fileid
+        data_type: string
+      - name: file_upload_answers.answers.filename
+        data_type: string
+      - name: file_upload_answers.answers.mimetype
+        data_type: string

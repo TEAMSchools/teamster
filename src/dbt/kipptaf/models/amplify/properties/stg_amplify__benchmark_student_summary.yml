@@ -1,0 +1,288 @@
+version: 2
+models:
+  - name: stg_amplify__benchmark_student_summary
+    columns:
+      - name: account_name
+        data_type: string
+      - name: alternate_assessment
+        data_type: string
+      - name: approved_accommodations
+        data_type: string
+      - name: assessing_teacher_name
+        data_type: string
+      - name: assessment_edition
+        data_type: string
+      - name: assessment
+        data_type: string
+      - name: classed
+        data_type: string
+      - name: date_of_birth
+        data_type: string
+      - name: disability
+        data_type: string
+      - name: district_name
+        data_type: string
+      - name: district_primary_id
+        data_type: string
+      - name: economically_disadvantaged
+        data_type: string
+      - name: ell_status
+        data_type: string
+      - name: english_proficiency
+        data_type: string
+      - name: enrollment_date
+        data_type: string
+      - name: external_program
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: hispanic_or_latino_ethnicity
+        data_type: string
+      - name: home_language
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: internal_program
+        data_type: string
+      - name: meal_status
+        data_type: string
+      - name: migrant
+        data_type: string
+      - name: municipality_name
+        data_type: string
+      - name: municipality_primary_id
+        data_type: string
+      - name: official_teacher_name
+        data_type: string
+      - name: primary_id_student_number
+        data_type: float64
+      - name: race
+        data_type: string
+      - name: reporting_class_id
+        data_type: string
+      - name: reporting_class_name
+        data_type: string
+      - name: school_name
+        data_type: string
+      - name: school_year
+        data_type: string
+      - name: secondary_school_id
+        data_type: string
+      - name: section_504
+        data_type: string
+      - name: special_education
+        data_type: string
+      - name: specific_disability
+        data_type: string
+      - name: state
+        data_type: string
+      - name: student_first_name
+        data_type: string
+      - name: student_id_district_id
+        data_type: float64
+      - name: student_id_state_id
+        data_type: string
+      - name: student_last_name
+        data_type: string
+      - name: student_middle_name
+        data_type: string
+      - name: student_primary_id
+        data_type: int64
+      - name: title_1
+        data_type: string
+      - name: assessing_teacher_staff_id
+        data_type: record
+      - name: assessing_teacher_staff_id.string_value
+        data_type: string
+      - name: assessing_teacher_staff_id.double_value
+        data_type: float64
+      - name: primary_id_student_id_district_id
+        data_type: record
+      - name: primary_id_student_id_district_id.long_value
+        data_type: int64
+      - name: primary_id_student_id_district_id.double_value
+        data_type: float64
+      - name: primary_school_id
+        data_type: record
+      - name: primary_school_id.string_value
+        data_type: string
+      - name: primary_school_id.long_value
+        data_type: int64
+      - name: administration_type
+        data_type: string
+      - name: benchmark_period
+        data_type: string
+      - name: correct_responses_maze_score
+        data_type: float64
+      - name: dibels_composite_score_lexile
+        data_type: string
+      - name: error_rate_orf_score
+        data_type: float64
+      - name: incorrect_responses_maze_score
+        data_type: float64
+      - name: ran_level
+        data_type: string
+      - name: ran_score
+        data_type: float64
+      - name: risk_indicator_level
+        data_type: string
+      - name: spelling_level
+        data_type: string
+      - name: spelling_score
+        data_type: float64
+      - name: vocabulary_level
+        data_type: string
+      - name: vocabulary_score
+        data_type: float64
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_date
+        data_type: date
+      - name: _dagster_partition_hour
+        data_type: int64
+      - name: _dagster_partition_minute
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: decoding_nwf_wrc_score
+        data_type: numeric
+      - name: letter_names_lnf_score
+        data_type: numeric
+      - name: letter_sounds_nwf_cls_score
+        data_type: numeric
+      - name: phonemic_awareness_psf_score
+        data_type: numeric
+      - name: reading_accuracy_orf_accu_score
+        data_type: numeric
+      - name: reading_comprehension_maze_score
+        data_type: numeric
+      - name: reading_fluency_orf_score
+        data_type: numeric
+      - name: word_reading_wrf_score
+        data_type: numeric
+      - name: composite_semester_growth
+        data_type: string
+      - name: decoding_nwf_wrc_semester_growth
+        data_type: string
+      - name: letter_names_lnf_semester_growth
+        data_type: string
+      - name: letter_sounds_nwf_cls_semester_growth
+        data_type: string
+      - name: phonemic_awareness_psf_semester_growth
+        data_type: string
+      - name: reading_accuracy_orf_accu_semester_growth
+        data_type: string
+      - name: reading_comprehension_maze_semester_growth
+        data_type: string
+      - name: reading_fluency_orf_semester_growth
+        data_type: string
+      - name: word_reading_wrf_semester_growth
+        data_type: string
+      - name: composite_year_growth
+        data_type: string
+      - name: decoding_nwf_wrc_year_growth
+        data_type: string
+      - name: letter_names_lnf_year_growth
+        data_type: string
+      - name: letter_sounds_nwf_cls_year_growth
+        data_type: string
+      - name: phonemic_awareness_psf_year_growth
+        data_type: string
+      - name: reading_accuracy_orf_accu_year_growth
+        data_type: string
+      - name: reading_comprehension_maze_year_growth
+        data_type: string
+      - name: reading_fluency_orf_year_growth
+        data_type: string
+      - name: word_reading_wrf_year_growth
+        data_type: string
+      - name: client_date
+        data_type: date
+      - name: sync_date
+        data_type: date
+      - name: assessment_grade
+        data_type: string
+      - name: enrollment_grade
+        data_type: string
+      - name: official_teacher_staff_id
+        data_type: string
+      - name: composite_score
+        data_type: numeric
+      - name: composite_national_norm_percentile
+        data_type: numeric
+      - name: decoding_nwf_wrc_national_norm_percentile
+        data_type: numeric
+      - name: letter_names_lnf_national_norm_percentile
+        data_type: numeric
+      - name: letter_sounds_nwf_cls_national_norm_percentile
+        data_type: numeric
+      - name: phonemic_awareness_psf_national_norm_percentile
+        data_type: numeric
+      - name: reading_accuracy_orf_accu_national_norm_percentile
+        data_type: numeric
+      - name: reading_comprehension_maze_national_norm_percentile
+        data_type: numeric
+      - name: reading_fluency_orf_national_norm_percentile
+        data_type: numeric
+      - name: word_reading_wrf_national_norm_percentile
+        data_type: numeric
+      - name: composite_level
+        data_type: string
+      - name: decoding_nwf_wrc_level
+        data_type: string
+      - name: letter_names_lnf_level
+        data_type: string
+      - name: letter_sounds_nwf_cls_level
+        data_type: string
+      - name: phonemic_awareness_psf_level
+        data_type: string
+      - name: reading_accuracy_orf_accu_level
+        data_type: string
+      - name: reading_comprehension_maze_level
+        data_type: string
+      - name: reading_fluency_orf_level
+        data_type: string
+      - name: word_reading_wrf_level
+        data_type: string
+      - name: composite_tested_out
+        data_type: boolean
+      - name: decoding_nwf_wrc_tested_out
+        data_type: boolean
+      - name: letter_names_lnf_tested_out
+        data_type: boolean
+      - name: letter_sounds_nwf_cls_tested_out
+        data_type: boolean
+      - name: phonemic_awareness_psf_tested_out
+        data_type: boolean
+      - name: reading_accuracy_orf_accu_tested_out
+        data_type: boolean
+      - name: reading_comprehension_maze_tested_out
+        data_type: boolean
+      - name: reading_fluency_orf_tested_out
+        data_type: boolean
+      - name: word_reading_wrf_tested_out
+        data_type: boolean
+      - name: composite_discontinued
+        data_type: boolean
+      - name: decoding_nwf_wrc_discontinued
+        data_type: boolean
+      - name: letter_names_lnf_discontinued
+        data_type: boolean
+      - name: letter_sounds_nwf_cls_discontinued
+        data_type: boolean
+      - name: phonemic_awareness_psf_discontinued
+        data_type: boolean
+      - name: reading_accuracy_orf_accu_discontinued
+        data_type: boolean
+      - name: reading_comprehension_maze_discontinued
+        data_type: boolean
+      - name: reading_fluency_orf_discontinued
+        data_type: boolean
+      - name: word_reading_wrf_discontinued
+        data_type: boolean
+      - name: assessment_grade_int
+        data_type: int64
+      - name: enrollment_grade_int
+        data_type: int64
+      - name: surrogate_key
+        data_type: string

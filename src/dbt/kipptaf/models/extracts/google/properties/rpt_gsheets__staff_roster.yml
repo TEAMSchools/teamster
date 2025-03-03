@@ -1,0 +1,54 @@
+version: 2
+models:
+  - name: rpt_gsheets__staff_roster
+    columns:
+      - name: associate_id
+        data_type: string
+      - name: preferred_first_name
+        data_type: string
+      - name: preferred_last_name
+        data_type: string
+      - name: preferred_lastfirst
+        data_type: string
+      - name: location
+        data_type: string
+      - name: location_custom
+        data_type: string
+      - name: department
+        data_type: string
+      - name: subject_dept_custom
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: job_title_custom
+        data_type: string
+      - name: reports_to
+        data_type: string
+      - name: manager_custom_assoc_id
+        data_type: string
+      - name: position_status
+        data_type: string
+      - name: termination_date
+        data_type: date
+      - name: email_addr
+        data_type: string
+      - name: hire_date
+        data_type: date
+      - name: position_start_date
+        data_type: date
+      - name: df_employee_number
+        data_type: int64
+      - name: manager_df_employee_number
+        data_type: int64
+      - name: legal_entity_name
+        data_type: string
+      - name: userprincipalname
+        data_type: string
+      - name: file_number
+        data_type: string
+      - name: position_id
+        data_type: string
+      - name: legal_name
+        data_type: string
+      - name: mobile_number
+        data_type: string

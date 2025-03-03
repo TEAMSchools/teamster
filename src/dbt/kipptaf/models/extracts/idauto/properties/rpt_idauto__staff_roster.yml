@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: rpt_idauto__staff_roster
+    columns:
+      - name: associate id
+        data_type: string
+      - name: first name
+        data_type: string
+      - name: last name
+        data_type: string
+      - name: job title description
+        data_type: string
+      - name: position status
+        data_type: string
+      - name: company code
+        data_type: string
+      - name: location description
+        data_type: string
+      - name: business unit description
+        data_type: string
+      - name: home department description
+        data_type: string
+      - name: position id
+        data_type: int64
+      - name: preferred name
+        data_type: int64
+      - name: business unit code
+        data_type: string
+      - name: rehire date
+        data_type: string
+      - name: termination date
+        data_type: string
+      - name: birth date
+        data_type: string

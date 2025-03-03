@@ -1,0 +1,140 @@
+version: 2
+models:
+  - name: int_adp_workforce_now__workers
+    columns:
+      - name: associate_oid
+        data_type: string
+      - name: effective_date_start
+        data_type: date
+      - name: effective_date_end
+        data_type: date
+      - name: effective_date_start_timestamp
+        data_type: timestamp
+      - name: effective_date_end_timestamp
+        data_type: timestamp
+      - name: worker_id__id_value
+        data_type: string
+      - name: worker_status__status_code__code_value
+        data_type: string
+      - name: worker_dates__original_hire_date
+        data_type: date
+      - name: worker_dates__rehire_date
+        data_type: date
+      - name: worker_dates__termination_date
+        data_type: date
+      - name: is_current_record
+        data_type: boolean
+      - name: is_prestart
+        data_type: boolean
+      - name: person__birth_date
+        data_type: date
+      - name: person__ethnicity_code_name
+        data_type: string
+      - name: person__family_name_1
+        data_type: string
+      - name: person__gender_code_name
+        data_type: string
+      - name: person__given_name
+        data_type: string
+      - name: person__legal_address__city_name
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_1__code_value
+        data_type: string
+      - name: person__legal_address__line_one
+        data_type: string
+      - name: person__legal_address__postal_code
+        data_type: string
+      - name: person__legal_name__family_name_1
+        data_type: string
+      - name: person__legal_name__formatted_name
+        data_type: string
+      - name: person__legal_name__given_name
+        data_type: string
+      - name: person__race_code_name
+        data_type: string
+      - name: race_ethnicity_reporting
+        data_type: string
+      - name: item_id
+        data_type: string
+      - name: position_id
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: work_assignment__actual_start_date
+        data_type: date
+      - name: work_assignment__termination_date
+        data_type: date
+      - name: assignment_status__effective_date
+        data_type: date
+      - name: assignment_status__reason_code__name
+        data_type: string
+      - name: assignment_status__status_code__name
+        data_type: string
+      - name: base_remuneration__annual_rate_amount__amount_value
+        data_type: numeric
+      - name: base_remuneration__hourly_rate_amount__amount_value
+        data_type: numeric
+      - name: home_work_location__name_code__name
+        data_type: string
+      - name: management_position_indicator
+        data_type: boolean
+      - name: payroll_file_number
+        data_type: string
+      - name: payroll_group_code
+        data_type: string
+      - name: primary_indicator
+        data_type: boolean
+      - name: wage_law_coverage__coverage_code__name
+        data_type: string
+      - name: wage_law_coverage__wage_law_name_code__name
+        data_type: string
+      - name: worker_type_code__name
+        data_type: string
+      - name: additional_remunerations__rate__amount_value__sum
+        data_type: float64
+      - name: benefits_eligibility_class__group_code__name
+        data_type: string
+      - name: communication__personal_cell__formatted_number
+        data_type: string
+      - name: communication__personal_email__email_uri
+        data_type: string
+      - name: communication__work_cell__formatted_number
+        data_type: string
+      - name: communication__work_email__email_uri
+        data_type: string
+      - name: custom_field__employee_number
+        data_type: int64
+      - name: wf_mgr_accrual_profile
+        data_type: string
+      - name: wf_mgr_badge_number
+        data_type: int64
+      - name: wf_mgr_ee_type
+        data_type: string
+      - name: wf_mgr_pay_rule
+        data_type: string
+      - name: wf_mgr_trigger
+        data_type: string
+      - name: organizational_unit__assigned__business_unit__code_value
+        data_type: string
+      - name: organizational_unit__assigned__business_unit__name
+        data_type: string
+      - name: organizational_unit__assigned__department__name
+        data_type: string
+      - name: organizational_unit__home__business_unit__code_value
+        data_type: string
+      - name: organizational_unit__home__business_unit__name
+        data_type: string
+      - name: organizational_unit__home__department__name
+        data_type: string
+      - name: reports_to_worker_id__id_value
+        data_type: string
+      - name: person__formatted_name
+        data_type: string
+      - name: reports_to_formatted_name
+        data_type: string
+      - name: worker_hire_date_recent
+        data_type: date
+      - name: wf_mgr_trigger_new
+        data_type: string
+      - name: assignment_status__status_code__name__lag
+        data_type: string

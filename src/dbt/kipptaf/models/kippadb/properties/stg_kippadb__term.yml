@@ -1,0 +1,168 @@
+version: 2
+models:
+  - name: stg_kippadb__term
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: owner_id
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: last_activity_date
+        data_type: date
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: last_referenced_date
+        data_type: timestamp
+      - name: last_viewed_date
+        data_type: timestamp
+      - name: system_modstamp
+        data_type: timestamp
+      - name: advising_provider
+        data_type: string
+      - name: auto_created_by_batch_job
+        data_type: boolean
+      - name: contact_do_not_call
+        data_type: boolean
+      - name: contact_owner
+        data_type: string
+      - name: contact_owner_role
+        data_type: string
+      - name: contact_record_type_id
+        data_type: string
+      - name: currently_enrolled_school
+        data_type: string
+      - name: details_from_nsc_load
+        data_type: string
+      - name: do_not_overwrite_with_nsc_data
+        data_type: boolean
+      - name: enrollment
+        data_type: string
+      - name: has_terminal_status
+        data_type: boolean
+      - name: kipp_region_text_id
+        data_type: string
+      - name: nsc_2_year_4_year
+        data_type: string
+      - name: nsc_calculated_attending_status
+        data_type: string
+      - name: nsc_calculated_enrollment_status
+        data_type: string
+      - name: nsc_calculated_pursuing_degree_type
+        data_type: string
+      - name: nsc_cip_1
+        data_type: string
+      - name: nsc_cip_2
+        data_type: string
+      - name: nsc_class_level
+        data_type: string
+      - name: nsc_college_code
+        data_type: string
+      - name: nsc_college_name
+        data_type: string
+      - name: nsc_college_sequence
+        data_type: string
+      - name: nsc_date_of_data_pull
+        data_type: date
+      - name: nsc_degree_cip_1
+        data_type: string
+      - name: nsc_degree_cip_2
+        data_type: string
+      - name: nsc_degree_cip_3
+        data_type: string
+      - name: nsc_degree_cip_4
+        data_type: string
+      - name: nsc_degree_major_1
+        data_type: string
+      - name: nsc_degree_major_2
+        data_type: string
+      - name: nsc_degree_major_3
+        data_type: string
+      - name: nsc_degree_major_4
+        data_type: string
+      - name: nsc_degree_title
+        data_type: string
+      - name: nsc_enrollment_begin
+        data_type: string
+      - name: nsc_enrollment_end
+        data_type: string
+      - name: nsc_enrollment_status
+        data_type: string
+      - name: nsc_graduated
+        data_type: string
+      - name: nsc_graduated_date
+        data_type: string
+      - name: nsc_major_1
+        data_type: string
+      - name: nsc_major_2
+        data_type: string
+      - name: nsc_match_code
+        data_type: string
+      - name: nsc_opeid
+        data_type: numeric
+      - name: nsc_public_private
+        data_type: string
+      - name: nsc_requester_return
+        data_type: string
+      - name: nsc_search_date
+        data_type: string
+      - name: nsc_start_date_calculated
+        data_type: date
+      - name: nsc_student_first_name
+        data_type: string
+      - name: nsc_student_id
+        data_type: string
+      - name: nsc_student_last_name
+        data_type: string
+      - name: previous_attending_status
+        data_type: string
+      - name: previous_college_standing
+        data_type: string
+      - name: previous_end_date
+        data_type: date
+      - name: previous_enrollment_status
+        data_type: string
+      - name: previous_pursuing_degree_type
+        data_type: string
+      - name: previous_start_date
+        data_type: date
+      - name: prod_migration
+        data_type: boolean
+      - name: term_attending_status
+        data_type: string
+      - name: term_college_standing
+        data_type: string
+      - name: term_end_date
+        data_type: date
+      - name: term_enrollment_status
+        data_type: string
+      - name: term_notes
+        data_type: string
+      - name: term_pursuing_degree_type
+        data_type: string
+      - name: term_season
+        data_type: string
+      - name: term_start_date
+        data_type: date
+      - name: term_verification_status
+        data_type: string
+      - name: terminal_status_sort_order
+        data_type: numeric
+      - name: transfer_withdrawal_notes
+        data_type: string
+      - name: transfer_withdrawal_reason
+        data_type: string
+      - name: verified_by_advisor
+        data_type: date
+      - name: verified_by_institution
+        data_type: date
+      - name: verified_by_nsc
+        data_type: date
+      - name: year
+        data_type: string
