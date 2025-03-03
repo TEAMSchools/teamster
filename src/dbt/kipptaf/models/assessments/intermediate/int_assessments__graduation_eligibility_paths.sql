@@ -204,7 +204,7 @@ with
                     'PSAT NMSQT' as met_psat_nmsqt
                 )
             )
-        where rn_highest = 1
+        -- where rn_highest = 1
         group by all
     ),
 
