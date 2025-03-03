@@ -8,6 +8,10 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
+    - bandit@1.8.3
+    - checkov@3.2.378
+    - terrascan@1.19.1
+    - trivy@0.59.1
     - actionlint@1.7.7
     - git-diff-check
     - gitleaks@8.24.0
@@ -28,13 +32,9 @@ lint:
     - trufflehog@3.88.14
     - yamllint@1.35.1
   disabled:
-    - bandit
     - black
-    - checkov
     - flake8
     - sql-formatter
-    - terrascan
-    - trivy
   ignore:
     - paths:
         - src/teamster/**
