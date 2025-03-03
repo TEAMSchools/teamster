@@ -14,6 +14,7 @@ with
             or srm.home_department_name
             in ('School Support', 'Student Support', 'KIPP Forward')
     ),
+    
     people as (
         select
             sr.employee_number as user_internal_id,
