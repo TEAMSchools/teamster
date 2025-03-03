@@ -91,6 +91,8 @@ select
     s.first_suspension_date_iss,
     s.first_suspension_date_oss,
 
+    rt.name as term,
+
     if(co.spedlep like 'SPED%', 'IEP', 'No IEP') as iep_status,
 
     if(date_day >= s.first_suspension_date, 1, 0) as is_susp_running,
@@ -128,6 +130,12 @@ left join
     on co.student_number = sd.student_number
     and co.academic_year = sd.academic_year
     and date_day = sd.end_date
+left join
+    {{ ref("stg_reporting__terms") }} as rt
+    on date_day between rt.start_date and rt.end_date
+    and co.schoolid = rt.school_id
+    and co.academic_year = rt.academic_year
+    and rt.type = 'RT'
 where
     co.rn_year = 1
     and co.academic_year >= {{ var("current_academic_year") - 1 }}
