@@ -160,7 +160,7 @@ with
             ) as rn_highest,
 
         from students as s
-        left join
+        inner join
             scores as p
             on s.student_number = p.student_number
             and s.discipline = p.discipline
@@ -182,12 +182,8 @@ with
             state_studentnumber,
             grade_level,
             cohort,
-            has_fafsa,
             discipline,
-            powerschool_credittype,
             ps_grad_path_code,
-            njgpa_date_11th,
-            is_before_fafsa_12th,
 
             if(max(met_njgpa) is not null, true, false) as njgpa_attempt,
 
@@ -266,10 +262,31 @@ with
     )
 
 select
-    l.*,
+    s._dbt_source_relation,
+    s.students_dcid,
+    s.studentid,
+    s.student_number,
+    s.state_studentnumber,
+    s.salesforce_id,
+    s.grade_level,
+    s.cohort,
+    s.has_fafsa,
+    s.discipline,
+    s.powerschool_credittype,
+    s.ps_grad_path_code,
+    s.njgpa_date_11th,
+    s.is_before_fafsa_12th,
 
-    f.njgpa_attempt,
-    f.met_njgpa,
+    l.pathway_option,
+    l.score_type,
+    l.scale_score,
+    l.pathway_code,
+    l.cutoff,
+    l.met_pathway_cutoff,
+    l.rn_highest,
+
+    f.njgpa_attempt as njgpa_attempt,
+    f.met_njgpa as met_njgpa,
     f.met_act,
     f.met_sat,
     f.met_psat10,
@@ -278,7 +295,11 @@ select
     f.met_ela,
     f.met_math,
 
-from lookup_table as l
+from students as s
+left join
+    lookup_table as l
+    on s.student_number = l.student_number
+    and s.discipline = l.discipline
 left join
     final_grad_path as f
     on l.student_number = f.student_number
