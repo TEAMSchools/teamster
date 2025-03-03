@@ -18,20 +18,27 @@ with
             ) as score_type,
 
             case
-                score_type
-                when 'latest_psat_total'
-                then 'Composite'
-                when 'latest_psat_math_section'
-                then 'Math'
-                when 'latest_psat_ebrw'
+                -- 3 to 4 digit score
+                when score_type = 'latest_psat_total'
+                then 'Combined'
+                -- 3-digit score
+                when score_type = 'latest_psat_ebrw'
                 then 'EBRW'
+                -- 2-digit score
+                when score_type = 'latest_psat_reading'
+                then 'Reading'
+                -- 3-digit score
+                when score_type = 'latest_psat_math_section'
+                then 'Math'
+                -- 2-digit score
+                when score_type = 'latest_psat_math_test'
+                then 'Math Test'
             end as test_subject,
 
             case
-                score_type
-                when 'latest_psat_ebrw'
+                when score_type in ('latest_psat_ebrw', 'latest_psat_reading')
                 then 'ENG'
-                when 'latest_psat_math_section'
+                when score_type in ('latest_psat_math_section', 'latest_psat_math_test')
                 then 'MATH'
             end as course_discipline,
         from
