@@ -93,6 +93,8 @@ select
 
     rt.name as term,
 
+    if(date_day = rt.end_date, true, false) as is_last_day_of_term,
+
     if(co.spedlep like 'SPED%', 'IEP', 'No IEP') as iep_status,
 
     if(date_day >= s.first_suspension_date, 1, 0) as is_susp_running,
