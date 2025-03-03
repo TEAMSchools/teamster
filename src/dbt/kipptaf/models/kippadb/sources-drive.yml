@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: kippadb
-    schema: kipptaf_kippadb
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_kippadb
     tables:
       - name: src_kippadb__nsc_crosswalk
         external:

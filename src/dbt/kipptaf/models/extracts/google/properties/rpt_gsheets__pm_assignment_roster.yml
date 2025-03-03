@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: rpt_gsheets__pm_assignment_roster
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: preferred_name
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: google_email
+        data_type: string
+      - name: email
+        data_type: string
+      - name: tableau_username
+        data_type: string
+      - name: primary_site
+        data_type: string
+      - name: legal_entity
+        data_type: string
+      - name: region
+        data_type: string
+      - name: manager_employee_number
+        data_type: int64
+      - name: manager_name
+        data_type: string
+      - name: manager_google
+        data_type: string
+      - name: manager_email
+        data_type: string
+      - name: manager_tableau_username
+        data_type: string
+      - name: dso_tableau_username
+        data_type: string
+      - name: head_of_school_tableau_username
+        data_type: string
+      - name: mdso_tableau_username
+        data_type: string
+      - name: school_leader_tableau_username
+        data_type: string
+      - name: site_campus
+        data_type: string
+      - name: tntp_assignment
+        data_type: string
+      - name: department_grade
+        data_type: string
+      - name: school_based
+        data_type: boolean
+      - name: feedback_group
+        data_type: string

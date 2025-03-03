@@ -1,0 +1,74 @@
+version: 2
+models:
+  - name: int_adp_workforce_now__workers__communication__pivot
+    columns:
+      - name: associate_oid
+        data_type: string
+      - name: communication__home_phone__item_id
+        data_type: string
+      - name: communication__home_phone__formatted_number
+        data_type: string
+      - name: communication__home_phone__country_dialing
+        data_type: string
+      - name: communication__home_phone__area_dialing
+        data_type: string
+      - name: communication__home_phone__dial_number
+        data_type: string
+      - name: communication__home_phone__extension
+        data_type: string
+      - name: communication__home_phone__access
+        data_type: string
+      - name: communication__personal_cell__item_id
+        data_type: string
+      - name: communication__personal_cell__formatted_number
+        data_type: string
+      - name: communication__personal_cell__country_dialing
+        data_type: string
+      - name: communication__personal_cell__area_dialing
+        data_type: string
+      - name: communication__personal_cell__dial_number
+        data_type: string
+      - name: communication__personal_cell__extension
+        data_type: string
+      - name: communication__personal_cell__access
+        data_type: string
+      - name: communication__personal_email__item_id
+        data_type: string
+      - name: communication__personal_email__email_uri
+        data_type: string
+      - name: communication__personal_email__notification_indicator
+        data_type: boolean
+      - name: communication__work_cell__item_id
+        data_type: string
+      - name: communication__work_cell__formatted_number
+        data_type: string
+      - name: communication__work_cell__country_dialing
+        data_type: string
+      - name: communication__work_cell__area_dialing
+        data_type: string
+      - name: communication__work_cell__dial_number
+        data_type: string
+      - name: communication__work_cell__extension
+        data_type: string
+      - name: communication__work_cell__access
+        data_type: string
+      - name: communication__work_email__item_id
+        data_type: string
+      - name: communication__work_email__email_uri
+        data_type: string
+      - name: communication__work_email__notification_indicator
+        data_type: boolean
+      - name: communication__work_phone__item_id
+        data_type: string
+      - name: communication__work_phone__formatted_number
+        data_type: string
+      - name: communication__work_phone__country_dialing
+        data_type: string
+      - name: communication__work_phone__area_dialing
+        data_type: string
+      - name: communication__work_phone__dial_number
+        data_type: string
+      - name: communication__work_phone__extension
+        data_type: string
+      - name: communication__work_phone__access
+        data_type: string

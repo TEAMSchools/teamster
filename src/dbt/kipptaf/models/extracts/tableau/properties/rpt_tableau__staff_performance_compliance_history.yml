@@ -1,0 +1,76 @@
+version: 2
+models:
+  - name: rpt_tableau__staff_performance_compliance_history
+    columns:
+      - name: asdf_employee_number
+        data_type: int64
+      - name: adp_associate_id
+        data_type: string
+      - name: preferred_first_name
+        data_type: string
+      - name: preferred_last_name
+        data_type: string
+      - name: cur
+        data_type: string
+      - name: termination_date
+        data_type: date
+      - name: current_legal_entity
+        data_type: string
+      - name: current_location
+        data_type: string
+      - name: current_role
+        data_type: string
+      - name: current_dept
+        data_type: string
+      - name: race_ethnicity_reporting
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: samaccountname
+        data_type: string
+      - name: current_manager
+        data_type: string
+      - name: manager_samaccountname
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: historic_legal_entity
+        data_type: string
+      - name: historic_location
+        data_type: string
+      - name: historic_role
+        data_type: string
+      - name: historic_dept
+        data_type: string
+      - name: historic_salary
+        data_type: numeric
+      - name: pm_term
+        data_type: int64
+      - name: etr_score
+        data_type: int64
+      - name: etr_tier
+        data_type: int64
+      - name: so_score
+        data_type: int64
+      - name: overall_score
+        data_type: float64
+      - name: overall_tier
+        data_type: int64
+      - name: hire_date
+        data_type: date
+      - name: is_hispanic
+        data_type: boolean
+      - name: is_certified
+        data_type: int64
+      - name: ay_approved_absences
+        data_type: int64
+      - name: ay_unapproved_absences
+        data_type: int64
+      - name: ay_approved_tardies
+        data_type: int64
+      - name: ay_unapproved_tardies
+        data_type: int64
+      - name: ay_approved_left_early
+        data_type: int64
+      - name: ay_unapproved_left_early
+        data_type: int64

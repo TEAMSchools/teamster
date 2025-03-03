@@ -1,0 +1,72 @@
+version: 2
+models:
+  - name: int_kippadb__persistence
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: sf_contact_id
+        data_type: string
+      - name: ktc_cohort
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: persistence_year
+        data_type: int64
+      - name: enrollment_id
+        data_type: string
+      - name: pursuing_degree_type
+        data_type: string
+      - name: enrollment_status
+        data_type: string
+      - name: start_date
+        data_type: date
+      - name: actual_end_date
+        data_type: date
+      - name: account_name
+        data_type: string
+      - name: account_type
+        data_type: string
+      - name: competitiveness_ranking
+        data_type: string
+      - name: adjusted_6_year_minority_graduation_rate
+        data_type: numeric
+      - name: hs_account_name
+        data_type: string
+      - name: ecc_pursuing_degree_type
+        data_type: string
+      - name: semester
+        data_type: string
+      - name: is_ecc
+        data_type: boolean
+      - name: is_ecc_ba
+        data_type: boolean
+      - name: is_ecc_aa
+        data_type: boolean
+      - name: is_first_year
+        data_type: boolean
+      - name: is_persisting_int
+        data_type: int64
+      - name: is_retained_int
+        data_type: int64
+      - name: persistence_status
+        data_type: string
+      - name: rn_enrollment_year
+        data_type: int64
+      - name: cumulative_credits_earned_recent
+        data_type: numeric
+      - name: cumulative_gpa_recent
+        data_type: numeric
+      - name: cumulative_credits_earned_semester
+        data_type: numeric
+      - name: cumulative_gpa_semester
+        data_type: numeric
+      - name: credits_required_for_graduation_recent
+        data_type: numeric
+      - name: credits_required_for_graduation_semester
+        data_type: numeric
+      - name: n_semester
+        data_type: int64
+      - name: progress_multiplier_4yr
+        data_type: float64
+      - name: progress_multiplier_6yr
+        data_type: float64

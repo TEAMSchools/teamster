@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: stg_google_directory__roles
+    columns:
+      - name: role_id
+        data_type: string
+      - name: role_name
+        data_type: string
+      - name: role_description
+        data_type: string
+      - name: is_system_role
+        data_type: boolean
+      - name: is_super_admin_role
+        data_type: boolean
+      - name: kind
+        data_type: string
+      - name: etag
+        data_type: string
+      - name: role_privileges
+        data_type: record
+      - name: role_privileges.privilegename
+        data_type: string
+      - name: role_privileges.serviceid
+        data_type: string

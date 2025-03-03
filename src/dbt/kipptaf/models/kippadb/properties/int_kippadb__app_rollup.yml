@@ -1,0 +1,92 @@
+version: 2
+models:
+  - name: int_kippadb__app_rollup
+    columns:
+      - name: applicant
+        data_type: string
+      - name: is_eof_applicant
+        data_type: boolean
+      - name: is_matriculated
+        data_type: boolean
+      - name: is_submitted_aa
+        data_type: boolean
+      - name: is_submitted_ba
+        data_type: boolean
+      - name: is_submitted_certificate
+        data_type: boolean
+      - name: is_accepted_aa
+        data_type: boolean
+      - name: is_accepted_ba
+        data_type: boolean
+      - name: is_accepted_certificate
+        data_type: boolean
+      - name: is_early_action_decision
+        data_type: boolean
+      - name: n_submitted
+        data_type: int64
+      - name: n_accepted
+        data_type: int64
+      - name: n_wishlist
+        data_type: int64
+      - name: is_accepted_early
+        data_type: boolean
+      - name: is_accepted_early_ecc_60_plus
+        data_type: boolean
+      - name: is_accepted_early_ecc_90_plus
+        data_type: boolean
+      - name: ecc_wishlist_avg
+        data_type: numeric
+      - name: ecc_wishlist_min
+        data_type: numeric
+      - name: ecc_submitted_avg
+        data_type: numeric
+      - name: ecc_submitted_min
+        data_type: numeric
+      - name: ecc_accepted_avg
+        data_type: numeric
+      - name: ecc_accepted_min
+        data_type: numeric
+      - name: ecc_matriculated_avg
+        data_type: numeric
+      - name: ecc_matriculated_min
+        data_type: numeric
+      - name: n_4_year_wishlist
+        data_type: int64
+      - name: n_55plus_ecc_wishlist
+        data_type: int64
+      - name: n_60plus_ecc_wishlist
+        data_type: int64
+      - name: n_68plus_ecc_wishlist
+        data_type: int64
+      - name: n_nj_wishlist
+        data_type: int64
+      - name: n_meets_full_need_wishlist
+        data_type: int64
+      - name: n_strong_oos_wishlist
+        data_type: int64
+      - name: n_aa_cte_wishlist
+        data_type: int64
+      - name: n_68plus_ecc_ea_ed_wishlist
+        data_type: int64
+      - name: n_meets_full_need_ea_ed_wishlist
+        data_type: int64
+      - name: n_meets_full_need_ea_ed_85ecc_wishlist
+        data_type: int64
+      - name: n_app_outcomes
+        data_type: int64
+      - name: n_68_plus_ecc_submitted
+        data_type: int64
+      - name: n_60_plus_ecc_submitted
+        data_type: int64
+      - name: n_55_plus_ecc_submitted
+        data_type: int64
+      - name: n_85plus_ecc_ea_ed_submitted
+        data_type: int64
+      - name: n_68plus_ecc_ea_ed_submitted
+        data_type: int64
+      - name: n_meets_full_need_68plus_ecc_ea_ed_submitted
+        data_type: int64
+      - name: n_meets_full_need_85plus_ecc_ea_ed_submitted
+        data_type: int64
+      - name: max_ecc_accepted
+        data_type: numeric

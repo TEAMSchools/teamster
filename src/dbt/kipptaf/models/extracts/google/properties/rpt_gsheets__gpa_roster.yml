@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: rpt_gsheets__gpa_roster
+    columns:
+      - name: academic_year
+        data_type: string
+      - name: region
+        data_type: string
+      - name: student_name
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: team
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: gifted_and_talented
+        data_type: string
+      - name: is_504
+        data_type: boolean
+      - name: gpa_q1
+        data_type: float64
+      - name: gpa_q2
+        data_type: float64
+      - name: gpa_q3
+        data_type: float64
+      - name: gpa_q4
+        data_type: float64
+      - name: gpa_y1
+        data_type: float64

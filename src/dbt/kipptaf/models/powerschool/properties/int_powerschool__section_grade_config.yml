@@ -1,0 +1,42 @@
+version: 2
+models:
+  - name: int_powerschool__section_grade_config
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: sections_dcid
+        data_type: int64
+      - name: grade_formula_set_id
+        data_type: int64
+      - name: term_abbreviation
+        data_type: string
+      - name: storecode
+        data_type: string
+      - name: storecode_type
+        data_type: string
+      - name: storecode_order
+        data_type: string
+      - name: term_start_date
+        data_type: date
+      - name: term_end_date
+        data_type: date
+      - name: grade_formula_set_name
+        data_type: string
+      - name: grade_calc_formula_weight
+        data_type: numeric
+      - name: teacher_category_id
+        data_type: int64
+      - name: district_teacher_category_id
+        data_type: int64
+      - name: default_score_type
+        data_type: string
+      - name: is_in_final_grades
+        data_type: int64
+      - name: grading_formula_id
+        data_type: int64
+      - name: grading_formula_weighting_type
+        data_type: string
+      - name: category_id
+        data_type: int64
+      - name: category_name
+        data_type: string

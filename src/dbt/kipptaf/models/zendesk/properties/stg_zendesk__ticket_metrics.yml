@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: stg_zendesk__ticket_metrics
+    columns:
+      - name: ticket_id
+        data_type: int64
+      - name: assignee_updated_at
+        data_type: timestamp
+      - name: initially_assigned_at
+        data_type: timestamp
+      - name: solved_at
+        data_type: timestamp
+      - name: assignee_stations
+        data_type: int64
+      - name: group_stations
+        data_type: int64
+      - name: replies
+        data_type: int64
+      - name: full_resolution_time_in_minutes_business
+        data_type: int64
+      - name: reply_time_in_minutes_business
+        data_type: int64

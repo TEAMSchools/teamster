@@ -1,0 +1,208 @@
+version: 2
+models:
+  - name: int_powerschool__teachers
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: lastfirst
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: title
+        data_type: string
+      - name: homeroom
+        data_type: string
+      - name: email_addr
+        data_type: string
+      - name: password
+        data_type: string
+      - name: ipaddrrestrict
+        data_type: string
+      - name: accessvalue
+        data_type: string
+      - name: homepage
+        data_type: string
+      - name: loginid
+        data_type: string
+      - name: defaultstudscrn
+        data_type: string
+      - name: teachernumber
+        data_type: string
+      - name: ssn
+        data_type: string
+      - name: home_phone
+        data_type: string
+      - name: school_phone
+        data_type: string
+      - name: street
+        data_type: string
+      - name: city
+        data_type: string
+      - name: state
+        data_type: string
+      - name: zip
+        data_type: string
+      - name: periodsavail
+        data_type: string
+      - name: powergradepw
+        data_type: string
+      - name: canchangeschool
+        data_type: string
+      - name: teacherloginpw
+        data_type: string
+      - name: nameasimported
+        data_type: string
+      - name: teacherloginid
+        data_type: string
+      - name: teacherloginip
+        data_type: string
+      - name: wm_status
+        data_type: string
+      - name: wm_statusdate
+        data_type: date
+      - name: wm_address
+        data_type: string
+      - name: wm_password
+        data_type: string
+      - name: wm_createdate
+        data_type: date
+      - name: wm_ta_flag
+        data_type: string
+      - name: wm_ta_date
+        data_type: date
+      - name: wm_alias
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: preferredname
+        data_type: string
+      - name: lastmeal
+        data_type: string
+      - name: staffpers_guid
+        data_type: string
+      - name: sif_stateprid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: homeschoolid
+        data_type: int64
+      - name: photo
+        data_type: int64
+      - name: numlogins
+        data_type: int64
+      - name: allowloginstart
+        data_type: int64
+      - name: allowloginend
+        data_type: int64
+      - name: psaccess
+        data_type: int64
+      - name: groupvalue
+        data_type: int64
+      - name: lunch_id
+        data_type: float64
+      - name: supportcontact
+        data_type: int64
+      - name: wm_tier
+        data_type: int64
+      - name: wm_createtime
+        data_type: int64
+      - name: wm_exclude
+        data_type: int64
+      - name: adminldapenabled
+        data_type: int64
+      - name: teacherldapenabled
+        data_type: int64
+      - name: maximum_load
+        data_type: int64
+      - name: gradebooktype
+        data_type: int64
+      - name: fedethnicity
+        data_type: int64
+      - name: fedracedecline
+        data_type: int64
+      - name: ptaccess
+        data_type: int64
+      - name: classpua
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: log
+        data_type: string
+      - name: sched_gender
+        data_type: string
+      - name: sched_classroom
+        data_type: string
+      - name: sched_homeroom
+        data_type: string
+      - name: sched_department
+        data_type: string
+      - name: sched_housecode
+        data_type: string
+      - name: sched_buildingcode
+        data_type: string
+      - name: sched_activitystatuscode
+        data_type: string
+      - name: sched_primaryschoolcode
+        data_type: string
+      - name: sched_team
+        data_type: string
+      - name: notes
+        data_type: string
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: balance1
+        data_type: float64
+      - name: balance2
+        data_type: float64
+      - name: balance3
+        data_type: float64
+      - name: balance4
+        data_type: float64
+      - name: noofcurclasses
+        data_type: int64
+      - name: staffstatus
+        data_type: int64
+      - name: status
+        data_type: int64
+      - name: sched_maximumcourses
+        data_type: int64
+      - name: sched_maximumduty
+        data_type: int64
+      - name: sched_maximumfree
+        data_type: int64
+      - name: sched_totalcourses
+        data_type: int64
+      - name: sched_maximumconsecutive
+        data_type: int64
+      - name: sched_isteacherfree
+        data_type: int64
+      - name: sched_teachermoreoneschool
+        data_type: int64
+      - name: sched_substitute
+        data_type: int64
+      - name: sched_scheduled
+        data_type: int64
+      - name: sched_usebuilding
+        data_type: int64
+      - name: sched_usehouse
+        data_type: int64
+      - name: sched_lunch
+        data_type: int64
+      - name: sched_maxpers
+        data_type: int64
+      - name: sched_maxpreps
+        data_type: int64
+      - name: prefixcodesetid
+        data_type: record
+      - name: prefixcodesetid.int_value
+        data_type: int64
+      - name: prefixcodesetid.double_value
+        data_type: float64
+      - name: prefixcodesetid.bytes_decimal_value
+        data_type: numeric

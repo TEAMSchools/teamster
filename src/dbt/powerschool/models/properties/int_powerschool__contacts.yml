@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: int_powerschool__contacts
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: family_ident
+        data_type: string
+      - name: personid
+        data_type: int64
+      - name: contactpriorityorder
+        data_type: int64
+      - name: firstname
+        data_type: string
+      - name: lastname
+        data_type: string
+      - name: isemergency
+        data_type: int64
+      - name: iscustodial
+        data_type: int64
+      - name: liveswithflg
+        data_type: int64
+      - name: schoolpickupflg
+        data_type: int64
+      - name: relationship_type
+        data_type: string
+      - name: person_type
+        data_type: string

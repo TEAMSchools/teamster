@@ -1,0 +1,68 @@
+version: 2
+models:
+  - name: int_powerschool__final_grades_pivot
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: course_number
+        data_type: string
+      - name: sectionid
+        data_type: int64
+      - name: storecode
+        data_type: string
+      - name: y1_letter_grade
+        data_type: string
+      - name: y1_percent_grade_adjusted
+        data_type: float64
+      - name: y1_letter_grade_adjusted
+        data_type: string
+      - name: need_90
+        data_type: float64
+      - name: need_80
+        data_type: float64
+      - name: need_70
+        data_type: float64
+      - name: need_60
+        data_type: float64
+      - name: term_percent_grade_cur
+        data_type: float64
+      - name: term_letter_grade_cur
+        data_type: string
+      - name: term_percent_grade_adjusted_cur
+        data_type: float64
+      - name: term_letter_grade_adjusted_cur
+        data_type: string
+      - name: term_percent_grade_rt1
+        data_type: float64
+      - name: term_letter_grade_rt1
+        data_type: string
+      - name: term_percent_grade_adjusted_rt1
+        data_type: float64
+      - name: term_letter_grade_adjusted_rt1
+        data_type: string
+      - name: term_percent_grade_rt2
+        data_type: float64
+      - name: term_letter_grade_rt2
+        data_type: string
+      - name: term_percent_grade_adjusted_rt2
+        data_type: float64
+      - name: term_letter_grade_adjusted_rt2
+        data_type: string
+      - name: term_percent_grade_rt3
+        data_type: float64
+      - name: term_letter_grade_rt3
+        data_type: string
+      - name: term_percent_grade_adjusted_rt3
+        data_type: float64
+      - name: term_letter_grade_adjusted_rt3
+        data_type: string
+      - name: term_percent_grade_rt4
+        data_type: float64
+      - name: term_letter_grade_rt4
+        data_type: string
+      - name: term_percent_grade_adjusted_rt4
+        data_type: float64
+      - name: term_letter_grade_adjusted_rt4
+        data_type: string

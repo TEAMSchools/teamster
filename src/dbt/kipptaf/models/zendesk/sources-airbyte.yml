@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: zendesk
-    schema: kipptaf_zendesk
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_zendesk
     tables:
       - name: groups
       - name: ticket_audits

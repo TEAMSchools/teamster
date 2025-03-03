@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: stg_leadership_development__output
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: metric_id
+        data_type: string
+      - name: assignment_id
+        data_type: string
+      - name: notes_boy
+        data_type: string
+      - name: rating_moy
+        data_type: string
+      - name: rating_eoy
+        data_type: string
+      - name: notes_moy
+        data_type: string
+      - name: notes_eoy
+        data_type: string
+      - name: manager_rating_moy
+        data_type: string
+      - name: manager_rating_eoy
+        data_type: string
+      - name: manager_notes_moy
+        data_type: string
+      - name: manager_notes_eoy
+        data_type: string
+      - name: edited_at
+        data_type: date
+      - name: edited_by
+        data_type: string
+      - name: active_assignment
+        data_type: boolean
+      - name: edited_at_timestamp
+        data_type: timestamp

@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: rpt_clever__teachers
+    columns:
+      - name: school_id
+        data_type: int64
+      - name: teacher_id
+        data_type: string
+      - name: teacher_number
+        data_type: string
+      - name: state_teacher_id
+        data_type: int64
+      - name: teacher_email
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: middle_name
+        data_type: int64
+      - name: last_name
+        data_type: string
+      - name: title
+        data_type: string
+      - name: username
+        data_type: string
+      - name: password
+        data_type: int64

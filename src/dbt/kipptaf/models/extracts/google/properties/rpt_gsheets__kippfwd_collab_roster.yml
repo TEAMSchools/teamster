@@ -1,0 +1,80 @@
+version: 2
+models:
+  - name: rpt_gsheets__kippfwd_collab_roster
+    columns:
+      - name: salesforce id
+        data_type: string
+      - name: sis id
+        data_type: int64
+      - name: college counselor
+        data_type: string
+      - name: first name
+        data_type: string
+      - name: last name
+        data_type: string
+      - name: current enrolled high school
+        data_type: string
+      - name: student cell phone
+        data_type: string
+      - name: personal email address
+        data_type: string
+      - name: primary parent name
+        data_type: string
+      - name: primary parent cell phone
+        data_type: string
+      - name: primary parent email
+        data_type: string
+      - name: mailing address
+        data_type: string
+      - name: iep
+        data_type: boolean
+      - name: 504 plan
+        data_type: boolean
+      - name: fafsa complete
+        data_type: string
+      - name: hesaa complete
+        data_type: string
+      - name: efc actual
+        data_type: numeric
+      - name: expected_hs_grad_date
+        data_type: date
+      - name: college_match_display_gpa
+        data_type: numeric
+      - name: highest_act_score
+        data_type: numeric
+      - name: application_id
+        data_type: string
+      - name: application_name
+        data_type: string
+      - name: matriculation_decision
+        data_type: string
+      - name: ccdm complete
+        data_type: int64
+      - name: application_account_name
+        data_type: string
+      - name: application_type
+        data_type: string
+      - name: intended_degree_type
+        data_type: string
+      - name: unmet_need
+        data_type: numeric
+      - name: pell_grant
+        data_type: numeric
+      - name: tag
+        data_type: numeric
+      - name: parent_plus_loan
+        data_type: numeric
+      - name: stafford_loan_subsidized
+        data_type: numeric
+      - name: stafford_loan_unsubsidized
+        data_type: numeric
+      - name: other_private_loan
+        data_type: numeric
+      - name: total_loan_amount
+        data_type: numeric
+      - name: hs_gpa_bands
+        data_type: string
+      - name: is_undermatch
+        data_type: boolean
+      - name: state_grant
+        data_type: numeric

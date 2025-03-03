@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_coupa__users
+    columns:
+      - name: id
+        data_type: int64
+      - name: active
+        data_type: boolean
+      - name: purchasing_user
+        data_type: boolean
+      - name: employee_number
+        data_type: int64
