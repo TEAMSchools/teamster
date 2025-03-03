@@ -212,51 +212,57 @@ with
         group by all
     ),
 
+    met_subject as (
+        select student_number, max(ela) as met_ela, max(math) as met_math,
+        from
+            unpivot_calcs pivot (
+                max(
+                    met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt
+                ) for discipline
+                in ('ELA', 'Math')
+            )
+        group by all
+    ),
+
     final_grad_path as (
         select
-            *,
+            u.*,
 
             case
-                when grade_level != 12
-                then ps_grad_path_code
-                when ps_grad_path_code in ('M', 'N', 'O', 'P')
-                then ps_grad_path_code
-                when met_njgpa
+                when u.grade_level != 12
+                then u.ps_grad_path_code
+                when u.ps_grad_path_code in ('M', 'N', 'O', 'P')
+                then u.ps_grad_path_code
+                when u.met_njgpa
                 then 'S'
-                when njgpa_attempt and not met_njgpa and met_act
+                when u.njgpa_attempt and not u.met_njgpa and u.met_act
                 then 'E'
-                when njgpa_attempt and not met_njgpa and not met_act and met_sat
+                when u.njgpa_attempt and not u.met_njgpa and not u.met_act and u.met_sat
                 then 'D'
                 when
-                    njgpa_attempt
-                    and not met_njgpa
-                    and not met_act
-                    and not met_sat
-                    and met_psat10
+                    u.njgpa_attempt
+                    and not u.met_njgpa
+                    and not u.met_act
+                    and not u.met_sat
+                    and u.met_psat10
                 then 'J'
                 when
-                    njgpa_attempt
-                    and not met_njgpa
-                    and not met_act
-                    and not met_sat
-                    and not met_psat10
-                    and met_psat_nmsqt
+                    u.njgpa_attempt
+                    and not u.met_njgpa
+                    and not u.met_act
+                    and not u.met_sat
+                    and not u.met_psat10
+                    and u.met_psat_nmsqt
                 then 'K'
                 else 'R'
             end as final_grad_path,
 
-        from unpivot_calcs
+            m.met_ela,
+            m.met_math,
+
+        from unpivot_calcs as u
+        inner join met_subject as m on u.student_number = m.student_number
     )
 
-select
-    *,
-
-    case
-        when
-            njgpa_attempt
-            and (met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt)
-        then true
-        else false
-    end as met_subject,
-
+select *
 from final_grad_path
