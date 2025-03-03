@@ -1,9 +1,7 @@
 select
     *,
     lower(`user_name`) as user_name_lower,
-    concat(
-        'https://tableau.kipp.org/t/KIPPNJ/views/', view_url, '?:embed=y'
-    ) as `url`,
+    concat('https://tableau.kipp.org/t/KIPPNJ/views/', view_url, '?:embed=y') as `url`,
     parse_timestamp('%m/%d/%Y %I:%M:%S %p', created_at) as created_at_timestamp,
     datetime(
         parse_timestamp('%m/%d/%Y %I:%M:%S %p', created_at),
