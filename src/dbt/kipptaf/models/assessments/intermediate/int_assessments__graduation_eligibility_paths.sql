@@ -221,6 +221,7 @@ with
                 ) for discipline
                 in ('ELA', 'Math')
             )
+        where njgpa_attempt
         group by all
     ),
 
@@ -257,8 +258,8 @@ with
                 else 'R'
             end as final_grad_path,
 
-            m.met_ela,
-            m.met_math,
+            coalesce(m.met_ela, false) as met_ela,
+            coalesce(m.met_math, false) as met_math,
 
         from unpivot_calcs as u
         inner join met_subject as m on u.student_number = m.student_number
