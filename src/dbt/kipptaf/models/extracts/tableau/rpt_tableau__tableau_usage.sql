@@ -14,7 +14,7 @@ select
     vc.name_hist_workbooks as workbook,
     vc.name_hist_views as `view`,
     vc.`action`,
-    vc.created_at_local as viewed_at,
+    vc.created_at_local_ny as viewed_at,
     vc.id as view_count_id,
     vc.url,
 from {{ ref("stg_tableau__view_count_per_view") }} as vc
