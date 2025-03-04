@@ -283,8 +283,40 @@ select
     case
         when grade_level <= 10
         then 'Grad Eligible'
-        when grade_level = 11 and not njgpa_season_11th and not njgpa_attempt
-        then 'Not Grad Eligible. Before NJGPA season.'
+        -- iep exempt
+        when ps_grad_path_code in ('M', 'N')
+        then 'Grad Eligible'
+        -- 11th graders before njgpa
+        when grade_level = 11 and not njgpa_season_11th
+        then 'Grad Eligible, but pending assessments/FAFSA.'
+        -- 11th graders after njgpa without njgpa attempt
+        when grade_level = 11 and njgpa_season_11th and not njgpa_attempt
+        then 'Not Grad Eligible. Missing NJGPA.'
+        -- 11th graders who tried njgpa and passed both
+        when
+            grade_level = 11
+            and njgpa_season_11th
+            and njgpa_attempt
+            and met_ela
+            and met_math
+        then 'Grad Eligible.'
+        -- 11th graders who tried njgpa and passed only ela
+        when
+            grade_level = 11
+            and njgpa_season_11th
+            and njgpa_attempt
+            and met_ela
+            and not met_math
+        then 'ELA Eligible only.'
+        -- 11th graders who tried njgpa and passed only math
+        when
+            grade_level = 11
+            and njgpa_season_11th
+            and njgpa_attempt
+            and not met_ela
+            and met_math
+        then 'Math Eligible only.'
+
         else 'New category. Need new logic.'
     end as grad_eligibility,
 
