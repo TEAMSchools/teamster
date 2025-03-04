@@ -264,6 +264,10 @@ select
         else 'R'
     end as final_grad_path,
 
+    case
+        when grade_level <= 10 then 'Grad Eligible' else 'New Category. Need new logic.'
+    end as grad_eligibility,
+
 from lookup_table as l
 left join
     unpivot_calcs as u
