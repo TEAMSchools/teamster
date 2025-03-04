@@ -222,6 +222,16 @@ with
         group by all
     ),
 
+    -- calculating if the student attempted njgpa for the discipline
+    attempted_subject_njgpa as (
+        select
+            student_number,
+            max(ela) as attempted_njgpa_ela,
+            max(math) as attempted_njgpa_math,
+        from unpivot_calcs pivot (max(njgpa_attempt) for discipline in ('ELA', 'Math'))
+        group by all
+    ),
+
     roster as (
         select
             l.*,
@@ -232,6 +242,9 @@ with
             coalesce(u.met_sat, false) as met_sat,
             coalesce(u.met_psat10, false) as met_psat10,
             coalesce(u.met_psat_nmsqt, false) as met_psat_nmsqt,
+
+            coalesce(attempted_njgpa_ela, false) as attempted_njgpa_ela,
+            coalesce(attempted_njgpa_math, false) as attempted_njgpa_math,
 
             coalesce(m.met_ela, false) as met_ela,
             coalesce(m.met_math, false) as met_math,
@@ -245,11 +258,14 @@ with
             unpivot_calcs as u
             on l.student_number = u.student_number
             and l.discipline = u.discipline
+        left join attempted_subject_njgpa as n on l.student_number = n.student_number
         left join met_subject as m on l.student_number = m.student_number
     )
 
 select
     *,
+
+    if(scale_score is not null, cutoff - scale_score, null) as points_short,
 
     case
         when grade_level != 12
@@ -288,7 +304,7 @@ select
         then 'Grad Eligible'
         -- 11th graders before njgpa
         when grade_level = 11 and not njgpa_season_11th
-        then 'Grad Eligible, but pending assessments/FAFSA.'
+        then 'Grad Eligible'
         -- 11th graders after njgpa without njgpa attempt
         when grade_level = 11 and njgpa_season_11th and not njgpa_attempt
         then 'Not Grad Eligible. Missing NJGPA.'
@@ -299,7 +315,7 @@ select
             and njgpa_attempt
             and met_ela
             and met_math
-        then 'Grad Eligible.'
+        then 'Grad Eligible'
         -- 11th graders who tried njgpa and passed only ela
         when
             grade_level = 11
@@ -307,7 +323,7 @@ select
             and njgpa_attempt
             and met_ela
             and not met_math
-        then 'ELA Eligible only.'
+        then 'ELA Eligible only'
         -- 11th graders who tried njgpa and passed only math
         when
             grade_level = 11
@@ -315,7 +331,72 @@ select
             and njgpa_attempt
             and not met_ela
             and met_math
-        then 'Math Eligible only.'
+        then 'Math Eligible only'
+        -- 12th graders before fafsa season. havent attempted njgpa
+        when grade_level = 12 and not njgpa_attempt
+        then 'Not Grad Eligible. No NJGPA attempt.'
+        -- 12th graders before fafsa season. took njgpa and qualified with some pathway
+        when
+            grade_level = 12
+            and not fafsa_season_12th
+            and njgpa_attempt
+            and met_ela
+            and met_math
+        then 'Grad Eligible'
+        -- 12th graders before fafsa season. took njgpa and qualified with some
+        -- pathway ela only
+        when
+            grade_level = 12
+            and not fafsa_season_12th
+            and njgpa_attempt
+            and met_ela
+            and not met_math
+        then 'ELA Eligible only'
+        -- 12th graders before fafsa season. took njgpa and qualified with some
+        -- pathway math only
+        when
+            grade_level = 12
+            and not fafsa_season_12th
+            and njgpa_attempt
+            and not met_ela
+            and met_math
+        then 'Math Eligible only'
+        -- 12th graders before fafsa season. took njgpa but didnt qualify with any
+        -- pathway
+        when
+            grade_level = 12
+            and not fafsa_season_12th
+            and njgpa_attempt
+            and not met_ela
+            and not met_math
+        then 'Not Grad Eligible. No pathway met.'
+        -- 12th grader after fafsa season, meets all requirements via some pathway
+        when
+            grade_level = 12
+            and fafsa_season_12th
+            and has_fafsa
+            and njgpa_attempt
+            and met_ela
+            and met_math
+        then 'Grad Eligible'
+        -- 12th grader after fafsa season, took NJGPA, ELA pathway met only somehow
+        when
+            grade_level = 12
+            and fafsa_season_12th
+            and has_fafsa
+            and njgpa_attempt
+            and met_ela
+            and not met_math
+        then 'ELA Eligible Only'
+        -- 12th grader after fafsa season, took NJGPA, math pathway met only somehow
+        when
+            grade_level = 12
+            and fafsa_season_12th
+            and has_fafsa
+            and njgpa_attempt
+            and not met_ela
+            and met_math
+        then 'Math Eligible Only'
 
         else 'New category. Need new logic.'
     end as grad_eligibility,
