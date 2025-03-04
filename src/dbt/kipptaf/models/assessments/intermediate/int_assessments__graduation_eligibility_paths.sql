@@ -40,16 +40,21 @@ with
 
             -- this is the date we start holding 11th graders accountable to
             -- fulfilling the NJGPA test requirement
-            date({{ var("current_academic_year") + 1 }}, 05, 31) as njgpa_date_11th,
+            if(
+                current_date('{{ var("local_timezone") }}')
+                < date({{ var("current_academic_year") + 1 }}, 05, 31),
+                false,
+                true
+            ) as njgpa_season_11th,
 
             -- this is the date we start holding 12th graders accountable to
             -- fulfilling the FAFSA requirement
             if(
                 current_date('{{ var("local_timezone") }}')
                 < date({{ var("current_academic_year") + 1 }}, 01, 01),
-                true,
-                false
-            ) as is_before_fafsa_12th,
+                false,
+                true
+            ) as fafsa_season_12th,
 
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
@@ -146,35 +151,30 @@ with
         select
             s.* except (state_studentnumber_int),
 
-            p.pathway_option,
-            p.score_type,
-            p.scale_score,
-
+            c.type as pathway_option,
+            c.subject as score_type,
             c.code as pathway_code,
             c.cutoff,
 
+            p.scale_score,
+
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
 
-            row_number() over (
-                partition by s.student_number, p.score_type order by p.scale_score desc
-            ) as rn_highest,
-
         from students as s
-        inner join
+        left join
             {{ ref("stg_reporting__promo_status_cutoffs") }} as c
             on s.cohort = c.cohort
             and s.discipline = c.discipline
-            and c.`domain` = 'Graduation Pathways'
-        inner join
+            and c.`domain` = 'Graduation Pathway'
+        left join
             scores as p
-            on s.student_number = p.student_number
-            and s.discipline = p.discipline
-            and c.type = p.pathway_option
+            on c.type = p.pathway_option
             and c.subject = p.score_type
+            and s.student_number = p.student_number
     ),
 
-    -- determining if the highest score ever for the score_type (if it exists) met the
-    -- pathway option
+    -- determining if any of the scores for the score_type (if it exists)
+    -- met the pathway option
     unpivot_calcs as (
         select
             _dbt_source_relation,
@@ -185,12 +185,12 @@ with
             -- pathways
             if(max(met_njgpa) is not null, true, false) as njgpa_attempt,
 
-            -- having to collapse the unpivot and turn non-tested subject to false
-            coalesce(max(met_njgpa), false) as met_njgpa,
-            coalesce(max(met_act), false) as met_act,
-            coalesce(max(met_sat), false) as met_sat,
-            coalesce(max(met_psat10), false) as met_psat10,
-            coalesce(max(met_psat_nmsqt), false) as met_psat_nmsqt,
+            -- collapse the unpivot
+            max(met_njgpa) as met_njgpa,
+            max(met_act) as met_act,
+            max(met_sat) as met_sat,
+            max(met_psat10) as met_psat10,
+            max(met_psat_nmsqt) as met_psat_nmsqt,
 
         from
             lookup_table pivot (
@@ -203,12 +203,12 @@ with
                     'PSAT NMSQT' as met_psat_nmsqt
                 )
             )
-        where rn_highest = 1
+        where scale_score is not null
         group by all
     ),
 
-    -- calculating of the student met the discipline overall, regardless of how they
-    -- did it, assuming they took the njgpa
+    -- calculating if the student met the discipline overall, regardless of
+    -- how they did it, assuming they took the njgpa
     met_subject as (
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
@@ -220,57 +220,68 @@ with
             )
         where njgpa_attempt
         group by all
+    ),
+
+    roster as (
+        select
+            l.*,
+
+            coalesce(u.njgpa_attempt, false) as njgpa_attempt,
+            coalesce(u.met_njgpa, false) as met_njgpa,
+            coalesce(u.met_act, false) as met_act,
+            coalesce(u.met_sat, false) as met_sat,
+            coalesce(u.met_psat10, false) as met_psat10,
+            coalesce(u.met_psat_nmsqt, false) as met_psat_nmsqt,
+
+            coalesce(m.met_ela, false) as met_ela,
+            coalesce(m.met_math, false) as met_math,
+
+        from lookup_table as l
+        left join
+            unpivot_calcs as u
+            on l.student_number = u.student_number
+            and l.discipline = u.discipline
+        left join met_subject as m on l.student_number = m.student_number
     )
 
 select
-    l.*,
-
-    u.njgpa_attempt,
-    u.met_njgpa,
-    u.met_act,
-    u.met_sat,
-    u.met_psat10,
-    u.met_psat_nmsqt,
-
-    coalesce(m.met_ela, false) as met_ela,
-    coalesce(m.met_math, false) as met_math,
+    *,
 
     case
-        when l.grade_level != 12
-        then l.ps_grad_path_code
-        when l.ps_grad_path_code in ('M', 'N', 'O', 'P')
-        then l.ps_grad_path_code
-        when u.met_njgpa
+        when grade_level != 12
+        then ps_grad_path_code
+        when ps_grad_path_code in ('M', 'N', 'O', 'P')
+        then ps_grad_path_code
+        when met_njgpa
         then 'S'
-        when u.njgpa_attempt and not u.met_njgpa and u.met_act
+        when njgpa_attempt and not met_njgpa and met_act
         then 'E'
-        when u.njgpa_attempt and not u.met_njgpa and not u.met_act and u.met_sat
+        when njgpa_attempt and not met_njgpa and not met_act and met_sat
         then 'D'
         when
-            u.njgpa_attempt
-            and not u.met_njgpa
-            and not u.met_act
-            and not u.met_sat
-            and u.met_psat10
+            njgpa_attempt
+            and not met_njgpa
+            and not met_act
+            and not met_sat
+            and met_psat10
         then 'J'
         when
-            u.njgpa_attempt
-            and not u.met_njgpa
-            and not u.met_act
-            and not u.met_sat
-            and not u.met_psat10
-            and u.met_psat_nmsqt
+            njgpa_attempt
+            and not met_njgpa
+            and not met_act
+            and not met_sat
+            and not met_psat10
+            and met_psat_nmsqt
         then 'K'
         else 'R'
     end as final_grad_path,
 
     case
-        when grade_level <= 10 then 'Grad Eligible' else 'New Category. Need new logic.'
+        when grade_level <= 10
+        then 'Grad Eligible'
+        when grade_level = 11 and not njgpa_season_11th and not njgpa_attempt
+        then 'Not Grad Eligible. Before NJGPA season.'
+        else 'New category. Need new logic.'
     end as grad_eligibility,
 
-from lookup_table as l
-left join
-    unpivot_calcs as u
-    on l.student_number = u.student_number
-    and l.discipline = u.discipline
-left join met_subject as m on l.student_number = m.student_number
+from roster
