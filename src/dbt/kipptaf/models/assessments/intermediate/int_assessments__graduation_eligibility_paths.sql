@@ -161,32 +161,31 @@ with
 
         from students as s
         inner join
+            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
+            on s.cohort = c.cohort
+            and s.discipline = c.discipline
+            and c.`domain` = 'Graduation Pathways'
+        inner join
             scores as p
             on s.student_number = p.student_number
             and s.discipline = p.discipline
-        inner join
-            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
-            on p.discipline = c.discipline
-            and p.pathway_option = c.type
-            and p.score_type = c.subject
-            and s.cohort = c.cohort
-            and c.`domain` = 'Graduation Pathways'
+            and c.type = p.pathway_option
+            and c.subject = p.score_type
     ),
 
-    -- having to collapse the unpivot 
+    -- determining if the highest score ever for the score_type (if it exists) met the
+    -- pathway option
     unpivot_calcs as (
         select
             _dbt_source_relation,
             student_number,
-            salesforce_id,
-            state_studentnumber,
-            grade_level,
-            cohort,
             discipline,
-            ps_grad_path_code,
 
+            -- taking the njgpa at least once is a requirement to consider other
+            -- pathways
             if(max(met_njgpa) is not null, true, false) as njgpa_attempt,
 
+            -- having to collapse the unpivot and turn non-tested subject to false
             coalesce(max(met_njgpa), false) as met_njgpa,
             coalesce(max(met_act), false) as met_act,
             coalesce(max(met_sat), false) as met_sat,
@@ -204,10 +203,12 @@ with
                     'PSAT NMSQT' as met_psat_nmsqt
                 )
             )
-        -- where rn_highest = 1
+        where rn_highest = 1
         group by all
     ),
 
+    -- calculating of the student met the discipline overall, regardless of how they
+    -- did it, assuming they took the njgpa
     met_subject as (
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
@@ -219,88 +220,53 @@ with
             )
         where njgpa_attempt
         group by all
-    ),
-
-    final_grad_path as (
-        select
-            u.*,
-
-            case
-                when u.grade_level != 12
-                then u.ps_grad_path_code
-                when u.ps_grad_path_code in ('M', 'N', 'O', 'P')
-                then u.ps_grad_path_code
-                when u.met_njgpa
-                then 'S'
-                when u.njgpa_attempt and not u.met_njgpa and u.met_act
-                then 'E'
-                when u.njgpa_attempt and not u.met_njgpa and not u.met_act and u.met_sat
-                then 'D'
-                when
-                    u.njgpa_attempt
-                    and not u.met_njgpa
-                    and not u.met_act
-                    and not u.met_sat
-                    and u.met_psat10
-                then 'J'
-                when
-                    u.njgpa_attempt
-                    and not u.met_njgpa
-                    and not u.met_act
-                    and not u.met_sat
-                    and not u.met_psat10
-                    and u.met_psat_nmsqt
-                then 'K'
-                else 'R'
-            end as final_grad_path,
-
-            coalesce(m.met_ela, false) as met_ela,
-            coalesce(m.met_math, false) as met_math,
-
-        from unpivot_calcs as u
-        inner join met_subject as m on u.student_number = m.student_number
     )
 
 select
-    s._dbt_source_relation,
-    s.students_dcid,
-    s.studentid,
-    s.student_number,
-    s.state_studentnumber,
-    s.salesforce_id,
-    s.grade_level,
-    s.cohort,
-    s.has_fafsa,
-    s.discipline,
-    s.powerschool_credittype,
-    s.ps_grad_path_code,
-    s.njgpa_date_11th,
-    s.is_before_fafsa_12th,
+    l.*,
 
-    l.pathway_option,
-    l.score_type,
-    l.scale_score,
-    l.pathway_code,
-    l.cutoff,
-    l.met_pathway_cutoff,
-    l.rn_highest,
+    u.njgpa_attempt,
+    u.met_njgpa,
+    u.met_act,
+    u.met_sat,
+    u.met_psat10,
+    u.met_psat_nmsqt,
 
-    f.njgpa_attempt as njgpa_attempt,
-    f.met_njgpa as met_njgpa,
-    f.met_act,
-    f.met_sat,
-    f.met_psat10,
-    f.met_psat_nmsqt,
-    f.final_grad_path,
-    f.met_ela,
-    f.met_math,
+    coalesce(m.met_ela, false) as met_ela,
+    coalesce(m.met_math, false) as met_math,
 
-from students as s
+    case
+        when l.grade_level != 12
+        then l.ps_grad_path_code
+        when l.ps_grad_path_code in ('M', 'N', 'O', 'P')
+        then l.ps_grad_path_code
+        when u.met_njgpa
+        then 'S'
+        when u.njgpa_attempt and not u.met_njgpa and u.met_act
+        then 'E'
+        when u.njgpa_attempt and not u.met_njgpa and not u.met_act and u.met_sat
+        then 'D'
+        when
+            u.njgpa_attempt
+            and not u.met_njgpa
+            and not u.met_act
+            and not u.met_sat
+            and u.met_psat10
+        then 'J'
+        when
+            u.njgpa_attempt
+            and not u.met_njgpa
+            and not u.met_act
+            and not u.met_sat
+            and not u.met_psat10
+            and u.met_psat_nmsqt
+        then 'K'
+        else 'R'
+    end as final_grad_path,
+
+from lookup_table as l
 left join
-    lookup_table as l
-    on s.student_number = l.student_number
-    and s.discipline = l.discipline
-left join
-    final_grad_path as f
-    on l.student_number = f.student_number
-    and l.discipline = f.discipline
+    unpivot_calcs as u
+    on l.student_number = u.student_number
+    and l.discipline = u.discipline
+left join met_subject as m on l.student_number = m.student_number
