@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: collegeboard
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
       {{ project_name }}_collegeboard
     tables:
       - name: src_collegeboard__psat
@@ -13,7 +13,8 @@ sources:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: AUTOMATIC
             max_staleness: INTERVAL 1 DAY
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/collegeboard/psat/"
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/collegeboard/psat/"
             format: AVRO
             enable_logical_types: true
         meta:

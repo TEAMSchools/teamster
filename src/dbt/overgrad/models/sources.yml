@@ -3,13 +3,14 @@ version: 2
 sources:
   - name: overgrad
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
       {{ var('overgrad_schema', project_name + '_overgrad') }}
     tables:
       - name: src_overgrad__admissions
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/overgrad/admissions/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
@@ -26,7 +27,8 @@ sources:
       - name: src_overgrad__custom_fields
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/overgrad/custom_fields/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
@@ -43,7 +45,8 @@ sources:
       - name: src_overgrad__followings
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/overgrad/followings/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
@@ -60,8 +63,8 @@ sources:
       - name: src_overgrad__schools
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/overgrad/schools/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/overgrad/schools/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: AUTOMATIC
@@ -77,7 +80,8 @@ sources:
       - name: src_overgrad__students
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/overgrad/students/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"

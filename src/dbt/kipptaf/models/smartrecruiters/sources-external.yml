@@ -3,12 +3,13 @@ version: 2
 sources:
   - name: smartrecruiters
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
       {{ project_name }}_smartrecruiters
     tables:
       - name: src_smartrecruiters__applicants
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/smartrecruiters/applicants/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/smartrecruiters/applicants/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: AUTOMATIC
@@ -23,7 +24,8 @@ sources:
               - applicants
       - name: src_smartrecruiters__applications
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/smartrecruiters/applications/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/smartrecruiters/applications/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: AUTOMATIC
