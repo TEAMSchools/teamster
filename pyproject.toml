@@ -13,7 +13,6 @@ dependencies = [
   "dagster-cloud",
   "dagster-dbt",
   "dagster-dlt",
-  "dagster-fivetran",
   "dagster-gcp",
   "dagster-k8s",
   "dagster-slack",
