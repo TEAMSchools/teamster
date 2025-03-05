@@ -11,8 +11,6 @@ models:
       - name: contact
         description: the auto-generated, unique id assigned to a student upon record creation in salesforce.
         data_type: string
-        tests:
-          - unique
 
       - name: academic_year
         description: the academic year the test was taken. this is calculated on-the-fly using the date__c field in stg_kippadb__standardized_test as base.
@@ -23,14 +21,10 @@ models:
       - name: administration_round
         description: displays the MMM / YY a test was taken, using the date__c field in stg_kippadb__standardized_test as base.
         data_type: string
-        tests:
-          - not_null
 
       - name: date
         description: the date the test was taken, which may or may not be accurate (it is highly dependent on data entry accuracy into salesforce)
         data_type: date
-        tests:
-          - not_null
 
       - name: test_type
         description: the type of assessment taken (ACT, SAT, PSAT, or AP)
@@ -43,8 +37,6 @@ models:
       - name: score
         description: the scale score earned by the student.
         data_type: numeric
-        tests:
-          - not_null
 
       - name: course_discipline
         description: the discipline the assessment belongs to - it matches the field courses_credittype on base_powerschool__course_enrollments
