@@ -53,6 +53,8 @@ models:
         +enabled: false
       stg_powerschool__u_def_ext_students:
         +enabled: false
+      stg_powerschool__u_storedgrades_de:
+        +enabled: false
       stg_powerschool__studentrace:
         +enabled: false
       stg_powerschool__gpnode:
@@ -86,6 +88,8 @@ sources:
       src_powerschool__s_nj_usr_x:
         +enabled: false
       src_powerschool__u_def_ext_students:
+        +enabled: false
+      src_powerschool__u_storedgrades_de:
         +enabled: false
       src_powerschool__studentrace:
         +enabled: false
