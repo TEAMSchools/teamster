@@ -27,7 +27,6 @@ on:
       - src/teamster/libraries/deanslist/schema.py
       - src/teamster/libraries/dlt/**
       - src/teamster/libraries/extracts/**
-      - src/teamster/libraries/fivetran/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**
       - src/teamster/libraries/overgrad/**
@@ -55,7 +54,6 @@ on:
       - src/teamster/libraries/deanslist/schema.py
       - src/teamster/libraries/dlt/**
       - src/teamster/libraries/extracts/**
-      - src/teamster/libraries/fivetran/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**
       - src/teamster/libraries/overgrad/**
