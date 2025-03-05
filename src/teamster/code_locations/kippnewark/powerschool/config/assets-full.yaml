@@ -58,6 +58,8 @@ assets:
     partition_column: whenmodified
   - asset_name: userscorefields
     partition_column: whenmodified
+  - asset_name: u_storedgrades_de
+    partition_column: whenmodified
   - asset_name: u_studentsuserfields
     partition_column: whenmodified
     select_columns:

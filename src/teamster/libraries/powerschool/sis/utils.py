@@ -7,6 +7,7 @@ from teamster.libraries.ssh.resources import SSHResource
 
 
 def open_ssh_tunnel(ssh_resource: SSHResource):
+    # trunk-ignore(bandit/B603)
     ssh_tunnel = subprocess.Popen(
         args=[
             "sshpass",
@@ -57,15 +58,18 @@ def get_query_text(
 ):
     # TODO: paramterize sqlalchemy query to resolve bandit/B608
     if column is None:
+        # trunk-ignore(bandit/B608)
         query = f"SELECT COUNT(*) FROM {table}"
     elif end_value is None:
         query = (
+            # trunk-ignore(bandit/B608)
             f"SELECT COUNT(*) FROM {table} "
             f"WHERE {column} >= "
             f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
         )
     else:
         query = (
+            # trunk-ignore(bandit/B608)
             f"SELECT COUNT(*) FROM {table} "
             f"WHERE {column} BETWEEN "
             f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "

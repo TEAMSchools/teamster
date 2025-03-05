@@ -814,3 +814,11 @@ sources:
               - kippcamden
               - powerschool
               - stg_powerschool__userscorefields
+      - name: stg_powerschool__u_storedgrades_de
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__u_storedgrades_de
