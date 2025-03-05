@@ -113,3 +113,6 @@ left join
     and r.discipline = c.discipline
     and c.scale_score is not null
     and c.rn_highest = 1
+
+    -- test
+    
