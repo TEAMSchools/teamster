@@ -1,6 +1,6 @@
 with
     grad_path as (
-        select _dbt_source_relation, student_number, discipline, final_grad_path,
+        select _dbt_source_relation, student_number, discipline, final_grad_path_code,
         from {{ ref("int_students__graduation_path_codes") }}
     ),
 
@@ -12,7 +12,7 @@ with
             s_nj_stu_x__graduation_pathway_ela,
         from
             grad_path pivot (
-                max(final_grad_path) for discipline in (
+                max(final_grad_path_code) for discipline in (
                     'Math' as `s_nj_stu_x__graduation_pathway_math`,
                     'ELA' as `s_nj_stu_x__graduation_pathway_ela`
                 )
