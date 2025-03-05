@@ -54,7 +54,7 @@ with
             )
     )
 
-select distinct
+select
     r._dbt_source_relation,
     r.academic_year,
     r.academic_year_display,
@@ -112,3 +112,4 @@ left join
     on r.student_number = c.student_number
     and r.discipline = c.discipline
     and c.scale_score is not null
+    and c.rn_highest = 1
