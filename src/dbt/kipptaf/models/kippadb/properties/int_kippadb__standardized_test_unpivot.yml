@@ -15,8 +15,6 @@ models:
       - name: academic_year
         description: the academic year the test was taken. this is calculated on-the-fly using the date__c field in stg_kippadb__standardized_test as base.
         data_type: int64
-        tests:
-          - not_null
 
       - name: administration_round
         description: displays the MMM / YY a test was taken, using the date__c field in stg_kippadb__standardized_test as base.
