@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: assessments
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
       {{ project_name }}_assessments
     tables:
       - name: src_assessments__ap_course_crosswalk
