@@ -1,24 +1,3 @@
--- purpose of this view: some version of the nonsense below is repeated via CTEs in
--- two views: the old version of this view (int_students__graduation_path_codes.sql) and
--- rpt_tableau__graduation_requirements.sql. path_codes then feeds autocomm_students
--- to send to PS the final graduation eligibility code. currently, the CTE versions
--- require manual adjustments of the ACT SAT PSAT et al thresholds needed to
--- calculate eligibility for graduation under these pathways IF a student tests for
--- NJGPA. i can share a doc of the logic behind the checks, if that helps. the point
--- is that these grad requirements can change even after a student has already been
--- assigned a path, so we need to be able to check grad pathways at the academic year
--- level (i.e. a student who is supposed to graduate this year may have different
--- ACT/SAT/PSAT thredsholds than a student who is supposed to graduate next year). i
--- started building a lookup table that allows me to customize the thresholds by
--- cohort/test/score_type (subject). it currently lives on the same table where walters
--- has the promo status cutoffs (stg_reporting__promo_status_cutoffs). im not married
--- to this location, so if you think it goes better somewhere else, please move it.
--- this view will also help us track the distribution of grad pathways over time to
--- share with katie and co which pathways our students take the most, which can
--- influence strategy decisions around which college readiness assessments serve our
--- students best. in addition, a large majority of the calcs on the main select here
--- only exist on tableau, but we need them further upstream for other projects. thank
--- you for coming to my tedtalk
 with
     students as (
         select
@@ -170,9 +149,6 @@ with
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
 
         from students as s
-        -- note for charlie: the reason for the left join rather than an inner join is
-        -- because we want to make sure we can tell which pathway of the ones that
-        -- were available to them a student did not take for graduation. 
         left join
             {{ ref("stg_reporting__promo_status_cutoffs") }} as c
             on s.cohort = c.cohort
@@ -273,8 +249,6 @@ with
             coalesce(m.met_ela, false) as met_ela,
             coalesce(m.met_math, false) as met_math,
 
-            -- note for chalie: if there are better ways to do an rn_highest where
-            -- null scale scores get skipped, id love to know!
             row_number() over (
                 partition by l.student_number, l.score_type order by l.scale_score desc
             ) as rn_highest,
@@ -512,7 +486,6 @@ select
         then pathway_option
         when pathway_code in ('J', 'K')
         then subject_area
-
         else 'No Data'
     end as test_type,
 
