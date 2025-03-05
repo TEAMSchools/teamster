@@ -1,7 +1,7 @@
 with
     view_count as (
         select
-            *,
+            * except (created_at_local),
 
             lower(user_name) as user_name_lower,
             concat(
