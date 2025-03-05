@@ -2,6 +2,7 @@ version: 2
 
 sources:
   - name: google_appsheet
+    schema: "{{ project_name }}_appsheet"
     tables:
       - name: illuminate_assessments_extension
         meta:
