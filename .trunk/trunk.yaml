@@ -9,7 +9,7 @@ plugins:
 lint:
   enabled:
     - bandit@1.8.3
-    - checkov@3.2.378
+    - checkov@3.2.379
     - terrascan@1.19.1
     - trivy@0.59.1
     - actionlint@1.7.7
@@ -20,9 +20,9 @@ lint:
     - markdownlint@0.44.0
     - osv-scanner@1.9.2
     - oxipng@9.1.4
-    - prettier@3.5.2
-    - pyright@1.1.395
-    - ruff@0.9.7
+    - prettier@3.5.3
+    - pyright@1.1.396
+    - ruff@0.9.9
     - shellcheck@0.10.0
     - shfmt@3.6.0
     - sqlfluff@3.3.1
