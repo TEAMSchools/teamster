@@ -489,4 +489,8 @@ select
         else 'No Data'
     end as test_type,
 
+    row_number() over (
+        partition by student_number order by pathway_option
+    ) as rn_distinct,
+
 from roster
