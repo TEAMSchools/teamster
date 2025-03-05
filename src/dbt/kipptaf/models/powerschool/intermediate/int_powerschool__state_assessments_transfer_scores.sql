@@ -1,12 +1,3 @@
--- purpose of this view: this CTE is used in 2 views -
--- int_students__graduation_path_codes and rpt_tableau__graduation_requirements. this
--- chunk brings over NJGPA scores of students who enrolled with us AFTER they
--- attempted the test. we dont get score files for them because they didnt test with
--- us, but we still need to know: 1) their attempt and, 2) their scores, so that we
--- can calculate graduation eligibility for the grad requirements dash, AND for
--- writing the correct grad path code into PS via autocomm_students. i wasnt sure
--- where this would go, but i figured since all the tables are from PS, it would go
--- here.
 select
     b._dbt_source_relation,
     b.name as test_name,
