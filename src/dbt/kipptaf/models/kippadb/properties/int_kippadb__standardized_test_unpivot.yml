@@ -1,28 +1,63 @@
 version: 2
 models:
   - name: int_kippadb__standardized_test_unpivot
+    description: a view that holds scores for act, sat, psat, and ap for students, as entered into salesforce.
+
     columns:
       - name: id
+        description: TBD
         data_type: string
+
       - name: contact
+        description: the auto-generated, unique id assigned to a student upon record creation in salesforce.
         data_type: string
+        tests:
+          - unique
+
       - name: academic_year
+        description: the academic year the test was taken. this is calculated on-the-fly using the date__c field in stg_kippadb__standardized_test as base.
         data_type: int64
+        tests:
+          - not_null
+
       - name: administration_round
+        description: displays the MMM / YY a test was taken, using the date__c field in stg_kippadb__standardized_test as base.
         data_type: string
+        tests:
+          - not_null
+
       - name: date
+        description: the date the test was taken, which may or may not be accurate (it is highly dependent on data entry accuracy into salesforce)
         data_type: date
+        tests:
+          - not_null
+
       - name: test_type
+        description: the type of assessment taken (ACT, SAT, PSAT, or AP)
         data_type: string
+
       - name: score_type
+        description: displays the test type plus the subjects tested (e.g. math, writing, reading, etc) as a string joined by underscores.
         data_type: string
+
       - name: score
+        description: the scale score earned by the student.
         data_type: numeric
+        tests:
+          - not_null
+
       - name: course_discipline
+        description: the discipline the assessment belongs to - it matches the field courses_credittype on base_powerschool__course_enrollments
         data_type: string
+
       - name: test_subject
+        description: converts the score_type value to a user-friendly description of the subject (e.g. Math, EBRW, Total (i.e. for combined/composite scores))
         data_type: string
+
       - name: rn_highest
+        description: tags each score by student and score_type from highest to lowest, regardless of admin. in others words, rn_highest = 1 the maximum score ever attained by a student for the score_type.
         data_type: int64
+
       - name: subject_area
+        description: user-friendly version of test_subject (e.g. for SAT/PSAT, total becomes combined rather composite; for Math Subscore, Math Test is used instead, etc.)
         data_type: string
