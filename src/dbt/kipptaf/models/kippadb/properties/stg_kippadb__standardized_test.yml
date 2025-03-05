@@ -1,0 +1,308 @@
+version: 2
+models:
+  - name: stg_kippadb__standardized_test
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: contact
+        data_type: string
+      - name: date
+        data_type: date
+      - name: test_type
+        data_type: string
+      - name: source
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: test_location
+        data_type: string
+      - name: arithmetic_reasoning_ar
+        data_type: numeric
+      - name: assembling_objects_ao
+        data_type: numeric
+      - name: auto_and_shop_information_as
+        data_type: numeric
+      - name: clerical_cl
+        data_type: numeric
+      - name: combat_co
+        data_type: numeric
+      - name: electronics_el
+        data_type: numeric
+      - name: electronics_information_ei
+        data_type: numeric
+      - name: field_artillery_fa
+        data_type: numeric
+      - name: general_maintenance_gm
+        data_type: numeric
+      - name: general_science_gs
+        data_type: numeric
+      - name: general_technical_gt
+        data_type: numeric
+      - name: mathematics_knowledge_mk
+        data_type: numeric
+      - name: mechanical_comprehension_mc
+        data_type: numeric
+      - name: mechanical_maintenance_mm
+        data_type: numeric
+      - name: operators_and_food_of
+        data_type: numeric
+      - name: paragraph_comprehension_pc
+        data_type: numeric
+      - name: skilled_technical_st
+        data_type: numeric
+      - name: surveillance_and_communications_sc
+        data_type: numeric
+      - name: word_knowledge_wk
+        data_type: numeric
+      - name: school_ability_index_sai
+        data_type: numeric
+      - name: corrected_age_ca_months
+        data_type: numeric
+      - name: corrected_age_ca_years
+        data_type: numeric
+      - name: physical_training_requirement_passed
+        data_type: string
+      - name: asvab_minimum_score_requirement
+        data_type: numeric
+      - name: raw_score_rs
+        data_type: string
+      - name: raw_score_rs_denominator
+        data_type: numeric
+      - name: raw_score_rs_numerator
+        data_type: numeric
+      - name: scaled_score_ss
+        data_type: numeric
+      - name: qualified_air_force
+        data_type: boolean
+      - name: qualified_army
+        data_type: boolean
+      - name: qualified_coast_guard
+        data_type: boolean
+      - name: qualified_marine_corps
+        data_type: boolean
+      - name: qualified_navy
+        data_type: boolean
+      - name: total_qualified_military_branches
+        data_type: numeric
+      - name: afqt_score
+        data_type: numeric
+      - name: bcpss_magnet
+        data_type: numeric
+      - name: bcpss_poly
+        data_type: numeric
+      - name: csq
+        data_type: numeric
+      - name: dc_cas_math
+        data_type: string
+      - name: dc_cas_reading
+        data_type: string
+      - name: estimated_act_high
+        data_type: numeric
+      - name: estimated_act_low
+        data_type: numeric
+      - name: explore_composite
+        data_type: numeric
+      - name: explore_english
+        data_type: numeric
+      - name: explore_est_plan_high
+        data_type: numeric
+      - name: explore_est_plan_low
+        data_type: numeric
+      - name: explore_math
+        data_type: numeric
+      - name: explore_reading
+        data_type: numeric
+      - name: explore_science
+        data_type: numeric
+      - name: ged_language_arts_reading
+        data_type: numeric
+      - name: ged_language_arts_writing
+        data_type: numeric
+      - name: ged_mathematics
+        data_type: numeric
+      - name: ged_science
+        data_type: numeric
+      - name: ged_social_studies
+        data_type: numeric
+      - name: ged_total_score
+        data_type: numeric
+      - name: hspt_language
+        data_type: numeric
+      - name: hspt_math
+        data_type: numeric
+      - name: hspt_quantitative
+        data_type: numeric
+      - name: hspt_reading
+        data_type: numeric
+      - name: hspt_vb
+        data_type: numeric
+      - name: hspt_verbal
+        data_type: numeric
+      - name: isee_mathematics_achievement_stanine
+        data_type: numeric
+      - name: isee_percentile
+        data_type: numeric
+      - name: isee_quantitative_reasoning_stanine
+        data_type: numeric
+      - name: isee_reading_comprehension_stanine
+        data_type: numeric
+      - name: isee_verbal_reasoning_stanine
+        data_type: numeric
+      - name: nwea_percentile
+        data_type: numeric
+      - name: nyc_level
+        data_type: string
+      - name: plan_composite
+        data_type: numeric
+      - name: plan_english
+        data_type: numeric
+      - name: plan_geometry
+        data_type: numeric
+      - name: plan_math
+        data_type: numeric
+      - name: plan_pre_alg_algebra
+        data_type: numeric
+      - name: plan_reading
+        data_type: numeric
+      - name: plan_rhetorical_skills
+        data_type: numeric
+      - name: plan_science
+        data_type: numeric
+      - name: plan_usage_mechanics
+        data_type: numeric
+      - name: grade_level
+        data_type: string
+      - name: overall_score
+        data_type: numeric
+      - name: scoring_irregularity
+        data_type: boolean
+      - name: standardized_test_count
+        data_type: numeric
+      - name: stanford_language_nce
+        data_type: numeric
+      - name: stanford_language_pr
+        data_type: numeric
+      - name: stanford_language_stanine
+        data_type: numeric
+      - name: stanford_math_nce
+        data_type: numeric
+      - name: stanford_math_pr
+        data_type: numeric
+      - name: stanford_math_stanine
+        data_type: numeric
+      - name: stanford_overall_nce
+        data_type: numeric
+      - name: stanford_reading_nce
+        data_type: numeric
+      - name: stanford_reading_pr
+        data_type: numeric
+      - name: stanford_reading_s
+        data_type: numeric
+      - name: record_type_id
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: last_activity_date
+        data_type: date
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: last_referenced_date
+        data_type: timestamp
+      - name: last_viewed_date
+        data_type: timestamp
+      - name: system_modstamp
+        data_type: timestamp
+      - name: administration_round
+        data_type: string
+      - name: act_composite
+        data_type: numeric
+      - name: act_ela
+        data_type: numeric
+      - name: act_english
+        data_type: numeric
+      - name: act_math
+        data_type: numeric
+      - name: act_reading
+        data_type: numeric
+      - name: act_science
+        data_type: numeric
+      - name: act_stem
+        data_type: numeric
+      - name: act_writing
+        data_type: numeric
+      - name: sat_total_score
+        data_type: numeric
+      - name: sat_ebrw
+        data_type: numeric
+      - name: sat_essay_analysis
+        data_type: numeric
+      - name: sat_essay_reading
+        data_type: numeric
+      - name: sat_essay_writing
+        data_type: numeric
+      - name: sat_math
+        data_type: numeric
+      - name: sat_math_test_score
+        data_type: numeric
+      - name: sat_reading_test_score
+        data_type: numeric
+      - name: sat_verbal
+        data_type: numeric
+      - name: sat_writing
+        data_type: numeric
+      - name: sat_critical_reading_pre_2016
+        data_type: numeric
+      - name: sat_math_pre_2016
+        data_type: numeric
+      - name: sat_writing_and_language_test_score
+        data_type: numeric
+      - name: sat_writing_pre_2016
+        data_type: numeric
+      - name: ssat_overall_percentile
+        data_type: numeric
+      - name: ssat_math
+        data_type: numeric
+      - name: ssat_math_percentile
+        data_type: numeric
+      - name: ssat_reading_comp
+        data_type: numeric
+      - name: ssat_reading_comp_percentile
+        data_type: numeric
+      - name: ssat_verbal
+        data_type: numeric
+      - name: ssat_verbal_percentile
+        data_type: numeric
+      - name: ap
+        data_type: numeric
+      - name: ib_course_grade
+        data_type: numeric
+      - name: psat_total_score
+        data_type: numeric
+      - name: psat_ebrw
+        data_type: numeric
+      - name: psat_math
+        data_type: numeric
+      - name: psat_math_test_score
+        data_type: numeric
+      - name: psat_reading_test_score
+        data_type: numeric
+      - name: psat_verbal
+        data_type: numeric
+      - name: psat_writing
+        data_type: numeric
+      - name: psat_writing_and_language_test_score
+        data_type: numeric
+      - name: psat_critical_reading_pre_2016
+        data_type: numeric
+      - name: psat_math_pre_2016
+        data_type: numeric
+      - name: psat_writing_pre_2016
+        data_type: numeric
+      - name: academic_year
+        data_type: int64

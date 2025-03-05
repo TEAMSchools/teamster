@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_schoolmint_grow__roles
+    columns:
+      - name: role_id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: category
+        data_type: string
+      - name: district
+        data_type: string

@@ -1,0 +1,70 @@
+version: 2
+models:
+  - name: rpt_tableau__home_instruction_queue
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: state_studentnumber
+        data_type: string
+      - name: lastfirst
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: school_abbreviation
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: team
+        data_type: string
+      - name: advisor_name
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: region
+        data_type: string
+      - name: term
+        data_type: string
+      - name: dl_student_id
+        data_type: int64
+      - name: dl_id
+        data_type: int64
+      - name: status
+        data_type: string
+      - name: reported_details
+        data_type: string
+      - name: admin_summary
+        data_type: string
+      - name: context
+        data_type: string
+      - name: dl_timestamp
+        data_type: datetime
+      - name: infraction
+        data_type: string
+      - name: final_approval
+        data_type: string
+      - name: instructor_source
+        data_type: string
+      - name: instructor_name
+        data_type: string
+      - name: hours_per_week
+        data_type: string
+      - name: hourly_rate
+        data_type: string
+      - name: board_approval_date
+        data_type: string
+      - name: hi_start_date
+        data_type: string
+      - name: hi_end_date
+        data_type: string
+      - name: referring_teacher_name
+        data_type: string
+      - name: reviewed_by
+        data_type: string
+      - name: approver_name
+        data_type: string
+      - name: dl_behavior
+        data_type: string

@@ -1,0 +1,28 @@
+version: 2
+models:
+  - name: rpt_google_directory__users_import
+    columns:
+      - name: primaryemail
+        data_type: string
+      - name: orgunitpath
+        data_type: string
+      - name: suspended
+        data_type: boolean
+      - name: is_create
+        data_type: boolean
+      - name: is_update
+        data_type: boolean
+      - name: hashfunction
+        data_type: string
+      - name: groupkey
+        data_type: string
+      - name: name
+        data_type: record
+      - name: name.givenname
+        data_type: string
+      - name: name.familyname
+        data_type: string
+      - name: password
+        data_type: string
+      - name: changepasswordatnextlogin
+        data_type: boolean

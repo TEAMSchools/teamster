@@ -1,0 +1,66 @@
+version: 2
+models:
+  - name: rpt_illuminate__users
+    columns:
+      - name: 01 user id
+        data_type: string
+      - name: 02 user last name
+        data_type: string
+      - name: 03 user first name
+        data_type: string
+      - name: 04 user middle name
+        data_type: int64
+      - name: 05 birth date
+        data_type: int64
+      - name: 06 gender
+        data_type: int64
+      - name: 07 email address
+        data_type: string
+      - name: 08 username
+        data_type: string
+      - name: 09 password
+        data_type: int64
+      - name: 10 state user or employee id
+        data_type: int64
+      - name: 11 name suffix
+        data_type: int64
+      - name: 12 former first name
+        data_type: int64
+      - name: 13 former middle name
+        data_type: int64
+      - name: 14 former last name
+        data_type: int64
+      - name: 15 primary race
+        data_type: int64
+      - name: 16 user is hispanic
+        data_type: int64
+      - name: 17 address
+        data_type: int64
+      - name: 18 city
+        data_type: string
+      - name: 19 state
+        data_type: int64
+      - name: 20 zip
+        data_type: int64
+      - name: 21 job title
+        data_type: string
+      - name: 22 education level
+        data_type: int64
+      - name: 23 hire date
+        data_type: int64
+      - name: 24 exit date
+        data_type: int64
+      - name: 25 active
+        data_type: int64
+      - name: 26 position status
+        data_type: int64
+      - name: 27 total years edu service
+        data_type: int64
+      - name: 28 total year in district
+        data_type: int64
+      - name: 29 email2
+        data_type: int64
+      - name: 30 phone1
+        data_type: int64
+      - name: 31 phone2
+        data_type: int64

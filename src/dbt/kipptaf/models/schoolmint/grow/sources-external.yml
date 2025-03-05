@@ -2,12 +2,17 @@ version: 2
 
 sources:
   - name: schoolmint_grow
-    schema: kipptaf_schoolmint_grow
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_schoolmint_grow
     tables:
       - name: src_schoolmint_grow__rubrics
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/rubrics/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/rubrics/"
             format: AVRO
@@ -24,6 +29,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/schools/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/schools/"
             format: AVRO
@@ -40,6 +48,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/users/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/users/"
             format: AVRO
             enable_logical_types: true
@@ -55,6 +66,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/videos/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/videos/"
             format: AVRO
             enable_logical_types: true
@@ -71,6 +85,9 @@ sources:
           location:
             "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_assignmentpresets/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_assignmentpresets/"
             format: AVRO
@@ -87,6 +104,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_courses/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_courses/"
             format: AVRO
@@ -103,6 +123,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_grades/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_grades/"
             format: AVRO
@@ -120,6 +143,9 @@ sources:
           location:
             "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_measurementgroups/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_measurementgroups/"
             format: AVRO
@@ -137,6 +163,9 @@ sources:
           location:
             "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_observationtypes/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_observationtypes/"
             format: AVRO
@@ -153,6 +182,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_tags/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_tags/"
             format: AVRO
@@ -170,6 +202,9 @@ sources:
           location:
             "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_meetingtypes/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_meetingtypes/"
             format: AVRO
@@ -186,6 +221,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/informals/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/informals/"
             format: AVRO
@@ -202,6 +240,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/measurements/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/measurements/"
             format: AVRO
@@ -218,6 +259,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/meetings/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/meetings/"
             format: AVRO
@@ -234,6 +278,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/roles/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/roles/"
             format: AVRO
             enable_logical_types: true
@@ -249,6 +296,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/observations/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/observations/"
             format: AVRO
@@ -265,6 +315,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/assignments/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/assignments/"
             format: AVRO
@@ -281,6 +334,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_eventtag1/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_eventtag1/"
             format: AVRO
@@ -297,6 +353,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_goaltypes/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_goaltypes/"
             format: AVRO
@@ -313,6 +372,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_rubrictag1/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_rubrictag1/"
             format: AVRO
@@ -329,6 +391,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_schooltag1/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_schooltag1/"
             format: AVRO
@@ -345,6 +410,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertag1/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertag1/"
             format: AVRO
@@ -361,6 +429,9 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertypes/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertypes/"
             format: AVRO

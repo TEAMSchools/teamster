@@ -1,0 +1,52 @@
+version: 2
+models:
+  - name: int_surveys__support_survey_details
+    columns:
+      - name: survey_id
+        data_type: string
+      - name: survey_title
+        data_type: string
+      - name: survey_response_id
+        data_type: string
+      - name: date_started
+        data_type: timestamp
+      - name: date_submitted
+        data_type: timestamp
+      - name: campaign_academic_year
+        data_type: int64
+      - name: campaign_name
+        data_type: string
+      - name: campaign_reporting_term
+        data_type: string
+      - name: respondent_df_employee_number
+        data_type: int64
+      - name: respondent_email
+        data_type: string
+      - name: question_shortname
+        data_type: string
+      - name: question_title
+        data_type: string
+      - name: answer
+        data_type: string
+      - name: answer_value
+        data_type: numeric
+      - name: is_open_ended
+        data_type: int64
+      - name: formatted_name
+        data_type: string
+      - name: is_manager
+        data_type: boolean
+      - name: respondent_department_name
+        data_type: string
+      - name: respondent_legal_entity_name
+        data_type: string
+      - name: respondent_manager_name
+        data_type: string
+      - name: respondent_primary_job
+        data_type: string
+      - name: respondent_primary_site
+        data_type: string
+      - name: race_ethnicity_reporting
+        data_type: string
+      - name: gender
+        data_type: string

@@ -1,0 +1,72 @@
+version: 2
+models:
+  - name: rpt_gsheets__kfwd_flc
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: school
+        data_type: string
+      - name: region
+        data_type: string
+      - name: advisor
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: student_email_google
+        data_type: string
+      - name: ccr_teacher
+        data_type: string
+      - name: ccr_period
+        data_type: string
+      - name: counselor_name
+        data_type: string
+      - name: contact_college_match_display_gpa
+        data_type: numeric
+      - name: contact_highest_act_score
+        data_type: numeric
+      - name: sf_id
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: enroll_status
+        data_type: string
+      - name: student_identifier
+        data_type: string
+      - name: act_count
+        data_type: int64
+      - name: lep_status
+        data_type: boolean
+      - name: hs_gpa_bands
+        data_type: string
+      - name: is_ea_ed
+        data_type: boolean
+      - name: matriculated_ecc
+        data_type: numeric
+      - name: matriculation_decision
+        data_type: string
+      - name: intended_degree_type
+        data_type: string
+      - name: account_type
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: bgp
+        data_type: string
+      - name: contact_expected_hs_graduation
+        data_type: date
+      - name: ccdm_complete
+        data_type: int64
+      - name: ktc_status
+        data_type: string
+      - name: taf_enroll_status
+        data_type: string
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+      - name: flc_eligibility
+        data_type: string
+      - name: has_overgrad_account_yn
+        data_type: string
+      - name: overgrad_counselor
+        data_type: string

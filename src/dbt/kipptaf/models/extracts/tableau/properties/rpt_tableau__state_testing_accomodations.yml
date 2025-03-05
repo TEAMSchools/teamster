@@ -1,0 +1,46 @@
+version: 2
+models:
+  - name: rpt_tableau__state_testing_accomodations
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: state_studentnumber
+        data_type: string
+      - name: lastfirst
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: school_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: team
+        data_type: string
+      - name: advisor_name
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: specialed_classification
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: c_504_status
+        data_type: boolean
+      - name: asmt_exclude_ela
+        data_type: int64
+      - name: asmt_exclude_math
+        data_type: int64
+      - name: math_state_assessment_name
+        data_type: string
+      - name: parcc_test_format
+        data_type: string
+      - name: state_assessment_name
+        data_type: string
+      - name: accommodation
+        data_type: string
+      - name: accommodation_value
+        data_type: string

@@ -1,0 +1,344 @@
+version: 2
+models:
+  - name: stg_kippadb__account
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: type
+        data_type: string
+      - name: annual_revenue
+        data_type: numeric
+      - name: billing_address
+        data_type: json
+      - name: billing_city
+        data_type: string
+      - name: billing_country
+        data_type: string
+      - name: billing_geocode_accuracy
+        data_type: string
+      - name: billing_latitude
+        data_type: numeric
+      - name: billing_longitude
+        data_type: numeric
+      - name: billing_postal_code
+        data_type: string
+      - name: billing_state
+        data_type: string
+      - name: billing_street
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: fax
+        data_type: string
+      - name: industry
+        data_type: string
+      - name: jigsaw
+        data_type: string
+      - name: jigsaw_company_id
+        data_type: string
+      - name: last_activity_date
+        data_type: date
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: last_referenced_date
+        data_type: timestamp
+      - name: last_viewed_date
+        data_type: timestamp
+      - name: master_record_id
+        data_type: string
+      - name: number_of_employees
+        data_type: int64
+      - name: owner_id
+        data_type: string
+      - name: parent_id
+        data_type: string
+      - name: phone
+        data_type: string
+      - name: photo_url
+        data_type: string
+      - name: record_type_id
+        data_type: string
+      - name: shipping_address
+        data_type: json
+      - name: shipping_city
+        data_type: string
+      - name: shipping_country
+        data_type: string
+      - name: shipping_geocode_accuracy
+        data_type: string
+      - name: shipping_latitude
+        data_type: numeric
+      - name: shipping_longitude
+        data_type: numeric
+      - name: shipping_postal_code
+        data_type: string
+      - name: shipping_state
+        data_type: string
+      - name: shipping_street
+        data_type: string
+      - name: sic_desc
+        data_type: string
+      - name: system_modstamp
+        data_type: timestamp
+      - name: website
+        data_type: string
+      - name: academic_rigor
+        data_type: string
+      - name: account_count
+        data_type: numeric
+      - name: account_source
+        data_type: string
+      - name: act_composite_25_75
+        data_type: string
+      - name: act25
+        data_type: numeric
+      - name: act75
+        data_type: numeric
+      - name: adjusted_6_year_graduation_rate
+        data_type: numeric
+      - name: adjusted_6_year_minority_graduation_rate
+        data_type: numeric
+      - name: admission_term
+        data_type: string
+      - name: admission_type
+        data_type: string
+      - name: admissions_completion_data_last_updated
+        data_type: date
+      - name: african_american
+        data_type: numeric
+      - name: african_american_hispanic_retention_rate
+        data_type: numeric
+      - name: alternate_names
+        data_type: string
+      - name: ambassador_college
+        data_type: boolean
+      - name: annual_matriculation_target_max
+        data_type: numeric
+      - name: annual_matriculation_target_min
+        data_type: numeric
+      - name: campus_locale
+        data_type: string
+      - name: cdu_external_id
+        data_type: string
+      - name: ceeb
+        data_type: string
+      - name: closest_kipp_school
+        data_type: string
+      - name: college_connections_college
+        data_type: boolean
+      - name: college_navigator_link
+        data_type: string
+      - name: college_power_ranking
+        data_type: string
+      - name: college_prep
+        data_type: boolean
+      - name: community_school_program
+        data_type: boolean
+      - name: community_service_hours
+        data_type: numeric
+      - name: competitiveness_index
+        data_type: numeric
+      - name: competitiveness_ranking
+        data_type: string
+      - name: completion_compared_to_peers
+        data_type: numeric
+      - name: completion_within_competitiveness_rank
+        data_type: numeric
+      - name: credits_required
+        data_type: numeric
+      - name: dep_total_applications_current_cycle
+        data_type: numeric
+      - name: distance_from_nearest_kipp_school_mi
+        data_type: numeric
+      - name: diversity
+        data_type: string
+      - name: early_action_due_date
+        data_type: date
+      - name: early_decision_due_date
+        data_type: date
+      - name: female
+        data_type: numeric
+      - name: financial_aid_priority_due_date
+        data_type: date
+      - name: freshman_class_size
+        data_type: string
+      - name: gender_specific
+        data_type: string
+      - name: general_fee
+        data_type: numeric
+      - name: geographic_region
+        data_type: string
+      - name: gpa_type
+        data_type: string
+      - name: hbcu
+        data_type: boolean
+      - name: hispanic
+        data_type: numeric
+      - name: hsi
+        data_type: boolean
+      - name: kipp_acceptance_rate_all_time
+        data_type: numeric
+      - name: kipp_acceptance_rate_seniors
+        data_type: numeric
+      - name: kipp_ambassador_college_end_date
+        data_type: date
+      - name: kipp_ambassador_college_start_date
+        data_type: date
+      - name: kipp_college_partner_end_date
+        data_type: date
+      - name: kipp_college_partner_start_date
+        data_type: date
+      - name: kipp_enrollment_rate_all_time
+        data_type: numeric
+      - name: kipp_graduation_and_persistence_rate
+        data_type: numeric
+      - name: kipp_partnership_owner
+        data_type: string
+      - name: kipp_specific_graduation_rate
+        data_type: numeric
+      - name: male
+        data_type: numeric
+      - name: matriculation_target_progress_max
+        data_type: numeric
+      - name: matriculation_target_progress_min
+        data_type: numeric
+      - name: metro_area
+        data_type: string
+      - name: nces_id
+        data_type: string
+      - name: net_price
+        data_type: numeric
+      - name: net_price_0_30k_income
+        data_type: numeric
+      - name: net_price_30_48k_income
+        data_type: numeric
+      - name: net_price_48_75k_income
+        data_type: numeric
+      - name: number_of_marking_periods
+        data_type: numeric
+      - name: of_accepted_students_that_enroll
+        data_type: numeric
+      - name: of_applicants_admitted
+        data_type: numeric
+      - name: of_freshmen_receiving_pell_grants
+        data_type: numeric
+      - name: of_overall_students_receiving_pell
+        data_type: numeric
+      - name: of_undergrads
+        data_type: numeric
+      - name: old_system_id
+        data_type: string
+      - name: open_admissions
+        data_type: boolean
+      - name: other_fee_amount
+        data_type: numeric
+      - name: other_fees
+        data_type: string
+      - name: partner_college
+        data_type: boolean
+      - name: partner_graduation_and_persistence_rate
+        data_type: numeric
+      - name: partnership_persistence_target
+        data_type: numeric
+      - name: percent_in_state
+        data_type: numeric
+      - name: percent_out_of_state
+        data_type: numeric
+      - name: period_for_admissions_stats
+        data_type: string
+      - name: pr_regional_rank
+        data_type: numeric
+      - name: priority_application_due_date
+        data_type: date
+      - name: public_with_entrance_criteria
+        data_type: boolean
+      - name: region
+        data_type: string
+      - name: region_prefix
+        data_type: string
+      - name: registration_fee
+        data_type: numeric
+      - name: regular_decision_due_date
+        data_type: date
+      - name: required_forms
+        data_type: string
+      - name: room_board
+        data_type: numeric
+      - name: sat_math_25_75
+        data_type: string
+      - name: sat_reading_25_75
+        data_type: string
+      - name: sat_writing_25_75
+        data_type: string
+      - name: sa_tmath25
+        data_type: numeric
+      - name: sa_tmath75
+        data_type: numeric
+      - name: sa_tread25
+        data_type: numeric
+      - name: sa_tread75
+        data_type: numeric
+      - name: sa_twriting25
+        data_type: numeric
+      - name: sa_twriting75
+        data_type: numeric
+      - name: short_name
+        data_type: string
+      - name: students_currently_enrolled
+        data_type: numeric
+      - name: students_graduated
+        data_type: numeric
+      - name: submitting_act
+        data_type: numeric
+      - name: submitting_sat
+        data_type: numeric
+      - name: system_batch_sync_old_school_name
+        data_type: string
+      - name: system_batch_sync_school_name
+        data_type: boolean
+      - name: system_rollback_account_name
+        data_type: boolean
+      - name: total_applications_current_cycle
+        data_type: numeric
+      - name: total_attending_or_graduated_enrollments
+        data_type: numeric
+      - name: total_kipp_acceptances
+        data_type: numeric
+      - name: total_kipp_acceptances_all_time
+        data_type: numeric
+      - name: total_kipp_acceptances_seniors
+        data_type: numeric
+      - name: total_kipp_applications
+        data_type: numeric
+      - name: total_kipp_enrollments_all_time
+        data_type: numeric
+      - name: total_kipp_matric_enrollments_seniors
+        data_type: numeric
+      - name: total_kipp_matriculations
+        data_type: numeric
+      - name: total_kipp_submitted_apps_all_time
+        data_type: numeric
+      - name: total_kipp_submitted_apps_seniors
+        data_type: numeric
+      - name: tuition
+        data_type: numeric
+      - name: undergrad_size_range
+        data_type: string
+      - name: x1st_year_retention_rate
+        data_type: numeric
+      - name: x6_yr_completion_rate
+        data_type: numeric
+      - name: x6_yr_minority_completion_rate
+        data_type: numeric
+      - name: x6_yr_minority_transfer_rate
+        data_type: numeric
+      - name: x6_yr_transfer_rate
+        data_type: numeric

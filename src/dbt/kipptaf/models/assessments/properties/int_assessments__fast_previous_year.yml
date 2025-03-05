@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: int_assessments__fast_previous_year
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: student_id
+        data_type: string
+      - name: assessment_subject
+        data_type: string
+      - name: prev_pm3_scale
+        data_type: int64
+      - name: prev_pm3_achievement_level
+        data_type: string
+      - name: prev_pm3_level_int
+        data_type: int64
+      - name: prev_pm3_sublevel_name
+        data_type: string
+      - name: prev_pm3_sublevel_number
+        data_type: int64
+      - name: fldoe_percentile_rank
+        data_type: float64
+      - name: scale_for_growth
+        data_type: int64
+      - name: sublevel_for_growth
+        data_type: string
+      - name: sublevel_number_for_growth
+        data_type: int64
+      - name: scale_for_proficiency
+        data_type: int64
+      - name: scale_points_to_growth_pm3
+        data_type: int64
+      - name: scale_points_to_proficiency_pm3
+        data_type: int64

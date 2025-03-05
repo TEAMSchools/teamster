@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: overgrad
-    schema: "{{ var('overgrad_schema', env_var('DBT_DEV_OVERGRAD_SCHEMA', 'overgrad')) }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('overgrad_schema', project_name + '_overgrad') }}
     tables:
       - name: src_overgrad__admissions
         external:
@@ -10,6 +12,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/overgrad/admissions/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -24,6 +29,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/overgrad/custom_fields/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -38,6 +46,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/overgrad/followings/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -52,6 +63,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/overgrad/schools/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -66,6 +80,9 @@ sources:
             "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/overgrad/students/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:

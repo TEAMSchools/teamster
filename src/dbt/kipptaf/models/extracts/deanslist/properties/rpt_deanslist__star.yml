@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: rpt_deanslist__star
+    columns:
+      - name: score_type
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: test_round
+        data_type: string
+      - name: discipline
+        data_type: string
+      - name: unified_score
+        data_type: int64
+      - name: state_benchmark_category_level
+        data_type: float64
+      - name: state_benchmark_category_name
+        data_type: string
+      - name: state_benchmark_proficient
+        data_type: string
+      - name: score_display
+        data_type: string
