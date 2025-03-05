@@ -40,7 +40,7 @@
     "**/.trunk/*plugins/": true
   },
   "[jsonc]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
+    "editor.defaultFormatter": "trunk.io"
   },
   "dbt.enableNewLineagePanel": true,
   "[python]": {
