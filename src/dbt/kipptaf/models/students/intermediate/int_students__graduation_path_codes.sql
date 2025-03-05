@@ -78,6 +78,7 @@ with
             s.salesforce_id,
             x.testscalescore as scale_score,
             x.testcode as score_type,
+            x.testcode as subject_area,
             x.test_name as pathway_option,
 
             x.discipline,
@@ -97,6 +98,7 @@ with
             s.salesforce_id,
             n.testscalescore as scale_score,
             n.testcode as score_type,
+            n.testcode as subject_area,
             n.assessment_name as pathway_option,
 
             n.discipline,
@@ -117,6 +119,7 @@ with
             s.salesforce_id,
             a.scale_score,
             a.score_type,
+            a.subject_area,
             a.scope as pathway_option,
 
             if(a.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
@@ -138,6 +141,7 @@ with
             s.salesforce_id,
             p.scale_score,
             p.score_type,
+            p.subject_area,
             p.scope as pathway_option,
 
             if(p.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
@@ -161,6 +165,7 @@ with
             c.cutoff,
 
             p.scale_score,
+            p.subject_area,
 
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
 
@@ -313,7 +318,7 @@ select
             and met_psat_nmsqt
         then 'K'
         else 'R'
-    end as final_grad_path,
+    end as final_grad_path_code,
 
     case
         when grade_level <= 10
@@ -354,9 +359,7 @@ select
         then 'Math Eligible only'
 
         -- 12th graders regardless of fafsa season with codes O or P
-        when
-            grade_level = 12
-            and ps_grad_path_code in ('O', 'P')
+        when grade_level = 12 and ps_grad_path_code in ('O', 'P')
         then 'Not Grad Eligible'
         -- 12th graders before fafsa season with iep exempt or portfolio
         when
@@ -487,5 +490,24 @@ select
 
         else 'New category. Need new logic.'
     end as grad_eligibility,
+
+    case
+        when pathway_code = 'M'
+        then 'DLM'
+        when pathway_code = 'N'
+        then 'Portfolio'
+        when pathway_code = 'O'
+        then 'Met No Requirements'
+        when pathway_code = 'P'
+        then 'Incomplete Credits'
+        when pathway_code = 'S'
+        then score_type
+        when pathway_code in ('E', 'D')
+        then pathway_option
+        when pathway_code in ('J', 'K')
+        then subject_area
+
+        else 'No Data'
+    end as test_type,
 
 from roster

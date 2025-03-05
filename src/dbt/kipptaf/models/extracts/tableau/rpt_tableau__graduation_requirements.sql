@@ -10,6 +10,7 @@ with
             e.school,
             e.students_dcid,
             e.studentid,
+            e.state_studentnumber,
             e.student_number,
             e.student_name,
             e.student_first_name,
@@ -51,196 +52,6 @@ with
             and e.cohort between ({{ var("current_academic_year") - 1 }}) and (
                 {{ var("current_academic_year") + 5 }}
             )
-    ),
-
-    transfer_roster as (
-        select
-            e.student_number as localstudentidentifier,
-
-            x.subject,
-            x.testcode,
-            x.testscalescore,
-            x.discipline,
-
-            safe_cast(e.state_studentnumber as int) as statestudentidentifier,
-        from roster as e
-        left join
-            {{ ref("int_powerschool__state_assessments_transfer_scores") }} as x
-            on e.studentid = x.studentid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="x") }}
-        where x.studentid is not null
-    ),
-
-    njgpa as (
-        select
-            localstudentidentifier,
-            statestudentidentifier,
-            `subject`,
-            testcode,
-            testscalescore,
-
-            case
-                when testcode = 'ELAGP' then 'ELA' when testcode = 'MATGP' then 'Math'
-            end as discipline,
-
-        from {{ ref("stg_pearson__njgpa") }}
-        where testscorecomplete = 1 and testcode in ('ELAGP', 'MATGP')
-
-        union all
-
-        select
-            student_number as localstudentidentifier,
-            cast(state_studentnumber as numeric) as statestudentidentifier,
-            `subject`,
-            testcode,
-            testscalescore,
-            discipline,
-
-        from {{ ref("int_powerschool__state_assessments_transfer_scores") }}
-    ),
-
-    njgpa_rollup as (
-        select
-            localstudentidentifier,
-            statestudentidentifier,
-            testcode,
-            `subject`,
-            discipline,
-
-            max(testscalescore) as testscalescore,
-        from njgpa
-        group by
-            localstudentidentifier,
-            statestudentidentifier,
-            testcode,
-            `subject`,
-            discipline
-    ),
-
-    act_sat_psat_official as (
-        select
-            salesforce_id,
-            student_number,
-            test_type,
-            scale_score,
-            subject_area,
-
-            case
-                when score_type in ('act_reading', 'act_math') and scale_score >= 17
-                then true
-                when score_type = 'sat_reading_test_score' and scale_score >= 23
-                then true
-                when score_type = 'sat_math_test_score' and scale_score >= 22
-                then true
-                when score_type = 'sat_math' and scale_score >= 440
-                then true
-                when score_type = 'sat_ebrw' and scale_score >= 450
-                then true
-                when
-                    score_type in (
-                        'psat10_psat_math_section',
-                        'psatnmsqt_psat_math_section',
-                        'psat10_psat_ebrw',
-                        'psatnmsqt_psat_ebrw'
-                    )
-                    and scale_score >= 420
-                then true
-                else false
-            end as met_pathway_requirement,
-
-            case
-                course_discipline when 'MATH' then 'Math' when 'ENG' then 'ELA'
-            end as course_discipline,
-
-            -- in some places, we need to know if the score is 10 or NMSQT. not here
-            if(scope in ('ACT', 'SAT'), scope, 'PSAT') as scope,
-
-        from {{ ref("int_assessments__college_assessment") }}
-        where
-            rn_highest = 1
-            and course_discipline in ('MATH', 'ENG')
-            and scope != 'PSAT89'
-    ),
-
-    grad_options_append_final as (
-        select
-            r.student_number,
-
-            a.discipline,
-            a.subject,
-            a.testcode as test_type,
-
-            'State Assessment' as pathway_option,
-
-            cast(a.testscalescore as string) as `value`,
-
-            if(a.testscalescore >= 725, true, false) as met_pathway_requirement,
-
-        from roster as r
-        inner join njgpa_rollup as a on r.state_studentnumber = a.statestudentidentifier
-
-        union all
-
-        select
-            r.student_number,
-
-            a.course_discipline,
-            a.subject_area,
-            a.scope as test_type,
-
-            'ACT/SAT' as pathway_option,
-
-            cast(a.scale_score as string) as `value`,
-
-            a.met_pathway_requirement,
-
-        from roster as r
-        inner join act_sat_psat_official as a on r.kippadb_contact_id = a.salesforce_id
-
-        union all
-
-        select
-            r.student_number,
-
-            a.course_discipline,
-            a.subject_area,
-            a.scope as test_type,
-
-            'PSAT' as pathway_option,
-
-            cast(a.scale_score as string) as `value`,
-
-            a.met_pathway_requirement,
-
-        from roster as r
-        inner join act_sat_psat_official as a on r.student_number = a.student_number
-
-        union all
-
-        select
-            r.student_number,
-
-            a.discipline,
-            a.discipline as `subject`,
-
-            case
-                when a.is_iep_eligible
-                then 'IEP'
-                when a.is_portfolio_eligible
-                then 'Portfolio'
-            end as test_type,
-
-            'Alternative' as pathway_option,
-
-            a.values_column as `value`,
-            a.met_requirement as met_pathway_requirement,
-        from roster as r
-        inner join
-            {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as a
-            on r.students_dcid = a.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="r", right_alias="a") }}
-            and a.value_type = 'Graduation Pathway'
-            and a.values_column in ('M', 'N')
     )
 
 select distinct
@@ -276,25 +87,28 @@ select distinct
     r.section_number as ccr_section_number,
     r.discipline,
 
-    g.pathway_option,
-    g.test_type,
-    g.subject,
-    g.value,
-    g.met_pathway_requirement,
-
-    c.code,
+    c.pathway_option,
+    c.test_type,
+    c.subject_area,
+    c.scale_score,
+    c.cutoff,
+    c.met_pathway_cutoff,
+    c.points_short,
+    c.ps_grad_path_code,
     c.njgpa_attempt,
-    c.njgpa_pass,
-    c.act,
-    c.sat,
-    c.psat,
-    c.final_grad_path,
+    c.attempted_njgpa_ela,
+    c.attempted_njgpa_math,
+    c.met_njgpa,
+    c.met_act,
+    c.met_sat,
+    c.met_psat10,
+    c.met_psat_nmsqt,
+    c.final_grad_path_code,
+    c.grad_eligibility,
+
 from roster as r
-left join
-    grad_options_append_final as g
-    on r.student_number = g.student_number
-    and r.discipline = g.discipline
 left join
     {{ ref("int_students__graduation_path_codes") }} as c
     on r.student_number = c.student_number
     and r.discipline = c.discipline
+    and c.scale_score is not null
