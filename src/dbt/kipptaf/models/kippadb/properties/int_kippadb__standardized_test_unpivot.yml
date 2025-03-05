@@ -4,7 +4,7 @@ models:
     description: a view that holds scores for act, sat, psat, and ap for students, as entered into salesforce.
     columns:
       - name: id
-        description: TBD
+        description: the auto-generated, unique id assigned to a score upon record creation in salesforce.
         data_type: string
       - name: contact
         description: the auto-generated, unique id assigned to a student upon record creation in salesforce.
