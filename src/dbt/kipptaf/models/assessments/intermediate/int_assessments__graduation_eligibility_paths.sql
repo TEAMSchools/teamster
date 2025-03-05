@@ -16,7 +16,9 @@
 -- this view will also help us track the distribution of grad pathways over time to
 -- share with katie and co which pathways our students take the most, which can
 -- influence strategy decisions around which college readiness assessments serve our
--- students best. thank you for coming to my tedtalk
+-- students best. in addition, a large majority of the calcs on the main select here
+-- only exist on tableau, but we need them further upstream for other projects. thank
+-- you for coming to my tedtalk
 with
     students as (
         select
@@ -28,7 +30,6 @@ with
             e.salesforce_id,
             e.grade_level,
             e.cohort,
-            e.has_fafsa,
             e.discipline,
             e.powerschool_credittype,
 
@@ -36,7 +37,10 @@ with
             -- code
             u.values_column as ps_grad_path_code,
 
+            -- needed to join on transfer njgpa scores
             safe_cast(e.state_studentnumber as numeric) as state_studentnumber_int,
+
+            if(e.has_fafsa = 'Yes', true, false) as has_fafsa,
 
             -- this is the date we start holding 11th graders accountable to
             -- fulfilling the NJGPA test requirement
@@ -299,9 +303,10 @@ select
     case
         when grade_level <= 10
         then 'Grad Eligible'
-        -- iep exempt
-        when ps_grad_path_code in ('M', 'N')
+        -- iep exempt, non-12th grade
+        when grade_level != 12 and ps_grad_path_code in ('M', 'N')
         then 'Grad Eligible'
+
         -- 11th graders before njgpa
         when grade_level = 11 and not njgpa_season_11th
         then 'Grad Eligible'
@@ -332,9 +337,24 @@ select
             and not met_ela
             and met_math
         then 'Math Eligible only'
-        -- 12th graders before fafsa season. havent attempted njgpa
+
+        -- 12th graders before FAFSA season with iep exemption
+        when
+            grade_level = 12
+            and not fafsa_season_12th
+            and ps_grad_path_code in ('M', 'N')
+        then 'Grad Eligible'
+        -- 12th graders after FAFSA season with iep exemption
+        when
+            grade_level = 12
+            and fafsa_season_12th
+            and not has_fafsa
+            and ps_grad_path_code in ('M', 'N')
+        then 'Not Grad Eligible. Missing FAFSA.'
+        -- 12th graders havent attempted njgpa
         when grade_level = 12 and not njgpa_attempt
         then 'Not Grad Eligible. No NJGPA attempt.'
+
         -- 12th graders before fafsa season. took njgpa and qualified with some pathway
         when
             grade_level = 12
@@ -397,6 +417,45 @@ select
             and not met_ela
             and met_math
         then 'Math Eligible Only'
+        -- 12th graders after fafsa season. took njgpa but didnt qualify with any
+        -- pathway
+        when
+            grade_level = 12
+            and fafsa_season_12th
+            and has_fafsa
+            and njgpa_attempt
+            and not met_ela
+            and not met_math
+        then 'Not Grad Eligible. No pathway met.'
+        -- 12th graders after fafsa season. took njgpa, met pathway, but missing fafsa
+        when
+            grade_level = 12
+            and fafsa_season_12th
+            and not has_fafsa
+            and njgpa_attempt
+            and met_ela
+            and met_math
+        then 'Not Grad Eligible. Missing FAFSA.'
+        -- 12th graders after fafsa season. took njgpa, met ela pathway, but missing
+        -- fafsa
+        when
+            grade_level = 12
+            and fafsa_season_12th
+            and not has_fafsa
+            and njgpa_attempt
+            and met_ela
+            and not met_math
+        then 'ELA Eligible Only. Missing FAFSA.'
+        -- 12th graders after fafsa season. took njgpa, met math pathway, but missing
+        -- fafsa
+        when
+            grade_level = 12
+            and fafsa_season_12th
+            and not has_fafsa
+            and njgpa_attempt
+            and not met_ela
+            and met_math
+        then 'Math Eligible Only. Missing FAFSA.'
 
         else 'New category. Need new logic.'
     end as grad_eligibility,
