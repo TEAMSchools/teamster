@@ -3,12 +3,13 @@ version: 2
 sources:
   - name: google_directory
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
       {{ project_name }}_google_directory
     tables:
       - name: src_google_directory__users
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/google/directory/users/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/google/directory/users/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: AUTOMATIC
@@ -24,7 +25,8 @@ sources:
               - users
       - name: src_google_directory__orgunits
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/google/directory/orgunits/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/google/directory/orgunits/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: AUTOMATIC
@@ -40,7 +42,8 @@ sources:
               - orgunits
       - name: src_google_directory__roles
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/google/directory/roles/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/google/directory/roles/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: AUTOMATIC
@@ -56,7 +59,9 @@ sources:
               - roles
       - name: src_google_directory__role_assignments
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/google/directory/role_assignments/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/google/directory/role_assignments/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: AUTOMATIC
