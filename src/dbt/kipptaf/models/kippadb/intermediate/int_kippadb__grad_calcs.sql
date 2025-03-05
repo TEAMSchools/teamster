@@ -164,8 +164,12 @@ select
 
     case
         when
-            e.ugrad_status = 'Graduated'
-            and e.ugrad_actual_end_date <= date((c.contact_kipp_hs_class + 6), 08, 31)
+            e.ba_status = 'Graduated'
+            and e.ba_actual_end_date <= date((c.contact_kipp_hs_class + 6), 08, 31)
+        then 1
+        when
+            e.aa_status = 'Graduated'
+            and e.aa_actual_end_date <= date((c.contact_kipp_hs_class + 6), 08, 31)
         then 1
         when
             e.cte_status = 'Graduated'
