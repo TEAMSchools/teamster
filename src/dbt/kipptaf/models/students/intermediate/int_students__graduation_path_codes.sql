@@ -170,6 +170,9 @@ with
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
 
         from students as s
+        -- note for charlie: the reason for the left join rather than an inner join is
+        -- because we want to make sure we can tell which pathway of the ones that
+        -- were available to them a student did not take for graduation. 
         left join
             {{ ref("stg_reporting__promo_status_cutoffs") }} as c
             on s.cohort = c.cohort
@@ -270,6 +273,8 @@ with
             coalesce(m.met_ela, false) as met_ela,
             coalesce(m.met_math, false) as met_math,
 
+            -- note for chalie: if there are better ways to do an rn_highest where
+            -- null scale scores get skipped, id love to know!
             row_number() over (
                 partition by l.student_number, l.score_type order by l.scale_score desc
             ) as rn_highest,
@@ -289,7 +294,8 @@ select
 
     if(met_sat_ela and met_sat_math, true, false) as met_sat_subject_mins,
 
-    if(scale_score is not null, cutoff - scale_score, null) as points_short,
+    -- negative value means short; positive value means above min required
+    if(scale_score is not null, scale_score - cutoff, null) as points_short,
 
     case
         when grade_level != 12
