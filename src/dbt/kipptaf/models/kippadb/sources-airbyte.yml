@@ -2,6 +2,7 @@ version: 2
 
 sources:
   - name: kippadb
+    schema: "{{ project_name }}_kippadb"
     tables:
       - name: account
         identifier: Account

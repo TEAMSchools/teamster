@@ -2,6 +2,7 @@ version: 2
 
 sources:
   - name: zendesk
+    schema: "{{ project_name }}_zendesk"
     tables:
       - name: groups
       - name: ticket_audits
