@@ -318,7 +318,7 @@ select
     case
         when grade_level <= 10
         then 'Grad Eligible'
-        -- iep exempt, non-12th grade
+        -- iep exempt or portfolio, non-12th grade
         when grade_level != 12 and ps_grad_path_code in ('M', 'N')
         then 'Grad Eligible'
 
@@ -353,13 +353,18 @@ select
             and met_math
         then 'Math Eligible only'
 
-        -- 12th graders before fafsa season with iep exemption
+        -- 12th graders regardless of fafsa season with codes O or P
+        when
+            grade_level = 12
+            and ps_grad_path_code in ('O', 'P')
+        then 'Not Grad Eligible'
+        -- 12th graders before fafsa season with iep exempt or portfolio
         when
             grade_level = 12
             and not fafsa_season_12th
             and ps_grad_path_code in ('M', 'N')
         then 'Grad Eligible'
-        -- 12th graders after fafsa season with iep exemption
+        -- 12th graders after fafsa season with iep exempt or portfolio
         when
             grade_level = 12
             and fafsa_season_12th

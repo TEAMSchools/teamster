@@ -35,8 +35,6 @@ with
 
             discipline,
 
-            safe_cast(e.state_studentnumber as int) as state_studentnumber,
-
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
