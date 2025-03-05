@@ -177,6 +177,15 @@ with
             and s.student_number = p.student_number
     ),
 
+    met_sat_subject_mins as (
+        select student_number, max(ela) as met_sat_ela, max(math) as met_sat_math,
+        from
+            lookup_table
+            pivot (max(met_pathway_cutoff) for discipline in ('ELA', 'Math'))
+        where score_type in ('sat_ebrw', 'sat_math')
+        group by all
+    ),
+
     -- determining if any of the scores for the score_type (if it exists)
     -- met the pathway option
     unpivot_calcs as (
@@ -338,13 +347,13 @@ select
             and met_math
         then 'Math Eligible only'
 
-        -- 12th graders before FAFSA season with iep exemption
+        -- 12th graders before fafsa season with iep exemption
         when
             grade_level = 12
             and not fafsa_season_12th
             and ps_grad_path_code in ('M', 'N')
         then 'Grad Eligible'
-        -- 12th graders after FAFSA season with iep exemption
+        -- 12th graders after fafsa season with iep exemption
         when
             grade_level = 12
             and fafsa_season_12th
@@ -456,6 +465,14 @@ select
             and not met_ela
             and met_math
         then 'Math Eligible Only. Missing FAFSA.'
+        when
+            grade_level = 12
+            and fafsa_season_12th
+            and has_fafsa
+            and not njgpa_attempt
+            and met_ela
+            and met_math
+        then 'Not Grad Eligible. Has pathway, but needs NJGPA attempt.'
 
         else 'New category. Need new logic.'
     end as grad_eligibility,
