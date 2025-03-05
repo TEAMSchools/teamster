@@ -55,4 +55,4 @@ Before you merge:
   [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to)
 - GitHub Actions for CI/CD
 
-### Fivetran & Airbyte
+### Airbyte
