@@ -1,0 +1,224 @@
+version: 2
+models:
+  - name: int_kippadb__enrollment_pivot
+    columns:
+      - name: student
+        data_type: string
+      - name: ba_enrollment_id
+        data_type: string
+      - name: aa_enrollment_id
+        data_type: string
+      - name: ecc_enrollment_id
+        data_type: string
+      - name: hs_enrollment_id
+        data_type: string
+      - name: cte_enrollment_id
+        data_type: string
+      - name: graduate_enrollment_id
+        data_type: string
+      - name: ugrad_enrollment_id
+        data_type: string
+      - name: cur_enrollment_id
+        data_type: string
+      - name: ba_school_name
+        data_type: string
+      - name: ba_pursuing_degree_type
+        data_type: string
+      - name: ba_status
+        data_type: string
+      - name: ba_start_date
+        data_type: date
+      - name: ba_actual_end_date
+        data_type: date
+      - name: ba_anticipated_graduation
+        data_type: date
+      - name: ba_account_type
+        data_type: string
+      - name: ba_major
+        data_type: string
+      - name: ba_major_area
+        data_type: string
+      - name: ba_college_major_declared
+        data_type: boolean
+      - name: ba_date_last_verified
+        data_type: date
+      - name: ba_credits_required_for_graduation
+        data_type: numeric
+      - name: ba_account_name
+        data_type: string
+      - name: ba_billing_state
+        data_type: string
+      - name: ba_nces_id
+        data_type: string
+      - name: aa_school_name
+        data_type: string
+      - name: aa_pursuing_degree_type
+        data_type: string
+      - name: aa_status
+        data_type: string
+      - name: aa_start_date
+        data_type: date
+      - name: aa_actual_end_date
+        data_type: date
+      - name: aa_anticipated_graduation
+        data_type: date
+      - name: aa_account_type
+        data_type: string
+      - name: aa_major
+        data_type: string
+      - name: aa_major_area
+        data_type: string
+      - name: aa_college_major_declared
+        data_type: boolean
+      - name: aa_date_last_verified
+        data_type: date
+      - name: aa_credits_required_for_graduation
+        data_type: numeric
+      - name: aa_account_name
+        data_type: string
+      - name: aa_billing_state
+        data_type: string
+      - name: aa_nces_id
+        data_type: string
+      - name: ecc_school_name
+        data_type: string
+      - name: ecc_pursuing_degree_type
+        data_type: string
+      - name: ecc_status
+        data_type: string
+      - name: ecc_start_date
+        data_type: date
+      - name: ecc_actual_end_date
+        data_type: date
+      - name: ecc_anticipated_graduation
+        data_type: date
+      - name: ecc_account_type
+        data_type: string
+      - name: ecc_account_id
+        data_type: string
+      - name: ecc_credits_required_for_graduation
+        data_type: numeric
+      - name: ecc_account_name
+        data_type: string
+      - name: ecc_adjusted_6_year_minority_graduation_rate
+        data_type: numeric
+      - name: ecc_date_last_verified
+        data_type: date
+      - name: hs_school_name
+        data_type: string
+      - name: hs_pursuing_degree_type
+        data_type: string
+      - name: hs_status
+        data_type: string
+      - name: hs_start_date
+        data_type: date
+      - name: hs_actual_end_date
+        data_type: date
+      - name: hs_anticipated_graduation
+        data_type: date
+      - name: hs_account_type
+        data_type: string
+      - name: hs_credits_required_for_graduation
+        data_type: numeric
+      - name: hs_account_name
+        data_type: string
+      - name: cte_pursuing_degree_type
+        data_type: string
+      - name: cte_status
+        data_type: string
+      - name: cte_start_date
+        data_type: date
+      - name: cte_actual_end_date
+        data_type: date
+      - name: cte_anticipated_graduation
+        data_type: date
+      - name: cte_account_type
+        data_type: string
+      - name: cte_credits_required_for_graduation
+        data_type: numeric
+      - name: cte_school_name
+        data_type: string
+      - name: cte_billing_state
+        data_type: string
+      - name: cte_nces_id
+        data_type: string
+      - name: cte_date_last_verified
+        data_type: date
+      - name: cur_pursuing_degree_type
+        data_type: string
+      - name: cur_status
+        data_type: string
+      - name: cur_start_date
+        data_type: date
+      - name: cur_actual_end_date
+        data_type: date
+      - name: cur_anticipated_graduation
+        data_type: date
+      - name: cur_account_type
+        data_type: string
+      - name: cur_credits_required_for_graduation
+        data_type: numeric
+      - name: cur_school_name
+        data_type: string
+      - name: cur_billing_state
+        data_type: string
+      - name: cur_nces_id
+        data_type: string
+      - name: cur_adjusted_6_year_minority_graduation_rate
+        data_type: numeric
+      - name: cur_date_last_verified
+        data_type: date
+      - name: emp_status
+        data_type: string
+      - name: emp_category
+        data_type: string
+      - name: emp_date_last_verified
+        data_type: date
+      - name: emp_start_date
+        data_type: date
+      - name: emp_actual_end_date
+        data_type: date
+      - name: emp_billing_state
+        data_type: string
+      - name: emp_nces_id
+        data_type: string
+      - name: emp_name
+        data_type: string
+      - name: ugrad_school_name
+        data_type: string
+      - name: ugrad_pursuing_degree_type
+        data_type: string
+      - name: ugrad_status
+        data_type: string
+      - name: ugrad_start_date
+        data_type: date
+      - name: ugrad_actual_end_date
+        data_type: date
+      - name: ugrad_anticipated_graduation
+        data_type: date
+      - name: ugrad_account_type
+        data_type: string
+      - name: ugrad_major
+        data_type: string
+      - name: ugrad_major_area
+        data_type: string
+      - name: ugrad_college_major_declared
+        data_type: boolean
+      - name: ugrad_date_last_verified
+        data_type: date
+      - name: ugrad_credits_required_for_graduation
+        data_type: numeric
+      - name: ugrad_account_name
+        data_type: string
+      - name: ugrad_billing_state
+        data_type: string
+      - name: ugrad_nces_id
+        data_type: string
+      - name: ugrad_act_composite_25_75
+        data_type: string
+      - name: ugrad_competitiveness_ranking
+        data_type: string
+      - name: ugrad_adjusted_6_year_minority_graduation_rate
+        data_type: numeric
+      - name: is_never_enrolled
+        data_type: boolean

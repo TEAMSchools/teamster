@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: rpt_tableau__seat_tracker_snapshot
+    columns:
+      - name: date_week
+        data_type: date
+      - name: staffing_model_id
+        data_type: string
+      - name: staffing_status
+        data_type: string
+      - name: status_detail
+        data_type: string
+      - name: plan_status
+        data_type: string
+      - name: academic_year
+        data_type: string
+      - name: teammate
+        data_type: string
+      - name: valid_from
+        data_type: date
+      - name: valid_to
+        data_type: date
+      - name: snapshot_open
+        data_type: int64
+      - name: snapshot_new_hire
+        data_type: int64
+      - name: snapshot_staffed
+        data_type: int64
+      - name: snapshot_active
+        data_type: int64
+      - name: snapshot_mid_year_hire
+        data_type: int64

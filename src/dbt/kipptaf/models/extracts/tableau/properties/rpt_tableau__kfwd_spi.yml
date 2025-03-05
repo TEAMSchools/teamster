@@ -1,0 +1,102 @@
+version: 2
+models:
+  - name: rpt_tableau__kfwd_spi
+    columns:
+      - name: contact_id
+        data_type: string
+      - name: student_name
+        data_type: string
+      - name: cohort
+        data_type: int64
+      - name: advising_provider
+        data_type: string
+      - name: contact_owner_name
+        data_type: string
+      - name: current_kipp_student
+        data_type: string
+      - name: currently_enrolled_school
+        data_type: string
+      - name: expected_hs_graduation
+        data_type: date
+      - name: hs_gpa
+        data_type: numeric
+      - name: highest_act_score
+        data_type: numeric
+      - name: status
+        data_type: string
+      - name: pursuing_degree_type
+        data_type: string
+      - name: start_date
+        data_type: date
+      - name: actual_end_date
+        data_type: date
+      - name: account_type
+        data_type: string
+      - name: ugrad_status
+        data_type: string
+      - name: hs_account_name
+        data_type: string
+      - name: ecc_account_name
+        data_type: string
+      - name: ugrad_account_name
+        data_type: string
+      - name: competitiveness_ranking
+        data_type: string
+      - name: act25
+        data_type: numeric
+      - name: act75
+        data_type: numeric
+      - name: act_composite_25_75
+        data_type: string
+      - name: adjusted_6_year_graduation_rate
+        data_type: numeric
+      - name: adjusted_6_year_minority_graduation_rate
+        data_type: numeric
+      - name: school_state
+        data_type: string
+      - name: school_name
+        data_type: string
+      - name: hbcu
+        data_type: boolean
+      - name: data_source
+        data_type: string
+      - name: match_type
+        data_type: string
+      - name: application_admission_type
+        data_type: string
+      - name: application_status
+        data_type: string
+      - name: application_submission_status
+        data_type: string
+      - name: matriculation_decision
+        data_type: string
+      - name: is_early_action_decision
+        data_type: boolean
+      - name: is_early_action
+        data_type: boolean
+      - name: is_early_decision
+        data_type: boolean
+      - name: is_ed_ea
+        data_type: string
+      - name: student_aid_index
+        data_type: numeric
+      - name: best_guess_pathway
+        data_type: string
+      - name: is_graduated
+        data_type: boolean
+      - name: is_ecc_enrollment
+        data_type: boolean
+      - name: is_ugrad_enrollment
+        data_type: boolean
+      - name: is_continuing_completing
+        data_type: boolean
+      - name: is_same_school
+        data_type: int64
+      - name: is_4yr_grad_int
+        data_type: int64
+      - name: is_6yr_grad_int
+        data_type: int64
+      - name: is_grad_ever_any
+        data_type: int64
+      - name: hs_gpa_bands
+        data_type: string

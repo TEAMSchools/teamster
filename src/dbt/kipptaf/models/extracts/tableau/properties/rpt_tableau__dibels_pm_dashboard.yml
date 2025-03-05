@@ -1,0 +1,136 @@
+version: 2
+models:
+  - name: rpt_tableau__dibels_pm_dashboard
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_display
+        data_type: string
+      - name: district
+        data_type: string
+      - name: region
+        data_type: string
+      - name: state
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: studentid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: grade_level
+        data_type: string
+      - name: is_out_of_district
+        data_type: boolean
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: is_homeless
+        data_type: boolean
+      - name: is_504
+        data_type: boolean
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: lunch_status
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string
+      - name: advisory
+        data_type: string
+      - name: cohort
+        data_type: int64
+      - name: expected_test
+        data_type: string
+      - name: expected_round
+        data_type: string
+      - name: start_date
+        data_type: date
+      - name: end_date
+        data_type: date
+      - name: month_round
+        data_type: string
+      - name: expected_mclass_measure_name_code
+        data_type: string
+      - name: expected_mclass_measure_name
+        data_type: string
+      - name: expected_mclass_measure_standard
+        data_type: string
+      - name: goal
+        data_type: int64
+      - name: admin_benchmark
+        data_type: int64
+      - name: schedule_student_number
+        data_type: int64
+      - name: schedule_student_grade_level
+        data_type: string
+      - name: teacherid
+        data_type: int64
+      - name: teacher_name
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: section_number
+        data_type: string
+      - name: scheduled
+        data_type: int64
+      - name: hos
+        data_type: string
+      - name: mclass_student_number
+        data_type: int64
+      - name: mclass_assessment_grade
+        data_type: string
+      - name: mclass_period
+        data_type: string
+      - name: mclass_client_date
+        data_type: date
+      - name: mclass_measure_name
+        data_type: string
+      - name: mclass_measure_name_code
+        data_type: string
+      - name: mclass_measure_standard
+        data_type: string
+      - name: mclass_measure_standard_score
+        data_type: float64
+      - name: mclass_measure_standard_level
+        data_type: string
+      - name: mclass_measure_standard_level_int
+        data_type: int64
+      - name: mclass_measure_percentile
+        data_type: float64
+      - name: mclass_measure_semester_growth
+        data_type: string
+      - name: mclass_measure_year_growth
+        data_type: string
+      - name: boy_composite
+        data_type: string
+      - name: moy_composite
+        data_type: string
+      - name: eoy_composite
+        data_type: string
+      - name: nj_student_tier
+        data_type: string
+      - name: tutoring_nj
+        data_type: boolean
+      - name: assessment_type
+        data_type: string
+      - name: expected_grade_level
+        data_type: string
+      - name: met_standard_goal
+        data_type: boolean
+      - name: met_overall_goal
+        data_type: boolean
+      - name: met_bm_goal
+        data_type: boolean

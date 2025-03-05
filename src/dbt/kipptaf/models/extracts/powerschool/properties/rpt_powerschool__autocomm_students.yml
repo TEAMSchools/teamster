@@ -1,0 +1,44 @@
+version: 2
+models:
+  - name: rpt_powerschool__autocomm_students
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: student_web_id
+        data_type: string
+      - name: team
+        data_type: string
+      - name: eligibility_name
+        data_type: string
+      - name: total_balance
+        data_type: float64
+      - name: home_room
+        data_type: string
+      - name: u_studentsuserfields__studentemail
+        data_type: string
+      - name: s_nj_stu_x__graduation_pathway_math
+        data_type: string
+      - name: s_nj_stu_x__graduation_pathway_ela
+        data_type: string
+      - name: web_id
+        data_type: string
+      - name: graduation_year
+        data_type: int64
+      - name: district_entry_date
+        data_type: string
+      - name: school_entry_date
+        data_type: string
+      - name: code_location
+        data_type: string
+      - name: student_allowwebaccess
+        data_type: int64
+      - name: allowwebaccess
+        data_type: int64
+      - name: retained_tf
+        data_type: int64
+      - name: student_web_password
+        data_type: string
+      - name: web_password
+        data_type: string
+      - name: track
+        data_type: string

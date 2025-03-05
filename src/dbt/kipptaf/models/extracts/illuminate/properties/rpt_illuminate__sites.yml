@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: rpt_illuminate__sites
+    columns:
+      - name: 01 site id
+        data_type: int64
+      - name: 02 site name
+        data_type: string
+      - name: 03 state site id
+        data_type: int64
+      - name: 04 start grade level id
+        data_type: int64
+      - name: 05 end grade level id
+        data_type: int64
+      - name: 06 school type id
+        data_type: int64
+      - name: 07 address 1
+        data_type: int64
+      - name: 08 address 2
+        data_type: int64
+      - name: 09 city
+        data_type: string
+      - name: 10 state
+        data_type: string
+      - name: 11 zip code
+        data_type: string
+      - name: 12 local site code
+        data_type: int64
+      - name: 13 annual hours of instruction
+        data_type: int64
+      - name: 14 annual number of weeks of instruction
+        data_type: int64
+      - name: 15 parent site id
+        data_type: int64

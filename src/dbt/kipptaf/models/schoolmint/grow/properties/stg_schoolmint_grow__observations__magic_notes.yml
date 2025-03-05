@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: stg_schoolmint_grow__observations__magic_notes
+    columns:
+      - name: observation_id
+        data_type: string
+      - name: column
+        data_type: string
+      - name: shared
+        data_type: boolean
+      - name: text
+        data_type: string
+      - name: created
+        data_type: string
+      - name: _id
+        data_type: string

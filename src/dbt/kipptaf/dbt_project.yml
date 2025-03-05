@@ -26,6 +26,7 @@ clean-targets: # directories to be removed by `dbt clean`
 vars:
   local_timezone: America/New_York
   cloud_storage_uri_base: gs://teamster-kipptaf/dagster/kipptaf
+  bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
   current_academic_year: 2024
   current_fiscal_year: 2025
   alchemer_survey_identifier_short_names:
@@ -196,8 +197,6 @@ models:
       +schema: powerschool
     powerschool_enrollment:
       +schema: powerschool_enrollment
-    qa:
-      +schema: qa
     renlearn:
       +schema: renlearn
     reporting:

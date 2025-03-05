@@ -1,0 +1,92 @@
+version: 2
+models:
+  - name: rpt_tableau__academic_goals_rollup
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: region
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: grade_level_prev
+        data_type: int64
+      - name: year_in_network
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: band
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: course_section
+        data_type: string
+      - name: course_teacher_name
+        data_type: string
+      - name: homeroom_section
+        data_type: string
+      - name: homeroom_teacher_name
+        data_type: string
+      - name: scale_score_state
+        data_type: float64
+      - name: is_proficient_int_state
+        data_type: int64
+      - name: scale_score_iready
+        data_type: int64
+      - name: iep_status
+        data_type: string
+      - name: benchmark_assessment_type
+        data_type: string
+      - name: performance_level
+        data_type: float64
+      - name: scale_score
+        data_type: float64
+      - name: is_proficient_int
+        data_type: int64
+      - name: is_approaching_int
+        data_type: int64
+      - name: is_below_int
+        data_type: int64
+      - name: is_tested_int
+        data_type: int64
+      - name: is_bucket2_eligible
+        data_type: boolean
+      - name: rank_scale_score_state
+        data_type: int64
+      - name: rank_scale_score
+        data_type: int64
+      - name: bubble_parameter
+        data_type: float64
+      - name: grade_band_goal
+        data_type: float64
+      - name: n_proficient
+        data_type: int64
+      - name: pct_proficient
+        data_type: float64
+      - name: pct_proficient_state
+        data_type: float64
+      - name: n_approaching
+        data_type: int64
+      - name: pct_approaching
+        data_type: float64
+      - name: n_below
+        data_type: int64
+      - name: pct_below
+        data_type: float64
+      - name: n_tested
+        data_type: int64
+      - name: pct_tested
+        data_type: float64
+      - name: n_bubble_to_move
+        data_type: float64
+      - name: percent_with_growth_met
+        data_type: float64
+      - name: pct_to_grow
+        data_type: float64
+      - name: scale_score_rank
+        data_type: int64
+      - name: student_tier_calculated
+        data_type: string

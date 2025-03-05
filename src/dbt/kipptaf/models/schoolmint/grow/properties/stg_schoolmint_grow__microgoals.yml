@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: stg_schoolmint_grow__microgoals
+    columns:
+      - name: goal_tag_id
+        data_type: string
+      - name: goal_name
+        data_type: string
+      - name: goal_code
+        data_type: string
+      - name: strand_name
+        data_type: string
+      - name: bucket_name
+        data_type: string
+      - name: goal_description
+        data_type: string

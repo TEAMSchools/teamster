@@ -1,0 +1,72 @@
+version: 2
+models:
+  - name: stg_kippadb__contact_note
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: academic_color
+        data_type: string
+      - name: advisor_activity
+        data_type: boolean
+      - name: category
+        data_type: string
+      - name: college_connection_event_type
+        data_type: string
+      - name: college_connections_contact
+        data_type: boolean
+      - name: comments
+        data_type: string
+      - name: contact
+        data_type: string
+      - name: contact_note_count
+        data_type: numeric
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: current_category_ranking
+        data_type: numeric
+      - name: date
+        data_type: date
+      - name: financial_color
+        data_type: string
+      - name: initiated_by_student
+        data_type: boolean
+      - name: kipp_sf_user_id
+        data_type: string
+      - name: last_activity_date
+        data_type: date
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: last_referenced_date
+        data_type: timestamp
+      - name: last_viewed_date
+        data_type: timestamp
+      - name: meaningful_contact
+        data_type: boolean
+      - name: next_steps
+        data_type: string
+      - name: note_count
+        data_type: numeric
+      - name: overall_benchmark_color
+        data_type: string
+      - name: passion_purpose_plan_color
+        data_type: string
+      - name: related_college_benchmark
+        data_type: string
+      - name: socio_emotional_color
+        data_type: string
+      - name: status
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: system_modstamp
+        data_type: timestamp
+      - name: type
+        data_type: string
+      - name: academic_year
+        data_type: int64

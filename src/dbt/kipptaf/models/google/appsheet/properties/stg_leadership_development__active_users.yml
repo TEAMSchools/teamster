@@ -1,0 +1,10 @@
+version: 2
+models:
+  - name: stg_leadership_development__active_users
+    columns:
+      - name: active_title
+        data_type: boolean
+      - name: special_case
+        data_type: boolean
+      - name: employee_number
+        data_type: int64

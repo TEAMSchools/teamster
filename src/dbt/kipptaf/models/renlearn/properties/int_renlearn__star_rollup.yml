@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: int_renlearn__star_rollup
+    columns:
+      - name: student_display_id
+        data_type: int64
+      - name: state_benchmark_category_level
+        data_type: float64
+      - name: state_benchmark_category_name
+        data_type: string
+      - name: state_benchmark_proficient
+        data_type: string
+      - name: district_benchmark_category_level
+        data_type: int64
+      - name: district_benchmark_category_name
+        data_type: string
+      - name: district_benchmark_proficient
+        data_type: string
+      - name: unified_score
+        data_type: int64
+      - name: screening_period_window_name
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: star_subject
+        data_type: string
+      - name: star_discipline
+        data_type: string
+      - name: rn_subj_round
+        data_type: int64
+      - name: rn_subj_year
+        data_type: int64

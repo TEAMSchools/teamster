@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: int_powerschool__spenrollments
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: programid
+        data_type: int64
+      - name: gradelevel
+        data_type: int64
+      - name: sp_comment
+        data_type: string
+      - name: enter_date
+        data_type: date
+      - name: exit_date
+        data_type: date
+      - name: exitcode
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: specprog_name
+        data_type: string
+      - name: is_out_of_district
+        data_type: boolean
+      - name: is_self_contained
+        data_type: boolean

@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: rpt_appsheet__leadership_development_assignments
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: entity
+        data_type: string
+      - name: region
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: metric_id
+        data_type: string
+      - name: assignment_id
+        data_type: string

@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: rpt_gsheets__kippfwd_collab_matriculation
+    columns:
+      - name: contact_id
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: cohort
+        data_type: int64
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: matriculation_decision
+        data_type: string
+      - name: type
+        data_type: string
+      - name: intended_degree_type
+        data_type: string
+      - name: ccdm_complete
+        data_type: int64
