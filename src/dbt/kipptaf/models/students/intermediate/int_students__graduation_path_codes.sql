@@ -490,7 +490,7 @@ select
     end as test_type,
 
     row_number() over (
-        partition by student_number order by pathway_option
-    ) as rn_distinct,
+        partition by student_number, discipline order by pathway_option
+    ) as rn_discipline_distinct,
 
 from roster
