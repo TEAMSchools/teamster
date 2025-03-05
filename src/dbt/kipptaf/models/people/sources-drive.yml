@@ -3,7 +3,8 @@ version: 2
 sources:
   - name: people
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_
+      {%- endif -%}
       {{ project_name }}_people
     tables:
       - name: src_people__employee_numbers_archive
@@ -132,3 +133,26 @@ sources:
               - kipptaf
               - people
               - renewal_approvers
+      - name: src_people__renewal_letter_mapping
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_people__renewal_letter_mapping
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - people
+              - renewal_letter_mapping
+        columns:
+          - name: jobs
+            data_type: string
+          - name: department
+            data_type: string
+          - name: entity
+            data_type: string
+          - name: renewal_doc
+            data_type: string

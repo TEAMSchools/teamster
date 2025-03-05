@@ -16,7 +16,7 @@ def main() -> None:
     parser.add_argument("command")
     parser.add_argument("project")
     parser.add_argument("--select", nargs="*")
-    parser.add_argument("--prod", action="store_true")
+    parser.add_argument("--dev", action="store_true")
 
     args = parser.parse_args()
 
@@ -24,7 +24,7 @@ def main() -> None:
 
     if args.command == "sxs":
         cloud_storage_uri_base = (
-            f"gs://teamster-{args.project if args.prod else 'test'}"
+            f"gs://teamster-{'test' if args.dev else args.project}"
             f"/dagster/{args.project}"
         )
 
@@ -39,6 +39,7 @@ def main() -> None:
         if args.select:
             run_args.extend(["--args", " ".join(["select:", *args.select])])
 
+        # trunk-ignore(bandit/B603)
         subprocess.run(args=run_args)
     elif args.command == "yaml":
         project_dir = pathlib.Path(f"src/dbt/{args.project}")
@@ -57,6 +58,7 @@ def main() -> None:
         print(" ".join(list_args))
         model_names = [
             o.decode()
+            # trunk-ignore(bandit/B603)
             for o in subprocess.check_output(args=list_args).split(b"\n")
             if re.match(pattern=r"(\w+)", string=o.decode())
         ]
@@ -78,6 +80,7 @@ def main() -> None:
             ]
 
             print(" ".join(run_args))
+            # trunk-ignore(bandit/B603)
             yaml = subprocess.check_output(args=run_args).decode()
 
             yaml = "\n".join(
