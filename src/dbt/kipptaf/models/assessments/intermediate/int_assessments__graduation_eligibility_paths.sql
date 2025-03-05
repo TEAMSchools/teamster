@@ -249,6 +249,9 @@ with
         select
             l.*,
 
+            coalesce(s.met_sat_ela) as met_sat_ela,
+            coalesce(s.met_sat_math) as met_sat_math,
+
             coalesce(u.njgpa_attempt, false) as njgpa_attempt,
             coalesce(u.met_njgpa, false) as met_njgpa,
             coalesce(u.met_act, false) as met_act,
@@ -271,12 +274,15 @@ with
             unpivot_calcs as u
             on l.student_number = u.student_number
             and l.discipline = u.discipline
+        left join met_sat_subject_mins as s on l.student_number = s.student_number
         left join attempted_subject_njgpa as n on l.student_number = n.student_number
         left join met_subject as m on l.student_number = m.student_number
     )
 
 select
     *,
+
+    if(met_sat_ela and met_sat_math, true, false) as met_sat_subject_mins,
 
     if(scale_score is not null, cutoff - scale_score, null) as points_short,
 
