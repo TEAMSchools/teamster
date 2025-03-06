@@ -53,6 +53,8 @@ select
         then 'currently enrolled'
         when co.enroll_status = 2
         then 'transferred out'
+        when co.enroll_status = 3
+        then 'graduated'
     end as enroll_status,
 
     concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
