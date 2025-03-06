@@ -66,20 +66,7 @@ select
         end
     ) as ny_salary,
 
-    case
-        when h.base_remuneration_annual_rate_amount < 60000
-        then
-            h.base_remuneration_hourly_rate_amount
-            + h.base_remuneration_hourly_rate_amount * 0.05
-        when h.base_remuneration_annual_rate_amount < 100000
-        then
-            h.base_remuneration_hourly_rate_amount
-            + h.base_remuneration_hourly_rate_amount * 0.04
-        when h.base_remuneration_annual_rate_amount >= 100000
-        then
-            h.base_remuneration_hourly_rate_amount
-            + h.base_remuneration_hourly_rate_amount * 0.03
-    end as ny_hourly,
+    h.base_remuneration_hourly_rate_amount + 1 as ny_hourly,
 from {{ ref("int_people__staff_roster") }} as c
 inner join
     years as y
