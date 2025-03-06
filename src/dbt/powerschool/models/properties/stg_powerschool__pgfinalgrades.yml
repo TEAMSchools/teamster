@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_powerschool__pgfinalgrades
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__pgfinalgrades") | replace("`", "") }}')
     columns:
       - name: finalgradename
         data_type: string

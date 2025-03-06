@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_powerschool__log
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__log") | replace("`", "") }}')
     columns:
       - name: studentid
         data_type: int64

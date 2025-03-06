@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_powerschool__gen
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__gen") | replace("`", "") }}')
     columns:
       - name: cat
         data_type: string

@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_schoolmint_grow__schools
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+        "src_schoolmint_grow__schools") | replace("`", "") }}')
     columns:
       - name: school_id
         data_type: string

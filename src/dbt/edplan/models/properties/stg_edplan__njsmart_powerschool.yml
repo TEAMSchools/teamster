@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_edplan__njsmart_powerschool
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("edplan",
+        "src_edplan__njsmart_powerschool") | replace("`", "") }}')
     columns:
       - name: student_number
         data_type: int64
