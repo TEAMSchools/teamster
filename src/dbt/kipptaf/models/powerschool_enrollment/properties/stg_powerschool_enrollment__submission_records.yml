@@ -1,6 +1,12 @@
 version: 2
 models:
   - name: stg_powerschool_enrollment__submission_records
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{
+        source("powerschool_enrollment",
+        "src_powerschool_enrollment__submission_records") | replace("`", "")
+        }}')
     columns:
       - name: external_student_id
         data_type: string

@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_deanslist__lists
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
+        "src_deanslist__lists") | replace("`", "") }}')
     columns:
       - name: is_dated
         data_type: boolean

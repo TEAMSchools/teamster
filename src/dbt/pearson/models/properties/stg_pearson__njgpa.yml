@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_pearson__njgpa
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("pearson",
+        "src_pearson__njgpa") | replace("`", "") }}')
     columns:
       - name: statestudentidentifier
         data_type: int64
