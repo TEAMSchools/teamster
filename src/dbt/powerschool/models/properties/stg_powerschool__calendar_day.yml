@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_powerschool__calendar_day
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__calendar_day") | replace("`", "") }}')
     columns:
       - name: date_value
         data_type: date

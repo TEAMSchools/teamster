@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_renlearn__star_dashboard_standards
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("renlearn",
+        "src_renlearn__star_dashboard_standards") | replace("`", "") }}')
     columns:
       - name: assessment_id
         data_type: string

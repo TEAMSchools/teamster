@@ -15,7 +15,7 @@ def main() -> None:
 
     parser.add_argument("command")
     parser.add_argument("project")
-    parser.add_argument("--select", nargs="*")
+    parser.add_argument("--select", "-s", nargs="*")
     parser.add_argument("--dev", action="store_true")
 
     args = parser.parse_args()

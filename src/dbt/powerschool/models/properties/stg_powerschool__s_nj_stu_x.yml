@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_powerschool__s_nj_stu_x
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__s_nj_stu_x") | replace("`", "") }}')
     columns:
       - name: examiner_smid
         data_type: string
