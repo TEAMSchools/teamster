@@ -3,8 +3,7 @@ version: 2
 sources:
   - name: deanslist
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_
-      {%- endif -%}{{ var('deanslist_schema', project_name + '_deanslist') }}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}{{ var('deanslist_schema', project_name + '_deanslist') }}
     tables:
       - name: src_deanslist__behavior
         meta:
