@@ -2,11 +2,14 @@ with
     psat as (
         select
             cb_id,
+            name_first,
+            name_last,
+            name_mi,
+            gender,
             latest_psat_total,
             latest_psat_math_section,
             latest_psat_ebrw,
             latest_psat_reading,
-            gender,
 
             safe_cast(birth_date as date) as birth_date,
 
