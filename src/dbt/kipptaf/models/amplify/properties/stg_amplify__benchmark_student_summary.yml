@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_amplify__benchmark_student_summary
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("amplify",
+        "src_amplify__benchmark_student_summary") | replace("`", "") }}')
     columns:
       - name: account_name
         data_type: string

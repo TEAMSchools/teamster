@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: powerschool_enrollment
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ project_name }}_powerschool_enrollment
     tables:
       - name: src_powerschool_enrollment__submission_records
@@ -13,8 +13,8 @@ sources:
             }}/powerschool/enrollment/submission_records/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base')
               }}/powerschool/enrollment/submission_records/"

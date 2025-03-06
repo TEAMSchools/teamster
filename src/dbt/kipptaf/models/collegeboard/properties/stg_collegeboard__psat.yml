@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_collegeboard__psat
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("collegeboard",
+        "src_collegeboard__psat") | replace("`", "") }}')
     columns:
       - name: cb_id
         data_type: int64

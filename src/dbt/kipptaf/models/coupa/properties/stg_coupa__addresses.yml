@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_coupa__addresses
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("coupa",
+        "src_coupa__addresses") | replace("`", "") }}')
     columns:
       - name: id
         data_type: int64

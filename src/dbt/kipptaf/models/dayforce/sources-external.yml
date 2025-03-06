@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: dayforce
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ project_name }}_dayforce
     tables:
       - name: src_dayforce__employees
@@ -11,8 +11,8 @@ sources:
           location: "{{ var('cloud_storage_uri_base') }}/dayforce/employees/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -27,8 +27,8 @@ sources:
             "{{ var('cloud_storage_uri_base') }}/dayforce/employee_manager/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -43,8 +43,8 @@ sources:
             "{{ var('cloud_storage_uri_base') }}/dayforce/employee_status/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -60,8 +60,8 @@ sources:
             }}/dayforce/employee_work_assignment/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
         meta:

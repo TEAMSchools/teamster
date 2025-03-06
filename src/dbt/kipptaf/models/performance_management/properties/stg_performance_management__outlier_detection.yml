@@ -1,6 +1,11 @@
 version: 2
 models:
   - name: stg_performance_management__outlier_detection
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{
+        source("performance_management",
+        "src_performance_management__outlier_detection") | replace("`", "") }}')
     columns:
       - name: observer_employee_number
         data_type: int64
