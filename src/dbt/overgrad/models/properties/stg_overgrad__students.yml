@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_overgrad__students
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("overgrad",
+        "src_overgrad__students") | replace("`", "") }}')
     columns:
       - name: id
         data_type: int64

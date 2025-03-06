@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_deanslist__followups
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
+        "src_deanslist__followups") | replace("`", "") }}')
     columns:
       - name: c_first
         data_type: string

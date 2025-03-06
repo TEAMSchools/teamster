@@ -20,8 +20,8 @@ sources:
             }}/iready/diagnostic_results/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -42,8 +42,8 @@ sources:
             }}/iready/diagnostic_and_instruction/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -64,8 +64,8 @@ sources:
             }}/iready/instructional_usage_data/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -86,8 +86,8 @@ sources:
             }}/iready/personalized_instruction_by_lesson/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -108,8 +108,8 @@ sources:
             }}/iready/instruction_by_lesson/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
