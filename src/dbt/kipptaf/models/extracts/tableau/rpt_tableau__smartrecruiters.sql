@@ -45,7 +45,7 @@ with
             resume_score,
             trim(subject_preference) as subject_preference,
         from
-            applications_unpivot,
+            applications_unpivot cross join
             unnest(split(subject_preference, ',')) as subject_preference
     )
 
