@@ -3,6 +3,7 @@ with
         select
             cb_id,
             powerschool_student_number,
+            birth_date,
             academic_year,
             latest_psat_date,
             administration_round,
@@ -56,6 +57,7 @@ with
 select
     cb_id,
     powerschool_student_number,
+    birth_date,
     academic_year,
     administration_round,
     latest_psat_date,
