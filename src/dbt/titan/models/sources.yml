@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: titan
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ var('titan_schema', project_name + '_titan') }}
     tables:
       - name: src_titan__person_data
