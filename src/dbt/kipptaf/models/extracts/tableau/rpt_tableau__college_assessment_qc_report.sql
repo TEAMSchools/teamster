@@ -24,7 +24,6 @@ with
         select
             e.student_number,
             e.first_name,
-            left(e.middle_name, 1) as middle_initial,
             e.last_name,
             e.dob,
             e.gender,
@@ -36,6 +35,8 @@ with
             p.cb_last_name,
             p.cb_gender,
             p.cb_dob,
+
+            left(e.middle_name, 1) as middle_initial,
 
             concat(
                 e.last_name, ', ', e.first_name, ' ', left(e.middle_name, 1)
