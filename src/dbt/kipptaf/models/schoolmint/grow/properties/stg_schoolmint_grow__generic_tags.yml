@@ -1,6 +1,40 @@
 version: 2
 models:
   - name: stg_schoolmint_grow__generic_tags
+    config:
+      pre_hook:
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_assignmentpresets") | replace("`",
+          "") }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_courses") | replace("`", "") }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_eventtag1") | replace("`", "") }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_goaltypes") | replace("`", "") }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_grades") | replace("`", "") }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_measurementgroups") | replace("`",
+          "") }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_meetingtypes") | replace("`", "")
+          }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_observationtypes") | replace("`",
+          "") }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_rubrictag1") | replace("`", "")
+          }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_schooltag1") | replace("`", "")
+          }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_tags") | replace("`", "") }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_usertag1") | replace("`", "") }}')
+        - CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+          "src_schoolmint_grow__generic_tags_usertypes") | replace("`", "") }}')
     columns:
       - name: tag_id
         data_type: string

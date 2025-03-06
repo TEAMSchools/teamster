@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_deanslist__comm_log
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
+        "src_deanslist__comm_log") | replace("`", "") }}')
     columns:
       - name: is_draft
         data_type: boolean

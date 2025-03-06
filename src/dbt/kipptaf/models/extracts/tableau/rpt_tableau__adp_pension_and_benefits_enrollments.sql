@@ -13,13 +13,7 @@ select
     cw.job_title as primary_job,
     cw.race_ethnicity_reporting as primary_race_ethnicity_reporting,
     cw.gender_identity as gender,
-from
-    {{
-        source(
-            "adp_workforce_now",
-            "src_adp_workforce_now__pension_and_benefits_enrollments",
-        )
-    }} as pb
+from {{ ref("stg_adp_workforce_now__pension_and_benefits_enrollments") }} as pb
 inner join
     {{ ref("int_people__staff_roster") }} as cw
     on pb.employee_number = cw.employee_number

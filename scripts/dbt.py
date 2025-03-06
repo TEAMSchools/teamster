@@ -5,6 +5,7 @@
 
 import argparse
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -15,12 +16,10 @@ def main() -> None:
 
     parser.add_argument("command")
     parser.add_argument("project")
-    parser.add_argument("--select", nargs="*")
+    parser.add_argument("--select", "-s", nargs="*")
     parser.add_argument("--dev", action="store_true")
 
     args = parser.parse_args()
-
-    dbt_path = "/workspaces/teamster/.venv/bin/dbt"
 
     if args.command == "sxs":
         cloud_storage_uri_base = (
@@ -29,7 +28,7 @@ def main() -> None:
         )
 
         run_args = [
-            dbt_path,
+            "dbt",
             "run-operation",
             "stage_external_sources",
             f"--project-dir=src/dbt/{args.project}",
@@ -40,12 +39,19 @@ def main() -> None:
             run_args.extend(["--args", " ".join(["select:", *args.select])])
 
         # trunk-ignore(bandit/B603)
-        subprocess.run(args=run_args)
+        subprocess.run(
+            args=run_args,
+            env={
+                **os.environ,
+                "DBT_CLOUD_ENVIRONMENT_TYPE": "dev" if args.dev else "prod",
+                "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
+            },
+        )
     elif args.command == "yaml":
         project_dir = pathlib.Path(f"src/dbt/{args.project}")
 
         list_args = [
-            dbt_path,
+            "dbt",
             "list",
             f"--project-dir={project_dir}",
             "--resource-type=model",
@@ -56,10 +62,20 @@ def main() -> None:
             list_args.extend(["--select", " ".join(*args.select)])
 
         print(" ".join(list_args))
+
+        # trunk-ignore(bandit/B603)
+        output = subprocess.check_output(
+            args=list_args,
+            env={
+                **os.environ,
+                "DBT_CLOUD_ENVIRONMENT_TYPE": "dev" if args.dev else "prod",
+                "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
+            },
+        )
+
         model_names = [
             o.decode()
-            # trunk-ignore(bandit/B603)
-            for o in subprocess.check_output(args=list_args).split(b"\n")
+            for o in output.split(b"\n")
             if re.match(pattern=r"(\w+)", string=o.decode())
         ]
 
@@ -71,7 +87,7 @@ def main() -> None:
                 continue
 
             run_args = [
-                dbt_path,
+                "dbt",
                 "run-operation",
                 "generate_model_yaml",
                 f"--project-dir={project_dir}",

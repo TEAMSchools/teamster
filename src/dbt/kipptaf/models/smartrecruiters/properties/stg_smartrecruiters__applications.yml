@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_smartrecruiters__applications
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("smartrecruiters",
+        "src_smartrecruiters__applications") | replace("`", "") }}')
     columns:
       - name: application_id
         data_type: string
