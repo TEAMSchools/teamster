@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_tableau__view_count_per_view
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("tableau",
+        "src_tableau__view_count_per_view") | replace("`", "") }}')
     columns:
       - name: user_name
         data_type: string

@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_google_directory__roles
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("google_directory",
+        "src_google_directory__roles") | replace("`", "") }}')
     columns:
       - name: role_id
         data_type: string

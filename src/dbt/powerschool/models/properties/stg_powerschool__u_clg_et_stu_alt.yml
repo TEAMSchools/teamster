@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_powerschool__u_clg_et_stu_alt
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__u_clg_et_stu_alt") | replace("`", "") }}')
     columns:
       - name: exit_code
         data_type: string

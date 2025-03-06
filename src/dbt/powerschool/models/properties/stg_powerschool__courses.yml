@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_powerschool__courses
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__courses") | replace("`", "") }}')
     columns:
       - name: course_number
         data_type: string
