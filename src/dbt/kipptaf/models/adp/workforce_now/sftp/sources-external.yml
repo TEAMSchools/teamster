@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: adp_workforce_now
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ project_name }}_adp_workforce_now
     tables:
       - name: src_adp_workforce_now__additional_earnings_report

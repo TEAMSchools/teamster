@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: schoolmint_grow
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_
       {%- endif -%}{{ project_name }}_schoolmint_grow
     tables:
       - name: src_schoolmint_grow__rubrics
