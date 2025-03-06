@@ -2,9 +2,9 @@ version: 2
 
 sources:
   - name: airbyte_zendesk
-    schema: "{{ project_name }}_zendesk"
     config:
       enabled: false
+    schema: "{{ project_name }}_zendesk"
     tables:
       - name: groups
       - name: ticket_audits
