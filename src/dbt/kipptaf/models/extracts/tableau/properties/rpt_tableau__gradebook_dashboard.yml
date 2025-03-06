@@ -1,0 +1,98 @@
+version: 2
+models:
+  - name: rpt_tableau__gradebook_dashboard
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: lastfirst
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school_abbreviation
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: team
+        data_type: string
+      - name: advisor_name
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: iep_status
+        data_type: string
+      - name: cohort
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: is_counselingservices
+        data_type: int64
+      - name: is_studentathlete
+        data_type: int64
+      - name: course_number
+        data_type: string
+      - name: term_name
+        data_type: string
+      - name: finalgradename
+        data_type: string
+      - name: excludefromgpa
+        data_type: int64
+      - name: credit_hours
+        data_type: float64
+      - name: term_grade_percent_adjusted
+        data_type: float64
+      - name: term_grade_letter_adjusted
+        data_type: string
+      - name: term_gpa_points
+        data_type: float64
+      - name: y1_grade_percent_adjusted
+        data_type: float64
+      - name: y1_grade_letter
+        data_type: string
+      - name: y1_gpa_points
+        data_type: float64
+      - name: is_curterm
+        data_type: int64
+      - name: credittype
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: earnedcrhrs
+        data_type: float64
+      - name: citizenship
+        data_type: string
+      - name: comment_value
+        data_type: string
+      - name: sectionid
+        data_type: int64
+      - name: termid
+        data_type: int64
+      - name: teacher_name
+        data_type: string
+      - name: section_number
+        data_type: string
+      - name: period
+        data_type: string
+      - name: external_expression
+        data_type: string
+      - name: tutoring_nj
+        data_type: boolean
+      - name: nj_student_tier
+        data_type: string
+      - name: hos
+        data_type: string
+      - name: need_65
+        data_type: float64
+      - name: need_70
+        data_type: float64
+      - name: need_80
+        data_type: float64
+      - name: need_90
+        data_type: float64
+      - name: ada
+        data_type: float64

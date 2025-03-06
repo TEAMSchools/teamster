@@ -2,6 +2,9 @@ version: 2
 
 sources:
   - name: kippcamden_pearson
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      kippcamden_pearson
     tables:
       - name: stg_pearson__njgpa
         meta:

@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: alchemer
-    schema: kipptaf_alchemer
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {{ project_name }}_alchemer
     config:
       enabled: false
     tables:
@@ -10,7 +12,11 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/alchemer/survey/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/alchemer/survey/"
             format: AVRO
             enable_logical_types: true
         meta:
@@ -21,8 +27,12 @@ sources:
               - survey
       - name: src_alchemer__survey_campaign
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_campaign/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/alchemer/survey_campaign/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_campaign/"
             format: AVRO
@@ -35,8 +45,12 @@ sources:
               - survey_campaign
       - name: src_alchemer__survey_question
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_question/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/alchemer/survey_question/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_question/"
             format: AVRO
@@ -49,8 +63,12 @@ sources:
               - survey_question
       - name: src_alchemer__survey_response
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response/"
             format: AVRO
@@ -63,10 +81,16 @@ sources:
               - survey_response
       - name: src_alchemer__survey_response_disqualified
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response_disqualified/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/alchemer/survey_response_disqualified/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response_disqualified/"
+              "{{ var('cloud_storage_uri_base')
+              }}/alchemer/survey_response_disqualified/"
             format: AVRO
             enable_logical_types: true
         meta:

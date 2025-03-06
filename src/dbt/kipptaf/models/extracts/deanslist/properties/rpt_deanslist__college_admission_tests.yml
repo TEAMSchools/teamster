@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: rpt_deanslist__college_admission_tests
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: test_type
+        data_type: string
+      - name: act_composite
+        data_type: numeric
+      - name: act_math
+        data_type: numeric
+      - name: act_science
+        data_type: numeric
+      - name: act_english
+        data_type: numeric
+      - name: act_reading
+        data_type: numeric
+      - name: act_writing
+        data_type: numeric
+      - name: sat_total
+        data_type: numeric
+      - name: sat_math
+        data_type: numeric
+      - name: sat_reading
+        data_type: numeric
+      - name: sat_writing
+        data_type: numeric
+      - name: sat_mc
+        data_type: int64
+      - name: sat_essay
+        data_type: int64
+      - name: test_date
+        data_type: string

@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: rpt_gsheets__absence_streak_roster
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: state_studentnumber
+        data_type: string
+      - name: student_name
+        data_type: string
+      - name: entrydate
+        data_type: date
+      - name: exitdate
+        data_type: date
+      - name: exitcode
+        data_type: string
+      - name: exitcomment
+        data_type: string
+      - name: absence_start_date
+        data_type: date
+      - name: absence_end_date
+        data_type: date
+      - name: absence_length_in_days
+        data_type: int64
+      - name: commlog_reason
+        data_type: string
+      - name: commlog_notes
+        data_type: string
+      - name: commlog_topic
+        data_type: string

@@ -1,0 +1,66 @@
+version: 2
+models:
+  - name: stg_deanslist__behavior
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: assignment
+        data_type: string
+      - name: behavior
+        data_type: string
+      - name: behavior_category
+        data_type: string
+      - name: notes
+        data_type: string
+      - name: roster
+        data_type: string
+      - name: school_name
+        data_type: string
+      - name: source_procedure
+        data_type: string
+      - name: source_type
+        data_type: string
+      - name: staff_title
+        data_type: string
+      - name: staff_first_name
+        data_type: string
+      - name: staff_middle_name
+        data_type: string
+      - name: staff_last_name
+        data_type: string
+      - name: student_first_name
+        data_type: string
+      - name: student_middle_name
+        data_type: string
+      - name: student_last_name
+        data_type: string
+      - name: weight
+        data_type: string
+      - name: dl_said
+        data_type: int64
+      - name: behavior_id
+        data_type: int64
+      - name: dl_organization_id
+        data_type: int64
+      - name: dl_school_id
+        data_type: int64
+      - name: dl_student_id
+        data_type: int64
+      - name: dl_user_id
+        data_type: int64
+      - name: roster_id
+        data_type: int64
+      - name: secondary_student_id
+        data_type: int64
+      - name: source_id
+        data_type: int64
+      - name: staff_school_id
+        data_type: int64
+      - name: student_school_id
+        data_type: int64
+      - name: behavior_date
+        data_type: date
+      - name: dl_last_update
+        data_type: datetime
+      - name: point_value
+        data_type: int64

@@ -194,21 +194,6 @@ locations:
                   secretKeyRef:
                     name: op-egencia-sftp
                     key: username
-              - name: FIVETRAN_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-key
-              - name: FIVETRAN_API_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-secret
-              - name: FIVETRAN_ACCOUNT_ID
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: account-id
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -562,21 +547,6 @@ locations:
                   secretKeyRef:
                     name: op-egencia-sftp
                     key: username
-              - name: FIVETRAN_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-key
-              - name: FIVETRAN_API_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-secret
-              - name: FIVETRAN_ACCOUNT_ID
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: account-id
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:

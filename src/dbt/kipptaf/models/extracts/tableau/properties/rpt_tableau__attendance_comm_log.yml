@@ -1,0 +1,68 @@
+version: 2
+models:
+  - name: rpt_tableau__attendance_comm_log
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: lastfirst
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: reporting_schoolid
+        data_type: int64
+      - name: school_abbreviation
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: team
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: is_retained_year
+        data_type: boolean
+      - name: enroll_status
+        data_type: int64
+      - name: att_date
+        data_type: date
+      - name: att_comment
+        data_type: string
+      - name: att_code
+        data_type: string
+      - name: commlog_staff_name
+        data_type: string
+      - name: commlog_reason
+        data_type: string
+      - name: commlog_notes
+        data_type: string
+      - name: commlog_topic
+        data_type: string
+      - name: commlog_type
+        data_type: string
+      - name: commlog_status
+        data_type: string
+      - name: followup_staff_name
+        data_type: string
+      - name: followup_init_notes
+        data_type: string
+      - name: followup_close_notes
+        data_type: string
+      - name: term
+        data_type: string
+      - name: abs_count
+        data_type: float64
+      - name: ada
+        data_type: float64
+      - name: drill_down
+        data_type: string
+      - name: is_successful
+        data_type: boolean
+      - name: homeroom
+        data_type: string
+      - name: rn_date
+        data_type: int64

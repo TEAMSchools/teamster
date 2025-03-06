@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: stg_illuminate__dna_assessments__assessments_reporting_groups
+    columns:
+      - name: assessment_reporting_group_id
+        data_type: int64
+      - name: assessment_id
+        data_type: int64
+      - name: reporting_group_id
+        data_type: int64
+      - name: performance_band_set_id
+        data_type: int64
+      - name: sort_order
+        data_type: int64

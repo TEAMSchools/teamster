@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: airbyte_zendesk
-    schema: kipptaf_zendesk
+    schema: "{{ project_name }}_zendesk"
     config:
       enabled: false
     tables:

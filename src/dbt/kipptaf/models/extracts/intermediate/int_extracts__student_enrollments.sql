@@ -63,6 +63,7 @@ select
     e.is_homeless,
     e.is_out_of_district,
     e.is_self_contained,
+    e.is_enrolled_oct01,
     e.is_enrolled_recent,
     e.is_enrolled_y1,
     e.is_retained_year,

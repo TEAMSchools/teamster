@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: stg_powerschool__u_studentsuserfields
+    columns:
+      - name: cr_prevschoolname
+        data_type: string
+      - name: infosnap_id
+        data_type: string
+      - name: infosnap_opt_in
+        data_type: string
+      - name: media_release
+        data_type: string
+      - name: newark_enrollment_number
+        data_type: string
+      - name: rides_staff
+        data_type: string
+      - name: studentsdcid
+        data_type: int64
+      - name: c_504_status
+        data_type: int64
+      - name: is_504
+        data_type: boolean

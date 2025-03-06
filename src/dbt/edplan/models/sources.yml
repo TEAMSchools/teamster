@@ -2,8 +2,9 @@ version: 2
 
 sources:
   - name: edplan
-    schema: "{{ var('edplan_schema', env_var('DBT_DEV_EDPLAN_SCHEMA', 'edplan')) }}"
-    database: "{{ var('edplan_database', target.database) }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {{ var('edplan_schema', project_name + '_edplan') }}
     tables:
       - name: src_edplan__njsmart_powerschool
         meta:
@@ -14,11 +15,16 @@ sources:
               - njsmart_powerschool
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/edplan/njsmart_powerschool/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              "{{ var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/edplan/njsmart_powerschool/"
             format: AVRO
             enable_logical_types: true

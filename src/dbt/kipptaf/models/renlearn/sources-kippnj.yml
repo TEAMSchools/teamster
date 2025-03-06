@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: kippnj_renlearn
-    schema: kippnewark_renlearn
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      kippnewark_renlearn
     tables:
       - name: stg_renlearn__accelerated_reader
         meta:

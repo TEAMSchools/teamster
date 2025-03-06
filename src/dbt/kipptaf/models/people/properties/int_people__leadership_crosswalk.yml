@@ -1,0 +1,72 @@
+version: 2
+models:
+  - name: int_people__leadership_crosswalk
+    columns:
+      - name: home_work_location_powerschool_school_id
+        data_type: int64
+      - name: home_work_location_name
+        data_type: string
+      - name: dso_employee_number
+        data_type: int64
+      - name: sl_employee_number
+        data_type: int64
+      - name: school_leader_preferred_name_lastfirst
+        data_type: string
+      - name: school_leader_mail
+        data_type: string
+      - name: school_leader_google_email
+        data_type: string
+      - name: school_leader_job_title
+        data_type: string
+      - name: school_leader_report_to_employee_number
+        data_type: int64
+      - name: school_leader_sam_account_name
+        data_type: string
+      - name: head_of_school_employee_number
+        data_type: int64
+      - name: head_of_school_preferred_name_lastfirst
+        data_type: string
+      - name: head_of_school_mail
+        data_type: string
+      - name: head_of_school_google_email
+        data_type: string
+      - name: head_of_school_job_title
+        data_type: string
+      - name: head_of_school_sam_account_name
+        data_type: string
+      - name: dso_preferred_name_lastfirst
+        data_type: string
+      - name: dso_mail
+        data_type: string
+      - name: dso_google_email
+        data_type: string
+      - name: dso_job_title
+        data_type: string
+      - name: dso_report_to_employee_number
+        data_type: int64
+      - name: dso_sam_account_name
+        data_type: string
+      - name: mdso_employee_number
+        data_type: int64
+      - name: mdso_preferred_name_lastfirst
+        data_type: string
+      - name: mdso_mail
+        data_type: string
+      - name: mdso_google_email
+        data_type: string
+      - name: mdso_job_title
+        data_type: string
+      - name: mdso_sam_account_name
+        data_type: string
+      - name: mdo_employee_number
+        data_type: int64
+      - name: mdo_preferred_name_lastfirst
+        data_type: string
+      - name: mdo_mail
+        data_type: string
+      - name: mdo_google_email
+        data_type: string
+      - name: mdo_job_title
+        data_type: string
+      - name: mdo_sam_account_name
+        data_type: string

@@ -1,0 +1,110 @@
+version: 2
+models:
+  - name: rpt_tableau__school_culture_dashboard_nj
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: state_studentnumber
+        data_type: string
+      - name: lastfirst
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: reporting_schoolid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: school_name
+        data_type: string
+      - name: school_abbreviation
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: team
+        data_type: string
+      - name: advisor_name
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: c_504_status
+        data_type: boolean
+      - name: lep_status
+        data_type: boolean
+      - name: lunchstatus
+        data_type: string
+      - name: is_retained_year
+        data_type: boolean
+      - name: is_retained_ever
+        data_type: boolean
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: fedethnicity
+        data_type: int64
+      - name: dl_student_id
+        data_type: int64
+      - name: incident_id
+        data_type: int64
+      - name: reporting_incident_id
+        data_type: int64
+      - name: status
+        data_type: string
+      - name: location
+        data_type: string
+      - name: reported_details
+        data_type: string
+      - name: admin_summary
+        data_type: string
+      - name: context
+        data_type: string
+      - name: dl_timestamp
+        data_type: datetime
+      - name: incident_type
+        data_type: string
+      - name: is_referral
+        data_type: boolean
+      - name: is_active
+        data_type: boolean
+      - name: referral_category
+        data_type: string
+      - name: penaltyname
+        data_type: string
+      - name: startdate
+        data_type: date
+      - name: enddate
+        data_type: date
+      - name: numdays
+        data_type: float64
+      - name: issuspension
+        data_type: boolean
+      - name: behavior category
+        data_type: string
+      - name: nj state reporting
+        data_type: string
+      - name: others involved
+        data_type: string
+      - name: parent contacted
+        data_type: string
+      - name: perceived motivation
+        data_type: string
+      - name: restraint used
+        data_type: string
+      - name: ssds incident id
+        data_type: string
+      - name: term
+        data_type: string
+      - name: days_suspended_att
+        data_type: int64
+      - name: dl_category
+        data_type: string
+      - name: created_staff
+        data_type: string
+      - name: last_update_staff
+        data_type: string
+      - name: week_of
+        data_type: string

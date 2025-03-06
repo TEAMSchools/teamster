@@ -1,0 +1,44 @@
+version: 2
+models:
+  - name: rpt_tableau__survey_links
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: assignment_status
+        data_type: string
+      - name: preferred_name_lastfirst
+        data_type: string
+      - name: business_unit
+        data_type: string
+      - name: location
+        data_type: string
+      - name: department
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: hire_date
+        data_type: date
+      - name: mail
+        data_type: string
+      - name: google_email
+        data_type: string
+      - name: report_to_employee_number
+        data_type: int64
+      - name: report_to_preferred_name_lastfirst
+        data_type: string
+      - name: samaccountname
+        data_type: string
+      - name: username
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: survey_round
+        data_type: string
+      - name: is_current
+        data_type: boolean
+      - name: survey
+        data_type: string
+      - name: assignment
+        data_type: string
+      - name: link
+        data_type: string

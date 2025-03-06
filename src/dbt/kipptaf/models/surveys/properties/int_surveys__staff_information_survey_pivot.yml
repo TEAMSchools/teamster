@@ -1,0 +1,120 @@
+version: 2
+models:
+  - name: int_surveys__staff_information_survey_pivot
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: last_submitted_timestamp
+        data_type: timestamp
+      - name: additional_languages
+        data_type: string
+      - name: cert_barriers
+        data_type: string
+      - name: cert_out_of_state_details
+        data_type: string
+      - name: cert_status
+        data_type: string
+      - name: cert_steps_taken
+        data_type: string
+      - name: fl_cert_endorsement_1
+        data_type: string
+      - name: fl_cert_endorsement_2
+        data_type: string
+      - name: fl_cert_endorsement_3
+        data_type: string
+      - name: fl_cert_endorsement_4
+        data_type: string
+      - name: fl_cert_endorsement_5
+        data_type: string
+      - name: fl_open_to_student_teacher
+        data_type: string
+      - name: gender_identity
+        data_type: string
+      - name: languages_spoken
+        data_type: string
+      - name: level_of_education
+        data_type: string
+      - name: nj_cert_document_link_1
+        data_type: string
+      - name: nj_cert_document_link_2
+        data_type: string
+      - name: nj_cert_document_link_3
+        data_type: string
+      - name: nj_cert_document_link_4
+        data_type: string
+      - name: nj_cert_document_link_5
+        data_type: string
+      - name: nj_cert_endorsement_1
+        data_type: string
+      - name: nj_cert_endorsement_2
+        data_type: string
+      - name: nj_cert_endorsement_3
+        data_type: string
+      - name: nj_cert_endorsement_4
+        data_type: string
+      - name: nj_cert_endorsement_5
+        data_type: string
+      - name: nj_cert_type_1
+        data_type: string
+      - name: nj_cert_type_2
+        data_type: string
+      - name: nj_cert_type_3
+        data_type: string
+      - name: nj_cert_type_4
+        data_type: string
+      - name: nj_cert_type_5
+        data_type: string
+      - name: praxis_document_link
+        data_type: string
+      - name: race_ethnicity
+        data_type: string
+      - name: respondent_name
+        data_type: string
+      - name: undergraduate_school
+        data_type: string
+      - name: updates_open_ended
+        data_type: string
+      - name: fl_cert_expiration_1
+        data_type: date
+      - name: fl_cert_expiration_2
+        data_type: date
+      - name: fl_cert_expiration_3
+        data_type: date
+      - name: fl_cert_expiration_4
+        data_type: date
+      - name: fl_cert_expiration_5
+        data_type: date
+      - name: nj_cert_issue_date_1
+        data_type: date
+      - name: nj_cert_issue_date_2
+        data_type: date
+      - name: nj_cert_issue_date_3
+        data_type: date
+      - name: nj_cert_issue_date_4
+        data_type: date
+      - name: nj_cert_issue_date_5
+        data_type: date
+      - name: years_exp_outside_kipp
+        data_type: numeric
+      - name: years_teaching_in_njfl
+        data_type: numeric
+      - name: years_teaching_outside_njfl
+        data_type: numeric
+      - name: alumni_status
+        data_type: string
+      - name: path_to_education
+        data_type: string
+      - name: relay_status
+        data_type: string
+      - name: community_grew_up
+        data_type: string
+      - name: community_professional_exp
+        data_type: string
+      - name: cert_required
+        data_type: boolean
+      - name: fl_additional_cert_1
+        data_type: boolean
+      - name: nj_cert_additional_1
+        data_type: boolean
+      - name: race_ethnicity_reporting
+        data_type: string

@@ -1,0 +1,98 @@
+version: 2
+models:
+  - name: rpt_tableau__college_assessment_dashboard
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_display
+        data_type: string
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: sped
+        data_type: int64
+      - name: is_504
+        data_type: boolean
+      - name: lep_status
+        data_type: boolean
+      - name: gifted_and_talented
+        data_type: string
+      - name: advisory
+        data_type: string
+      - name: contact_id
+        data_type: string
+      - name: ktc_cohort
+        data_type: int64
+      - name: contact_owner_name
+        data_type: string
+      - name: college_match_gpa
+        data_type: numeric
+      - name: college_match_gpa_bands
+        data_type: string
+      - name: courses_course_name
+        data_type: string
+      - name: teacher_lastfirst
+        data_type: string
+      - name: sections_external_expression
+        data_type: string
+      - name: expected_test_type
+        data_type: string
+      - name: expected_scope
+        data_type: string
+      - name: expected_subject_area
+        data_type: string
+      - name: test_type
+        data_type: string
+      - name: scope
+        data_type: string
+      - name: scope_round
+        data_type: string
+      - name: assessment_id
+        data_type: int64
+      - name: assessment_title
+        data_type: string
+      - name: administration_round
+        data_type: string
+      - name: subject_area
+        data_type: string
+      - name: test_date
+        data_type: date
+      - name: response_type
+        data_type: string
+      - name: response_type_description
+        data_type: string
+      - name: points
+        data_type: numeric
+      - name: percent_correct
+        data_type: numeric
+      - name: total_subjects_tested
+        data_type: int64
+      - name: raw_score
+        data_type: numeric
+      - name: scale_score
+        data_type: float64
+      - name: rn_highest
+        data_type: int64
+      - name: subject_course
+        data_type: string
+      - name: subject_teacher
+        data_type: string
+      - name: subject_external_expression
+        data_type: string
+      - name: is_math_double_blocked
+        data_type: boolean
+      - name: is_exempt_state_testing
+        data_type: boolean

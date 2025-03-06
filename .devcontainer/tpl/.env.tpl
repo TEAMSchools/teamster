@@ -1,15 +1,3 @@
-# hard-coded
-DBT_DEV_CLOUD_STORAGE_URI_BASE=gs://teamster-test/dagster/kippnewark
-DBT_DEV_DEANSLIST_SCHEMA=z_dev_deanslist
-DBT_DEV_EDPLAN_SCHEMA=z_dev_edplan
-DBT_DEV_IREADY_SCHEMA=z_dev_iready
-DBT_DEV_OVERGRAD_SCHEMA=z_dev_overgrad
-DBT_DEV_PEARSON_SCHEMA=z_dev_pearson
-DBT_DEV_POWERSCHOOL_SCHEMA=z_dev_powerschool
-DBT_DEV_RENLEARN_SCHEMA=z_dev_renlearn
-DBT_DEV_TITAN_SCHEMA=z_dev_titan
-DBT_DEV=true
-# OP
 ADP_SFTP_HOST_IP=op://Data Team/ADP Workforce Now SFTP/ip
 ADP_SFTP_PASSWORD=op://Data Team/ADP Workforce Now SFTP/password
 ADP_SFTP_USERNAME=op://Data Team/ADP Workforce Now SFTP/username
@@ -54,9 +42,6 @@ EDPLAN_SFTP_USERNAME_KIPPNEWARK=op://Data Team/edplan SFTP - Newark/username
 EDPLAN_SFTP_USERNAME=op://Data Team/edplan SFTP - Camden/username
 EGENCIA_SFTP_HOST=op://Data Team/Egencia SFTP/host
 EGENCIA_SFTP_USERNAME=op://Data Team/Egencia SFTP/username
-FIVETRAN_ACCOUNT_ID=op://Data Team/Fivetran API/account id
-FIVETRAN_API_KEY=op://Data Team/Fivetran API/api key
-FIVETRAN_API_SECRET=op://Data Team/Fivetran API/api secret
 GOOGLE_DIRECTORY_DELEGATED_ACCOUNT=op://Data Team/Google Admin Service Account/username
 GOOGLE_WORKSPACE_CUSTOMER_ID=op://Data Team/Google Admin Service Account/customer id
 ILLUMINATE_DB_DATABASE=op://Data Team/Illuminate ODBC/database

@@ -2,12 +2,19 @@ version: 2
 
 sources:
   - name: deanslist
-    schema: kipptaf_deanslist
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {{ project_name }}_deanslist
     tables:
       - name: src_deanslist__reconcile_attendance
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/deanslist/reconcile_attendance/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/deanslist/reconcile_attendance/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -18,8 +25,13 @@ sources:
               - reconcile_attendance
       - name: src_deanslist__reconcile_suspensions
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/deanslist/reconcile_suspensions/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/deanslist/reconcile_suspensions/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:

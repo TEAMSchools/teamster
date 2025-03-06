@@ -1,0 +1,28 @@
+version: 2
+models:
+  - name: rpt_deanslist__state_test_scores
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: academic_year
+        data_type: string
+      - name: academic_year_int
+        data_type: int64
+      - name: test_round
+        data_type: string
+      - name: test_type
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: test_name
+        data_type: string
+      - name: scale_score
+        data_type: float64
+      - name: proficiency_level
+        data_type: string
+      - name: is_proficient
+        data_type: int64
+      - name: score_display
+        data_type: string
+      - name: test_index
+        data_type: int64

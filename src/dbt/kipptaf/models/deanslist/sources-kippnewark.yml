@@ -3,9 +3,8 @@ version: 2
 sources:
   - name: kippnewark_deanslist
     schema: |
-      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kippnewark_deanslist
-      {%- else -%}kippnewark_deanslist
-      {%- endif %}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      kippnewark_deanslist
     tables:
       - name: stg_deanslist__behavior
         meta:
