@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_adp_workforce_now__workers
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("adp_workforce_now",
+        "src_adp_workforce_now__workers") | replace("`", "") }}')
     columns:
       - name: associate_oid
         data_type: string
