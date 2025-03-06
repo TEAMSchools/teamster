@@ -31,21 +31,21 @@ with
 
     applications_unnested as (
         select
-            application_id,
-            candidate_id,
-            job_city,
-            recruiters,
-            department_internal,
-            job_title,
-            application_status,
-            reason_for_rejection,
-            phone_interview_score,
-            status_type,
-            date_val,
-            resume_score,
-            trim(subject_preference) as subject_preference,
+            a.application_id,
+            a.candidate_id,
+            a.job_city,
+            a.recruiters,
+            a.department_internal,
+            a.job_title,
+            a.application_status,
+            a.reason_for_rejection,
+            a.phone_interview_score,
+            a.status_type,
+            a.date_val,
+            a.resume_score,
+            trim(a.subject_preference) as subject_preference,
         from
-            applications_unpivot,
+            applications_unpivot as a,
             unnest(split(subject_preference, ',')) as subject_preference
     )
 
