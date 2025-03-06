@@ -6,6 +6,7 @@ with
             latest_psat_math_section,
             latest_psat_ebrw,
             latest_psat_reading,
+            gender,
 
             safe_cast(birth_date as date) as birth_date,
 
