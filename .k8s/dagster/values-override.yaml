@@ -55,7 +55,7 @@ workspace:
       cpu: 250m
       memory: 0.5Gi
     limits:
-      cpu: 500m
+      cpu: 750m
       memory: 1.0Gi
 
     # securityContext:

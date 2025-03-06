@@ -465,6 +465,7 @@ class MeetingTypeTag(GenericTag):
     enableTag4: bool | None = None
     hideFromLists: bool | None = None
     isWeeklyDataMeeting: bool | None = None
+    requireSignature: bool | None = None
     videoForm: bool | None = None
 
     excludedModules: list[str | None] | None = None
