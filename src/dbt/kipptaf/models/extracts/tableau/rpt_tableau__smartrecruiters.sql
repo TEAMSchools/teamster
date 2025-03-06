@@ -1,5 +1,5 @@
 with
-    applications as (
+    applications_unpivot as (
         select
             application_id,
             candidate_id,
@@ -10,10 +10,12 @@ with
             application_status,
             reason_for_rejection,
             phone_interview_score,
-            subject_preference,
             status_type,
             date_val,
             coalesce(resume_score, star_score) as resume_score,
+            if(
+                subject_preference is null, 'No Preference', subject_preference
+            ) as subject_preference
         from
             {{ ref("stg_smartrecruiters__applications") }} unpivot (
                 date_val for status_type in (
@@ -25,6 +27,26 @@ with
                     phone_screen_requested_date
                 )
             )
+    ),
+
+    applications_unnested as (
+        select
+            application_id,
+            candidate_id,
+            job_city,
+            recruiters,
+            department_internal,
+            job_title,
+            application_status,
+            reason_for_rejection,
+            phone_interview_score,
+            status_type,
+            date_val,
+            resume_score,
+            trim(subject_preference) as subject_preference,
+        from
+            applications_unpivot,
+            unnest(split(subject_preference, ',')) as subject_preference
     )
 
 select
@@ -71,6 +93,6 @@ select
     s.grad_gpa,
     s.certification_in_state,
     s.certification_out_of_state,
-from applications as a
+from applications_unnested as a
 left join
     {{ ref("stg_smartrecruiters__applicants") }} as s on a.candidate_id = s.candidate_id
