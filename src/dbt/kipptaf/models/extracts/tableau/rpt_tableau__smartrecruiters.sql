@@ -15,7 +15,7 @@ with
             coalesce(resume_score, star_score) as resume_score,
             if(
                 subject_preference is null, 'No Preference', subject_preference
-            ) as subject_preference
+            ) as subject_preference,
         from
             {{ ref("stg_smartrecruiters__applications") }} unpivot (
                 date_val for status_type in (
