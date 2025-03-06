@@ -7,6 +7,8 @@ with
             latest_psat_ebrw,
             latest_psat_reading,
 
+            safe_cast(birth_date as date) as birth_date,
+
             safe_cast(latest_psat_math_test as integer) as latest_psat_math_test,
 
             safe_cast(latest_psat_date as date) as latest_psat_date,
