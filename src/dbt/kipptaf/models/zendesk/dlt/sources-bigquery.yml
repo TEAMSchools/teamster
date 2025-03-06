@@ -43,7 +43,7 @@ sources:
               - dlt
               - zendesk
               - support
-              - ticket_events
+              - ticket_events__child_events
       - name: ticket_metrics
         meta:
           dagster:
