@@ -1,0 +1,66 @@
+version: 2
+models:
+  - name: stg_powerschool__termbins
+    columns:
+      - name: storecode
+        data_type: string
+      - name: date1
+        data_type: date
+      - name: creditstring
+        data_type: string
+      - name: collectiondate
+        data_type: date
+      - name: description
+        data_type: string
+      - name: date2
+        data_type: date
+      - name: citasmt
+        data_type: string
+      - name: changegradeto
+        data_type: string
+      - name: excludedmarks
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: termid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: creditpct
+        data_type: float64
+      - name: collect
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: showonspreadsht
+        data_type: int64
+      - name: currentgrade
+        data_type: int64
+      - name: storegrades
+        data_type: int64
+      - name: numattpoints
+        data_type: float64
+      - name: suppressltrgrd
+        data_type: int64
+      - name: gradescaleid
+        data_type: int64
+      - name: suppresspercentscr
+        data_type: int64
+      - name: aregradeslocked
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: storecode_type
+        data_type: string
+      - name: storecode_order
+        data_type: string

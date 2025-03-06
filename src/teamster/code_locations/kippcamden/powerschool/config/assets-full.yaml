@@ -18,6 +18,8 @@ assets:
     partition_column: whenmodified
   - asset_name: emailaddress
     partition_column: whenmodified
+  - asset_name: gpstudentwaiver
+    partition_column: whenmodified
   - asset_name: gradescaleitem
     partition_column: whenmodified
   - asset_name: originalcontactmap
@@ -62,7 +64,7 @@ assets:
     partition_column: whenmodified
   - asset_name: u_clg_et_stu_alt
     partition_column: whenmodified
-  - asset_name: gpstudentwaiver
+  - asset_name: u_storedgrades_de
     partition_column: whenmodified
   - asset_name: userscorefields
     partition_column: whenmodified

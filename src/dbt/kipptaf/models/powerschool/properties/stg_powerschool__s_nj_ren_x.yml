@@ -1,0 +1,184 @@
+version: 2
+models:
+  - name: stg_powerschool__s_nj_ren_x
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: lepbegindate
+        data_type: date
+      - name: lependdate
+        data_type: date
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: liep_type
+        data_type: string
+      - name: withdrawal_date
+        data_type: date
+      - name: alternativeeducationprogram_yn
+        data_type: string
+      - name: city
+        data_type: string
+      - name: countycodeattending
+        data_type: string
+      - name: countycodereceiving
+        data_type: string
+      - name: countycoderesident
+        data_type: string
+      - name: districtcodeattending
+        data_type: string
+      - name: districtcodereceiving
+        data_type: string
+      - name: districtcoderesident
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string
+      - name: homeless_code
+        data_type: string
+      - name: indistrictplacement
+        data_type: string
+      - name: liep_languageofinstruction
+        data_type: string
+      - name: nonpublic
+        data_type: string
+      - name: programtypecode
+        data_type: string
+      - name: residentmunicipalcode
+        data_type: string
+      - name: schoolcodeattending
+        data_type: string
+      - name: schoolcodereceiving
+        data_type: string
+      - name: schoolcoderesident
+        data_type: string
+      - name: shared_time_code
+        data_type: string
+      - name: studentslearningmodel
+        data_type: string
+      - name: titleilanguage_yn
+        data_type: string
+      - name: titleimath_yn
+        data_type: string
+      - name: titleiscience_yn
+        data_type: string
+      - name: reportedsharedvoc_yn
+        data_type: string
+      - name: schoolentrydate
+        data_type: date
+      - name: specialed_classification
+        data_type: string
+      - name: tuition_code
+        data_type: string
+      - name: deafhardofhearing_yn
+        data_type: string
+      - name: district_status_override
+        data_type: string
+      - name: districtentrydate
+        data_type: date
+      - name: gradelevelcode
+        data_type: string
+      - name: sid_entrydate
+        data_type: date
+      - name: sid_exitdate
+        data_type: date
+      - name: declassificationspeddate
+        data_type: date
+      - name: homelessinstrucservice
+        data_type: string
+      - name: homelesssupportservice
+        data_type: string
+      - name: mddisablingcondition1
+        data_type: string
+      - name: mddisablingcondition2
+        data_type: string
+      - name: mddisablingcondition3
+        data_type: string
+      - name: mddisablingcondition4
+        data_type: string
+      - name: mddisablingcondition5
+        data_type: string
+      - name: titleiindicator
+        data_type: string
+      - name: eligible_for_liep
+        data_type: string
+      - name: elp_screener_date
+        data_type: date
+      - name: home_language2
+        data_type: string
+      - name: home_language3
+        data_type: string
+      - name: home_language4
+        data_type: string
+      - name: home_language5
+        data_type: string
+      - name: home_language_name2
+        data_type: string
+      - name: home_language_name3
+        data_type: string
+      - name: home_language_name4
+        data_type: string
+      - name: home_language_name5
+        data_type: string
+      - name: lepbegindate2
+        data_type: date
+      - name: liep_parent_refusal_date
+        data_type: date
+      - name: liependdate2
+        data_type: date
+      - name: sld_basic_reading_yn
+        data_type: string
+      - name: sld_listen_comp_yn
+        data_type: string
+      - name: sld_math_cal_yn
+        data_type: string
+      - name: sld_math_prob_solve_yn
+        data_type: string
+      - name: sld_oral_expresn_yn
+        data_type: string
+      - name: sld_read_fluency_yn
+        data_type: string
+      - name: sld_reading_comp_yn
+        data_type: string
+      - name: sld_writn_exprsn_yn
+        data_type: string
+      - name: reenrollmentsdcid
+        data_type: int64
+      - name: lep_tf
+        data_type: int64
+      - name: cumulativedaysabsent
+        data_type: int64
+      - name: cumulativedayspresent
+        data_type: int64
+      - name: cumulativestateabs
+        data_type: int64
+      - name: daysopen
+        data_type: int64
+      - name: deviceowner
+        data_type: int64
+      - name: devicetype
+        data_type: int64
+      - name: homelessprimarynighttimeres
+        data_type: int64
+      - name: internetconnectivity
+        data_type: int64
+      - name: remotedaysabsent
+        data_type: int64
+      - name: remotedayspresent
+        data_type: int64
+      - name: learningenvironment
+        data_type: int64
+      - name: retained_tf
+        data_type: int64
+      - name: languageacquisition
+        data_type: int64
+      - name: lep_completion_date_refused
+        data_type: int64
+      - name: sid_excludeenrollment
+        data_type: int64
+      - name: pid_504_tf
+        data_type: boolean

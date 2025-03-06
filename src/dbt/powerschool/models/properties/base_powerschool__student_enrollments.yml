@@ -1,0 +1,290 @@
+version: 2
+models:
+  - name: base_powerschool__student_enrollments
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: students_dcid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: reenrollments_dcid
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: entrydate
+        data_type: date
+      - name: exitdate
+        data_type: date
+      - name: entrycode
+        data_type: string
+      - name: exitcode
+        data_type: string
+      - name: exitcomment
+        data_type: string
+      - name: lunchstatus
+        data_type: string
+      - name: fteid
+        data_type: int64
+      - name: state_studentnumber
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: lastfirst
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: dob
+        data_type: date
+      - name: street
+        data_type: string
+      - name: city
+        data_type: string
+      - name: state
+        data_type: string
+      - name: zip
+        data_type: string
+      - name: home_phone
+        data_type: string
+      - name: fedethnicity
+        data_type: int64
+      - name: next_school
+        data_type: int64
+      - name: sched_nextyeargrade
+        data_type: int64
+      - name: highest_grade_level_achieved
+        data_type: int64
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: yearid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: exit_code_kf
+        data_type: string
+      - name: exit_code_ts
+        data_type: string
+      - name: track
+        data_type: string
+      - name: cohort_primary
+        data_type: int64
+      - name: lunch_status
+        data_type: string
+      - name: rn_all
+        data_type: int64
+      - name: rn_year
+        data_type: int64
+      - name: rn_school
+        data_type: int64
+      - name: grade_level_prev
+        data_type: int64
+      - name: yearid_prev
+        data_type: int64
+      - name: rn_undergrad
+        data_type: int64
+      - name: is_retained_year
+        data_type: boolean
+      - name: cohort_graduated
+        data_type: int64
+      - name: year_in_school
+        data_type: int64
+      - name: year_in_network
+        data_type: int64
+      - name: is_enrolled_y1
+        data_type: boolean
+      - name: is_enrolled_oct01
+        data_type: boolean
+      - name: is_enrolled_oct15
+        data_type: boolean
+      - name: is_enrolled_recent
+        data_type: boolean
+      - name: is_retained_ever
+        data_type: boolean
+      - name: boy_status
+        data_type: string
+      - name: cohort_secondary
+        data_type: int64
+      - name: entry_schoolid
+        data_type: int64
+      - name: entry_grade_level
+        data_type: int64
+      - name: school_name
+        data_type: string
+      - name: school_abbreviation
+        data_type: string
+      - name: spedlep
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: is_homeless
+        data_type: boolean
+      - name: advisory_name
+        data_type: string
+      - name: advisor_teachernumber
+        data_type: string
+      - name: advisor_lastfirst
+        data_type: string
+      - name: contact_1_address_home
+        data_type: string
+      - name: contact_1_email_current
+        data_type: string
+      - name: contact_1_name
+        data_type: string
+      - name: contact_1_phone_daytime
+        data_type: string
+      - name: contact_1_phone_home
+        data_type: string
+      - name: contact_1_phone_mobile
+        data_type: string
+      - name: contact_1_phone_primary
+        data_type: string
+      - name: contact_1_phone_work
+        data_type: string
+      - name: contact_1_relationship
+        data_type: string
+      - name: contact_2_address_home
+        data_type: string
+      - name: contact_2_email_current
+        data_type: string
+      - name: contact_2_name
+        data_type: string
+      - name: contact_2_phone_daytime
+        data_type: string
+      - name: contact_2_phone_home
+        data_type: string
+      - name: contact_2_phone_mobile
+        data_type: string
+      - name: contact_2_phone_primary
+        data_type: string
+      - name: contact_2_phone_work
+        data_type: string
+      - name: contact_2_relationship
+        data_type: string
+      - name: emergency_1_address_home
+        data_type: string
+      - name: emergency_1_email_current
+        data_type: string
+      - name: emergency_1_name
+        data_type: string
+      - name: emergency_1_phone_daytime
+        data_type: string
+      - name: emergency_1_phone_home
+        data_type: string
+      - name: emergency_1_phone_mobile
+        data_type: string
+      - name: emergency_1_phone_primary
+        data_type: string
+      - name: emergency_1_phone_work
+        data_type: string
+      - name: emergency_1_relationship
+        data_type: string
+      - name: emergency_2_address_home
+        data_type: string
+      - name: emergency_2_email_current
+        data_type: string
+      - name: emergency_2_name
+        data_type: string
+      - name: emergency_2_phone_daytime
+        data_type: string
+      - name: emergency_2_phone_home
+        data_type: string
+      - name: emergency_2_phone_mobile
+        data_type: string
+      - name: emergency_2_phone_primary
+        data_type: string
+      - name: emergency_2_phone_work
+        data_type: string
+      - name: emergency_2_relationship
+        data_type: string
+      - name: emergency_3_address_home
+        data_type: string
+      - name: emergency_3_email_current
+        data_type: string
+      - name: emergency_3_name
+        data_type: string
+      - name: emergency_3_phone_daytime
+        data_type: string
+      - name: emergency_3_phone_home
+        data_type: string
+      - name: emergency_3_phone_mobile
+        data_type: string
+      - name: emergency_3_phone_primary
+        data_type: string
+      - name: emergency_3_phone_work
+        data_type: string
+      - name: emergency_3_relationship
+        data_type: string
+      - name: pickup_1_address_home
+        data_type: string
+      - name: pickup_1_email_current
+        data_type: string
+      - name: pickup_1_name
+        data_type: string
+      - name: pickup_1_phone_daytime
+        data_type: string
+      - name: pickup_1_phone_home
+        data_type: string
+      - name: pickup_1_phone_mobile
+        data_type: string
+      - name: pickup_1_phone_primary
+        data_type: string
+      - name: pickup_1_phone_work
+        data_type: string
+      - name: pickup_1_relationship
+        data_type: string
+      - name: pickup_2_address_home
+        data_type: string
+      - name: pickup_2_email_current
+        data_type: string
+      - name: pickup_2_name
+        data_type: string
+      - name: pickup_2_phone_daytime
+        data_type: string
+      - name: pickup_2_phone_home
+        data_type: string
+      - name: pickup_2_phone_mobile
+        data_type: string
+      - name: pickup_2_phone_primary
+        data_type: string
+      - name: pickup_2_phone_work
+        data_type: string
+      - name: pickup_2_relationship
+        data_type: string
+      - name: pickup_3_address_home
+        data_type: string
+      - name: pickup_3_email_current
+        data_type: string
+      - name: pickup_3_name
+        data_type: string
+      - name: pickup_3_phone_daytime
+        data_type: string
+      - name: pickup_3_phone_home
+        data_type: string
+      - name: pickup_3_phone_mobile
+        data_type: string
+      - name: pickup_3_phone_primary
+        data_type: string
+      - name: pickup_3_phone_work
+        data_type: string
+      - name: pickup_3_relationship
+        data_type: string
+      - name: cohort
+        data_type: int64
+      - name: is_self_contained
+        data_type: boolean
+      - name: is_out_of_district
+        data_type: boolean
+      - name: reporting_schoolid
+        data_type: int64
+      - name: reporting_school_name
+        data_type: string
+      - name: school_level
+        data_type: string

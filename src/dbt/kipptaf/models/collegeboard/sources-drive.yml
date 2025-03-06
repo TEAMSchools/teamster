@@ -3,9 +3,8 @@ version: 2
 sources:
   - name: collegeboard
     schema: |
-      {% if env_var('DBT_DEV', '') == 'true' -%}z_dev_kipptaf_collegeboard
-      {%- else -%}kipptaf_collegeboard
-      {%- endif %}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {{ project_name }}_collegeboard
     tables:
       - name: src_collegeboard__id_crosswalk
         external:

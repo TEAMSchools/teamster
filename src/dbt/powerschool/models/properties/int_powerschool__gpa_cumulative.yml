@@ -1,0 +1,28 @@
+version: 2
+models:
+  - name: int_powerschool__gpa_cumulative
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: earned_credits_cum
+        data_type: float64
+      - name: potential_credits_cum
+        data_type: float64
+      - name: earned_credits_cum_projected
+        data_type: float64
+      - name: earned_credits_cum_projected_s1
+        data_type: float64
+      - name: cumulative_y1_gpa
+        data_type: float64
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64
+      - name: core_cumulative_y1_gpa
+        data_type: float64

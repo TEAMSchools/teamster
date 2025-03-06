@@ -1,0 +1,68 @@
+version: 2
+models:
+  - name: rpt_python__manager_pm_averages
+    columns:
+      - name: observer_employee_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: form_term
+        data_type: string
+      - name: term_num
+        data_type: int64
+      - name: etr1a
+        data_type: float64
+      - name: etr1b
+        data_type: float64
+      - name: etr2a
+        data_type: float64
+      - name: etr2b
+        data_type: float64
+      - name: etr2c
+        data_type: float64
+      - name: etr2d
+        data_type: float64
+      - name: etr3a
+        data_type: float64
+      - name: etr3b
+        data_type: float64
+      - name: etr3c
+        data_type: float64
+      - name: etr3d
+        data_type: float64
+      - name: etr4a
+        data_type: float64
+      - name: etr4b
+        data_type: float64
+      - name: etr4c
+        data_type: float64
+      - name: etr4d
+        data_type: float64
+      - name: etr4e
+        data_type: float64
+      - name: etr4f
+        data_type: float64
+      - name: etr5a
+        data_type: float64
+      - name: etr5b
+        data_type: float64
+      - name: etr5c
+        data_type: float64
+      - name: so1
+        data_type: float64
+      - name: so2
+        data_type: float64
+      - name: so3
+        data_type: float64
+      - name: so4
+        data_type: float64
+      - name: so5
+        data_type: float64
+      - name: so6
+        data_type: float64
+      - name: so7
+        data_type: float64
+      - name: so8
+        data_type: float64
+      - name: overall_score
+        data_type: float64

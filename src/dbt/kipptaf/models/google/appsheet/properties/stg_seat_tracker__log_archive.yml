@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: stg_seat_tracker__log_archive
+    columns:
+      - name: log_id
+        data_type: string
+      - name: valid_from
+        data_type: date
+      - name: academic_year
+        data_type: string
+      - name: staffing_model_id
+        data_type: string
+      - name: teammate
+        data_type: string
+      - name: staffing_status
+        data_type: string
+      - name: status_detail
+        data_type: string
+      - name: is_mid_year_hire
+        data_type: boolean
+      - name: is_open
+        data_type: boolean
+      - name: is_staffed
+        data_type: boolean
+      - name: is_active
+        data_type: boolean
+      - name: is_new_hire
+        data_type: boolean
+      - name: plan_status
+        data_type: string

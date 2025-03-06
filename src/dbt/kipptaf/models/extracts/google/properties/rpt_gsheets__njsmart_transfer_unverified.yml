@@ -1,0 +1,44 @@
+version: 2
+models:
+  - name: rpt_gsheets__njsmart_transfer_unverified
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: state_studentnumber
+        data_type: string
+      - name: student_name
+        data_type: string
+      - name: last_kipp_grade_level
+        data_type: int64
+      - name: last_kipp_region
+        data_type: string
+      - name: last_kipp_school
+        data_type: string
+      - name: last_kipp_advisor
+        data_type: string
+      - name: exit_date
+        data_type: date
+      - name: nj_exit_code
+        data_type: string
+      - name: kipp_exit_code
+        data_type: string
+      - name: exitcomment
+        data_type: string
+      - name: contact_1_name
+        data_type: string
+      - name: contact_1_relationship
+        data_type: string
+      - name: contact_2_name
+        data_type: string
+      - name: contact_2_relationship
+        data_type: string
+      - name: salesforce_hs_name
+        data_type: string
+      - name: kipp_forward_counselor
+        data_type: string
+      - name: contact_1_phone
+        data_type: string
+      - name: contact_2_phone
+        data_type: string
+      - name: last_kipp_academic_year
+        data_type: string

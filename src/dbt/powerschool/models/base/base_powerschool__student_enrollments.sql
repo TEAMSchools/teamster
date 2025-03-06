@@ -294,10 +294,10 @@ with
                 is_enrolled_y1,
                 is_enrolled_oct01,
                 is_enrolled_oct15,
-                is_enrolled_recent
+                is_enrolled_recent,
+                is_retained_year
             ),
 
-            max(cohort_graduated) over (partition by studentid) as cohort_graduated,
             max(year_in_school) over (partition by studentid, yearid) as year_in_school,
             max(year_in_network) over (
                 partition by studentid, yearid
@@ -312,7 +312,11 @@ with
             max(is_enrolled_recent) over (
                 partition by studentid, yearid
             ) as is_enrolled_recent,
+            max(is_retained_year) over (
+                partition by studentid, yearid
+            ) as is_retained_year,
 
+            max(cohort_graduated) over (partition by studentid) as cohort_graduated,
             max(is_retained_year) over (partition by studentid) as is_retained_ever,
         from enr_bools
     ),

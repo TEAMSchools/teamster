@@ -1,0 +1,20 @@
+version: 2
+models:
+  - name: stg_powerschool__gradeschoolformulaassoc
+    columns:
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: gradeschoolformulaassocid
+        data_type: int64
+      - name: gradeformulasetid
+        data_type: int64
+      - name: gradeschoolconfigid
+        data_type: int64
+      - name: isdefaultformulaset
+        data_type: int64

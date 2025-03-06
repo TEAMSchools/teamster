@@ -162,6 +162,7 @@ assets:
       cron_schedule:
         - 0 1 * * *
         - 0 18 * * *
+        - 0 16 * * 5
   - name: APM Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__iready_apm]

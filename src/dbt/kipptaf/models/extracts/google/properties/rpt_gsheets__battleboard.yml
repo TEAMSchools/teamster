@@ -1,0 +1,48 @@
+version: 2
+models:
+  - name: rpt_gsheets__battleboard
+    columns:
+      - name: df_employee_number
+        data_type: int64
+      - name: status
+        data_type: string
+      - name: preferred_name
+        data_type: string
+      - name: primary_site
+        data_type: string
+      - name: primary_job
+        data_type: string
+      - name: primary_on_site_department
+        data_type: string
+      - name: mail
+        data_type: string
+      - name: google_email
+        data_type: string
+      - name: original_hire_date
+        data_type: date
+      - name: entity
+        data_type: string
+      - name: pm1
+        data_type: int64
+      - name: pm2
+        data_type: int64
+      - name: pm3
+        data_type: int64
+      - name: last year final
+        data_type: int64
+      - name: intent_to_return
+        data_type: int64
+      - name: reason_for_leaving_primary
+        data_type: int64
+      - name: reason_for_leaving_secondary
+        data_type: int64
+      - name: transfer_1
+        data_type: int64
+      - name: transfer_oe
+        data_type: int64
+      - name: stay_oe
+        data_type: int64
+      - name: anything_else_oe
+        data_type: int64
+      - name: department_grade
+        data_type: string

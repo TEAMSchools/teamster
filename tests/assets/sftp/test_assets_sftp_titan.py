@@ -1,21 +1,9 @@
 import random
 
-from dagster import EnvVar, materialize
+from dagster import materialize
 
 from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.libraries.ssh.resources import SSHResource
-
-SSH_TITAN_KIPPNEWARK = SSHResource(
-    remote_host="sftp.titank12.com",
-    username=EnvVar("TITAN_SFTP_USERNAME_KIPPNEWARK"),
-    password=EnvVar("TITAN_SFTP_PASSWORD_KIPPNEWARK"),
-)
-
-SSH_TITAN_KIPPCAMDEN = SSHResource(
-    remote_host="sftp.titank12.com",
-    username=EnvVar("TITAN_SFTP_USERNAME_KIPPCAMDEN"),
-    password=EnvVar("TITAN_SFTP_PASSWORD_KIPPCAMDEN"),
-)
+from tests.utils import get_titan_ssh_resource
 
 
 def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
@@ -55,7 +43,10 @@ def _test_asset(asset, ssh_resource: dict, partition_key=None, instance=None):
 def test_titan_person_data_kippnewark():
     from teamster.code_locations.kippnewark.titan.assets import person_data
 
-    _test_asset(asset=person_data, ssh_resource={"ssh_titan": SSH_TITAN_KIPPNEWARK})
+    _test_asset(
+        asset=person_data,
+        ssh_resource={"ssh_titan": get_titan_ssh_resource("kippnewark")},
+    )
 
 
 def test_titan_person_data_kippcamden():
@@ -63,6 +54,6 @@ def test_titan_person_data_kippcamden():
 
     _test_asset(
         asset=person_data,
-        ssh_resource={"ssh_titan": SSH_TITAN_KIPPCAMDEN},
+        ssh_resource={"ssh_titan": get_titan_ssh_resource("kippcamden")},
         partition_key="2023",
     )

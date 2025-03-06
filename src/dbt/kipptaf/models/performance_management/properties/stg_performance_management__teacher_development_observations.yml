@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: stg_performance_management__teacher_development_observations
+    columns:
+      - name: observation_id
+        data_type: string
+      - name: employee_number
+        data_type: int64
+      - name: observed_at
+        data_type: date
+      - name: observation_type
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: observation_notes
+        data_type: string
+      - name: growth_area
+        data_type: string
+      - name: observer_team
+        data_type: string
+      - name: growth_notes
+        data_type: string
+      - name: glow_area
+        data_type: string
+      - name: glow_notes
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: observation_type_abbreviation
+        data_type: string
+      - name: observer_name
+        data_type: string

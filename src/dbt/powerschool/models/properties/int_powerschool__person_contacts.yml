@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: int_powerschool__person_contacts
+    columns:
+      - name: personid
+        data_type: int64
+      - name: priority_order
+        data_type: int64
+      - name: is_primary
+        data_type: int64
+      - name: contact_type
+        data_type: string
+      - name: contact
+        data_type: string
+      - name: contact_category
+        data_type: string

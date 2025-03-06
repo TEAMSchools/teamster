@@ -40,7 +40,7 @@
     "**/.trunk/*plugins/": true
   },
   "[jsonc]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
+    "editor.defaultFormatter": "trunk.io"
   },
   "dbt.enableNewLineagePanel": true,
   "[python]": {
@@ -48,6 +48,8 @@
   },
   "terminal.integrated.env.linux": {
     "DAGSTER_HOME": "/workspaces/teamster/.dagster/home",
+    "DBT_CLOUD_ENVIRONMENT_TYPE": "dev",
+    "DBT_DEV_CLOUD_STORAGE_URI_BASE": "gs://teamster-test/dagster/kippnewark",
     "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
     "PYTHONDONTWRITEBYTECODE": "1",
     "TRUNK_TELEMETRY": "off",

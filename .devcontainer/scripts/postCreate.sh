@@ -13,10 +13,6 @@ sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends install bash-completion google-cloud-cli &&
   sudo rm -rf /var/lib/apt/lists/*
 
-# auth gcloud
-gcloud auth activate-service-account \
-  --key-file=/etc/secret-volume/gcloud_service_account_json
-
 # create env folder
 mkdir -p ./env
 sudo mkdir -p /etc/secret-volume
@@ -63,10 +59,15 @@ op inject -f --in-file=.devcontainer/tpl/powerschool_ssh_password.txt.tpl \
   --out-file=env/powerschool_ssh_password.txt &&
   sudo mv -f env/powerschool_ssh_password.txt /etc/secret-volume/powerschool_ssh_password.txt
 
+# auth gcloud
+gcloud auth activate-service-account \
+  --key-file=/etc/secret-volume/gcloud_service_account_json
+
 # install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh || true
 
 # install dependencies
+uv tool install datamodel-code-generator
 uv sync --frozen
 
 # prepare dbt projects

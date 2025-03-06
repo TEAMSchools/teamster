@@ -1,0 +1,216 @@
+version: 2
+models:
+  - name: rpt_tableau__gradebook_gpa
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_display
+        data_type: string
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: studentid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: salesforce_id
+        data_type: string
+      - name: ktc_cohort
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: advisory
+        data_type: string
+      - name: hos
+        data_type: string
+      - name: region_school_level
+        data_type: string
+      - name: year_in_school
+        data_type: int64
+      - name: year_in_network
+        data_type: int64
+      - name: rn_undergrad
+        data_type: int64
+      - name: is_out_of_district
+        data_type: boolean
+      - name: is_pathways
+        data_type: boolean
+      - name: is_retained_year
+        data_type: boolean
+      - name: is_retained_ever
+        data_type: boolean
+      - name: lunch_status
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: is_504
+        data_type: boolean
+      - name: is_counseling_services
+        data_type: int64
+      - name: is_student_athlete
+        data_type: int64
+      - name: ada
+        data_type: float64
+      - name: quarter
+        data_type: string
+      - name: semester
+        data_type: string
+      - name: quarter_start_date
+        data_type: date
+      - name: quarter_end_date
+        data_type: date
+      - name: cal_quarter_end_date
+        data_type: date
+      - name: is_current_quarter
+        data_type: boolean
+      - name: is_quarter_end_date_range
+        data_type: boolean
+      - name: gpa_for_quarter
+        data_type: float64
+      - name: gpa_semester
+        data_type: float64
+      - name: gpa_y1
+        data_type: float64
+      - name: gpa_y1_unweighted
+        data_type: float64
+      - name: gpa_total_credit_hours
+        data_type: float64
+      - name: gpa_n_failing_y1
+        data_type: int64
+      - name: gpa_cumulative_y1_gpa
+        data_type: float64
+      - name: gpa_cumulative_y1_gpa_unweighted
+        data_type: float64
+      - name: gpa_cumulative_y1_gpa_projected
+        data_type: float64
+      - name: gpa_cumulative_y1_gpa_projected_s1
+        data_type: float64
+      - name: gpa_cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64
+      - name: gpa_core_cumulative_y1_gpa
+        data_type: float64
+      - name: sectionid
+        data_type: int64
+      - name: sections_dcid
+        data_type: int64
+      - name: section_number
+        data_type: string
+      - name: external_expression
+        data_type: string
+      - name: date_enrolled
+        data_type: date
+      - name: credit_type
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: exclude_from_gpa
+        data_type: int64
+      - name: teacher_number
+        data_type: string
+      - name: teacher_name
+        data_type: string
+      - name: tutoring_nj
+        data_type: boolean
+      - name: nj_student_tier
+        data_type: string
+      - name: is_ap_course
+        data_type: boolean
+      - name: tableau_username
+        data_type: string
+      - name: y1_course_final_percent_grade_adjusted
+        data_type: float64
+      - name: y1_course_final_letter_grade_adjusted
+        data_type: string
+      - name: y1_course_final_earned_credits
+        data_type: float64
+      - name: y1_course_final_potential_credit_hours
+        data_type: float64
+      - name: y1_course_final_grade_points
+        data_type: float64
+      - name: quarter_course_in_progress_percent_grade
+        data_type: float64
+      - name: quarter_course_in_progress_letter_grade
+        data_type: string
+      - name: quarter_course_in_progress_grade_points
+        data_type: float64
+      - name: quarter_course_in_progress_percent_grade_adjusted
+        data_type: float64
+      - name: quarter_course_in_progress_letter_grade_adjusted
+        data_type: string
+      - name: quarter_course_final_percent_grade
+        data_type: float64
+      - name: quarter_course_final_letter_grade
+        data_type: string
+      - name: quarter_course_final_grade_points
+        data_type: float64
+      - name: quarter_course_percent_grade_that_matters
+        data_type: float64
+      - name: quarter_course_letter_grade_that_matters
+        data_type: string
+      - name: quarter_course_grade_points_that_matters
+        data_type: float64
+      - name: y1_course_in_progress_percent_grade
+        data_type: float64
+      - name: y1_course_in_progress_percent_grade_adjusted
+        data_type: float64
+      - name: y1_course_in_progress_letter_grade
+        data_type: string
+      - name: y1_course_in_progress_letter_grade_adjusted
+        data_type: string
+      - name: y1_course_in_progress_grade_points
+        data_type: float64
+      - name: y1_course_in_progress_grade_points_unweighted
+        data_type: float64
+      - name: need_60
+        data_type: float64
+      - name: need_70
+        data_type: float64
+      - name: need_80
+        data_type: float64
+      - name: need_90
+        data_type: float64
+      - name: quarter_citizenship
+        data_type: string
+      - name: quarter_comment_value
+        data_type: string
+      - name: category_name_code
+        data_type: string
+      - name: category_quarter_code
+        data_type: string
+      - name: category_quarter_percent_grade
+        data_type: float64
+      - name: category_y1_percent_grade_running
+        data_type: float64
+      - name: category_y1_percent_grade_current
+        data_type: float64
+      - name: category_quarter_average_all_courses
+        data_type: float64
+      - name: roster_type
+        data_type: string
+      - name: ada_above_or_at_80
+        data_type: boolean
+      - name: section_or_period
+        data_type: string

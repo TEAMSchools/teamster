@@ -2,7 +2,9 @@ version: 2
 
 sources:
   - name: tableau
-    schema: kipptaf_tableau
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {{ project_name }}_tableau
     tables:
       - name: src_tableau__workbook
         config:
@@ -10,7 +12,11 @@ sources:
         external:
           location: "{{ var('cloud_storage_uri_base') }}/tableau/workbook/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/tableau/workbook/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/tableau/workbook/"
             format: AVRO
             enable_logical_types: true
         meta:
@@ -21,8 +27,12 @@ sources:
               - workbook
       - name: src_tableau__view_count_per_view
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/tableau/view_count_per_view/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/tableau/view_count_per_view/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: AUTOMATIC
+            max_staleness: INTERVAL 1 DAY
             format: AVRO
             enable_logical_types: true
         meta:

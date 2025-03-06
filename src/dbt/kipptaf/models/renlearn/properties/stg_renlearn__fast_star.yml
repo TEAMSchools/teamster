@@ -1,0 +1,370 @@
+version: 2
+models:
+  - name: stg_renlearn__fast_star
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_subject
+        data_type: string
+      - name: guid
+        data_type: string
+      - name: assess_num
+        data_type: int64
+      - name: assess_status
+        data_type: string
+      - name: attempts_g3
+        data_type: record
+      - name: attempts_g3.string_value
+        data_type: string
+      - name: attempts_g3.long_value
+        data_type: int64
+      - name: cbt_flag
+        data_type: string
+      - name: cid
+        data_type: string
+      - name: class_code
+        data_type: string
+      - name: client_id
+        data_type: int64
+      - name: cname
+        data_type: string
+      - name: completed_date
+        data_type: string
+      - name: completed_date_local
+        data_type: string
+      - name: current_sgp
+        data_type: float64
+      - name: dbm_level
+        data_type: int64
+      - name: dbmc_nol
+        data_type: int64
+      - name: dbmc_pr_max
+        data_type: int64
+      - name: dbmc_pr_min
+        data_type: int64
+      - name: dbmc
+        data_type: string
+      - name: dbmp
+        data_type: string
+      - name: dis
+        data_type: int64
+      - name: dis_name
+        data_type: string
+      - name: dob
+        data_type: int64
+      - name: email_s
+        data_type: string
+      - name: email_t
+        data_type: string
+      - name: enrolled
+        data_type: string
+      - name: est_orf
+        data_type: float64
+      - name: eth_hisp
+        data_type: string
+      - name: exempted_absence
+        data_type: string
+      - name: exempted_failed_prac
+        data_type: string
+      - name: exempted_non_eng_speaker
+        data_type: string
+      - name: exempted_wrong_test
+        data_type: string
+      - name: extra_time
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: first_name_t
+        data_type: string
+      - name: fleid
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: gid_rid
+        data_type: string
+      - name: gname
+        data_type: string
+      - name: grade_e
+        data_type: record
+      - name: grade_e.double_value
+        data_type: float64
+      - name: grade_e.string_value
+        data_type: string
+      - name: grade_p
+        data_type: float64
+      - name: grade_t
+        data_type: record
+      - name: grade_t.string_value
+        data_type: string
+      - name: grade_t.long_value
+        data_type: int64
+      - name: irl
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: last_name_t
+        data_type: string
+      - name: launch_date
+        data_type: string
+      - name: lexile_range
+        data_type: string
+      - name: lit_classification
+        data_type: string
+      - name: mi_t
+        data_type: string
+      - name: mi
+        data_type: string
+      - name: multi_race
+        data_type: string
+      - name: nce
+        data_type: float64
+      - name: paper_accommodations
+        data_type: string
+      - name: passing_score_g3
+        data_type: string
+      - name: passing_status_g3
+        data_type: string
+      - name: pnp_answer_eliminator
+        data_type: string
+      - name: pnp_audio_options
+        data_type: string
+      - name: pnp_calculator
+        data_type: string
+      - name: pnp_color_scheme
+        data_type: string
+      - name: pnp_contrast_overlay
+        data_type: string
+      - name: pnp_enlarge_text
+        data_type: string
+      - name: pnp_highlighter
+        data_type: string
+      - name: pnp_line_reader
+        data_type: string
+      - name: pnp_other_assistive_technology
+        data_type: string
+      - name: pnp_screen_reader
+        data_type: string
+      - name: pnp_unlimited_time
+        data_type: string
+      - name: pr
+        data_type: int64
+      - name: quantile
+        data_type: string
+      - name: race_a
+        data_type: string
+      - name: race_b
+        data_type: string
+      - name: race_i
+        data_type: string
+      - name: race_p
+        data_type: string
+      - name: race_w
+        data_type: string
+      - name: rbm_level
+        data_type: int64
+      - name: rbmc_nol
+        data_type: int64
+      - name: rbmc_pr_max
+        data_type: int64
+      - name: rbmc_pr_min
+        data_type: int64
+      - name: rbmc
+        data_type: string
+      - name: reported
+        data_type: string
+      - name: sbm_level
+        data_type: int64
+      - name: sbm
+        data_type: string
+      - name: sbmc_nol
+        data_type: int64
+      - name: sbmc_ss_max
+        data_type: int64
+      - name: sbmc_ss_min
+        data_type: int64
+      - name: sbmc
+        data_type: string
+      - name: sbmp
+        data_type: string
+      - name: sch
+        data_type: int64
+      - name: sch_bm_level
+        data_type: int64
+      - name: sch_bmc
+        data_type: string
+      - name: sch_bmc_nol
+        data_type: int64
+      - name: sch_bmc_pr_max
+        data_type: int64
+      - name: sch_bmc_pr_min
+        data_type: int64
+      - name: sch_bmp
+        data_type: string
+      - name: sch_name
+        data_type: string
+      - name: school_year
+        data_type: string
+      - name: school_year_ed
+        data_type: string
+      - name: school_year_sd
+        data_type: string
+      - name: sem
+        data_type: float64
+      - name: sgp_ff
+        data_type: float64
+      - name: sgp_fs
+        data_type: float64
+      - name: sgp_fw
+        data_type: float64
+      - name: sgp_sf
+        data_type: float64
+      - name: sgp_ss
+        data_type: float64
+      - name: sgp_ws
+        data_type: float64
+      - name: sid_sid
+        data_type: int64
+      - name: sw_ed
+        data_type: string
+      - name: sw_name
+        data_type: string
+      - name: sw_sd
+        data_type: string
+      - name: testing_ip
+        data_type: string
+      - name: testing_site
+        data_type: string
+      - name: test_name
+        data_type: string
+      - name: tid_rid
+        data_type: string
+      - name: tid
+        data_type: int64
+      - name: total_correct
+        data_type: float64
+      - name: total_possible
+        data_type: float64
+      - name: total_time
+        data_type: int64
+      - name: unified_score
+        data_type: int64
+      - name: zpd_lexile_lower
+        data_type: float64
+      - name: zpd_lexile_upper
+        data_type: float64
+      - name: zpd_lower
+        data_type: float64
+      - name: zpd_upper
+        data_type: float64
+      - name: sub_domain_ap
+        data_type: int64
+      - name: sub_domain_ap_skill_set_a
+        data_type: int64
+      - name: sub_domain_ap_skill_set_b
+        data_type: int64
+      - name: sub_domain_ap_skill_set_c
+        data_type: int64
+      - name: sub_domain_cw
+        data_type: int64
+      - name: sub_domain_cw_skill_set_a
+        data_type: int64
+      - name: sub_domain_cw_skill_set_b
+        data_type: int64
+      - name: sub_domain_cw_skill_set_c
+        data_type: int64
+      - name: sub_domain_cw_skill_set_d
+        data_type: int64
+      - name: sub_domain_en
+        data_type: int64
+      - name: sub_domain_en_skill_set_a
+        data_type: int64
+      - name: sub_domain_en_skill_set_b
+        data_type: int64
+      - name: sub_domain_en_skill_set_c
+        data_type: int64
+      - name: sub_domain_en_skill_set_d
+        data_type: int64
+      - name: sub_domain_en_skill_set_e
+        data_type: int64
+      - name: sub_domain_pa
+        data_type: int64
+      - name: sub_domain_pa_skill_set_a
+        data_type: int64
+      - name: sub_domain_pa_skill_set_b
+        data_type: int64
+      - name: sub_domain_pa_skill_set_c
+        data_type: int64
+      - name: sub_domain_pa_skill_set_d
+        data_type: int64
+      - name: sub_domain_pa_skill_set_e
+        data_type: int64
+      - name: sub_domain_pa_skill_set_f
+        data_type: int64
+      - name: sub_domain_pa_skill_set_g
+        data_type: int64
+      - name: sub_domain_pa_skill_set_h
+        data_type: int64
+      - name: sub_domain_pc
+        data_type: int64
+      - name: sub_domain_pc_skill_set_a
+        data_type: int64
+      - name: sub_domain_ph
+        data_type: int64
+      - name: sub_domain_ph_skill_set_a
+        data_type: int64
+      - name: sub_domain_ph_skill_set_b
+        data_type: int64
+      - name: sub_domain_ph_skill_set_c
+        data_type: int64
+      - name: sub_domain_ph_skill_set_d
+        data_type: int64
+      - name: sub_domain_ph_skill_set_e
+        data_type: int64
+      - name: sub_domain_ph_skill_set_f
+        data_type: int64
+      - name: sub_domain_ph_skill_set_g
+        data_type: int64
+      - name: sub_domain_ph_skill_set_h
+        data_type: int64
+      - name: sub_domain_ph_skill_set_i
+        data_type: int64
+      - name: sub_domain_ph_skill_set_j
+        data_type: int64
+      - name: sub_domain_ph_skill_set_k
+        data_type: int64
+      - name: sub_domain_ph_skill_set_l
+        data_type: int64
+      - name: sub_domain_sa
+        data_type: int64
+      - name: sub_domain_sa_skill_set_a
+        data_type: int64
+      - name: sub_domain_sa_skill_set_b
+        data_type: int64
+      - name: sub_domain_sa_skill_set_c
+        data_type: int64
+      - name: sub_domain_sa_skill_set_d
+        data_type: int64
+      - name: sub_domain_sc
+        data_type: int64
+      - name: sub_domain_sc_skill_set_a
+        data_type: int64
+      - name: sub_domain_vo
+        data_type: int64
+      - name: sub_domain_vo_skill_set_a
+        data_type: int64
+      - name: sub_domain_vo_skill_set_b
+        data_type: int64
+      - name: sub_domain_vo_skill_set_c
+        data_type: int64
+      - name: sub_domain_vs
+        data_type: int64
+      - name: sub_domain_vs_skill_set_a
+        data_type: int64
+      - name: sub_domain_vs_skill_set_b
+        data_type: int64
+      - name: lexile
+        data_type: string
+      - name: sgrade
+        data_type: string

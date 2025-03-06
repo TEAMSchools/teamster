@@ -1,0 +1,72 @@
+version: 2
+models:
+  - name: stg_kippadb__subsequent_financial_aid_award
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: last_activity_date
+        data_type: date
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: last_referenced_date
+        data_type: timestamp
+      - name: last_viewed_date
+        data_type: timestamp
+      - name: owner_id
+        data_type: string
+      - name: system_modstamp
+        data_type: timestamp
+      - name: applicable_grade_level
+        data_type: string
+      - name: applicable_school_year
+        data_type: string
+      - name: efc_from_fafsa_for_this_year
+        data_type: numeric
+      - name: enrollment
+        data_type: string
+      - name: federal_work_study
+        data_type: numeric
+      - name: institutional_grant
+        data_type: numeric
+      - name: institutional_scholarship
+        data_type: numeric
+      - name: institutional_work_study
+        data_type: numeric
+      - name: offer_date
+        data_type: date
+      - name: other_private_loan
+        data_type: numeric
+      - name: parent_plus_loan
+        data_type: numeric
+      - name: pell_grant
+        data_type: numeric
+      - name: perkins_loan
+        data_type: numeric
+      - name: seog
+        data_type: numeric
+      - name: stafford_loan_subsidized
+        data_type: numeric
+      - name: stafford_loan_unsubsidized
+        data_type: numeric
+      - name: state_grant
+        data_type: numeric
+      - name: status
+        data_type: string
+      - name: subsequent_financial_aid_award_count
+        data_type: numeric
+      - name: tap
+        data_type: numeric
+      - name: total_aid_available
+        data_type: numeric
+      - name: total_cost_of_attendance
+        data_type: numeric
+      - name: unmet_need
+        data_type: numeric

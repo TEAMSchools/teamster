@@ -161,5 +161,21 @@ select
         then 1
         else 0
     end as is_6yr_ugrad_grad_int,
+
+    case
+        when
+            e.ba_status = 'Graduated'
+            and e.ba_actual_end_date <= date((c.contact_kipp_hs_class + 6), 08, 31)
+        then 1
+        when
+            e.aa_status = 'Graduated'
+            and e.aa_actual_end_date <= date((c.contact_kipp_hs_class + 6), 08, 31)
+        then 1
+        when
+            e.cte_status = 'Graduated'
+            and e.cte_actual_end_date <= date((c.contact_kipp_hs_class + 6), 08, 31)
+        then 1
+        else 0
+    end as is_6yr_grad_any_int,
 from {{ ref("int_kippadb__enrollment_pivot") }} as e
 inner join {{ ref("base_kippadb__contact") }} as c on e.student = c.contact_id

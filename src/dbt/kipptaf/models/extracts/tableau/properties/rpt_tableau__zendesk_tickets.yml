@@ -1,0 +1,74 @@
+version: 2
+models:
+  - name: rpt_tableau__zendesk_tickets
+    columns:
+      - name: ticket_id
+        data_type: int64
+      - name: created_at
+        data_type: timestamp
+      - name: ticket_status
+        data_type: string
+      - name: ticket_subject
+        data_type: string
+      - name: ticket_url
+        data_type: string
+      - name: category
+        data_type: string
+      - name: tech_tier
+        data_type: string
+      - name: location
+        data_type: string
+      - name: submitter_name
+        data_type: string
+      - name: assignee
+        data_type: string
+      - name: last_group
+        data_type: string
+      - name: assignee_updated_at
+        data_type: timestamp
+      - name: initially_assigned_at
+        data_type: timestamp
+      - name: solved_at
+        data_type: timestamp
+      - name: assignee_stations
+        data_type: int64
+      - name: group_stations
+        data_type: int64
+      - name: comments_count
+        data_type: int64
+      - name: total_bh_minutes
+        data_type: int64
+      - name: reply_time_in_minutes_business
+        data_type: int64
+      - name: group_updated
+        data_type: timestamp
+      - name: original_group
+        data_type: string
+      - name: submitter_dept
+        data_type: string
+      - name: submitter_job
+        data_type: string
+      - name: submitter_site
+        data_type: string
+      - name: submitter_entity
+        data_type: string
+      - name: assignee_primary_job
+        data_type: string
+      - name: assignee_primary_site
+        data_type: string
+      - name: assignee_legal_entity
+        data_type: string
+      - name: original_assignee
+        data_type: string
+      - name: orig_assignee_job
+        data_type: string
+      - name: orig_assignee_dept
+        data_type: string
+      - name: weekdays_created_to_last_group
+        data_type: int64
+      - name: weekdays_created_to_solved
+        data_type: int64
+      - name: weekdays_created_to_first_assigned
+        data_type: int64
+      - name: weekdays_created_to_last_assigned
+        data_type: int64

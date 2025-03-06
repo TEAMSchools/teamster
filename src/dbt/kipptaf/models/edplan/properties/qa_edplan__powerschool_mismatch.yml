@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: qa_edplan__powerschool_mismatch
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: entrydate
+        data_type: date
+      - name: spedlep_ps
+        data_type: string
+      - name: spedlep_edplan
+        data_type: string
+      - name: specialed_classification_ps
+        data_type: string
+      - name: specialed_classification_edplan
+        data_type: string
+      - name: nj_se_parentalconsentobtained
+        data_type: string
+      - name: code_location
+        data_type: string

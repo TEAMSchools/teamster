@@ -1,0 +1,64 @@
+version: 2
+models:
+  - name: rpt_coupa__users
+    columns:
+      - name: login
+        data_type: string
+      - name: sso identifier
+        data_type: string
+      - name: email
+        data_type: string
+      - name: first name
+        data_type: string
+      - name: last name
+        data_type: string
+      - name: employee number
+        data_type: int64
+      - name: user role names
+        data_type: string
+      - name: default address location code
+        data_type: string
+      - name: default address street 1
+        data_type: string
+      - name: default address street 2
+        data_type: string
+      - name: default address city
+        data_type: string
+      - name: default address state
+        data_type: string
+      - name: default address postal code
+        data_type: string
+      - name: default address attention
+        data_type: string
+      - name: default address name
+        data_type: string
+      - name: status
+        data_type: string
+      - name: sage intacct id
+        data_type: int64
+      - name: sage intacct fund
+        data_type: int64
+      - name: default address country code
+        data_type: string
+      - name: authentication method
+        data_type: string
+      - name: generate password and notify user
+        data_type: string
+      - name: employee payment channel
+        data_type: string
+      - name: expense user
+        data_type: string
+      - name: purchasing user
+        data_type: string
+      - name: content groups
+        data_type: string
+      - name: mention name
+        data_type: string
+      - name: school name
+        data_type: string
+      - name: sage intacct program
+        data_type: int64
+      - name: sage intacct department
+        data_type: int64
+      - name: sage intacct location
+        data_type: int64

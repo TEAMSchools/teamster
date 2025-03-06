@@ -1,0 +1,90 @@
+version: 2
+models:
+  - name: stg_kippadb__internships_programs
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: last_activity_date
+        data_type: date
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: last_referenced_date
+        data_type: timestamp
+      - name: last_viewed_date
+        data_type: timestamp
+      - name: record_type_id
+        data_type: string
+      - name: system_modstamp
+        data_type: timestamp
+      - name: amount_hrs_of_work_completed
+        data_type: string
+      - name: application_status
+        data_type: string
+      - name: external_application_progress
+        data_type: string
+      - name: family_contribution
+        data_type: numeric
+      - name: financial_support
+        data_type: string
+      - name: first_job_after_college
+        data_type: boolean
+      - name: hourly_rate
+        data_type: string
+      - name: industry_of_interest
+        data_type: string
+      - name: internal_application_status
+        data_type: string
+      - name: internship_or_program_type
+        data_type: string
+      - name: internships_programs_count
+        data_type: numeric
+      - name: interview_date
+        data_type: date
+      - name: interview_status
+        data_type: string
+      - name: kf_team_they_interned_on
+        data_type: string
+      - name: kipp_foundation_program_name
+        data_type: string
+      - name: kipp_scholarship_amount
+        data_type: numeric
+      - name: notes
+        data_type: string
+      - name: opportunity_dates
+        data_type: string
+      - name: opportunity_end_date
+        data_type: date
+      - name: opportunity_start_date
+        data_type: date
+      - name: opportunity_type
+        data_type: string
+      - name: organizational_scholarship_amount
+        data_type: numeric
+      - name: program_cost
+        data_type: numeric
+      - name: program_or_organization_name
+        data_type: string
+      - name: resume_submitted
+        data_type: boolean
+      - name: special_opportunity_program_name
+        data_type: string
+      - name: student
+        data_type: string
+      - name: total_paid
+        data_type: string
+      - name: type_of_work
+        data_type: string
+      - name: weekly_hours
+        data_type: numeric
+      - name: weekly_pay
+        data_type: numeric
+      - name: work_is_in_area_of_career_interest
+        data_type: boolean

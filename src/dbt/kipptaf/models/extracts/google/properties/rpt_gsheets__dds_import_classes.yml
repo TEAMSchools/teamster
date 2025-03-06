@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: rpt_gsheets__dds_import_classes
+    columns:
+      - name: classname
+        data_type: string
+      - name: grade
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: teacher
+        data_type: string
+      - name: track
+        data_type: string
+      - name: classtype
+        data_type: int64
+      - name: username
+        data_type: string
