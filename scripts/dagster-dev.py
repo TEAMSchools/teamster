@@ -23,6 +23,7 @@ def main() -> None:
     for m in args.modules:
         module_args.extend(f"-m teamster.code_locations.{m}.definitions".split())
 
+    # trunk-ignore(bandit/B603)
     subprocess.run(
         args=["dagster", "dev", *module_args],
         env={

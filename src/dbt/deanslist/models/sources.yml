@@ -3,8 +3,7 @@ version: 2
 sources:
   - name: deanslist
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
-      {{ var('deanslist_schema', project_name + '_deanslist') }}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}{{ var('deanslist_schema', project_name + '_deanslist') }}
     tables:
       - name: src_deanslist__behavior
         meta:
@@ -20,8 +19,8 @@ sources:
             }}/deanslist/behavior/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -42,8 +41,8 @@ sources:
             }}/deanslist/comm_log/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -64,8 +63,8 @@ sources:
             }}/deanslist/followups/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -86,8 +85,8 @@ sources:
             }}/deanslist/homework/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -108,8 +107,8 @@ sources:
             }}/deanslist/incidents/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            # metadata_cache_mode: MANUAL
+            # max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -129,8 +128,8 @@ sources:
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/lists/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/lists/"
@@ -150,8 +149,8 @@ sources:
             }}/deanslist/roster_assignments/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -172,8 +171,8 @@ sources:
             }}/deanslist/rosters/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -193,8 +192,8 @@ sources:
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/terms/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/terms/"
@@ -213,8 +212,8 @@ sources:
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/users/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/users/"
@@ -234,8 +233,8 @@ sources:
             }}/deanslist/students/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -256,8 +255,8 @@ sources:
             }}/deanslist/dff_stats/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))

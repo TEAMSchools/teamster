@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_powerschool__gradecalculationtype
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__gradecalculationtype") | replace("`", "") }}')
     columns:
       - name: abbreviation
         data_type: string
