@@ -47,5 +47,5 @@ with
         where e.rn_undergrad = 1 and e.region != 'Miami'
     )
 
-select *, if(student_name = cb_student_name, true, false) as student_name_match,
+select *
 from roster

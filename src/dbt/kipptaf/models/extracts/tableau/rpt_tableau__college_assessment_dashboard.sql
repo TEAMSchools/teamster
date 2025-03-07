@@ -70,6 +70,7 @@ with
             if(
                 s.courses_course_number = 'MAT02056D3', true, false
             ) as is_math_double_blocked,
+
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
