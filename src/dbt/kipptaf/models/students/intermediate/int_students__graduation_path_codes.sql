@@ -161,6 +161,7 @@ with
             and s.student_number = p.student_number
     ),
 
+    -- did the student ever meet the min reqs for college readiness for SAT?
     met_sat_subject_mins as (
         select student_number, max(ela) as met_sat_ela, max(math) as met_sat_math,
         from

@@ -15,8 +15,6 @@ with
             score,
             test_type,
 
-            -- reason for proposed change: this concat creates names like
-            -- psat10_psat_math_section. it seems a bit redundant.
             regexp_replace(
                 concat(test_name, '_', regexp_extract(score_type, r'^[^_]+_(.+)')),
                 '_psat_',
