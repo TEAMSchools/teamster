@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: stg_powerschool__studenttestscore
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__studenttestscore") | replace("`", "") }}')
+    columns:
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: testscoreid
+        data_type: int64
+      - name: studenttestid
+        data_type: int64
+      - name: numscore
+        data_type: float64
+      - name: percentscore
+        data_type: float64
+      - name: readonly
+        data_type: int64
+      - name: alphascore
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: notes
+        data_type: string

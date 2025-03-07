@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: stg_google_directory__orgunits
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("google_directory",
+        "src_google_directory__orgunits") | replace("`", "") }}')
+    columns:
+      - name: kind
+        data_type: string
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: etag
+        data_type: string
+      - name: block_inheritance
+        data_type: boolean
+      - name: org_unit_id
+        data_type: string
+      - name: org_unit_path
+        data_type: string
+      - name: parent_org_unit_id
+        data_type: string
+      - name: parent_org_unit_path
+        data_type: string

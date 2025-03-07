@@ -2,72 +2,92 @@ version: 2
 
 sources:
   - name: fldoe
-    schema: kippmiami_fldoe
-    tags:
-      - stage_external_sources
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('fldoe_schema', project_name + '_fldoe') }}
     tables:
       - name: src_fldoe__fast
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kippmiami
               - fldoe
               - fast
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/fast/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/fast/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/fldoe/fast/"
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__fsa
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kippmiami
               - fldoe
               - fsa
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/fsa/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/fsa/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/fldoe/fsa/"
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__science
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kippmiami
               - fldoe
               - science
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/science/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/science/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/fldoe/science/"
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__eoc
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kippmiami
               - fldoe
               - eoc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/eoc/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/eoc/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/fldoe/eoc/"
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__fte
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kippmiami
               - fldoe
               - fte
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/fte/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/fte/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/fldoe/fte/"
             format: AVRO
             enable_logical_types: true

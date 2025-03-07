@@ -1,4 +1,6 @@
-from dagster import EnvVar
+import os
+
+from dagster import EnvVar, _check
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
 from dagster_slack import SlackResource
@@ -11,6 +13,60 @@ from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
+
+
+def get_io_manager_gcs_pickle(code_location):
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+        code_location = "test"
+
+    return GCSIOManager(
+        gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{code_location}", object_type="pickle"
+    )
+
+
+def get_io_manager_gcs_avro(code_location, test=False):
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+        code_location = "test"
+        test = True
+
+    return GCSIOManager(
+        gcs=GCS_RESOURCE,
+        gcs_bucket=f"teamster-{code_location}",
+        object_type="avro",
+        test=test,
+    )
+
+
+def get_io_manager_gcs_file(code_location, test=False):
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+        code_location = "test"
+        test = True
+
+    return GCSIOManager(
+        gcs=GCS_RESOURCE,
+        gcs_bucket=f"teamster-{code_location}",
+        object_type="file",
+        test=test,
+    )
+
+
+def get_dbt_cli_resource(dbt_project, test=False):
+    if test:
+        return DbtCliResource(
+            project_dir=dbt_project, dbt_executable="/workspaces/teamster/.venv/bin/dbt"
+        )
+    else:
+        return DbtCliResource(project_dir=dbt_project)
+
+
+def get_powerschool_ssh_resource():
+    return SSHResource(
+        remote_host=EnvVar("PS_SSH_HOST"),
+        remote_port=int(_check.not_none(value=EnvVar("PS_SSH_PORT").get_value())),
+        username=EnvVar("PS_SSH_USERNAME"),
+        tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
+    )
+
 
 BIGQUERY_RESOURCE = BigQueryResource(project=GCS_PROJECT_NAME)
 
@@ -33,88 +89,35 @@ SLACK_RESOURCE = SlackResource(token=EnvVar("SLACK_TOKEN"))
 
 SSH_COUCHDROP = SSHResource(
     remote_host=EnvVar("COUCHDROP_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("COUCHDROP_SFTP_USERNAME"),
     password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
 )
 
 SSH_EDPLAN = SSHResource(
     remote_host=EnvVar("EDPLAN_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("EDPLAN_SFTP_USERNAME"),
     password=EnvVar("EDPLAN_SFTP_PASSWORD"),
 )
 
 SSH_IREADY = SSHResource(
     remote_host=EnvVar("IREADY_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("IREADY_SFTP_USERNAME"),
     password=EnvVar("IREADY_SFTP_PASSWORD"),
 )
 
-SSH_POWERSCHOOL = SSHResource(
-    remote_host=EnvVar("PS_SSH_HOST"),
-    remote_port=EnvVar("PS_SSH_PORT"),
-    username=EnvVar("PS_SSH_USERNAME"),
-    password=EnvVar("PS_SSH_PASSWORD"),
-    tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
-)
-
 SSH_RENLEARN = SSHResource(
     remote_host=EnvVar("RENLEARN_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("RENLEARN_SFTP_USERNAME"),
     password=EnvVar("RENLEARN_SFTP_PASSWORD"),
 )
 
 SSH_TITAN = SSHResource(
     remote_host=EnvVar("TITAN_SFTP_HOST"),
+    remote_port=22,
     username=EnvVar("TITAN_SFTP_USERNAME"),
     password=EnvVar("TITAN_SFTP_PASSWORD"),
 )
-
-
-def get_io_manager_gcs_pickle(code_location):
-    return GCSIOManager(
-        gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{code_location}", object_type="pickle"
-    )
-
-
-def get_io_manager_gcs_avro(code_location, test=False):
-    return GCSIOManager(
-        gcs=GCS_RESOURCE,
-        gcs_bucket=f"teamster-{code_location}",
-        object_type="avro",
-        test=test,
-    )
-
-
-def get_io_manager_gcs_file(code_location):
-    return GCSIOManager(
-        gcs=GCS_RESOURCE, gcs_bucket=f"teamster-{code_location}", object_type="file"
-    )
-
-
-def get_dbt_cli_resource(dbt_project, test=False):
-    if test:
-        return DbtCliResource(
-            project_dir=dbt_project, dbt_executable="/workspaces/teamster/.venv/bin/dbt"
-        )
-    else:
-        return DbtCliResource(project_dir=dbt_project)
-
-
-def get_db_powerschool_resource(code_location: str):
-    return PowerSchoolODBCResource(
-        user=EnvVar(f"PS_DB_USERNAME_{code_location}"),
-        password=EnvVar(f"PS_DB_PASSWORD_{code_location}"),
-        host=EnvVar(f"PS_DB_HOST_{code_location}"),
-        port=EnvVar(f"PS_DB_PORT_{code_location}"),
-        service_name=EnvVar(f"PS_DB_DATABASE_{code_location}"),
-    )
-
-
-def get_ssh_powerschool_resource(code_location: str):
-    return SSHResource(
-        remote_host=EnvVar(f"PS_SSH_HOST_{code_location}"),
-        remote_port=EnvVar(f"PS_SSH_PORT_{code_location}"),
-        username=EnvVar(f"PS_SSH_USERNAME_{code_location}"),
-        password=EnvVar(f"PS_SSH_PASSWORD_{code_location}"),
-        tunnel_remote_host=EnvVar(f"PS_SSH_REMOTE_BIND_HOST_{code_location}"),
-    )

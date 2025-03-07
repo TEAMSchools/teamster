@@ -1,0 +1,126 @@
+version: 2
+models:
+  - name: rpt_gsheets__kfwd_taf_contact_feed
+    columns:
+      - name: ps_student_number
+        data_type: int64
+      - name: sf_contact_id
+        data_type: string
+      - name: student_name
+        data_type: string
+      - name: sf_cohort
+        data_type: int64
+      - name: dob
+        data_type: date
+      - name: exit_school_name
+        data_type: string
+      - name: exit_date
+        data_type: date
+      - name: exit_grade_level
+        data_type: int64
+      - name: current_grade_level_projection
+        data_type: int64
+      - name: expected_hs_grad_date
+        data_type: date
+      - name: contact_owner_name
+        data_type: string
+      - name: sf_home_phone
+        data_type: string
+      - name: sf_mobile_phone
+        data_type: string
+      - name: sf_other_phone
+        data_type: string
+      - name: sf_primary_email
+        data_type: string
+      - name: sf_secondary_email
+        data_type: string
+      - name: sf_mailing_address
+        data_type: string
+      - name: cur_pursuing_degree_type
+        data_type: string
+      - name: cur_account_type
+        data_type: string
+      - name: cur_status
+        data_type: string
+      - name: cur_school_name
+        data_type: string
+      - name: cur_start_date
+        data_type: date
+      - name: cur_actual_end_date
+        data_type: date
+      - name: cur_anticipated_graduation
+        data_type: date
+      - name: state_studentnumber
+        data_type: string
+      - name: ps_contact_1_name
+        data_type: string
+      - name: ps_contact_1_relationship
+        data_type: string
+      - name: ps_contact_1_email_current
+        data_type: string
+      - name: ps_contact_1_phone_daytime
+        data_type: string
+      - name: ps_contact_1_phone_home
+        data_type: string
+      - name: ps_contact_1_phone_mobile
+        data_type: string
+      - name: ps_contact_1_phone_primary
+        data_type: string
+      - name: ps_contact_1_phone_work
+        data_type: string
+      - name: ps_contact_2_name
+        data_type: string
+      - name: ps_contact_2_relationship
+        data_type: string
+      - name: ps_contact_2_email_current
+        data_type: string
+      - name: ps_contact_2_phone_daytime
+        data_type: string
+      - name: ps_contact_2_phone_home
+        data_type: string
+      - name: ps_contact_2_phone_mobile
+        data_type: string
+      - name: ps_contact_2_phone_primary
+        data_type: string
+      - name: ps_contact_2_phone_work
+        data_type: string
+      - name: ps_emergency_contact_1_name
+        data_type: string
+      - name: ps_emergency_contact_1_relationship
+        data_type: string
+      - name: ps_emergency_contact_1_phone_daytime
+        data_type: string
+      - name: ps_emergency_contact_1_phone_home
+        data_type: string
+      - name: ps_emergency_contact_1_phone_mobile
+        data_type: string
+      - name: ps_emergency_contact_1_phone_primary
+        data_type: string
+      - name: ps_emergency_contact_2_name
+        data_type: string
+      - name: ps_emergency_contact_2_relationship
+        data_type: string
+      - name: ps_emergency_contact_2_phone_daytime
+        data_type: string
+      - name: ps_emergency_contact_2_phone_home
+        data_type: string
+      - name: ps_emergency_contact_2_phone_mobile
+        data_type: string
+      - name: ps_emergency_contact_2_phone_primary
+        data_type: string
+      - name: ps_emergency_contact_3_name
+        data_type: string
+      - name: ps_emergency_contact_3_relationship
+        data_type: string
+      - name: ps_emergency_contact_3_phone_daytime
+        data_type: string
+      - name: ps_emergency_contact_3_phone_home
+        data_type: string
+      - name: ps_emergency_contact_3_phone_mobile
+        data_type: string
+      - name: ps_emergency_contact_3_phone_primary
+        data_type: string
+      - name: region
+        data_type: string
+      - name: ps_home_address
+        data_type: string

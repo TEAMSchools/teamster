@@ -1,0 +1,152 @@
+version: 2
+models:
+  - name: int_powerschool__student_contacts_pivot
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: contact_1_address_home
+        data_type: string
+      - name: contact_1_email_current
+        data_type: string
+      - name: contact_1_name
+        data_type: string
+      - name: contact_1_phone_daytime
+        data_type: string
+      - name: contact_1_phone_home
+        data_type: string
+      - name: contact_1_phone_mobile
+        data_type: string
+      - name: contact_1_phone_primary
+        data_type: string
+      - name: contact_1_phone_work
+        data_type: string
+      - name: contact_1_relationship
+        data_type: string
+      - name: contact_2_address_home
+        data_type: string
+      - name: contact_2_email_current
+        data_type: string
+      - name: contact_2_name
+        data_type: string
+      - name: contact_2_phone_daytime
+        data_type: string
+      - name: contact_2_phone_home
+        data_type: string
+      - name: contact_2_phone_mobile
+        data_type: string
+      - name: contact_2_phone_primary
+        data_type: string
+      - name: contact_2_phone_work
+        data_type: string
+      - name: contact_2_relationship
+        data_type: string
+      - name: emergency_1_address_home
+        data_type: string
+      - name: emergency_1_email_current
+        data_type: string
+      - name: emergency_1_name
+        data_type: string
+      - name: emergency_1_phone_daytime
+        data_type: string
+      - name: emergency_1_phone_home
+        data_type: string
+      - name: emergency_1_phone_mobile
+        data_type: string
+      - name: emergency_1_phone_primary
+        data_type: string
+      - name: emergency_1_phone_work
+        data_type: string
+      - name: emergency_1_relationship
+        data_type: string
+      - name: emergency_2_address_home
+        data_type: string
+      - name: emergency_2_email_current
+        data_type: string
+      - name: emergency_2_name
+        data_type: string
+      - name: emergency_2_phone_daytime
+        data_type: string
+      - name: emergency_2_phone_home
+        data_type: string
+      - name: emergency_2_phone_mobile
+        data_type: string
+      - name: emergency_2_phone_primary
+        data_type: string
+      - name: emergency_2_phone_work
+        data_type: string
+      - name: emergency_2_relationship
+        data_type: string
+      - name: emergency_3_address_home
+        data_type: string
+      - name: emergency_3_email_current
+        data_type: string
+      - name: emergency_3_name
+        data_type: string
+      - name: emergency_3_phone_daytime
+        data_type: string
+      - name: emergency_3_phone_home
+        data_type: string
+      - name: emergency_3_phone_mobile
+        data_type: string
+      - name: emergency_3_phone_primary
+        data_type: string
+      - name: emergency_3_phone_work
+        data_type: string
+      - name: emergency_3_relationship
+        data_type: string
+      - name: pickup_1_address_home
+        data_type: string
+      - name: pickup_1_email_current
+        data_type: string
+      - name: pickup_1_name
+        data_type: string
+      - name: pickup_1_phone_daytime
+        data_type: string
+      - name: pickup_1_phone_home
+        data_type: string
+      - name: pickup_1_phone_mobile
+        data_type: string
+      - name: pickup_1_phone_primary
+        data_type: string
+      - name: pickup_1_phone_work
+        data_type: string
+      - name: pickup_1_relationship
+        data_type: string
+      - name: pickup_2_address_home
+        data_type: string
+      - name: pickup_2_email_current
+        data_type: string
+      - name: pickup_2_name
+        data_type: string
+      - name: pickup_2_phone_daytime
+        data_type: string
+      - name: pickup_2_phone_home
+        data_type: string
+      - name: pickup_2_phone_mobile
+        data_type: string
+      - name: pickup_2_phone_primary
+        data_type: string
+      - name: pickup_2_phone_work
+        data_type: string
+      - name: pickup_2_relationship
+        data_type: string
+      - name: pickup_3_address_home
+        data_type: string
+      - name: pickup_3_email_current
+        data_type: string
+      - name: pickup_3_name
+        data_type: string
+      - name: pickup_3_phone_daytime
+        data_type: string
+      - name: pickup_3_phone_home
+        data_type: string
+      - name: pickup_3_phone_mobile
+        data_type: string
+      - name: pickup_3_phone_primary
+        data_type: string
+      - name: pickup_3_phone_work
+        data_type: string
+      - name: pickup_3_relationship
+        data_type: string

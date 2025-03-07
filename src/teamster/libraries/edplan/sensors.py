@@ -1,14 +1,13 @@
 import json
 import re
-from socket import gaierror
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     AssetsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     _check,
     define_asset_job,
     sensor,
@@ -18,9 +17,9 @@ from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_edplan_sftp_sensor(
-    code_location: str,
     asset: AssetsDefinition,
-    timezone,
+    code_location: str,
+    execution_timezone: ZoneInfo,
     minimum_interval_seconds=None,
 ):
     job = define_asset_job(
@@ -33,26 +32,12 @@ def build_edplan_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_edplan: SSHResource):
-        now_timestamp = pendulum.now(tz=timezone).timestamp()
+        now_timestamp = datetime.now(execution_timezone).timestamp()
 
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            files = ssh_edplan.listdir_attr_r("Reports")
-        except gaierror as e:
-            if (
-                "[Errno -3] Temporary failure in name resolution" in e.args
-                or "[Errno -5] No address associated with hostname" in e.args
-            ):
-                return SkipReason(str(e))
-            else:
-                raise e
-        except TimeoutError as e:
-            if "timed out" in e.args:
-                return SkipReason(str(e))
-            else:
-                raise e
+        files = ssh_edplan.listdir_attr_r("Reports")
 
         asset_identifier = asset.key.to_python_identifier()
         context.log.info(asset_identifier)
@@ -71,9 +56,13 @@ def build_edplan_sftp_sensor(
                 and _check.not_none(value=f.st_size) > 0
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                partition_key = pendulum.from_timestamp(
-                    timestamp=_check.not_none(value=f.st_mtime)
-                ).to_date_string()
+                partition_key = (
+                    datetime.fromtimestamp(
+                        timestamp=_check.not_none(value=f.st_mtime), tz=timezone.utc
+                    )
+                    .date()
+                    .isoformat()
+                )
 
                 run_requests.append(
                     RunRequest(

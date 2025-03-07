@@ -1,0 +1,64 @@
+version: 2
+models:
+  - name: stg_edplan__njsmart_powerschool
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("edplan",
+        "src_edplan__njsmart_powerschool") | replace("`", "") }}')
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: nj_se_earlyintervention
+        data_type: string
+      - name: nj_se_parentalconsentobtained
+        data_type: string
+      - name: ti_serv_counseling
+        data_type: string
+      - name: ti_serv_occup
+        data_type: string
+      - name: ti_serv_other
+        data_type: string
+      - name: ti_serv_physical
+        data_type: string
+      - name: ti_serv_speech
+        data_type: string
+      - name: effective_date
+        data_type: date
+      - name: fiscal_year
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: nj_se_delayreason
+        data_type: int64
+      - name: nj_se_placement
+        data_type: int64
+      - name: nj_timeinregularprogram
+        data_type: numeric
+      - name: nj_se_eligibilityddate
+        data_type: date
+      - name: nj_se_lastiepmeetingdate
+        data_type: date
+      - name: nj_se_parentalconsentdate
+        data_type: date
+      - name: nj_se_reevaluationdate
+        data_type: date
+      - name: nj_se_referraldate
+        data_type: date
+      - name: nj_se_initialiepmeetingdate
+        data_type: date
+      - name: nj_se_consenttoimplementdate
+        data_type: date
+      - name: state_studentnumber
+        data_type: int64
+      - name: special_education
+        data_type: string
+      - name: row_hash
+        data_type: string
+      - name: rn_row_year_asc
+        data_type: int64
+      - name: spedlep
+        data_type: string
+      - name: special_education_code
+        data_type: string
+      - name: effective_end_date
+        data_type: date

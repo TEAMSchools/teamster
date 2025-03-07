@@ -1,0 +1,57 @@
+version: 2
+models:
+  - name: stg_adp_workforce_manager__time_details
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{
+        source("adp_workforce_manager",
+        "src_adp_workforce_manager__time_details") | replace("`", "") }}')
+    columns:
+      - name: symbolic_period_begin
+        data_type: date
+      - name: budget_location
+        data_type: string
+      - name: job
+        data_type: string
+      - name: employee_payrule
+        data_type: string
+      - name: transaction_type
+        data_type: string
+      - name: transaction_apply_to
+        data_type: string
+      - name: transaction_in_exceptions
+        data_type: string
+      - name: transaction_out_exceptions
+        data_type: string
+      - name: days
+        data_type: float64
+      - name: hours
+        data_type: float64
+      - name: money
+        data_type: float64
+      - name: academic_year
+        data_type: int64
+      - name: worker_id
+        data_type: string
+      - name: transaction_apply_date
+        data_type: date
+      - name: transaction_start_date_time
+        data_type: datetime
+      - name: transaction_end_date_time
+        data_type: datetime
+      - name: is_previous_sched_period
+        data_type: boolean
+      - name: org
+        data_type: string
+      - name: payroll_code
+        data_type: string
+      - name: location
+        data_type: string
+      - name: department
+        data_type: string
+      - name: missed_in_punch
+        data_type: boolean
+      - name: missed_out_punch
+        data_type: boolean
+      - name: rn_worker_date
+        data_type: int64

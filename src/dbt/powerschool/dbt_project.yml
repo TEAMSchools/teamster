@@ -27,6 +27,7 @@ clean-targets: # directories to be removed by `dbt clean`
 vars:
   current_academic_year: 0
   local_timezone: UTC
+  bigquery_external_connection_name: null
 
 models:
   +schema: powerschool

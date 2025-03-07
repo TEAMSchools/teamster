@@ -1,0 +1,74 @@
+version: 2
+models:
+  - name: stg_powerschool__attendance
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: att_mode_code
+        data_type: string
+      - name: att_comment
+        data_type: string
+      - name: prog_crse_type
+        data_type: string
+      - name: transaction_type
+        data_type: string
+      - name: att_date
+        data_type: date
+      - name: psguid
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_date
+        data_type: date
+      - name: _dagster_partition_hour
+        data_type: int64
+      - name: _dagster_partition_minute
+        data_type: int64
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: attendance_codeid
+        data_type: int64
+      - name: calendar_dayid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: ccid
+        data_type: int64
+      - name: periodid
+        data_type: int64
+      - name: parent_attendanceid
+        data_type: int64
+      - name: att_interval
+        data_type: int64
+      - name: lock_teacher_yn
+        data_type: int64
+      - name: lock_reporting_yn
+        data_type: int64
+      - name: total_minutes
+        data_type: int64
+      - name: ada_value_code
+        data_type: float64
+      - name: ada_value_time
+        data_type: float64
+      - name: adm_value
+        data_type: float64
+      - name: programid
+        data_type: int64
+      - name: att_flags
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64

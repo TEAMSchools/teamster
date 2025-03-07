@@ -1,0 +1,40 @@
+version: 2
+models:
+  - name: rpt_tableau__assessment_entry_audit
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: assessment_id
+        data_type: int64
+      - name: title
+        data_type: string
+      - name: scope
+        data_type: string
+      - name: subject_area
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: administered_at
+        data_type: date
+      - name: module_type
+        data_type: string
+      - name: module_number
+        data_type: string
+      - name: lastfirst
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: reporting_schoolid
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: team
+        data_type: string
+      - name: term
+        data_type: string
+      - name: percent_correct
+        data_type: float64
+      - name: is_replacement
+        data_type: int64

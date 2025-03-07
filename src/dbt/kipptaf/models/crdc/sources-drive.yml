@@ -1,0 +1,56 @@
+version: 2
+
+sources:
+  - name: crdc
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_crdc
+    tables:
+      - name: src_crdc__sced_code_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1pDwUdnK3Kcqjk_Bwp6-8Wz9Kr55AmEC7rA-EGuU6jGA
+            sheet_range: src_crdc__sced_code_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: sced_code
+            data_type: string
+          - name: sced_course_name
+            data_type: string
+          - name: crdc_course_group
+            data_type: string
+          - name: crdc_subject_group
+            data_type: string
+          - name: crdc_ap_group
+            data_type: string
+          - name: ap_tag
+            data_type: boolean
+          - name: duplicate
+            data_type: numeric
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - crdc
+              - sced_code_crosswalk
+      - name: src_crdc__student_numbers
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1pDwUdnK3Kcqjk_Bwp6-8Wz9Kr55AmEC7rA-EGuU6jGA
+            sheet_range: src_crdc__student_numbers
+            skip_leading_rows: 1
+        columns:
+          - name: crdc_question_section
+            data_type: string
+          - name: student_number
+            data_type: numeric
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - crdc
+              - student_numbers

@@ -1,0 +1,40 @@
+version: 2
+models:
+  - name: stg_iready__instruction_by_lesson_pro
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: academic_year_int
+        data_type: int64
+      - name: student_id
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: level
+        data_type: string
+      - name: topic
+        data_type: string
+      - name: lesson
+        data_type: string
+      - name: lesson_status
+        data_type: string
+      - name: lesson_result
+        data_type: string
+      - name: lesson_time_on_task_min
+        data_type: int64
+      - name: lesson_language
+        data_type: string
+      - name: skills_completed
+        data_type: int64
+      - name: skills_successful
+        data_type: int64
+      - name: completion_date
+        data_type: date
+      - name: student_grade
+        data_type: string
+      - name: percent_skills_successful
+        data_type: float64
+      - name: passed_or_not_passed_numeric
+        data_type: float64

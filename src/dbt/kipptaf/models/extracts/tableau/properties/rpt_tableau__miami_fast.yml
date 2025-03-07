@@ -1,0 +1,176 @@
+version: 2
+models:
+  - name: rpt_tableau__miami_fast
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: mdcps_id
+        data_type: string
+      - name: fleid
+        data_type: string
+      - name: lastfirst
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: school_name
+        data_type: string
+      - name: team
+        data_type: string
+      - name: school_abbreviation
+        data_type: string
+      - name: year_in_network
+        data_type: int64
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: lunchstatus
+        data_type: string
+      - name: is_retained_year
+        data_type: boolean
+      - name: enroll_status
+        data_type: int64
+      - name: is_enrolled_fte2
+        data_type: boolean
+      - name: is_enrolled_fte3
+        data_type: boolean
+      - name: is_enrolled_fte
+        data_type: boolean
+      - name: is_present_fte2
+        data_type: int64
+      - name: is_present_fte3
+        data_type: int64
+      - name: fsa_subject
+        data_type: string
+      - name: iready_subject
+        data_type: string
+      - name: administration_window
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: section_number
+        data_type: string
+      - name: teacher_name
+        data_type: string
+      - name: total_lessons
+        data_type: int64
+      - name: lessons_passed
+        data_type: float64
+      - name: qaf1
+        data_type: float64
+      - name: qaf2
+        data_type: float64
+      - name: qaf3
+        data_type: float64
+      - name: qaf4
+        data_type: float64
+      - name: diagnostic_scale
+        data_type: int64
+      - name: diagnostic_overall_relative_placement
+        data_type: string
+      - name: annual_typical_growth_measure
+        data_type: int64
+      - name: annual_stretch_growth_measure
+        data_type: int64
+      - name: recent_scale
+        data_type: int64
+      - name: recent_overall_relative_placement
+        data_type: string
+      - name: recent_overall_placement
+        data_type: string
+      - name: diagnostic_gain
+        data_type: float64
+      - name: lexile_recent
+        data_type: string
+      - name: lexile_range_recent
+        data_type: string
+      - name: rush_flag
+        data_type: string
+      - name: projected_sublevel
+        data_type: string
+      - name: projected_sublevel_number
+        data_type: int64
+      - name: scale_for_proficiency
+        data_type: int64
+      - name: progress_to_typical
+        data_type: float64
+      - name: progress_to_stretch
+        data_type: float64
+      - name: scale_points_to_proficiency
+        data_type: int64
+      - name: achievement_level
+        data_type: string
+      - name: scale_score
+        data_type: int64
+      - name: scale_score_prev
+        data_type: int64
+      - name: fast_sublevel_name
+        data_type: string
+      - name: fast_sublevel_number
+        data_type: int64
+      - name: fast_scale_for_growth
+        data_type: int64
+      - name: fast_scale_for_proficiency
+        data_type: int64
+      - name: fast_scale_points_to_growth
+        data_type: int64
+      - name: fast_scale_points_to_proficiency
+        data_type: int64
+      - name: fast_level_int
+        data_type: int64
+      - name: prev_pm3_scale
+        data_type: int64
+      - name: prev_pm3_level_int
+        data_type: int64
+      - name: prev_pm3_sublevel_name
+        data_type: string
+      - name: prev_pm3_sublevel_number
+        data_type: int64
+      - name: fldoe_percentile_rank
+        data_type: float64
+      - name: scale_for_growth_prev_pm3
+        data_type: int64
+      - name: sublevel_for_growth_prev_pm3
+        data_type: string
+      - name: sublevel_number_for_growth_prev_pm3
+        data_type: int64
+      - name: scale_for_proficiency_prev_pm3
+        data_type: int64
+      - name: scale_points_to_growth_pm3
+        data_type: int64
+      - name: scale_points_to_proficiency_pm3
+        data_type: int64
+      - name: standard_domain
+        data_type: string
+      - name: mastery_indicator
+        data_type: string
+      - name: mastery_number
+        data_type: string
+      - name: territory
+        data_type: string
+      - name: student_tier
+        data_type: string
+      - name: pct_passed
+        data_type: float64
+      - name: is_low_25
+        data_type: boolean
+      - name: gr3_retention_flag
+        data_type: int64
+      - name: is_proficient
+        data_type: float64
+      - name: is_fldoe_growth
+        data_type: boolean
+      - name: rn_test_fast
+        data_type: int64
+      - name: rn_year_fast
+        data_type: int64

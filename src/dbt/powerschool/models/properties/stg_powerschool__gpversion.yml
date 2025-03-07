@@ -1,0 +1,50 @@
+version: 2
+models:
+  - name: stg_powerschool__gpversion
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__gpversion") | replace("`", "") }}')
+    columns:
+      - name: gpamethod
+        data_type: string
+      - name: minimumgrade
+        data_type: string
+      - name: minimumgpa
+        data_type: record
+      - name: minimumgpa.int_value
+        data_type: int64
+      - name: minimumgpa.double_value
+        data_type: float64
+      - name: minimumgpa.bytes_decimal_value
+        data_type: numeric
+      - name: sourceid
+        data_type: record
+      - name: sourceid.int_value
+        data_type: int64
+      - name: sourceid.double_value
+        data_type: float64
+      - name: sourceid.bytes_decimal_value
+        data_type: numeric
+      - name: useallcoursesforgpacalc
+        data_type: record
+      - name: useallcoursesforgpacalc.int_value
+        data_type: int64
+      - name: useallcoursesforgpacalc.double_value
+        data_type: float64
+      - name: useallcoursesforgpacalc.bytes_decimal_value
+        data_type: numeric
+      - name: id
+        data_type: int64
+      - name: gradplanid
+        data_type: int64
+      - name: startyear
+        data_type: int64
+      - name: endyear
+        data_type: int64
+      - name: minimumgradepercentage
+        data_type: float64
+      - name: verifyminimumgradefirst
+        data_type: int64
+      - name: isadvancedplan
+        data_type: int64

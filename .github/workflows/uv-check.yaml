@@ -1,5 +1,7 @@
 name: uv Dependendabot Check
 
+permissions: {}
+
 on:
   workflow_dispatch: null
   pull_request:
@@ -22,11 +24,10 @@ jobs:
       - name: Python setup uv
         uses: astral-sh/setup-uv@v3
 
-      - name: Install Python 3.12
-        run: uv python install 3.12
+      - run: uv python install 3.12
 
-      - name: Setup uv venv
-        run: uv venv
+      - run: uv lock
 
-      - name: Install requirements.txt
-        run: uv pip install -r requirements.txt --override overrides.txt --no-cache-dir
+      - run: uv venv
+
+      - run: uv sync --frozen --no-dev --no-install-project --no-editable

@@ -1,5 +1,10 @@
 name: kippcamden
 
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
 on:
   workflow_dispatch: null
   push:
@@ -9,7 +14,7 @@ on:
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kippcamden.yaml
       - Dockerfile
-      - requirements.txt
+      - uv.lock
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
       - src/dbt/kippcamden/**
@@ -20,7 +25,7 @@ on:
       - src/teamster/code_locations/kippcamden/**
       - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**
@@ -35,10 +40,11 @@ on:
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kippcamden.yaml
       - Dockerfile
+      - uv.lock
       - src/teamster/code_locations/kippcamden/**
       - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**

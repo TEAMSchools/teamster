@@ -1,0 +1,22 @@
+version: 2
+models:
+  - name: stg_surveys__cmo_engagement_regional_survey_detail_archive
+    columns:
+      - name: respondent_legal_entity_name
+        data_type: string
+      - name: respondent_primary_site
+        data_type: string
+      - name: campaign_reporting_term
+        data_type: string
+      - name: question_shortname
+        data_type: string
+      - name: answer
+        data_type: string
+      - name: date_submitted
+        data_type: timestamp
+      - name: campaign_academic_year
+        data_type: int64
+      - name: respondent_df_employee_number
+        data_type: int64
+      - name: answer_value
+        data_type: numeric

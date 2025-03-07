@@ -28,18 +28,53 @@ dagsterCloud:
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ########################################################################################
 dagsterCloudAgent:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 0.5Gi
+    limits:
+      cpu: 500m
+      memory: 1.0Gi
   nodeSelector:
-    # cloud.google.com/gke-placement-group: servers
     cloud.google.com/compute-class: Balanced
     cloud.google.com/gke-spot: "true"
+  podSecurityContext:
+    runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
+  # securityContext:
+  #   runAsNonRoot: true
+  #   allowPrivilegeEscalation: false
 
 ########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
 workspace:
+  # Default compute resource requirements for the pods created by the agent. See:
+  # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
+  resources:
+    requests:
+      cpu: 250m
+      memory: 0.5Gi
+    limits:
+      cpu: 750m
+      memory: 1.0Gi
+
+    # securityContext:
+    #   runAsNonRoot: true
+    #   allowPrivilegeEscalation: false
+
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
   runK8sConfig:
+    # Autopilot clusters enforce higher minimum values for the resource requests of
+    # extended duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
+    containerConfig:
+      resources:
+        requests:
+          cpu: 250m
+          memory: 0.5Gi
+        limits:
+          cpu: 750m
+          memory: 2.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
@@ -50,6 +85,14 @@ workspace:
 
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
+    containerConfig:
+      resources:
+        requests:
+          cpu: 250m
+          memory: 0.5Gi
+        limits:
+          cpu: 500m
+          memory: 1.0Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
@@ -65,64 +108,6 @@ workspace:
   serverTTL:
     fullDeployments:
       enabled: true
-      ttlSeconds: 21600 # 6 hours
+      ttlSeconds: 3600 # 1 hour
     branchDeployments:
       ttlSeconds: 300
-
-  # Specifies the timeout in seconds the agent should use when waiting for a code
-  # server to be ready after the Kubernetes deployment is created.
-  # If not set, defaults to 180 seconds.
-  # This timeout should be increased if your code locations can take more than 3
-  # minutes to load your Dagster definitions.
-  serverProcessStartupTimeout: 300
-########################################################################################
-# Extra Manifests: (Optional) Create additional k8s resources within this chart
-########################################################################################
-extraManifests:
-  # Useful for providing extra configuration -- e.g. RBAC/serviceAccount information,
-  # etc. -- for user workspace pods.
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-agent
-    spec:
-      minAvailable: 1
-      selector:
-        matchLabels:
-          component: agent
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kippcamden
-    spec:
-      minAvailable: 1
-      selector:
-        matchLabels:
-          location_name: kippcamden
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kippmiami
-    spec:
-      minAvailable: 1
-      selector:
-        matchLabels:
-          location_name: kippmiami
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kippnewark
-    spec:
-      minAvailable: 1
-      selector:
-        matchLabels:
-          location_name: kippnewark
-  - apiVersion: policy/v1
-    kind: PodDisruptionBudget
-    metadata:
-      name: pdb-kipptaf
-    spec:
-      minAvailable: 1
-      selector:
-        matchLabels:
-          location_name: kipptaf

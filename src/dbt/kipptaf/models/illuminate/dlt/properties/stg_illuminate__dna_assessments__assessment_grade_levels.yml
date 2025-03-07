@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_illuminate__dna_assessments__assessment_grade_levels
+    columns:
+      - name: assessment_grade_level_id
+        data_type: int64
+      - name: assessment_id
+        data_type: int64
+      - name: grade_level_id
+        data_type: int64
+      - name: grade_level
+        data_type: int64

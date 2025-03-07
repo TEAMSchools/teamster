@@ -1,0 +1,62 @@
+version: 2
+models:
+  - name: stg_powerschool__gradesectionconfig
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__gradesectionconfig") | replace("`", "") }}')
+    columns:
+      - name: type
+        data_type: string
+      - name: defaultroundingrule
+        data_type: string
+      - name: stndcalculationmetric
+        data_type: string
+      - name: recentscoreweightlist
+        data_type: string
+      - name: higherlevelstndmetric
+        data_type: string
+      - name: calcmetricsectionfromstnd
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: gradesectionconfigid
+        data_type: int64
+      - name: sectionsdcid
+        data_type: int64
+      - name: gradeformulasetid
+        data_type: int64
+      - name: defaultdecimalcount
+        data_type: int64
+      - name: iscalcformulaeditable
+        data_type: int64
+      - name: isdropscoreeditable
+        data_type: int64
+      - name: iscalcprecisioneditable
+        data_type: int64
+      - name: isstndcalcmeteditable
+        data_type: int64
+      - name: isstndrcntscoreeditable
+        data_type: int64
+      - name: ishigherlvlstndeditable
+        data_type: int64
+      - name: ishigherstndautocalc
+        data_type: int64
+      - name: ishigherstndcalceditable
+        data_type: int64
+      - name: iscalcsectionfromstndedit
+        data_type: int64
+      - name: issectstndweighteditable
+        data_type: int64
+      - name: minimumassignmentvalue
+        data_type: int64
+      - name: isgradescaleteachereditable
+        data_type: int64
+      - name: isusingpercentforstndautocalc
+        data_type: int64

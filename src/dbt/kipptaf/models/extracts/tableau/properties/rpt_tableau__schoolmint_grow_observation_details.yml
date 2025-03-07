@@ -1,0 +1,108 @@
+version: 2
+models:
+  - name: rpt_tableau__schoolmint_grow_observation_details
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: teammate
+        data_type: string
+      - name: entity
+        data_type: string
+      - name: location
+        data_type: string
+      - name: grade_band
+        data_type: string
+      - name: department
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: manager
+        data_type: string
+      - name: worker_original_hire_date
+        data_type: date
+      - name: assignment_status
+        data_type: string
+      - name: sam_account_name
+        data_type: string
+      - name: report_to_sam_account_name
+        data_type: string
+      - name: tracking_type
+        data_type: string
+      - name: tracking_code
+        data_type: string
+      - name: tracking_rubric
+        data_type: string
+      - name: tracking_academic_year
+        data_type: int64
+      - name: is_current
+        data_type: boolean
+      - name: start_date
+        data_type: date
+      - name: end_date
+        data_type: date
+      - name: lockbox_date
+        data_type: date
+      - name: final_score
+        data_type: float64
+      - name: final_tier
+        data_type: int64
+      - name: observer_employee_number
+        data_type: int64
+      - name: observation_id
+        data_type: string
+      - name: rubric_name
+        data_type: string
+      - name: observation_score
+        data_type: float64
+      - name: glows
+        data_type: string
+      - name: grows
+        data_type: string
+      - name: locked
+        data_type: boolean
+      - name: observed_at
+        data_type: date
+      - name: academic_year
+        data_type: int64
+      - name: observation_type
+        data_type: string
+      - name: observation_type_abbreviation
+        data_type: string
+      - name: term_code
+        data_type: string
+      - name: term_name
+        data_type: string
+      - name: row_score
+        data_type: float64
+      - name: strand_name
+        data_type: string
+      - name: measurement_name
+        data_type: string
+      - name: overall_tier
+        data_type: float64
+      - name: observation_notes
+        data_type: string
+      - name: measurement_dropdown_selection
+        data_type: string
+      - name: teacher_moves_track
+        data_type: string
+      - name: student_habits_track
+        data_type: string
+      - name: number_of_kids
+        data_type: string
+      - name: current_assignment_status
+        data_type: string
+      - name: observer_name
+        data_type: string
+      - name: grade_taught
+        data_type: int64
+      - name: etr_score
+        data_type: float64
+      - name: so_score
+        data_type: float64
+      - name: is_observed
+        data_type: int64
+      - name: measurement_comments
+        data_type: string
+      - name: pm_round_eligible
+        data_type: boolean

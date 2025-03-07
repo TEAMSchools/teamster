@@ -2,9 +2,9 @@ version: 2
 
 sources:
   - name: egencia
-    schema: kipptaf_egencia
-    tags:
-      - stage_external_sources
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_egencia
     tables:
       - name: src_egencia__traveler_groups
         external:
@@ -16,16 +16,16 @@ sources:
             skip_leading_rows: 1
         columns:
           - name: adp_home_work_location_name
-            data_type: STRING
+            data_type: string
           - name: adp_department_home_name
-            data_type: STRING
+            data_type: string
           - name: adp_job_title
-            data_type: STRING
+            data_type: string
           - name: egencia_traveler_group
-            data_type: STRING
+            data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - egencia
               - traveler_groups
@@ -39,10 +39,29 @@ sources:
             skip_leading_rows: 1
         columns:
           - name: employee_number
-            data_type: INT
+            data_type: int64
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - egencia
               - travel_managers
+      - name: src_egencia__traveler_group_exceptions
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8
+            sheet_range: src_egencia__traveler_group_exceptions
+            skip_leading_rows: 1
+        columns:
+          - name: employee_number
+            data_type: int64
+          - name: traveler_group
+            data_type: string
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - egencia
+              - traveler_group_exceptions

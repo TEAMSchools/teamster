@@ -1,0 +1,157 @@
+version: 2
+
+sources:
+  - name: coupa
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_coupa
+    tables:
+      - name: src_coupa__address_name_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__address_name_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: adp_home_work_location_name
+            data_type: string
+          - name: coupa_address_name
+            data_type: string
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - coupa
+              - address_name_crosswalk
+      - name: src_coupa__school_name_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__school_name_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: ldap_physical_delivery_office_name
+            data_type: string
+          - name: coupa_school_name
+            data_type: string
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - coupa
+              - school_name_crosswalk
+      - name: src_coupa__school_name_lookup
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__school_name_lookup
+            skip_leading_rows: 1
+        columns:
+          - name: adp_business_unit_home_code
+            data_type: string
+          - name: adp_department_home_name
+            data_type: string
+          - name: adp_job_title
+            data_type: string
+          - name: coupa_school_name
+            data_type: string
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - coupa
+              - school_name_lookup
+      - name: src_coupa__user_exceptions
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__user_exceptions
+            skip_leading_rows: 1
+        columns:
+          - name: employee_number
+            data_type: int64
+          - name: coupa_school_name
+            data_type: string
+          - name: home_work_location_name
+            data_type: string
+          - name: sage_intacct_department
+            data_type: int64
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - coupa
+              - user_exceptions
+      - name: src_coupa__intacct_program_lookup
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__intacct_program_lookup
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - coupa
+              - intacct_program_lookup
+      - name: src_coupa__intacct_location_lookup
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__intacct_location_lookup
+            skip_leading_rows: 1
+        columns:
+          - name: adp_business_unit_home_code
+            data_type: string
+          - name: adp_department_home_name
+            data_type: string
+          - name: adp_job_title
+            data_type: string
+          - name: sage_intacct_location
+            data_type: string
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - coupa
+              - intacct_location_lookup
+      - name: src_coupa__intacct_fund_lookup
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__intacct_fund_lookup
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - coupa
+              - intacct_fund_lookup
+      - name: src_coupa__intacct_department_lookup
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
+            sheet_range: src_coupa__intacct_department_lookup
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - coupa
+              - intacct_department_lookup

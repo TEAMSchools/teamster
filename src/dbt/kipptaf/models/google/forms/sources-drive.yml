@@ -2,9 +2,9 @@ version: 2
 
 sources:
   - name: google_forms
-    schema: kipptaf_google_forms
-    tags:
-      - stage_external_sources
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_google_forms
     tables:
       - name: src_google_forms__form_items_extension
         external:
@@ -16,20 +16,20 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - google_forms
               - form_items_extension
         columns:
           - name: form_id
-            data_type: STRING
+            data_type: string
           - name: item_id
-            data_type: STRING
+            data_type: string
           - name: question_id
-            data_type: STRING
+            data_type: string
           - name: title
-            data_type: STRING
+            data_type: string
           - name: abbreviation
-            data_type: STRING
+            data_type: string
           - name: url_id
-            data_type: STRING
+            data_type: string

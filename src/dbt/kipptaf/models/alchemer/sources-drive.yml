@@ -2,11 +2,11 @@ version: 2
 
 sources:
   - name: alchemer
-    schema: kipptaf_alchemer
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_alchemer
     config:
       enabled: false
-    tags:
-      - stage_external_sources
     tables:
       - name: src_alchemer__response_id_override
         external:
@@ -18,7 +18,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - alchemer
               - response_id_override

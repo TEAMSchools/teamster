@@ -1,0 +1,56 @@
+version: 2
+models:
+  - name: rpt_gsheets__people_staff_info_feed_and_links
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: status_value
+        data_type: string
+      - name: business_unit
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: work_location
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: hire_date
+        data_type: date
+      - name: business_email
+        data_type: string
+      - name: respondent_response_name
+        data_type: string
+      - name: worker_username
+        data_type: string
+      - name: last_submitted_time
+        data_type: timestamp
+      - name: last_submitted_race_ethnicity
+        data_type: string
+      - name: last_submitted_gender_identity
+        data_type: string
+      - name: last_submitted_community_grew_up
+        data_type: string
+      - name: last_submitted_community_professional_experience
+        data_type: string
+      - name: last_submitted_languages_spoken
+        data_type: string
+      - name: last_submitted_level_of_education
+        data_type: string
+      - name: last_submitted_undergraduate_school
+        data_type: string
+      - name: last_submitted_years_exp_outside_kipp
+        data_type: numeric
+      - name: last_submitted_years_teaching_in_njfl
+        data_type: numeric
+      - name: last_submitted_years_teaching_outside_njfl
+        data_type: numeric
+      - name: last_submitted_alumni_status
+        data_type: string
+      - name: last_submitted_relay_status
+        data_type: string
+      - name: last_submitted_path_to_education
+        data_type: string
+      - name: staff_info_update_personal_link
+        data_type: string

@@ -5,10 +5,7 @@ from teamster.code_locations.kipptaf.schoolmint.grow.assets import (
     observations,
     schoolmint_grow_static_partition_assets,
 )
-from teamster.libraries.google.bigquery.ops import (
-    BigQueryGetTableOpConfig,
-    bigquery_get_table_op,
-)
+from teamster.libraries.google.bigquery.ops import BigQueryOpConfig, bigquery_query_op
 from teamster.libraries.schoolmint.grow.ops import (
     schoolmint_grow_school_update_op,
     schoolmint_grow_user_update_op,
@@ -30,7 +27,7 @@ schoolmint_grow_observations_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}__schoolmint__grow__user_update_job",
     config=RunConfig(
         ops={
-            "bigquery_get_table_op": BigQueryGetTableOpConfig(
+            "bigquery_query_op": BigQueryOpConfig(
                 dataset_id="kipptaf_extracts", table_id="rpt_schoolmint_grow__users"
             )
         }
@@ -38,7 +35,7 @@ schoolmint_grow_observations_asset_job = define_asset_job(
     tags={"job_type": "op"},
 )
 def schoolmint_grow_user_update_job():
-    users = bigquery_get_table_op()
+    users = bigquery_query_op()
 
     updated_users = schoolmint_grow_user_update_op(users=users)
 

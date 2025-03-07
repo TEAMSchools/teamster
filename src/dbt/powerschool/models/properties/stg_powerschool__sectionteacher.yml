@@ -1,0 +1,46 @@
+version: 2
+models:
+  - name: stg_powerschool__sectionteacher
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__sectionteacher") | replace("`", "") }}')
+    columns:
+      - name: start_date
+        data_type: timestamp
+      - name: end_date
+        data_type: timestamp
+      - name: notes
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: sectionnickname
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: id
+        data_type: int64
+      - name: teacherid
+        data_type: int64
+      - name: sectionid
+        data_type: int64
+      - name: roleid
+        data_type: int64
+      - name: allocation
+        data_type: numeric
+      - name: priorityorder
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64

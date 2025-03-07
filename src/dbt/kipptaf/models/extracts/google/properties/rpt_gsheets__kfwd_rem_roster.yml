@@ -1,0 +1,94 @@
+version: 2
+models:
+  - name: rpt_gsheets__kfwd_rem_roster
+    columns:
+      - name: student_name
+        data_type: string
+      - name: contact_id
+        data_type: string
+      - name: ktc_cohort
+        data_type: int64
+      - name: contact_owner_name
+        data_type: string
+      - name: contact_college_match_display_gpa
+        data_type: numeric
+      - name: last_outreach_date
+        data_type: date
+      - name: last_successful_contact_date
+        data_type: date
+      - name: last_successful_advisor_contact_date
+        data_type: date
+      - name: latest_fafsa_date
+        data_type: date
+      - name: status
+        data_type: string
+      - name: actual_end_date
+        data_type: date
+      - name: of_credits_required_for_graduation
+        data_type: numeric
+      - name: college_degree_type
+        data_type: string
+      - name: cte_degree_type
+        data_type: string
+      - name: cumulative_credits_earned
+        data_type: numeric
+      - name: credits_required_for_graduation
+        data_type: numeric
+      - name: last_modified_date
+        data_type: string
+      - name: degree_percentage_completed
+        data_type: numeric
+      - name: rem_status
+        data_type: string
+      - name: successful_contact_status
+        data_type: string
+      - name: last_outreach_status
+        data_type: string
+      - name: rem_contact_days_since_handoff
+        data_type: int64
+      - name: is_kipp_hs_grad
+        data_type: boolean
+      - name: expected_college_graduation
+        data_type: date
+      - name: is_collab
+        data_type: boolean
+      - name: most_recent_rem_status
+        data_type: date
+      - name: rem_handoff_date
+        data_type: date
+      - name: rem_enrollment_status
+        data_type: string
+      - name: hs_gpa_bands
+        data_type: string
+      - name: is_graduated
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: contact_home_phone
+        data_type: string
+      - name: contact_mobile_phone
+        data_type: string
+      - name: contact_email
+        data_type: string
+      - name: contact_secondary_email
+        data_type: string
+      - name: gpa
+        data_type: numeric
+      - name: fiscal_year
+        data_type: int64
+      - name: contact_middle_school_attended
+        data_type: string
+      - name: contact_postsecondary_status
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: is_enrolled_bool
+        data_type: boolean
+      - name: most_recent_college_enrollment
+        data_type: string
+      - name: most_recent_college_enrollment_status
+        data_type: string
+      - name: currently_enrolled_school
+        data_type: string

@@ -1,0 +1,52 @@
+version: 2
+models:
+  - name: int_powerschool__ps_membership_reg
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: student_track
+        data_type: string
+      - name: fteid
+        data_type: int64
+      - name: dflt_att_mode_code
+        data_type: string
+      - name: dflt_conversion_mode_code
+        data_type: string
+      - name: att_calccntpresentabsent
+        data_type: string
+      - name: att_intervalduration
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: calendardate
+        data_type: date
+      - name: a
+        data_type: int64
+      - name: b
+        data_type: int64
+      - name: c
+        data_type: int64
+      - name: d
+        data_type: int64
+      - name: e
+        data_type: int64
+      - name: f
+        data_type: int64
+      - name: bell_schedule_id
+        data_type: int64
+      - name: cycle_day_id
+        data_type: int64
+      - name: attendance_conversion_id
+        data_type: int64
+      - name: studentmembership
+        data_type: float64
+      - name: calendarmembership
+        data_type: float64
+      - name: ontrack
+        data_type: int64
+      - name: offtrack
+        data_type: int64

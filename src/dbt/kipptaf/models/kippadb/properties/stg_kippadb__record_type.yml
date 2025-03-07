@@ -1,0 +1,30 @@
+version: 2
+models:
+  - name: stg_kippadb__record_type
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: is_active
+        data_type: boolean
+      - name: business_process_id
+        data_type: string
+      - name: system_modstamp
+        data_type: timestamp
+      - name: sobject_type
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: developer_name
+        data_type: string
+      - name: last_modified_by_id
+        data_type: string
+      - name: namespace_prefix
+        data_type: string

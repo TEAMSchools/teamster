@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: stg_deanslist__incidents__penalties
+    columns:
+      - name: incident_id
+        data_type: int64
+      - name: is_reportable
+        data_type: boolean
+      - name: is_suspension
+        data_type: boolean
+      - name: print
+        data_type: boolean
+      - name: penalty_name
+        data_type: string
+      - name: incident_penalty_id
+        data_type: int64
+      - name: penalty_id
+        data_type: int64
+      - name: said
+        data_type: int64
+      - name: school_id
+        data_type: int64
+      - name: student_id
+        data_type: int64
+      - name: num_periods
+        data_type: int64
+      - name: start_date
+        data_type: date
+      - name: end_date
+        data_type: date
+      - name: num_days
+        data_type: float64

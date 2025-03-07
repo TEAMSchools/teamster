@@ -1,0 +1,70 @@
+version: 2
+models:
+  - name: rpt_deanslist__student_misc
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: sid
+        data_type: string
+      - name: team
+        data_type: string
+      - name: home_phone
+        data_type: string
+      - name: parent1_name
+        data_type: string
+      - name: parent2_name
+        data_type: string
+      - name: guardianemail
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: parent1_cell
+        data_type: string
+      - name: parent2_cell
+        data_type: string
+      - name: advisor_name
+        data_type: string
+      - name: advisor_email
+        data_type: string
+      - name: lunch_balance
+        data_type: float64
+      - name: dob
+        data_type: date
+      - name: _dbt_source_relation
+        data_type: string
+      - name: sched_nextyeargrade
+        data_type: int64
+      - name: ktc_counselor_name
+        data_type: string
+      - name: ktc_counselor_phone
+        data_type: string
+      - name: ktc_counselor_email
+        data_type: string
+      - name: gpa_y1
+        data_type: float64
+      - name: gpa_term
+        data_type: float64
+      - name: principal
+        data_type: string
+      - name: schoolphone
+        data_type: string
+      - name: culture_lead
+        data_type: string
+      - name: family_access_id
+        data_type: string
+      - name: student_email
+        data_type: string
+      - name: student_web_password
+        data_type: string
+      - name: home_address
+        data_type: string
+      - name: enroll_status
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school_entrydate
+        data_type: date
+      - name: school_exitdate
+        data_type: date

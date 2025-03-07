@@ -1,0 +1,28 @@
+version: 2
+models:
+  - name: stg_people__staffing_model
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: unique_id
+        data_type: string
+      - name: entity
+        data_type: string
+      - name: city
+        data_type: string
+      - name: grade_band
+        data_type: string
+      - name: school
+        data_type: string
+      - name: recruitment_group
+        data_type: string
+      - name: adp_department
+        data_type: string
+      - name: adp_job_title
+        data_type: string
+      - name: display_name
+        data_type: string
+      - name: culture
+        data_type: boolean
+      - name: flex
+        data_type: boolean

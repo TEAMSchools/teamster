@@ -1,6 +1,6 @@
 import re
+from datetime import datetime, timezone
 
-import pendulum
 from dagster import (
     AddDynamicPartitionsRequest,
     AssetKey,
@@ -10,12 +10,10 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     _check,
     define_asset_job,
     sensor,
 )
-from paramiko.ssh_exception import SSHException
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.adp.payroll.assets import general_ledger_file
@@ -29,9 +27,6 @@ from teamster.libraries.ssh.resources import SSHResource
         name=f"{CODE_LOCATION}_adp_payroll_sftp_asset_job",
         selection=[
             general_ledger_file.key,
-            AssetKey(
-                [CODE_LOCATION, "adp_payroll", "src_adp_payroll__general_ledger_file"]
-            ),
             AssetKey(
                 [CODE_LOCATION, "adp_payroll", "stg_adp_payroll__general_ledger_file"]
             ),
@@ -52,21 +47,15 @@ from teamster.libraries.ssh.resources import SSHResource
 def adp_payroll_sftp_sensor(
     context: SensorEvaluationContext, ssh_couchdrop: SSHResource
 ):
-    now = pendulum.now()
+    now = datetime.now(timezone.utc)
     run_requests = []
     dynamic_partitions_requests = []
 
     tick_cursor = float(context.cursor or "0.0")
 
-    try:
-        files = ssh_couchdrop.listdir_attr_r(
-            remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll"
-        )
-    except SSHException as e:
-        if "No existing session" in e.args:
-            return SkipReason(str(e))
-        else:
-            raise e
+    files = ssh_couchdrop.listdir_attr_r(
+        remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll"
+    )
 
     add_dynamic_partition_keys = set()
 
@@ -85,8 +74,8 @@ def adp_payroll_sftp_sensor(
     context.log.info(asset_identifier)
     pattern = re.compile(
         pattern=(
-            rf"{metadata_by_key["remote_dir_regex"]}/"
-            rf"{metadata_by_key["remote_file_regex"]}"
+            rf"{metadata_by_key['remote_dir_regex']}/"
+            rf"{metadata_by_key['remote_file_regex']}"
         )
     )
 

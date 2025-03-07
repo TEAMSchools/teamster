@@ -5,12 +5,23 @@ with
             a.sectionsdcid,
             a.assignmentsectionid,
 
-            s.studentsdcid,
-            s.islate,
-            s.isexempt,
-            s.ismissing,
+            e.students_dcid,
 
-            if(s.isexempt = 0, true, false) as is_expected,
+            coalesce(s.islate, 0) as islate,
+            coalesce(s.isexempt, 0) as isexempt,
+            coalesce(s.ismissing, 0) as ismissing,
+
+            if(coalesce(s.isexempt, 0) = 0, true, false) as is_expected,
+
+            if(s.scorepoints is null, 1, 0) as is_null,
+
+            if(
+                s.scorepoints is null and coalesce(s.ismissing, 0) = 1, 1, 0
+            ) as is_null_missing,
+
+            if(
+                s.scorepoints is null and coalesce(s.ismissing, 0) = 0, 1, 0
+            ) as is_null_not_missing,
 
             case
                 when s.isexempt = 1
@@ -26,10 +37,21 @@ with
                 safe_divide(s.scorepoints, a.totalpointvalue) * 100, 2
             ) as score_percent,
         from {{ ref("int_powerschool__gradebook_assignments") }} as a
+        /* PS automatically assigns ALL assignments to a student when they enroll into
+        a section, including those from before their enrollment date. This join ensures
+        assignments are only matched to valid student enrollments */
+        left join
+            {{ ref("base_powerschool__course_enrollments") }} as e
+            on a.sectionsdcid = e.sections_dcid
+            and a.duedate >= e.cc_dateenrolled
+            and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+            and not e.is_dropped_section
         left join
             {{ ref("stg_powerschool__assignmentscore") }} as s
             on a.assignmentsectionid = s.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
+            and e.students_dcid = s.studentsdcid
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
     ),
 
     school_course_exceptions as (
@@ -61,10 +83,14 @@ select
     s._dbt_source_relation,
     s.assignmentsectionid,
 
-    count(s.studentsdcid) as n_students,
+    count(s.students_dcid) as n_students,
+
     sum(s.islate) as n_late,
     sum(s.isexempt) as n_exempt,
     sum(s.ismissing) as n_missing,
+    sum(s.is_null) as n_null,
+    sum(s.is_null_missing) as n_is_null_missing,
+    sum(s.is_null_not_missing) as n_is_null_not_missing,
 
     countif(s.is_expected) as n_expected,
     countif(s.is_expected_scored) as n_expected_scored,

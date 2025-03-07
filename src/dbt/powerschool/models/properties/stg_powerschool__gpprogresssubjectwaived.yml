@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: stg_powerschool__gpprogresssubjectwaived
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__gpprogresssubjectwaived") | replace("`", "") }}')
+    columns:
+      - name: gpprogresssubjectid
+        data_type: int64
+      - name: gpstudentwaiverid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: waivedcredits
+        data_type: float64

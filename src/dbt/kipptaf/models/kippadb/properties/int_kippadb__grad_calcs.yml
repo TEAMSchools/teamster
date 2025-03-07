@@ -1,0 +1,48 @@
+version: 2
+models:
+  - name: int_kippadb__grad_calcs
+    columns:
+      - name: student
+        data_type: string
+      - name: is_4yr_ba_grad_int
+        data_type: int64
+      - name: is_5yr_ba_grad_int
+        data_type: int64
+      - name: is_6yr_ba_grad_int
+        data_type: int64
+      - name: is_7yr_ba_grad_int
+        data_type: int64
+      - name: is_2yr_aa_grad_int
+        data_type: int64
+      - name: is_3yr_aa_grad_int
+        data_type: int64
+      - name: is_4yr_aa_grad_int
+        data_type: int64
+      - name: is_5yr_aa_grad_int
+        data_type: int64
+      - name: is_6yr_aa_grad_int
+        data_type: int64
+      - name: is_1yr_cte_grad_int
+        data_type: int64
+      - name: is_2yr_cte_grad_int
+        data_type: int64
+      - name: is_3yr_cte_grad_int
+        data_type: int64
+      - name: is_4yr_cte_grad_int
+        data_type: int64
+      - name: is_5yr_cte_grad_int
+        data_type: int64
+      - name: is_6yr_cte_grad_int
+        data_type: int64
+      - name: is_grad_ever
+        data_type: int64
+      - name: is_6yr_ugrad_cte_grad_int
+        data_type: int64
+      - name: is_24yo_ugrad_cte_grad_int
+        data_type: int64
+      - name: is_4yr_ugrad_grad_int
+        data_type: int64
+      - name: is_5yr_ugrad_grad_int
+        data_type: int64
+      - name: is_6yr_ugrad_grad_int
+        data_type: int64

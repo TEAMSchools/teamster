@@ -1,6 +1,6 @@
 from typing import Any, Mapping
 
-from dagster import AssetKey, AutomationCondition
+from dagster import AssetKey, AssetSelection, AutomationCondition
 from dagster_dbt import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 
@@ -45,8 +45,30 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                 | AutomationCondition.newly_missing()
             )
         else:
+            ignore_selection = AssetSelection.keys(
+                *automation_condition_config.get("ignore", {}).get("keys", {})
+            )
+
             return (
-                AutomationCondition.eager() | AutomationCondition.code_version_changed()
+                # forked from AutomationCondition.eager()
+                # - added configurable ignore on any_deps_updated()
+                # - replaced since_last_handled() to allow initial_evaluation()
+                (
+                    AutomationCondition.in_latest_time_window()
+                    & (
+                        AutomationCondition.newly_missing()
+                        | AutomationCondition.any_deps_updated().ignore(
+                            ignore_selection
+                        )
+                    ).since(
+                        AutomationCondition.newly_requested()
+                        | AutomationCondition.newly_updated()
+                    )
+                    & ~AutomationCondition.any_deps_missing()
+                    & ~AutomationCondition.any_deps_in_progress()
+                    & ~AutomationCondition.in_progress()
+                )
+                | AutomationCondition.code_version_changed()
             )
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:

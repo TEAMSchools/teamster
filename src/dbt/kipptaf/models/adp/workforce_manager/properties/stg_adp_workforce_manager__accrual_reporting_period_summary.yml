@@ -1,0 +1,36 @@
+version: 2
+models:
+  - name: stg_adp_workforce_manager__accrual_reporting_period_summary
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{
+        source("adp_workforce_manager",
+        "src_adp_workforce_manager__accrual_reporting_period_summary") |
+        replace("`", "") }}')
+    columns:
+      - name: employee_name_id
+        data_type: string
+      - name: accrual_code
+        data_type: string
+      - name: accrual_reporting_period
+        data_type: string
+      - name: accrual_opening_vested_balance_hours
+        data_type: float64
+      - name: accrual_earned_to_date_hours
+        data_type: float64
+      - name: accrual_taken_to_date_hours
+        data_type: float64
+      - name: accrual_available_balance_hours
+        data_type: float64
+      - name: accrual_planned_takings_hours
+        data_type: float64
+      - name: accrual_pending_grants_hours
+        data_type: float64
+      - name: accrual_ending_vested_balance_hours
+        data_type: float64
+      - name: lastest_update
+        data_type: date
+      - name: worker_id
+        data_type: string
+      - name: rn_employee_code
+        data_type: int64

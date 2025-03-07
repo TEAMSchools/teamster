@@ -1,0 +1,322 @@
+version: 2
+models:
+  - name: stg_powerschool__students
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__students") | replace("`", "") }}')
+    columns:
+      - name: lastfirst
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: entrydate
+        data_type: date
+      - name: exitdate
+        data_type: date
+      - name: web_id
+        data_type: string
+      - name: web_password
+        data_type: string
+      - name: dob
+        data_type: date
+      - name: street
+        data_type: string
+      - name: city
+        data_type: string
+      - name: state
+        data_type: string
+      - name: zip
+        data_type: string
+      - name: guardianemail
+        data_type: string
+      - name: transfercomment
+        data_type: string
+      - name: guardianfax
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: ssn
+        data_type: string
+      - name: entrycode
+        data_type: string
+      - name: exitcode
+        data_type: string
+      - name: lunchstatus
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: lastmeal
+        data_type: string
+      - name: pl_language
+        data_type: string
+      - name: family_ident
+        data_type: string
+      - name: log
+        data_type: string
+      - name: track
+        data_type: string
+      - name: gradreqset
+        data_type: string
+      - name: applic_submitted_date
+        data_type: date
+      - name: applic_response_recvd_date
+        data_type: date
+      - name: student_web_id
+        data_type: string
+      - name: student_web_password
+        data_type: string
+      - name: bus_route
+        data_type: string
+      - name: bus_stop
+        data_type: string
+      - name: doctor_name
+        data_type: string
+      - name: doctor_phone
+        data_type: string
+      - name: emerg_contact_1
+        data_type: string
+      - name: emerg_contact_2
+        data_type: string
+      - name: emerg_phone_1
+        data_type: string
+      - name: emerg_phone_2
+        data_type: string
+      - name: father
+        data_type: string
+      - name: home_phone
+        data_type: string
+      - name: home_room
+        data_type: string
+      - name: locker_combination
+        data_type: string
+      - name: locker_number
+        data_type: string
+      - name: mailing_city
+        data_type: string
+      - name: mailing_street
+        data_type: string
+      - name: mailing_state
+        data_type: string
+      - name: mailing_zip
+        data_type: string
+      - name: mother
+        data_type: string
+      - name: wm_status
+        data_type: string
+      - name: wm_statusdate
+        data_type: date
+      - name: wm_address
+        data_type: string
+      - name: wm_password
+        data_type: string
+      - name: wm_createdate
+        data_type: date
+      - name: sched_nextyearhouse
+        data_type: string
+      - name: sched_nextyearbuilding
+        data_type: string
+      - name: sched_nextyearteam
+        data_type: string
+      - name: sched_nextyearhomeroom
+        data_type: string
+      - name: sched_nextyearbus
+        data_type: string
+      - name: wm_ta_flag
+        data_type: string
+      - name: wm_ta_date
+        data_type: date
+      - name: districtentrydate
+        data_type: date
+      - name: schoolentrydate
+        data_type: date
+      - name: graduated_schoolname
+        data_type: string
+      - name: alert_discipline
+        data_type: string
+      - name: alert_disciplineexpires
+        data_type: date
+      - name: alert_guardian
+        data_type: string
+      - name: alert_guardianexpires
+        data_type: date
+      - name: alert_medical
+        data_type: string
+      - name: alert_medicalexpires
+        data_type: date
+      - name: alert_other
+        data_type: string
+      - name: alert_otherexpires
+        data_type: date
+      - name: state_studentnumber
+        data_type: string
+      - name: districtofresidence
+        data_type: string
+      - name: enrollmenttype
+        data_type: string
+      - name: enrollment_transfer_date_pend
+        data_type: date
+      - name: enrollment_transfer_info
+        data_type: bytes
+      - name: exitcomment
+        data_type: string
+      - name: team
+        data_type: string
+      - name: house
+        data_type: string
+      - name: building
+        data_type: string
+      - name: withdrawal_reason_code
+        data_type: string
+      - name: guardian_studentcont_guid
+        data_type: string
+      - name: father_studentcont_guid
+        data_type: string
+      - name: mother_studentcont_guid
+        data_type: string
+      - name: studentpers_guid
+        data_type: string
+      - name: studentpict_guid
+        data_type: string
+      - name: studentschlenrl_guid
+        data_type: string
+      - name: summerschoolnote
+        data_type: string
+      - name: geocode
+        data_type: string
+      - name: mailing_geocode
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: allowwebaccess
+        data_type: int64
+      - name: balance1
+        data_type: float64
+      - name: balance2
+        data_type: float64
+      - name: balance3
+        data_type: float64
+      - name: balance4
+        data_type: float64
+      - name: campusid
+        data_type: int64
+      - name: classof
+        data_type: int64
+      - name: cumulative_gpa
+        data_type: float64
+      - name: cumulative_pct
+        data_type: float64
+      - name: customrank_gpa
+        data_type: float64
+      - name: dcid
+        data_type: int64
+      - name: districtentrygradelevel
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: enrollment_schoolid
+        data_type: int64
+      - name: enrollmentcode
+        data_type: int64
+      - name: enrollmentid
+        data_type: int64
+      - name: exclude_fr_rank
+        data_type: int64
+      - name: fedethnicity
+        data_type: int64
+      - name: fedracedecline
+        data_type: int64
+      - name: fee_exemption_status
+        data_type: int64
+      - name: fteid
+        data_type: int64
+      - name: fulltimeequiv_obsolete
+        data_type: float64
+      - name: gpentryyear
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: gradreqsetid
+        data_type: int64
+      - name: graduated_rank
+        data_type: int64
+      - name: graduated_schoolid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: ismigrated
+        data_type: int64
+      - name: ldapenabled
+        data_type: int64
+      - name: lunch_id
+        data_type: float64
+      - name: membershipshare
+        data_type: float64
+      - name: next_school
+        data_type: int64
+      - name: person_id
+        data_type: int64
+      - name: phone_id
+        data_type: int64
+      - name: photoflag
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: sched_loadlock
+        data_type: int64
+      - name: sched_lockstudentschedule
+        data_type: int64
+      - name: sched_nextyeargrade
+        data_type: int64
+      - name: sched_priority
+        data_type: int64
+      - name: sched_scheduled
+        data_type: int64
+      - name: sched_yearofgraduation
+        data_type: int64
+      - name: schoolentrygradelevel
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: sdatarn
+        data_type: int64
+      - name: simple_gpa
+        data_type: float64
+      - name: simple_pct
+        data_type: float64
+      - name: state_enrollflag
+        data_type: int64
+      - name: state_excludefromreporting
+        data_type: int64
+      - name: student_allowwebaccess
+        data_type: int64
+      - name: summerschoolid
+        data_type: int64
+      - name: teachergroupid
+        data_type: int64
+      - name: tuitionpayer
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: wm_createtime
+        data_type: int64
+      - name: wm_tier
+        data_type: int64
+      - name: gender_code
+        data_type: string
+      - name: ethnicity_code
+        data_type: string

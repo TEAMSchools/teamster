@@ -1,0 +1,112 @@
+version: 2
+models:
+  - name: stg_powerschool__schools
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__schools") | replace("`", "") }}')
+    columns:
+      - name: name
+        data_type: string
+      - name: address
+        data_type: string
+      - name: pscomm_path
+        data_type: string
+      - name: abbreviation
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: activecrslist
+        data_type: string
+      - name: bulletinemail
+        data_type: string
+      - name: sysemailfrom
+        data_type: string
+      - name: tchrlogentrto
+        data_type: string
+      - name: portalid
+        data_type: string
+      - name: schooladdress
+        data_type: string
+      - name: schoolcity
+        data_type: string
+      - name: schoolstate
+        data_type: string
+      - name: schoolzip
+        data_type: string
+      - name: schoolphone
+        data_type: string
+      - name: schoolfax
+        data_type: string
+      - name: schoolcountry
+        data_type: string
+      - name: principal
+        data_type: string
+      - name: principalphone
+        data_type: string
+      - name: principalemail
+        data_type: string
+      - name: asstprincipalphone
+        data_type: string
+      - name: asstprincipalemail
+        data_type: string
+      - name: countyname
+        data_type: string
+      - name: countynbr
+        data_type: string
+      - name: asstprincipal
+        data_type: string
+      - name: schedulewhichschool
+        data_type: string
+      - name: schoolinfo_guid
+        data_type: string
+      - name: sif_stateprid
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: district_number
+        data_type: int64
+      - name: school_number
+        data_type: int64
+      - name: low_grade
+        data_type: int64
+      - name: high_grade
+        data_type: int64
+      - name: sortorder
+        data_type: int64
+      - name: schoolgroup
+        data_type: int64
+      - name: hist_low_grade
+        data_type: int64
+      - name: hist_high_grade
+        data_type: int64
+      - name: dfltnextschool
+        data_type: int64
+      - name: view_in_portal
+        data_type: int64
+      - name: state_excludefromreporting
+        data_type: int64
+      - name: alternate_school_number
+        data_type: int64
+      - name: fee_exemption_status
+        data_type: int64
+      - name: issummerschool
+        data_type: int64
+      - name: schoolcategorycodesetid
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: school_level
+        data_type: string

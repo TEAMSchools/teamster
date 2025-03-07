@@ -42,15 +42,15 @@ with
                 app.application_admission_type = 'Early Decision', true, false
             ) as is_early_decision,
 
-            if(app.honors_special_program_name = 'EOF', true, false) as is_eof,
+            if(app.honors_special_program_name like '%EOF%', true, false) as is_eof,
             if(
-                app.honors_special_program_name = 'EOF'
+                app.honors_special_program_name like '%EOF%'
                 and app.honors_special_program_status in ('Applied', 'Accepted'),
                 true,
                 false
             ) as is_eof_applied,
             if(
-                app.honors_special_program_name = 'EOF'
+                app.honors_special_program_name like '%EOF%'
                 and app.honors_special_program_status = 'Accepted',
                 true,
                 false
@@ -120,4 +120,8 @@ select
     if(
         is_submitted and is_certificate and is_accepted, true, false
     ) as is_accepted_certificate,
+    row_number() over (
+        partition by applicant, school
+        order by is_matriculated desc, is_accepted desc, is_submitted desc
+    ) as rn_application_school,
 from app_acct

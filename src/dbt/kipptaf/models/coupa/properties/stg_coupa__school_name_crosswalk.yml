@@ -1,0 +1,8 @@
+version: 2
+models:
+  - name: stg_coupa__school_name_crosswalk
+    columns:
+      - name: ldap_physical_delivery_office_name
+        data_type: string
+      - name: coupa_school_name
+        data_type: string

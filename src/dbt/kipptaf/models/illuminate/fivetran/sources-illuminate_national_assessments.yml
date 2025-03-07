@@ -1,0 +1,89 @@
+version: 2
+
+sources:
+  - name: illuminate
+    schema: illuminate_national_assessments
+    config:
+      enabled: false
+    tables:
+      - name: psat_2023
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - psat_2023
+      - name: psat_2024
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - psat_2024
+      - name: psat89_2025
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - psat89_2025
+      - name: aptest_2019
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2019
+      - name: aptest_2020
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2020
+      - name: aptest_2021
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2021
+      - name: aptest_2022
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2022
+      - name: aptest_2023
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2023
+      - name: aptest_2024
+        meta:
+          dagster:
+            group: illuminate
+            asset_key:
+              - kipptaf
+              - illuminate
+              - national_assessments
+              - aptest_2024

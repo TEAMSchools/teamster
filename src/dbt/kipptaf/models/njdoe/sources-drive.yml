@@ -2,9 +2,9 @@ version: 2
 
 sources:
   - name: njdoe
-    schema: kipptaf_njdoe
-    tags:
-      - stage_external_sources
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_njdoe
     tables:
       - name: src_njdoe__parcc
         external:
@@ -65,7 +65,7 @@ sources:
             data_type: string
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - njdoe
               - parcc

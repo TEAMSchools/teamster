@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: stg_powerschool__studentcontactassoc
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__studentcontactassoc") | replace("`", "") }}')
+    columns:
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: studentcontactassocid
+        data_type: int64
+      - name: studentdcid
+        data_type: int64
+      - name: personid
+        data_type: int64
+      - name: contactpriorityorder
+        data_type: int64
+      - name: currreltypecodesetid
+        data_type: int64

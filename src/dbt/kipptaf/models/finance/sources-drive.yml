@@ -2,9 +2,9 @@ version: 2
 
 sources:
   - name: finance
-    schema: kipptaf_finance
-    tags:
-      - stage_external_sources
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_finance
     tables:
       - name: src_finance__enrollment_targets
         external:
@@ -16,7 +16,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - finance
               - enrollment_targets
@@ -30,7 +30,7 @@ sources:
             skip_leading_rows: 1
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - finance
               - payroll_code_mapping

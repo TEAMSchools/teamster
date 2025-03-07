@@ -1,0 +1,92 @@
+version: 2
+models:
+  - name: stg_kippadb__gpa
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: record_type_id
+        data_type: string
+      - name: system_modstamp
+        data_type: timestamp
+      - name: academic_status
+        data_type: string
+      - name: college_standing
+        data_type: string
+      - name: college_term
+        data_type: string
+      - name: credits
+        data_type: numeric
+      - name: credits_in_major
+        data_type: numeric
+      - name: credits_required_for_graduation
+        data_type: numeric
+      - name: cumulative_credits_attempted
+        data_type: numeric
+      - name: cumulative_credits_earned
+        data_type: numeric
+      - name: enrollment
+        data_type: string
+      - name: gpa
+        data_type: numeric
+      - name: gpa_count
+        data_type: numeric
+      - name: gpa_in_major
+        data_type: numeric
+      - name: major
+        data_type: string
+      - name: major_area
+        data_type: string
+      - name: major_cumulative_credits_attempted
+        data_type: numeric
+      - name: major_cumulative_credits_earned
+        data_type: numeric
+      - name: major_cumulative_gpa
+        data_type: numeric
+      - name: major_declared
+        data_type: boolean
+      - name: major_semester_credits_attempted
+        data_type: numeric
+      - name: major_semester_credits_earned
+        data_type: numeric
+      - name: major_semester_gpa
+        data_type: numeric
+      - name: scale
+        data_type: string
+      - name: semester_credits_attempted
+        data_type: numeric
+      - name: semester_credits_earned
+        data_type: numeric
+      - name: semester_gpa
+        data_type: numeric
+      - name: source
+        data_type: string
+      - name: student
+        data_type: string
+      - name: term
+        data_type: string
+      - name: term_number
+        data_type: string
+      - name: term_type
+        data_type: string
+      - name: time_period
+        data_type: string
+      - name: time_period_sort_order
+        data_type: numeric
+      - name: transcript_date
+        data_type: date
+      - name: type
+        data_type: string
+      - name: semester
+        data_type: string
+      - name: academic_year
+        data_type: int64
