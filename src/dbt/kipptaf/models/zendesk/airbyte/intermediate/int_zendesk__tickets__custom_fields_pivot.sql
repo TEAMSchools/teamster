@@ -28,7 +28,7 @@ select
     `type`,
     vendor,
 from
-    {{ ref("base_zendesk__tickets__custom_fields") }} pivot (
+    {{ ref("int_zendesk__tickets__custom_fields") }} pivot (
         max(custom_field_value) for ticket_field_title in (
             'Actual Received Date' as actual_received_date,
             'Assignee to' as assignee_to,
