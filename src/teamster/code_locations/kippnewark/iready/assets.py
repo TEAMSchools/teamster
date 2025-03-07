@@ -36,7 +36,8 @@ instruction_by_lesson = build_iready_sftp_asset(
     asset_key=[*key_prefix, "personalized_instruction_by_lesson"],
     region_subfolder=region_subfolder,
     remote_file_regex=(
-        r"iready_instruction_by_lesson_(?P<subject>ela|math)(_CONFIDENTIAL)?\.csv"
+        r"(personalized|iready)_instruction_by_lesson_"
+        r"(?P<subject>ela|math)(_CONFIDENTIAL)?\.csv"
     ),
     avro_schema=PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
     start_fiscal_year=2023,
