@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: adp_workforce_now
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ project_name }}_adp_workforce_now
     tables:
       - name: src_adp_workforce_now__additional_earnings_report
@@ -13,8 +13,8 @@ sources:
             }}/adp/workforce_now/additional_earnings_report/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -31,8 +31,8 @@ sources:
             }}/adp/workforce_now/pension_and_benefits_enrollments/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
         meta:
@@ -51,8 +51,8 @@ sources:
             }}/adp/workforce_now/comprehensive_benefits_report/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
         meta:

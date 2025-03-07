@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: alchemer
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ project_name }}_alchemer
     config:
       enabled: false
@@ -13,8 +13,8 @@ sources:
           location: "{{ var('cloud_storage_uri_base') }}/alchemer/survey/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey/"
             format: AVRO
@@ -31,8 +31,8 @@ sources:
             "{{ var('cloud_storage_uri_base') }}/alchemer/survey_campaign/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_campaign/"
             format: AVRO
@@ -49,8 +49,8 @@ sources:
             "{{ var('cloud_storage_uri_base') }}/alchemer/survey_question/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_question/"
             format: AVRO
@@ -67,8 +67,8 @@ sources:
             "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response/"
             format: AVRO
@@ -86,8 +86,8 @@ sources:
             }}/alchemer/survey_response_disqualified/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base')
               }}/alchemer/survey_response_disqualified/"

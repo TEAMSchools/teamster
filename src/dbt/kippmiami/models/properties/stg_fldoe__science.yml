@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_fldoe__science
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("fldoe",
+        "src_fldoe__science") | replace("`", "") }}')
     columns:
       - name: student_id
         data_type: string

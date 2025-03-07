@@ -1,6 +1,12 @@
 version: 2
 models:
   - name: stg_performance_management__observation_details_archive
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{
+        source("performance_management",
+        "src_performance_management__observation_details_archive") |
+        replace("`", "") }}')
     columns:
       - name: employee_number
         data_type: int64
