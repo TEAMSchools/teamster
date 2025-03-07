@@ -1,0 +1,68 @@
+version: 2
+models:
+  - name: stg_deanslist__rosters
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: active
+        data_type: string
+      - name: collect_hw
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: grade_levels
+        data_type: string
+      - name: last_synced
+        data_type: string
+      - name: marker_color
+        data_type: string
+      - name: master_name
+        data_type: string
+      - name: meeting_days
+        data_type: string
+      - name: period
+        data_type: string
+      - name: room
+        data_type: string
+      - name: roster_name
+        data_type: string
+      - name: roster_type
+        data_type: string
+      - name: rti_tier
+        data_type: string
+      - name: screen_set_name
+        data_type: string
+      - name: section_number
+        data_type: string
+      - name: show_roster
+        data_type: string
+      - name: sis_expression
+        data_type: string
+      - name: sis_gradebook_name
+        data_type: string
+      - name: sis_key
+        data_type: string
+      - name: student_count
+        data_type: string
+      - name: subject_name
+        data_type: string
+      - name: take_attendance
+        data_type: string
+      - name: take_class_attendance
+        data_type: string
+      - name: roster_id
+        data_type: int64
+      - name: master_id
+        data_type: int64
+      - name: roster_type_id
+        data_type: int64
+      - name: rti_focus_id
+        data_type: int64
+      - name: school_id
+        data_type: int64
+      - name: screen_set_id
+        data_type: int64
+      - name: secondary_integration_id
+        data_type: int64
+      - name: subject_id
+        data_type: int64

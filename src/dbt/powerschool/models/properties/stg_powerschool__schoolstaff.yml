@@ -1,0 +1,104 @@
+version: 2
+models:
+  - name: stg_powerschool__schoolstaff
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__schoolstaff") | replace("`", "") }}')
+    columns:
+      - name: classpua
+        data_type: string
+      - name: custom
+        data_type: string
+      - name: log
+        data_type: string
+      - name: sched_gender
+        data_type: string
+      - name: sched_classroom
+        data_type: string
+      - name: sched_homeroom
+        data_type: string
+      - name: sched_department
+        data_type: string
+      - name: sched_housecode
+        data_type: string
+      - name: sched_buildingcode
+        data_type: string
+      - name: sched_activitystatuscode
+        data_type: string
+      - name: sched_primaryschoolcode
+        data_type: string
+      - name: sched_team
+        data_type: string
+      - name: notes
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: users_dcid
+        data_type: int64
+      - name: balance1
+        data_type: float64
+      - name: balance2
+        data_type: float64
+      - name: balance3
+        data_type: float64
+      - name: balance4
+        data_type: float64
+      - name: noofcurclasses
+        data_type: int64
+      - name: staffstatus
+        data_type: int64
+      - name: status
+        data_type: int64
+      - name: sched_maximumcourses
+        data_type: int64
+      - name: sched_maximumduty
+        data_type: int64
+      - name: sched_maximumfree
+        data_type: int64
+      - name: sched_totalcourses
+        data_type: int64
+      - name: sched_maximumconsecutive
+        data_type: int64
+      - name: sched_isteacherfree
+        data_type: int64
+      - name: sched_teachermoreoneschool
+        data_type: int64
+      - name: sched_substitute
+        data_type: int64
+      - name: sched_scheduled
+        data_type: int64
+      - name: sched_usebuilding
+        data_type: int64
+      - name: sched_usehouse
+        data_type: int64
+      - name: sched_lunch
+        data_type: int64
+      - name: sched_maxpers
+        data_type: int64
+      - name: sched_maxpreps
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64

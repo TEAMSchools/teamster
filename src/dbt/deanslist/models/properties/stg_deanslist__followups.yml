@@ -1,0 +1,76 @@
+version: 2
+models:
+  - name: stg_deanslist__followups
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
+        "src_deanslist__followups") | replace("`", "") }}')
+    columns:
+      - name: c_first
+        data_type: string
+      - name: c_last
+        data_type: string
+      - name: close_by
+        data_type: string
+      - name: c_middle
+        data_type: string
+      - name: c_title
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: followup_notes
+        data_type: string
+      - name: followup_type
+        data_type: string
+      - name: grade_level_short
+        data_type: string
+      - name: i_first
+        data_type: string
+      - name: i_last
+        data_type: string
+      - name: i_middle
+        data_type: string
+      - name: init_notes
+        data_type: string
+      - name: i_title
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: long_type
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: outstanding
+        data_type: string
+      - name: response_type
+        data_type: string
+      - name: ticket_status
+        data_type: string
+      - name: ticket_type
+        data_type: string
+      - name: url
+        data_type: string
+      - name: followup_id
+        data_type: int64
+      - name: ext_status
+        data_type: int64
+      - name: init_by
+        data_type: int64
+      - name: response_id
+        data_type: int64
+      - name: school_id
+        data_type: int64
+      - name: source_id
+        data_type: int64
+      - name: student_id
+        data_type: int64
+      - name: student_school_id
+        data_type: int64
+      - name: ticket_type_id
+        data_type: int64
+      - name: init_ts
+        data_type: datetime
+      - name: open_ts
+        data_type: datetime
+      - name: close_ts
+        data_type: datetime

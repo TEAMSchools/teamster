@@ -1,0 +1,46 @@
+version: 2
+models:
+  - name: stg_deanslist__terms
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
+        "src_deanslist__terms") | replace("`", "") }}')
+    columns:
+      - name: stored_grades
+        data_type: boolean
+      - name: start_date_timezone_type
+        data_type: int64
+      - name: end_date_timezone_type
+        data_type: int64
+      - name: term_id
+        data_type: int64
+      - name: academic_year_id
+        data_type: int64
+      - name: integration_id
+        data_type: int64
+      - name: school_id
+        data_type: int64
+      - name: secondary_integration_id
+        data_type: int64
+      - name: term_type_id
+        data_type: int64
+      - name: academic_year_name
+        data_type: string
+      - name: days
+        data_type: string
+      - name: grade_key
+        data_type: string
+      - name: secondary_grade_key
+        data_type: string
+      - name: term_name
+        data_type: string
+      - name: term_type
+        data_type: string
+      - name: start_date_timezone
+        data_type: string
+      - name: end_date_timezone
+        data_type: string
+      - name: start_date_date
+        data_type: datetime
+      - name: end_date_date
+        data_type: datetime

@@ -1,10 +1,11 @@
 import json
 import re
 from collections import defaultdict
+from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -13,20 +14,18 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     StaticPartitionsDefinition,
     _check,
     define_asset_job,
     sensor,
 )
-from paramiko.ssh_exception import AuthenticationException, SSHException
 
 from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_couchdrop_sftp_sensor(
-    code_location,
-    local_timezone,
+    code_location: str,
+    local_timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
     minimum_interval_seconds: int,
     exclude_dirs: list | None = None,
@@ -34,7 +33,7 @@ def build_couchdrop_sftp_sensor(
     if exclude_dirs is None:
         exclude_dirs = []
 
-    base_job_name = f"{code_location}_couchdrop_sftp_asset_job"
+    base_job_name = f"{code_location}__couchdrop__sftp_asset_job"
 
     keys_by_partitions_def = defaultdict(set[AssetKey])
 
@@ -45,6 +44,8 @@ def build_couchdrop_sftp_sensor(
         define_asset_job(
             name=(
                 f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
+                if partitions_def is not None
+                else base_job_name
             ),
             selection=list(keys),
         )
@@ -57,52 +58,26 @@ def build_couchdrop_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_couchdrop: SSHResource):
-        now_timestamp = pendulum.now(tz=local_timezone).timestamp()
+        now_timestamp = datetime.now(local_timezone).timestamp()
 
         run_request_kwargs = []
         run_requests = []
 
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            files = ssh_couchdrop.listdir_attr_r(
-                remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
-            )
-        except Exception as e:
-            exception_str = str(e)
-
-            context.log.error(msg=exception_str)
-
-            if isinstance(e, SSHException) and (
-                "Error reading SSH protocol banner" in exception_str
-                or "Server connection dropped" in exception_str
-            ):
-                return SkipReason(exception_str)
-            elif (
-                isinstance(e, AuthenticationException)
-                and "Authentication timeout" in exception_str
-            ):
-                return SkipReason(exception_str)
-            elif (
-                isinstance(e, FileNotFoundError)
-                and "[Errno 2] no such file" in exception_str
-            ):
-                return SkipReason(exception_str)
-            elif isinstance(e, TimeoutError) and "timed out" in exception_str:
-                return SkipReason(exception_str)
-            else:
-                raise e
+        files = ssh_couchdrop.listdir_attr_r(
+            remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
+        )
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()
             metadata = a.metadata_by_key[a.key]
-            partitions_def = _check.not_none(value=a.partitions_def)
 
             max_st_mtime = cursor_st_mtime = cursor.get(asset_identifier, 0)
 
             pattern = re.compile(
                 pattern=(
-                    rf"{metadata["remote_dir_regex"]}/{metadata["remote_file_regex"]}"
+                    rf"{metadata['remote_dir_regex']}/{metadata['remote_file_regex']}"
                 )
             )
 
@@ -130,28 +105,41 @@ def build_couchdrop_sftp_sensor(
                     partition_key = None
 
                 context.log.info(f"{asset_identifier}\n{f.filename}: {partition_key}")
-                run_request_kwargs.append(
-                    {
-                        "asset_key": a.key,
-                        "job_name": (
-                            f"{base_job_name}_"
-                            f"{partitions_def.get_serializable_unique_identifier()}"
-                        ),
-                        "partition_key": partition_key,
-                    }
-                )
+
+                if a.partitions_def is not None:
+                    run_request_kwargs.append(
+                        {
+                            "asset_key": a.key,
+                            "job_name": (
+                                f"{base_job_name}_"
+                                + a.partitions_def.get_serializable_unique_identifier()
+                            ),
+                            "partition_key": partition_key,
+                        }
+                    )
+                else:
+                    run_request_kwargs.append(
+                        {
+                            "asset_key": a.key,
+                            "job_name": base_job_name,
+                            "partition_key": None,
+                        }
+                    )
 
             cursor[asset_identifier] = max_st_mtime
 
         if run_request_kwargs:
-            for (job_name, parition_key), group in groupby(
-                iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
+            item_getter_key = itemgetter("job_name", "partition_key")
+
+            for (job_name, partition_key), group in groupby(
+                iterable=sorted(run_request_kwargs, key=item_getter_key),
+                key=item_getter_key,
             ):
                 run_requests.append(
                     RunRequest(
-                        run_key=f"{job_name}_{parition_key}_{now_timestamp}",
+                        run_key=f"{job_name}_{partition_key}_{now_timestamp}",
                         job_name=job_name,
-                        partition_key=parition_key,
+                        partition_key=partition_key,
                         asset_selection=[g["asset_key"] for g in group],
                     )
                 )

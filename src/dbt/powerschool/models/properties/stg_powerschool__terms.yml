@@ -1,0 +1,66 @@
+version: 2
+models:
+  - name: stg_powerschool__terms
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__terms") | replace("`", "") }}')
+    columns:
+      - name: name
+        data_type: string
+      - name: firstday
+        data_type: date
+      - name: lastday
+        data_type: date
+      - name: abbreviation
+        data_type: string
+      - name: importmap
+        data_type: string
+      - name: terminfo_guid
+        data_type: string
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: noofdays
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: yearlycredithrs
+        data_type: float64
+      - name: termsinyear
+        data_type: int64
+      - name: portion
+        data_type: int64
+      - name: autobuildbin
+        data_type: int64
+      - name: isyearrec
+        data_type: int64
+      - name: periods_per_day
+        data_type: int64
+      - name: days_per_cycle
+        data_type: int64
+      - name: attendance_calculation_code
+        data_type: int64
+      - name: sterms
+        data_type: int64
+      - name: suppresspublicview
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: fiscal_year
+        data_type: int64

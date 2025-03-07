@@ -1,10 +1,11 @@
 import json
 import re
 from collections import defaultdict
+from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -23,9 +24,9 @@ from teamster.libraries.ssh.resources import SSHResource
 
 def build_renlearn_sftp_sensor(
     code_location: str,
+    timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
     partition_key_start_date: str,
-    timezone,
     minimum_interval_seconds=None,
     tags=None,
 ):
@@ -52,7 +53,7 @@ def build_renlearn_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_renlearn: SSHResource):
-        now_timestamp = pendulum.now(tz=timezone).timestamp()
+        now_timestamp = datetime.now(timezone).timestamp()
 
         run_request_kwargs = []
         run_requests = []
@@ -103,14 +104,14 @@ def build_renlearn_sftp_sensor(
 
                 cursor[asset_identifier] = now_timestamp
 
-        for (job_name, parition_key), group in groupby(
+        for (job_name, partition_key), group in groupby(
             iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
         ):
             run_requests.append(
                 RunRequest(
-                    run_key=f"{job_name}_{parition_key}_{now_timestamp}",
+                    run_key=f"{job_name}_{partition_key}_{now_timestamp}",
                     job_name=job_name,
-                    partition_key=parition_key,
+                    partition_key=partition_key,
                     asset_selection=[g["asset_key"] for g in group],
                 )
             )

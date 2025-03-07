@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: int_adp_workforce_manager__accrual_summary_pivot
+    columns:
+      - name: worker_id
+        data_type: string
+      - name: lastest_update
+        data_type: date
+      - name: rn_employee_code
+        data_type: int64
+      - name: taken_learning_center
+        data_type: float64
+      - name: taken_no_accrual
+        data_type: float64
+      - name: taken_please_select_pay_code
+        data_type: float64
+      - name: taken_pto
+        data_type: float64
+      - name: taken_sick
+        data_type: float64
+      - name: taken_unused_pto
+        data_type: float64
+      - name: taken_vacation
+        data_type: float64
+      - name: balance_learning_center
+        data_type: float64
+      - name: balance_no_accrual
+        data_type: float64
+      - name: balance_please_select_pay_code
+        data_type: float64
+      - name: balance_pto
+        data_type: float64
+      - name: balance_sick
+        data_type: float64
+      - name: balance_unused_pto
+        data_type: float64
+      - name: balance_vacation
+        data_type: float64

@@ -1,0 +1,90 @@
+version: 2
+models:
+  - name: rpt_tableau__staff_attendance
+    columns:
+      - name: adp_associate_id
+        data_type: string
+      - name: budget_location
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: work_date
+        data_type: date
+      - name: transaction_start_date_time
+        data_type: datetime
+      - name: transaction_end_date_time
+        data_type: datetime
+      - name: transaction_type
+        data_type: string
+      - name: transaction_apply_to
+        data_type: string
+      - name: hours
+        data_type: float64
+      - name: df_employee_number
+        data_type: int64
+      - name: preferred_name
+        data_type: string
+      - name: employee_status
+        data_type: string
+      - name: legal_entity_current
+        data_type: string
+      - name: location_current
+        data_type: string
+      - name: site_name_clean
+        data_type: string
+      - name: site_abbreviation
+        data_type: string
+      - name: ps_school_id
+        data_type: int64
+      - name: original_hire_date
+        data_type: date
+      - name: rehire_date
+        data_type: date
+      - name: termination_date
+        data_type: date
+      - name: staff_samaccountname
+        data_type: string
+      - name: manager_name
+        data_type: string
+      - name: manager_samaccountname
+        data_type: string
+      - name: sl_samaccountname
+        data_type: string
+      - name: accrual_last_update
+        data_type: date
+      - name: no_accrual_taken
+        data_type: float64
+      - name: pto_taken
+        data_type: float64
+      - name: sick_taken
+        data_type: float64
+      - name: unused_pto_taken
+        data_type: float64
+      - name: vacation_taken
+        data_type: float64
+      - name: no_accrual_balance
+        data_type: float64
+      - name: pto_balance
+        data_type: float64
+      - name: sick_balance
+        data_type: float64
+      - name: unused_pto_balance
+        data_type: float64
+      - name: vacation_balance
+        data_type: float64
+      - name: late_status
+        data_type: int64
+      - name: early_out_status
+        data_type: int64
+      - name: transaction_in_exceptions
+        data_type: string
+      - name: transaction_out_exceptions
+        data_type: string
+      - name: missed_punch_status
+        data_type: int64
+      - name: denominator_day
+        data_type: int64
+      - name: present_status
+        data_type: int64

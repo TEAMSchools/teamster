@@ -7,6 +7,9 @@ with
             s.id as studentid,
             s.dcid as students_dcid,
             s.student_number,
+
+            null as reenrollments_dcid,
+
             s.grade_level,
             s.schoolid,
             s.entrydate,
@@ -37,6 +40,7 @@ with
             s.ethnicity_code as ethnicity,
 
             terms.yearid,
+            terms.academic_year,
 
             x1.exit_code as exit_code_kf,
             x2.exit_code as exit_code_ts,
@@ -67,6 +71,7 @@ with
             s.dcid as students_dcid,
             s.student_number,
 
+            re.dcid as reenrollments_dcid,
             re.grade_level,
             re.schoolid,
             re.entrydate,
@@ -99,6 +104,7 @@ with
             s.ethnicity_code as ethnicity,
 
             terms.yearid,
+            terms.academic_year,
 
             x1.exit_code as exit_code_kf,
             x2.exit_code as exit_code_ts,
@@ -130,6 +136,9 @@ with
             s.id as studentid,
             s.dcid as students_dcid,
             s.student_number,
+
+            null as reenrollments_dcid,
+
             s.grade_level,
             s.schoolid,
 
@@ -163,6 +172,7 @@ with
             s.ethnicity_code as ethnicity,
 
             terms.yearid,
+            terms.academic_year,
 
             null as exit_code_kf,
             null as exit_code_ts,
@@ -180,8 +190,7 @@ with
         select
             *,
 
-            yearid + 1990 as academic_year,
-            yearid + 2003 + (-1 * grade_level) as cohort_primary,
+            (academic_year + 13) + (-1 * grade_level) as cohort_primary,
 
             if(
                 lunchstatus in unnest({{ invalid_lunch_status }}), null, lunchstatus
@@ -285,10 +294,10 @@ with
                 is_enrolled_y1,
                 is_enrolled_oct01,
                 is_enrolled_oct15,
-                is_enrolled_recent
+                is_enrolled_recent,
+                is_retained_year
             ),
 
-            max(cohort_graduated) over (partition by studentid) as cohort_graduated,
             max(year_in_school) over (partition by studentid, yearid) as year_in_school,
             max(year_in_network) over (
                 partition by studentid, yearid
@@ -303,7 +312,11 @@ with
             max(is_enrolled_recent) over (
                 partition by studentid, yearid
             ) as is_enrolled_recent,
+            max(is_retained_year) over (
+                partition by studentid, yearid
+            ) as is_retained_year,
 
+            max(cohort_graduated) over (partition by studentid) as cohort_graduated,
             max(is_retained_year) over (partition by studentid) as is_retained_ever,
         from enr_bools
     ),

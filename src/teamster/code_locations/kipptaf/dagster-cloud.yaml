@@ -19,13 +19,13 @@ locations:
                 - secret:
                     name: op-adp-wfn-api
                     items:
-                      - key: KTAF_Mutual_SSL.pem
-                        path: adp_wfn_cert
+                      - key: adp_wfn_api.cer
+                        path: adp_wfn_api.cer
                 - secret:
                     name: op-adp-wfn-api
                     items:
-                      - key: kipptaf_auth.key
-                        path: adp_wfn_key
+                      - key: adp_wfn_api.key
+                        path: adp_wfn_api.key
                 - secret:
                     name: op-egencia-sftp
                     items:
@@ -41,15 +41,13 @@ locations:
                     items:
                       - key: service_account_gserviceaccount.json
                         path: gcloud_service_account_json
+                - secret:
+                    name: op-gcp-service-account-dlt
+                    items:
+                      - key: keyfile.json
+                        path: gcloud_teamster_dlt_keyfile.json
         server_k8s_config:
           container_config:
-            resources:
-              requests:
-                cpu: 1250m
-                memory: 2.0Gi
-              limits:
-                cpu: 1250m
-                memory: 2.0Gi
             env:
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
@@ -111,6 +109,11 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: credential
+              - name: AIRBYTE_WORKSPACE_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-airbyte-api
+                    key: workspace-id
               - name: AMPLIFY_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -161,6 +164,21 @@ locations:
                   secretKeyRef:
                     name: op-coupa-sftp
                     key: username
+              - name: COUPA_API_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: username
+              - name: COUPA_API_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: credential
+              - name: COUPA_API_INSTANCE_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: hostname
               - name: DEANSLIST_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -176,16 +194,6 @@ locations:
                   secretKeyRef:
                     name: op-egencia-sftp
                     key: username
-              - name: FIVETRAN_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-key
-              - name: FIVETRAN_API_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-secret
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -256,6 +264,11 @@ locations:
                   secretKeyRef:
                     name: op-smartrecruiters-api
                     key: smart-token
+              - name: ZENDESK_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-zendesk-api
+                    key: subdomain
               - name: ZENDESK_EMAIL
                 valueFrom:
                   secretKeyRef:
@@ -371,23 +384,38 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: OVERGRAD_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-overgrad-api
-                    key: credential
               - name: SLACK_TOKEN
                 valueFrom:
                   secretKeyRef:
                     name: op-slack-api
                     key: credential
+              - name: ILLUMINATE_DB_DRIVERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: driver
+              - name: ILLUMINATE_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: ip
+              - name: ILLUMINATE_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: database
+              - name: ILLUMINATE_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: username
+              - name: ILLUMINATE_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: password
         run_k8s_config:
           container_config:
-            resources:
-              requests:
-                cpu: 750m
-              limits:
-                cpu: 750m
             env:
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
@@ -449,6 +477,11 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: credential
+              - name: AIRBYTE_WORKSPACE_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-airbyte-api
+                    key: workspace-id
               - name: AMPLIFY_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -514,16 +547,6 @@ locations:
                   secretKeyRef:
                     name: op-egencia-sftp
                     key: username
-              - name: FIVETRAN_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-key
-              - name: FIVETRAN_API_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-secret
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -594,6 +617,11 @@ locations:
                   secretKeyRef:
                     name: op-smartrecruiters-api
                     key: smart-token
+              - name: ZENDESK_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-zendesk-api
+                    key: subdomain
               - name: ZENDESK_EMAIL
                 valueFrom:
                   secretKeyRef:
@@ -634,6 +662,21 @@ locations:
                   secretKeyRef:
                     name: op-coupa-sftp
                     key: host
+              - name: COUPA_API_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: username
+              - name: COUPA_API_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: credential
+              - name: COUPA_API_INSTANCE_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: hostname
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:
@@ -709,13 +752,33 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: OVERGRAD_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-overgrad-api-kippnewark
-                    key: credential
               - name: SLACK_TOKEN
                 valueFrom:
                   secretKeyRef:
                     name: op-slack-api
                     key: credential
+              - name: ILLUMINATE_DB_DRIVERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: driver
+              - name: ILLUMINATE_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: ip
+              - name: ILLUMINATE_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: database
+              - name: ILLUMINATE_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: username
+              - name: ILLUMINATE_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: password

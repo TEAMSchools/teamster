@@ -1,0 +1,284 @@
+version: 2
+models:
+  - name: stg_deanslist__incidents
+    # config:
+    #   pre_hook:
+    #     CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
+    #     "src_deanslist__incidents") | replace("`", "") }}')
+    columns:
+      - name: hearing_flag
+        data_type: boolean
+      - name: is_active
+        data_type: boolean
+      - name: is_referral
+        data_type: boolean
+      - name: send_alert
+        data_type: boolean
+      - name: close_ts_timezone_type
+        data_type: int64
+      - name: create_ts_timezone_type
+        data_type: int64
+      - name: dl_last_update_timezone_type
+        data_type: int64
+      - name: hearing_date_timezone_type
+        data_type: int64
+      - name: issue_ts_timezone_type
+        data_type: int64
+      - name: return_date_timezone_type
+        data_type: int64
+      - name: review_ts_timezone_type
+        data_type: int64
+      - name: update_ts_timezone_type
+        data_type: int64
+      - name: actions
+        data_type: record
+      - name: actions.actionid
+        data_type: string
+      - name: actions.actionname
+        data_type: string
+      - name: actions.pointvalue
+        data_type: string
+      - name: actions.said
+        data_type: string
+      - name: actions.sourceid
+        data_type: string
+      - name: custom_fields
+        data_type: record
+      - name: custom_fields.customfieldid
+        data_type: string
+      - name: custom_fields.fieldcategory
+        data_type: string
+      - name: custom_fields.fieldkey
+        data_type: string
+      - name: custom_fields.fieldname
+        data_type: string
+      - name: custom_fields.fieldtype
+        data_type: string
+      - name: custom_fields.inputhtml
+        data_type: string
+      - name: custom_fields.inputname
+        data_type: string
+      - name: custom_fields.isfrontend
+        data_type: string
+      - name: custom_fields.isrequired
+        data_type: string
+      - name: custom_fields.labelhtml
+        data_type: string
+      - name: custom_fields.minuserlevel
+        data_type: string
+      - name: custom_fields.options
+        data_type: string
+      - name: custom_fields.sourceid
+        data_type: string
+      - name: custom_fields.sourcetype
+        data_type: string
+      - name: custom_fields.stringvalue
+        data_type: string
+      - name: custom_fields.value
+        data_type: string
+      - name: custom_fields.numvalue
+        data_type: record
+      - name: custom_fields.numvalue.long_value
+        data_type: int64
+      - name: custom_fields.numvalue.double_value
+        data_type: float64
+      - name: custom_fields.selectedoptions
+        data_type: string
+      - name: penalties
+        data_type: record
+      - name: penalties.incidentid
+        data_type: string
+      - name: penalties.incidentpenaltyid
+        data_type: string
+      - name: penalties.schoolid
+        data_type: string
+      - name: penalties.penaltyid
+        data_type: string
+      - name: penalties.penaltyname
+        data_type: string
+      - name: penalties.startdate
+        data_type: string
+      - name: penalties.enddate
+        data_type: string
+      - name: penalties.numperiods
+        data_type: string
+      - name: penalties.issuspension
+        data_type: boolean
+      - name: penalties.isreportable
+        data_type: boolean
+      - name: penalties.said
+        data_type: string
+      - name: penalties.print
+        data_type: boolean
+      - name: penalties.studentid
+        data_type: string
+      - name: penalties.numdays
+        data_type: record
+      - name: penalties.numdays.long_value
+        data_type: int64
+      - name: penalties.numdays.double_value
+        data_type: float64
+      - name: attachments
+        data_type: record
+      - name: attachments.attachmentid
+        data_type: string
+      - name: attachments.attachmenttype
+        data_type: string
+      - name: attachments.bytes
+        data_type: string
+      - name: attachments.contenttype
+        data_type: string
+      - name: attachments.entityid
+        data_type: string
+      - name: attachments.entityname
+        data_type: string
+      - name: attachments.entitytype
+        data_type: string
+      - name: attachments.internalfilename
+        data_type: string
+      - name: attachments.internalfolder
+        data_type: string
+      - name: attachments.minuserlevel
+        data_type: string
+      - name: attachments.minuserlevelgroupname
+        data_type: string
+      - name: attachments.publicfilename
+        data_type: string
+      - name: attachments.reportdate
+        data_type: string
+      - name: attachments.reporttype
+        data_type: string
+      - name: attachments.schoolid
+        data_type: string
+      - name: attachments.sourceid
+        data_type: string
+      - name: attachments.sourcetype
+        data_type: string
+      - name: attachments.studentid
+        data_type: string
+      - name: attachments.termid
+        data_type: string
+      - name: attachments.url
+        data_type: string
+      - name: attachments.filepostedat
+        data_type: record
+      - name: attachments.filepostedat.date
+        data_type: string
+      - name: attachments.filepostedat.timezone_type
+        data_type: int64
+      - name: attachments.filepostedat.timezone
+        data_type: string
+      - name: addl_reqs
+        data_type: string
+      - name: admin_summary
+        data_type: string
+      - name: category
+        data_type: string
+      - name: context
+        data_type: string
+      - name: create_by
+        data_type: string
+      - name: create_first
+        data_type: string
+      - name: create_last
+        data_type: string
+      - name: create_middle
+        data_type: string
+      - name: create_title
+        data_type: string
+      - name: family_meeting_notes
+        data_type: string
+      - name: followup_notes
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: grade_level_short
+        data_type: string
+      - name: hearing_location
+        data_type: string
+      - name: hearing_notes
+        data_type: string
+      - name: hearing_time
+        data_type: string
+      - name: homeroom_name
+        data_type: string
+      - name: infraction
+        data_type: string
+      - name: location
+        data_type: string
+      - name: reported_details
+        data_type: string
+      - name: return_period
+        data_type: string
+      - name: status
+        data_type: string
+      - name: student_first
+        data_type: string
+      - name: student_last
+        data_type: string
+      - name: student_middle
+        data_type: string
+      - name: update_by
+        data_type: string
+      - name: update_first
+        data_type: string
+      - name: update_last
+        data_type: string
+      - name: update_middle
+        data_type: string
+      - name: update_title
+        data_type: string
+      - name: incident_id
+        data_type: int64
+      - name: category_id
+        data_type: int64
+      - name: create_staff_school_id
+        data_type: int64
+      - name: infraction_type_id
+        data_type: int64
+      - name: location_id
+        data_type: int64
+      - name: reporting_incident_id
+        data_type: int64
+      - name: school_id
+        data_type: int64
+      - name: status_id
+        data_type: int64
+      - name: student_id
+        data_type: int64
+      - name: student_school_id
+        data_type: int64
+      - name: update_staff_school_id
+        data_type: int64
+      - name: close_ts_timezone
+        data_type: string
+      - name: create_ts_timezone
+        data_type: string
+      - name: dl_last_update_timezone
+        data_type: string
+      - name: hearing_date_timezone
+        data_type: string
+      - name: issue_ts_timezone
+        data_type: string
+      - name: return_date_timezone
+        data_type: string
+      - name: review_ts_timezone
+        data_type: string
+      - name: update_ts_timezone
+        data_type: string
+      - name: close_ts_date
+        data_type: datetime
+      - name: create_ts_date
+        data_type: datetime
+      - name: hearing_date_date
+        data_type: datetime
+      - name: issue_ts_date
+        data_type: datetime
+      - name: return_date_date
+        data_type: datetime
+      - name: review_ts_date
+        data_type: datetime
+      - name: update_ts_date
+        data_type: datetime
+      - name: dl_last_update_date
+        data_type: datetime

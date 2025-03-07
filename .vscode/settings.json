@@ -26,7 +26,6 @@
     "*.toml": "toml"
   },
   "files.exclude": {
-    "**/.git": false,
     "**/.trunk/*actions/": true,
     "**/.trunk/*logs/": true,
     "**/.trunk/*notifications/": true,
@@ -41,57 +40,21 @@
     "**/.trunk/*plugins/": true
   },
   "[jsonc]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
+    "editor.defaultFormatter": "trunk.io"
   },
   "dbt.enableNewLineagePanel": true,
-  "dbt.deferConfigPerProject": {
-    "src/dbt/deanslist": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/deanslist/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/edplan": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/edplan/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/iready": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/iready/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/kippcamden": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/kippcamden/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/kippmiami": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/kippmiami/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/kippnewark": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/kippnewark/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/kipptaf": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/kipptaf/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/overgrad": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/overgrad/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/pearson": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/pearson/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/powerschool": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/powerschool/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/renlearn": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/renlearn/target",
-      "manifestPathType": "local"
-    },
-    "src/dbt/titan": {
-      "manifestPathForDeferral": "/workspaces/teamster/src/dbt/titan/target",
-      "manifestPathType": "local"
-    }
+  "[python]": {
+    "editor.defaultFormatter": "trunk.io"
+  },
+  "terminal.integrated.env.linux": {
+    "DAGSTER_HOME": "/workspaces/teamster/.dagster/home",
+    "DBT_CLOUD_ENVIRONMENT_TYPE": "dev",
+    "DBT_DEV_CLOUD_STORAGE_URI_BASE": "gs://teamster-test/dagster/kippnewark",
+    "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TRUNK_TELEMETRY": "off",
+    "UV_ENV_FILE": "/workspaces/teamster/env/.env",
+    "UV_LINK_MODE": "copy",
+    "UV_RESOLUTION": "highest"
   }
 }

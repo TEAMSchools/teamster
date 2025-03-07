@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: stg_powerschool__gradecalcformulaweight
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__gradecalcformulaweight") | replace("`", "") }}')
+    columns:
+      - name: storecode
+        data_type: string
+      - name: type
+        data_type: string
+      - name: stndcalculationmetric
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: gradecalcformulaweightid
+        data_type: int64
+      - name: gradecalculationtypeid
+        data_type: int64
+      - name: teachercategoryid
+        data_type: int64
+      - name: districtteachercategoryid
+        data_type: int64
+      - name: assignmentid
+        data_type: int64
+      - name: weight
+        data_type: numeric

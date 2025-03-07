@@ -1,10 +1,11 @@
 import json
 import re
 from collections import defaultdict
+from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -23,8 +24,8 @@ from teamster.libraries.ssh.resources import SSHResource
 
 def build_titan_sftp_sensor(
     code_location: str,
+    timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
-    timezone,
     minimum_interval_seconds: int | None = None,
     exclude_dirs: list | None = None,
 ):
@@ -54,7 +55,7 @@ def build_titan_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_titan: SSHResource):
-        now_timestamp = pendulum.now(tz=timezone).timestamp()
+        now_timestamp = datetime.now(timezone).timestamp()
 
         run_request_kwargs = []
         run_requests = []
@@ -63,15 +64,8 @@ def build_titan_sftp_sensor(
         try:
             files = ssh_titan.listdir_attr_r(exclude_dirs=exclude_dirs)
         except SSHException as e:
-            if (
-                "No existing session" in e.args
-                or "Error reading SSH protocol banner" in e.args
-            ):
-                return SkipReason(str(e))
-            else:
-                raise e
-        except TimeoutError as e:
-            if "timed out" in e.args:
+            # mute error
+            if "No existing session" in e.args:
                 return SkipReason(str(e))
             else:
                 raise e
@@ -108,14 +102,14 @@ def build_titan_sftp_sensor(
 
                 cursor[asset_identifier] = now_timestamp
 
-        for (job_name, parition_key), group in groupby(
+        for (job_name, partition_key), group in groupby(
             iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
         ):
             run_requests.append(
                 RunRequest(
-                    run_key=f"{job_name}_{parition_key}_{now_timestamp}",
+                    run_key=f"{job_name}_{partition_key}_{now_timestamp}",
                     job_name=job_name,
-                    partition_key=parition_key,
+                    partition_key=partition_key,
                     asset_selection=[g["asset_key"] for g in group],
                 )
             )

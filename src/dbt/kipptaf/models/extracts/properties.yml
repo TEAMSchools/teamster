@@ -1,8 +1,0 @@
-version: 2
-
-models:
-  - name: rpt_gsheets__intacct_integration_file
-    meta:
-      dagster:
-        automation_condition:
-          enabled: false

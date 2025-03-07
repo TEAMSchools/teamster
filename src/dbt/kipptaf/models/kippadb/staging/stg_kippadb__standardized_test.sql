@@ -9,54 +9,6 @@ select
     subject__c as `subject`,
     test_location__c as test_location,
 
-    act_composite__c as act_composite,
-    act_ela__c as act_ela,
-    act_english__c as act_english,
-    act_math__c as act_math,
-    act_reading__c as act_reading,
-    act_science__c as act_science,
-    act_stem__c as act_stem,
-    act_writing__c as act_writing,
-
-    sat_total_score__c as sat_total_score,
-    sat_ebrw__c as sat_ebrw,
-    sat_essay_analysis__c as sat_essay_analysis,
-    sat_essay_reading__c as sat_essay_reading,
-    sat_essay_writing__c as sat_essay_writing,
-    sat_math__c as sat_math,
-    sat_math_test_score__c as sat_math_test_score,
-    sat_reading_test_score__c as sat_reading_test_score,
-    sat_verbal__c as sat_verbal,
-    sat_writing__c as sat_writing,
-    sat_critical_reading_pre_2016__c as sat_critical_reading_pre_2016,
-    sat_math_pre_2016__c as sat_math_pre_2016,
-    sat_writing_and_language_test_score__c as sat_writing_and_language_test_score,
-    sat_writing_pre_2016__c as sat_writing_pre_2016,
-
-    ssat_overall_percentile__c as ssat_overall_percentile,
-    ssat_math__c as ssat_math,
-    ssat_math_percentile__c as ssat_math_percentile,
-    ssat_reading_comp__c as ssat_reading_comp,
-    ssat_reading_comp_percentile__c as ssat_reading_comp_percentile,
-    ssat_verbal__c as ssat_verbal,
-    ssat_verbal_percentile__c as ssat_verbal_percentile,
-
-    ap__c as ap,
-
-    ib_course_grade__c as ib_course_grade,
-
-    psat_total_score__c as psat_total_score,
-    psat_ebrw__c as psat_ebrw,
-    psat_math__c as psat_math,
-    psat_math_test_score__c as psat_math_test_score,
-    psat_reading_test_score__c as psat_reading_test_score,
-    psat_verbal__c as psat_verbal,
-    psat_writing__c as psat_writing,
-    psat_writing_and_language_test_score__c as psat_writing_and_language_test_score,
-    psat_critical_reading_pre_2016__c as psat_critical_reading_pre_2016,
-    psat_math_pre_2016__c as psat_math_pre_2016,
-    psat_writing_pre_2016__c as psat_writing_pre_2016,
-
     arithmetic_reasoning_ar__c as arithmetic_reasoning_ar,
     assembling_objects_ao__c as assembling_objects_ao,
     auto_and_shop_information_as__c as auto_and_shop_information_as,
@@ -172,5 +124,90 @@ select
     lastreferenceddate as last_referenced_date,
     lastvieweddate as last_viewed_date,
     systemmodstamp as system_modstamp,
+
+    concat(
+        format_date('%b', date__c), ' ', format_date('%g', date__c)
+    ) as administration_round,
+
+    if(act_composite__c = 0, null, act_composite__c) as act_composite,
+    if(act_ela__c = 0, null, act_ela__c) as act_ela,
+    if(act_english__c = 0, null, act_english__c) as act_english,
+    if(act_math__c = 0, null, act_math__c) as act_math,
+    if(act_reading__c = 0, null, act_reading__c) as act_reading,
+    if(act_science__c = 0, null, act_science__c) as act_science,
+    if(act_stem__c = 0, null, act_stem__c) as act_stem,
+    if(act_writing__c = 0, null, act_writing__c) as act_writing,
+
+    if(sat_total_score__c = 0, null, sat_total_score__c) as sat_total_score,
+    if(sat_ebrw__c = 0, null, sat_ebrw__c) as sat_ebrw,
+    if(sat_essay_analysis__c = 0, null, sat_essay_analysis__c) as sat_essay_analysis,
+    if(sat_essay_reading__c = 0, null, sat_essay_reading__c) as sat_essay_reading,
+    if(sat_essay_writing__c = 0, null, sat_essay_writing__c) as sat_essay_writing,
+    if(sat_math__c = 0, null, sat_math__c) as sat_math,
+    if(sat_math_test_score__c = 0, null, sat_math_test_score__c) as sat_math_test_score,
+    if(
+        sat_reading_test_score__c = 0, null, sat_reading_test_score__c
+    ) as sat_reading_test_score,
+    if(sat_verbal__c = 0, null, sat_verbal__c) as sat_verbal,
+    if(sat_writing__c = 0, null, sat_writing__c) as sat_writing,
+    if(
+        sat_critical_reading_pre_2016__c = 0, null, sat_critical_reading_pre_2016__c
+    ) as sat_critical_reading_pre_2016,
+    if(sat_math_pre_2016__c = 0, null, sat_math_pre_2016__c) as sat_math_pre_2016,
+    if(
+        sat_writing_and_language_test_score__c = 0,
+        null,
+        sat_writing_and_language_test_score__c
+    ) as sat_writing_and_language_test_score,
+    if(
+        sat_writing_pre_2016__c = 0, null, sat_writing_pre_2016__c
+    ) as sat_writing_pre_2016,
+
+    if(
+        ssat_overall_percentile__c = 0, null, ssat_overall_percentile__c
+    ) as ssat_overall_percentile,
+    if(ssat_math__c = 0, null, ssat_math__c) as ssat_math,
+    if(
+        ssat_math_percentile__c = 0, null, ssat_math_percentile__c
+    ) as ssat_math_percentile,
+    if(ssat_reading_comp__c = 0, null, ssat_reading_comp__c) as ssat_reading_comp,
+    if(
+        ssat_reading_comp_percentile__c = 0, null, ssat_reading_comp_percentile__c
+    ) as ssat_reading_comp_percentile,
+    if(ssat_verbal__c = 0, null, ssat_verbal__c) as ssat_verbal,
+    if(
+        ssat_verbal_percentile__c = 0, null, ssat_verbal_percentile__c
+    ) as ssat_verbal_percentile,
+
+    if(ap__c = 0, null, ap__c) as ap,
+
+    if(ib_course_grade__c = 0, null, ib_course_grade__c) as ib_course_grade,
+
+    if(psat_total_score__c = 0, null, psat_total_score__c) as psat_total_score,
+    if(psat_ebrw__c = 0, null, psat_ebrw__c) as psat_ebrw,
+    if(psat_math__c = 0, null, psat_math__c) as psat_math,
+    if(
+        psat_math_test_score__c = 0, null, psat_math_test_score__c
+    ) as psat_math_test_score,
+    if(
+        psat_reading_test_score__c = 0, null, psat_reading_test_score__c
+    ) as psat_reading_test_score,
+    if(psat_verbal__c = 0, null, psat_verbal__c) as psat_verbal,
+    if(psat_writing__c = 0, null, psat_writing__c) as psat_writing,
+    if(
+        psat_writing_and_language_test_score__c = 0,
+        null,
+        psat_writing_and_language_test_score__c
+    ) as psat_writing_and_language_test_score,
+    if(
+        psat_critical_reading_pre_2016__c = 0, null, psat_critical_reading_pre_2016__c
+    ) as psat_critical_reading_pre_2016,
+    if(psat_math_pre_2016__c = 0, null, psat_math_pre_2016__c) as psat_math_pre_2016,
+    if(
+        psat_writing_pre_2016__c = 0, null, psat_writing_pre_2016__c
+    ) as psat_writing_pre_2016,
+
+    {{ date_to_fiscal_year(date_field="date__c", start_month=7, year_source="start") }}
+    as academic_year,
 from {{ source("kippadb", "standardized_test") }}
 where not isdeleted

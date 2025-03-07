@@ -1,0 +1,42 @@
+version: 2
+models:
+  - name: int_powerschool__category_grades
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: sectionid
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: course_number
+        data_type: string
+      - name: credittype
+        data_type: string
+      - name: is_dropped_section
+        data_type: boolean
+      - name: yearid
+        data_type: int64
+      - name: reporting_term
+        data_type: string
+      - name: quarter
+        data_type: string
+      - name: termbin_start_date
+        data_type: date
+      - name: termbin_end_date
+        data_type: date
+      - name: is_current
+        data_type: boolean
+      - name: storecode
+        data_type: string
+      - name: storecode_type
+        data_type: string
+      - name: storecode_order
+        data_type: string
+      - name: percent_grade
+        data_type: float64
+      - name: citizenship_grade
+        data_type: string
+      - name: percent_grade_y1_running
+        data_type: float64

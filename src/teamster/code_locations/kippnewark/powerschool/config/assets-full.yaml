@@ -58,6 +58,8 @@ assets:
     partition_column: whenmodified
   - asset_name: userscorefields
     partition_column: whenmodified
+  - asset_name: u_storedgrades_de
+    partition_column: whenmodified
   - asset_name: u_studentsuserfields
     partition_column: whenmodified
     select_columns:
@@ -76,7 +78,7 @@ assets:
         container_config:
           resources:
             requests:
-              cpu: 750m
+              cpu: 250m
             limits:
               cpu: 750m
   - asset_name: personphonenumberassoc
@@ -86,7 +88,7 @@ assets:
         container_config:
           resources:
             requests:
-              cpu: 750m
+              cpu: 250m
             limits:
               cpu: 750m
   - asset_name: studentcontactdetail
@@ -96,7 +98,7 @@ assets:
         container_config:
           resources:
             requests:
-              cpu: 750m
+              cpu: 250m
             limits:
               cpu: 750m
   - asset_name: s_nj_stu_x
@@ -106,7 +108,7 @@ assets:
         container_config:
           resources:
             requests:
-              memory: 2.5Gi
+              memory: 0.5Gi
             limits:
               memory: 2.5Gi
   - asset_name: cc
@@ -131,6 +133,6 @@ assets:
         container_config:
           resources:
             requests:
-              cpu: 750m
+              cpu: 250m
             limits:
               cpu: 750m

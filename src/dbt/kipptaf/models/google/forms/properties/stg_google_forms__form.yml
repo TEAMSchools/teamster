@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: stg_google_forms__form
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("google_forms",
+        "src_google_forms__form") | replace("`", "") }}')
+    columns:
+      - name: form_id
+        data_type: string
+      - name: revision_id
+        data_type: string
+      - name: responder_uri
+        data_type: string
+      - name: linked_sheet_id
+        data_type: string
+      - name: info_title
+        data_type: string
+      - name: info_document_title
+        data_type: string
+      - name: info_description
+        data_type: string
+      - name: settings_quiz_settings_is_quiz
+        data_type: boolean

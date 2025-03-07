@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: int_students__graduation_path_codes
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: discipline
+        data_type: string
+      - name: act
+        data_type: boolean
+      - name: sat
+        data_type: boolean
+      - name: psat
+        data_type: boolean
+      - name: njgpa_attempt
+        data_type: boolean
+      - name: njgpa_pass
+        data_type: boolean
+      - name: code
+        data_type: string
+      - name: final_grad_path
+        data_type: string

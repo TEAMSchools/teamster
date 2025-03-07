@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: int_adp_workforce_now__workers__communication
+    columns:
+      - name: associate_oid
+        data_type: string
+      - name: item_id
+        data_type: string
+      - name: name_code__code_value
+        data_type: string
+      - name: name_code__long_name
+        data_type: string
+      - name: name_code__short_name
+        data_type: string
+      - name: name_code__effective_date
+        data_type: string
+      - name: email_uri
+        data_type: string
+      - name: notification_indicator
+        data_type: boolean
+      - name: formatted_number
+        data_type: string
+      - name: country_dialing
+        data_type: string
+      - name: area_dialing
+        data_type: string
+      - name: dial_number
+        data_type: string
+      - name: extension
+        data_type: string
+      - name: access
+        data_type: string

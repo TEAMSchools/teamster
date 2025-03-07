@@ -29,11 +29,11 @@ select
     gl.gl_dim_donor_restriction as `GLDIMDONOR_RESTRICTION`,
 
     srh.employee_number as `GLENTRY_EMPLOYEEID`,
-    srh.preferred_name_lastfirst as preferred_name,
-    srh.legal_name_formatted_name as legal_name,
+    srh.formatted_name as preferred_name,
+    srh.legal_formatted_name as legal_name,
     srh.assignment_status,
     srh.home_work_location_name as home_work_location,
-    srh.department_home_name as home_department,
+    srh.home_department_name as home_department,
     srh.job_title,
     srh.worker_original_hire_date as original_hire_date,
     srh.worker_termination_date as termination_date,
@@ -46,8 +46,8 @@ left join
     {{ ref("stg_finance__payroll_code_mapping") }} as cm
     on gl.gl_entry_project_id = cm.old_project_id_alt_nj
 left join
-    {{ ref("base_people__staff_roster_history") }} as srh
+    {{ ref("int_people__staff_roster_history") }} as srh
     on gl.position_id = srh.position_id
-    and gl.date between srh.work_assignment_start_date and srh.work_assignment_end_date
+    and gl.date between srh.effective_date_start and srh.effective_date_end
     and srh.primary_indicator
 order by gl.line_no

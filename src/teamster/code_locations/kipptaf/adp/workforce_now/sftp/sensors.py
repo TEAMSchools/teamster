@@ -1,12 +1,11 @@
 import json
 import re
+from datetime import datetime
 
-import pendulum
 from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     _check,
     define_asset_job,
     sensor,
@@ -23,21 +22,12 @@ job = define_asset_job(name=f"{CODE_LOCATION}_adp_wfn_sftp_asset_job", selection
 def adp_wfn_sftp_sensor(
     context: SensorEvaluationContext, ssh_adp_workforce_now: SSHResource
 ):
-    now = pendulum.now(tz=LOCAL_TIMEZONE)
+    now = datetime.now(LOCAL_TIMEZONE)
 
     run_requests = []
     cursor: dict = json.loads(context.cursor or "{}")
 
-    try:
-        files = ssh_adp_workforce_now.listdir_attr_r()
-    except TimeoutError as e:
-        if "timed out" in e.args:
-            return SkipReason(str(e))
-        else:
-            raise e
-    except Exception as e:
-        context.log.error(msg=str(e))
-        raise e
+    files = ssh_adp_workforce_now.listdir_attr_r()
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]

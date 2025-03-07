@@ -1,10 +1,11 @@
 import json
 import re
 from collections import defaultdict
+from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -12,20 +13,18 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
     _check,
     define_asset_job,
     sensor,
 )
-from paramiko.ssh_exception import AuthenticationException
 
 from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_iready_sftp_sensor(
     code_location: str,
+    timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
-    timezone,
     remote_dir_regex: str,
     current_fiscal_year: int,
     minimum_interval_seconds=None,
@@ -53,21 +52,13 @@ def build_iready_sftp_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_iready: SSHResource):
-        now_timestamp = pendulum.now(tz=timezone).timestamp()
+        now_timestamp = datetime.now(timezone).timestamp()
 
         run_request_kwargs = []
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            files = ssh_iready.listdir_attr_r(remote_dir=remote_dir_regex)
-        except AuthenticationException as e:
-            if "Authentication failed: transport shut down or saw EOF" in str(e):
-                return SkipReason(str(e))
-            else:
-                raise e
-        except Exception as e:
-            raise e
+        files = ssh_iready.listdir_attr_r(remote_dir=remote_dir_regex)
 
         for asset in asset_selection:
             asset_identifier = asset.key.to_python_identifier()
@@ -79,8 +70,8 @@ def build_iready_sftp_sensor(
 
             pattern = re.compile(
                 pattern=(
-                    rf"{metadata_by_key["remote_dir_regex"]}/"
-                    rf"{metadata_by_key["remote_file_regex"]}"
+                    rf"{metadata_by_key['remote_dir_regex']}/"
+                    rf"{metadata_by_key['remote_file_regex']}"
                 )
             )
 
@@ -121,14 +112,14 @@ def build_iready_sftp_sensor(
 
                 cursor[asset_identifier] = now_timestamp
 
-        for (job_name, parition_key), group in groupby(
+        for (job_name, partition_key), group in groupby(
             iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
         ):
             run_requests.append(
                 RunRequest(
-                    run_key=f"{job_name}_{parition_key}_{now_timestamp}",
+                    run_key=f"{job_name}_{partition_key}_{now_timestamp}",
                     job_name=job_name,
-                    partition_key=parition_key,
+                    partition_key=partition_key,
                     asset_selection=[g["asset_key"] for g in group],
                 )
             )

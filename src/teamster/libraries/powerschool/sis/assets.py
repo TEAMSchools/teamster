@@ -1,8 +1,8 @@
 import hashlib
 import pathlib
+from datetime import datetime, timezone
 from io import BufferedReader
 
-import pendulum
 from dagster import (
     AssetExecutionContext,
     AssetsDefinition,
@@ -12,12 +12,13 @@ from dagster import (
     _check,
     asset,
 )
+from dateutil.relativedelta import relativedelta
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
-from sshtunnel import HandlerSSHTunnelForwarderError
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.utils import open_ssh_tunnel
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -69,7 +70,11 @@ def build_powerschool_table_asset(
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
     ):
-        hour_timestamp = pendulum.now().start_of("hour").timestamp()
+        hour_timestamp = (
+            datetime.now(timezone.utc)
+            .replace(minute=0, second=0, microsecond=0)
+            .timestamp()
+        )
 
         first_partition_key = (
             partitions_def.get_first_partition_key()
@@ -82,11 +87,11 @@ def build_powerschool_table_asset(
         elif context.partition_key == first_partition_key:
             constructed_where = ""
         else:
-            partition_start = pendulum.from_format(
-                string=context.partition_key, fmt="YYYY-MM-DDTHH:mm:ssZZ"
-            )
+            partition_start = datetime.fromisoformat(context.partition_key)
 
-            partition_start_fmt = partition_start.format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+            partition_start_fmt = partition_start.replace(tzinfo=None).isoformat(
+                timespec="microseconds"
+            )
 
             if isinstance(partitions_def, FiscalYearPartitionsDefinition):
                 date_add_kwargs = {"years": 1}
@@ -96,10 +101,15 @@ def build_powerschool_table_asset(
                 date_add_kwargs = {}
 
             partition_end_fmt = (
-                partition_start.add(**date_add_kwargs)
-                .subtract(days=1)
-                .end_of("day")
-                .format("YYYY-MM-DDTHH:mm:ss.SSSSSS")
+                (
+                    partition_start
+                    # trunk-ignore(pyright/reportArgumentType)
+                    + relativedelta(**date_add_kwargs)
+                    - relativedelta(days=1)
+                )
+                .replace(hour=23, minute=59, second=59, microsecond=999999)
+                .replace(tzinfo=None)
+                .isoformat(timespec="microseconds")
             )
 
             constructed_where = (
@@ -116,17 +126,19 @@ def build_powerschool_table_asset(
             .where(text(constructed_where))
         )
 
-        ssh_tunnel = ssh_powerschool.get_tunnel(remote_port=1521, local_port=1521)
+        context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
+        ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
 
         try:
-            ssh_tunnel.start()
+            connection = db_powerschool.connect()
+        except Exception as e:
+            ssh_tunnel.kill()
+            raise e
 
-            context.log.debug(msg=ssh_tunnel.tunnel_is_up)
-            if not ssh_tunnel.tunnel_is_up:
-                raise HandlerSSHTunnelForwarderError
-
+        try:
             file_path = _check.inst(
                 obj=db_powerschool.execute_query(
+                    connection=connection,
                     query=sql,
                     output_format="avro",
                     batch_size=partition_size,
@@ -136,7 +148,8 @@ def build_powerschool_table_asset(
                 ttype=pathlib.Path,
             )
         finally:
-            ssh_tunnel.stop(force=True)
+            connection.close()
+            ssh_tunnel.kill()
 
         with file_path.open(mode="rb") as f:
             num_records = sum(block.num_records for block in block_reader(f))

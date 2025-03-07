@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: stg_ldap__user_person
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("ldap",
+        "src_ldap__user_person") | replace("`", "") }}')
+    columns:
+      - name: distinguished_name
+        data_type: string
+      - name: user_principal_name
+        data_type: string
+      - name: mail
+        data_type: string
+      - name: sam_account_name
+        data_type: string
+      - name: physical_delivery_office_name
+        data_type: string
+      - name: employee_number
+        data_type: int64
+      - name: uac_account_disable
+        data_type: int64
+      - name: google_email
+        data_type: string

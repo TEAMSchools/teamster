@@ -1,0 +1,78 @@
+version: 2
+models:
+  - name: stg_powerschool__assignmentsection
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__assignmentsection") | replace("`", "") }}')
+    columns:
+      - name: name
+        data_type: string
+      - name: duedate
+        data_type: date
+      - name: description
+        data_type: string
+      - name: scoretype
+        data_type: string
+      - name: publishoption
+        data_type: string
+      - name: publishonspecificdate
+        data_type: date
+      - name: publisheddate
+        data_type: date
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_date
+        data_type: date
+      - name: _dagster_partition_hour
+        data_type: int64
+      - name: _dagster_partition_minute
+        data_type: int64
+      - name: assignmentid
+        data_type: int64
+      - name: assignmentsectionid
+        data_type: int64
+      - name: extracreditpoints
+        data_type: numeric
+      - name: iscountedinfinalgrade
+        data_type: int64
+      - name: isscorespublish
+        data_type: int64
+      - name: isscoringneeded
+        data_type: int64
+      - name: maxretakeallowed
+        data_type: int64
+      - name: publishdaysbeforedue
+        data_type: int64
+      - name: publishedscoretypeid
+        data_type: int64
+      - name: relatedgradescaleitemdcid
+        data_type: int64
+      - name: sectionsdcid
+        data_type: int64
+      - name: weight
+        data_type: numeric
+      - name: whomodifiedid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: scoreentrypoints
+        data_type: float64
+      - name: totalpointvalue
+        data_type: float64

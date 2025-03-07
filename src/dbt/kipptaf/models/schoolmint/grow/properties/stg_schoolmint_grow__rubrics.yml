@@ -1,0 +1,356 @@
+version: 2
+models:
+  - name: stg_schoolmint_grow__rubrics
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
+        "src_schoolmint_grow__rubrics") | replace("`", "") }}')
+    columns:
+      - name: rubric_id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: district
+        data_type: string
+      - name: scale_min
+        data_type: int64
+      - name: scale_max
+        data_type: int64
+      - name: is_private
+        data_type: boolean
+      - name: is_published
+        data_type: boolean
+      - name: order
+        data_type: int64
+      - name: settings
+        data_type: record
+      - name: settings.actionstep
+        data_type: boolean
+      - name: settings.actionstepcreate
+        data_type: boolean
+      - name: settings.actionstepworkflow
+        data_type: boolean
+      - name: settings.allowcoteacher
+        data_type: boolean
+      - name: settings.allowtakeoverobservation
+        data_type: boolean
+      - name: settings.cloneable
+        data_type: boolean
+      - name: settings.coachactionstep
+        data_type: boolean
+      - name: settings.coachingevaltype
+        data_type: string
+      - name: settings.customhtml
+        data_type: string
+      - name: settings.customhtml1
+        data_type: string
+      - name: settings.customhtml2
+        data_type: string
+      - name: settings.customhtml3
+        data_type: string
+      - name: settings.customhtmltitle
+        data_type: string
+      - name: settings.customhtmltitle1
+        data_type: string
+      - name: settings.customhtmltitle2
+        data_type: string
+      - name: settings.customhtmltitle3
+        data_type: string
+      - name: settings.dashhidden
+        data_type: boolean
+      - name: settings.debrief
+        data_type: boolean
+      - name: settings.defaultcourse
+        data_type: string
+      - name: settings.defaultobsmodule
+        data_type: string
+      - name: settings.defaultobstag1
+        data_type: string
+      - name: settings.defaultobstag2
+        data_type: string
+      - name: settings.defaultobstag3
+        data_type: string
+      - name: settings.defaultobstag4
+        data_type: string
+      - name: settings.defaultobstype
+        data_type: string
+      - name: settings.defaultusertype
+        data_type: string
+      - name: settings.descriptionsineditor
+        data_type: boolean
+      - name: settings.disablemeetingstab
+        data_type: boolean
+      - name: settings.displaylabels
+        data_type: boolean
+      - name: settings.displaynumbers
+        data_type: boolean
+      - name: settings.dontrequiretextboxesonlikertrows
+        data_type: boolean
+      - name: settings.enableclicktofill
+        data_type: boolean
+      - name: settings.enablepointclick
+        data_type: boolean
+      - name: settings.filters
+        data_type: boolean
+      - name: settings.goalcreate
+        data_type: boolean
+      - name: settings.goals
+        data_type: boolean
+      - name: settings.hascompletionmarks
+        data_type: boolean
+      - name: settings.hasrowdescriptions
+        data_type: boolean
+      - name: settings.hideemptyrows
+        data_type: boolean
+      - name: settings.hideemptytextrows
+        data_type: boolean
+      - name: settings.hidefromcoaches
+        data_type: boolean
+      - name: settings.hidefromlists
+        data_type: boolean
+      - name: settings.hidefromregionalcoaches
+        data_type: boolean
+      - name: settings.hidefromschooladmins
+        data_type: boolean
+      - name: settings.hidefromschoolassistantadmins
+        data_type: boolean
+      - name: settings.hidefromteachers
+        data_type: boolean
+      - name: settings.hideoverallscore
+        data_type: boolean
+      - name: settings.isalwaysfocus
+        data_type: boolean
+      - name: settings.iscoachingstartform
+        data_type: boolean
+      - name: settings.iscompetencyrubric
+        data_type: boolean
+      - name: settings.isholisticdefault
+        data_type: boolean
+      - name: settings.ispeerrubric
+        data_type: boolean
+      - name: settings.isprivate
+        data_type: boolean
+      - name: settings.isscoreprivate
+        data_type: boolean
+      - name: settings.issitevisit
+        data_type: boolean
+      - name: settings.locked
+        data_type: boolean
+      - name: settings.meetingquickcreate
+        data_type: boolean
+      - name: settings.meetingtypesexcludedfromscheduling
+        data_type: boolean
+      - name: settings.nameandsignaturedisplay
+        data_type: boolean
+      - name: settings.notification
+        data_type: boolean
+      - name: settings.notificationnote
+        data_type: boolean
+      - name: settings.obsshowenddate
+        data_type: boolean
+      - name: settings.obstypefinalize
+        data_type: boolean
+      - name: settings.prepopulateactionstep
+        data_type: string
+      - name: settings.quickhits
+        data_type: string
+      - name: settings.requireactionstepbeforefinalize
+        data_type: boolean
+      - name: settings.requireall
+        data_type: boolean
+      - name: settings.requiregoal
+        data_type: boolean
+      - name: settings.requireobservationtype
+        data_type: boolean
+      - name: settings.requireonlyscores
+        data_type: boolean
+      - name: settings.rubrictag1
+        data_type: string
+      - name: settings.scoreonform
+        data_type: boolean
+      - name: settings.scoreoverride
+        data_type: boolean
+      - name: settings.scripting
+        data_type: boolean
+      - name: settings.sendemailonsignature
+        data_type: boolean
+      - name: settings.showalltextonopts
+        data_type: boolean
+      - name: settings.showavgbystrand
+        data_type: boolean
+      - name: settings.showobservationlabels
+        data_type: boolean
+      - name: settings.showobservationmodule
+        data_type: boolean
+      - name: settings.showobservationtag1
+        data_type: boolean
+      - name: settings.showobservationtag2
+        data_type: boolean
+      - name: settings.showobservationtag3
+        data_type: boolean
+      - name: settings.showobservationtag4
+        data_type: boolean
+      - name: settings.showobservationtype
+        data_type: boolean
+      - name: settings.showondatareports
+        data_type: boolean
+      - name: settings.showstrandscores
+        data_type: boolean
+      - name: settings.signature
+        data_type: boolean
+      - name: settings.signatureonbydefault
+        data_type: boolean
+      - name: settings.transferdescriptiontotextbox
+        data_type: boolean
+      - name: settings.useadditivescoring
+        data_type: boolean
+      - name: settings.usestrandweights
+        data_type: boolean
+      - name: settings.video
+        data_type: boolean
+      - name: settings.videoform
+        data_type: boolean
+      - name: settings.lockscoreafterdays
+        data_type: record
+      - name: settings.lockscoreafterdays.long_value
+        data_type: int64
+      - name: settings.lockscoreafterdays.string_value
+        data_type: string
+      - name: settings.hiddenfeatures
+        data_type: string
+      - name: settings.observationtypeshidden
+        data_type: string
+      - name: settings.privaterows
+        data_type: string
+      - name: settings.requiredrows
+        data_type: string
+      - name: settings.schoolsexcluded
+        data_type: string
+      - name: settings.featureinstructions
+        data_type: record
+      - name: settings.featureinstructions.hideondraft
+        data_type: boolean
+      - name: settings.featureinstructions.hideonfinalized
+        data_type: boolean
+      - name: settings.featureinstructions.includeonemails
+        data_type: boolean
+      - name: settings.featureinstructions.section
+        data_type: string
+      - name: settings.featureinstructions.text
+        data_type: string
+      - name: settings.featureinstructions.titleoverride
+        data_type: string
+      - name: settings.featureinstructions._id
+        data_type: string
+      - name: settings.resources
+        data_type: record
+      - name: settings.resources.label
+        data_type: string
+      - name: settings.resources.url
+        data_type: string
+      - name: settings.resources._id
+        data_type: string
+      - name: settings.rolesexcluded
+        data_type: record
+      - name: settings.rolesexcluded.string_value
+        data_type: string
+      - name: settings.rolesexcluded.rubric_rolesexcluded_value
+        data_type: record
+      - name: settings.rolesexcluded.rubric_rolesexcluded_value.archivedat
+        data_type: string
+      - name: settings.rolesexcluded.rubric_rolesexcluded_value.created
+        data_type: string
+      - name: settings.rolesexcluded.rubric_rolesexcluded_value.lastmodified
+        data_type: string
+      - name: settings.rolesexcluded.rubric_rolesexcluded_value.name
+        data_type: string
+      - name: settings.rolesexcluded.rubric_rolesexcluded_value._id
+        data_type: string
+      - name: settings.rolesexcluded.rubric_rolesexcluded_value.category
+        data_type: string
+      - name: settings.rolesexcluded.rubric_rolesexcluded_value.district
+        data_type: string
+      - name: settings.rolesexcluded.rubric_rolesexcluded_value.visibleroles
+        data_type: string
+      - name: settings.rolesexcluded.rubric_rolesexcluded_value.privileges
+        data_type: string
+      - name: layout
+        data_type: record
+      - name: layout.formleft
+        data_type: record
+      - name: layout.formleft.assignmentslug
+        data_type: string
+      - name: layout.formleft.hideondraft
+        data_type: boolean
+      - name: layout.formleft.hideonfinalized
+        data_type: boolean
+      - name: layout.formleft.includeinemail
+        data_type: boolean
+      - name: layout.formleft.mustbemainpanel
+        data_type: boolean
+      - name: layout.formleft.rubricmeasurement
+        data_type: string
+      - name: layout.formleft.showonfinalizedpopup
+        data_type: boolean
+      - name: layout.formleft.widgetdescription
+        data_type: string
+      - name: layout.formleft.widgetkey
+        data_type: string
+      - name: layout.formleft.widgettitle
+        data_type: string
+      - name: layout.formwide
+        data_type: record
+      - name: layout.formwide.assignmentslug
+        data_type: string
+      - name: layout.formwide.hideondraft
+        data_type: boolean
+      - name: layout.formwide.hideonfinalized
+        data_type: boolean
+      - name: layout.formwide.includeinemail
+        data_type: boolean
+      - name: layout.formwide.mustbemainpanel
+        data_type: boolean
+      - name: layout.formwide.rubricmeasurement
+        data_type: string
+      - name: layout.formwide.showonfinalizedpopup
+        data_type: boolean
+      - name: layout.formwide.widgetdescription
+        data_type: string
+      - name: layout.formwide.widgetkey
+        data_type: string
+      - name: layout.formwide.widgettitle
+        data_type: string
+      - name: measurement_groups
+        data_type: record
+      - name: measurement_groups.name
+        data_type: string
+      - name: measurement_groups._id
+        data_type: string
+      - name: measurement_groups.key
+        data_type: string
+      - name: measurement_groups.description
+        data_type: string
+      - name: measurement_groups.weight
+        data_type: int64
+      - name: measurement_groups.measurements
+        data_type: record
+      - name: measurement_groups.measurements._id
+        data_type: string
+      - name: measurement_groups.measurements.key
+        data_type: string
+      - name: measurement_groups.measurements.isprivate
+        data_type: boolean
+      - name: measurement_groups.measurements.require
+        data_type: boolean
+      - name: measurement_groups.measurements.weight
+        data_type: float64
+      - name: measurement_groups.measurements.measurement
+        data_type: string
+      - name: measurement_groups.measurements.exclude
+        data_type: boolean
+      - name: archived_at
+        data_type: timestamp
+      - name: created
+        data_type: timestamp
+      - name: last_modified
+        data_type: timestamp

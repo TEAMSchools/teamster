@@ -2,6 +2,8 @@ version: 2
 
 sources:
   - name: instagram_business
+    config:
+      enabled: false
     tables:
       - name: media_history
       - name: media_insights

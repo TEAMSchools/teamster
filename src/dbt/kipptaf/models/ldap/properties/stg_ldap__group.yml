@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: stg_ldap__group
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("ldap",
+        "src_ldap__group") | replace("`", "") }}')
+    columns:
+      - name: cn
+        data_type: string
+      - name: distinguished_name
+        data_type: string
+      - name: member
+        data_type: string

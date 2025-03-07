@@ -17,16 +17,16 @@ powerschool_sis_asset_gradebook_schedule = build_powerschool_sis_asset_schedule(
         *powerschool_table_assets_gradebook_monthly,
     ],
     cron_schedule="0 2 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=LOCAL_TIMEZONE,
 )
 
 powerschool_sis_asset_no_partition_job_schedule = ScheduleDefinition(
     job=define_asset_job(
-        name=f"{CODE_LOCATION}_powerschool_sis_assets_no_partition_job",
+        name=f"{CODE_LOCATION}__powerschool__sis__assets_no_partition_job",
         selection=powerschool_table_assets_no_partition,
     ),
     cron_schedule="0 0 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
     tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 10)},
 )
 

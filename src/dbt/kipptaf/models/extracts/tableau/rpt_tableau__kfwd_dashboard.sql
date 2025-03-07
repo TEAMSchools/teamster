@@ -7,247 +7,6 @@ with
         select {{ var("current_academic_year") - 1 }} as academic_year
     ),
 
-    app_rollup as (
-        select
-            applicant,
-            max(is_eof) as is_eof_applicant,
-            max(is_matriculated) as is_matriculated,
-            max(is_submitted_aa) as is_submitted_aa,
-            max(is_submitted_ba) as is_submitted_ba,
-            max(is_submitted_certificate) as is_submitted_certificate,
-            max(is_accepted_aa) as is_accepted_aa,
-            max(is_accepted_ba) as is_accepted_ba,
-            max(is_accepted_certificate) as is_accepted_certificate,
-            max(is_early_action_decision) as is_early_action_decision,
-
-            sum(if(is_submitted, 1, 0)) as n_submitted,
-            sum(if(is_accepted, 1, 0)) as n_accepted,
-
-            sum(if(application_submission_status = 'Wishlist', 1, 0)) as n_wishlist,
-
-            max(
-                case
-                    when is_early_action_decision and is_submitted and is_accepted
-                    then true
-                    when is_early_action_decision and is_submitted and not is_accepted
-                    then false
-                end
-            ) as is_accepted_early,
-            max(
-                case
-                    when
-                        is_early_action_decision
-                        and is_submitted
-                        and is_accepted
-                        and adjusted_6_year_minority_graduation_rate >= 60
-                    then true
-                    when
-                        is_early_action_decision
-                        and is_submitted
-                        and not is_accepted
-                        and adjusted_6_year_minority_graduation_rate >= 60
-                    then false
-                end
-            ) as is_accepted_early_ecc_60_plus,
-            max(
-                case
-                    when
-                        is_early_action_decision
-                        and is_submitted
-                        and is_accepted
-                        and adjusted_6_year_minority_graduation_rate >= 90
-                    then true
-                    when
-                        is_early_action_decision
-                        and is_submitted
-                        and not is_accepted
-                        and adjusted_6_year_minority_graduation_rate >= 90
-                    then false
-                end
-            ) as is_accepted_early_ecc_90_plus,
-            round(
-                avg(
-                    if(
-                        application_submission_status = 'Wishlist',
-                        adjusted_6_year_minority_graduation_rate,
-                        null
-                    )
-                ),
-                0
-            ) as ecc_wishlist_avg,
-            round(
-                min(
-                    if(
-                        application_submission_status = 'Wishlist',
-                        adjusted_6_year_minority_graduation_rate,
-                        null
-                    )
-                ),
-                0
-            ) as ecc_wishlist_min,
-            round(
-                avg(
-                    if(
-                        application_submission_status = 'Submitted',
-                        adjusted_6_year_minority_graduation_rate,
-                        null
-                    )
-                ),
-                0
-            ) as ecc_submitted_avg,
-            round(
-                min(
-                    if(
-                        application_submission_status = 'Submitted',
-                        adjusted_6_year_minority_graduation_rate,
-                        null
-                    )
-                ),
-                0
-            ) as ecc_submitted_min,
-            round(
-                avg(
-                    if(
-                        application_status = 'Accepted',
-                        adjusted_6_year_minority_graduation_rate,
-                        null
-                    )
-                ),
-                0
-            ) as ecc_accepted_avg,
-            round(
-                min(
-                    if(
-                        application_status = 'Accepted',
-                        adjusted_6_year_minority_graduation_rate,
-                        null
-                    )
-                ),
-                0
-            ) as ecc_accepted_min,
-            round(
-                avg(
-                    if(
-                        matriculation_decision = 'Matriculated (Intent to Enroll)'
-                        and not transfer_application,
-                        adjusted_6_year_minority_graduation_rate,
-                        null
-                    )
-                ),
-                0
-            ) as ecc_matriculated_avg,
-            round(
-                min(
-                    if(
-                        matriculation_decision = 'Matriculated (Intent to Enroll)'
-                        and not transfer_application,
-                        adjusted_6_year_minority_graduation_rate,
-                        null
-                    )
-                ),
-                0
-            ) as ecc_matriculated_min,
-            sum(
-                if(
-                    account_type in ('Public 4 yr', 'Private 4 yr')
-                    and application_submission_status = 'Wishlist',
-                    1,
-                    0
-                )
-            ) as n_4_year_wishlist,
-            count(
-                if(
-                    adjusted_6_year_minority_graduation_rate >= 55
-                    and application_submission_status = 'Wishlist',
-                    id,
-                    null
-                )
-            ) as n_55plus_ecc_wishlist,
-            count(
-                if(
-                    adjusted_6_year_minority_graduation_rate >= 60
-                    and application_submission_status = 'Wishlist',
-                    id,
-                    null
-                )
-            ) as n_60plus_ecc_wishlist,
-            count(
-                if(
-                    adjusted_6_year_minority_graduation_rate >= 68
-                    and application_submission_status = 'Wishlist',
-                    id,
-                    null
-                )
-            ) as n_68plus_ecc_wishlist,
-            count(
-                if(
-                    account_billing_state = 'NJ'
-                    and application_submission_status = 'Wishlist',
-                    id,
-                    null
-                )
-            ) as n_nj_wishlist,
-            count(
-                if(
-                    meets_full_need and application_submission_status = 'Wishlist',
-                    id,
-                    null
-                )
-            ) as n_meets_full_need_wishlist,
-            count(
-                if(
-                    is_strong_oos_option and application_submission_status = 'Wishlist',
-                    id,
-                    null
-                )
-            ) as n_strong_oos_wishlist,
-            count(
-                if(
-                    account_type in (
-                        'Non-profit',
-                        'NonProfit',
-                        'Private',
-                        'Private 2 yr',
-                        'Public 2 yr'
-                    )
-                    and application_submission_status = 'Wishlist',
-                    id,
-                    null
-                )
-            ) as n_aa_cte_wishlist,
-            count(
-                if(
-                    adjusted_6_year_minority_graduation_rate >= 68
-                    and application_submission_status = 'Wishlist'
-                    and is_early_action_decision,
-                    id,
-                    null
-                )
-            ) as n_68plus_ecc_ea_ed_wishlist,
-            count(
-                if(
-                    meets_full_need
-                    and application_submission_status = 'Wishlist'
-                    and is_early_action_decision,
-                    id,
-                    null
-                )
-            ) as n_meets_full_need_ea_ed_wishlist,
-            count(
-                if(
-                    meets_full_need
-                    and application_submission_status = 'Wishlist'
-                    and is_early_action_decision
-                    and adjusted_6_year_minority_graduation_rate >= 85,
-                    id,
-                    null
-                )
-            ) as n_meets_full_need_ea_ed_85ecc_wishlist,
-            sum(if(application_status is not null, 1, 0)) as n_app_outcomes,
-        from {{ ref("base_kippadb__application") }}
-        group by applicant
-    ),
-
     gpa_by_semester as (
         select
             student,
@@ -436,6 +195,13 @@ with
             ) as n_award_letters_received,
         from {{ ref("stg_overgrad__admissions") }}
         group by all
+    ),
+
+    school_visit as (
+        select contact, academic_year, count(*) as school_visit_count
+        from {{ ref("stg_kippadb__contact_note") }}
+        where type = 'School Visit' and status = 'Successful'
+        group by all
     )
 
 select
@@ -516,6 +282,29 @@ select
     ei.ugrad_act_composite_25_75,
     ei.ugrad_competitiveness_ranking,
     ei.ugrad_status,
+
+    gc.is_4yr_ba_grad_int,
+    gc.is_5yr_ba_grad_int,
+    gc.is_6yr_ba_grad_int,
+    gc.is_7yr_ba_grad_int,
+    gc.is_2yr_aa_grad_int,
+    gc.is_3yr_aa_grad_int,
+    gc.is_4yr_aa_grad_int,
+    gc.is_5yr_aa_grad_int,
+    gc.is_6yr_aa_grad_int,
+    gc.is_1yr_cte_grad_int,
+    gc.is_2yr_cte_grad_int,
+    gc.is_3yr_cte_grad_int,
+    gc.is_4yr_cte_grad_int,
+    gc.is_5yr_cte_grad_int,
+    gc.is_6yr_cte_grad_int,
+    gc.is_grad_ever,
+    gc.is_6yr_ugrad_cte_grad_int,
+    gc.is_24yo_ugrad_cte_grad_int,
+    gc.is_4yr_ugrad_grad_int,
+    gc.is_5yr_ugrad_grad_int,
+    gc.is_6yr_ugrad_grad_int,
+    gc.is_6yr_grad_any_int,
 
     apps.name as application_name,
     apps.account_type as application_account_type,
@@ -671,6 +460,13 @@ select
     ta.n_act_attempts,
     ta.n_sat_attempts,
 
+    sv.school_visit_count,
+
+    c.contact_opt_out_national_contact,
+    c.contact_opt_out_regional_contact,
+
+    coalesce(ar.max_ecc_accepted, 0) as max_ecc_accepted,
+
     case
         when c.contact_college_match_display_gpa >= 3.50
         then '3.50+'
@@ -683,161 +479,6 @@ select
         when c.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
-
-    if(
-        ei.ba_status = 'Graduated'
-        and ei.ba_actual_end_date <= date((c.ktc_cohort + 4), 08, 31),
-        1,
-        0
-    ) as is_4yr_ba_grad_int,
-
-    if(
-        ei.ba_status = 'Graduated'
-        and ei.ba_actual_end_date <= date((c.ktc_cohort + 5), 08, 31),
-        1,
-        0
-    ) as is_5yr_ba_grad_int,
-
-    if(
-        ei.ba_status = 'Graduated'
-        and ei.ba_actual_end_date <= date((c.ktc_cohort + 6), 08, 31),
-        1,
-        0
-    ) as is_6yr_ba_grad_int,
-
-    if(
-        ei.aa_status = 'Graduated'
-        and ei.aa_actual_end_date <= date((c.ktc_cohort + 2), 08, 31),
-        1,
-        0
-    ) as is_2yr_aa_grad_int,
-
-    if(
-        ei.aa_status = 'Graduated'
-        and ei.aa_actual_end_date <= date((c.ktc_cohort + 3), 08, 31),
-        1,
-        0
-    ) as is_3yr_aa_grad_int,
-
-    if(
-        ei.aa_status = 'Graduated'
-        and ei.aa_actual_end_date <= date((c.ktc_cohort + 4), 08, 31),
-        1,
-        0
-    ) as is_4yr_aa_grad_int,
-
-    if(
-        ei.aa_status = 'Graduated'
-        and ei.aa_actual_end_date <= date((c.ktc_cohort + 5), 08, 31),
-        1,
-        0
-    ) as is_5yr_aa_grad_int,
-
-    if(
-        ei.aa_status = 'Graduated'
-        and ei.aa_actual_end_date <= date((c.ktc_cohort + 6), 08, 31),
-        1,
-        0
-    ) as is_6yr_aa_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 1), 08, 31),
-        1,
-        0
-    ) as is_1yr_cte_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 2), 08, 31),
-        1,
-        0
-    ) as is_2yr_cte_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 3), 08, 31),
-        1,
-        0
-    ) as is_3yr_cte_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 4), 08, 31),
-        1,
-        0
-    ) as is_4yr_cte_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 5), 08, 31),
-        1,
-        0
-    ) as is_5yr_cte_grad_int,
-
-    if(
-        ei.cte_status = 'Graduated'
-        and ei.cte_actual_end_date <= date((c.ktc_cohort + 6), 08, 31),
-        1,
-        0
-    ) as is_6yr_cte_grad_int,
-
-    if(
-        ei.ugrad_status = 'Graduated'
-        and ei.ugrad_actual_end_date <= current_date('{{ var("local_timezone") }}'),
-        1,
-        0
-    ) as is_grad_ever,
-
-    case
-        when
-            ei.ugrad_status = 'Graduated'
-            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
-        then 1
-        when
-            ei.cte_status = 'Graduated'
-            and ei.cte_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
-        then 1
-        else 0
-    end as is_6yr_ugrad_cte_grad_int,
-
-    case
-        when
-            ei.ugrad_status = 'Graduated'
-            and ei.ugrad_actual_end_date
-            <= date_add(c.contact_birthdate, interval 25 year)
-        then 1
-        when
-            ei.cte_status = 'Graduated'
-            and ei.cte_actual_end_date
-            <= date_add(c.contact_birthdate, interval 25 year)
-        then 1
-        else 0
-    end as is_24yo_ugrad_cte_grad_int,
-
-    case
-        when
-            ei.ugrad_status = 'Graduated'
-            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 4), 08, 31)
-        then 1
-        else 0
-    end as is_4yr_ugrad_grad_int,
-
-    case
-        when
-            ei.ugrad_status = 'Graduated'
-            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 5), 08, 31)
-        then 1
-        else 0
-    end as is_5yr_ugrad_grad_int,
-
-    case
-        when
-            ei.ugrad_status = 'Graduated'
-            and ei.ugrad_actual_end_date <= date((c.ktc_cohort + 6), 08, 31)
-        then 1
-        else 0
-    end as is_6yr_ugrad_grad_int,
 
     lag(gpa_spr.semester_credits_earned, 1) over (
         partition by c.contact_id order by ay.academic_year asc
@@ -945,6 +586,21 @@ select
         else 0
     end as is_wishlist_quality_bar_int,
 
+    case
+        when
+            round(c.contact_college_match_display_gpa, 2) >= 3.50
+            and ar.n_meets_full_need_85plus_ecc_ea_ed_submitted >= 1
+            and ar.n_68_plus_ecc_submitted >= 2
+        then 1
+        when
+            ocf.is_ed_ea = 'Yes'
+            and ar.n_68_plus_ecc_submitted >= 2
+            and ar.n_meets_full_need_68plus_ecc_ea_ed_submitted >= 1
+        then 1
+        -- when cf.best_guess_pathway = '4-year' and
+        else 0
+    end as is_submitted_quality_bar_int,
+
     if(
         ei.ecc_pursuing_degree_type in ("Bachelor's (4-year)", "Associate's (2 year)"),
         true,
@@ -963,7 +619,8 @@ left join
     and apps.matriculation_decision = 'Matriculated (Intent to Enroll)'
     and not apps.transfer_application
     and apps.rn_app_enr = 1
-left join app_rollup as ar on c.contact_id = ar.applicant
+left join {{ ref("int_kippadb__app_rollup") }} as ar on c.contact_id = ar.applicant
+left join {{ ref("int_kippadb__grad_calcs") }} as gc on c.contact_id = gc.student
 left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cnr
     on c.contact_id = cnr.contact_id
@@ -1008,6 +665,10 @@ left join
     and ocf._dbt_source_model = 'stg_overgrad__students'
 left join award_letter_rollup as al on os.id = al.og_student_id
 left join test_attempts as ta on c.contact_id = ta.contact
+left join
+    school_visit as sv
+    on sv.contact = c.contact_id
+    and sv.academic_year = ay.academic_year
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null

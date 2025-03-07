@@ -1,3 +1,17 @@
+with
+    sw_referral as (
+        select
+            contact,
+            academic_year,
+            date,
+
+            row_number() over (
+                partition by contact, academic_year order by date desc
+            ) as rn_referral,
+        from {{ ref("stg_kippadb__contact_note") }}
+        where subject in ('SW REM Referral', 'SW Teammate Referral', 'SW Self Referral')
+    )
+
 select
     ktc.contact_id as sf_contact_id,
     ktc.first_name,
@@ -22,5 +36,15 @@ select
     cn.status,
     cn.type,
     cn.academic_year,
+
+    sw.date as referral_date,
+    case
+        when cn.status = 'Successful' and cn.type = 'School Visit' then 1 else 0
+    end as school_visit,
 from {{ ref("int_kippadb__roster") }} as ktc
 inner join {{ ref("stg_kippadb__contact_note") }} as cn on ktc.contact_id = cn.contact
+left join
+    sw_referral as sw
+    on cn.contact = sw.contact
+    and cn.academic_year = sw.academic_year
+    and sw.rn_referral = 1

@@ -2,14 +2,18 @@ version: 2
 
 sources:
   - name: schoolmint_grow
-    schema: kipptaf_schoolmint_grow
-    tags:
-      - stage_external_sources
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_
+      {%- endif -%}{{ project_name }}_schoolmint_grow
     tables:
       - name: src_schoolmint_grow__rubrics
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/rubrics/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/rubrics/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/rubrics/"
             format: AVRO
@@ -17,15 +21,19 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - rubrics
       - name: src_schoolmint_grow__schools
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/schools/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/schools/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/schools/"
             format: AVRO
@@ -33,37 +41,47 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - schools
       - name: src_schoolmint_grow__users
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/users/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/users/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/users/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/users/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - users
       - name: src_schoolmint_grow__videos
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/videos/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/videos/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/videos/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/videos/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -71,48 +89,65 @@ sources:
       - name: src_schoolmint_grow__generic_tags_assignmentpresets
         external:
           location:
-            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_assignmentpresets/*"
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_assignmentpresets/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_assignmentpresets/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_assignmentpresets/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - generic_tags_assignmentpresets
       - name: src_schoolmint_grow__generic_tags_courses
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_courses/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_courses/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_courses/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_courses/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - generic_tags_courses
       - name: src_schoolmint_grow__generic_tags_grades
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_grades/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_grades/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_grades/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_grades/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -120,16 +155,21 @@ sources:
       - name: src_schoolmint_grow__generic_tags_measurementgroups
         external:
           location:
-            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_measurementgroups/*"
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_measurementgroups/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_measurementgroups/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_measurementgroups/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -137,32 +177,43 @@ sources:
       - name: src_schoolmint_grow__generic_tags_observationtypes
         external:
           location:
-            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_observationtypes/*"
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_observationtypes/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_observationtypes/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_observationtypes/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - generic_tags_observationtypes
       - name: src_schoolmint_grow__generic_tags_tags
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_tags/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_tags/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_tags/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_tags/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
@@ -170,24 +221,33 @@ sources:
       - name: src_schoolmint_grow__generic_tags_meetingtypes
         external:
           location:
-            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_meetingtypes/*"
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_meetingtypes/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_meetingtypes/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_meetingtypes/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - generic_tags_meetingtypes
       - name: src_schoolmint_grow__informals
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/informals/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/informals/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/informals/"
             format: AVRO
@@ -195,15 +255,19 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - informals
       - name: src_schoolmint_grow__measurements
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/measurements/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/measurements/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/measurements/"
             format: AVRO
@@ -211,15 +275,19 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - measurements
       - name: src_schoolmint_grow__meetings
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/meetings/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/meetings/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/meetings/"
             format: AVRO
@@ -227,30 +295,39 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - meetings
       - name: src_schoolmint_grow__roles
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/roles/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/roles/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/roles/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/roles/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - roles
       - name: src_schoolmint_grow__observations
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/observations/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/observations/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/observations/"
             format: AVRO
@@ -258,15 +335,19 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - observations
       - name: src_schoolmint_grow__assignments
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/assignments/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/assignments/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/assignments/"
             format: AVRO
@@ -274,103 +355,139 @@ sources:
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - assignments
       - name: src_schoolmint_grow__generic_tags_eventtag1
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_eventtag1/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_eventtag1/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_eventtag1/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_eventtag1/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - generic_tags_eventtag1
       - name: src_schoolmint_grow__generic_tags_goaltypes
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_goaltypes/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_goaltypes/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_goaltypes/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_goaltypes/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - generic_tags_goaltypes
       - name: src_schoolmint_grow__generic_tags_rubrictag1
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_rubrictag1/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_rubrictag1/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_rubrictag1/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_rubrictag1/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - generic_tags_rubrictag1
       - name: src_schoolmint_grow__generic_tags_schooltag1
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_schooltag1/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_schooltag1/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_schooltag1/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_schooltag1/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - generic_tags_schooltag1
       - name: src_schoolmint_grow__generic_tags_usertag1
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertag1/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_usertag1/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertag1/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_usertag1/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow
               - generic_tags_usertag1
       - name: src_schoolmint_grow__generic_tags_usertypes
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertypes/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/schoolmint/grow/generic_tags_usertypes/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/generic_tags_usertypes/"
+              "{{ var('cloud_storage_uri_base')
+              }}/schoolmint/grow/generic_tags_usertypes/"
             format: AVRO
             enable_logical_types: true
         meta:
           dagster:
             group: schoolmint
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - schoolmint
               - grow

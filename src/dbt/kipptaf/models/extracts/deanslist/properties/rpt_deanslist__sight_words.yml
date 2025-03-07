@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: rpt_deanslist__sight_words
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: date_administered
+        data_type: datetime
+      - name: word
+        data_type: string
+      - name: term_name
+        data_type: string
+      - name: mastery_status
+        data_type: string
+      - name: is_mastery
+        data_type: int64

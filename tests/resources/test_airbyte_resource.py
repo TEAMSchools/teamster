@@ -1,17 +1,19 @@
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
-import pendulum
 from dagster import AssetKey, EnvVar, _check, build_resources
-from dagster_airbyte import AirbyteCloudResource
+from dagster_airbyte import AirbyteCloudWorkspace
 
 
 def test_resource():
     with build_resources(
         resources={
-            "airbyte": AirbyteCloudResource(client_id=EnvVar(), client_secret=EnvVar())
+            "airbyte": AirbyteCloudWorkspace(
+                workspace_id=EnvVar(), client_id=EnvVar(), client_secret=EnvVar()
+            )
         }
     ) as resources:
-        airbyte: AirbyteCloudResource = resources.airbyte
+        airbyte: AirbyteCloudWorkspace = resources.airbyte
 
     connections_response = _check.not_none(
         airbyte.make_request(endpoint="/connections", method="GET")
@@ -23,12 +25,12 @@ def test_resource():
     for connection in connections:
         connection_id = connection["connectionId"]
 
-        last_updated = pendulum.today().subtract(days=1)
+        last_updated = datetime.now(timezone.utc) - timedelta(days=1)
 
         params = urlencode(
             query={
                 "connectionId": connection_id,
-                "updatedAtStart": last_updated.format("YYYY-MM-DDTHH:mm:ss[Z]"),
+                "updatedAtStart": last_updated.isoformat(),
                 "status": "succeeded",
             }
         )

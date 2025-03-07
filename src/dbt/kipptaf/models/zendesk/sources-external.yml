@@ -2,23 +2,29 @@ version: 2
 
 sources:
   - name: zendesk
-    schema: kipptaf_zendesk
-    tags:
-      - stage_external_sources
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_zendesk
     tables:
       - name: src_zendesk__ticket_metrics_archive
         config:
           enabled: false
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/zendesk/ticket_metrics_archive/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/zendesk/ticket_metrics_archive/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/zendesk/ticket_metrics_archive/"
+              "{{ var('cloud_storage_uri_base')
+              }}/zendesk/ticket_metrics_archive/"
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - zendesk
               - ticket_metrics_archive

@@ -26,6 +26,11 @@ locations:
                     items:
                       - key: deanslist_api_key_map.yaml
                         path: deanslist_api_key_map_yaml
+                - secret:
+                    name: op-ps-ssh-kippnewark
+                    items:
+                      - key: password
+                        path: powerschool_ssh_password.txt
         server_k8s_config:
           container_config:
             env:
@@ -63,11 +68,6 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-db-kippnewark
-                    key: password
-              - name: PS_SSH_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippnewark
                     key: password
               - name: PS_SSH_PORT
                 valueFrom:

@@ -4,7 +4,9 @@ packages:
   - local: ../powerschool
   - local: ../renlearn
   - package: dbt-labs/dbt_external_tables
-    version: 0.9.0
+    version: 0.11.1
+  - package: dbt-labs/codegen
+    version: 0.13.1
   - package: dbt-labs/dbt_utils
     version: 1.3.0
-sha1_hash: 4e897ba267484d3b780dab85292a264c56669935
+sha1_hash: 0d8c55805158322f989c7b4ea61d1d6aaa5db0d1

@@ -1,0 +1,46 @@
+version: 2
+models:
+  - name: stg_powerschool__cc
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__cc") | replace("`", "") }}')
+    columns:
+      - name: dcid
+        data_type: int64
+      - name: id
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: sectionid
+        data_type: int64
+      - name: section_number
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: studyear
+        data_type: int64
+      - name: termid
+        data_type: int64
+      - name: dateenrolled
+        data_type: date
+      - name: dateleft
+        data_type: date
+      - name: course_number
+        data_type: string
+      - name: teacherid
+        data_type: int64
+      - name: currentabsences
+        data_type: int64
+      - name: currenttardies
+        data_type: int64
+      - name: abs_termid
+        data_type: int64
+      - name: abs_sectionid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: fiscal_year
+        data_type: int64

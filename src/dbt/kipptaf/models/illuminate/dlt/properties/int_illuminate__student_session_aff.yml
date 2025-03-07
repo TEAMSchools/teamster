@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: int_illuminate__student_session_aff
+    columns:
+      - name: stu_sess_id
+        data_type: int64
+      - name: student_id
+        data_type: int64
+      - name: session_id
+        data_type: int64
+      - name: grade_level_id
+        data_type: int64
+      - name: attendance_program_id
+        data_type: int64
+      - name: tuition_payer_code_id
+        data_type: int64
+      - name: entry_date
+        data_type: date
+      - name: leave_date
+        data_type: date
+      - name: entry_code_id
+        data_type: int64
+      - name: exit_code_id
+        data_type: int64
+      - name: track_number
+        data_type: int64
+      - name: fte_override
+        data_type: numeric
+      - name: is_primary_ada
+        data_type: boolean
+      - name: created_at
+        data_type: timestamp
+      - name: academic_year
+        data_type: int64
+      - name: site_id
+        data_type: int64
+      - name: rn_student_session_desc
+        data_type: int64

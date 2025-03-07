@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: stg_google_directory__role_assignments
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("google_directory",
+        "src_google_directory__role_assignments") | replace("`", "") }}')
+    columns:
+      - name: role_assignment_id
+        data_type: string
+      - name: role_id
+        data_type: string
+      - name: kind
+        data_type: string
+      - name: etag
+        data_type: string
+      - name: assigned_to
+        data_type: string
+      - name: assignee_type
+        data_type: string
+      - name: scope_type
+        data_type: string
+      - name: org_unit_id
+        data_type: string

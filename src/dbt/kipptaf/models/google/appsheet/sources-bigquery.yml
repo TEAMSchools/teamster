@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: google_appsheet
-    schema: kipptaf_appsheet
+    schema: "{{ project_name }}_appsheet"
     tables:
       - name: illuminate_assessments_extension
         meta:
@@ -70,3 +70,11 @@ sources:
               - google
               - appsheet
               - src_stipend_bonus_app__output
+      - name: src_seat_tracker__people
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - src_seat_tracker__people

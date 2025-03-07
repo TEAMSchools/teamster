@@ -1,5 +1,10 @@
 name: kipptaf
 
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
 on:
   workflow_dispatch: null
   push:
@@ -9,7 +14,7 @@ on:
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kipptaf.yaml
       - Dockerfile
-      - requirements.txt
+      - uv.lock
       - src/dbt/kipptaf/**
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**
@@ -17,10 +22,11 @@ on:
       - src/teamster/libraries/airbyte/**
       - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/coupa/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/schema.py
-      - src/teamster/libraries/fivetran/**
+      - src/teamster/libraries/dlt/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**
       - src/teamster/libraries/overgrad/**
@@ -36,16 +42,18 @@ on:
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kipptaf.yaml
       - Dockerfile
+      - uv.lock
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**
       - src/teamster/libraries/adp/**
       - src/teamster/libraries/airbyte/**
       - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/coupa/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/schema.py
-      - src/teamster/libraries/fivetran/**
+      - src/teamster/libraries/dlt/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**
       - src/teamster/libraries/overgrad/**

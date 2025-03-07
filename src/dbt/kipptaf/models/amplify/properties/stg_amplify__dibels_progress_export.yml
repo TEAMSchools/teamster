@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: stg_amplify__dibels_progress_export
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("amplify",
+        "src_amplify__dibels_progress_export") | replace("`", "") }}')
+    columns:
+      - name: student_id
+        data_type: int64
+      - name: measure
+        data_type: string
+      - name: score
+        data_type: float64
+      - name: academic_year
+        data_type: int64
+      - name: assessment_dates
+        data_type: date

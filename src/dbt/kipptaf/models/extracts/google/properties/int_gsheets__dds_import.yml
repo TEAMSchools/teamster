@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: int_gsheets__dds_import
+    columns:
+      - name: students_student_number
+        data_type: int64
+      - name: teacher_lastfirst
+        data_type: string
+      - name: school_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: teacher_first
+        data_type: string
+      - name: teacher_last
+        data_type: string
+      - name: student_first
+        data_type: string
+      - name: student_last
+        data_type: string
+      - name: teacher_mail
+        data_type: string
+      - name: class_name
+        data_type: string

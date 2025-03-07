@@ -5,7 +5,7 @@ with
             e.student,
             e.start_date,
 
-            0 as is_employment,
+            false as is_employment,
 
             coalesce(
                 e.actual_end_date, '{{ var("current_fiscal_year") }}-06-30'
@@ -66,7 +66,7 @@ with
                 `start_date`, enlist_date, bmt_start_date, meps_start_date
             ) as `start_date`,
 
-            1 as is_employment,
+            true as is_employment,
 
             coalesce(
                 coalesce(end_date, discharge_date, bmt_end_date, meps_end_date),
@@ -88,6 +88,7 @@ with
             is_ecc_degree_type,
             is_ecc_dated,
             is_employment,
+
             row_number() over (
                 partition by student, pursuing_degree_level
                 order by start_date asc, actual_end_date asc
@@ -110,6 +111,7 @@ with
     enrollment_grouped as (
         select
             student,
+
             max(
                 if(
                     pursuing_degree_level = 'BA' and rn_degree_desc = 1,
@@ -160,7 +162,7 @@ with
                 )
             ) as ecc_enrollment_id,
             max(
-                if(rn_current = 1 and is_employment = 0, enrollment_id, null)
+                if(rn_current = 1 and not is_employment, enrollment_id, null)
             ) as cur_enrollment_id,
         from enrollment_ordered
         group by student
