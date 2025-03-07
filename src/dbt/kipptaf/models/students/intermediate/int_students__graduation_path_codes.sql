@@ -481,11 +481,9 @@ select
         when pathway_code = 'P'
         then 'Incomplete Credits'
         when pathway_code = 'S'
-        then score_type
-        when pathway_code in ('E', 'D')
-        then pathway_option
-        when pathway_code in ('J', 'K')
         then subject_area
+        when pathway_code in ('E', 'D', 'J', 'K')
+        then concat(pathway_option, ' ', subject_area)
         else 'No Data'
     end as test_type,
 
