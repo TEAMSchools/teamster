@@ -31,8 +31,8 @@ def test_regex_pattern_replace():
         r"pc(?P<administration>[a-z]+)(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+GPA\w+\.csv",
         r"pcspr(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+\.csv",
         r"personalized_instruction_by_lesson_(?P<subject>\w+)\.csv",
-        r"StudentListReport_(?P<administration_fiscal_year>[A-za-z]+\d+)_\d+_\d+-\d+-\d+\.csv",
-        r"StudentListReport_(?P<administration_fiscal_year>[A-za-z]+\d+)(_\d+_|\s-\s)\d+-\d+-\d+(T\w+\.\d+\+\d+)?\.csv",
+        r"StudentListReport_(?P<administration_fiscal_year>[A-Za-z]+\d+)_\d+_\d+-\d+-\d+\.csv",
+        r"StudentListReport_(?P<administration_fiscal_year>[A-Za-z]+\d+)(_\d+_|\s-\s)\d+-\d+-\d+(T\w+\.\d+\+\d+)?\.csv",
     ]
     for test_pattern in test_patterns:
         result_pattern = regex_pattern_replace(

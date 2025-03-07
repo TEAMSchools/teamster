@@ -37,7 +37,7 @@ student_list_report = build_sftp_file_asset(
         rf"{remote_dir_regex_prefix}/student_list_report/(?P<test_type>[a-z]+)"
     ),
     remote_file_regex=(
-        r"StudentListReport_(?P<administration_fiscal_year>[A-za-z]+\d+)"
+        r"StudentListReport_(?P<administration_fiscal_year>[A-Za-z]+\d+)"
         r"(_\d+_|\s-\s)\d+-\d+-\d+(T\w+\.\d+\+\d+)?\.csv"
     ),
     avro_schema=STUDENT_LIST_REPORT_SCHEMA,
