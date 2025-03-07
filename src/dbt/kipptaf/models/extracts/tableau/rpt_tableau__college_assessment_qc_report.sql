@@ -47,5 +47,5 @@ with
         where e.rn_undergrad = 1 and e.region != 'Miami'
     )
 
-select *
+select *,
 from roster
