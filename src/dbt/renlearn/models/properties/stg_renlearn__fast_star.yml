@@ -1,10 +1,10 @@
 version: 2
 models:
   - name: stg_renlearn__fast_star
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("renlearn",
-        "src_renlearn__fast_star") | replace("`", "") }}')
+    # config:
+    #   pre_hook:
+    #     CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("renlearn",
+    #     "src_renlearn__fast_star") | replace("`", "") }}')
     columns:
       - name: _dagster_partition_fiscal_year
         data_type: int64
