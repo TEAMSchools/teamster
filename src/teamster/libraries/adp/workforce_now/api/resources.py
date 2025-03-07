@@ -44,6 +44,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
         if not self.masked:
             self._session.headers["Accept"] = "application/json;masked=false"
 
+    # TODO: refine retrying rules for rate limit
     @retry(stop=stop_after_attempt(3), wait=wait_exponential_jitter())
     def _request(self, method, url, **kwargs) -> Response:
         response = self._session.request(method=method, url=url, **kwargs)
