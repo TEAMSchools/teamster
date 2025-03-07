@@ -1,6 +1,5 @@
 from itertools import groupby
 from operator import itemgetter
-from typing import Generator
 
 from dagster import (
     AssetsDefinition,
@@ -9,6 +8,7 @@ from dagster import (
     RunRequest,
     ScheduleEvaluationContext,
     StaticPartitionsDefinition,
+    _check,
     schedule,
 )
 
@@ -16,23 +16,19 @@ from teamster.core.utils.classes import FiscalYear
 
 
 def build_deanslist_job_schedule(
+    schedule_name: str,
     cron_schedule: str,
     execution_timezone: str,
     asset_selection: list[AssetsDefinition],
-    current_fiscal_year: FiscalYear,
-    code_location: str | None = None,
-    schedule_name: str | None = None,
+    current_fiscal_year: FiscalYear | None = None,
 ):
-    if schedule_name is None:
-        schedule_name = f"{code_location}__deanslist__partitioned_asset_job_schedule"
-
     @schedule(
         name=schedule_name,
         cron_schedule=cron_schedule,
         execution_timezone=execution_timezone,
         target=asset_selection,
     )
-    def _schedule(context: ScheduleEvaluationContext) -> Generator:
+    def _schedule(context: ScheduleEvaluationContext):
         run_request_kwargs = []
 
         for asset in asset_selection:
@@ -50,6 +46,10 @@ def build_deanslist_job_schedule(
                         }
                     )
             elif isinstance(asset.partitions_def, MultiPartitionsDefinition):
+                fy_start_fmt = _check.not_none(
+                    value=current_fiscal_year
+                ).start.isoformat()
+
                 partitions_def_identifier = (
                     asset.partitions_def.get_serializable_unique_identifier()
                 )
@@ -62,7 +62,7 @@ def build_deanslist_job_schedule(
 
                 for school in school_partition_keys:
                     for date in date_partition_keys:
-                        if date >= current_fiscal_year.start.isoformat():
+                        if date >= fy_start_fmt:
                             run_request_kwargs.append(
                                 {
                                     "key": asset.key,
