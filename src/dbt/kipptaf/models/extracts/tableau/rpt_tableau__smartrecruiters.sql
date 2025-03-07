@@ -31,21 +31,21 @@ with
 
     applications_unnested as (
         select
-            application_id,
-            candidate_id,
-            job_city,
-            recruiters,
-            department_internal,
-            job_title,
-            application_status,
-            reason_for_rejection,
-            phone_interview_score,
-            status_type,
-            date_val,
-            resume_score,
-            trim(subject_preference) as subject_preference,
-        from applications_unpivot
-        cross join unnest(split(subject_preference, ',')) as subject_preference
+            au.application_id,
+            au.candidate_id,
+            au.job_city,
+            au.recruiters,
+            au.department_internal,
+            au.job_title,
+            au.application_status,
+            au.reason_for_rejection,
+            au.phone_interview_score,
+            au.status_type,
+            au.date_val,
+            au.resume_score,
+            trim(au.subject_preference) as subject_preference,
+        from applications_unpivot as au
+        cross join unnest(split(au.subject_preference, ',')) as subject_preference
     )
 
 select
