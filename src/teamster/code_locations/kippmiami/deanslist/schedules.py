@@ -1,51 +1,32 @@
 from dagster import AssetKey
 
-from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kippmiami.deanslist.assets import (
-    DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
-    DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF,
-    DEANSLIST_STATIC_PARTITIONS_DEF,
-    fiscal_multi_partitions_assets,
-    monthly_multi_partitions_assets,
-    static_partitions_assets,
+from teamster.code_locations.kippmiami import (
+    CODE_LOCATION,
+    CURRENT_FISCAL_YEAR,
+    LOCAL_TIMEZONE,
 )
+from teamster.code_locations.kippmiami.deanslist.assets import assets
 from teamster.libraries.deanslist.schedules import build_deanslist_job_schedule
 
-deanslist_static_partitions_assets_job_schedule = build_deanslist_job_schedule(
-    job_name=f"{CODE_LOCATION}__deanslist__static_partitions_assets_job",
-    selection=static_partitions_assets,
-    partitions_def=DEANSLIST_STATIC_PARTITIONS_DEF,
+deanslist_partitioned_assets_job_schedule = build_deanslist_job_schedule(
+    code_location=CODE_LOCATION,
     cron_schedule="0 0 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
-)
-
-deanslist_monthly_multi_partitions_assets_job_schedule = build_deanslist_job_schedule(
-    job_name=f"{CODE_LOCATION}__deanslist__monthly_multi_partitions_assets_job",
-    selection=monthly_multi_partitions_assets,
-    partitions_def=DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF,
-    cron_schedule="0 0 * * *",
-    execution_timezone=str(LOCAL_TIMEZONE),
-)
-
-deanslist_fiscal_multi_partitions_assets_job_schedule = build_deanslist_job_schedule(
-    job_name=f"{CODE_LOCATION}__deanslist__fiscal_multi_partitions_assets_job",
-    selection=fiscal_multi_partitions_assets,
-    partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
-    cron_schedule="0 0 * * *",
-    execution_timezone=str(LOCAL_TIMEZONE),
+    asset_selection=assets,
+    current_fiscal_year=CURRENT_FISCAL_YEAR,
 )
 
 deanslist_midday_commlog_job_schedule = build_deanslist_job_schedule(
-    job_name=f"{CODE_LOCATION}__deanslist__midday_commlog_job",
-    selection=[AssetKey([CODE_LOCATION, "deanslist", "comm_log"])],
-    partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
+    schedule_name=f"{CODE_LOCATION}__deanslist__midday_commlog_job",
     cron_schedule="0 14 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
+    asset_selection=[
+        a for a in assets if a.key == AssetKey([CODE_LOCATION, "deanslist", "comm_log"])
+    ],
+    current_fiscal_year=CURRENT_FISCAL_YEAR,
 )
 
 schedules = [
-    deanslist_fiscal_multi_partitions_assets_job_schedule,
+    deanslist_partitioned_assets_job_schedule,
     deanslist_midday_commlog_job_schedule,
-    deanslist_monthly_multi_partitions_assets_job_schedule,
-    deanslist_static_partitions_assets_job_schedule,
 ]
