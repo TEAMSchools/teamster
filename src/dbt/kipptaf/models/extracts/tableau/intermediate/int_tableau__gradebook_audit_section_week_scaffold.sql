@@ -48,17 +48,7 @@ with
                 'SEM72250G373252',
                 'SEM72250G4133570965',
                 'SEM72250G473252',
-                'WRI01137G330200803,',
                 'HR30200803,',
-                'WRI01136G230200803,',
-                'SEM72152G430200803,',
-                'SEM72152G130200803,',
-                'SOC04435G130200803,',
-                'SEM72152G330200803,',
-                'SEM72152G230200803,',
-                'WRI01135G130200803,',
-                'SOC04435H130200803,',
-                'WRI01138G430200803'
             )
     ),
 
@@ -143,7 +133,7 @@ select
     if(
         current_date(
             '{{ var("local_timezone") }}'
-        ) between (tw.quarter_end_date_insession - interval 7 day) and (
+        ) between (tw.quarter_end_date_insession - interval 21 day) and (
             tw.quarter_end_date_insession + interval 14 day
         ),
         true,
