@@ -133,7 +133,7 @@ select
     if(
         current_date(
             '{{ var("local_timezone") }}'
-        ) between (tw.quarter_end_date_insession - interval 45 day) and (
+        ) between (tw.quarter_end_date_insession - interval 7 day) and (
             tw.quarter_end_date_insession + interval 14 day
         ),
         true,
