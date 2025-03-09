@@ -46,6 +46,8 @@ with
                 audit_flag_value for audit_flag_name in (
                     qt_teacher_s_total_greater_200,
                     qt_teacher_s_total_less_200,
+                    qt_teacher_s_total_greater_100,
+                    qt_teacher_s_total_less_100,
                     w_expected_assign_count_not_met,
                     f_expected_assign_count_not_met,
                     s_expected_assign_count_not_met,
