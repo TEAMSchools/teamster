@@ -47,7 +47,8 @@ with
                 'SEM72250G3133570965',
                 'SEM72250G373252',
                 'SEM72250G4133570965',
-                'SEM72250G473252'
+                'SEM72250G473252',
+                'HR30200803,'
             )
     ),
 
@@ -132,7 +133,7 @@ select
     if(
         current_date(
             '{{ var("local_timezone") }}'
-        ) between (tw.quarter_end_date_insession - interval 7 day) and (
+        ) between (tw.quarter_end_date_insession - interval 45 day) and (
             tw.quarter_end_date_insession + interval 14 day
         ),
         true,
