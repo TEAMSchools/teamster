@@ -3,12 +3,13 @@ select
 
     /* unpivot cols */
     rn_exam_number,
-    admin_year,
     exam_code,
     irregularity_code_1,
     irregularity_code_2,
 
     cast(exam_grade as int) as exam_grade,
+
+    extract(year from parse_date('%y', admin_year)) as admin_year,
 
     -- trunk-ignore-begin(sqlfluff/CV10)
     case
