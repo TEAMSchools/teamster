@@ -1,0 +1,33 @@
+connection_id: e4856fb7-1f97-4bcd-bc4e-e616c5ae4e52
+group_name: kippadb
+kinds:
+  - salesforce
+dataset_id: kipptaf_kippadb
+destination_tables:
+  - Account
+  - Application__c
+  - Application__History
+  - Application_History__c
+  - Application_Status_History__c
+  - Attachment
+  - College_Persistence__c
+  - Contact
+  - Contact_Note__c
+  - ContentDocument
+  - Counseling_Case__c
+  - Employment__c
+  - Enrollment__c
+  - Enrollment__History
+  - Event
+  - GPA__c
+  - Internships_Programs__c
+  - KIPP_Aid__c
+  - Marking_Period__c
+  - RecordType
+  - Relationship__c
+  - Standardized_Test__c
+  - Subsequent_Financial_Aid_Award__c
+  - Task
+  - Term__c
+  - Term__History
+  - User

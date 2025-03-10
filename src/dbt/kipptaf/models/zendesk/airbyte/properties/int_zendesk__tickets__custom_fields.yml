@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: base_zendesk__tickets__custom_fields
+  - name: int_zendesk__tickets__custom_fields
     columns:
       - name: ticket_id
         data_type: int64

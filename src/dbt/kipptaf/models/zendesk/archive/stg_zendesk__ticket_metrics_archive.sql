@@ -1,5 +1,3 @@
-{{- config(enabled=false) -}}
-
 select
     ticket_id,
     assignee_updated_at,

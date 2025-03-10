@@ -1,4 +1,4 @@
-from dagster import AssetExecutionContext, AssetKey
+from dagster import AssetExecutionContext
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import pipeline
 from dlt.common.runtime.collector import LogCollector
@@ -19,9 +19,7 @@ class ZendeskDagsterDltTranslator(DagsterDltTranslator):
         asset_spec = super().get_asset_spec(data)
 
         asset_spec = asset_spec.replace_attributes(
-            key=AssetKey(
-                [self.code_location, "dlt", "zendesk", "support", data.resource.name]
-            ),
+            key=[self.code_location, "dlt", "zendesk", "support", data.resource.name],
             deps=[],
         )
 
