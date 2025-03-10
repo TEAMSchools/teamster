@@ -156,7 +156,6 @@ select
     v.ada,
     v.ada_above_or_at_80,
     v.date_enrolled,
-    v.category_quarter_percent_grade,
     v.category_quarter_average_all_courses,
     v.quarter_course_percent_grade_that_matters,
     v.quarter_course_grade_points_that_matters,
@@ -168,6 +167,8 @@ select
     v.is_exempt,
     v.is_late,
     v.is_missing,
+
+    e.category_quarter_percent_grade as effort_grade,
 
     coalesce(v.flag_value, 0) as flag_value,
 from teacher_aggs as t
@@ -183,6 +184,16 @@ inner join
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
+left join
+    {{ ref("int_tableau__gradebook_audit_flags") }} as e
+    on v.academic_year = e.academic_year
+    and v.region = e.region
+    and v.schoolid = e.schoolid
+    and v.quarter = e.quarter
+    and v.audit_qt_week_number = e.week_number_quarter
+    and v.sectionid = e.sectionid
+    and v.student_number = e.student_number
+    and e.audit_category = 'Effort Grade'
 where
     t.code_type = 'Quarter'
     and t.audit_category = 'Comments'
