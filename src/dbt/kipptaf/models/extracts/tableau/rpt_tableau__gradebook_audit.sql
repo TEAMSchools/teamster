@@ -1,3 +1,5 @@
+{{ config(enabled=False) }}
+
 with
     grades_and_assignments as (
         select
