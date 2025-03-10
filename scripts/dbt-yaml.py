@@ -21,42 +21,43 @@ def main() -> None:
     args = parser.parse_args()
 
     project_dir = pathlib.Path(f"src/dbt/{args.project}")
+    env = {
+        **os.environ,
+        "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
+        "DBT_CLOUD_ENVIRONMENT_TYPE": "dev" if args.dev else "prod",
+    }
 
-    list_args = [
-        "dbt",
-        "list",
-        f"--project-dir={project_dir}",
-        "--resource-type=model",
-        "--output=name",
-    ]
+    if len(args.select) == 1:
+        model_names = args.select
+    else:
+        list_args = [
+            "dbt",
+            "list",
+            f"--project-dir={project_dir}",
+            "--resource-type=model",
+            "--output=name",
+        ]
 
-    if args.select:
-        list_args.extend(["--select", " ".join(*args.select)])
+        if args.select:
+            list_args.extend(["--select", " ".join(*args.select)])
 
-    print(" ".join(list_args))
+        print(" ".join(list_args))
 
-    # trunk-ignore(bandit/B603)
-    output = subprocess.check_output(
-        args=list_args,
-        env={
-            **os.environ,
-            "DBT_CLOUD_ENVIRONMENT_TYPE": "dev" if args.dev else "prod",
-            "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
-        },
-    )
+        # trunk-ignore(bandit/B603)
+        output = subprocess.check_output(args=list_args, env=env)
 
-    model_names = [
-        o.decode()
-        for o in output.split(b"\n")
-        if re.match(pattern=r"(\w+)", string=o.decode())
-    ]
+        model_names = [
+            o.decode()
+            for o in output.split(b"\n")
+            if re.match(pattern=r"(\w+)", string=o.decode())
+        ]
 
     for model_name in model_names:
         file_path = project_dir / f"models/properties/{model_name}.yml"
 
         # skip if file has already been created
-        if file_path.exists():
-            continue
+        # if file_path.exists():
+        #     continue
 
         run_args = [
             "dbt",
@@ -69,7 +70,7 @@ def main() -> None:
 
         print(" ".join(run_args))
         # trunk-ignore(bandit/B603)
-        yaml = subprocess.check_output(args=run_args).decode()
+        yaml = subprocess.check_output(args=run_args, env=env).decode()
 
         yaml = "\n".join(
             [
