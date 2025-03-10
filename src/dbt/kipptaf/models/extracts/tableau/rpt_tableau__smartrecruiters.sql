@@ -43,9 +43,9 @@ with
             au.status_type,
             au.date_val,
             au.resume_score,
-            trim(au.subject_preference) as subject_preference,
+            trim(subject_preference) as subject_preference,
         from applications_unpivot as au
-        cross join unnest(split(au.subject_preference, ',')) as subject_preference
+        cross join unnest(split(subject_preference, ',')) as subject_preference
     )
 
 select
