@@ -63,6 +63,7 @@ with
 
             max(audit_flag_value) as audit_flag_value,
         from {{ ref("int_tableau__gradebook_audit_flags") }}
+        where audit_category = 'Comments'
         group by all
     ),
 
