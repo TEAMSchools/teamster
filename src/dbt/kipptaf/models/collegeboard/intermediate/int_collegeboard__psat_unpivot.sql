@@ -3,43 +3,69 @@ with
         select
             cb_id,
             powerschool_student_number,
+            secondary_id,
+            name_first,
+            name_last,
+            name_mi,
+            gender,
+            birth_date,
             academic_year,
             latest_psat_date,
             administration_round,
             score,
             test_type,
 
-            concat(
-                test_name, '_', regexp_extract(score_type, r'^[^_]+_(.+)')
+            regexp_replace(
+                concat(test_name, '_', regexp_extract(score_type, r'^[^_]+_(.+)')),
+                '_psat_',
+                '_'
             ) as score_type,
 
             case
-                score_type
-                when 'latest_psat_total'
-                then 'Composite'
-                when 'latest_psat_math_section'
-                then 'Math'
-                when 'latest_psat_ebrw'
+                -- 3 to 4 digit score
+                when score_type = 'latest_psat_total'
+                then 'Combined'
+                -- 3-digit score
+                when score_type = 'latest_psat_ebrw'
                 then 'EBRW'
+                -- 2-digit score
+                when score_type = 'latest_psat_reading'
+                then 'Reading'
+                -- 3-digit score
+                when score_type = 'latest_psat_math_section'
+                then 'Math'
+                -- 2-digit score
+                when score_type = 'latest_psat_math_test'
+                then 'Math Test'
             end as test_subject,
 
             case
-                score_type
-                when 'latest_psat_ebrw'
+                when score_type in ('latest_psat_ebrw', 'latest_psat_reading')
                 then 'ENG'
-                when 'latest_psat_math_section'
+                when score_type in ('latest_psat_math_section', 'latest_psat_math_test')
                 then 'MATH'
             end as course_discipline,
         from
             {{ ref("int_collegeboard__psat") }} unpivot (
-                score for score_type
-                in (latest_psat_total, latest_psat_math_section, latest_psat_ebrw)
+                score for score_type in (
+                    latest_psat_total,
+                    latest_psat_math_section,
+                    latest_psat_ebrw,
+                    latest_psat_reading,
+                    latest_psat_math_test
+                )
             )
     )
 
 select
     cb_id,
     powerschool_student_number,
+    secondary_id,
+    name_first,
+    name_last,
+    name_mi,
+    gender,
+    birth_date,
     academic_year,
     administration_round,
     latest_psat_date,

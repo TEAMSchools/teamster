@@ -110,6 +110,8 @@ select
         score_type
         when 'sat_total_score'
         then 'Combined'
+        when 'psat_total_score'
+        then 'Combined'
         when 'sat_reading_test_score'
         then 'Reading Test'
         when 'sat_math_test_score'
