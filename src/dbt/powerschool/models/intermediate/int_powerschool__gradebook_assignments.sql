@@ -11,6 +11,8 @@ with
             asec.extracreditpoints,
             asec.weight,
             asec.iscountedinfinalgrade,
+            asec.whocreated,
+            asec.whencreated,
 
             coalesce(tc.districtteachercategoryid, tc.teachercategoryid) as category_id,
 
