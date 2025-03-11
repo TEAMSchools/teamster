@@ -141,10 +141,18 @@ select
     ) as is_quarter_end_date_range,
 
     if(
+        extract(week from tw.week_start_date)
+        < extract(week from current_date('{{ var("local_timezone") }}')),
+        true,
+        false
+    ) as is_on_before_last_week,
+
+    if(
         tw.school_level = 'HS',
         sec.sections_external_expression,
         sec.sections_section_number
     ) as section_or_period,
+
 from term_weeks as tw
 inner join
     sections as sec
