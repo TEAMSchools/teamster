@@ -3,12 +3,6 @@ with
         select
             cb_id,
             powerschool_student_number,
-            secondary_id,
-            name_first,
-            name_last,
-            name_mi,
-            gender,
-            birth_date,
             academic_year,
             latest_psat_date,
             administration_round,
@@ -22,19 +16,19 @@ with
             ) as score_type,
 
             case
-                -- 3 to 4 digit score
+                /* 3 to 4 digit score */
                 when score_type = 'latest_psat_total'
                 then 'Combined'
-                -- 3-digit score
+                /* 3-digit score */
                 when score_type = 'latest_psat_ebrw'
                 then 'EBRW'
-                -- 2-digit score
+                /* 2-digit score */
                 when score_type = 'latest_psat_reading'
                 then 'Reading'
-                -- 3-digit score
+                /* 3-digit score */
                 when score_type = 'latest_psat_math_section'
                 then 'Math'
-                -- 2-digit score
+                /* 2-digit score */
                 when score_type = 'latest_psat_math_test'
                 then 'Math Test'
             end as test_subject,
@@ -60,12 +54,6 @@ with
 select
     cb_id,
     powerschool_student_number,
-    secondary_id,
-    name_first,
-    name_last,
-    name_mi,
-    gender,
-    birth_date,
     academic_year,
     administration_round,
     latest_psat_date,
