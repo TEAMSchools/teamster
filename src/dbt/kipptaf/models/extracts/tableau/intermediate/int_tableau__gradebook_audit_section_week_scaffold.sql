@@ -86,6 +86,7 @@ with
             max(cw.week_end_date) over (
                 partition by t._dbt_source_relation, t.schoolid, t.yearid, tb.storecode
             ) as quarter_end_date_insession,
+
         from {{ ref("stg_powerschool__terms") }} as t
         inner join
             {{ ref("stg_powerschool__termbins") }} as tb
@@ -139,13 +140,6 @@ select
         true,
         false
     ) as is_quarter_end_date_range,
-
-    if(
-        extract(week from tw.week_start_date)
-        < extract(week from current_date('{{ var("local_timezone") }}')),
-        true,
-        false
-    ) as is_on_before_last_week,
 
     if(
         tw.school_level = 'HS',
