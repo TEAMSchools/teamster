@@ -29,8 +29,6 @@ illuminate_dlt_daily_asset_job = define_asset_job(
         f"{asset_key_prefix}/dna_repositories/fields",
         f"{asset_key_prefix}/dna_repositories/repositories",
         f"{asset_key_prefix}/dna_repositories/repository_grade_levels",
-        f"{asset_key_prefix}/national_assessments/psat_2023",
-        f"{asset_key_prefix}/national_assessments/psat_2024",
         f"{asset_key_prefix}/public/sessions",
         f"{asset_key_prefix}/public/student_session_aff",
         f"{asset_key_prefix}/public/students",
