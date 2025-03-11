@@ -10,15 +10,11 @@ select
 
     r.name as testcode,
 
-    n.student_number,
-    n.state_studentnumber,
-
     case r.name when 'ELAGP' then 'ELA' when 'MATGP' then 'Math' end as discipline,
 
     case
         r.name when 'ELAGP' then 'English Language Arts' when 'MATGP' then 'Mathematics'
     end as `subject`,
-
 from {{ ref("stg_powerschool__test") }} as b
 inner join
     {{ ref("stg_powerschool__studenttest") }} as s
@@ -34,8 +30,4 @@ inner join
     on s.testid = r.testid
     and t.testscoreid = r.id
     and {{ union_dataset_join_clause(left_alias="s", right_alias="r") }}
-inner join
-    {{ ref("stg_powerschool__students") }} as n
-    on s.studentid = n.id
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="n") }}
 where b.name = 'NJGPA'
