@@ -18,6 +18,7 @@ with
             week_start_monday as audit_start_date,
             week_end_sunday as audit_end_date,
             school_week_start_date_lead as audit_due_date,
+            is_current_week,
             assignment_category_name,
             assignment_category_code,
             assignment_category_term,
@@ -188,6 +189,7 @@ where
     t.code_type = 'Gradebook Category'
     and t.cte_grouping = 'assignment_student'
     and t.audit_start_date <= current_date('{{ var("local_timezone") }}')
+    and not t.is_current_week
 
 union all
 
@@ -252,6 +254,7 @@ left join
 where
     t.cte_grouping = 'student_course_category'
     and t.audit_start_date <= current_date('{{ var("local_timezone") }}')
+    and not t.is_current_week
 
 union all
 
@@ -316,6 +319,7 @@ where
     t.code_type = 'Quarter'
     and t.cte_grouping != 'student_course_category'
     and t.audit_start_date <= current_date('{{ var("local_timezone") }}')
+    and not t.is_current_week
 
 union all
 
@@ -382,6 +386,7 @@ where
     t.code_type = 'Gradebook Category'
     and t.cte_grouping = 'class_category_assignment'
     and t.audit_start_date <= current_date('{{ var("local_timezone") }}')
+    and not t.is_current_week
 
 union all
 
@@ -447,3 +452,4 @@ where
     t.code_type = 'Gradebook Category'
     and t.cte_grouping = 'class_category'
     and t.audit_start_date <= current_date('{{ var("local_timezone") }}')
+    and not t.is_current_week
