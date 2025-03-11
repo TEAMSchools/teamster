@@ -22,15 +22,15 @@ lint:
     - oxipng@9.1.4
     - prettier@3.5.3
     - pyright@1.1.396
-    - ruff@0.9.9
+    - ruff@0.9.10
     - shellcheck@0.10.0
     - shfmt@3.6.0
     - sqlfluff@3.3.1
     - sqlfmt@0.26.0
     - svgo@3.3.2
     - taplo@0.9.3
-    - trufflehog@3.88.15
-    - yamllint@1.35.1
+    - trufflehog@3.88.16
+    - yamllint@1.36.0
   disabled:
     - black
     - flake8

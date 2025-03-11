@@ -25,6 +25,21 @@ with
             ) as end_date,
         from {{ ref("stg_reporting__terms") }}
         where type = 'IR'
+    ),
+
+    iready_teacher as (
+        select
+            cc_academic_year,
+            students_student_number,
+            courses_course_name,
+            teacher_lastfirst,
+
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where
+            courses_course_name like 'i-Ready%'
+            and not is_dropped_section
+            and not is_dropped_course
+            and rn_course_number_year = 1
     )
 
 select
@@ -94,6 +109,8 @@ select
 
     cr.teacher_lastfirst as subject_teacher,
     cr.sections_section_number as subject_section,
+
+    it.teacher_lastfirst as iready_teacher,
 
     if(
         current_date('{{ var("local_timezone") }}')
@@ -168,6 +185,10 @@ left join
     and case when subj = 'Reading' then 'ENG' when subj = 'Math' then 'MATH' end
     = cr.courses_credittype
     and cr.rn_credittype_year = 1
+left join
+    iready_teacher as it
+    on co.academic_year = it.cc_academic_year
+    and co.student_number = it.students_student_number
 where
     co.academic_year >= {{ var("current_academic_year") - 1 }}
     and co.enroll_status = 0

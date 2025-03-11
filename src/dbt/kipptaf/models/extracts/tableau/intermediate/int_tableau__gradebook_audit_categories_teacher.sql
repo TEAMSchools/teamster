@@ -176,6 +176,7 @@ select
 
     if(
         assignment_category_code = 'S'
+        and region_school_level != 'MiamiES'
         and sum_totalpointvalue_section_quarter_category > 200,
         true,
         false
@@ -183,9 +184,26 @@ select
 
     if(
         assignment_category_code = 'S'
+        and region_school_level != 'MiamiES'
         and sum_totalpointvalue_section_quarter_category < 200,
         true,
         false
     ) as qt_teacher_s_total_less_200,
+
+    if(
+        assignment_category_code = 'S'
+        and region_school_level = 'MiamiES'
+        and sum_totalpointvalue_section_quarter_category > 100,
+        true,
+        false
+    ) as qt_teacher_s_total_greater_100,
+
+    if(
+        assignment_category_code = 'S'
+        and region_school_level = 'MiamiES'
+        and sum_totalpointvalue_section_quarter_category < 100,
+        true,
+        false
+    ) as qt_teacher_s_total_less_100,
 
 from final

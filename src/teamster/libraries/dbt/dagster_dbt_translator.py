@@ -38,7 +38,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         elif (
             dbt_resource_props["resource_type"] == "model"
             and dbt_resource_props["config"]["materialized"] == "view"
-            and "extracts" in dbt_resource_props["fqn"]
+            and dbt_resource_props["name"][:3] == "rpt"
         ):
             return (
                 AutomationCondition.code_version_changed()
