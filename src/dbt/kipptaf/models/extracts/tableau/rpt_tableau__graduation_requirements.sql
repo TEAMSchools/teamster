@@ -48,6 +48,7 @@ with
         cross join unnest(['Math', 'ELA']) as discipline
         where
             e.academic_year = {{ var("current_academic_year") }}
+            and e.region != 'Miami'
             and e.schoolid != 999999
             and e.cohort between ({{ var("current_academic_year") - 1 }}) and (
                 {{ var("current_academic_year") + 5 }}
