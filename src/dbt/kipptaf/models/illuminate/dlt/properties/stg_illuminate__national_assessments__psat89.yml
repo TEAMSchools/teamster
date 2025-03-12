@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: stg_illuminate__national_assessments__psat89
+    config:
+      enabled: false
     columns:
       - name: id
         data_type: int64
