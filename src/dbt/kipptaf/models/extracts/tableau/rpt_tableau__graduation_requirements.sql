@@ -104,6 +104,8 @@ select
     c.met_sat,
     c.met_psat10,
     c.met_psat_nmsqt,
+    c.met_ela,
+    c.met_math,
     c.final_grad_path_code,
     c.grad_eligibility,
 
