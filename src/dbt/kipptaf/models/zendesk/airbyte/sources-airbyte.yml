@@ -1,7 +1,9 @@
 version: 2
 
 sources:
-  - name: zendesk
+  - name: airbyte_zendesk
+    config:
+      enabled: false
     schema: "{{ project_name }}_zendesk"
     tables:
       - name: groups
