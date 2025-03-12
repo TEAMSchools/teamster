@@ -13,6 +13,10 @@ with
             asec.iscountedinfinalgrade,
             asec.whocreated,
             asec.whencreated,
+            asec.whomodified,
+            asec.whenmodified,
+            asec.transaction_date,
+            asec.publisheddate,
 
             coalesce(tc.districtteachercategoryid, tc.teachercategoryid) as category_id,
 
