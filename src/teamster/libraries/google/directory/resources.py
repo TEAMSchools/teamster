@@ -45,43 +45,30 @@ class GoogleDirectoryResource(ConfigurableResource):
             # https://stackoverflow.com/a/57092533
             # https://github.com/GoogleCloudPlatform/professional-services/tree/main/examples/gce-to-adminsdk
             request = requests.Request()
-
-            # Refresh the default credentials. This ensures that the information about
-            # this account, notably the email, is populated.
             source_credentials, project_id = default()
 
             source_credentials = _check.inst(
                 obj=source_credentials, ttype=service_account.Credentials
             )
 
+            # Refresh the default credentials. This ensures that the information about
+            # this account, notably the email, is populated.
             source_credentials.refresh(request)
 
-            # Create an IAM signer using the default credentials.
-            signer = iam.Signer(
-                request=request,
-                credentials=source_credentials,
-                service_account_email=source_credentials.service_account_email,
-            )
-
             # Create OAuth 2.0 Service Account credentials using the IAM-based signer
-            # and the bootstrap_credential's service account email.
+            # and the bootstrap credential's service account email.
             # trunk-ignore(bandit/B106)
             credentials = service_account.Credentials(
-                signer=signer,
+                signer=iam.Signer(
+                    request=request,
+                    credentials=source_credentials,
+                    service_account_email=source_credentials.service_account_email,
+                ),
                 service_account_email=source_credentials.service_account_email,
                 token_uri="https://accounts.google.com/o/oauth2/token",
                 scopes=self.scopes,
                 subject=self.delegated_account,
             )
-
-            # # https://cloud.google.com/iam/docs/create-short-lived-credentials-direct#user-credentials
-            # source_credentials, project_id = default()
-
-            # credentials = impersonated_credentials.Credentials(
-            #     source_credentials=source_credentials,
-            #     target_principal=self.delegated_account,
-            #     target_scopes=self.scopes,
-            # )
 
         self._resource = discovery.build(
             serviceName="admin",
