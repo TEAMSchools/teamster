@@ -284,5 +284,4 @@ left join
     psat_bucket1 as ps
     on co.student_number = ps.powerschool_student_number
     and sj.discipline = ps.discipline
-    and co.grade_level = 10
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
