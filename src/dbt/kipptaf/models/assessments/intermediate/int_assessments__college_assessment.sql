@@ -1,6 +1,7 @@
 select
     powerschool_student_number as student_number,
     administration_round,
+    academic_year,
     latest_psat_date as test_date,
     test_type as scope,
     test_subject as subject_area,
@@ -19,6 +20,7 @@ select
     null as student_number,
 
     administration_round,
+    academic_year,
     `date` as test_date,
     test_type as scope,
     subject_area,

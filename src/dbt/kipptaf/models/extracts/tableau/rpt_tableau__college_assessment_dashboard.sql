@@ -70,6 +70,7 @@ with
             if(
                 s.courses_course_number = 'MAT02056D3', true, false
             ) as is_math_double_blocked,
+
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
@@ -145,6 +146,7 @@ left join
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
+    and e.academic_year = o.academic_year
 left join
     course_subjects_roster as c
     on e.student_number = c.student_number
@@ -217,6 +219,7 @@ left join
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
+    and e.academic_year = o.academic_year
 left join
     course_subjects_roster as c
     on e.student_number = c.student_number
@@ -225,6 +228,8 @@ left join
 where
     e.expected_test_type = 'Official' and e.expected_scope in ('PSAT NMSQT', 'PSAT 8/9')
 
+-- this code is a placeholder for now, as we are not reporting practice scores for
+-- sy2425, but will do so again for sy2526
 union all
 
 select
