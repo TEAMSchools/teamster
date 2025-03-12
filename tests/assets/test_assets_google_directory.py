@@ -1,6 +1,6 @@
 import random
 
-from dagster import AssetsDefinition, TextMetadataValue, _check, materialize
+from dagster import AssetsDefinition, EnvVar, TextMetadataValue, _check, materialize
 from dagster._core.events import StepMaterializationData
 
 from teamster.code_locations.kipptaf._google.directory.assets import (
@@ -11,7 +11,7 @@ from teamster.code_locations.kipptaf._google.directory.assets import (
     roles,
     users,
 )
-from teamster.code_locations.kipptaf.resources import GOOGLE_DIRECTORY_RESOURCE
+from teamster.code_locations.kipptaf.resources import get_google_directory_resource
 from teamster.core.resources import get_io_manager_gcs_avro
 
 
@@ -30,7 +30,14 @@ def _test_asset(asset: AssetsDefinition):
             "io_manager_gcs_avro": get_io_manager_gcs_avro(
                 code_location="test", test=True
             ),
-            "google_directory": GOOGLE_DIRECTORY_RESOURCE,
+            "google_directory": get_google_directory_resource(
+                customer_id=EnvVar("GOOGLE_WORKSPACE_CUSTOMER_ID"),
+                delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
+                test=True,
+                service_account_file_path=(
+                    "/etc/secret-volume/gcloud_dagster_service_account.json"
+                ),
+            ),
         },
     )
 

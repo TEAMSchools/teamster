@@ -3,23 +3,23 @@ import time
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from dagster._utils.backoff import backoff
 from google import auth
-from google.oauth2.service_account import Credentials
+from google.oauth2 import service_account
 from googleapiclient import discovery, errors
 from pydantic import PrivateAttr
 
 
 class GoogleDirectoryResource(ConfigurableResource):
     customer_id: str
-    service_account_file_path: str | None = None
-    delegated_account: str | None = None
     version: str = "v1"
-    scopes: list = [
+    max_results: int = 500
+    scopes: list[str] = [
         "https://www.googleapis.com/auth/admin.directory.user",
         "https://www.googleapis.com/auth/admin.directory.group",
         "https://www.googleapis.com/auth/admin.directory.rolemanagement",
         "https://www.googleapis.com/auth/admin.directory.orgunit",
     ]
-    max_results: int = 500
+    service_account_file_path: str | None = None
+    delegated_account: str | None = None
 
     _resource: discovery.Resource = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
@@ -33,9 +33,9 @@ class GoogleDirectoryResource(ConfigurableResource):
                 filename=self.service_account_file_path, scopes=self.scopes
             )
 
-            credentials = _check.inst(credentials, Credentials)
-
-            credentials = credentials.with_subject(self.delegated_account)
+            credentials = _check.inst(
+                credentials, service_account.Credentials
+            ).with_subject(self.delegated_account)
         else:
             credentials, project_id = auth.default(scopes=self.scopes)
 

@@ -5,7 +5,7 @@ from dagster import SensorResult, build_sensor_context
 from teamster.code_locations.kipptaf._google.sheets.sensors import (
     google_sheets_asset_sensor,
 )
-from teamster.libraries.google.sheets.resources import GoogleSheetsResource
+from teamster.code_locations.kipptaf.resources import get_google_sheets_resource
 
 
 def test_google_sheets_asset_sensor():
@@ -33,8 +33,11 @@ def test_google_sheets_asset_sensor():
         context=build_sensor_context(
             cursor=json.dumps(obj=cursor), sensor_name=google_sheets_asset_sensor.name
         ),
-        gsheets=GoogleSheetsResource(
-            service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
+        gsheets=get_google_sheets_resource(
+            test=True,
+            service_account_file_path=(
+                "/etc/secret-volume/gcloud_dagster_service_account.json"
+            ),
         ),
     )
 
