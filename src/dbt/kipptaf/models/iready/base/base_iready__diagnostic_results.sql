@@ -30,6 +30,13 @@ with
             overall_placement,
 
             if(
+                percent_progress_to_annual_typical_growth_percent >= 100, true, false
+            ) as is_met_typical,
+            if(
+                percent_progress_to_annual_stretch_growth_percent >= 100, true, false
+            ) as is_met_stretch,
+
+            if(
                 student_grade = 'K', 0, safe_cast(student_grade as int)
             ) as student_grade_int,
 
@@ -99,6 +106,8 @@ select
     dr.mid_on_grade_level_scale_score,
     dr.percent_progress_to_annual_typical_growth_percent,
     dr.percent_progress_to_annual_stretch_growth_percent,
+    dr.is_met_typical,
+    dr.is_met_stretch,
     dr.diagnostic_gain,
     dr.annual_typical_growth_measure,
     dr.annual_stretch_growth_measure,
