@@ -4,7 +4,6 @@ from teamster.code_locations.kippmiami import CODE_LOCATION, CURRENT_FISCAL_YEAR
 from teamster.code_locations.kippmiami.fldoe.schema import (
     EOC_SCHEMA,
     FAST_SCHEMA,
-    FSA_SCHEMA,
     FTE_SCHEMA,
     SCIENCE_SCHEMA,
 )
@@ -121,23 +120,3 @@ assets = [
     fte,
     science,
 ]
-
-# archived
-fsa = build_sftp_file_asset(
-    asset_key=[CODE_LOCATION, "fldoe", "fsa"],
-    remote_dir_regex=r"/data-team/kippmiami/fldoe/fsa/student_scores",
-    remote_file_regex=(
-        r"FSA_(?P<school_year_term>\d+)SPR_\d+_SRS-E_"
-        r"(?P<grade_level_subject>\w+)_SCHL\.csv"
-    ),
-    ssh_resource_key="ssh_couchdrop",
-    avro_schema=FSA_SCHEMA,
-    partitions_def=MultiPartitionsDefinition(
-        {
-            "school_year_term": StaticPartitionsDefinition(["21", "22"]),
-            "grade_level_subject": StaticPartitionsDefinition(
-                ["ELA_GR03", "SCI", "MATH", "ELA_GR04_10"]
-            ),
-        }
-    ),
-)
