@@ -63,6 +63,11 @@ select
     score_type,
     score,
 
+    case
+        course_discipline when 'MATH' then 'Math' when 'ENG' then 'ELA'
+    end as discipline,
+
+    /* highest of the flavor of PSAT */
     row_number() over (
         partition by powerschool_student_number, test_type, score_type
         order by score desc
