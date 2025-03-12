@@ -2,20 +2,18 @@ import json
 
 from dagster import EnvVar, build_resources
 
-from teamster.code_locations.kipptaf.resources import get_google_directory_resource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 
 
-def _get_google_directory_resource() -> GoogleDirectoryResource:
+def get_google_directory_resource() -> GoogleDirectoryResource:
     with build_resources(
         resources={
-            "directory": get_google_directory_resource(
+            "directory": GoogleDirectoryResource(
                 customer_id=EnvVar("GOOGLE_WORKSPACE_CUSTOMER_ID"),
-                # delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
-                test=True,
-                service_account_file_path=(
-                    "/etc/secret-volume/gcloud_dagster_service_account.json"
-                ),
+                delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
+                # service_account_file_path=(
+                #     "/etc/secret-volume/gcloud_dagster_service_account.json"
+                # ),
             )
         }
     ) as resources:
@@ -23,7 +21,7 @@ def _get_google_directory_resource() -> GoogleDirectoryResource:
 
 
 def test_list_orgunits():
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     data = google_directory.list_orgunits(org_unit_type="all")
 
@@ -32,7 +30,7 @@ def test_list_orgunits():
 
 
 def test_get_orgunit():
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     data = google_directory.get_orgunit(org_unit_path="")
 
@@ -41,7 +39,7 @@ def test_get_orgunit():
 
 
 def test_list_roles():
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     data = google_directory.list_roles()
 
@@ -50,7 +48,7 @@ def test_list_roles():
 
 
 def test_list_role_assignments():
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     data = google_directory.list_role_assignments()
 
@@ -59,7 +57,7 @@ def test_list_role_assignments():
 
 
 def test_list_members():
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     data = google_directory.list_members(
         group_key="group-students-miami@teamstudents.org"
@@ -70,7 +68,7 @@ def test_list_members():
 
 
 def test_list_groups():
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     data = google_directory.list_groups()
 
@@ -81,7 +79,7 @@ def test_list_groups():
 def test_get_user():
     user_key = "113203151440162455385"
 
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     data = google_directory.get_user(user_key=user_key)
 
@@ -90,7 +88,7 @@ def test_get_user():
 
 
 def test_list_users():
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     data = google_directory.list_users(projection="full")
 
@@ -99,7 +97,7 @@ def test_list_users():
 
 
 def test_batch_insert_users():
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     google_directory.batch_insert_users(
         [
@@ -126,7 +124,7 @@ def test_batch_insert_users():
 
 
 def test_batch_update_users():
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     google_directory.batch_update_users(
         [
@@ -164,7 +162,7 @@ def test_batch_update_users():
 
 
 def test_batch_insert_members():
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     google_directory.batch_insert_members(
         [
@@ -183,7 +181,7 @@ def test_batch_insert_members():
 
 
 def test_batch_insert_role_assignments():
-    google_directory = _get_google_directory_resource()
+    google_directory = get_google_directory_resource()
 
     google_directory.batch_insert_role_assignments(
         [

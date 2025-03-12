@@ -2,7 +2,12 @@ import time
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from dagster._utils.backoff import backoff
-from google.auth import default, impersonated_credentials, load_credentials_from_file
+from google.auth import (  # impersonated_credentials,
+    default,
+    iam,
+    load_credentials_from_file,
+)
+from google.auth.transport import requests
 from google.oauth2 import service_account
 from googleapiclient import discovery, errors
 from pydantic import PrivateAttr
@@ -37,14 +42,45 @@ class GoogleDirectoryResource(ConfigurableResource):
                 credentials, service_account.Credentials
             ).with_subject(self.delegated_account)
         else:
-            # https://cloud.google.com/iam/docs/create-short-lived-credentials-direct#user-credentials
+            # https://stackoverflow.com/a/57092533
+            request = requests.Request()
+
+            # Refresh the default credentials. This ensures that the information about
+            # this account, notably the email, is populated.
             source_credentials, project_id = default()
 
-            credentials = impersonated_credentials.Credentials(
-                source_credentials=source_credentials,
-                target_principal=self.delegated_account,
-                target_scopes=self.scopes,
+            source_credentials = _check.inst(
+                obj=source_credentials, ttype=service_account.Credentials
             )
+
+            source_credentials.refresh(request)
+
+            # Create an IAM signer using the default credentials.
+            signer = iam.Signer(
+                request=request,
+                credentials=source_credentials,
+                service_account_email=source_credentials.service_account_email,
+            )
+
+            # Create OAuth 2.0 Service Account credentials using the IAM-based signer
+            # and the bootstrap_credential's service account email.
+            # trunk-ignore(bandit/B106)
+            credentials = service_account.Credentials(
+                signer=signer,
+                service_account_email=source_credentials.service_account_email,
+                token_uri="https://accounts.google.com/o/oauth2/token",
+                scopes=self.scopes,
+                subject=self.delegated_account,
+            )
+
+            # # https://cloud.google.com/iam/docs/create-short-lived-credentials-direct#user-credentials
+            # source_credentials, project_id = default()
+
+            # credentials = impersonated_credentials.Credentials(
+            #     source_credentials=source_credentials,
+            #     target_principal=self.delegated_account,
+            #     target_scopes=self.scopes,
+            # )
 
         self._resource = discovery.build(
             serviceName="admin",

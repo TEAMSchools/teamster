@@ -5,10 +5,8 @@ from dagster import DagsterInstance, SensorResult, build_sensor_context
 from teamster.code_locations.kipptaf._google.forms.sensors import (
     google_forms_responses_sensor,
 )
-from teamster.code_locations.kipptaf.resources import (
-    get_google_drive_resource,
-    get_google_forms_resource,
-)
+from teamster.libraries.google.drive.resources import GoogleDriveResource
+from teamster.libraries.google.forms.resources import GoogleFormsResource
 
 
 def test_google_forms_responses_sensor():
@@ -36,14 +34,12 @@ def test_google_forms_responses_sensor():
             sensor_name=google_forms_responses_sensor.name,
             cursor=json.dumps(obj=cursor),
         ),
-        google_forms=get_google_forms_resource(
-            test=True,
+        google_forms=GoogleFormsResource(
             service_account_file_path=(
                 "/etc/secret-volume/gcloud_dagster_service_account.json"
             ),
         ),
-        google_drive=get_google_drive_resource(
-            test=True,
+        google_drive=GoogleDriveResource(
             service_account_file_path=(
                 "/etc/secret-volume/gcloud_dagster_service_account.json"
             ),
