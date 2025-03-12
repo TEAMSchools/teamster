@@ -2,11 +2,7 @@ import time
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from dagster._utils.backoff import backoff
-from google.auth import (  # impersonated_credentials,
-    default,
-    iam,
-    load_credentials_from_file,
-)
+from google.auth import compute_engine, default, iam, load_credentials_from_file
 from google.auth.transport import requests
 from google.oauth2 import service_account
 from googleapiclient import discovery, errors
@@ -48,7 +44,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             source_credentials, project_id = default()
 
             source_credentials = _check.inst(
-                obj=source_credentials, ttype=service_account.Credentials
+                obj=source_credentials, ttype=compute_engine.Credentials
             )
 
             # Refresh the default credentials. This ensures that the information about
