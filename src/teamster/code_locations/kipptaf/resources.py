@@ -22,44 +22,6 @@ from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
 
-
-def get_google_drive_resource(
-    test: bool = False, service_account_file_path: str | None = None
-):
-    return GoogleDriveResource(
-        service_account_file_path=(service_account_file_path if test else None)
-    )
-
-
-def get_google_forms_resource(
-    test: bool = False, service_account_file_path: str | None = None
-):
-    return GoogleFormsResource(
-        service_account_file_path=(service_account_file_path if test else None)
-    )
-
-
-def get_google_sheets_resource(
-    test: bool = False, service_account_file_path: str | None = None
-):
-    return GoogleSheetsResource(
-        service_account_file_path=(service_account_file_path if test else None)
-    )
-
-
-def get_google_directory_resource(
-    customer_id,
-    test: bool = False,
-    delegated_account: str | None = None,
-    service_account_file_path: str | None = None,
-):
-    return GoogleDirectoryResource(
-        customer_id=customer_id,
-        delegated_account=delegated_account,
-        service_account_file_path=(service_account_file_path if test else None),
-    )
-
-
 ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
     subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
     app_key=EnvVar("ADP_WFM_APP_KEY"),
