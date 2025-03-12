@@ -2,7 +2,7 @@ import time
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from dagster._utils.backoff import backoff
-from google import auth
+from google.auth import default, impersonated_credentials, load_credentials_from_file
 from google.oauth2 import service_account
 from googleapiclient import discovery, errors
 from pydantic import PrivateAttr
@@ -29,7 +29,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         self._log = _check.not_none(value=context.log)
 
         if self.service_account_file_path is not None:
-            credentials, project_id = auth.load_credentials_from_file(
+            credentials, project_id = load_credentials_from_file(
                 filename=self.service_account_file_path, scopes=self.scopes
             )
 
@@ -37,7 +37,11 @@ class GoogleDirectoryResource(ConfigurableResource):
                 credentials, service_account.Credentials
             ).with_subject(self.delegated_account)
         else:
-            credentials, project_id = auth.default(scopes=self.scopes)
+            credentials = impersonated_credentials.Credentials(
+                source_credentials=default(),
+                target_principal=self.delegated_account,
+                target_scopes=self.scopes,
+            )
 
         self._resource = discovery.build(
             serviceName="admin",
