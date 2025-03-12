@@ -37,8 +37,11 @@ class GoogleDirectoryResource(ConfigurableResource):
                 credentials, service_account.Credentials
             ).with_subject(self.delegated_account)
         else:
+            # https://cloud.google.com/iam/docs/create-short-lived-credentials-direct#user-credentials
+            source_credentials, project_id = default()
+
             credentials = impersonated_credentials.Credentials(
-                source_credentials=default(),
+                source_credentials=source_credentials,
                 target_principal=self.delegated_account,
                 target_scopes=self.scopes,
             )
