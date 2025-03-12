@@ -38,10 +38,10 @@ op inject -f --in-file=.devcontainer/tpl/deanslist_api_key_map_yaml.tpl \
   sudo mv -f env/deanslist_api_key_map_yaml \
     /etc/secret-volume/deanslist_api_key_map_yaml
 
-op inject -f --in-file=.devcontainer/tpl/gcloud_service_account_json.tpl \
-  --out-file=env/gcloud_service_account_json &&
-  sudo mv -f env/gcloud_service_account_json \
-    /etc/secret-volume/gcloud_service_account_json
+op inject -f --in-file=.devcontainer/tpl/gcloud_dagster_service_account.json.tpl \
+  --out-file=env/gcloud_dagster_service_account.json &&
+  sudo mv -f env/gcloud_dagster_service_account.json \
+    /etc/secret-volume/gcloud_dagster_service_account.json
 
 op inject -f --in-file=.devcontainer/tpl/id_rsa_egencia.tpl \
   --out-file=env/id_rsa_egencia &&
@@ -61,7 +61,7 @@ op inject -f --in-file=.devcontainer/tpl/powerschool_ssh_password.txt.tpl \
 
 # auth gcloud
 gcloud auth activate-service-account \
-  --key-file=/etc/secret-volume/gcloud_service_account_json
+  --key-file=/etc/secret-volume/gcloud_dagster_service_account.json
 
 # install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh || true
