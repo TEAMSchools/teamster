@@ -3,12 +3,6 @@ with
         select
             cb_id,
             powerschool_student_number,
-            secondary_id,
-            name_first,
-            name_last,
-            name_mi,
-            gender,
-            birth_date,
             academic_year,
             latest_psat_date,
             administration_round,
@@ -22,19 +16,19 @@ with
             ) as score_type,
 
             case
-                -- 3 to 4 digit score
+                /* 3 to 4 digit score */
                 when score_type = 'latest_psat_total'
                 then 'Combined'
-                -- 3-digit score
+                /* 3-digit score */
                 when score_type = 'latest_psat_ebrw'
                 then 'EBRW'
-                -- 2-digit score
+                /* 2-digit score */
                 when score_type = 'latest_psat_reading'
                 then 'Reading'
-                -- 3-digit score
+                /* 3-digit score */
                 when score_type = 'latest_psat_math_section'
                 then 'Math'
-                -- 2-digit score
+                /* 2-digit score */
                 when score_type = 'latest_psat_math_test'
                 then 'Math Test'
             end as test_subject,
@@ -60,12 +54,6 @@ with
 select
     cb_id,
     powerschool_student_number,
-    secondary_id,
-    name_first,
-    name_last,
-    name_mi,
-    gender,
-    birth_date,
     academic_year,
     administration_round,
     latest_psat_date,
@@ -75,6 +63,11 @@ select
     score_type,
     score,
 
+    case
+        course_discipline when 'MATH' then 'Math' when 'ENG' then 'ELA'
+    end as discipline,
+
+    /* highest of the flavor of PSAT */
     row_number() over (
         partition by powerschool_student_number, test_type, score_type
         order by score desc

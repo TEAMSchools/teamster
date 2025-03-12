@@ -68,12 +68,10 @@ with
     ),
 
     psat_bucket1 as (
-        select local_student_id, academic_year, discipline, max(score) as max_score,
-        from {{ ref("int_illuminate__psat_unpivot") }} as pt
-        where
-            score_type
-            in ('psat10_math_section_score', 'psat10_eb_read_write_section_score')
-        group by local_student_id, academic_year, discipline
+        select powerschool_student_number, discipline, max(score) as max_score,
+        from {{ ref("int_collegeboard__psat_unpivot") }} as pt
+        where test_subject in ('EBRW', 'Math') and test_type != 'PSAT 8/9'
+        group by all
     ),
 
     prev_yr_iready as (
@@ -284,8 +282,6 @@ left join
     and sj.iready_subject = ci.subject
 left join
     psat_bucket1 as ps
-    on co.student_number = ps.local_student_id
-    and co.academic_year = ps.academic_year
+    on co.student_number = ps.powerschool_student_number
     and sj.discipline = ps.discipline
-    and co.grade_level = 10
 where co.academic_year >= {{ var("current_academic_year") - 1 }}

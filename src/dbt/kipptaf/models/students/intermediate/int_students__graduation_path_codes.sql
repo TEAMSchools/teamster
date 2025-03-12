@@ -12,17 +12,17 @@ with
             e.discipline,
             e.powerschool_credittype,
 
-            -- this is not their final code, but it is used to calculate their final
-            -- code
+            /* this is not their final code, but it is used to calculate their final 
+            code */
             u.values_column as ps_grad_path_code,
 
-            -- needed to join on transfer njgpa scores
+            /* needed to join on transfer njgpa scores */
             safe_cast(e.state_studentnumber as numeric) as state_studentnumber_int,
 
             if(e.has_fafsa = 'Yes', true, false) as has_fafsa,
 
-            -- this is the date we start holding 11th graders accountable to
-            -- fulfilling the NJGPA test requirement
+            /* this is the date we start holding 11th graders accountable to 
+            fulfilling the NJGPA test requirement */
             if(
                 current_date('{{ var("local_timezone") }}')
                 < date({{ var("current_academic_year") + 1 }}, 05, 31),
@@ -30,8 +30,8 @@ with
                 true
             ) as njgpa_season_11th,
 
-            -- this is the date we start holding 12th graders accountable to
-            -- fulfilling the FAFSA requirement
+            /* this is the date we start holding 12th graders accountable to fulfilling
+            the FAFSA requirement */
             if(
                 current_date('{{ var("local_timezone") }}')
                 < date({{ var("current_academic_year") + 1 }}, 01, 01),
@@ -50,27 +50,26 @@ with
     ),
 
     scores as (
-        -- njgpa transfer scores
+        /* njgpa transfer scores */
         select
             s.student_number,
             s.state_studentnumber,
             s.salesforce_id,
+
             x.testscalescore as scale_score,
             x.testcode as score_type,
             x.testcode as subject_area,
             x.test_name as pathway_option,
-
             x.discipline,
-
         from students as s
         inner join
             {{ ref("int_powerschool__state_assessments_transfer_scores") }} as x
-            on s.state_studentnumber = x.state_studentnumber
+            on s.studentid = x.studentid
             and s.discipline = x.discipline
 
         union all
 
-        -- njgpa scores from file
+        /* njgpa scores from file */
         select
             s.student_number,
             s.state_studentnumber,
@@ -91,7 +90,7 @@ with
 
         union all
 
-        -- act/sat scores
+        /* act/sat scores */
         select
             s.student_number,
             s.state_studentnumber,
@@ -113,7 +112,7 @@ with
 
         union all
 
-        -- psat scores
+        /* psat scores */
         select
             s.student_number,
             s.state_studentnumber,
@@ -147,7 +146,6 @@ with
             p.subject_area,
 
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
-
         from students as s
         left join
             {{ ref("stg_reporting__promo_status_cutoffs") }} as c
@@ -161,7 +159,7 @@ with
             and s.student_number = p.student_number
     ),
 
-    -- did the student ever meet the min reqs for college readiness for SAT?
+    /* did the student ever meet the min reqs for college readiness for SAT? */
     met_sat_subject_mins as (
         select student_number, max(ela) as met_sat_ela, max(math) as met_sat_math,
         from
@@ -171,19 +169,19 @@ with
         group by all
     ),
 
-    -- determining if any of the scores for the score_type (if it exists)
-    -- met the pathway option
+    /* determining if any of the scores for the score_type (if it exists)
+    met the pathway option */
     unpivot_calcs as (
         select
             _dbt_source_relation,
             student_number,
             discipline,
 
-            -- taking the njgpa at least once is a requirement to consider other
-            -- pathways
+            /* taking the njgpa at least once is a requirement to consider other 
+            pathways */
             if(max(met_njgpa) is not null, true, false) as njgpa_attempt,
 
-            -- collapse the unpivot
+            /* collapse the unpivot */
             max(met_njgpa) as met_njgpa,
             max(met_act) as met_act,
             max(met_sat) as met_sat,
@@ -205,8 +203,8 @@ with
         group by all
     ),
 
-    -- calculating if the student met the discipline overall, regardless of
-    -- how they did it, assuming they took the njgpa
+    /* calculating if the student met the discipline overall, regardless of how they 
+    did it, assuming they took the njgpa */
     met_subject as (
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
@@ -220,7 +218,7 @@ with
         group by all
     ),
 
-    -- calculating if the student attempted njgpa for the discipline
+    /* calculating if the student attempted njgpa for the discipline */
     attempted_subject_njgpa as (
         select
             student_number,
@@ -269,7 +267,7 @@ select
 
     if(met_sat_ela and met_sat_math, true, false) as met_sat_subject_mins,
 
-    -- negative value means short; positive value means above min required
+    /* negative value means short; positive value means above min required */
     if(scale_score is not null, scale_score - cutoff, null) as points_short,
 
     case
@@ -304,17 +302,17 @@ select
     case
         when grade_level <= 10
         then 'Grad Eligible'
-        -- iep exempt or portfolio, non-12th grade
+        /* iep exempt or portfolio, non-12th grade */
         when grade_level != 12 and ps_grad_path_code in ('M', 'N')
         then 'Grad Eligible'
 
-        -- 11th graders before njgpa
+        /* 11th graders before njgpa */
         when grade_level = 11 and not njgpa_season_11th
         then 'Grad Eligible'
-        -- 11th graders after njgpa without njgpa attempt
+        /* 11th graders after njgpa without njgpa attempt */
         when grade_level = 11 and njgpa_season_11th and not njgpa_attempt
         then 'Not Grad Eligible. Missing NJGPA.'
-        -- 11th graders who tried njgpa and passed both
+        /* 11th graders who tried njgpa and passed both */
         when
             grade_level = 11
             and njgpa_season_11th
@@ -322,7 +320,7 @@ select
             and met_ela
             and met_math
         then 'Grad Eligible'
-        -- 11th graders who tried njgpa and passed only ela
+        /* 11th graders who tried njgpa and passed only ela */
         when
             grade_level = 11
             and njgpa_season_11th
@@ -330,7 +328,7 @@ select
             and met_ela
             and not met_math
         then 'ELA Eligible only'
-        -- 11th graders who tried njgpa and passed only math
+        /* 11th graders who tried njgpa and passed only math */
         when
             grade_level = 11
             and njgpa_season_11th
@@ -339,27 +337,28 @@ select
             and met_math
         then 'Math Eligible only'
 
-        -- 12th graders regardless of fafsa season with codes O or P
+        /* 12th graders regardless of fafsa season with codes O or P */
         when grade_level = 12 and ps_grad_path_code in ('O', 'P')
         then 'Not Grad Eligible'
-        -- 12th graders before fafsa season with iep exempt or portfolio
+        /* 12th graders before fafsa season with iep exempt or portfolio */
         when
             grade_level = 12
             and not fafsa_season_12th
             and ps_grad_path_code in ('M', 'N')
         then 'Grad Eligible'
-        -- 12th graders after fafsa season with iep exempt or portfolio
+        /* 12th graders after fafsa season with iep exempt or portfolio */
         when
             grade_level = 12
             and fafsa_season_12th
             and not has_fafsa
             and ps_grad_path_code in ('M', 'N')
         then 'Not Grad Eligible. Missing FAFSA.'
-        -- 12th graders havent attempted njgpa
+        /* 12th graders havent attempted njgpa */
         when grade_level = 12 and not njgpa_attempt
         then 'Not Grad Eligible. No NJGPA attempt.'
 
-        -- 12th graders before fafsa season. took njgpa and qualified with some pathway
+        /* 12th graders before fafsa season. took njgpa and qualified with some
+        pathway */
         when
             grade_level = 12
             and not fafsa_season_12th
@@ -367,8 +366,8 @@ select
             and met_ela
             and met_math
         then 'Grad Eligible'
-        -- 12th graders before fafsa season. took njgpa and qualified with some
-        -- pathway ela only
+        /* 12th graders before fafsa season. took njgpa and qualified with some pathway
+        ela only */
         when
             grade_level = 12
             and not fafsa_season_12th
@@ -376,8 +375,8 @@ select
             and met_ela
             and not met_math
         then 'ELA Eligible only'
-        -- 12th graders before fafsa season. took njgpa and qualified with some
-        -- pathway math only
+        /* 12th graders before fafsa season. took njgpa and qualified with some pathway
+        math only */
         when
             grade_level = 12
             and not fafsa_season_12th
@@ -385,8 +384,8 @@ select
             and not met_ela
             and met_math
         then 'Math Eligible only'
-        -- 12th graders before fafsa season. took njgpa but didnt qualify with any
-        -- pathway
+        /* 12th graders before fafsa season. took njgpa but didnt qualify with any
+        pathway */
         when
             grade_level = 12
             and not fafsa_season_12th
@@ -394,7 +393,7 @@ select
             and not met_ela
             and not met_math
         then 'Not Grad Eligible. No pathway met.'
-        -- 12th grader after fafsa season, meets all requirements via some pathway
+        /* 12th grader after fafsa season, meets all requirements via some pathway */
         when
             grade_level = 12
             and fafsa_season_12th
@@ -403,7 +402,7 @@ select
             and met_ela
             and met_math
         then 'Grad Eligible'
-        -- 12th grader after fafsa season, took NJGPA, ELA pathway met only somehow
+        /* 12th grader after fafsa season, took NJGPA, ELA pathway met only somehow */
         when
             grade_level = 12
             and fafsa_season_12th
@@ -412,7 +411,7 @@ select
             and met_ela
             and not met_math
         then 'ELA Eligible Only'
-        -- 12th grader after fafsa season, took NJGPA, math pathway met only somehow
+        /* 12th grader after fafsa season, took NJGPA, math pathway met only somehow */
         when
             grade_level = 12
             and fafsa_season_12th
@@ -421,8 +420,8 @@ select
             and not met_ela
             and met_math
         then 'Math Eligible Only'
-        -- 12th graders after fafsa season. took njgpa but didnt qualify with any
-        -- pathway
+        /* 12th graders after fafsa season. took njgpa but didnt qualify with any
+        pathway */
         when
             grade_level = 12
             and fafsa_season_12th
@@ -431,7 +430,8 @@ select
             and not met_ela
             and not met_math
         then 'Not Grad Eligible. No pathway met.'
-        -- 12th graders after fafsa season. took njgpa, met pathway, but missing fafsa
+        /* 12th graders after fafsa season. took njgpa, met pathway, but missing
+        fafsa */
         when
             grade_level = 12
             and fafsa_season_12th
@@ -440,8 +440,8 @@ select
             and met_ela
             and met_math
         then 'Not Grad Eligible. Missing FAFSA.'
-        -- 12th graders after fafsa season. took njgpa, met ela pathway, but missing
-        -- fafsa
+        /* 12th graders after fafsa season. took njgpa, met ela pathway, but missing
+        fafsa */
         when
             grade_level = 12
             and fafsa_season_12th
@@ -450,8 +450,8 @@ select
             and met_ela
             and not met_math
         then 'ELA Eligible Only. Missing FAFSA.'
-        -- 12th graders after fafsa season. took njgpa, met math pathway, but missing
-        -- fafsa
+        /* 12th graders after fafsa season. took njgpa, met math pathway, but missing 
+        fafsa */
         when
             grade_level = 12
             and fafsa_season_12th
@@ -491,5 +491,4 @@ select
     row_number() over (
         partition by student_number, discipline order by pathway_option
     ) as rn_discipline_distinct,
-
 from roster
