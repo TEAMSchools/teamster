@@ -61,11 +61,17 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
 
 
 def test_asset_google_forms_form():
-    _test_asset(asset=form)
+    _test_asset(
+        # trunk-ignore(pyright/reportArgumentType)
+        asset=form,
+        # trunk-ignore(gitleaks/generic-api-key)
+        partition_key="1mK_JPYxBneKxNKbDfpzQ9xbNWDyLL5mJ08TbITs-g-w",
+    )
 
 
 def test_asset_google_forms_responses():
     _test_asset(
+        # trunk-ignore(pyright/reportArgumentType)
         asset=responses,
         # trunk-ignore(gitleaks/generic-api-key)
         partition_key="15Iq_dMeOmURb68Bg8Uc6j-Fco4N2wix7D8YFfSdCKPE",
