@@ -43,6 +43,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             ).with_subject(self.delegated_account)
         else:
             # https://stackoverflow.com/a/57092533
+            # https://github.com/GoogleCloudPlatform/professional-services/tree/main/examples/gce-to-adminsdk
             request = requests.Request()
 
             # Refresh the default credentials. This ensures that the information about
