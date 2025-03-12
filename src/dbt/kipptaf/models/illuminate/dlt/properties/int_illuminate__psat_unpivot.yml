@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: int_illuminate__psat_unpivot
+    config:
+      enabled: false
     columns:
       - name: local_student_id
         data_type: int64
