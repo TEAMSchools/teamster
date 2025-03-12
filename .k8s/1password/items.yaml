@@ -290,14 +290,6 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-gcp-service-account-teamster
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/Teamster Service Account - Default
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
   name: op-tableau-server-api
   namespace: dagster-cloud
 spec:
