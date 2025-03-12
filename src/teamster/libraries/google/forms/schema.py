@@ -174,6 +174,10 @@ class FormSettings(BaseModel):
     quizSettings: QuizSettings | None = None
 
 
+class PublishSettings(BaseModel):
+    publishState: dict[str, str] | None = None
+
+
 class Info(BaseModel):
     title: str | None = None
     description: str | None = None
@@ -231,5 +235,6 @@ class Form(BaseModel):
 
     info: Info | None = None
     settings: FormSettings | None = None
+    publishSettings: PublishSettings | None = None
 
     items: list[Item | None] | None = None
