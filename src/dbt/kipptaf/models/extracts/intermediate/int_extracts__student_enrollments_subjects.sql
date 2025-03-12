@@ -68,11 +68,7 @@ with
     ),
 
     psat_bucket1 as (
-        select
-            powerschool_student_number,
-            academic_year,
-            discipline,
-            max(score) as max_score,
+        select powerschool_student_number, discipline, max(score) as max_score,
         from {{ ref("int_collegeboard__psat_unpivot") }} as pt
         where test_subject in ('EBRW', 'Math') and test_type != 'PSAT 8/9'
         group by all
