@@ -34,7 +34,9 @@ def test_google_sheets_asset_sensor():
             cursor=json.dumps(obj=cursor), sensor_name=google_sheets_asset_sensor.name
         ),
         gsheets=GoogleSheetsResource(
-            service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
+            service_account_file_path=(
+                "/etc/secret-volume/gcloud_dagster_service_account.json"
+            ),
         ),
     )
 
