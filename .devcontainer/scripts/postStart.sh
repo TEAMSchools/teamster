@@ -5,7 +5,7 @@ op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env
 
 # update uv
 uv self update
-uv tool upgrade datamodel-code-generator
+uv tool upgrade datamodel-code-generator dagster-dg
 
 # update trunk
 trunk upgrade -y --no-progress
