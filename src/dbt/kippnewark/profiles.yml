@@ -3,7 +3,6 @@ kippnewark:
   outputs:
     kippnewark:
       type: bigquery
-      method: service-account
+      method: oauth
       project: teamster-332318
       schema: kippnewark
-      keyfile: /etc/secret-volume/dbt_user_creds_json

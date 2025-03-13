@@ -1,4 +1,3 @@
-import json
 import pathlib
 
 import yaml
@@ -22,14 +21,9 @@ sql_database_credentials = ConnectionStringCredentials(
     }
 )
 
-dlt_credentials = json.load(
-    fp=open(file="/etc/secret-volume/gcloud_teamster_dlt_keyfile.json")
-)
-
 assets = [
     build_illuminate_dlt_assets(
         sql_database_credentials=sql_database_credentials,
-        dlt_credentials=dlt_credentials,
         code_location=CODE_LOCATION,
         schema=a["schema"],
         **t,
