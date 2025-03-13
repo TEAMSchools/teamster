@@ -10,6 +10,7 @@ class OvergradResource(ConfigurableResource):
     api_key: str
     api_version: str = "v1"
     page_limit: int = 20
+    request_timeout: float = 60.0
 
     _base_url: str = PrivateAttr(default="https://api.overgrad.com/api")
     _session: Session = PrivateAttr(default_factory=Session)
@@ -32,7 +33,9 @@ class OvergradResource(ConfigurableResource):
         response = Response()
 
         try:
-            response = self._session.request(method=method, url=url, **kwargs)
+            response = self._session.request(
+                method=method, url=url, timeout=self.request_timeout, **kwargs
+            )
 
             response.raise_for_status()
 
