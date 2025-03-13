@@ -109,6 +109,7 @@ with
             and s.powerschool_credittype = a.course_discipline
             and a.scope in ('ACT', 'SAT')
             and a.course_discipline in ('MATH', 'ENG')
+            and a.score_type not in ('act_english', 'act_science')
 
         union all
 
