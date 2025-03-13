@@ -39,7 +39,9 @@ where
     and score_type in (
         'act_composite',
         'act_reading',
+        'act_english',
         'act_math',
+        'act_science',
         'sat_total_score',
         'sat_reading_test_score',
         'sat_math_test_score',
