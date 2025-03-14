@@ -181,7 +181,9 @@ with
             on c.type = p.pathway_option
             and c.subject = p.score_type
             and s.student_number = p.student_number
-        where s.ps_grad_path_code not in ('M', 'N', 'O', 'P')
+        where
+            s.ps_grad_path_code is null
+            or s.ps_grad_path_code not in ('M', 'N', 'O', 'P')
 
         union all
 
