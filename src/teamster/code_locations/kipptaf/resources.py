@@ -77,7 +77,9 @@ LDAP_RESOURCE = LdapResource(
 )
 
 MCLASS_RESOURCE = MClassResource(
-    username=EnvVar("AMPLIFY_USERNAME"), password=EnvVar("AMPLIFY_PASSWORD")
+    username=EnvVar("AMPLIFY_USERNAME"),
+    password=EnvVar("AMPLIFY_PASSWORD"),
+    request_timeout=(60 * 10),
 )
 
 POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(
