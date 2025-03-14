@@ -16,6 +16,13 @@ with
             code */
             u.values_column as ps_grad_path_code,
 
+            case
+                when u.values_column in ('M', 'N')
+                then true
+                when u.values_column in ('O', 'P')
+                then false
+            end as pre_met_pathway_cutoff,
+
             /* needed to join on transfer njgpa scores */
             safe_cast(e.state_studentnumber as numeric) as state_studentnumber_int,
 
@@ -74,11 +81,11 @@ with
             s.student_number,
             s.state_studentnumber,
             s.salesforce_id,
+
             n.testscalescore as scale_score,
             n.testcode as score_type,
             n.testcode as subject_area,
             n.assessment_name as pathway_option,
-
             n.discipline,
 
         from students as s
@@ -95,6 +102,7 @@ with
             s.student_number,
             s.state_studentnumber,
             s.salesforce_id,
+
             a.scale_score,
             a.score_type,
             a.subject_area,
@@ -118,6 +126,7 @@ with
             s.student_number,
             s.state_studentnumber,
             s.salesforce_id,
+
             p.scale_score,
             p.score_type,
             p.subject_area,
@@ -136,7 +145,7 @@ with
 
     lookup_table as (
         select
-            s.* except (state_studentnumber_int),
+            s.* except (state_studentnumber_int, pre_met_pathway_cutoff),
 
             c.type as pathway_option,
             c.subject as score_type,
@@ -158,6 +167,47 @@ with
             on c.type = p.pathway_option
             and c.subject = p.score_type
             and s.student_number = p.student_number
+        where s.ps_grad_path_code not in ('M', 'N', 'O', 'P')
+
+        union all
+
+        select
+            s.* except (state_studentnumber_int),
+
+            case
+                s.ps_grad_path_code
+                when 'M'
+                then 'DLM'
+                when 'N'
+                then 'Portfolio'
+                when 'O'
+                then 'No Pathway'
+                when 'P'
+                then 'Incomplete Credits'
+            end as pathway_option,
+
+            case
+                s.ps_grad_path_code
+                when 'M'
+                then 'dlm'
+                when 'N'
+                then 'portfolio'
+                when 'O'
+                then 'no_pathway'
+                when 'P'
+                then 'incomplete_credits'
+            end as score_type,
+
+            s.ps_grad_path_code as pathway_code,
+
+            null as cutoff,
+            null as scale_score,
+            s.discipline as subject_area,
+
+            s.pre_met_pathway_cutoff as met_pathway_cutoff,
+
+        from students as s
+        where s.ps_grad_path_code in ('M', 'N', 'O', 'P')
     ),
 
     /* did the student ever meet the min reqs for college readiness for SAT? */
