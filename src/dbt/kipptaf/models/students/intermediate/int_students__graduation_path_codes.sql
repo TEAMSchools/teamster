@@ -385,15 +385,26 @@ select
             and not met_ela
             and met_math
         then 'Math Eligible only'
-        /* 12th graders before fafsa season. took njgpa but didnt qualify with any
+        /* 12th graders after fafsa season. has fafsa. took njgpa but didnt qualify with any
         pathway */
         when
             grade_level = 12
-            and not fafsa_season_12th
+            and fafsa_season_12th
+            and has_fafsa
             and njgpa_attempt
             and not met_ela
             and not met_math
         then 'Not Grad Eligible. No pathway met.'
+        /* 12th graders after fafsa season. no fafsa. took njgpa but didnt qualify with any
+        pathway */
+        when
+            grade_level = 12
+            and fafsa_season_12th
+            and not has_fafsa
+            and njgpa_attempt
+            and not met_ela
+            and not met_math
+        then 'Not Grad Eligible. Missing FAFSA. No pathway met.'
         /* 12th grader after fafsa season, meets all requirements via some pathway */
         when
             grade_level = 12
