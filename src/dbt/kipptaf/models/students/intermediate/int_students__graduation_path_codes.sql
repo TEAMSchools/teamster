@@ -16,6 +16,13 @@ with
             code */
             u.values_column as ps_grad_path_code,
 
+            case
+                when u.values_column in ('M', 'N')
+                then true
+                when u.values_column in ('O', 'P')
+                then false
+            end as pre_met_pathway_cutoff,
+
             /* needed to join on transfer njgpa scores */
             safe_cast(e.state_studentnumber as numeric) as state_studentnumber_int,
 
@@ -74,11 +81,11 @@ with
             s.student_number,
             s.state_studentnumber,
             s.salesforce_id,
+
             n.testscalescore as scale_score,
             n.testcode as score_type,
             n.testcode as subject_area,
             n.assessment_name as pathway_option,
-
             n.discipline,
 
         from students as s
@@ -95,6 +102,7 @@ with
             s.student_number,
             s.state_studentnumber,
             s.salesforce_id,
+
             a.scale_score,
             a.score_type,
             a.subject_area,
@@ -118,6 +126,7 @@ with
             s.student_number,
             s.state_studentnumber,
             s.salesforce_id,
+
             p.scale_score,
             p.score_type,
             p.subject_area,
@@ -136,7 +145,20 @@ with
 
     lookup_table as (
         select
-            s.* except (state_studentnumber_int),
+            s._dbt_source_relation,
+            s.students_dcid,
+            s.studentid,
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            s.grade_level,
+            s.cohort,
+            s.discipline,
+            s.powerschool_credittype,
+            s.ps_grad_path_code,
+            s.has_fafsa,
+            s.njgpa_season_11th,
+            s.fafsa_season_12th,
 
             c.type as pathway_option,
             c.subject as score_type,
@@ -149,7 +171,8 @@ with
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
         from students as s
         left join
-            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
+            `teamster-332318`.`_grangel_reporting`.`stg_reporting__promo_status_cutoffs`
+            as c
             on s.cohort = c.cohort
             and s.discipline = c.discipline
             and c.`domain` = 'Graduation Pathway'
@@ -158,6 +181,62 @@ with
             on c.type = p.pathway_option
             and c.subject = p.score_type
             and s.student_number = p.student_number
+        where
+            s.ps_grad_path_code is null
+            or s.ps_grad_path_code not in ('M', 'N', 'O', 'P')
+
+        union all
+
+        select
+            s._dbt_source_relation,
+            s.students_dcid,
+            s.studentid,
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            s.grade_level,
+            s.cohort,
+            s.discipline,
+            s.powerschool_credittype,
+            s.ps_grad_path_code,
+            s.has_fafsa,
+            s.njgpa_season_11th,
+            s.fafsa_season_12th,
+
+            case
+                s.ps_grad_path_code
+                when 'M'
+                then 'DLM'
+                when 'N'
+                then 'Portfolio'
+                when 'O'
+                then 'No Pathway'
+                when 'P'
+                then 'Incomplete Credits'
+            end as pathway_option,
+
+            case
+                s.ps_grad_path_code
+                when 'M'
+                then 'dlm'
+                when 'N'
+                then 'portfolio'
+                when 'O'
+                then 'no_pathway'
+                when 'P'
+                then 'incomplete_credits'
+            end as score_type,
+
+            s.ps_grad_path_code as pathway_code,
+
+            null as cutoff,
+            null as scale_score,
+            s.discipline as subject_area,
+
+            s.pre_met_pathway_cutoff as met_pathway_cutoff,
+
+        from students as s
+        where s.ps_grad_path_code in ('M', 'N', 'O', 'P')
     ),
 
     /* did the student ever meet the min reqs for college readiness for SAT? */
@@ -183,6 +262,8 @@ with
             if(max(met_njgpa) is not null, true, false) as njgpa_attempt,
 
             /* collapse the unpivot */
+            max(met_dlm) as met_dlm,
+            max(met_portfolio) as met_portfolio,
             max(met_njgpa) as met_njgpa,
             max(met_act) as met_act,
             max(met_sat) as met_sat,
@@ -193,6 +274,8 @@ with
             lookup_table pivot (
                 max(met_pathway_cutoff)
                 for pathway_option in (
+                    'DLM' as met_dlm,
+                    'Portfolio' as met_portfolio,
                     'NJGPA' as met_njgpa,
                     'ACT' as met_act,
                     'SAT' as met_sat,
@@ -211,7 +294,13 @@ with
         from
             unpivot_calcs pivot (
                 max(
-                    met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt
+                    met_dlm
+                    or met_portfolio
+                    or met_njgpa
+                    or met_act
+                    or met_sat
+                    or met_psat10
+                    or met_psat_nmsqt
                 ) for discipline
                 in ('ELA', 'Math')
             )
@@ -236,6 +325,8 @@ with
             coalesce(s.met_sat_ela) as met_sat_ela,
             coalesce(s.met_sat_math) as met_sat_math,
 
+            coalesce(u.met_dlm, false) as met_dlm,
+            coalesce(u.met_portfolio, false) as met_portfolio,
             coalesce(u.njgpa_attempt, false) as njgpa_attempt,
             coalesce(u.met_njgpa, false) as met_njgpa,
             coalesce(u.met_act, false) as met_act,
@@ -385,15 +476,26 @@ select
             and not met_ela
             and met_math
         then 'Math Eligible only'
-        /* 12th graders before fafsa season. took njgpa but didnt qualify with any
+        /* 12th graders after fafsa season. has fafsa. took njgpa but didnt qualify with any
         pathway */
         when
             grade_level = 12
-            and not fafsa_season_12th
+            and fafsa_season_12th
+            and has_fafsa
             and njgpa_attempt
             and not met_ela
             and not met_math
         then 'Not Grad Eligible. No pathway met.'
+        /* 12th graders after fafsa season. no fafsa. took njgpa but didnt qualify with any
+        pathway */
+        when
+            grade_level = 12
+            and fafsa_season_12th
+            and not has_fafsa
+            and njgpa_attempt
+            and not met_ela
+            and not met_math
+        then 'Not Grad Eligible. Missing FAFSA. No pathway met.'
         /* 12th grader after fafsa season, meets all requirements via some pathway */
         when
             grade_level = 12
