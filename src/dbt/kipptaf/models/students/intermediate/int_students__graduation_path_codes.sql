@@ -260,6 +260,8 @@ with
             if(max(met_njgpa) is not null, true, false) as njgpa_attempt,
 
             /* collapse the unpivot */
+            max(met_dlm) as met_dlm,
+            max(met_portfolio) as met_portfolio,
             max(met_njgpa) as met_njgpa,
             max(met_act) as met_act,
             max(met_sat) as met_sat,
@@ -270,6 +272,8 @@ with
             lookup_table pivot (
                 max(met_pathway_cutoff)
                 for pathway_option in (
+                    'DLM' as met_dlm,
+                    'Portfolio' as met_portfolio,
                     'NJGPA' as met_njgpa,
                     'ACT' as met_act,
                     'SAT' as met_sat,
@@ -288,7 +292,13 @@ with
         from
             unpivot_calcs pivot (
                 max(
-                    met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt
+                    met_dlm
+                    or met_portfolio
+                    or met_njgpa
+                    or met_act
+                    or met_sat
+                    or met_psat10
+                    or met_psat_nmsqt
                 ) for discipline
                 in ('ELA', 'Math')
             )
@@ -313,6 +323,8 @@ with
             coalesce(s.met_sat_ela) as met_sat_ela,
             coalesce(s.met_sat_math) as met_sat_math,
 
+            coalesce(u.met_dlm, false) as met_dlm,
+            coalesce(u.met_portfolio, false) as met_portfolio,
             coalesce(u.njgpa_attempt, false) as njgpa_attempt,
             coalesce(u.met_njgpa, false) as met_njgpa,
             coalesce(u.met_act, false) as met_act,
