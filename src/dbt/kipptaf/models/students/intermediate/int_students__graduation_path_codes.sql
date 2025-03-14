@@ -145,7 +145,20 @@ with
 
     lookup_table as (
         select
-            s.* except (state_studentnumber_int, pre_met_pathway_cutoff),
+            s._dbt_source_relation,
+            s.students_dcid,
+            s.studentid,
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            s.grade_level,
+            s.cohort,
+            s.discipline,
+            s.powerschool_credittype,
+            s.ps_grad_path_code,
+            s.has_fafsa,
+            s.njgpa_season_11th,
+            s.fafsa_season_12th,
 
             c.type as pathway_option,
             c.subject as score_type,
@@ -158,7 +171,8 @@ with
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
         from students as s
         left join
-            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
+            `teamster-332318`.`_grangel_reporting`.`stg_reporting__promo_status_cutoffs`
+            as c
             on s.cohort = c.cohort
             and s.discipline = c.discipline
             and c.`domain` = 'Graduation Pathway'
@@ -172,7 +186,20 @@ with
         union all
 
         select
-            s.* except (state_studentnumber_int),
+            s._dbt_source_relation,
+            s.students_dcid,
+            s.studentid,
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            s.grade_level,
+            s.cohort,
+            s.discipline,
+            s.powerschool_credittype,
+            s.ps_grad_path_code,
+            s.has_fafsa,
+            s.njgpa_season_11th,
+            s.fafsa_season_12th,
 
             case
                 s.ps_grad_path_code
