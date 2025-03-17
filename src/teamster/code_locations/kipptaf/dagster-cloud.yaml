@@ -399,6 +399,11 @@ locations:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: password
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api-kippnewark
+                    key: credential
         run_k8s_config:
           container_config:
             env:
@@ -767,3 +772,8 @@ locations:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: password
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api-kippnewark
+                    key: credential
