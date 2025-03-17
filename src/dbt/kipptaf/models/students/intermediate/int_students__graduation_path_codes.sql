@@ -307,6 +307,19 @@ with
                 ) for discipline
                 in ('ELA', 'Math')
             )
+        where njgpa_attempt and ps_grad_path_code is null
+        group by all
+
+        union all
+
+        select student_number, max(ela) as met_ela, max(math) as met_math,
+        from
+            unpivot_calcs pivot (
+                max(
+                    met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt
+                ) for discipline
+                in ('ELA', 'Math')
+            )
         where njgpa_attempt and ps_grad_path_code not in ('M', 'N', 'O', 'P')
         group by all
 
