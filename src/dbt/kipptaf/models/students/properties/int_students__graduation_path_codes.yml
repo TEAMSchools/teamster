@@ -80,7 +80,10 @@ models:
       - name: final_grad_path_code
         data_type: string
       - name: grad_eligibility
-        description: Tags each student with their final eligibility status
+        description: >
+          Tags each student with their final eligibility status, 
+          as listed on the combo values of G-Sheet 
+          stg_reporting__graduation_paths_combos.
         tests:
           - accepted_values:
               values:
