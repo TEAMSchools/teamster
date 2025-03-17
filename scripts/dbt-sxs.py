@@ -18,7 +18,8 @@ def main() -> None:
     args = parser.parse_args()
 
     cloud_storage_uri_base = (
-        f"gs://teamster-{'test' if args.dev else args.project}/dagster/{args.project}"
+        # f"gs://teamster-{'test' if args.dev else args.project}"
+        f"gs://teamster-{args.project}" + f"/dagster/{args.project}"
     )
 
     run_args = [
