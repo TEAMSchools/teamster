@@ -83,16 +83,14 @@ models:
         tests:
           - accepted_values:
               values:
-                [
-                  Grad Eligible,
-                  ELA Only,
-                  Not Grad Eligible,
-                  Math Only,
-                  No FAFSA,
-                  ELA Only / No FAFSA,
-                  Math Only / No FAFSA,
-                  No FAFSA / No NJGPA,
-                ]
+                - Grad Eligible
+                - ELA Only
+                - Not Grad Eligible
+                - Math Only
+                - No FAFSA
+                - ELA Only / No FAFSA
+                - Math Only / No FAFSA
+                - No FAFSA / No NJGPA
         data_type: string
       - name: test_type
         data_type: string
