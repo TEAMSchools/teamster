@@ -432,7 +432,7 @@ select
         then r.subject_area
         when r.pathway_code in ('E', 'D', 'J', 'K')
         then concat(r.pathway_option, ' ', r.subject_area)
-        else 'No Data.'
+        else 'No Data'
     end as test_type,
 
     row_number() over (
