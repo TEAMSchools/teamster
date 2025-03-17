@@ -557,7 +557,7 @@ select
             and njgpa_attempt
             and not met_ela
             and not met_math
-        then 'Not Grad Eligible. No pathway met'
+        then 'Not Grad Eligible. No pathway met.'
         /* 12th graders after fafsa season. took njgpa, met pathway, but missing
         fafsa */
         when
