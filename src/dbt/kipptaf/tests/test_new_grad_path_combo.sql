@@ -7,6 +7,6 @@
     )
 -}}
 
-select *
+select *,
 from {{ ref("model_name") }}
 where grad_eligibility = 'New category. Need new logic.'
