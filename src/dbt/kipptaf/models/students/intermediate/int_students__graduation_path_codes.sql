@@ -379,243 +379,75 @@ with
     )
 
 select
-    *,
+    r.*,
 
-    if(met_sat_ela and met_sat_math, true, false) as met_sat_subject_mins,
+    if(r.met_sat_ela and r.met_sat_math, true, false) as met_sat_subject_mins,
 
     /* negative value means short; positive value means above min required */
-    if(scale_score is not null, scale_score - cutoff, null) as points_short,
+    if(r.scale_score is not null, r.scale_score - r.cutoff, null) as points_short,
 
     case
-        when grade_level != 12
-        then ps_grad_path_code
-        when ps_grad_path_code in ('M', 'N', 'O', 'P')
-        then ps_grad_path_code
-        when met_njgpa
+        when r.grade_level != 12
+        then r.ps_grad_path_code
+        when r.ps_grad_path_code in ('M', 'N', 'O', 'P')
+        then r.ps_grad_path_code
+        when r.met_njgpa
         then 'S'
-        when njgpa_attempt and not met_njgpa and met_act
+        when r.njgpa_attempt and not r.met_njgpa and r.met_act
         then 'E'
-        when njgpa_attempt and not met_njgpa and not met_act and met_sat
+        when r.njgpa_attempt and not r.met_njgpa and not r.met_act and r.met_sat
         then 'D'
         when
-            njgpa_attempt
-            and not met_njgpa
-            and not met_act
-            and not met_sat
-            and met_psat10
+            r.njgpa_attempt
+            and not r.met_njgpa
+            and not r.met_act
+            and not r.met_sat
+            and r.met_psat10
         then 'J'
         when
-            njgpa_attempt
-            and not met_njgpa
-            and not met_act
-            and not met_sat
-            and not met_psat10
-            and met_psat_nmsqt
+            r.njgpa_attempt
+            and not r.met_njgpa
+            and not r.met_act
+            and not r.met_sat
+            and not r.met_psat10
+            and r.met_psat_nmsqt
         then 'K'
         else 'R'
     end as final_grad_path_code,
 
-    case
-        when grade_level <= 10
-        then 'Grad Eligible'
-        /* iep exempt or portfolio, non-12th grade */
-        when grade_level != 12 and ps_grad_path_code in ('M', 'N')
-        then 'Grad Eligible'
-
-        /* 11th graders before njgpa */
-        when grade_level = 11 and not njgpa_season_11th
-        then 'Grad Eligible'
-        /* 11th graders after njgpa without njgpa attempt */
-        when grade_level = 11 and njgpa_season_11th and not njgpa_attempt
-        then 'Not Grad Eligible. Missing NJGPA.'
-        /* 11th graders who tried njgpa and passed both */
-        when
-            grade_level = 11
-            and njgpa_season_11th
-            and njgpa_attempt
-            and met_ela
-            and met_math
-        then 'Grad Eligible'
-        /* 11th graders who tried njgpa and passed only ela */
-        when
-            grade_level = 11
-            and njgpa_season_11th
-            and njgpa_attempt
-            and met_ela
-            and not met_math
-        then 'ELA Eligible only'
-        /* 11th graders who tried njgpa and passed only math */
-        when
-            grade_level = 11
-            and njgpa_season_11th
-            and njgpa_attempt
-            and not met_ela
-            and met_math
-        then 'Math Eligible only'
-
-        /* 12th graders regardless of fafsa season with codes O or P */
-        when grade_level = 12 and ps_grad_path_code in ('O', 'P')
-        then 'Not Grad Eligible'
-        /* 12th graders before fafsa season with iep exempt or portfolio */
-        when
-            grade_level = 12
-            and not fafsa_season_12th
-            and ps_grad_path_code in ('M', 'N')
-        then 'Grad Eligible'
-        /* 12th graders after fafsa season with iep exempt or portfolio */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and not has_fafsa
-            and ps_grad_path_code in ('M', 'N')
-        then 'Not Grad Eligible. Missing FAFSA.'
-        /* 12th graders havent attempted njgpa */
-        when grade_level = 12 and not njgpa_attempt
-        then 'Not Grad Eligible. No NJGPA attempt.'
-
-        /* 12th graders before fafsa season. took njgpa and qualified with some
-        pathway */
-        when
-            grade_level = 12
-            and not fafsa_season_12th
-            and njgpa_attempt
-            and met_ela
-            and met_math
-        then 'Grad Eligible'
-        /* 12th graders before fafsa season. took njgpa and qualified with some pathway
-        ela only */
-        when
-            grade_level = 12
-            and not fafsa_season_12th
-            and njgpa_attempt
-            and met_ela
-            and not met_math
-        then 'ELA Eligible only'
-        /* 12th graders before fafsa season. took njgpa and qualified with some pathway
-        math only */
-        when
-            grade_level = 12
-            and not fafsa_season_12th
-            and njgpa_attempt
-            and not met_ela
-            and met_math
-        then 'Math Eligible only'
-        /* 12th graders after fafsa season. has fafsa. took njgpa but didnt qualify with any
-        pathway */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and has_fafsa
-            and njgpa_attempt
-            and not met_ela
-            and not met_math
-        then 'Not Grad Eligible. No pathway met.'
-        /* 12th graders after fafsa season. no fafsa. took njgpa but didnt qualify with any
-        pathway */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and not has_fafsa
-            and njgpa_attempt
-            and not met_ela
-            and not met_math
-        then 'Not Grad Eligible. Missing FAFSA. No pathway met.'
-        /* 12th grader after fafsa season, meets all requirements via some pathway */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and has_fafsa
-            and njgpa_attempt
-            and met_ela
-            and met_math
-        then 'Grad Eligible'
-        /* 12th grader after fafsa season, took NJGPA, ELA pathway met only somehow */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and has_fafsa
-            and njgpa_attempt
-            and met_ela
-            and not met_math
-        then 'ELA Eligible Only'
-        /* 12th grader after fafsa season, took NJGPA, math pathway met only somehow */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and has_fafsa
-            and njgpa_attempt
-            and not met_ela
-            and met_math
-        then 'Math Eligible Only'
-        /* 12th graders after fafsa season. took njgpa but didnt qualify with any
-        pathway */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and has_fafsa
-            and njgpa_attempt
-            and not met_ela
-            and not met_math
-        then 'Not Grad Eligible. No pathway met.'
-        /* 12th graders after fafsa season. took njgpa, met pathway, but missing
-        fafsa */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and not has_fafsa
-            and njgpa_attempt
-            and met_ela
-            and met_math
-        then 'Not Grad Eligible. Missing FAFSA.'
-        /* 12th graders after fafsa season. took njgpa, met ela pathway, but missing
-        fafsa */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and not has_fafsa
-            and njgpa_attempt
-            and met_ela
-            and not met_math
-        then 'ELA Eligible Only. Missing FAFSA.'
-        /* 12th graders after fafsa season. took njgpa, met math pathway, but missing 
-        fafsa */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and not has_fafsa
-            and njgpa_attempt
-            and not met_ela
-            and met_math
-        then 'Math Eligible Only. Missing FAFSA.'
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and has_fafsa
-            and not njgpa_attempt
-            and met_ela
-            and met_math
-        then 'Not Grad Eligible. Has pathway, but needs NJGPA attempt.'
-
-        else 'New category. Need new logic.'
-    end as grad_eligibility,
+    coalesce(
+        case
+            when r.grade_level <= 10
+            then 'Grad Eligible'
+            when r.grade_level >= 11
+            then g.grad_eligibility
+        end,
+        'New category. Need new logic.'
+    ) as grad_eligibility,
 
     case
-        when pathway_code = 'M'
-        then 'DLM'
-        when pathway_code = 'N'
-        then 'Portfolio'
-        when pathway_code = 'O'
-        then 'Met No Requirements'
-        when pathway_code = 'P'
-        then 'Incomplete Credits'
-        when pathway_code = 'S'
-        then subject_area
-        when pathway_code in ('E', 'D', 'J', 'K')
-        then concat(pathway_option, ' ', subject_area)
+        when r.pathway_code in ('M', 'N', 'O', 'P')
+        then r.pathway_option
+        when r.pathway_code = 'S'
+        then r.subject_area
+        when r.pathway_code in ('E', 'D', 'J', 'K')
+        then concat(r.pathway_option, ' ', r.subject_area)
         else 'No Data'
     end as test_type,
 
     row_number() over (
-        partition by student_number, discipline order by pathway_option
+        partition by r.student_number, r.discipline order by r.pathway_option
     ) as rn_discipline_distinct,
-from roster
+
+from roster as r
+left join
+    {{ ref("stg_reporting__graduation_paths_combos") }} as g
+    on r.grade_level = g.grade_level
+    and r.has_fafsa = g.has_fafsa
+    and r.njgpa_season_11th = g.njgpa_season_11th
+    and r.fafsa_season_12th = g.fafsa_season_12th
+    and r.met_dlm = g.met_dlm
+    and r.met_portfolio = g.met_portfolio
+    and r.njgpa_attempt = g.njgpa_attempt
+    and r.met_ela = g.met_ela
+    and r.met_math = g.met_math
