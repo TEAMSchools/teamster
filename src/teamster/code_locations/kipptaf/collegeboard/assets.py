@@ -19,7 +19,7 @@ psat = build_sftp_folder_asset(
 ap = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "collegeboard", "ap"],
     remote_dir_regex=(
-        r"/data-team/kipptaf/collegeboard/ap/(?P<school_year>\d+)/(?P<school>[A-Za-z])"
+        r"/data-team/kipptaf/collegeboard/ap/(?P<school_year>\d+)/(?P<school>[A-Za-z]+)"
     ),
     remote_file_regex=r".+\.csv",
     file_dtype=str,
