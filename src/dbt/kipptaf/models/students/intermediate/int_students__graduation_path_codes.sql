@@ -171,8 +171,7 @@ with
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
         from students as s
         left join
-            `teamster-332318`.`_grangel_reporting`.`stg_reporting__promo_status_cutoffs`
-            as c
+            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
             on s.cohort = c.cohort
             and s.discipline = c.discipline
             and c.`domain` = 'Graduation Pathway'
