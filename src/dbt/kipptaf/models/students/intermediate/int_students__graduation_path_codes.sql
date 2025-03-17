@@ -229,8 +229,8 @@ with
 
             s.ps_grad_path_code as pathway_code,
 
-            null as cutoff,
-            null as scale_score,
+            0 as cutoff,
+            0 as scale_score,
             s.discipline as subject_area,
 
             s.pre_met_pathway_cutoff as met_pathway_cutoff,
@@ -294,17 +294,20 @@ with
         from
             unpivot_calcs pivot (
                 max(
-                    met_dlm
-                    or met_portfolio
-                    or met_njgpa
-                    or met_act
-                    or met_sat
-                    or met_psat10
-                    or met_psat_nmsqt
+                    met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt
                 ) for discipline
                 in ('ELA', 'Math')
             )
-        where njgpa_attempt
+        where njgpa_attempt and ps_grad_path_code not in ('M', 'N', 'O', 'P')
+        group by all
+
+        union all
+
+        select student_number, max(ela) as met_ela, max(math) as met_math,
+        from
+            unpivot_calcs
+            pivot (max(met_dlm or met_portfolio) for discipline in ('ELA', 'Math'))
+        where ps_grad_path_code in ('M', 'N', 'O', 'P')
         group by all
     ),
 
