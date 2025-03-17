@@ -216,15 +216,23 @@ with
             end as pathway_option,
 
             case
-                s.ps_grad_path_code
-                when 'M'
-                then 'dlm'
-                when 'N'
-                then 'portfolio'
-                when 'O'
-                then 'no_pathway'
-                when 'P'
-                then 'incomplete_credits'
+                concat(s.discipline, s.ps_grad_path_code)
+                when 'MathM'
+                then 'dlm_math'
+                when 'ELAM'
+                then 'dlm_ela'
+                when 'MathN'
+                then 'portfolio_math'
+                when 'ELAN'
+                then 'portfolio_ela'
+                when 'MathO'
+                then 'no_pathway_math'
+                when 'ELAO'
+                then 'no_pathway_ela'
+                when 'MathP'
+                then 'incomplete_credits_math'
+                when 'ELAP'
+                then 'incomplete_credits_ela'
             end as score_type,
 
             s.ps_grad_path_code as pathway_code,
@@ -256,6 +264,7 @@ with
             _dbt_source_relation,
             student_number,
             discipline,
+            ps_grad_path_code,
 
             /* taking the njgpa at least once is a requirement to consider other 
             pathways */
