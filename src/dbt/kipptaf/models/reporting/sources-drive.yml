@@ -89,3 +89,17 @@ sources:
               - kipptaf
               - reporting
               - gradebook_flags
+      - name: src_reporting__graduation_path_combos
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
+            sheet_range: src_reporting__graduation_path_combos
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - reporting
+              - graduation_path_combos
