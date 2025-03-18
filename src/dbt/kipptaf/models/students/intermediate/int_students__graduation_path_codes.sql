@@ -438,7 +438,6 @@ select
     row_number() over (
         partition by r.student_number, r.discipline order by r.pathway_option
     ) as rn_discipline_distinct,
-
 from roster as r
 left join
     {{ ref("stg_reporting__graduation_paths_combos") }} as g
@@ -448,6 +447,6 @@ left join
     and r.fafsa_season_12th = g.fafsa_season_12th
     and r.met_dlm = g.met_dlm
     and r.met_portfolio = g.met_portfolio
-    and r.njgpa_attempt = g.njgpa_attempt
+    -- and r.njgpa_attempt = g.njgpa_attempt
     and r.met_ela = g.met_ela
     and r.met_math = g.met_math
