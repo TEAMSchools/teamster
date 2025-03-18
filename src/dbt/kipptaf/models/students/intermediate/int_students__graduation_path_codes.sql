@@ -447,6 +447,7 @@ left join
     and r.fafsa_season_12th = g.fafsa_season_12th
     and r.met_dlm = g.met_dlm
     and r.met_portfolio = g.met_portfolio
-    -- and r.njgpa_attempt = g.njgpa_attempt
+    and r.attempted_njgpa_ela = g.attempted_njgpa_ela
+    and r.attempted_njgpa_math = g.attempted_njgpa_math
     and r.met_ela = g.met_ela
     and r.met_math = g.met_math
