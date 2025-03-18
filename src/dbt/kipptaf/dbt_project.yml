@@ -46,6 +46,7 @@ vars:
 models:
   kipptaf:
     act:
+      +enabled: false
       +schema: act
     adp:
       workforce_now:
@@ -128,6 +129,8 @@ models:
       +schema: extracts
       tableau:
         +schema: tableau
+      disabled:
+        +enabled: false
     facebook:
       +enabled: false
     finance:
@@ -209,6 +212,8 @@ models:
       +materialized: table
     powerschool:
       +schema: powerschool
+      disabled:
+        +enabled: false
     powerschool_enrollment:
       +schema: powerschool_enrollment
     renlearn:
@@ -221,10 +226,14 @@ models:
         +schema: schoolmint_grow
         staging:
           +materialized: table
+        disabled:
+          +enabled: false
     smartrecruiters:
       +schema: smartrecruiters
     students:
       +schema: students
+      disabled:
+        +enabled: false
     surveys:
       +schema: surveys
       +materialized: table
@@ -232,9 +241,15 @@ models:
       +schema: tableau
       staging:
         +materialized: table
+      disabled:
+        +enabled: false
     titan:
       +schema: titan
+      disabled:
+        +enabled: false
     zendesk:
       +schema: zendesk
       staging:
         +materialized: table
+      disabled:
+        +enabled: false
