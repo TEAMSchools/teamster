@@ -191,7 +191,7 @@ with
 
 select
     pc.academic_year,
-    pc.group,
+    pc.criteria_group as `group`,
     pc.grade_level,
     pc.measure,
     pc.criteria as criteria_cutoff,

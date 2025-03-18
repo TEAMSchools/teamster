@@ -1,5 +1,3 @@
-{{- config(enabled=false) -}}
-
 select
     group_id,
     author_id,
