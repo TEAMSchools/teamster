@@ -80,6 +80,7 @@ models:
       - name: final_grad_path_code
         data_type: string
       - name: grad_eligibility
+        data_type: string
         tests:
           - accepted_values:
               values:
@@ -91,7 +92,6 @@ models:
                 - ELA Only / No FAFSA
                 - Math Only / No FAFSA
                 - No FAFSA / No NJGPA
-        data_type: string
       - name: test_type
         data_type: string
       - name: rn_discipline_distict
