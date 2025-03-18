@@ -1,0 +1,15 @@
+version: 2
+models:
+  - name: stg_coupa__intacct_program_lookup
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: adp_business_unit_home_code
+        data_type: string
+      - name: adp_home_work_location_name
+        data_type: string
+      - name: sage_intacct_program
+        data_type: int64
+      - name: sage_intacct_location
+        data_type: int64

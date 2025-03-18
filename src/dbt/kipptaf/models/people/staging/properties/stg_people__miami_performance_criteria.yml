@@ -1,0 +1,19 @@
+version: 2
+models:
+  - name: stg_people__miami_performance_criteria
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: criteria_group
+        data_type: string
+      - name: grade_level
+        data_type: string
+      - name: measure
+        data_type: string
+      - name: criteria
+        data_type: float64
+      - name: payout_amount
+        data_type: float64
