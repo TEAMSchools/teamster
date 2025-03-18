@@ -53,7 +53,11 @@ with
             and e.discipline = u.discipline
             and {{ union_dataset_join_clause(left_alias="e", right_alias="u") }}
             and u.value_type = 'Graduation Pathway'
-        where e.region != 'Miami' and grade_level >= 8 and rn_undergrad = 1
+        where
+            e.region != 'Miami'
+            and grade_level >= 8
+            and rn_undergrad = 1
+            and e.student_number = 107452
     ),
 
     scores as (
