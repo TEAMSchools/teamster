@@ -1,0 +1,37 @@
+version: 2
+models:
+  - name: stg_assessments__assessment_expectations
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: assessment_type
+        data_type: string
+      - name: grade
+        data_type: int64
+      - name: test_type
+        data_type: string
+      - name: scope
+        data_type: string
+      - name: discipline
+        data_type: string
+      - name: subject_area
+        data_type: string
+      - name: assessment_subject_area
+        data_type: string
+      - name: test_code
+        data_type: string
+      - name: admin_season
+        data_type: string
+      - name: month_round
+        data_type: string
+      - name: illuminate_subject
+        data_type: string
+      - name: iready_subject
+        data_type: string
+      - name: ps_credit_type
+        data_type: string

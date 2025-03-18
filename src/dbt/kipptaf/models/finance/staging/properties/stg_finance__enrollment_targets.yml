@@ -1,0 +1,39 @@
+version: 2
+models:
+  - name: stg_finance__enrollment_targets
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: fiscal_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: target_enrollment
+        data_type: int64
+      - name: adjustment
+        data_type: int64
+      - name: attrition_factor
+        data_type: float64
+      - name: financial_model_enrollment
+        data_type: float64
+      - name: grade_band_ratio
+        data_type: float64
+      - name: at_risk_and_lep_ratio
+        data_type: float64
+      - name: at_risk_only_ratio
+        data_type: float64
+      - name: lep_only_ratio
+        data_type: float64
+      - name: sped_ratio
+        data_type: float64
+      - name: _dbt_source_relation
+        data_type: string
+      - name: academic_year
+        data_type: int64
