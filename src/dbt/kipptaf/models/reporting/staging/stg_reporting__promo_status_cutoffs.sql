@@ -1,1 +1,15 @@
-select *, from {{ source("reporting", "src_reporting__promo_status_cutoffs") }}
+select
+    region,
+    academic_year,
+    cohort,
+    grade_level,
+    special_population,
+    domain,
+    discipline,
+    `subject`,
+    code,
+    `type`,
+    sf_standardized_test,
+    cutoff,
+    is_exempt,
+from {{ source("reporting", "src_reporting__promo_status_cutoffs") }}
