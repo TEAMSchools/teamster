@@ -90,7 +90,6 @@ models:
                 - No FAFSA
                 - ELA Only / No FAFSA
                 - Math Only / No FAFSA
-                - No FAFSA / No NJGPA
         data_type: string
       - name: test_type
         data_type: string
