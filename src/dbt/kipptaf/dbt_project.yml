@@ -81,14 +81,22 @@ models:
     amplify:
       +schema: amplify
       +materialized: table
+      drive:
+        disabled:
+          +enabled: false
     assessments:
       +schema: assessments
       staging:
         +materialized: table
+      disabled:
+        +enabled: false
     collegeboard:
       +schema: collegeboard
       staging:
         +materialized: table
+      drive:
+        staging:
+          +materialized: table
     coupa:
       +schema: coupa
       api:
@@ -136,6 +144,9 @@ models:
             group: google_forms
         staging:
           +materialized: table
+        drive:
+          staging:
+            +materialized: table
       directory:
         +schema: google_directory
         +meta:
@@ -173,6 +184,9 @@ models:
       +schema: kippadb
       staging:
         +materialized: table
+      drive:
+        staging:
+          +materialized: table
     ldap:
       +schema: ldap
       staging:

@@ -1,0 +1,17 @@
+version: 2
+models:
+  - name: stg_people__powerschool_crosswalk
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: adp_worker_id
+        data_type: string
+      - name: powerschool_teacher_number
+        data_type: string
+      - name: name
+        data_type: string
+      - name: is_active
+        data_type: boolean
