@@ -80,7 +80,8 @@ models:
       - name: final_grad_path_code
         description: >-
           Using the original code entered in PS plus the attempt/passing status 
-          of different pathways, the final graduation code per subject is generated. This is sent to PS via autocomm.
+          of different pathways, the final graduation code per subject is
+          generated.  This is sent to PS via autocomm.
         data_type: string
       - name: grad_eligibility
         description: >-
