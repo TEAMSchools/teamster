@@ -385,97 +385,78 @@ with
         left join met_sat_subject_mins as s on l.student_number = s.student_number
         left join attempted_subject_njgpa as n on l.student_number = n.student_number
         left join met_subject as m on l.student_number = m.student_number
-    ),
-
-    final as (
-
-        select
-            r.*,
-
-            if(r.met_sat_ela and r.met_sat_math, true, false) as met_sat_subject_mins,
-
-            /* negative value means short; positive value means above min required */
-            if(
-                r.scale_score is not null, r.scale_score - r.cutoff, null
-            ) as points_short,
-
-            case
-                when r.grade_level <= 10
-                then r.ps_grad_path_code
-                when r.ps_grad_path_code in ('M', 'N', 'O', 'P')
-                then r.ps_grad_path_code
-                when r.met_njgpa
-                then 'S'
-                when r.njgpa_attempt and not r.met_njgpa and r.met_act
-                then 'E'
-                when r.njgpa_attempt and not r.met_njgpa and not r.met_act and r.met_sat
-                then 'D'
-                when
-                    r.njgpa_attempt
-                    and not r.met_njgpa
-                    and not r.met_act
-                    and not r.met_sat
-                    and r.met_psat10
-                then 'J'
-                when
-                    r.njgpa_attempt
-                    and not r.met_njgpa
-                    and not r.met_act
-                    and not r.met_sat
-                    and not r.met_psat10
-                    and r.met_psat_nmsqt
-                then 'K'
-                else 'R'
-            end as final_grad_path_code,
-
-            coalesce(
-                case
-                    when r.grade_level <= 10
-                    then 'Grad Eligible'
-                    when r.grade_level >= 11
-                    then g.grad_eligibility
-                end,
-                'New category. Need new logic.'
-            ) as grad_eligibility,
-
-            case
-                when r.pathway_code in ('M', 'N', 'O', 'P')
-                then r.pathway_option
-                when r.pathway_code = 'S'
-                then r.subject_area
-                when r.pathway_code in ('E', 'D', 'J', 'K')
-                then concat(r.pathway_option, ' ', r.subject_area)
-                else 'No Data'
-            end as test_type,
-
-            row_number() over (
-                partition by r.student_number, r.discipline order by r.pathway_option
-            ) as rn_discipline_distinct,
-        from roster as r
-        left join
-            {{ ref("stg_reporting__graduation_paths_combos") }} as g
-            on r.grade_level = g.grade_level
-            and r.has_fafsa = g.has_fafsa
-            and r.njgpa_season_11th = g.njgpa_season_11th
-            and r.fafsa_season_12th = g.fafsa_season_12th
-            and r.met_dlm = g.met_dlm
-            and r.met_portfolio = g.met_portfolio
-            and r.attempted_njgpa_ela = g.attempted_njgpa_ela
-            and r.attempted_njgpa_math = g.attempted_njgpa_math
-            and r.met_ela = g.met_ela
-            and r.met_math = g.met_math
     )
 
-select distinct
-    grade_level,
-    has_fafsa,
-    njgpa_season_11th,
-    fafsa_season_12th,
-    met_dlm,
-    met_portfolio,
-    attempted_njgpa_ela,
-    attempted_njgpa_math,
-    met_ela,
-    met_math
-from final
-where grad_eligibility = 'New category. Need new logic.'
+select
+    r.*,
+
+    if(r.met_sat_ela and r.met_sat_math, true, false) as met_sat_subject_mins,
+
+    /* negative value means short; positive value means above min required */
+    if(r.scale_score is not null, r.scale_score - r.cutoff, null) as points_short,
+
+    case
+        when r.grade_level <= 10
+        then r.ps_grad_path_code
+        when r.ps_grad_path_code in ('M', 'N', 'O', 'P')
+        then r.ps_grad_path_code
+        when r.met_njgpa
+        then 'S'
+        when r.njgpa_attempt and not r.met_njgpa and r.met_act
+        then 'E'
+        when r.njgpa_attempt and not r.met_njgpa and not r.met_act and r.met_sat
+        then 'D'
+        when
+            r.njgpa_attempt
+            and not r.met_njgpa
+            and not r.met_act
+            and not r.met_sat
+            and r.met_psat10
+        then 'J'
+        when
+            r.njgpa_attempt
+            and not r.met_njgpa
+            and not r.met_act
+            and not r.met_sat
+            and not r.met_psat10
+            and r.met_psat_nmsqt
+        then 'K'
+        else 'R'
+    end as final_grad_path_code,
+
+    coalesce(
+        case
+            when r.grade_level <= 10
+            then 'Grad Eligible'
+            when r.grade_level >= 11
+            then g.grad_eligibility
+        end,
+        'New category. Need new logic.'
+    ) as grad_eligibility,
+
+    case
+        when r.pathway_code in ('M', 'N', 'O', 'P')
+        then r.pathway_option
+        when r.pathway_code = 'S'
+        then r.subject_area
+        when r.pathway_code in ('E', 'D', 'J', 'K')
+        then concat(r.pathway_option, ' ', r.subject_area)
+        else 'No Data'
+    end as test_type,
+
+    row_number() over (
+        partition by r.student_number, r.discipline order by r.pathway_option
+    ) as rn_discipline_distinct,
+from roster as r
+left join
+    {{ ref("stg_reporting__graduation_paths_combos") }} as g
+    on r.grade_level = g.grade_level
+    and r.has_fafsa = g.has_fafsa
+    and r.njgpa_season_11th = g.njgpa_season_11th
+    and r.fafsa_season_12th = g.fafsa_season_12th
+    and r.met_dlm = g.met_dlm
+    and r.met_portfolio = g.met_portfolio
+    and r.attempted_njgpa_ela = g.attempted_njgpa_ela
+    and r.attempted_njgpa_math = g.attempted_njgpa_math
+    and r.met_ela = g.met_ela
+    and r.met_math = g.met_math
