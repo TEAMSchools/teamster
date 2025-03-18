@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: stg_people__renewal_letter_mapping
+    config:
+      contract:
+        enforced: true
     columns:
       - name: jobs
         data_type: string
