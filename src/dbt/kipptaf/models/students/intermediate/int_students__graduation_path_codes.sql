@@ -1,3 +1,5 @@
+{{- config(materialized="table") -}}
+
 with
     students as (
         select
@@ -143,6 +145,17 @@ with
             and p.course_discipline in ('MATH', 'ENG')
     ),
 
+    /* calculating if the student attempted njgpa for the discipline */
+    attempted_subject_njgpa as (
+        select
+            student_number,
+            max(ela) as attempted_njgpa_ela,
+            max(math) as attempted_njgpa_math,
+        from scores pivot (max(score_type) for discipline in ('ELA', 'Math'))
+        where pathway_option = 'NJGPA'
+        group by all
+    ),
+
     lookup_table as (
         select
             s._dbt_source_relation,
@@ -169,7 +182,14 @@ with
             p.subject_area,
 
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
+
+            if(nj.attempted_njgpa_ela is not null, true, false) as attempted_njgpa_ela,
+            if(
+                nj.attempted_njgpa_math is not null, true, false
+            ) as attempted_njgpa_math,
+
         from students as s
+        left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         left join
             {{ ref("stg_reporting__promo_status_cutoffs") }} as c
             on s.cohort = c.cohort
@@ -242,7 +262,13 @@ with
 
             s.pre_met_pathway_cutoff as met_pathway_cutoff,
 
+            if(nj.attempted_njgpa_ela is not null, true, false) as attempted_njgpa_ela,
+            if(
+                nj.attempted_njgpa_math is not null, true, false
+            ) as attempted_njgpa_math,
+
         from students as s
+        left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         where s.ps_grad_path_code in ('M', 'N', 'O', 'P')
     ),
 
@@ -263,11 +289,19 @@ with
             _dbt_source_relation,
             student_number,
             discipline,
-            ps_grad_path_code,
+
+            attempted_njgpa_ela,
+            attempted_njgpa_math,
 
             /* taking the njgpa at least once is a requirement to consider other 
             pathways */
-            if(max(met_njgpa) is not null, true, false) as njgpa_attempt,
+            case
+                when discipline = 'ELA' and attempted_njgpa_ela
+                then true
+                when discipline = 'Math' and attempted_njgpa_math
+                then true
+                else false
+            end as njgpa_attempt,
 
             /* collapse the unpivot */
             max(met_dlm) as met_dlm,
@@ -295,14 +329,30 @@ with
         group by all
     ),
 
+    /* need the ps_grad_path_code to not lose null/null students */
+    unpivot_calcs_ps_code as (
+        select u.*, s.ps_grad_path_code
+        from unpivot_calcs as u
+        inner join
+            students as s
+            on u.student_number = s.student_number
+            and u.discipline = s.discipline
+    ),
+
     /* calculating if the student met the discipline overall, regardless of how they 
     did it, assuming they took the njgpa */
     met_subject as (
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
-            unpivot_calcs pivot (
+            unpivot_calcs_ps_code pivot (
                 max(
-                    met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt
+                    met_dlm
+                    or met_portfolio
+                    or met_njgpa
+                    or met_act
+                    or met_sat
+                    or met_psat10
+                    or met_psat_nmsqt
                 ) for discipline
                 in ('ELA', 'Math')
             )
@@ -313,38 +363,48 @@ with
 
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
-            unpivot_calcs pivot (
+            unpivot_calcs_ps_code pivot (
                 max(
-                    met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt
+                    met_dlm
+                    or met_portfolio
+                    or met_njgpa
+                    or met_act
+                    or met_sat
+                    or met_psat10
+                    or met_psat_nmsqt
                 ) for discipline
                 in ('ELA', 'Math')
             )
-        where njgpa_attempt and ps_grad_path_code not in ('M', 'N', 'O', 'P')
-        group by all
-
-        union all
-
-        select student_number, max(ela) as met_ela, max(math) as met_math,
-        from
-            unpivot_calcs
-            pivot (max(met_dlm or met_portfolio) for discipline in ('ELA', 'Math'))
-        where ps_grad_path_code in ('M', 'N', 'O', 'P')
-        group by all
-    ),
-
-    /* calculating if the student attempted njgpa for the discipline */
-    attempted_subject_njgpa as (
-        select
-            student_number,
-            max(ela) as attempted_njgpa_ela,
-            max(math) as attempted_njgpa_math,
-        from unpivot_calcs pivot (max(njgpa_attempt) for discipline in ('ELA', 'Math'))
+        where njgpa_attempt and ps_grad_path_code is not null
         group by all
     ),
 
     roster as (
         select
-            l.*,
+            l._dbt_source_relation,
+            l.students_dcid,
+            l.studentid,
+            l.student_number,
+            l.state_studentnumber,
+            l.salesforce_id,
+            l.grade_level,
+            l.cohort,
+            l.discipline,
+            l.powerschool_credittype,
+            l.ps_grad_path_code,
+            l.has_fafsa,
+            l.njgpa_season_11th,
+            l.fafsa_season_12th,
+            l.pathway_option,
+            l.score_type,
+            l.pathway_code,
+            l.cutoff,
+            l.scale_score,
+            l.subject_area,
+            l.met_pathway_cutoff,
+
+            coalesce(l.attempted_njgpa_ela, false) as attempted_njgpa_ela,
+            coalesce(l.attempted_njgpa_math, false) as attempted_njgpa_math,
 
             coalesce(s.met_sat_ela) as met_sat_ela,
             coalesce(s.met_sat_math) as met_sat_math,
@@ -357,9 +417,6 @@ with
             coalesce(u.met_sat, false) as met_sat,
             coalesce(u.met_psat10, false) as met_psat10,
             coalesce(u.met_psat_nmsqt, false) as met_psat_nmsqt,
-
-            coalesce(attempted_njgpa_ela, false) as attempted_njgpa_ela,
-            coalesce(attempted_njgpa_math, false) as attempted_njgpa_math,
 
             coalesce(m.met_ela, false) as met_ela,
             coalesce(m.met_math, false) as met_math,
@@ -387,7 +444,7 @@ select
     if(r.scale_score is not null, r.scale_score - r.cutoff, null) as points_short,
 
     case
-        when r.grade_level != 12
+        when r.grade_level <= 10
         then r.ps_grad_path_code
         when r.ps_grad_path_code in ('M', 'N', 'O', 'P')
         then r.ps_grad_path_code
@@ -438,6 +495,7 @@ select
     row_number() over (
         partition by r.student_number, r.discipline order by r.pathway_option
     ) as rn_discipline_distinct,
+
 from roster as r
 left join
     {{ ref("stg_reporting__graduation_paths_combos") }} as g
@@ -445,8 +503,6 @@ left join
     and r.has_fafsa = g.has_fafsa
     and r.njgpa_season_11th = g.njgpa_season_11th
     and r.fafsa_season_12th = g.fafsa_season_12th
-    and r.met_dlm = g.met_dlm
-    and r.met_portfolio = g.met_portfolio
     and r.attempted_njgpa_ela = g.attempted_njgpa_ela
     and r.attempted_njgpa_math = g.attempted_njgpa_math
     and r.met_ela = g.met_ela
