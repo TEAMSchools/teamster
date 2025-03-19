@@ -5,21 +5,21 @@ models:
       contract:
         enforced: true
     columns:
-      - name: region
+      - name: Region
         data_type: string
-      - name: academic_year
+      - name: Academic_Year
         data_type: int64
-      - name: term_name
+      - name: Term_Name
         data_type: string
-      - name: grade_level
+      - name: Grade_Level
         data_type: int64
-      - name: illuminate_subject_area
+      - name: Illuminate_Subject_Area
         data_type: string
-      - name: parent_standard
+      - name: Parent_Standard
         data_type: int64
-      - name: standard_code
+      - name: Standard_Code
         data_type: string
-      - name: is_power_standard
+      - name: Is_Power_Standard
         data_type: boolean
-      - name: qbl
+      - name: QBL
         data_type: string

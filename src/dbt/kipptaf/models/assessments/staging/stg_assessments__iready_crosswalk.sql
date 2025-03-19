@@ -1,12 +1,5 @@
 select
-    source_system,
-    destination_system,
-    test_name,
-    grade_level,
-    sublevel_name,
-    sublevel_number,
-    scale_low,
-    scale_high,
+    *,
 
     cast(grade_level as string) as grade_level_string,
 

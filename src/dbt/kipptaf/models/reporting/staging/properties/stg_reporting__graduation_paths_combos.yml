@@ -23,3 +23,7 @@ models:
         data_type: boolean
       - name: grad_eligibility
         data_type: string
+      # - name: met_dlm
+      #   data_type: boolean
+      # - name: met_portfolio
+      #   data_type: boolean

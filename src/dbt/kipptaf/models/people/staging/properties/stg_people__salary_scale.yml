@@ -5,23 +5,23 @@ models:
       contract:
         enforced: true
     columns:
-      - name: scale_name
+      - name: Scale_Name
         data_type: string
-      - name: job_title
+      - name: Job_Title
         data_type: string
-      - name: salary_rule
+      - name: Salary_Rule
         data_type: string
-      - name: region
+      - name: Region
         data_type: string
-      - name: school_level
+      - name: School_Level
         data_type: string
-      - name: scale_cy_salary
+      - name: Scale_CY_Salary
         data_type: int64
-      - name: scale_ny_salary
+      - name: Scale_NY_Salary
         data_type: int64
-      - name: scale_step
+      - name: Scale_Step
         data_type: int64
-      - name: academic_year
+      - name: Academic_Year
         data_type: int64
       - name: scale_ny_salary_plus_1_cent
         data_type: float64
