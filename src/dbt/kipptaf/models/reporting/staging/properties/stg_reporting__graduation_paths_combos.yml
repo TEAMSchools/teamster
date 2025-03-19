@@ -13,10 +13,6 @@ models:
         data_type: boolean
       - name: fafsa_season_12th
         data_type: boolean
-      - name: met_dlm
-        data_type: boolean
-      - name: met_portfolio
-        data_type: boolean
       - name: attempted_njgpa_ela
         data_type: boolean
       - name: attempted_njgpa_math

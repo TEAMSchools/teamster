@@ -503,8 +503,6 @@ left join
     and r.has_fafsa = g.has_fafsa
     and r.njgpa_season_11th = g.njgpa_season_11th
     and r.fafsa_season_12th = g.fafsa_season_12th
-    and r.met_dlm = g.met_dlm
-    and r.met_portfolio = g.met_portfolio
     and r.attempted_njgpa_ela = g.attempted_njgpa_ela
     and r.attempted_njgpa_math = g.attempted_njgpa_math
     and r.met_ela = g.met_ela

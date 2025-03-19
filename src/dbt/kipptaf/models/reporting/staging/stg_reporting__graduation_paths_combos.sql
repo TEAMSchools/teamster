@@ -3,8 +3,6 @@ select
     has_fafsa,
     njgpa_season_11th,
     fafsa_season_12th,
-    met_dlm,
-    met_portfolio,
     attempted_njgpa_ela,
     attempted_njgpa_math,
     met_ela,
