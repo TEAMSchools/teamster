@@ -1,13 +1,4 @@
-select
-    academic_year,
-    region,
-    metric_id,
-    bucket,
-    `role`,
-    `type`,
-    `description`,
-
-    academic_year + 1 as fiscal_year,
+select *, academic_year + 1 as fiscal_year,
 from
     {{
         source(
