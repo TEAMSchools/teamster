@@ -5,21 +5,21 @@ models:
       contract:
         enforced: true
     columns:
-      - name: assessment_id
+      - name: Assessment_ID
         data_type: int64
-      - name: academic_year
+      - name: Academic_Year
         data_type: int64
-      - name: test_type
+      - name: Test_Type
         data_type: string
-      - name: administration_round
+      - name: Administration_Round
         data_type: string
-      - name: subject
+      - name: Subject
         data_type: string
-      - name: grade_level
+      - name: Grade_Level
         data_type: int64
-      - name: raw_score_low
+      - name: Raw_Score_Low
         data_type: int64
-      - name: raw_score_high
+      - name: Raw_Score_High
         data_type: int64
-      - name: scale_score
+      - name: Scale_Score
         data_type: int64

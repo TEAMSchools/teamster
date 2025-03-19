@@ -1,13 +1,7 @@
 select
-    employee_number,
-    academic_year,
+    * except (pm_term),
+
     pm_term as form_term,
-    etr_score,
-    so_score,
-    overall_score,
-    etr_tier,
-    so_tier,
-    overall_tier,
 
     'Coaching Tool: Coach ETR and Reflection' as form_long_name,
 
