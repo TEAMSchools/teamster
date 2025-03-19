@@ -5,25 +5,21 @@ models:
       contract:
         enforced: true
     columns:
-      - name: Grade_Level
+      - name: grade_level
         data_type: int64
-      - name: Has_FAFSA
+      - name: has_fafsa
         data_type: boolean
-      - name: NJGPA_Season_11th
+      - name: njgpa_season_11th
         data_type: boolean
-      - name: FAFSA_Season_12th
+      - name: fafsa_season_12th
         data_type: boolean
-      - name: Met_DLM
+      - name: attempted_njgpa_ela
         data_type: boolean
-      - name: Met_Portfolio
+      - name: attempted_njgpa_math
         data_type: boolean
-      - name: Attempted_NJGPA_ELA
+      - name: met_ela
         data_type: boolean
-      - name: Attempted_NJGPA_Math
+      - name: met_math
         data_type: boolean
-      - name: Met_ELA
-        data_type: boolean
-      - name: Met_Math
-        data_type: boolean
-      - name: Grad_Eligibility
+      - name: grad_eligibility
         data_type: string
