@@ -5,9 +5,9 @@ models:
       contract:
         enforced: true
     columns:
-      - name: old_project_id_alt_nj
+      - name: Old_Project_Id_Alt_Nj
         data_type: int64
-      - name: project_id
+      - name: Project_Id
         data_type: int64
-      - name: project_name
+      - name: Project_Name
         data_type: string

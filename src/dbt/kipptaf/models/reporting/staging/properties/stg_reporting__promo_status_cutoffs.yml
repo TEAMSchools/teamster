@@ -5,29 +5,29 @@ models:
       contract:
         enforced: true
     columns:
-      - name: region
+      - name: Region
         data_type: string
-      - name: academic_year
+      - name: Academic_Year
         data_type: int64
-      - name: cohort
+      - name: Cohort
         data_type: int64
-      - name: grade_level
+      - name: Grade_Level
         data_type: int64
-      - name: special_population
+      - name: Special_Population
         data_type: string
-      - name: domain
+      - name: Domain
         data_type: string
-      - name: discipline
+      - name: Discipline
         data_type: string
-      - name: subject
+      - name: Subject
         data_type: string
-      - name: code
+      - name: Code
         data_type: string
-      - name: type
+      - name: Type
         data_type: string
-      - name: sf_standardized_test
+      - name: Sf_Standardized_Test
         data_type: string
-      - name: cutoff
+      - name: Cutoff
         data_type: float64
-      - name: is_exempt
+      - name: Is_Exempt
         data_type: boolean

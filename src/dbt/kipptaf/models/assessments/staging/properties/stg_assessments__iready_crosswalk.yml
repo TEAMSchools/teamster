@@ -5,25 +5,25 @@ models:
       contract:
         enforced: true
     columns:
-      - name: source_system
+      - name: Source_System
         data_type: string
-      - name: destination_system
+      - name: Destination_System
         data_type: string
-      - name: test_name
+      - name: Test_Name
         data_type: string
-      - name: grade_level
+      - name: Grade_Level
         data_type: int64
-      - name: sublevel_name
+      - name: Sublevel_Name
         data_type: string
-      - name: sublevel_number
+      - name: Sublevel_Number
         data_type: int64
-      - name: scale_low
+      - name: Scale_Low
         data_type: int64
-      - name: scale_high
+      - name: Scale_High
         data_type: int64
-      - name: grade_level_string
+      - name: Grade_Level_String
         data_type: string
-      - name: level
+      - name: Level
         data_type: int64
-      - name: is_proficient
+      - name: Is_Proficient
         data_type: boolean

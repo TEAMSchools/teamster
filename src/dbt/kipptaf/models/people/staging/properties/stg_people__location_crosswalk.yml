@@ -5,27 +5,27 @@ models:
       contract:
         enforced: true
     columns:
-      - name: name
+      - name: Name
         data_type: string
-      - name: clean_name
+      - name: Clean_Name
         data_type: string
-      - name: abbreviation
+      - name: Abbreviation
         data_type: string
-      - name: grade_band
+      - name: Grade_Band
         data_type: string
-      - name: region
+      - name: Region
         data_type: string
-      - name: powerschool_school_id
+      - name: Powerschool_School_Id
         data_type: int64
-      - name: deanslist_school_id
+      - name: Deanslist_School_Id
         data_type: int64
-      - name: reporting_school_id
+      - name: Reporting_School_Id
         data_type: int64
-      - name: is_campus
+      - name: Is_Campus
         data_type: boolean
-      - name: is_pathways
+      - name: Is_Pathways
         data_type: boolean
-      - name: dagster_code_location
+      - name: Dagster_Code_Location
         data_type: string
-      - name: head_of_schools_employee_number
+      - name: Head_Of_Schools_Employee_Number
         data_type: int64
