@@ -4,7 +4,8 @@ with
             * except (
                 academic_year,
                 dfg,
-                subgroup subgroup_type,
+                subgroup,
+                subgroup_type,
                 county_code,
                 district_code,
                 school_code,
