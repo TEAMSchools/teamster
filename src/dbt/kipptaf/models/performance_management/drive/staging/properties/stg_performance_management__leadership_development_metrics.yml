@@ -9,7 +9,7 @@ models:
         data_type: int64
       - name: Region
         data_type: string
-      - name: Metric_Id
+      - name: Metric_ID
         data_type: string
       - name: Bucket
         data_type: string
@@ -19,5 +19,7 @@ models:
         data_type: string
       - name: Description
         data_type: string
-      - name: Fiscal_Year
+      - name: Disabled
+        data_type: boolean
+      - name: fiscal_year
         data_type: int64

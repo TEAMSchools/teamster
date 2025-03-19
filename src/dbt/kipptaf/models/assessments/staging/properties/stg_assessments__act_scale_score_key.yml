@@ -5,7 +5,7 @@ models:
       contract:
         enforced: true
     columns:
-      - name: Assessment_Id
+      - name: Assessment_ID
         data_type: int64
       - name: Academic_Year
         data_type: int64

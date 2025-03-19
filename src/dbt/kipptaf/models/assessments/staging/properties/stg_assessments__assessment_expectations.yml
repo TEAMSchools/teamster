@@ -31,7 +31,7 @@ models:
         data_type: string
       - name: Illuminate_Subject
         data_type: string
-      - name: Iready_Subject
+      - name: iReady_Subject
         data_type: string
-      - name: Ps_Credit_Type
+      - name: PS_Credit_Type
         data_type: string

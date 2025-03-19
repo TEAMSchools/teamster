@@ -5,9 +5,9 @@ models:
       contract:
         enforced: true
     columns:
-      - name: Powerschool_Course_Number
+      - name: PowerSchool_Course_Number
         data_type: string
-      - name: Powerschool_Course_Name
+      - name: PowerSchool_Course_Name
         data_type: string
       - name: Illuminate_Subject_Area
         data_type: string
@@ -15,7 +15,7 @@ models:
         data_type: boolean
       - name: Is_Advanced_Math
         data_type: boolean
-      - name: Exclude_From_Gradebook
+      - name: Exclude_from_Gradebook
         data_type: boolean
       - name: Duplicate_Audit
         data_type: int64

@@ -25,7 +25,7 @@ models:
         data_type: string
       - name: Type
         data_type: string
-      - name: Sf_Standardized_Test
+      - name: SF_Standardized_Test
         data_type: string
       - name: Cutoff
         data_type: float64
