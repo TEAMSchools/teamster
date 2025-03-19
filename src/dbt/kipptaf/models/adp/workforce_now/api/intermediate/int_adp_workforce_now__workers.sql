@@ -25,6 +25,7 @@ select
     w.person__legal_name__given_name,
     w.person__race_code_name,
     w.race_ethnicity_reporting,
+    w.worker_hire_date_recent,
 
     wa.item_id,
     wa.position_id,
@@ -73,10 +74,6 @@ select
     rtw.person__family_name_1
     || ', '
     || rtw.person__given_name as reports_to_formatted_name,
-
-    coalesce(
-        w.worker_dates__rehire_date, w.worker_dates__original_hire_date
-    ) as worker_hire_date_recent,
 
     {{
         dbt_utils.generate_surrogate_key(
