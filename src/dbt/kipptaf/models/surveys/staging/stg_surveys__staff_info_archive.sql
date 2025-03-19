@@ -1,7 +1,7 @@
 select
     * except (
         `timestamp`,
-        community_professional_experience,,
+        community_professional_experience,
         years_exp_outside_kipp,
         years_teaching_in_njfl,
         years_teaching_outside_njfl

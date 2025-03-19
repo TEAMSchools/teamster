@@ -16,7 +16,7 @@ with
                 l2_percent,
                 l3_percent,
                 l4_percent,
-                l5_percent,
+                l5_percent
             ),
 
             safe_cast(academic_year as int) as academic_year,
