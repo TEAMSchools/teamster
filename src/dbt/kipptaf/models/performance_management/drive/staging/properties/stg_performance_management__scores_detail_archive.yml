@@ -5,21 +5,21 @@ models:
       contract:
         enforced: true
     columns:
-      - name: employee_number
+      - name: Employee_Number
         data_type: int64
-      - name: academic_year
+      - name: Academic_Year
         data_type: int64
-      - name: form_term
+      - name: Form_Term
         data_type: string
-      - name: score_type
+      - name: Score_Type
         data_type: string
-      - name: observer_employee_number
+      - name: Observer_Employee_Number
         data_type: int64
-      - name: measurement_name
+      - name: Measurement_Name
         data_type: string
-      - name: row_score_value
+      - name: Row_Score_Value
         data_type: int64
-      - name: observer_name
+      - name: Observer_Name
         data_type: string
-      - name: observed_at
+      - name: Observed_At
         data_type: date

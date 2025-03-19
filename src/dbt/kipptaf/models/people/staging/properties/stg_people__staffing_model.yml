@@ -5,27 +5,27 @@ models:
       contract:
         enforced: true
     columns:
-      - name: academic_year
+      - name: Academic_Year
         data_type: int64
-      - name: unique_id
+      - name: Unique_Id
         data_type: string
-      - name: entity
+      - name: Entity
         data_type: string
-      - name: city
+      - name: City
         data_type: string
-      - name: grade_band
+      - name: Grade_Band
         data_type: string
-      - name: school
+      - name: School
         data_type: string
-      - name: recruitment_group
+      - name: Recruitment_Group
         data_type: string
-      - name: adp_department
+      - name: Adp_Department
         data_type: string
-      - name: adp_job_title
+      - name: Adp_Job_Title
         data_type: string
-      - name: display_name
+      - name: Display_Name
         data_type: string
-      - name: culture
+      - name: Culture
         data_type: boolean
-      - name: flex
+      - name: Flex
         data_type: boolean

@@ -5,19 +5,19 @@ models:
       contract:
         enforced: true
     columns:
-      - name: region
+      - name: Region
         data_type: string
-      - name: school_level
+      - name: School_Level
         data_type: string
-      - name: audit_category
+      - name: Audit_Category
         data_type: string
-      - name: audit_flag_name
+      - name: Audit_Flag_Name
         data_type: string
-      - name: grade_level
+      - name: Grade_Level
         data_type: int64
-      - name: code
+      - name: Code
         data_type: string
-      - name: cte_grouping
+      - name: Cte_Grouping
         data_type: string
-      - name: code_type
+      - name: Code_Type
         data_type: string

@@ -5,33 +5,33 @@ models:
       contract:
         enforced: true
     columns:
-      - name: fiscal_year
+      - name: Fiscal_Year
         data_type: int64
-      - name: region
+      - name: Region
         data_type: string
-      - name: schoolid
+      - name: Schoolid
         data_type: int64
-      - name: school_name
+      - name: School_Name
         data_type: string
-      - name: grade_level
+      - name: Grade_Level
         data_type: int64
-      - name: target_enrollment
+      - name: Target_Enrollment
         data_type: int64
-      - name: adjustment
+      - name: Adjustment
         data_type: int64
-      - name: attrition_factor
+      - name: Attrition_Factor
         data_type: float64
-      - name: financial_model_enrollment
+      - name: Financial_Model_Enrollment
         data_type: float64
-      - name: grade_band_ratio
+      - name: Grade_Band_Ratio
         data_type: float64
-      - name: at_risk_and_lep_ratio
+      - name: At_Risk_And_Lep_Ratio
         data_type: float64
-      - name: at_risk_only_ratio
+      - name: At_Risk_Only_Ratio
         data_type: float64
-      - name: lep_only_ratio
+      - name: Lep_Only_Ratio
         data_type: float64
-      - name: sped_ratio
+      - name: Sped_Ratio
         data_type: float64
       - name: _dbt_source_relation
         data_type: string
