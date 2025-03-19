@@ -25,15 +25,13 @@ models:
         data_type: float64
       - name: Grade_Band_Ratio
         data_type: float64
-      - name: At_Risk_And_Lep_Ratio
+      - name: At_Risk_and_LEP_Ratio
         data_type: float64
       - name: At_Risk_Only_Ratio
         data_type: float64
-      - name: Lep_Only_Ratio
+      - name: LEP_Only_Ratio
         data_type: float64
-      - name: Sped_Ratio
+      - name: SPED_Ratio
         data_type: float64
-      - name: _dbt_source_relation
-        data_type: string
       - name: academic_year
         data_type: int64

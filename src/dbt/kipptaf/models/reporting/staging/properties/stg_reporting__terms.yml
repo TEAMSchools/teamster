@@ -5,31 +5,31 @@ models:
       contract:
         enforced: true
     columns:
-      - name: Type
+      - name: type
         data_type: string
-      - name: Code
+      - name: code
         data_type: string
-      - name: Name
+      - name: name
         data_type: string
-      - name: Start_Date
+      - name: start_date
         data_type: date
-      - name: End_Date
+      - name: end_date
         data_type: date
-      - name: Academic_Year
+      - name: academic_year
         data_type: int64
-      - name: Fiscal_Year
+      - name: fiscal_year
         data_type: int64
-      - name: Powerschool_Year_Id
+      - name: powerschool_year_id
         data_type: int64
-      - name: Powerschool_Term_Id
+      - name: powerschool_term_id
         data_type: int64
-      - name: School_Id
+      - name: school_id
         data_type: int64
-      - name: Region
+      - name: region
         data_type: string
-      - name: Grade_Band
+      - name: grade_band
         data_type: string
-      - name: Lockbox_Date
+      - name: lockbox_date
         data_type: date
-      - name: Is_Current
+      - name: is_current
         data_type: boolean

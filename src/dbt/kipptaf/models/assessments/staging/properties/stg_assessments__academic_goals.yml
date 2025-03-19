@@ -7,7 +7,7 @@ models:
     columns:
       - name: Academic_Year
         data_type: int64
-      - name: School_Id
+      - name: School_ID
         data_type: int64
       - name: Grade_Level
         data_type: int64

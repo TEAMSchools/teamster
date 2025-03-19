@@ -21,5 +21,5 @@ models:
         data_type: string
       - name: Is_Power_Standard
         data_type: boolean
-      - name: Qbl
+      - name: QBL
         data_type: string

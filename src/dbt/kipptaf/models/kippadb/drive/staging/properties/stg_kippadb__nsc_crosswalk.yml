@@ -5,17 +5,17 @@ models:
       contract:
         enforced: true
     columns:
-      - name: Account_Id
+      - name: Account_ID
         data_type: string
-      - name: College_Name_Nsc
+      - name: College_Name_NSC
         data_type: string
-      - name: College_State_Nsc
+      - name: College_State_NSC
         data_type: string
-      - name: College_Code_Nsc
+      - name: College_Code_NSC
         data_type: string
       - name: Meets_Full_Need
         data_type: boolean
-      - name: Is_Strong_Oos_Option
+      - name: Is_Strong_OOS_Option
         data_type: boolean
-      - name: Rn_Account
+      - name: rn_account
         data_type: int64

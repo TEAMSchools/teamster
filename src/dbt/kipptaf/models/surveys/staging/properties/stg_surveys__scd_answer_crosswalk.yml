@@ -11,7 +11,7 @@ models:
         data_type: string
       - name: Response
         data_type: string
-      - name: response_int
+      - name: Response_Int
         data_type: int64
-      - name: response_string
+      - name: Response_String
         data_type: string
