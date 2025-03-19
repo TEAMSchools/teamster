@@ -4,7 +4,7 @@ select
         campaign_academic_year,
         respondent_df_employee_number,
         subject_df_employee_number,
-        answer_value,
+        answer_value
     ),
 
     safe_cast(date_submitted as timestamp) as date_submitted,
