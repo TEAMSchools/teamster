@@ -9,6 +9,7 @@ from requests import Response, Session, exceptions
 class MClassResource(ConfigurableResource):
     username: str
     password: str
+    request_timeout: float = 60.0
 
     _base_url: str = PrivateAttr(default="https://mclass.amplify.com")
     _session: Session = PrivateAttr(default_factory=Session)
@@ -42,7 +43,9 @@ class MClassResource(ConfigurableResource):
         response = Response()
 
         try:
-            response = self._session.request(method=method, url=url, **kwargs)
+            response = self._session.request(
+                method=method, url=url, timeout=self.request_timeout, **kwargs
+            )
 
             response.raise_for_status()
             return response

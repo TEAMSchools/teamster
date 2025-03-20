@@ -1,5 +1,3 @@
-{{- config(enabled=false) -}}
-
 with
     identifier_responses as (
         select

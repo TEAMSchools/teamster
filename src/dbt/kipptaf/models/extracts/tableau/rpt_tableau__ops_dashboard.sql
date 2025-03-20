@@ -4,6 +4,7 @@ with
             _dbt_source_relation,
             studentid,
             yearid,
+
             sum(attendancevalue) as n_attendance,
             sum(membershipvalue) as n_membership,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
@@ -24,11 +25,8 @@ with
             at_risk_only_ratio,
             lep_only_ratio,
             sped_ratio,
-            '`{{ target.database }}`.`'
-            || regexp_extract(_dbt_source_relation, r'(kipp\w+)_')
-            || '_powerschool'
-            || '`.`base_powerschool__student_enrollments`' as _dbt_source_relation,
-        from {{ ref("stg_finance__enrollment_targets") }}
+            _dbt_source_relation,
+        from {{ ref("int_finance__enrollment_targets") }}
 
         union all
 
@@ -38,6 +36,7 @@ with
             reporting_schoolid,
             is_self_contained,
             grade_level,
+
             1 as target_enrollment,
             1 as target_enrollment_finance,
             null as grade_band_ratio,
@@ -45,6 +44,7 @@ with
             null as at_risk_only_ratio,
             null as lep_only_ratio,
             null as sped_ratio,
+
             _dbt_source_relation,
         from {{ ref("base_powerschool__student_enrollments") }}
         where
@@ -61,6 +61,7 @@ with
             schoolid,
             is_self_contained,
             grade_level,
+
             sum(target_enrollment) as target_enrollment,
             sum(target_enrollment_finance) as target_enrollment_finance,
             max(grade_band_ratio) as grade_band_ratio,

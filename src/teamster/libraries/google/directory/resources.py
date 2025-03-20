@@ -2,24 +2,25 @@ import time
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
 from dagster._utils.backoff import backoff
-from google import auth
-from google.oauth2.service_account import Credentials
+from google.auth import compute_engine, default, iam, load_credentials_from_file
+from google.auth.transport import requests
+from google.oauth2 import service_account
 from googleapiclient import discovery, errors
 from pydantic import PrivateAttr
 
 
 class GoogleDirectoryResource(ConfigurableResource):
     customer_id: str
-    service_account_file_path: str | None = None
-    delegated_account: str | None = None
     version: str = "v1"
-    scopes: list = [
+    max_results: int = 500
+    scopes: list[str] = [
         "https://www.googleapis.com/auth/admin.directory.user",
         "https://www.googleapis.com/auth/admin.directory.group",
         "https://www.googleapis.com/auth/admin.directory.rolemanagement",
         "https://www.googleapis.com/auth/admin.directory.orgunit",
     ]
-    max_results: int = 500
+    service_account_file_path: str | None = None
+    delegated_account: str | None = None
 
     _resource: discovery.Resource = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
@@ -29,15 +30,41 @@ class GoogleDirectoryResource(ConfigurableResource):
         self._log = _check.not_none(value=context.log)
 
         if self.service_account_file_path is not None:
-            credentials, project_id = auth.load_credentials_from_file(
+            credentials, project_id = load_credentials_from_file(
                 filename=self.service_account_file_path, scopes=self.scopes
             )
 
-            credentials = _check.inst(credentials, Credentials)
-
-            credentials = credentials.with_subject(self.delegated_account)
+            credentials = _check.inst(
+                credentials, service_account.Credentials
+            ).with_subject(self.delegated_account)
         else:
-            credentials, project_id = auth.default(scopes=self.scopes)
+            # https://stackoverflow.com/a/57092533
+            # https://github.com/GoogleCloudPlatform/professional-services/tree/main/examples/gce-to-adminsdk
+            request = requests.Request()
+            source_credentials, project_id = default()
+
+            source_credentials = _check.inst(
+                obj=source_credentials, ttype=compute_engine.Credentials
+            )
+
+            # Refresh the default credentials. This ensures that the information about
+            # this account, notably the email, is populated.
+            source_credentials.refresh(request)
+
+            # Create OAuth 2.0 Service Account credentials using the IAM-based signer
+            # and the bootstrap credential's service account email.
+            # trunk-ignore(bandit/B106)
+            credentials = service_account.Credentials(
+                signer=iam.Signer(
+                    request=request,
+                    credentials=source_credentials,
+                    service_account_email=source_credentials.service_account_email,
+                ),
+                service_account_email=source_credentials.service_account_email,
+                token_uri="https://accounts.google.com/o/oauth2/token",
+                scopes=self.scopes,
+                subject=self.delegated_account,
+            )
 
         self._resource = discovery.build(
             serviceName="admin",
