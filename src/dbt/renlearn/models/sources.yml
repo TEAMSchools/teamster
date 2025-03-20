@@ -41,8 +41,8 @@ sources:
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/renlearn/star/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: MANUAL
-            max_staleness: INTERVAL 7 DAY
+            # metadata_cache_mode: MANUAL
+            # max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/renlearn/star/"

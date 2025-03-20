@@ -1,0 +1,13 @@
+version: 2
+models:
+  - name: stg_finance__payroll_code_mapping
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: Old_Project_ID_Alt_NJ
+        data_type: int64
+      - name: Project_ID
+        data_type: int64
+      - name: Project_Name
+        data_type: string

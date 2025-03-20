@@ -22,10 +22,6 @@ from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
 
-"""
-Dagster resources
-"""
-
 ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
     subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
     app_key=EnvVar("ADP_WFM_APP_KEY"),
@@ -62,23 +58,16 @@ DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
 
 DLT_RESOURCE = DagsterDltResource()
 
-GOOGLE_DRIVE_RESOURCE = GoogleDriveResource(
-    service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
-)
+GOOGLE_DRIVE_RESOURCE = GoogleDriveResource()
 
-GOOGLE_FORMS_RESOURCE = GoogleFormsResource(
-    service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
-)
+GOOGLE_FORMS_RESOURCE = GoogleFormsResource()
 
 GOOGLE_DIRECTORY_RESOURCE = GoogleDirectoryResource(
     customer_id=EnvVar("GOOGLE_WORKSPACE_CUSTOMER_ID"),
     delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
-    service_account_file_path="/etc/secret-volume/gcloud_service_account_json",
 )
 
-GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource(
-    service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
-)
+GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource()
 
 LDAP_RESOURCE = LdapResource(
     host=EnvVar("LDAP_HOST_IP"),
@@ -88,7 +77,9 @@ LDAP_RESOURCE = LdapResource(
 )
 
 MCLASS_RESOURCE = MClassResource(
-    username=EnvVar("AMPLIFY_USERNAME"), password=EnvVar("AMPLIFY_PASSWORD")
+    username=EnvVar("AMPLIFY_USERNAME"),
+    password=EnvVar("AMPLIFY_PASSWORD"),
+    request_timeout=(60 * 10),
 )
 
 POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(

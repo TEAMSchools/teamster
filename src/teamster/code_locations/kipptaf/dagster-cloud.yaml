@@ -31,21 +31,6 @@ locations:
                     items:
                       - key: id_rsa_egencia
                         path: id_rsa_egencia
-                - secret:
-                    name: op-gcp-service-account-dbt
-                    items:
-                      - key: dbt_user_credentials.json
-                        path: dbt_user_creds_json
-                - secret:
-                    name: op-gcp-service-account-teamster
-                    items:
-                      - key: service_account_gserviceaccount.json
-                        path: gcloud_service_account_json
-                - secret:
-                    name: op-gcp-service-account-dlt
-                    items:
-                      - key: keyfile.json
-                        path: gcloud_teamster_dlt_keyfile.json
         server_k8s_config:
           container_config:
             env:
@@ -414,6 +399,11 @@ locations:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: password
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api-kippnewark
+                    key: credential
         run_k8s_config:
           container_config:
             env:
@@ -782,3 +772,8 @@ locations:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: password
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api-kippnewark
+                    key: credential
