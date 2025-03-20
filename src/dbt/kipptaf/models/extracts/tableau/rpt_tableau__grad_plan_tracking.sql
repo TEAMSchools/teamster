@@ -87,7 +87,7 @@ with
 
             gp.name as gradplan_name,
 
-        from {{ ref("base_powerschool__student_enrollments") }} as e
+        from {{ ref("int_extracts__student_enrollments") }} as e
         left join
             {{ ref("stg_powerschool__gpprogresssubject") }} as sub
             on e.students_dcid = sub.studentsdcid
@@ -110,7 +110,6 @@ with
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
-            and e.rn_year = 1
     )
 
 select
@@ -160,7 +159,7 @@ select
         gpver.minimumgpa.bytes_decimal_value
     ) as minimumgpa,
 
-from {{ ref("base_powerschool__student_enrollments") }} as e
+from {{ ref("int_extracts__student_enrollments") }} as e
 left join
     {{ ref("stg_powerschool__gpprogresssubject") }} as sub
     on e.students_dcid = sub.studentsdcid
@@ -188,5 +187,5 @@ left join
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.school_level = 'HS'
-    and e.rn_year = 1
     and gpn.name != gp.name
+    and e.student_number = 203535
