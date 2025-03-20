@@ -1,5 +1,4 @@
 select
-
     s.studentsdcid,
     s.earnedcredits,  -- from stored grades
     s.enrolledcredits,  -- from cc table
