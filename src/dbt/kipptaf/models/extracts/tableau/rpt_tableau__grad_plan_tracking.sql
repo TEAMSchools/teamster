@@ -2,25 +2,43 @@ with
     student_id_crosswalk as (
         select
             _dbt_source_relation,
+            academic_year,
+            academic_year_display,
+            district,
+            schoolid,
+            region,
+            school,
             studentid,
             students_dcid,
             student_number,
             state_studentnumber,
             salesforce_id,
+            student_name,
+            student_first_name,
+            student_last_name,
+            grade_level,
+            enroll_status,
+            student_email,
+            cohort,
+            ktc_cohort,
+            gender,
+            ethnicity,
+            lep_status,
+            iep_status,
+            gifted_and_talented,
+            is_504,
+            is_out_of_district,
+            is_self_contained,
+            is_counseling_services,
+            is_student_athlete,
+            advisory,
+            college_match_gpa,
+            college_match_gpa_bands,
 
         from {{ ref("int_extracts__student_enrollments") }}
-        where rn_undergrad = 1 and grade_level >= 9
+        where grade_level >= 9 and academic_year = {{ var("current_academic_year") }}
     ),
 
-    -- note for charlie: open to finding a better way to do this, but this CTE is here
-    -- cuz: 1) the majority of students have two grad plans set on PS - the basic one,
-    -- which is called NJ State Diploma; and the advanced one: HS Distinction Diploma.
-    -- all students are expected to finish the advanced one, but if they don't, they
-    -- get defaulted to the basic one. however, PS allows credit waivers to be entered
-    -- only on non-basic grad plans and the unique id used to track the waivers match
-    -- only the advanced degree rows (i.e. i cannot bring waiver data for the basic
-    -- plan, and there is no way to tag which plan a student will end up completing,so
-    -- i need to bring both)
     waivers as (
         select
             sub.waivedcredits,
