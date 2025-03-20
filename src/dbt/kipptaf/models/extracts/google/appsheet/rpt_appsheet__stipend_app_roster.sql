@@ -9,12 +9,10 @@ select
     r.home_work_location_name as location,
     r.home_department_name as department,
     r.formatted_name,
-    r.user_principal_name,
     r.google_email,
     r.assignment_status,
     r.home_business_unit_name as entity,
     r.home_business_unit_code as entity_short,
-    r.worker_termination_date,
     coalesce(r.home_work_location_campus_name, r.home_work_location_name) as campus,
     case
         when
