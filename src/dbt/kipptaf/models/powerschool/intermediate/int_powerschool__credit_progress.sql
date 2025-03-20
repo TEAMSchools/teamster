@@ -1,30 +1,15 @@
 with
-    -- note for charlie: id like for the CTE below to be considered a permanent
-    -- fixture of the data model. not all tables on the data model that need to be
-    -- connected have the same student identifier and dont always need all of the
-    -- extra information from student_enrollments (base or int_tableau). i just need a
-    -- way to connect two tables with different student identifiers. i dont need all
-    -- the fields below for THIS particular view, but i left them there for you to
-    -- review the possibilty of making this CTE, as is, as a its own view/table
     student_id_crosswalk as (
-        select distinct
-            e._dbt_source_relation,
-            e.studentid,
-            e.students_dcid,
-            e.student_number,
-            e.state_studentnumber,
-            e.fleid,
-            e.infosnap_id,
+        select
+            _dbt_source_relation,
+            studentid,
+            students_dcid,
+            student_number,
+            state_studentnumber,
+            salesforce_id,
 
-            a.contact_id,
-
-            i.student_id as illuminate_id,
-        from {{ ref("base_powerschool__student_enrollments") }} as e
-        left join
-            {{ ref("int_kippadb__roster") }} as a on e.student_number = a.student_number
-        left join
-            {{ ref("stg_illuminate__students") }} as i
-            on e.student_number = i.local_student_id
+        from {{ ref("int_extracts__student_enrollments") }}
+        where rn_undergrad = 1 and grade_level >= 9
     ),
 
     -- note for charlie: open to finding a better way to do this, but this CTE is here
