@@ -1,6 +1,9 @@
 select
+    p._dbt_source_relation,
     p.gpversionid as plan_gpversionid,
     p.parentid as plan_parentid,
+
+    /* foreign key to int_powerschool__grad_plans_progress_students.gpnodeid */
     p.id as plan_id,
     p.name as plan_name,
 
