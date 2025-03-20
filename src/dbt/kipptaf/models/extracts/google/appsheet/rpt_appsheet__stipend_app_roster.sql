@@ -59,6 +59,9 @@ select
         /* in location/campus view */
         when r.job_title in ('Director School Operations', 'Director Campus Operations')
         then 1
+        /* in-region/state view: username temp permissions for DSO coverage */
+        when r.sam_account_name = 'tcloss'
+        then 1
         else 0
     end as app_permissions,
 from {{ ref("int_people__staff_roster") }} as r
