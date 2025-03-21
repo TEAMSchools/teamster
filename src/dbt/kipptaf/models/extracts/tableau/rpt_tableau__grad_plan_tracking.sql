@@ -6,6 +6,7 @@ with
             {{ ref("int_powerschool__grad_plans_progress_students") }} as s
             on p.plan_id = s.plan_id
             and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
+        where p.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
     )
 
 select *,
