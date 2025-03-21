@@ -13,9 +13,10 @@ select
     d.name as discipline_name,
     d.creditcapacity as discipline_credits,
 
-    coalesce(s.id, d.id) as subject_id,
     s.name as subject_name,
     s.creditcapacity as subject_credits,
+
+    coalesce(s.id, d.id) as subject_id,
 
 from {{ ref("stg_powerschool__gpnode") }} as p
 inner join
