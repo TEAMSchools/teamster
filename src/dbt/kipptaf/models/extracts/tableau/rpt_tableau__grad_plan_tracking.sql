@@ -1,6 +1,6 @@
 with
     plans as (
-        select p.*
+        select p.*,
         from {{ ref("int_powerschool__grad_plans") }} as p
         inner join
             {{ ref("int_powerschool__grad_plans_progress_students") }} as s
@@ -8,5 +8,5 @@ with
             and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
     )
 
-select *
+select *,
 from plans
