@@ -13,13 +13,22 @@ select
     d.name as discipline_name,
     d.creditcapacity as discipline_credits,
 
-    c.id as subject_id,
-    c.name as subject_name,
-    c.creditcapacity as subject_credits,
+    s.id as subject_id,
+    s.name as subject_name,
+    s.creditcapacity as subject_credits,
 
 from {{ ref("stg_powerschool__gpnode") }} as p
-inner join {{ ref("stg_powerschool__gpnode") }} as o on p.id = o.parentid
-inner join {{ ref("stg_powerschool__gpnode") }} as d on o.id = d.parentid
-left join {{ ref("stg_powerschool__gpnode") }} as c on d.id = c.parentid
-where p.parentid is null and p.name in ('NJ State Diploma', 'HS Distinction Diploma')
+inner join
+    {{ ref("stg_powerschool__gpnode") }} as o
+    on p.id = o.parentid
+    and {{ union_dataset_join_clause(left_alias="p", right_alias="o") }}
+inner join
+    {{ ref("stg_powerschool__gpnode") }} as d
+    on o.id = d.parentid
+    and {{ union_dataset_join_clause(left_alias="o", right_alias="d") }}
+left join
+    {{ ref("stg_powerschool__gpnode") }} as s
+    on d.id = s.parentid
+    and {{ union_dataset_join_clause(left_alias="d", right_alias="s") }}
+where p.parentid is null  -- and p.name in ('NJ State Diploma', 'HS Distinction Diploma')
 order by o.sortorder, d.sortorder, c.sortorder
