@@ -34,7 +34,7 @@ select
     s.waivedcredits as subject_waivedcredits,
 
 from {{ ref("int_powerschool__grad_plans") }} as p
-inner join
+left join
     students as s
     on p.subject_id = s.subject_id
     and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
