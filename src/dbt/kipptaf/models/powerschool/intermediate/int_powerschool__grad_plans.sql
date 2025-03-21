@@ -13,7 +13,7 @@ select
     d.name as discipline_name,
     d.creditcapacity as discipline_credits,
 
-    s.id as subject_id,
+    coalesce(s.id, d.id) as subject_id,
     s.name as subject_name,
     s.creditcapacity as subject_credits,
 
