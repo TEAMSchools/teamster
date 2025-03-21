@@ -13,10 +13,9 @@ select
     d.name as discipline_name,
     d.creditcapacity as discipline_credits,
 
+    s.id as subject_id,
+    s.name as subject_name,
     s.creditcapacity as subject_credits,
-
-    coalesce(s.id, d.id) as subject_id,
-    coalesce(s.name, d.name) as subject_name,
 
 from {{ ref("stg_powerschool__gpnode") }} as p
 inner join
@@ -29,7 +28,7 @@ inner join
     and {{ union_dataset_join_clause(left_alias="o", right_alias="d") }}
 left join
     {{ ref("stg_powerschool__gpnode") }} as s
-    on d.id = s.parentid
+    on d.id = s.id
     and {{ union_dataset_join_clause(left_alias="d", right_alias="s") }}
 where p.parentid is null
 order by o.sortorder, d.sortorder, s.sortorder
