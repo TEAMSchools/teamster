@@ -63,7 +63,7 @@ inner join
     on o.id = d.parentid
     and o.studentsdcid = d.studentsdcid
     and {{ union_dataset_join_clause(left_alias="o", right_alias="d") }}
-inner join
+left join
     students as s
     on d.id = s.parentid
     and d.studentsdcid = s.studentsdcid
