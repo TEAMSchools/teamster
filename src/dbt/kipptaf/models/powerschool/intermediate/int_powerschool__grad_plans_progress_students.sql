@@ -3,7 +3,7 @@ with
         select
             s._dbt_source_relation,
             s.studentsdcid,
-            s.gpnodeid as plan_id,
+            s.gpnodeid,
             s.earnedcredits,  -- from stored grades
             s.enrolledcredits,  -- from cc table
             s.requestedcredits,  -- from schedule requests table
@@ -11,8 +11,10 @@ with
             s.waivedcredits,
             s.isadvancedplan,
 
-            g.id as subject_id,
-            g.name as subject_name,
+            g.gpversionid,
+            g.parentid,
+            g.id,
+            g.name,
 
         from {{ ref("stg_powerschool__gpprogresssubject") }} as s
         inner join
@@ -23,18 +25,45 @@ with
     )
 
 select
-    p.*,
+    p._dbt_source_relation,
+    p.studentsdcid,
+    p.gpversionid as plan_gpversionid,
+    p.parentid as plan_parentid,
+    p.name as plan_name,
+    p.isadvancedplan,
 
-    s.studentsdcid,
-    s.isadvancedplan as advanced_plan,
-    s.earnedcredits as subject_earnedcredits,
-    s.enrolledcredits as subject_enrolledcredits,
-    s.requestedcredits as subject_requestedcredits,
-    s.requiredcredits as subject_requiredcredits,
-    s.waivedcredits as subject_waivedcredits,
+    o.requiredcredits as plan_credits,
+    o.enrolledcredits as plan_enrolled_credits,
 
-from {{ ref("int_powerschool__grad_plans") }} as p
-left join
+    d.id as discpline_id,
+    d.name as discipline_name,
+    d.requiredcredits as discipline_required_credits,
+    d.earnedcredits as discipline_earned_credits,
+    d.enrolledcredits as discipline_enrolled_credits,
+    d.requestedcredits as discipline_requested_credits,
+    d.waivedcredits as discipline_waived_credits,
+
+    s.id as subject_id,
+    s.name as subject_name,
+    s.requiredcredits as subject_required_credits,
+    s.earnedcredits as subject_earned_credits,
+    s.enrolledcredits as subject_enrolled_credits,
+    s.requestedcredits as subject_requested_credits,
+    s.waivedcredits as subject_waived_credits,
+
+from students as p
+inner join
+    students as o
+    on p.id = o.parentid
+    and {{ union_dataset_join_clause(left_alias="p", right_alias="o") }}
+inner join
+    students as d
+    on o.id = d.parentid
+    and {{ union_dataset_join_clause(left_alias="o", right_alias="d") }}
+inner join
     students as s
-    on p.subject_id = s.subject_id
-    and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
+    on d.id = s.parentid
+    and {{ union_dataset_join_clause(left_alias="d", right_alias="s") }}
+where
+    -- p.name in ('NJ State Diploma', 'HS Distinction Diploma')
+    p.studentsdcid = 31521

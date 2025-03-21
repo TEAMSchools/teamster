@@ -31,4 +31,4 @@ left join
     on d.id = s.parentid
     and {{ union_dataset_join_clause(left_alias="d", right_alias="s") }}
 where p.parentid is null  -- and p.name in ('NJ State Diploma', 'HS Distinction Diploma')
-order by o.sortorder, d.sortorder, c.sortorder
+order by o.sortorder, d.sortorder, s.sortorder
