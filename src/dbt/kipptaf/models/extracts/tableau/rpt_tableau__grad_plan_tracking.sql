@@ -62,10 +62,13 @@ select
     e.college_match_gpa,
     e.college_match_gpa_bands,
 
+    p.plan_id,
     p.plan_name,
     p.plan_credits as plan_total_credits_required,
+    p.discipline_id,
     p.discipline_name,
     p.discipline_credits as discipline_total_credits_required,
+    p.subject_id,
     p.subject_name,
     p.subject_credits as subject_total_credits_required,
     p.isadvancedplan,
