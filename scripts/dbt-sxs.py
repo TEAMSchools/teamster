@@ -14,12 +14,12 @@ def main() -> None:
     parser.add_argument("project")
     parser.add_argument("--select", "-s", nargs="*")
     parser.add_argument("--dev", action="store_true")
+    parser.add_argument("--test", action="store_true")
 
     args = parser.parse_args()
 
     cloud_storage_uri_base = (
-        # f"gs://teamster-{'test' if args.dev else args.project}"
-        f"gs://teamster-{args.project}" + f"/dagster/{args.project}"
+        f"gs://teamster-{'test' if args.test else args.project}/dagster/{args.project}"
     )
 
     run_args = [
@@ -38,7 +38,7 @@ def main() -> None:
         args=run_args,
         env={
             **os.environ,
-            "DBT_CLOUD_ENVIRONMENT_TYPE": "dev" if args.dev else "prod",
+            "DBT_CLOUD_ENVIRONMENT_TYPE": "dev" if args.dev or args.test else "prod",
             "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
         },
     )
