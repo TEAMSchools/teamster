@@ -28,6 +28,7 @@ select
     p._dbt_source_relation,
     p.studentsdcid,
     p.gpversionid as plan_gpversionid,
+    p.id as plan_id,
     p.parentid as plan_parentid,
     p.name as plan_name,
     p.isadvancedplan,
@@ -64,6 +65,3 @@ inner join
     students as s
     on d.id = s.parentid
     and {{ union_dataset_join_clause(left_alias="d", right_alias="s") }}
-where
-    -- p.name in ('NJ State Diploma', 'HS Distinction Diploma')
-    p.studentsdcid = 31521

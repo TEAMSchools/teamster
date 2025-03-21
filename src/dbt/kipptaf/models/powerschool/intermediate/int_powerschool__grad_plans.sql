@@ -30,5 +30,5 @@ left join
     {{ ref("stg_powerschool__gpnode") }} as s
     on d.id = s.parentid
     and {{ union_dataset_join_clause(left_alias="d", right_alias="s") }}
-where p.parentid is null  -- and p.name in ('NJ State Diploma', 'HS Distinction Diploma')
+where p.parentid is null
 order by o.sortorder, d.sortorder, s.sortorder
