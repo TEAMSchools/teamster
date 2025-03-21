@@ -65,7 +65,7 @@ inner join
     and {{ union_dataset_join_clause(left_alias="o", right_alias="d") }}
 inner join
     students as s
-    on d.id = s.parentid
+    on d.id = s.id
     and d.studentsdcid = s.studentsdcid
     and {{ union_dataset_join_clause(left_alias="d", right_alias="s") }}
 where p.parentid is null
