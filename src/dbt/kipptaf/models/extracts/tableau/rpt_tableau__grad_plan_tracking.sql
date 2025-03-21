@@ -3,10 +3,8 @@ with
         select
             p.*,
 
-            s.studentsdcid,
-            s.plan_enrolled_credits,
-
             s.isadvancedplan,
+            s.studentsdcid,
             s.plan_enrolled_credits,
             s.discipline_required_credits,
             s.discipline_earned_credits,
@@ -63,6 +61,26 @@ select
     e.advisory,
     e.college_match_gpa,
     e.college_match_gpa_bands,
+
+    p.plan_name,
+    p.plan_credits as plan_total_credits_required,
+    p.discipline_name,
+    p.discipline_credits as discipline_total_credits_required,
+    p.subject_name,
+    p.subject_credits as subject_total_credits_required,
+    p.isadvancedplan,
+
+    p.plan_enrolled_credits,
+
+    p.discipline_earned_credits,
+    p.discipline_enrolled_credits,
+    p.discipline_requested_credits,
+    p.discipline_waived_credits,
+
+    p.subject_earned_credits,
+    p.subject_enrolled_credits,
+    p.subject_requested_credits,
+    p.subject_waived_credits,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join
