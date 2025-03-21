@@ -1,0 +1,28 @@
+version: 2
+models:
+  - name: int_powerschool__grad_plans
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: plan_gpversionid
+        data_type: int64
+      - name: plan_parentid
+        data_type: int64
+      - name: plan_id
+        data_type: int64
+      - name: plan_name
+        data_type: string
+      - name: plan_credits
+        data_type: numeric
+      - name: discipline_id
+        data_type: int64
+      - name: discipline_name
+        data_type: string
+      - name: discipline_credits
+        data_type: numeric
+      - name: subject_id
+        data_type: int64
+      - name: subject_name
+        data_type: string
+      - name: subject_credits
+        data_type: numeric
