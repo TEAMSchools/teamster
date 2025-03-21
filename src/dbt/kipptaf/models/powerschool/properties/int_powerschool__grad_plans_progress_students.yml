@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: int_powerschool__grad_plans
+  - name: int_powerschool__grad_plans_progress_students
     columns:
       - name: _dbt_source_relation
         data_type: string
