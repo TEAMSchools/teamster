@@ -21,8 +21,8 @@ with
         select
             {{ var("current_academic_year") - 1 }} as academic_year,
             'SSDS Reporting Period 2' as ssds_period,
-            date({{ var("current_academic_year") }} + 1, 1, 1) as period_start_date,
-            date({{ var("current_academic_year") }} + 1, 6, 30) as period_end_date,
+            date({{ var("current_academic_year") }}, 1, 1) as period_start_date,
+            date({{ var("current_academic_year") }}, 6, 30) as period_end_date,
     ),
 
     ms_grad_sub as (
