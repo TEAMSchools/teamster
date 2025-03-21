@@ -47,6 +47,7 @@ with
             co.gender,
             co.ethnicity,
             co.is_self_contained,
+            co.year_in_network,
 
             enr.cc_section_number as section_number,
             enr.teacher_lastfirst as teacher_name,
