@@ -56,12 +56,15 @@ from students as p
 inner join
     students as o
     on p.id = o.parentid
+    and p.studentsdcid = o.studentsdcid
     and {{ union_dataset_join_clause(left_alias="p", right_alias="o") }}
 inner join
     students as d
     on o.id = d.parentid
+    and o.studentsdcid = d.studentsdcid
     and {{ union_dataset_join_clause(left_alias="o", right_alias="d") }}
 inner join
     students as s
     on d.id = s.parentid
+    and d.studentsdcid = s.studentsdcid
     and {{ union_dataset_join_clause(left_alias="d", right_alias="s") }}
