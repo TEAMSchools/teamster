@@ -253,7 +253,11 @@ with
             on co.student_number = ir.student_number
             and co.academic_year = ir.academic_year
             and s.subject = ir.subject
-        where co.rn_year = 1 and co.enroll_status = 0 and co.grade_level between 3 and 8
+        where
+            co.rn_year = 1
+            and co.enroll_status = 0
+            and co.grade_level between 3 and 8
+            and co.academic_year >= {{ var("current_academic_year") - 1 }}
 
         union all
 
@@ -325,7 +329,11 @@ with
             on co.student_number = ir.student_number
             and co.academic_year = ir.academic_year
             and s.subject = ir.subject
-        where co.rn_year = 1 and co.enroll_status = 0 and co.grade_level between 0 and 2
+        where
+            co.rn_year = 1
+            and co.enroll_status = 0
+            and co.grade_level between 0 and 2
+            and co.academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
     roster_ranked as (
