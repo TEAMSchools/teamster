@@ -289,10 +289,7 @@ where
     e.expected_test_type = 'Official'
     and e.expected_scope in ('PSAT NMSQT', 'PSAT 8/9', 'PSAT10')
 
-/* 
-   this code is a placeholder for now, as we are not reporting practice 
-   scores for sy2425, but will do so again for sy2526 
-*/
+/* this code is a placeholder for now, as we are not reporting practice scores for sy2425, but will do so again for sy2526 */
 union all
 
 select
