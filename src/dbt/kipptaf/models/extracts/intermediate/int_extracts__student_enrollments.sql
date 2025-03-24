@@ -205,4 +205,4 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
-where e.rn_year = 1 and e.schoolid != 999999
+where e.schoolid != 999999
