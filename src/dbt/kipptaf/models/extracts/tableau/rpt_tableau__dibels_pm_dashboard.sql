@@ -97,6 +97,7 @@ with
             and e.academic_year >= 2024
             and e.grade_level <= 2
             and e.region != 'Miami'
+            and e.rn_year = 1
     ),
 
     schedules as (
@@ -465,3 +466,4 @@ left join
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
+    and f.rn_year = 1

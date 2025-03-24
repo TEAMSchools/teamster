@@ -59,6 +59,7 @@ with
             not e.is_self_contained
             and e.academic_year >= {{ var("current_academic_year") - 1 }}
             and e.grade_level <= 8
+            and e.rn_year = 1
     ),
 
     schedules as (
@@ -203,6 +204,7 @@ left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as f
     on s.academic_year = f.academic_year
     and s.student_number = f.student_number
+    and f.rn_year = 1
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
 where s.year_grade_filter

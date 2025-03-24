@@ -32,6 +32,7 @@ with
         where
             e.academic_year >= {{ var("current_academic_year") - 7 }}
             and e.grade_level > 2
+            and e.rn_year = 1
     ),
 
     assessment_scores as (
@@ -332,11 +333,13 @@ left join
     on s.academic_year = sf.academic_year
     and s.discipline = sf.discipline
     and s.student_number = sf.student_number
+    and sf.rn_year = 1
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
     on s.academic_year = sf2.academic_year - 1
     and s.discipline = sf2.discipline
     and s.student_number = sf2.student_number
+    and sf2.rn_year = 1
     /*
 union all
 

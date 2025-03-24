@@ -10,6 +10,7 @@ with
             and is_retained_year
             -- miami does their own submission
             and region != 'Miami'
+            and rn_year = 1
     ),
 
     enrollment as (
@@ -100,6 +101,7 @@ with
             and e.grade_level != 99
             -- miami does their own submission
             and e.region != 'Miami'
+            and e.rn_year = 1
     ),
 
     custom_schedule as (

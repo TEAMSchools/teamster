@@ -72,6 +72,7 @@ select
     e.year_in_network,
     e.boy_status,
     e.rn_undergrad,
+    e.rn_year,
     e.code_location,
 
     m.ms_attended,

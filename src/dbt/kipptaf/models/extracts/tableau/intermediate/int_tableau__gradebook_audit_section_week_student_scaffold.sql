@@ -190,3 +190,4 @@ where
     s.academic_year = {{ var("current_academic_year") }}
     and s.enroll_status = 0
     and not s.is_out_of_district
+    and s.rn_year = 1

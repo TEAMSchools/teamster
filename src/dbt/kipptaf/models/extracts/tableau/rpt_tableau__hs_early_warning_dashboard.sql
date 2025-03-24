@@ -118,3 +118,4 @@ where
     co.academic_year = {{ var("current_academic_year") }}
     and co.is_enrolled_recent
     and co.school_level = 'HS'
+    and co.rn_year = 1

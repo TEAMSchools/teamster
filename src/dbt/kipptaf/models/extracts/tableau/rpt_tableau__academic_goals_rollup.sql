@@ -225,6 +225,7 @@ with
             and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}
             and s.subject = sf.iready_subject
             and not sf.is_exempt_state_testing
+            and sf.rn_year = 1
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
@@ -303,6 +304,7 @@ with
             and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}
             and s.subject = sf.iready_subject
             and not sf.is_exempt_state_testing
+            and sf.rn_year = 1
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
