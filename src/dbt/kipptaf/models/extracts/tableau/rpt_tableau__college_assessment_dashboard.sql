@@ -16,6 +16,7 @@ with
             min(if(courses_course_name = 'HR', 2, 1)) over (
                 partition by cc_academic_year, students_student_number
             ) as expected_course_rank,
+            
         from {{ ref("base_powerschool__course_enrollments") }}
         where
             courses_course_name in (
