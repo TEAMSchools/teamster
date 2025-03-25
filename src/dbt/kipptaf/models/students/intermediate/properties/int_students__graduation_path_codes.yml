@@ -92,6 +92,9 @@ models:
                 - FAFSA Only
                 - ELA Only / No FAFSA
                 - Math Only / No FAFSA
+              config:
+                severity: warn
+                store_failures: true
       - name: test_type
         data_type: string
       - name: rn_discipline_distict

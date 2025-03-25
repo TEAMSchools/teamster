@@ -22,6 +22,7 @@ with
             ) over (partition by academic_year, student_number)
             as nj_overall_student_tier,
         from {{ ref("int_extracts__student_enrollments_subjects") }}
+        where academic_year >= {{ var("current_academic_year") - 1 }}
 
     ),
 
