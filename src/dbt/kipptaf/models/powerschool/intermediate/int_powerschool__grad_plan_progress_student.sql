@@ -19,6 +19,7 @@ select
     g.subject_id,
     g.subject_name,
     g.subject_credit_capacity,
+
 from {{ ref("stg_powerschool__gpprogresssubject") }} as s
 inner join
     {{ ref("int_powerschool__gpnode") }} as g
