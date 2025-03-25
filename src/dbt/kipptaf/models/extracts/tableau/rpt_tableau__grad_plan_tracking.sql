@@ -1,32 +1,3 @@
-with
-    plans as (
-        select
-            p.*,
-
-            s.isadvancedplan,
-            s.studentsdcid,
-            s.plan_enrolled_credits,
-            s.discipline_required_credits,
-            s.discipline_earned_credits,
-            s.discipline_enrolled_credits,
-            s.discipline_requested_credits,
-            s.discipline_waived_credits,
-
-            s.subject_required_credits,
-            s.subject_earned_credits,
-            s.subject_enrolled_credits,
-            s.subject_requested_credits,
-            s.subject_waived_credits,
-
-        from {{ ref("int_powerschool__grad_plans") }} as p
-        inner join
-            {{ ref("int_powerschool__grad_plans_progress_students") }} as s
-            on p.plan_id = s.plan_id
-            and p.subject_id = s.subject_id
-            and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
-        where p.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
-    )
-
 select
     e._dbt_source_relation,
     e.academic_year,
@@ -64,30 +35,27 @@ select
 
     p.plan_id,
     p.plan_name,
-    p.plan_credits as plan_total_credits_required,
+    p.plan_credit_capacity as plan_total_credits_required,
+    p.enrolled_credits as plan_enrolled_credits,
+    p.isadvancedplan,
     p.discipline_id,
     p.discipline_name,
-    p.discipline_credits as discipline_total_credits_required,
+    p.discipline_credit_capacity as discipline_total_credits_required,
+    p.earned_credits as discipline_earned_credits,
+    p.enrolled_credits as discipline_enrolled_credits,
+    p.requested_credits as discipline_requested_credits,
+    p.waived_credits as discipline_waived_credits,
     p.subject_id,
     p.subject_name,
-    p.subject_credits as subject_total_credits_required,
-    p.isadvancedplan,
-
-    p.plan_enrolled_credits,
-
-    p.discipline_earned_credits,
-    p.discipline_enrolled_credits,
-    p.discipline_requested_credits,
-    p.discipline_waived_credits,
-
-    p.subject_earned_credits,
-    p.subject_enrolled_credits,
-    p.subject_requested_credits,
-    p.subject_waived_credits,
-
+    p.subject_credit_capacity as subject_total_credits_required,
+    p.earned_credits as subject_earned_credits,
+    p.enrolled_credits as subject_enrolled_credits,
+    p.requested_credits as subject_requested_credits,
+    p.waived_credits as subject_waived_credits,
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join
-    plans as p
+    {{ ref("int_powerschool__grad_plan_progress_student") }} as p
     on e.students_dcid = p.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="p") }}
+    and p.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
 where e.grade_level >= 9 and e.academic_year = {{ var("current_academic_year") }}
