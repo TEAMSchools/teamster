@@ -14,7 +14,7 @@ select
 
     coalesce(s.id, d.id) as subject_id,
     coalesce(s.name, d.name) as subject_name,
-    coalesce(s.creditcapacity, d.creditcapacity) as subject_credits,
+    coalesce(s.creditcapacity, d.creditcapacity) as subject_credit_capacity,
 from {{ ref("stg_powerschool__gpnode") }} as p
 inner join
     {{ ref("stg_powerschool__gpnode") }} as o
