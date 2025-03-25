@@ -174,8 +174,13 @@ class FormSettings(BaseModel):
     quizSettings: QuizSettings | None = None
 
 
+class PublishState(BaseModel):
+    isPublished: bool | None = None
+    isAcceptingResponses: bool | None = None
+
+
 class PublishSettings(BaseModel):
-    publishState: dict[str, str] | None = None
+    publishState: PublishState | None = None
 
 
 class Info(BaseModel):
