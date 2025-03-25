@@ -64,6 +64,8 @@ with
 
             sum(points) as points,
 
+            array_agg(assessment_id) as assessment_ids,
+
             round(
                 safe_divide(sum(points), sum(points_possible)) * 100, 1
             ) as percent_correct,
@@ -93,6 +95,7 @@ with
             points,
             percent_correct,
             n_assessments,
+            assessment_ids,
             powerschool_school_id,
 
             if(
@@ -184,6 +187,8 @@ with
 
             1 as n_assessments,
 
+            [assessment_id] as assessment_ids,
+
             powerschool_school_id,
             title,
             assessment_id,
@@ -220,6 +225,7 @@ select
     ru.performance_band_set_id,
     ru.n_assessments,
     ru.is_multipart_assessment,
+    ru.assessment_ids,
 
     pbl.label as performance_band_label,
     pbl.label_number as performance_band_label_number,
