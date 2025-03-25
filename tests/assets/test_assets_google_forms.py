@@ -65,7 +65,7 @@ def test_asset_google_forms_form():
         # trunk-ignore(pyright/reportArgumentType)
         asset=form,
         # trunk-ignore(gitleaks/generic-api-key)
-        partition_key="1mK_JPYxBneKxNKbDfpzQ9xbNWDyLL5mJ08TbITs-g-w",
+        partition_key="1x8uQ_pIkW8nXU-HpZb6OEjMBjf-16CKbFRGnfiLd2rE",
     )
 
 
