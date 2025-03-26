@@ -35,23 +35,29 @@ select
 
     p.plan_id,
     p.plan_name,
-    p.plan_credit_capacity as plan_total_credits_required,
-    p.enrolled_credits as plan_enrolled_credits,
+    p.plan_required_credits,
+    p.plan_enrolled_credits,
+    p.plan_earned_credits,
+    p.plan_requested_credits,
+    p.plan_waived_credits,
     p.isadvancedplan,
-    p.discipline_id,
+
+    p.discpline_id,
     p.discipline_name,
-    p.discipline_credit_capacity as discipline_total_credits_required,
-    p.earned_credits as discipline_earned_credits,
-    p.enrolled_credits as discipline_enrolled_credits,
-    p.requested_credits as discipline_requested_credits,
-    p.waived_credits as discipline_waived_credits,
+    p.discipline_required_credits,
+    p.discipline_earned_credits,
+    p.discipline_enrolled_credits,
+    p.discipline_requested_credits,
+    p.discipline_waived_credits,
+
     p.subject_id,
     p.subject_name,
-    p.subject_credit_capacity as subject_total_credits_required,
-    p.earned_credits as subject_earned_credits,
-    p.enrolled_credits as subject_enrolled_credits,
-    p.requested_credits as subject_requested_credits,
-    p.waived_credits as subject_waived_credits,
+    p.subject_required_credits,
+    p.subject_earned_credits,
+    p.subject_enrolled_credits,
+    p.subject_requested_credits,
+    p.subject_waived_credits,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join
     {{ ref("int_powerschool__grad_plan_progress_student") }} as p
