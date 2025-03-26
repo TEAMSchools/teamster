@@ -90,7 +90,7 @@ with
                 'College and Career II',
                 'HR'
             )
-        left join
+        inner join
             expected_course as ec
             on s.cc_academic_year = ec.cc_academic_year
             and s.students_student_number = ec.student_number
