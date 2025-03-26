@@ -230,7 +230,7 @@ select
                 '&entry.1309133590=',
                 coalesce(
                     safe_cast(
-                        round(safe_cast(ny_salary_from_form as int), 0) as string
+                        round(safe_cast(ny_salary_from_form as numeric), 2) as string
                     ),
                     safe_cast(round(safe_cast(ny_rate as numeric), 2) as string),
                     ''
