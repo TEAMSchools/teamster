@@ -229,8 +229,8 @@ select
                 ),
                 '&entry.1309133590=',
                 coalesce(
-                    safe_cast(round(ny_salary_from_form,0) as string),
-                    safe_cast(round(ny_rate,2) as string),
+                    safe_cast(round(ny_salary_from_form, 0) as string),
+                    safe_cast(round(ny_rate, 2) as string),
                     ''
                 ),
                 '&entry.1059490956=',
