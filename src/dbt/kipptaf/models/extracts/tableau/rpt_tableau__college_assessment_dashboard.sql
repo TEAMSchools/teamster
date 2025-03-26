@@ -140,39 +140,162 @@ with
     )
 
 select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    region,
-    schoolid,
-    school,
-    student_number,
-    student_name,
-    grade_level,
-    enroll_status,
-    cohort,
-    entrydate,
-    exitdate,
-    sped,
-    is_504,
-    lep_status,
-    gifted_and_talented,
-    advisory,
-    contact_id,
-    ktc_cohort,
-    contact_owner_name,
-    college_match_gpa,
-    college_match_gpa_bands,
-    ms_attended,
-    courses_course_name,
-    teacher_lastfirst,
-    sections_external_expression,
-    expected_test_type,
-    expected_scope,
-    expected_subject_area,
+    e._dbt_source_relation,
+    e.academic_year,
+    e.academic_year_display,
+    e.region,
+    e.schoolid,
+    e.school,
+    e.student_number,
+    e.student_name,
+    e.grade_level,
+    e.enroll_status,
+    e.cohort,
+    e.entrydate,
+    e.exitdate,
+    e.sped,
+    e.is_504,
+    e.lep_status,
+    e.gifted_and_talented,
+    e.advisory,
+    e.contact_id,
+    e.ktc_cohort,
+    e.contact_owner_name,
+    e.college_match_gpa,
+    e.college_match_gpa_bands,
+    e.ms_attended,
+    e.courses_course_name,
+    e.teacher_lastfirst,
+    e.sections_external_expression,
+    e.expected_test_type,
+    e.expected_scope,
+    e.expected_subject_area,
 
-from roster
-where academic_year >= 2023
+    o.test_type,
+    o.scope,
+
+    'NA' as scope_round,
+    null as assessment_id,
+    'NA' as assessment_title,
+
+    o.administration_round,
+    o.subject_area,
+    o.test_date,
+
+    'NA' as response_type,
+    'NA' as response_type_description,
+
+    null as points,
+    null as percent_correct,
+    null as total_subjects_tested,
+    null as raw_score,
+
+    o.scale_score,
+    o.rn_highest,
+
+    c.courses_course_name as subject_course,
+    c.teacher_lastfirst as subject_teacher,
+    c.sections_external_expression as subject_external_expression,
+    c.is_math_double_blocked,
+
+    coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
+
+from roster as e
+left join
+    {{ ref("int_assessments__college_assessment") }} as o
+    on e.contact_id = o.salesforce_id
+    and e.expected_test_type = o.test_type
+    and e.expected_scope = o.scope
+    and e.expected_subject_area = o.subject_area
+left join
+    course_subjects_roster as c
+    on e.student_number = c.student_number
+    and e.academic_year = c.academic_year
+    and o.course_discipline = c.courses_credittype
+where
+    e.expected_test_type = 'Official'
+    and e.expected_scope in ('ACT', 'SAT')
+    and e.academic_year >= 2023
+
+union all
+
+select
+    e._dbt_source_relation,
+    e.academic_year,
+    e.academic_year_display,
+    e.region,
+    e.schoolid,
+    e.school,
+    e.student_number,
+    e.student_name,
+    e.grade_level,
+    e.enroll_status,
+    e.cohort,
+    e.entrydate,
+    e.exitdate,
+    e.sped,
+    e.is_504,
+    e.lep_status,
+    e.gifted_and_talented,
+    e.advisory,
+    e.contact_id,
+    e.ktc_cohort,
+    e.contact_owner_name,
+    e.college_match_gpa,
+    e.college_match_gpa_bands,
+    e.ms_attended,
+    e.courses_course_name,
+    e.teacher_lastfirst,
+    e.sections_external_expression,
+    e.expected_test_type,
+    e.expected_scope,
+    e.expected_subject_area,
+
+    o.test_type,
+    o.scope,
+
+    'NA' as scope_round,
+    null as assessment_id,
+    'NA' as assessment_title,
+
+    o.administration_round,
+    o.subject_area,
+    o.test_date,
+
+    'NA' as response_type,
+    'NA' as response_type_description,
+
+    null as points,
+    null as percent_correct,
+    null as total_subjects_tested,
+    null as raw_score,
+
+    o.scale_score,
+    o.rn_highest,
+
+    c.courses_course_name as subject_course,
+    c.teacher_lastfirst as subject_teacher,
+    c.sections_external_expression as subject_external_expression,
+    c.is_math_double_blocked,
+
+    coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
+
+from roster as e
+left join
+    {{ ref("int_assessments__college_assessment") }} as o
+    on e.student_number = o.student_number
+    and e.expected_test_type = o.test_type
+    and e.expected_scope = o.scope
+    and e.expected_subject_area = o.subject_area
+left join
+    course_subjects_roster as c
+    on e.student_number = c.student_number
+    and e.academic_year = c.academic_year
+    and o.course_discipline = c.courses_credittype
+where
+    e.expected_test_type = 'Official'
+    and e.expected_scope in ('PSAT NMSQT', 'PSAT 8/9', 'PSAT10')
+    and e.academic_year >= 2023
 
 union all
 
@@ -208,12 +331,47 @@ select
     o.test_type as expected_test_type,
     o.scope as expected_scope,
     o.subject_area as expected_subject_area,
+
+    o.test_type,
+    o.scope,
+
+    'NA' as scope_round,
+    null as assessment_id,
+    'NA' as assessment_title,
+
+    o.administration_round,
+    o.subject_area,
+    o.test_date,
+
+    'NA' as response_type,
+    'NA' as response_type_description,
+
+    null as points,
+    null as percent_correct,
+    null as total_subjects_tested,
+    null as raw_score,
+
+    o.scale_score,
+    o.rn_highest,
+
+    c.courses_course_name as subject_course,
+    c.teacher_lastfirst as subject_teacher,
+    c.sections_external_expression as subject_external_expression,
+    c.is_math_double_blocked,
+
+    coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
 
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment") }} as o
     on e.academic_year = o.academic_year
     and e.contact_id = o.salesforce_id
+    and o.scope in ('ACT', 'SAT')
+left join
+    course_subjects_roster as c
+    on e.student_number = c.student_number
+    and e.academic_year = c.academic_year
+    and o.course_discipline = c.courses_credittype
 where e.academic_year < 2023
 
 union all
@@ -251,9 +409,122 @@ select
     o.scope as expected_scope,
     o.subject_area as expected_subject_area,
 
+    o.test_type,
+    o.scope,
+
+    'NA' as scope_round,
+    null as assessment_id,
+    'NA' as assessment_title,
+
+    o.administration_round,
+    o.subject_area,
+    o.test_date,
+
+    'NA' as response_type,
+    'NA' as response_type_description,
+
+    null as points,
+    null as percent_correct,
+    null as total_subjects_tested,
+    null as raw_score,
+
+    o.scale_score,
+    o.rn_highest,
+
+    c.courses_course_name as subject_course,
+    c.teacher_lastfirst as subject_teacher,
+    c.sections_external_expression as subject_external_expression,
+    c.is_math_double_blocked,
+
+    coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
+
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment") }} as o
     on e.academic_year = o.academic_year
     and e.student_number = o.student_number
+    and o.scope in ('PSAT NMSQT', 'PSAT 8/9', 'PSAT10')
+left join
+    course_subjects_roster as c
+    on e.student_number = c.student_number
+    and e.academic_year = c.academic_year
+    and o.course_discipline = c.courses_credittype
 where e.academic_year < 2023
+
+union all
+
+select
+    e._dbt_source_relation,
+    e.academic_year,
+    e.academic_year_display,
+    e.region,
+    e.schoolid,
+    e.school,
+    e.student_number,
+    e.student_name,
+    e.grade_level,
+    e.enroll_status,
+    e.cohort,
+    e.entrydate,
+    e.exitdate,
+    e.sped,
+    e.is_504,
+    e.lep_status,
+    e.gifted_and_talented,
+    e.advisory,
+    e.contact_id,
+    e.ktc_cohort,
+    e.contact_owner_name,
+    e.college_match_gpa,
+    e.college_match_gpa_bands,
+    e.ms_attended,
+    e.courses_course_name,
+    e.teacher_lastfirst,
+    e.sections_external_expression,
+
+    e.expected_test_type,
+    e.expected_scope,
+    e.expected_subject_area,
+
+    p.test_type,
+    p.scope,
+    p.scope_round,
+    p.assessment_id,
+    p.assessment_title,
+    p.administration_round,
+    p.subject_area,
+    p.test_date,
+    p.response_type,
+    p.response_type_description,
+    p.points,
+    p.percent_correct,
+    p.total_subjects_tested,
+    p.raw_score,
+    p.scale_score,
+
+    row_number() over (
+        partition by e.student_number, p.scope, p.subject_area
+        order by p.scale_score desc
+    ) as rn_highest,
+
+    c.courses_course_name as subject_course,
+    c.teacher_lastfirst as subject_teacher,
+    c.sections_external_expression as subject_external_expression,
+    c.is_math_double_blocked,
+
+    coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
+
+from roster as e
+left join
+    {{ ref("int_assessments__college_assessment_practice") }} as p
+    on e.student_number = p.powerschool_student_number
+    and e.academic_year = p.academic_year
+    and e.expected_test_type = p.test_type
+    and e.expected_scope = p.scope
+    and e.expected_subject_area = p.subject_area
+left join
+    course_subjects_roster as c
+    on p.powerschool_student_number = c.student_number
+    and p.academic_year = c.academic_year
+    and p.course_discipline = c.courses_credittype
+where e.expected_test_type = 'Practice'
