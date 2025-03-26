@@ -12,6 +12,8 @@ select
 
     'Official' as test_type,
     null as salesforce_id,
+    format_date('%m', latest_psat_date) as test_month_int,
+
 from {{ ref("int_collegeboard__psat_unpivot") }}
 
 union all
@@ -30,8 +32,8 @@ select
     rn_highest,
 
     'Official' as test_type,
-
     contact as salesforce_id,
+    format_date('%m', `date`) as test_month_int,
 from {{ ref("int_kippadb__standardized_test_unpivot") }}
 where
     `date` is not null

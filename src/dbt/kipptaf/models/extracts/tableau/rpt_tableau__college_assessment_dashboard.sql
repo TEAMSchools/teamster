@@ -73,6 +73,9 @@ with
             t.test_type as expected_test_type,
             t.scope as expected_scope,
             t.subject_area as expected_subject_area,
+            t.test_code as expected_administration_round,
+            t.admin_season as expected_admin_season,
+            t.month_round as expected_month_round,
 
             if(e.iep_status = 'No IEP', 0, 1) as sped,
 
@@ -170,7 +173,9 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
-
+    -- e.expected_test_code,
+    -- e.expected_admin_season,
+    -- e.expected_month_round,
     o.test_type,
     o.scope,
 
