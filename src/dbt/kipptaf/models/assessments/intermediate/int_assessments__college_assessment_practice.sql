@@ -17,7 +17,7 @@ with
 
             'Practice' as test_type,
 
-            format_date('%m', a.date_taken) as test_month_int,
+            format_date('%B', a.date_taken) as test_month,
 
             round(a.percent_correct / 100, 2) as percent_correct,
 
@@ -104,7 +104,7 @@ select
     r.course_discipline,
     r.subject_area,
     r.test_date,
-    r.test_month_int,
+    r.test_month,
     r.response_type,
     r.response_type_description,
     r.points,
@@ -134,7 +134,7 @@ select distinct
     course_discipline,
     'Composite' as subject_area,
     test_date,
-    test_month_int,
+    test_month,
     'NA' as response_type,
     'NA' as response_type_description,
     sum(points) over (
@@ -174,7 +174,7 @@ select distinct
     course_discipline,
     'Composite' as subject_area,
     test_date,
-    test_month_int,
+    test_month,
     'NA' as response_type,
     'NA' as response_type_description,
     sum(points) over (
