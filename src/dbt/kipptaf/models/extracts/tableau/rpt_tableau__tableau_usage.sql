@@ -22,4 +22,5 @@ left join
     {{ ref("int_people__staff_roster_history") }} as srh
     on vc.user_name_lower = srh.sam_account_name
     and vc.created_at
-    between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
+    between srh.work_assignment_actual_start_date
+    and srh.work_assignment_termination_date
