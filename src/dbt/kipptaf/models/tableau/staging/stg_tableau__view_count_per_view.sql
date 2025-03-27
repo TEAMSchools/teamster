@@ -1,5 +1,16 @@
 with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("tableau", "src_tableau__view_count_per_view"),
+                partition_by="id",
+                order_by="extract_created desc",
+            )
+        }}
+    ),
+
     view_count as (
+        -- trunk-ignore(sqlfluff/AM04)
         select
             * except (created_at_local),
 
@@ -9,7 +20,7 @@ with
             ) as `url`,
 
             parse_timestamp('%m/%d/%Y %I:%M:%S %p', created_at) as created_at_timestamp,
-        from {{ source("tableau", "src_tableau__view_count_per_view") }}
+        from deduplicate
     )
 
 select
