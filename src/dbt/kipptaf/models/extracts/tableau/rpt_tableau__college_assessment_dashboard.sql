@@ -73,7 +73,7 @@ with
             t.test_type as expected_test_type,
             t.scope as expected_scope,
             t.subject_area as expected_subject_area,
-            t.test_code as expected_administration_round,
+            t.test_code as expected_scope_round,
             t.admin_season as expected_admin_season,
             t.month_round as expected_month_round,
 
@@ -173,9 +173,9 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
-    -- e.expected_test_code,
-    -- e.expected_admin_season,
-    -- e.expected_month_round,
+    e.expected_scope_round,
+    e.expected_admin_season,
+    e.expected_month_round,
     o.test_type,
     o.scope,
 
@@ -255,6 +255,9 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
+    e.expected_scope_round,
+    e.expected_admin_season,
+    e.expected_month_round,
 
     o.test_type,
     o.scope,
@@ -336,6 +339,9 @@ select
     o.test_type as expected_test_type,
     o.scope as expected_scope,
     o.subject_area as expected_subject_area,
+    null as expected_scope_round,
+    null as expected_admin_season,
+    o.test_month as expected_month_round,
 
     o.test_type,
     o.scope,
@@ -413,6 +419,9 @@ select
     o.test_type as expected_test_type,
     o.scope as expected_scope,
     o.subject_area as expected_subject_area,
+    null as expected_scope_round,
+    null as expected_admin_season,
+    o.test_month as expected_month_round,
 
     o.test_type,
     o.scope,
@@ -490,6 +499,9 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
+    e.expected_scope_round,
+    e.expected_admin_season,
+    e.expected_month_round,
 
     p.test_type,
     p.scope,

@@ -34,7 +34,6 @@ with
                 then 'ENG'
                 when a.subject_area in ('Math')
                 then 'MATH'
-                else null
             end as course_discipline,
 
             /*

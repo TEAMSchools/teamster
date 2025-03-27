@@ -34,6 +34,7 @@ select
     'Official' as test_type,
     contact as salesforce_id,
     format_date('%B', `date`) as test_month,
+
 from {{ ref("int_kippadb__standardized_test_unpivot") }}
 where
     `date` is not null
