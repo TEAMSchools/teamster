@@ -34,7 +34,7 @@ with
                 then 'ENG'
                 when a.subject_area in ('Math')
                 then 'MATH'
-                else 'NA'
+                else null
             end as course_discipline,
 
             /*
@@ -172,7 +172,7 @@ select distinct
     'NA' as assessment_title,
     administration_round,
     course_discipline,
-    'Composite' as subject_area,
+    'Combined' as subject_area,
     test_date,
     test_month,
     'NA' as response_type,
