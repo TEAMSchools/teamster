@@ -1,0 +1,15 @@
+version: 2
+models:
+  - name: stg_egencia__traveler_groups
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: adp_home_work_location_name
+        data_type: string
+      - name: adp_department_home_name
+        data_type: string
+      - name: adp_job_title
+        data_type: string
+      - name: egencia_traveler_group
+        data_type: string

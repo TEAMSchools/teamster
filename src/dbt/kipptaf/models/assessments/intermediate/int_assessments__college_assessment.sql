@@ -1,6 +1,7 @@
 select
     powerschool_student_number as student_number,
     administration_round,
+    academic_year,
     latest_psat_date as test_date,
     test_type as scope,
     test_subject as subject_area,
@@ -19,6 +20,7 @@ select
     null as student_number,
 
     administration_round,
+    academic_year,
     `date` as test_date,
     test_type as scope,
     subject_area,
@@ -37,7 +39,9 @@ where
     and score_type in (
         'act_composite',
         'act_reading',
+        'act_english',
         'act_math',
+        'act_science',
         'sat_total_score',
         'sat_reading_test_score',
         'sat_math_test_score',

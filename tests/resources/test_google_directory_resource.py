@@ -1,6 +1,6 @@
 import json
 
-from dagster import build_resources
+from dagster import EnvVar, build_resources
 
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 
@@ -9,11 +9,11 @@ def get_google_directory_resource() -> GoogleDirectoryResource:
     with build_resources(
         resources={
             "directory": GoogleDirectoryResource(
-                customer_id="C029u7m0n",
-                service_account_file_path=(
-                    "/etc/secret-volume/gcloud_service_account_json"
-                ),
-                delegated_account="dagster@apps.teamschools.org",
+                customer_id=EnvVar("GOOGLE_WORKSPACE_CUSTOMER_ID"),
+                delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
+                # service_account_file_path=(
+                #     "/etc/secret-volume/gcloud_dagster_service_account.json"
+                # ),
             )
         }
     ) as resources:

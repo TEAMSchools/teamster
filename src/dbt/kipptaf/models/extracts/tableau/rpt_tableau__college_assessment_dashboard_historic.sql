@@ -102,48 +102,27 @@ with
 
     college_assessments_official as (
         select
-            contact,
-            test_type as scope,
-            date as test_date,
-            score as scale_score,
+            salesforce_id as contact,
+            scope,
+            test_date,
+            administration_round,
+            subject_area,
+            scale_score,
             rn_highest,
 
             'Official' as test_type,
 
-            concat(
-                format_date('%b', date), ' ', format_date('%y', date)
-            ) as administration_round,
-
-            case
-                score_type
-                when 'sat_total_score'
-                then 'Composite'
-                when 'sat_reading_test_score'
-                then 'Reading Test'
-                when 'sat_math_test_score'
-                then 'Math Test'
-                else test_subject
-            end as subject_area,
-            case
-                when
-                    score_type in (
-                        'act_reading',
-                        'act_english',
-                        'sat_reading_test_score',
-                        'sat_ebrw'
-                    )
-                then 'ENG'
-                when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
-                then 'MATH'
-                else 'NA'
-            end as course_discipline,
+            if(
+                subject_area in ('Composite', 'Combined'), 'NA', course_discipline
+            ) as course_discipline,
 
             {{
                 date_to_fiscal_year(
-                    date_field="date", start_month=7, year_source="start"
+                    date_field="test_date", start_month=7, year_source="start"
                 )
             }} as test_academic_year,
-        from {{ ref("int_kippadb__standardized_test_unpivot") }}
+
+        from {{ ref("int_assessments__college_assessment") }}
         where
             score_type in (
                 'act_composite',
@@ -215,7 +194,6 @@ left join
     college_assessments_official as o
     on e.contact_id = o.contact
     and e.academic_year = o.test_academic_year
-    and o.test_type != 'PSAT10'
 where o.test_type = 'Official'
 
 union all

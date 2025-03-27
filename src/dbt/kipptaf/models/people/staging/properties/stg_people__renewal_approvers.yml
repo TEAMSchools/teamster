@@ -1,0 +1,17 @@
+version: 2
+models:
+  - name: stg_people__renewal_approvers
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: Academic_Year
+        data_type: int64
+      - name: Approver_Employee_Number
+        data_type: int64
+      - name: Approver_Name
+        data_type: string
+      - name: Approver_Email
+        data_type: string
+      - name: Approval_Level
+        data_type: string

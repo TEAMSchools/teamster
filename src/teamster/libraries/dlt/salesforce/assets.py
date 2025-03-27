@@ -29,7 +29,6 @@ def build_salesforce_kippadb_dlt_assets(
     salesforce_user_name: str,
     salesforce_password: str,
     salesforce_security_token: str,
-    dlt_credentials: dict,
     code_location: str,
     op_tags: dict[str, object] | None = None,
 ):
@@ -58,6 +57,6 @@ def build_salesforce_kippadb_dlt_assets(
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
-        yield from dlt.run(context=context, credentials=dlt_credentials)
+        yield from dlt.run(context=context)
 
     return _assets

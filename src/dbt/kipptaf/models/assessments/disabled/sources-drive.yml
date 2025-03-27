@@ -1,0 +1,40 @@
+version: 2
+
+sources:
+  - name: assessments
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_assessments
+    tables:
+      - name: src_assessments__college_readiness_expected_tests
+        config:
+          enabled: false
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__college_readiness_expected_tests
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - assessments
+              - college_readiness_expected_tests
+      - name: src_assessments__internal_assessment_scopes
+        config:
+          enabled: false
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
+            sheet_range: src_assessments__internal_assessment_scopes
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - assessments
+              - internal_assessment_scopes

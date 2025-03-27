@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_powerschool__attendance_conversion_items
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__attendance_conversion_items") | replace("`", "") }}')
     columns:
       - name: comment_value
         data_type: string

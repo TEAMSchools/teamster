@@ -11,7 +11,7 @@ def test():
         resources={
             "ssh_powerschool": SSHResource(
                 remote_host=EnvVar("PS_SSH_HOST"),
-                remote_port=EnvVar("PS_SSH_PORT"),
+                remote_port=int(EnvVar("PS_SSH_PORT")),
                 username=EnvVar("PS_SSH_USERNAME"),
                 tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
             ),

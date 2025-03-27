@@ -1,0 +1,31 @@
+version: 2
+models:
+  - name: stg_people__staffing_model
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: Academic_Year
+        data_type: int64
+      - name: Unique_ID
+        data_type: string
+      - name: Entity
+        data_type: string
+      - name: City
+        data_type: string
+      - name: Grade_Band
+        data_type: string
+      - name: School
+        data_type: string
+      - name: Recruitment_Group
+        data_type: string
+      - name: ADP_Department
+        data_type: string
+      - name: ADP_Job_Title
+        data_type: string
+      - name: Display_Name
+        data_type: string
+      - name: Culture
+        data_type: boolean
+      - name: Flex
+        data_type: boolean

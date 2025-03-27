@@ -47,7 +47,8 @@ with
                 'SEM72250G3133570965',
                 'SEM72250G373252',
                 'SEM72250G4133570965',
-                'SEM72250G473252'
+                'SEM72250G473252',
+                'HR30200803,'
             )
     ),
 
@@ -85,6 +86,7 @@ with
             max(cw.week_end_date) over (
                 partition by t._dbt_source_relation, t.schoolid, t.yearid, tb.storecode
             ) as quarter_end_date_insession,
+
         from {{ ref("stg_powerschool__terms") }} as t
         inner join
             {{ ref("stg_powerschool__termbins") }} as tb
@@ -144,6 +146,7 @@ select
         sec.sections_external_expression,
         sec.sections_section_number
     ) as section_or_period,
+
 from term_weeks as tw
 inner join
     sections as sec

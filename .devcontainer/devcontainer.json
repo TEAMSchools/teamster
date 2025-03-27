@@ -17,7 +17,11 @@
   },
   "customizations": {
     "vscode": {
-      "extensions": ["innoverio.vscode-dbt-power-user", "trunk.io", "ms-python.python"]
+      "extensions": [
+        "innoverio.vscode-dbt-power-user",
+        "trunk.io",
+        "ms-python.python"
+      ]
     }
   }
 }

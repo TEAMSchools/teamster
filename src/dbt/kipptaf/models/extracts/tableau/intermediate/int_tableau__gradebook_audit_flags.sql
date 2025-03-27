@@ -46,6 +46,8 @@ with
                 audit_flag_value for audit_flag_name in (
                     qt_teacher_s_total_greater_200,
                     qt_teacher_s_total_less_200,
+                    qt_teacher_s_total_greater_100,
+                    qt_teacher_s_total_less_100,
                     w_expected_assign_count_not_met,
                     f_expected_assign_count_not_met,
                     s_expected_assign_count_not_met,
@@ -263,6 +265,14 @@ select
     f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between r.week_start_monday and r.week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from student_unpivot as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -402,6 +412,14 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between week_start_monday and week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from student_course_category
 
 union all
@@ -525,6 +543,14 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between week_start_monday and week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from eoq_items
 
 union all
@@ -650,6 +676,14 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between week_start_monday and week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from eoq_items_conduct_code
 
 union all
@@ -787,6 +821,14 @@ select
     r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between r.week_start_monday and r.week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from teacher_unpivot_cca as r
 
 union all
@@ -923,4 +965,12 @@ select
     r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between r.week_start_monday and r.week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from teacher_unpivot_cc as r

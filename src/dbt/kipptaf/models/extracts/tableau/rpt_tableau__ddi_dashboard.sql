@@ -70,6 +70,7 @@ with
             co.school_level,
             co.gender,
             co.ethnicity,
+            co.year_in_network,
 
             w.week_start_monday,
             w.week_end_sunday,
@@ -223,6 +224,7 @@ select
     co.school_level,
     co.gender,
     co.ethnicity,
+    co.year_in_network,
     co.week_start_monday,
     co.week_end_sunday,
     co.days_in_session,
@@ -333,6 +335,7 @@ select
     co.school_level,
     co.gender,
     co.ethnicity,
+    co.year_in_network,
     co.week_start_monday,
     co.week_end_sunday,
     co.days_in_session,
@@ -419,7 +422,7 @@ union all
 /* walkthrough data */
 select
     null as student_number,
-    r.user_principal_name as student_name,
+    r.sam_account_name as student_name,
 
     w.academic_year,
 
@@ -444,6 +447,7 @@ select
 
     null as gender,
     null as ethnicity,
+    null as year_in_network,
 
     w.week_start_monday,
     w.week_end_sunday,
@@ -484,7 +488,7 @@ select
     null as homeroom_section,
     null as homeroom_teachernumber,
 
-    r.reports_to_user_principal_name as homeroom_teacher_name,
+    r.reports_to_sam_account_name as homeroom_teacher_name,
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
 

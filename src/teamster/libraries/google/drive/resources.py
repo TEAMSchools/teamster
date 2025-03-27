@@ -1,23 +1,23 @@
-import google.auth
 from dagster import ConfigurableResource, InitResourceContext
+from google import auth
 from googleapiclient import discovery
 from pydantic import PrivateAttr
 
 
 class GoogleDriveResource(ConfigurableResource):
-    service_account_file_path: str | None = None
     version: str = "v3"
-    scopes: list = ["https://www.googleapis.com/auth/drive.metadata.readonly"]
+    scopes: list[str] = ["https://www.googleapis.com/auth/drive.metadata.readonly"]
+    service_account_file_path: str | None = None
 
     _service: discovery.Resource = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         if self.service_account_file_path is not None:
-            credentials, project_id = google.auth.load_credentials_from_file(
+            credentials, project_id = auth.load_credentials_from_file(
                 filename=self.service_account_file_path, scopes=self.scopes
             )
         else:
-            credentials, project_id = google.auth.default(scopes=self.scopes)
+            credentials, project_id = auth.default(scopes=self.scopes)
 
         self._service = discovery.build(
             serviceName="drive", version=self.version, credentials=credentials

@@ -15,14 +15,16 @@ sources:
               - accelerated_reader
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/renlearn/accelerated_reader/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            # metadata_cache_mode: MANUAL
+            # max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              "{{ var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/renlearn/accelerated_reader/"
             format: AVRO
             enable_logical_types: true
@@ -35,15 +37,15 @@ sources:
               - star
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/renlearn/star/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/renlearn/star/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            # metadata_cache_mode: MANUAL
+            # max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/renlearn/star/"
+              "{{ var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/renlearn/star/"
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__star_skill_area
@@ -55,14 +57,16 @@ sources:
               - star_skill_area
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/renlearn/star_skill_area/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              "{{ var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/renlearn/star_skill_area/"
             format: AVRO
             enable_logical_types: true
@@ -75,14 +79,16 @@ sources:
               - star_dashboard_standards
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/renlearn/star_dashboard_standards/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              "{{ var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/renlearn/star_dashboard_standards/"
             format: AVRO
             enable_logical_types: true
@@ -95,14 +101,16 @@ sources:
               - fast_star
         external:
           location:
-            "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
             }}/renlearn/fast_star/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            # metadata_cache_mode: MANUAL
+            # max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              "{{ var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/renlearn/fast_star/"
             format: AVRO
             enable_logical_types: true

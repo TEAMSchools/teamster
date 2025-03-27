@@ -27,7 +27,6 @@ on:
       - src/teamster/libraries/deanslist/schema.py
       - src/teamster/libraries/dlt/**
       - src/teamster/libraries/extracts/**
-      - src/teamster/libraries/fivetran/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**
       - src/teamster/libraries/overgrad/**
@@ -44,6 +43,7 @@ on:
       - .github/workflows/deploy-prod-kipptaf.yaml
       - Dockerfile
       - uv.lock
+      - src/dbt/kipptaf/profiles.yml
       - src/teamster/code_locations/kipptaf/**
       - src/teamster/core/**
       - src/teamster/libraries/adp/**
@@ -55,7 +55,6 @@ on:
       - src/teamster/libraries/deanslist/schema.py
       - src/teamster/libraries/dlt/**
       - src/teamster/libraries/extracts/**
-      - src/teamster/libraries/fivetran/**
       - src/teamster/libraries/google/**
       - src/teamster/libraries/ldap/**
       - src/teamster/libraries/overgrad/**
