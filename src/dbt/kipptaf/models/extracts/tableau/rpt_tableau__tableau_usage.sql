@@ -23,3 +23,4 @@ left join
     on vc.user_name_lower = srh.sam_account_name
     and vc.created_at_timestamp
     between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
+where srh.primary_indicator
