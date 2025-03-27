@@ -138,6 +138,8 @@ sources:
               - dna_assessments
               - students_assessments
   - name: illuminate_national_assessments
+    config:
+      enabled: false
     schema: dagster_kipptaf_dlt_illuminate_national_assessments
     tables:
       - name: psat_2023

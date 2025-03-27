@@ -1,6 +1,7 @@
 import random
 
 from dagster import (
+    AssetsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
     _check,
@@ -11,7 +12,7 @@ from dagster import (
 from teamster.core.resources import SSH_COUCHDROP, get_io_manager_gcs_avro
 
 
-def _test_asset(asset, partition_key=None, instance=None):
+def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
     if partition_key is not None:
         pass
     elif asset.partitions_def is not None:
@@ -73,9 +74,7 @@ def test_adp_payroll_general_ledger_file_kipptaf():
         )
 
         _test_asset(
-            asset=general_ledger_file,
-            instance=instance,
-            partition_key=f"{date_key}|{group_code_key}",
+            asset=general_ledger_file, partition_key=f"{date_key}|{group_code_key}"
         )
 
 
@@ -188,3 +187,9 @@ def test_collegeboard_psat_kipptaf_psat10():
     from teamster.code_locations.kipptaf.collegeboard.assets import psat
 
     _test_asset(asset=psat, partition_key="PSAT10")
+
+
+def test_collegeboard_ap_kipptaf():
+    from teamster.code_locations.kipptaf.collegeboard.assets import ap
+
+    _test_asset(asset=ap, partition_key="NCA|2023")

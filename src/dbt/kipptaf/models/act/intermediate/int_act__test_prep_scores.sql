@@ -1,4 +1,3 @@
-{{ config(enabled=False) }}
 with
     assessment_responses as (
         select

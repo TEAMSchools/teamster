@@ -21,8 +21,8 @@ with
         select
             {{ var("current_academic_year") - 1 }} as academic_year,
             'SSDS Reporting Period 2' as ssds_period,
-            date({{ var("current_academic_year") }} + 1, 1, 1) as period_start_date,
-            date({{ var("current_academic_year") }} + 1, 6, 30) as period_end_date,
+            date({{ var("current_academic_year") }}, 1, 1) as period_start_date,
+            date({{ var("current_academic_year") }}, 6, 30) as period_end_date,
     ),
 
     ms_grad_sub as (
@@ -197,8 +197,8 @@ select
 
     ms.ms_attended,
 
-    if(ats.type = 'Suspension Letter', ats.attachments, null) as attachments,
-    if(ats.type = 'Upload', ats.attachments, null) as attachments_uploaded,
+    ats.attachments,
+    atr.attachments as attachments_uploaded,
 
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
@@ -384,6 +384,11 @@ left join
     on co.student_number = ms.student_number
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ms") }}
     and ms.rn = 1
-left join attachments as ats on dli.incident_id = ats.incident_id
+left join
+    attachments as ats
+    on dli.incident_id = ats.incident_id
+    and ats.type = 'Suspension Letter'
+left join
+    attachments as atr on dli.incident_id = atr.incident_id and atr.type = 'Upload'
 where
     co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99

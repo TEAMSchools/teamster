@@ -1,0 +1,67 @@
+select
+    e._dbt_source_relation,
+    e.academic_year,
+    e.academic_year_display,
+    e.district,
+    e.schoolid,
+    e.region,
+    e.school,
+    e.studentid,
+    e.students_dcid,
+    e.student_number,
+    e.state_studentnumber,
+    e.salesforce_id,
+    e.student_name,
+    e.student_first_name,
+    e.student_last_name,
+    e.grade_level,
+    e.enroll_status,
+    e.student_email,
+    e.cohort,
+    e.ktc_cohort,
+    e.gender,
+    e.ethnicity,
+    e.lep_status,
+    e.iep_status,
+    e.gifted_and_talented,
+    e.is_504,
+    e.is_out_of_district,
+    e.is_self_contained,
+    e.is_counseling_services,
+    e.is_student_athlete,
+    e.advisory,
+    e.college_match_gpa,
+    e.college_match_gpa_bands,
+
+    p.plan_id,
+    p.plan_name,
+    p.plan_required_credits,
+    p.plan_enrolled_credits,
+    p.plan_earned_credits,
+    p.plan_requested_credits,
+    p.plan_waived_credits,
+    p.isadvancedplan,
+
+    p.discpline_id,
+    p.discipline_name,
+    p.discipline_required_credits,
+    p.discipline_earned_credits,
+    p.discipline_enrolled_credits,
+    p.discipline_requested_credits,
+    p.discipline_waived_credits,
+
+    p.subject_id,
+    p.subject_name,
+    p.subject_required_credits,
+    p.subject_earned_credits,
+    p.subject_enrolled_credits,
+    p.subject_requested_credits,
+    p.subject_waived_credits,
+
+from {{ ref("int_extracts__student_enrollments") }} as e
+left join
+    {{ ref("int_powerschool__grad_plan_progress_student") }} as p
+    on e.students_dcid = p.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="p") }}
+    and p.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
+where e.grade_level >= 9 and e.academic_year = {{ var("current_academic_year") }}

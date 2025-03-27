@@ -98,14 +98,6 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-fivetran-api
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/Fivetran API
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
   name: op-illuminate-sftp
   namespace: dagster-cloud
 spec:
@@ -286,22 +278,6 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/DeansList API
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
-  name: op-gcp-service-account-dbt
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/Teamster Service Account - dbt
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
-  name: op-gcp-service-account-teamster
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/Teamster Service Account - Default
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem

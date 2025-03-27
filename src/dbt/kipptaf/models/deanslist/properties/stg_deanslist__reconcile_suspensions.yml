@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_deanslist__reconcile_suspensions
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
+        "src_deanslist__reconcile_suspensions") | replace("`", "") }}')
     columns:
       - name: dl_incident_id
         data_type: int64

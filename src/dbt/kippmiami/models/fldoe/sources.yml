@@ -17,9 +17,10 @@ sources:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/fast/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/fast/"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/fldoe/fast/"
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__fsa
@@ -33,9 +34,10 @@ sources:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/fsa/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/fsa/"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/fldoe/fsa/"
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__science
@@ -49,9 +51,10 @@ sources:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/science/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/science/"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/fldoe/science/"
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__eoc
@@ -65,9 +68,10 @@ sources:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/eoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/eoc/"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/fldoe/eoc/"
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__fte
@@ -81,8 +85,9 @@ sources:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/fte/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/fldoe/fte/"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/fldoe/fte/"
             format: AVRO
             enable_logical_types: true

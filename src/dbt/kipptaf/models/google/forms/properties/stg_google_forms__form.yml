@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_google_forms__form
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("google_forms",
+        "src_google_forms__form") | replace("`", "") }}')
     columns:
       - name: form_id
         data_type: string

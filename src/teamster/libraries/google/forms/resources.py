@@ -1,28 +1,28 @@
-import google.auth
 from dagster import ConfigurableResource, InitResourceContext
+from google import auth
 from googleapiclient import discovery
 from pydantic import PrivateAttr
 from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 
 class GoogleFormsResource(ConfigurableResource):
-    service_account_file_path: str | None = None
     version: str = "v1"
-    scopes: list = [
+    scopes: list[str] = [
         "https://www.googleapis.com/auth/forms.body.readonly",
         "https://www.googleapis.com/auth/forms.responses.readonly",
         "https://www.googleapis.com/auth/drive.metadata.readonly",
     ]
+    service_account_file_path: str | None = None
 
     _resource: discovery.Resource = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         if self.service_account_file_path is not None:
-            credentials, project_id = google.auth.load_credentials_from_file(
+            credentials, project_id = auth.load_credentials_from_file(
                 filename=self.service_account_file_path, scopes=self.scopes
             )
         else:
-            credentials, project_id = google.auth.default(scopes=self.scopes)
+            credentials, project_id = auth.default(scopes=self.scopes)
 
         self._resource = discovery.build(
             serviceName="forms", version=self.version, credentials=credentials

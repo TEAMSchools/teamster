@@ -1,0 +1,25 @@
+version: 2
+models:
+  - name: stg_assessments__act_scale_score_key
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: Assessment_ID
+        data_type: int64
+      - name: Academic_Year
+        data_type: int64
+      - name: Test_Type
+        data_type: string
+      - name: Administration_Round
+        data_type: string
+      - name: Subject
+        data_type: string
+      - name: Grade_Level
+        data_type: int64
+      - name: Raw_Score_Low
+        data_type: int64
+      - name: Raw_Score_High
+        data_type: int64
+      - name: Scale_Score
+        data_type: int64

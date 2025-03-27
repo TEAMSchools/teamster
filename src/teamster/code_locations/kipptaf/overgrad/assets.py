@@ -9,7 +9,8 @@ universities = build_overgrad_asset(
     name="universities",
     schema=UNIVERSITY_SCHEMA,
     partitions_def=DynamicPartitionsDefinition(name="overgrad__universities__id"),
-    automation_condition=AutomationCondition.on_missing(),
+    automation_condition=AutomationCondition.newly_missing(),
+    pool="overgrad_api_limit_kippnewark",  # uses kippnewark api key
     deps=[
         AssetKey(["kippcamden", "overgrad", "admissions"]),
         AssetKey(["kippcamden", "overgrad", "followings"]),

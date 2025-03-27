@@ -21,30 +21,21 @@ from teamster.libraries.deanslist.assets import (
 
 DEANSLIST_STATIC_PARTITIONS_DEF = StaticPartitionsDefinition(["472", "525"])
 
-DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
-    partitions_defs={
-        "date": MonthlyPartitionsDefinition(
-            start_date="2018-07-01", timezone=str(LOCAL_TIMEZONE), end_offset=1
-        ),
-        "school": DEANSLIST_STATIC_PARTITIONS_DEF,
-    }
-)
-
 DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
     partitions_defs={
+        "school": DEANSLIST_STATIC_PARTITIONS_DEF,
         "date": FiscalYearPartitionsDefinition(
             start_date="2018-07-01",
             start_month=7,
             timezone=str(LOCAL_TIMEZONE),
             end_offset=1,
         ),
-        "school": DEANSLIST_STATIC_PARTITIONS_DEF,
     }
 )
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
-static_partitions_assets = [
+static_partitioned_assets = [
     build_deanslist_static_partition_asset(
         code_location=CODE_LOCATION,
         schema=ASSET_SCHEMA[e["endpoint"]],
@@ -56,12 +47,19 @@ static_partitions_assets = [
     ]
 ]
 
-monthly_multi_partitions_assets = [
+month_partitioned_assets = [
     build_deanslist_multi_partition_asset(
         code_location=CODE_LOCATION,
         api_version="v1",
         schema=ASSET_SCHEMA[e["endpoint"]],
-        partitions_def=DEANSLIST_MONTHLY_MULTI_PARTITIONS_DEF,
+        partitions_def=MultiPartitionsDefinition(
+            partitions_defs={
+                "school": DEANSLIST_STATIC_PARTITIONS_DEF,
+                "date": MonthlyPartitionsDefinition(
+                    start_date="2018-07-01", timezone=str(LOCAL_TIMEZONE), end_offset=1
+                ),
+            }
+        ),
         **e,
     )
     for e in config_from_files([f"{config_dir}/multi-partition-monthly-assets.yaml"])[
@@ -69,7 +67,7 @@ monthly_multi_partitions_assets = [
     ]
 ]
 
-fiscal_multi_partitions_assets = [
+year_partitioned_assets = [
     build_deanslist_multi_partition_asset(
         code_location=CODE_LOCATION,
         api_version="v1",
@@ -82,18 +80,18 @@ fiscal_multi_partitions_assets = [
     ]
 ]
 
-behavior = build_deanslist_paginated_multi_partition_asset(
-    code_location=CODE_LOCATION,
-    endpoint="behavior",
-    api_version="v1",
-    schema=BEHAVIOR_SCHEMA,
-    partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
+year_partitioned_assets.append(
+    build_deanslist_paginated_multi_partition_asset(
+        code_location=CODE_LOCATION,
+        endpoint="behavior",
+        api_version="v1",
+        schema=BEHAVIOR_SCHEMA,
+        partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
+    )
 )
 
-fiscal_multi_partitions_assets = [behavior, *fiscal_multi_partitions_assets]
-
 assets = [
-    *static_partitions_assets,
-    *monthly_multi_partitions_assets,
-    *fiscal_multi_partitions_assets,
+    *month_partitioned_assets,
+    *static_partitioned_assets,
+    *year_partitioned_assets,
 ]

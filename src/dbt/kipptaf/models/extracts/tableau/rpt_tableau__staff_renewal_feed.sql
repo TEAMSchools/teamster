@@ -119,6 +119,8 @@ with
             ap.er_approval_date,
             ap.hos_mdo_approval_date,
 
+            rlm.renewal_doc,
+
             concat(b.family_name_1, ', ', b.given_name) as preferred_name,
             concat(m.family_name_1, ', ', m.given_name) as manager_name,
 
@@ -173,6 +175,11 @@ with
             approvals as ap
             on s.academic_year = ap.campaign_academic_year
             and b.employee_number = ap.subject_employee_number
+        left join
+            {{ ref("stg_people__renewal_letter_mapping") }} as rlm
+            on rlm.entity = s.ny_entity
+            and rlm.department = s.ny_dept
+            and rlm.jobs = s.ny_title
     )
 
 select
@@ -222,8 +229,10 @@ select
                 ),
                 '&entry.1309133590=',
                 coalesce(
-                    safe_cast(ny_salary_from_form as string),
-                    safe_cast(ny_rate as string),
+                    safe_cast(
+                        round(safe_cast(ny_salary_from_form as numeric), 2) as string
+                    ),
+                    safe_cast(round(safe_cast(ny_rate as numeric), 2) as string),
                     ''
                 ),
                 '&entry.1059490956=',

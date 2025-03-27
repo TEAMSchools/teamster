@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_pearson__student_list_report
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("pearson",
+        "src_pearson__student_list_report") | replace("`", "") }}')
     columns:
       - name: state_student_identifier
         data_type: int64

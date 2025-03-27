@@ -9,13 +9,15 @@ sources:
       - name: src_powerschool_enrollment__submission_records
         external:
           location:
-            "{{ var('cloud_storage_uri_base') }}/powerschool/enrollment/submission_records/*"
+            "{{ var('cloud_storage_uri_base')
+            }}/powerschool/enrollment/submission_records/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/powerschool/enrollment/submission_records/"
+              "{{ var('cloud_storage_uri_base')
+              }}/powerschool/enrollment/submission_records/"
             format: AVRO
             enable_logical_types: true
         meta:
