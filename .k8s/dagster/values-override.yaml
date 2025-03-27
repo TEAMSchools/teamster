@@ -91,7 +91,7 @@ workspace:
           cpu: 250m
           memory: 0.5Gi
         limits:
-          cpu: 500m
+          cpu: 7500m
           memory: 1.0Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
