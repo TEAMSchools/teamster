@@ -78,3 +78,380 @@ sources:
               - google
               - appsheet
               - src_seat_tracker__people
+
+      - name: amplify__dibels__measures
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - amplify__dibels__measures
+      - name: amplify__dibels__pm_expectations
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - amplify__dibels__pm_expectations
+      - name: assessments__academic_goals
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - assessments__academic_goals
+      - name: assessments__act_scale_score_key
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - assessments__act_scale_score_key
+      - name: assessments__ap_course_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - assessments__ap_course_crosswalk
+      - name: assessments__assessment_expectations
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - assessments__assessment_expectations
+      - name: assessments__course_subject_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - assessments__course_subject_crosswalk
+      - name: assessments__iready_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - assessments__iready_crosswalk
+      - name: assessments__qbls_power_standards
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - assessments__qbls_power_standards
+      - name: assessments__standard_domains
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - assessments__standard_domains
+      - name: assessments__state_test_comparison
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - assessments__state_test_comparison
+      - name: collegeboard__id_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - collegeboard__id_crosswalk
+      - name: coupa__address_name_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - coupa__address_name_crosswalk
+      - name: coupa__intacct_department_lookup
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - coupa__intacct_department_lookup
+      - name: coupa__intacct_fund_lookup
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - coupa__intacct_fund_lookup
+      - name: coupa__intacct_location_lookup
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - coupa__intacct_location_lookup
+      - name: coupa__intacct_program_lookup
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - coupa__intacct_program_lookup
+      - name: coupa__school_name_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - coupa__school_name_crosswalk
+      - name: coupa__school_name_lookup
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - coupa__school_name_lookup
+      - name: coupa__user_exceptions
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - coupa__user_exceptions
+      - name: crdc__sced_code_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - crdc__sced_code_crosswalk
+      - name: crdc__student_numbers
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - crdc__student_numbers
+      - name: egencia__travel_managers
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - egencia__travel_managers
+      - name: egencia__traveler_group_exceptions
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - egencia__traveler_group_exceptions
+      - name: egencia__traveler_groups
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - egencia__traveler_groups
+      - name: finance__enrollment_targets
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - finance__enrollment_targets
+      - name: finance__payroll_code_mapping
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - finance__payroll_code_mapping
+      - name: google_forms__form_items_extension
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - google_forms__form_items_extension
+      - name: kippadb__nsc_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - kippadb__nsc_crosswalk
+      - name: people__campus_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - people__campus_crosswalk
+      - name: people__employee_numbers_archive
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - people__employee_numbers_archive
+      - name: people__location_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - people__location_crosswalk
+      - name: people__miami_performance_criteria
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - people__miami_performance_criteria
+      - name: people__powerschool_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - people__powerschool_crosswalk
+      - name: people__renewal_approvers
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - people__renewal_approvers
+      - name: people__renewal_letter_mapping
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - people__renewal_letter_mapping
+      - name: people__salary_scale
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - people__salary_scale
+      - name: people__staffing_model
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - people__staffing_model
+      - name: people__student_logins_archive
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - people__student_logins_archive
+      - name: performance_management__leadership_development_metrics
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - performance_management__leadership_development_metrics
+      - name: reporting__gradebook_expectations
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - reporting__gradebook_expectations
+      - name: reporting__gradebook_flags
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - reporting__gradebook_flags
+      - name: reporting__graduation_path_combos
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - reporting__graduation_path_combos
+      - name: reporting__promo_status_cutoffs
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - reporting__promo_status_cutoffs
+      - name: reporting__terms
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - reporting__terms
+      - name: surveys__scd_answer_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - surveys__scd_answer_crosswalk
+      - name: surveys__scd_question_crosswalk
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - appsheet
+              - surveys__scd_question_crosswalk
