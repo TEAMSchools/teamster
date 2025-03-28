@@ -1,61 +1,57 @@
 with
     people as (
         select
-            studentid,
-            student_number,
+            studentdcid,
             personid,
-            'contact' as person_type,
             relationship_type,
-            concat(
-                ltrim(rtrim(firstname)), ' ', ltrim(rtrim(lastname))
-            ) as contact_name,
+            contact_name,
             contactpriorityorder,
+
+            'contact' as person_type,
         from {{ ref("int_powerschool__contacts") }}
         where person_type != 'self' and contactpriorityorder <= 2
 
         union all
 
         select
-            studentid,
-            student_number,
+            studentdcid,
             personid,
-            'emergency' as person_type,
             relationship_type,
-            concat(
-                ltrim(rtrim(firstname)), ' ', ltrim(rtrim(lastname))
-            ) as contact_name,
+            contact_name,
+
             row_number() over (
-                partition by studentid order by contactpriorityorder
+                partition by studentdcid order by contactpriorityorder
             ) as contactpriorityorder,
+
+            'emergency' as person_type,
         from {{ ref("int_powerschool__contacts") }}
-        where person_type != 'self' and contactpriorityorder > 2 and isemergency = 1
+        where person_type != 'self' and contactpriorityorder >= 3 and isemergency = 1
 
         union all
 
         select
-            studentid,
-            student_number,
+            studentdcid,
             personid,
-            'pickup' as person_type,
             relationship_type,
-            concat(
-                ltrim(rtrim(firstname)), ' ', ltrim(rtrim(lastname))
-            ) as contact_name,
+            contact_name,
+
             row_number() over (
-                partition by studentid order by contactpriorityorder
+                partition by studentdcid order by contactpriorityorder
             ) as contactpriorityorder,
+
+            'pickup' as person_type,
         from {{ ref("int_powerschool__contacts") }}
         where
             person_type != 'self'
-            and contactpriorityorder > 2
+            and contactpriorityorder >= 3
             and schoolpickupflg = 1
             and isemergency = 0
     ),
 
     person_contacts as (
         select
-            c.studentid,
-            c.student_number,
+            c.studentdcid,
+
             concat(c.person_type, '_', c.contactpriorityorder) as person_type,
 
             lower(pc.contact_category)
@@ -65,7 +61,7 @@ with
 
             row_number() over (
                 partition by
-                    c.studentid, c.personid, pc.contact_category, pc.contact_type
+                    c.studentdcid, c.personid, pc.contact_category, pc.contact_type
                 order by pc.priority_order
             ) as contact_category_type_priority,
         from people as c
@@ -76,8 +72,8 @@ with
         union all
 
         select
-            c.studentid,
-            c.student_number,
+            c.studentdcid,
+
             concat(c.person_type, '_', c.contactpriorityorder) as person_type,
 
             'phone_primary' as contact_category_type,
@@ -85,7 +81,7 @@ with
             pc.contact,
 
             row_number() over (
-                partition by c.studentid, c.personid
+                partition by c.studentdcid, c.personid
                 order by pc.is_primary desc, pc.priority_order asc
             ) as contact_category_type_priority,
         from people as c
@@ -97,39 +93,45 @@ with
         union all
 
         select
-            studentid,
-            student_number,
+            studentdcid,
+
             concat(person_type, '_', contactpriorityorder) as person_type,
+
             'name' as contact_category_type,
+
             ltrim(rtrim(contact_name)) as contact,
+
             1 as contact_category_type_priority,
         from people
 
         union all
 
         select
-            studentid,
-            student_number,
+            studentdcid,
+
             concat(person_type, '_', contactpriorityorder) as person_type,
+
             'relationship' as contact_category_type,
+
             relationship_type as contact,
+
             1 as contact_category_type_priority,
         from people
     ),
 
     pre_pivot as (
         select
-            studentid,
-            student_number,
+            studentdcid,
             contact as input_column,
+
             person_type || '_' || contact_category_type as pivot_column,
         from person_contacts
         where contact_category_type_priority = 1
     )
 
 select
-    studentid,
-    student_number,
+    studentdcid,
+
     contact_1_address_home,
     contact_1_email_current,
     contact_1_name,
