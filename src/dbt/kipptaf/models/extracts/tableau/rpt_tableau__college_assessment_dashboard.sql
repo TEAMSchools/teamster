@@ -94,11 +94,12 @@ with
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
             and s.courses_course_name in (
-                'College and Career IV',
+                'HR',
+                'Advisory',
                 'College and Career I',
-                'College and Career III',
                 'College and Career II',
-                'HR'
+                'College and Career III',
+                'College and Career IV'
             )
         inner join
             expected_course as ec
