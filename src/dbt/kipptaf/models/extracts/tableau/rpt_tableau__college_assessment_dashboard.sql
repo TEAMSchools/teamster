@@ -11,15 +11,22 @@ with
             students_student_number as student_number,
             courses_course_name,
 
-            if(courses_course_name = 'HR', 2, 1) as course_rank,
+            case
+                courses_course_name when 'Advisory' then 3 when 'HR' then 2 else 1
+            end as course_rank,
 
-            min(if(courses_course_name = 'HR', 2, 1)) over (
-                partition by cc_academic_year, students_student_number
-            ) as expected_course_rank,
+            min(
+                case
+                    courses_course_name when 'Advisory' then 3 when 'HR' then 2 else 1
+                end
+            ) over (partition by cc_academic_year, students_student_number)
+            as expected_course_rank,
+
         from {{ ref("base_powerschool__course_enrollments") }}
         where
             courses_course_name in (
                 'HR',
+                'Advisory',
                 'College and Career I',
                 'College and Career II',
                 'College and Career III',
