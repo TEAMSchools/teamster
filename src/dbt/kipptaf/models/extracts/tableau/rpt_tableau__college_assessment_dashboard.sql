@@ -20,10 +20,10 @@ with
         where
             courses_course_name in (
                 'HR',
-                'College and Career IV',
                 'College and Career I',
+                'College and Career II',
                 'College and Career III',
-                'College and Career II'
+                'College and Career IV'
             )
             and rn_course_number_year = 1
             and rn_credittype_year = 1
