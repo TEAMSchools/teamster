@@ -57,7 +57,7 @@ select
 from {{ ref("base_powerschool__student_enrollments") }} as sr
 left join
     {{ ref("int_powerschool__student_contacts") }} as sc
-    on sr.student_number = sc.student_number
+    on sr.students_dcid = sc.studentdcid
     and {{ union_dataset_join_clause(left_alias="sr", right_alias="sc") }}
     and sc.contact_category = 'Phone'
     and sc.person_type != 'self'

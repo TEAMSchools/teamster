@@ -475,7 +475,7 @@ left join
     and enr.schoolid = adv.schoolid
 left join
     {{ ref("int_powerschool__student_contacts_pivot") }} as scw
-    on enr.student_number = scw.student_number
+    on enr.students_dcid = scw.studentdcid
 left join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on enr.studentid = sp.studentid
