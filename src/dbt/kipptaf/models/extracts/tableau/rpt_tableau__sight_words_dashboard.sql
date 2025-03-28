@@ -61,6 +61,7 @@ inner join
     on swq.academic_year = co.academic_year
     and swq.grade_level = co.grade_level
     and co.iready_subject = 'Reading'
+    and co.rn_year = 1
 left join
     {{ ref("int_illuminate__repository_data") }} as sw
     on swq.repository_id = sw.repository_id
@@ -108,3 +109,4 @@ inner join
     and sw.local_student_id = co.student_number
     and co.is_enrolled_recent
     and co.iready_subject = 'Reading'
+    and co.rn_year = 1

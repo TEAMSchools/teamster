@@ -91,3 +91,4 @@ left join
 where
     e.school_level = 'HS'
     and date(e.academic_year + 1, 05, 15) between e.entrydate and e.exitdate
+    and e.rn_year = 1
