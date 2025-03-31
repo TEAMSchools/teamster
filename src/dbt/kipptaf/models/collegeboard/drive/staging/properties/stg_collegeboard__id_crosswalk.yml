@@ -4,6 +4,7 @@ models:
     config:
       contract:
         enforced: true
+      tags: google_sheet
     columns:
       - name: college_board_id
         data_type: int64
