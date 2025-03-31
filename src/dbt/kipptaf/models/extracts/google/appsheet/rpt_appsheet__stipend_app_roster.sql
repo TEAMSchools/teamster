@@ -40,12 +40,18 @@ select
             r.home_department_name
             in ('Data', 'Human Resources', 'Leadership Development', 'Executive')
         then 3
+        when
+            r.home_business_unit_code = 'KIPP_TAF'
+            and r.home_department_name = 'Operations'
+            and contains_substr(r.home_work_location_name, 'Room')
+        then 3
         /* in-region/state view */
         when
             contains_substr(r.job_title, 'Director')
             and r.home_department_name = 'Operations'
             and contains_substr(r.home_work_location_name, 'Room')
         then 2
+
         when
             r.job_title in (
                 'Head of Schools',
