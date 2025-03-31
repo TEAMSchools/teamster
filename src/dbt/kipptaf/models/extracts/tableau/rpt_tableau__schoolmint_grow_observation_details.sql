@@ -199,6 +199,7 @@ select
     srh.job_title,
     srh.reports_to_formatted_name as manager,
     srh.worker_original_hire_date,
+    srh.work_assignment_actual_start_date,
     srh.assignment_status,
     srh.sam_account_name,
     srh.reports_to_sam_account_name as report_to_sam_account_name,
