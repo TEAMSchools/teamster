@@ -4,6 +4,7 @@ models:
     config:
       contract:
         enforced: true
+      tags: google_sheet
     columns:
       - name: ADP_Business_Unit_Home_Code
         data_type: string
