@@ -49,6 +49,7 @@ with
             and e.grade_level = t.grade
             and e.region = t.region
             and t.assessment_type = 'College Entrance'
+            and t.strategy
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
