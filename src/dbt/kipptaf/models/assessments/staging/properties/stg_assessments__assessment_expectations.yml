@@ -38,3 +38,5 @@ models:
         data_type: string
       - name: Strategy
         data_type: boolean
+      - name: Actual_Month_Round
+        data_type: string
