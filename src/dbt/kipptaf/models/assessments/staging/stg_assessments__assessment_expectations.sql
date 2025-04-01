@@ -1,1 +1,19 @@
-select *, from {{ source("assessments", "src_assessments__assessment_expectations") }}
+select
+    academic_year,
+    region,
+    assessment_type,
+    grade,
+    test_type,
+    scope,
+    discipline,
+    subject_area,
+    assessment_subject_area,
+    test_code,
+    admin_season,
+    month_round,
+    illuminate_subject,
+    iready_subject,
+    ps_credit_type,
+    strategy,
+    actual_month_round,
+from {{ source("assessments", "src_assessments__assessment_expectations") }}
