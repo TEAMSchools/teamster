@@ -233,6 +233,8 @@ where
     and e.expected_scope in ('ACT', 'SAT')
     and e.strategy
 
+union all
+
 select
     e.academic_year,
     e.academic_year_display,
