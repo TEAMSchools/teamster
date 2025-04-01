@@ -63,7 +63,10 @@ with
 
             max(audit_flag_value) as audit_flag_value,
         from {{ ref("int_tableau__gradebook_audit_flags") }}
-        where audit_category = 'Comments'
+        where
+            audit_category = 'Comments'
+            or concat(region_school_level, audit_flag_name)
+            = 'MiamiMSqt_grade_70_comment_missing'
         group by all
     ),
 
