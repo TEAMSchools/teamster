@@ -228,7 +228,87 @@ left join
     on e.student_number = c.student_number
     and e.academic_year = c.academic_year
     and o.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Official' and e.expected_scope in ('ACT', 'SAT')
+where
+    e.expected_test_type = 'Official'
+    and e.expected_scope in ('ACT', 'SAT')
+    and e.strategy
+
+select
+    e.academic_year,
+    e.academic_year_display,
+    e.region,
+    e.schoolid,
+    e.school,
+    e.student_number,
+    e.student_name,
+    e.grade_level,
+    e.enroll_status,
+    e.cohort,
+    e.sped,
+    e.is_504,
+    e.lep_status,
+    e.gifted_and_talented,
+    e.advisory,
+    e.contact_id,
+    e.ktc_cohort,
+    e.contact_owner_name,
+    e.college_match_gpa,
+    e.college_match_gpa_bands,
+    e.courses_course_name,
+    e.teacher_lastfirst,
+    e.sections_external_expression,
+    e.expected_test_type,
+    e.expected_scope,
+    e.expected_subject_area,
+    e.expected_score_type,
+    e.expected_test_code,
+    e.expected_admin_season,
+    e.expected_month_round,
+    e.expected_actual_month_round,
+    e.strategy,
+
+    o.test_type,
+    o.scope,
+
+    'NA' as scope_round,
+    null as assessment_id,
+    'NA' as assessment_title,
+
+    o.administration_round,
+    o.subject_area,
+    o.test_date,
+
+    'NA' as response_type,
+    'NA' as response_type_description,
+
+    null as points,
+    null as percent_correct,
+    null as total_subjects_tested,
+    null as raw_score,
+
+    o.scale_score,
+    o.rn_highest,
+
+    c.courses_course_name as subject_course,
+    c.teacher_lastfirst as subject_teacher,
+    c.sections_external_expression as subject_external_expression,
+    c.is_math_double_blocked,
+
+    coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
+from roster as e
+inner join
+    {{ ref("int_assessments__college_assessment") }} as o
+    on e.contact_id = o.salesforce_id
+    and e.expected_test_type = o.test_type
+    and e.expected_scope = o.scope
+    and e.expected_score_type = o.score_type
+    and e.expected_actual_month_round = o.test_month
+inner join
+    course_subjects_roster as c
+    on e.student_number = c.student_number
+    and e.academic_year = c.academic_year
+    and o.course_discipline = c.courses_credittype
+where e.expected_test_type = 'Official' and not e.strategy
 
 union all
 
