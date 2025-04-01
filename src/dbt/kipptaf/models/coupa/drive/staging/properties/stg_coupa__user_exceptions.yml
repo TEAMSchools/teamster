@@ -4,6 +4,7 @@ models:
     config:
       contract:
         enforced: true
+      tags: google_sheet
     columns:
       - name: employee_number
         data_type: int64
