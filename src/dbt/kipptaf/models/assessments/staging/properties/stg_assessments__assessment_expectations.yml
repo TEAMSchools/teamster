@@ -6,37 +6,37 @@ models:
         enforced: true
       tags: google_sheet
     columns:
-      - name: academic_year
+      - name: Academic_Year
         data_type: int64
-      - name: region
+      - name: Region
         data_type: string
-      - name: assessment_type
+      - name: Assessment_Type
         data_type: string
-      - name: grade
+      - name: Grade
         data_type: int64
-      - name: test_type
+      - name: Test_Type
         data_type: string
-      - name: scope
+      - name: Scope
         data_type: string
-      - name: discipline
+      - name: Discipline
         data_type: string
-      - name: subject_area
+      - name: Subject_Area
         data_type: string
-      - name: assessment_subject_area
+      - name: Assessment_Subject_Area
         data_type: string
-      - name: test_code
+      - name: Test_Code
         data_type: string
-      - name: admin_season
+      - name: Admin_Season
         data_type: string
-      - name: month_round
+      - name: Month_Round
         data_type: string
-      - name: illuminate_subject
+      - name: Illuminate_Subject
         data_type: string
-      - name: iReady_subject
+      - name: iReady_Subject
         data_type: string
-      - name: ps_credit_type
+      - name: PS_Credit_Type
         data_type: string
-      - name: strategy
+      - name: Strategy
         data_type: boolean
-      - name: actual_month_round
+      - name: Actual_Month_Round
         data_type: string
