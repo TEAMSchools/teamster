@@ -28,6 +28,12 @@ with
             t.test_type as expected_test_type,
             t.scope as expected_scope,
             t.subject_area as expected_subject_area,
+            t.assessment_subject_area as expected_score_type,
+            t.test_code as expected_test_code,
+            t.admin_season as expected_admin_season,
+            t.month_round as expected_month_round,
+            t.actual_month_round as expected_actual_month_round,
+            t.strategy,
 
             if(e.iep_status = 'No IEP', 0, 1) as sped,
         from {{ ref("int_extracts__student_enrollments") }} as e
@@ -53,6 +59,70 @@ with
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
+
+        union all
+
+        select
+            e.academic_year,
+            e.academic_year_display,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.student_name,
+            e.grade_level,
+            e.enroll_status,
+            e.cohort,
+            e.is_504,
+            e.lep_status,
+            e.gifted_and_talented,
+            e.advisory,
+            e.salesforce_id as contact_id,
+            e.ktc_cohort,
+            e.contact_owner_name,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
+
+            s.courses_course_name,
+            s.teacher_lastfirst,
+            s.sections_external_expression,
+
+            t.test_type as expected_test_type,
+            t.scope as expected_scope,
+            t.subject_area as expected_subject_area,
+            t.assessment_subject_area as expected_score_type,
+            t.test_code as expected_test_code,
+            t.admin_season as expected_admin_season,
+            t.month_round as expected_month_round,
+            t.actual_month_round as expected_actual_month_round,
+            t.strategy,
+
+            if(e.iep_status = 'No IEP', 0, 1) as sped,
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        left join
+            {{ ref("base_powerschool__course_enrollments") }} as s
+            on e.student_number = s.students_student_number
+            and e.academic_year = s.cc_academic_year
+            and s.rn_course_number_year = 1
+            and not s.is_dropped_section
+            and s.courses_course_name in (
+                'College and Career IV',
+                'College and Career I',
+                'College and Career III',
+                'College and Career II'
+            )
+        left join
+            {{ ref("stg_assessments__assessment_expectations") }} as t
+            on e.academic_year = t.academic_year
+            and e.grade_level = t.grade
+            and e.region = t.region
+            and t.scope = 'SAT'
+            and t.assessment_type = 'College Entrance'
+            and not t.strategy
+        where
+            e.academic_year = {{ var("current_academic_year") }}
+            and e.school_level = 'HS'
+            and e.grade_level = 11
     ),
 
     course_subjects_roster as (
@@ -111,6 +181,12 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
+    e.expected_score_type,
+    e.expected_test_code,
+    e.expected_admin_season,
+    e.expected_month_round,
+    e.expected_actual_month_round,
+    e.strategy,
 
     o.test_type,
     o.scope,
@@ -146,7 +222,7 @@ left join
     on e.contact_id = o.salesforce_id
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
-    and e.expected_subject_area = o.subject_area
+    and e.expected_score_type = o.score_type
 left join
     course_subjects_roster as c
     on e.student_number = c.student_number
@@ -183,6 +259,12 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
+    e.expected_score_type,
+    e.expected_test_code,
+    e.expected_admin_season,
+    e.expected_month_round,
+    e.expected_actual_month_round,
+    e.strategy,
 
     o.test_type,
     o.scope,
@@ -258,6 +340,12 @@ select
     e.expected_test_type,
     e.expected_scope,
     e.expected_subject_area,
+    e.expected_score_type,
+    e.expected_test_code,
+    e.expected_admin_season,
+    e.expected_month_round,
+    e.expected_actual_month_round,
+    true as strategy,
 
     p.test_type,
     p.scope,
