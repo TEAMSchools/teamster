@@ -2,9 +2,9 @@ version: 2
 models:
   - name: stg_surveys__manager_survey_detail_archive
     config:
+      enabled: false
       contract:
         enforced: true
-      tags: google_sheet
     columns:
       - name: campaign_reporting_term
         data_type: string
