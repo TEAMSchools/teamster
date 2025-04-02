@@ -91,7 +91,7 @@ with
         where e.school_level = 'HS'
     ),
 
-    scores as (
+    custom_scores as (
         select
             o.* except (test_month),
             t.test_code,
@@ -108,6 +108,45 @@ with
             and o.score_type = t.assessment_subject_area
             and o.test_month = t.month_round
             and t.assessment_type = 'College Entrance'
+            and t.strategy
+
+        union all
+
+        select
+            o.* except (test_month),
+            t.test_code,
+            t.admin_season,
+            t.month_round,
+            t.strategy,
+            t.actual_month_round,
+
+        from {{ ref("int_assessments__college_assessment") }} as o
+        inner join
+            {{ ref("stg_assessments__assessment_expectations") }} as t
+            on o.academic_year = t.academic_year
+            and o.test_type = t.test_type
+            and o.score_type = t.assessment_subject_area
+            and o.test_month = t.actual_month_round
+            and t.assessment_type = 'College Entrance'
+            and t.grade = 11
+            and t.scope = 'SAT'
+            and not t.strategy
+    ),
+
+    scores as (
+        select
+            *,
+            row_number() over (
+                partition by
+                    academic_year,
+                    student_number,
+                    salesforce_id,
+                    score_type,
+                    test_code,
+                    admin_season,
+                    month_round
+            ) as rn_distinct,
+        from custom_scores
     )
 
 select
@@ -179,6 +218,7 @@ left join
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_score_type = o.score_type
+    and o.rn_distinct = 1
 left join
     course_subjects_roster as c
     on e.student_number = c.student_number
@@ -258,6 +298,7 @@ left join
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
+    and o.rn_distinct = 1
 left join
     course_subjects_roster as c
     on e.student_number = c.student_number
