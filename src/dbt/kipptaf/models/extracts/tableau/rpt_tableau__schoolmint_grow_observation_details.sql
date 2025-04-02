@@ -67,7 +67,7 @@ select
     srh.assignment_status,
     srh.sam_account_name,
     srh.reports_to_sam_account_name as report_to_sam_account_name,
-    srh.race_ethnicity,
+    srh.race_ethnicity_reporting,
 
     t.type as tracking_type,
     t.code as tracking_code,
@@ -204,7 +204,7 @@ select
     srh.assignment_status,
     srh.sam_account_name,
     srh.reports_to_sam_account_name as report_to_sam_account_name,
-    srh.race_ethnicity,
+    srh.race_ethnicity_reporting,
 
     null as tracking_type,
     null as tracking_code,
