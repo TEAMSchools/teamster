@@ -73,24 +73,23 @@ select
     e.boy_status,
     e.rn_undergrad,
     e.code_location,
+    e.salesforce_contact_id as salesforce_id,
+    e.salesforce_contact_df_has_fafsa as has_fafsa,
+    e.salesforce_contact_college_match_display_gpa as college_match_gpa,
+    e.salesforce_contact_college_match_gpa_band as college_match_gpa_bands,
+    e.salesfoce_contact_owner_name as contact_owner_name,
+    e.ktc_cohort,
+    e.illuminate_student_id,
 
     m.ms_attended,
 
     mt.territory,
-
-    adb.id as salesforce_id,
-    adb.df_has_fafsa as has_fafsa,
-    adb.college_match_display_gpa as college_match_gpa,
-
-    su.name as contact_owner_name,
 
     hr.sections_section_number as team,
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
     'KTAF' as district,
-
-    coalesce(adb.kipp_hs_class, e.cohort) as ktc_cohort,
 
     concat(e.region, e.school_level) as region_school_level,
     coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
@@ -129,32 +128,20 @@ select
     case
         e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
     end as race_ethnicity,
+
     case
         when e.school_level in ('ES', 'MS')
         then e.advisory_name
         when e.school_level = 'HS'
         then e.advisor_lastfirst
     end as advisory,
+
     case
         when e.region in ('Camden', 'Newark')
         then 'NJ'
         when e.region = 'Miami'
         then 'FL'
     end as `state`,
-
-    case
-        when adb.college_match_display_gpa >= 3.50
-        then '3.50+'
-        when adb.college_match_display_gpa >= 3.00
-        then '3.00-3.49'
-        when adb.college_match_display_gpa >= 2.50
-        then '2.50-2.99'
-        when adb.college_match_display_gpa >= 2.00
-        then '2.00-2.49'
-        when adb.college_match_display_gpa < 2.00
-        then '<2.00'
-        else 'No GPA'
-    end as college_match_gpa_bands,
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     ms_grad_sub as m
@@ -166,10 +153,6 @@ left join
     on e.student_number = mt.student_school_id
     and {{ union_dataset_join_clause(left_alias="e", right_alias="mt") }}
     and mt.rn_territory = 1
-left join
-    {{ ref("stg_kippadb__contact") }} as adb
-    on e.student_number = adb.school_specific_id
-left join {{ ref("stg_kippadb__user") }} as su on adb.owner_id = su.id
 left join
     {{ ref("int_powerschool__spenrollments") }} as cs
     on e.studentid = cs.studentid
