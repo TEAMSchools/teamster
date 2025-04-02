@@ -73,7 +73,19 @@ select
 
     tpd.total_balance as lunch_balance,
 
+    adb.id as salesforce_contact_id,
+    adb.df_has_fafsa as salesforce_contact_df_has_fafsa,
+    adb.college_match_display_gpa as salesforce_contact_college_match_display_gpa,
+    adb.kipp_hs_class as salesforce_contact_kipp_hs_class,
+    adb.owner_id as salesforce_contact_owner_id,
+
+    adbu.name as salesfoce_contact_owner_name,
+
+    ill.student_id as illuminate_student_id,
+
     coalesce(njr.pid_504_tf, suf.is_504, false) as is_504,
+
+    coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
 
     if(ar.region = 'Miami' and fte.survey_2 is not null, true, false) as is_fldoe_fte_2,
     if(ar.region = 'Miami' and fte.survey_3 is not null, true, false) as is_fldoe_fte_3,
@@ -125,6 +137,20 @@ select
                 else tpd.eligibility || ' - ' || tpd.eligibility_determination_reason
             end
     end as lunch_application_status,
+
+    case
+        when adb.college_match_display_gpa >= 3.50
+        then '3.50+'
+        when adb.college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when adb.college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when adb.college_match_display_gpa >= 2.00
+        then '2.00-2.49'
+        when adb.college_match_display_gpa < 2.00
+        then '<2.00'
+        else 'No GPA'
+    end as salesforce_contact_college_match_gpa_band,
 from with_region as ar
 left join
     {{ ref("int_people__staff_roster") }} as sr
@@ -160,3 +186,10 @@ left join
     on ar.state_studentnumber = fte.student_id
     and ar.academic_year = fte.academic_year
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="fte") }}
+left join
+    {{ ref("stg_kippadb__contact") }} as adb
+    on ar.student_number = adb.school_specific_id
+left join {{ ref("stg_kippadb__user") }} as adbu on adb.owner_id = adbu.id
+left join
+    {{ ref("stg_illuminate__public__students") }} as ill
+    on ar.student_number = ill.local_student_id
