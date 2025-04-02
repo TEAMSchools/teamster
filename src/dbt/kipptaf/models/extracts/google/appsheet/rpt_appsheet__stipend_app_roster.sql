@@ -63,7 +63,12 @@ select
         when r.sam_account_name = 'tmiddleton'
         then 2
         /* in location/campus view */
-        when r.job_title in ('Director School Operations', 'Director Campus Operations')
+        when
+            r.job_title in (
+                'Director School Operations',
+                'Director Campus Operations',
+                'Fellow School Operations Director'
+            )
         then 1
         else 0
     end as app_permissions,
