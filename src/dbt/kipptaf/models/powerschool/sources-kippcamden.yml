@@ -822,3 +822,11 @@ sources:
               - kippcamden
               - powerschool
               - stg_powerschool__u_storedgrades_de
+      - name: stg_powerschool__gpprogresssubjectearned
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpprogresssubjectearned
