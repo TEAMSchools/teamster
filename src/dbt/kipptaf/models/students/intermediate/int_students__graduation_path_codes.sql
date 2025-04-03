@@ -339,7 +339,7 @@ with
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
             unpivot_calcs_ps_code pivot (max(met_dlm) for discipline in ('ELA', 'Math'))
-        where ps_grad_path_code != 'M'
+        where ps_grad_path_code = 'M'
         group by all
     ),
 
