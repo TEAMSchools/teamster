@@ -1,56 +1,42 @@
-with
-    student_ids as (
-        select student_number, salesforce_id,
-        from {{ ref("int_extracts__student_enrollments") }}
-        where rn_undergrad = 1
-    )
-
 select
-    u.powerschool_student_number as student_number,
-    u.administration_round,
-    u.academic_year,
-    u.latest_psat_date as test_date,
-    u.test_type as scope,
-    u.test_subject as subject_area,
-    u.course_discipline,
-    u.score_type,
-    u.score as scale_score,
-    u.rn_highest,
+    powerschool_student_number as student_number,
+    administration_round,
+    academic_year,
+    latest_psat_date as test_date,
+    test_type as scope,
+    test_subject as subject_area,
+    course_discipline,
+    score_type,
+    score as scale_score,
+    rn_highest,
 
-    format_date('%B', u.latest_psat_date) as test_month,
+    format_date('%B', latest_psat_date) as test_month,
 
     'Official' as test_type,
-    i.salesforce_id,
-
-from {{ ref("int_collegeboard__psat_unpivot") }} as u
-inner join student_ids as i on u.powerschool_student_number = i.student_number
+from {{ ref("int_collegeboard__psat_unpivot") }}
 
 union all
 
 select
-    i.student_number,
+    school_specific_id as student_number,
+    administration_round,
+    academic_year,
+    `date` as test_date,
+    test_type as scope,
+    subject_area,
+    course_discipline,
+    score_type,
+    score as scale_score,
+    rn_highest,
 
-    u.administration_round,
-    u.academic_year,
-    u.`date` as test_date,
-    u.test_type as scope,
-    u.subject_area,
-    u.course_discipline,
-    u.score_type,
-    u.score as scale_score,
-    u.rn_highest,
-
-    format_date('%B', u.`date`) as test_month,
+    format_date('%B', `date`) as test_month,
 
     'Official' as test_type,
-    u.contact as salesforce_id,
-
-from {{ ref("int_kippadb__standardized_test_unpivot") }} as u
-inner join student_ids as i on u.contact = i.salesforce_id
+from {{ ref("int_kippadb__standardized_test_unpivot") }}
 where
-    u.`date` is not null
-    and u.test_type in ('ACT', 'SAT')
-    and u.score_type in (
+    `date` is not null
+    and test_type in ('ACT', 'SAT')
+    and score_type in (
         'act_composite',
         'act_reading',
         'act_english',
