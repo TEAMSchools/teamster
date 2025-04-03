@@ -1,7 +1,6 @@
 import random
 
 from dagster import _check, materialize
-from dagster._core.events import StepMaterializationData
 
 from teamster.core.resources import (
     get_io_manager_gcs_file,
@@ -33,12 +32,12 @@ def _test_asset(assets, asset_name: str, code_location: str):
 
     asset_materialization_event = result.get_asset_materialization_events()[0]
 
-    event_specific_data = _check.inst(
-        asset_materialization_event.event_specific_data, StepMaterializationData
-    )
-
     records = _check.inst(
-        event_specific_data.materialization.metadata["records"].value, int
+        # trunk-ignore(pyright/reportAttributeAccessIssue,pyright/reportOptionalMemberAccess)
+        asset_materialization_event.event_specific_data.materialization.metadata[
+            "records"
+        ].value,
+        int,
     )
 
     assert records > 0
@@ -152,7 +151,18 @@ def test_gpprogresssubjectwaived_kippnewark():
     )
 
 
-def test_gpstudentwaiver_kippnewark():  # whenmodified
+def test_gpprogresssubjectearned_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpprogresssubjectearned",
+        code_location=CODE_LOCATION.upper(),
+    )
+
+
+def test_gpstudentwaiver_kippnewark():
     from teamster.code_locations.kippnewark import CODE_LOCATION
     from teamster.code_locations.kippnewark.powerschool import assets
 
