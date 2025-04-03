@@ -1,42 +1,56 @@
+with
+    student_ids as (
+        select student_number, salesforce_id,
+        from {{ ref("int_extracts__student_enrollments") }}
+        where rn_undergrad = 1
+    )
+
 select
-    powerschool_student_number as student_number,
-    administration_round,
-    academic_year,
-    latest_psat_date as test_date,
-    test_type as scope,
-    test_subject as subject_area,
-    course_discipline,
-    score_type,
-    score as scale_score,
-    rn_highest,
+    u.powerschool_student_number as student_number,
+    u.administration_round,
+    u.academic_year,
+    u.latest_psat_date as test_date,
+    u.test_type as scope,
+    u.test_subject as subject_area,
+    u.course_discipline,
+    u.score_type,
+    u.score as scale_score,
+    u.rn_highest,
+
+    format_date('%B', u.latest_psat_date) as test_month,
 
     'Official' as test_type,
-    null as salesforce_id,
-from {{ ref("int_collegeboard__psat_unpivot") }}
+    i.salesforce_id,
+
+from {{ ref("int_collegeboard__psat_unpivot") }} as u
+inner join student_ids as i on u.powerschool_student_number = i.student_number
 
 union all
 
 select
-    null as student_number,
+    i.student_number,
 
-    administration_round,
-    academic_year,
-    `date` as test_date,
-    test_type as scope,
-    subject_area,
-    course_discipline,
-    score_type,
-    score as scale_score,
-    rn_highest,
+    u.administration_round,
+    u.academic_year,
+    u.`date` as test_date,
+    u.test_type as scope,
+    u.subject_area,
+    u.course_discipline,
+    u.score_type,
+    u.score as scale_score,
+    u.rn_highest,
+
+    format_date('%B', u.`date`) as test_month,
 
     'Official' as test_type,
+    u.contact as salesforce_id,
 
-    contact as salesforce_id,
-from {{ ref("int_kippadb__standardized_test_unpivot") }}
+from {{ ref("int_kippadb__standardized_test_unpivot") }} as u
+inner join student_ids as i on u.contact = i.salesforce_id
 where
     `date` is not null
-    and test_type in ('ACT', 'SAT')
-    and score_type in (
+    and u.test_type in ('ACT', 'SAT')
+    and u.score_type in (
         'act_composite',
         'act_reading',
         'act_english',
