@@ -39,3 +39,4 @@ where
     co.grade_level >= 9
     and co.enroll_status = 0
     and co.academic_year = {{ var("current_academic_year") }}
+    and co.rn_year = 1

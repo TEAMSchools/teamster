@@ -72,6 +72,7 @@ select
     e.year_in_network,
     e.boy_status,
     e.rn_undergrad,
+    e.rn_year,
     e.code_location,
     e.salesforce_contact_id as salesforce_id,
     e.salesforce_contact_df_has_fafsa as has_fafsa,
@@ -188,4 +189,4 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
-where e.rn_year = 1 and e.schoolid != 999999
+where e.schoolid != 999999

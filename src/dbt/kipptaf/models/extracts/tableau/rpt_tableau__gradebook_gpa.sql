@@ -158,6 +158,7 @@ with
         where
             enr.academic_year = {{ var("current_academic_year") }}
             and not enr.is_out_of_district
+            and enr.rn_year = 1
     ),
 
     course_enrollments as (
