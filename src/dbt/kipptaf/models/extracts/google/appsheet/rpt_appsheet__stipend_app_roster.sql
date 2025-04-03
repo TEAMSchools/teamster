@@ -67,7 +67,9 @@ select
             r.job_title in (
                 'Director School Operations',
                 'Director Campus Operations',
-                'Fellow School Operations Director'
+                'Fellow School Operations Director',
+                'School Leader',
+                'School Leader in Residence'
             )
         then 1
         else 0
