@@ -75,7 +75,6 @@ with
             a.region,
         from assessment_region_scaffold as a
         inner join
-            {# {{ ref("stg_illuminate__assessment_grade_levels") }} as agl #}
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on a.assessment_id = agl.assessment_id
         where a.academic_year < 2025
@@ -126,7 +125,6 @@ with
             and a.grade_level_id = ssa.grade_level_id
             and ssa.rn_student_session_desc = 1
         inner join
-            {# {{ ref("stg_illuminate__students") }} as s #}
             {{ ref("stg_illuminate__public__students") }} as s
             on ssa.student_id = s.student_id
         inner join
@@ -167,7 +165,6 @@ with
             and a.region = ce.region
             and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
         inner join
-            {# {{ ref("stg_illuminate__students") }} as s #}
             {{ ref("stg_illuminate__public__students") }} as s
             on ce.powerschool_student_number = s.local_student_id
             and ce.illuminate_grade_level_id >= 10
@@ -197,7 +194,6 @@ select
     false as is_replacement,
 from internal_assessments as ia
 left join
-    {# {{ ref("stg_illuminate__students_assessments") }} as sa #}
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
     on ia.illuminate_student_id = sa.student_id
     and ia.assessment_id = sa.assessment_id
@@ -233,11 +229,9 @@ select
     true as is_replacement,
 from {{ ref("int_assessments__assessments") }} as a
 inner join
-    {# {{ ref("stg_illuminate__students_assessments") }} as sa #}
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
     on a.assessment_id = sa.assessment_id
 inner join
-    {# {{ ref("stg_illuminate__students") }} as s #}
     {{ ref("stg_illuminate__public__students") }} as s on sa.student_id = s.student_id
 inner join
     {{ ref("int_illuminate__student_session_aff") }} as ssa
@@ -281,11 +275,9 @@ select
     false as is_replacement,
 from {{ ref("int_assessments__assessments") }} as a
 inner join
-    {# {{ ref("stg_illuminate__students_assessments") }} as sa #}
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
     on a.assessment_id = sa.assessment_id
 inner join
-    {# {{ ref("stg_illuminate__students") }} as s #}
     {{ ref("stg_illuminate__public__students") }} as s on sa.student_id = s.student_id
 inner join
     {{ ref("int_illuminate__student_session_aff") }} as ssa

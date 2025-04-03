@@ -288,7 +288,8 @@ left join
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
 
 union all
--- academic year < current year - 1
+
+/* academic year < current year - 1 */
 select
     co.*,
 
