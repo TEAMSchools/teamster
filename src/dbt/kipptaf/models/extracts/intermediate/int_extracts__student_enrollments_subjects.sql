@@ -65,6 +65,38 @@ with
             end as njsla_proficiency,
             if(testperformancelevel > 3, true, false) as is_proficient,
         from {{ ref("stg_pearson__njsla") }}
+
+        union all
+
+        select
+            _dbt_source_relation,
+            null as localstudentidentifier,
+            student_id as statestudentidentifier,
+
+            academic_year + 1 as academic_year_plus,
+
+            case
+                when assessment_subject like 'English Language Arts%'
+                then 'Text Study'
+                when assessment_subject in ('Algebra I', 'Algebra II', 'Geometry')
+                then 'Mathematics'
+                else assessment_subject
+            end as `subject`,
+
+            case
+                when achievement_level_int = 1
+                then 'Below/Far Below'
+                when achievement_level_int = 2
+                then 'Approaching'
+                when achievement_level_int >= 3
+                then 'At/Above'
+            end as proficiency,
+            is_proficient,
+        from {{ ref("int_fldoe__all_assessments") }}
+        where
+            scale_score is not null
+            and assessment_name = 'FAST'
+            and administration_window = 'PM3'
     ),
 
     psat_bucket1 as (
