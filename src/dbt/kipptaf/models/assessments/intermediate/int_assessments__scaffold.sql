@@ -1,4 +1,4 @@
-{{- config(materialized="table") -}}
+{{ config(materialized="table") }}
 
 with
     assessment_region_scaffold as (
@@ -23,63 +23,26 @@ with
 
     grade_scaffold as (
         select
-            assessment_id,
-            title,
-            academic_year,
-            academic_year_clean,
-            administered_at,
-            subject_area,
-            performance_band_set_id,
-            grade_level_id,
-            scope,
-            module_type,
-            module_code,
-            region,
-        from assessment_region_scaffold
-        where academic_year >= 2025  /* first year using appsheet table */
-
-        union all
-
-        select
             a.assessment_id,
             a.title,
             a.academic_year,
             a.academic_year_clean,
             a.administered_at,
+            a.scope,
             a.subject_area,
+            a.module_type,
+            a.module_code,
             a.performance_band_set_id,
-
-            agl.grade_level_id,
-
-            if(
-                a.scope in ('Cumulative Review Quizzes', 'Cold Read Quizzes')
-                and agl.grade_level_id in (1, 2),
-                'Checkpoint',
-                a.scope
-            ) as scope,
-
-            if(
-                a.scope in ('Cumulative Review Quizzes', 'Cold Read Quizzes')
-                and agl.grade_level_id in (1, 2),
-                'CP',
-                a.module_type
-            ) as module_type,
-
-            if(
-                a.scope in ('Cumulative Review Quizzes', 'Cold Read Quizzes')
-                and agl.grade_level_id in (1, 2),
-                replace(a.module_code, 'CRQ', 'CP'),
-                a.module_code
-            ) as module_code,
-
             a.region,
+
+            coalesce(a.grade_level_id, agl.grade_level_id) as grade_level_id,
         from assessment_region_scaffold as a
-        inner join
+        left join
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on a.assessment_id = agl.assessment_id
-        where a.academic_year < 2025
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     internal_assessments as (
         /* K-8 */
         select
@@ -89,6 +52,9 @@ with
             a.performance_band_set_id,
             a.academic_year_clean,
             a.subject_area,
+            a.scope,
+            a.module_type,
+            a.module_code,
             a.region,
             a.grade_level_id,
 
@@ -97,27 +63,8 @@ with
             s.local_student_id as powerschool_student_number,
 
             ce.powerschool_school_id,
-
-            if(
-                a.scope in ('Cumulative Review Quizzes', 'Cold Read Quizzes')
-                and a.grade_level_id in (1, 2),
-                'Checkpoint',
-                a.scope
-            ) as scope,
-
-            if(
-                a.scope in ('Cumulative Review Quizzes', 'Cold Read Quizzes')
-                and a.grade_level_id in (1, 2),
-                'CP',
-                a.module_type
-            ) as module_type,
-
-            if(
-                a.scope in ('Cumulative Review Quizzes', 'Cold Read Quizzes')
-                and a.grade_level_id in (1, 2),
-                replace(a.module_code, 'CRQ', 'CP'),
-                a.module_code
-            ) as module_code,
+            ce.cc_dateenrolled,
+            ce.cc_dateleft,
         from grade_scaffold as a
         inner join
             {{ ref("int_illuminate__student_session_aff") }} as ssa
@@ -146,6 +93,9 @@ with
             a.performance_band_set_id,
             a.academic_year_clean,
             a.subject_area,
+            a.scope,
+            a.module_type,
+            a.module_code,
             a.region,
 
             ce.illuminate_grade_level_id as grade_level_id,
@@ -154,10 +104,8 @@ with
 
             ce.powerschool_student_number,
             ce.powerschool_school_id,
-
-            a.scope,
-            a.module_type,
-            a.module_code,
+            ce.cc_dateenrolled,
+            ce.cc_dateleft,
         from assessment_region_scaffold as a
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
@@ -168,6 +116,19 @@ with
             {{ ref("stg_illuminate__public__students") }} as s
             on ce.powerschool_student_number = s.local_student_id
             and ce.illuminate_grade_level_id >= 10
+    ),
+
+    deduplicate as (
+        /* we need to join to `int_assessments__course_enrollments` according to
+        enrollment dates, but some students have multiple enrollments for the same
+        course */
+        {{
+            dbt_utils.deduplicate(
+                relation="internal_assessments",
+                partition_by="assessment_id, illuminate_student_id",
+                order_by="cc_dateleft desc, cc_dateenrolled desc",
+            )
+        }}
     )
 
 /* internal assessments */
@@ -192,7 +153,7 @@ select
 
     true as is_internal_assessment,
     false as is_replacement,
-from internal_assessments as ia
+from deduplicate as ia
 left join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
     on ia.illuminate_student_id = sa.student_id
