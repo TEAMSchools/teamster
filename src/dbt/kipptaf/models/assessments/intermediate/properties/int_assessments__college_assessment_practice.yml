@@ -24,6 +24,8 @@ models:
         data_type: string
       - name: test_date
         data_type: date
+      - name: test_month
+        data_type: string
       - name: response_type
         data_type: string
       - name: response_type_description
