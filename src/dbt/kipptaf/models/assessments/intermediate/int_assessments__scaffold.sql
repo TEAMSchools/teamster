@@ -42,6 +42,7 @@ with
             on a.assessment_id = agl.assessment_id
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     internal_assessments as (
         /* K-8 */
         select
@@ -62,6 +63,8 @@ with
             s.local_student_id as powerschool_student_number,
 
             ce.powerschool_school_id,
+            ce.cc_dateenrolled,
+            ce.cc_dateleft,
         from grade_scaffold as a
         inner join
             {{ ref("int_illuminate__student_session_aff") }} as ssa
@@ -101,6 +104,8 @@ with
 
             ce.powerschool_student_number,
             ce.powerschool_school_id,
+            ce.cc_dateenrolled,
+            ce.cc_dateleft,
         from assessment_region_scaffold as a
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
@@ -111,6 +116,19 @@ with
             {{ ref("stg_illuminate__public__students") }} as s
             on ce.powerschool_student_number = s.local_student_id
             and ce.illuminate_grade_level_id >= 10
+    ),
+
+    deduplicate as (
+        /* we need to join to `int_assessments__course_enrollments` according to
+        enrollment dates, but some students have multiple enrollments for the same
+        course */
+        {{
+            dbt_utils.deduplicate(
+                relation="internal_assessments",
+                partition_by="assessment_id, illuminate_student_id",
+                order_by="cc_dateleft desc, cc_dateenrolled desc",
+            )
+        }}
     )
 
 /* internal assessments */
@@ -135,7 +153,7 @@ select
 
     true as is_internal_assessment,
     false as is_replacement,
-from internal_assessments as ia
+from deduplicate as ia
 left join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
     on ia.illuminate_student_id = sa.student_id
