@@ -48,7 +48,7 @@ select
 from {{ ref("int_kippadb__standardized_test_unpivot") }} as u
 inner join student_ids as i on u.contact = i.salesforce_id
 where
-    `date` is not null
+    u.`date` is not null
     and u.test_type in ('ACT', 'SAT')
     and u.score_type in (
         'act_composite',
