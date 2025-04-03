@@ -20,6 +20,7 @@ nav:
   - Contributing: CONTRIBUTING.md
   - Guides:
       - Dagster: guides/dagster.md
+      - dbt: guides/dbt.md
 
 markdown_extensions:
   - admonition

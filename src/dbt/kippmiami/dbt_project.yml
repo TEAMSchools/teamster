@@ -61,6 +61,8 @@ models:
         +enabled: false
       stg_powerschool__gpprogresssubject:
         +enabled: false
+      stg_powerschool__gpprogresssubjectearned:
+        +enabled: false
       stg_powerschool__gpprogresssubjectwaived:
         +enabled: false
       stg_powerschool__gpversion:

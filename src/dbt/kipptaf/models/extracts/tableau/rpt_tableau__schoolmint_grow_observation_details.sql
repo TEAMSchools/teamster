@@ -63,9 +63,11 @@ select
     srh.job_title,
     srh.reports_to_formatted_name as manager,
     srh.worker_original_hire_date,
+    srh.work_assignment_actual_start_date,
     srh.assignment_status,
     srh.sam_account_name,
     srh.reports_to_sam_account_name as report_to_sam_account_name,
+    srh.race_ethnicity_reporting,
 
     t.type as tracking_type,
     t.code as tracking_code,
@@ -135,7 +137,7 @@ select
         when
             t.code in ('PM2', 'PM3')
             and (
-                srh.worker_original_hire_date
+                srh.work_assignment_actual_start_date
                 <= date_sub(t.lockbox_date, interval 6 week)
             )
         then true
@@ -146,8 +148,10 @@ inner join
     {{ ref("stg_reporting__terms") }} as t
     on srh.home_business_unit_name = t.region
     and (
-        t.start_date between srh.effective_date_start and srh.effective_date_end
-        or t.end_date between srh.effective_date_start and srh.effective_date_end
+        t.start_date
+        between srh.work_assignment_actual_start_date and srh.effective_date_end
+        or t.end_date
+        between srh.work_assignment_actual_start_date and srh.effective_date_end
     )
     and t.type in ('PMS', 'PMC', 'TR', 'O3', 'WT')
     and t.academic_year = {{ var("current_academic_year") }}
@@ -181,6 +185,7 @@ left join
 where
     (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
     and srh.assignment_status = 'Active'
+    and srh.primary_indicator
 
 union all
 
@@ -195,9 +200,11 @@ select
     srh.job_title,
     srh.reports_to_formatted_name as manager,
     srh.worker_original_hire_date,
+    srh.work_assignment_actual_start_date,
     srh.assignment_status,
     srh.sam_account_name,
     srh.reports_to_sam_account_name as report_to_sam_account_name,
+    srh.race_ethnicity_reporting,
 
     null as tracking_type,
     null as tracking_code,
