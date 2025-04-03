@@ -1,5 +1,3 @@
-{{- config(materialized="table") -}}
-
 with
     students as (
         select
@@ -62,8 +60,6 @@ with
         /* njgpa transfer scores */
         select
             s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
 
             x.testscalescore as scale_score,
             x.testcode as score_type,
@@ -81,8 +77,6 @@ with
         /* njgpa scores from file */
         select
             s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
 
             n.testscalescore as scale_score,
             n.testcode as score_type,
@@ -99,50 +93,21 @@ with
 
         union all
 
-        /* act/sat scores */
+        /* act/sat/psat scores */
         select
-            s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
+            student_number,
+            scale_score,
+            score_type,
+            subject_area,
+            scope as pathway_option,
 
-            a.scale_score,
-            a.score_type,
-            a.subject_area,
-            a.scope as pathway_option,
+            if(course_discipline = 'ENG', 'ELA', 'Math') as discipline,
 
-            if(a.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
-
-        from students as s
-        inner join
-            {{ ref("int_assessments__college_assessment") }} as a
-            on s.salesforce_id = a.salesforce_id
-            and s.powerschool_credittype = a.course_discipline
-            and a.scope in ('ACT', 'SAT')
-            and a.course_discipline in ('MATH', 'ENG')
-            and a.score_type not in ('act_english', 'act_science')
-
-        union all
-
-        /* psat scores */
-        select
-            s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
-
-            p.scale_score,
-            p.score_type,
-            p.subject_area,
-            p.scope as pathway_option,
-
-            if(p.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
-
-        from students as s
-        inner join
-            {{ ref("int_assessments__college_assessment") }} as p
-            on s.student_number = p.student_number
-            and s.powerschool_credittype = p.course_discipline
-            and p.scope in ('PSAT10', 'PSAT NMSQT')
-            and p.course_discipline in ('MATH', 'ENG')
+        from {{ ref("int_assessments__college_assessment") }}
+        where
+            scope in ('ACT', 'SAT', 'PSAT10', 'PSAT NMSQT')
+            and course_discipline in ('MATH', 'ENG')
+            and score_type != 'act_english'
     ),
 
     /* calculating if the student attempted njgpa for the discipline */
@@ -272,16 +237,6 @@ with
         where s.ps_grad_path_code in ('M', 'N', 'O', 'P')
     ),
 
-    /* did the student ever meet the min reqs for college readiness for SAT? */
-    met_sat_subject_mins as (
-        select student_number, max(ela) as met_sat_ela, max(math) as met_sat_math,
-        from
-            lookup_table
-            pivot (max(met_pathway_cutoff) for discipline in ('ELA', 'Math'))
-        where score_type in ('sat_ebrw', 'sat_math')
-        group by all
-    ),
-
     /* determining if any of the scores for the score_type (if it exists)
     met the pathway option */
     unpivot_calcs as (
@@ -375,7 +330,16 @@ with
                 ) for discipline
                 in ('ELA', 'Math')
             )
-        where njgpa_attempt and ps_grad_path_code is not null
+        where
+            njgpa_attempt and ps_grad_path_code is not null and ps_grad_path_code != 'M'
+        group by all
+
+        union all
+
+        select student_number, max(ela) as met_ela, max(math) as met_math,
+        from
+            unpivot_calcs_ps_code pivot (max(met_dlm) for discipline in ('ELA', 'Math'))
+        where ps_grad_path_code != 'M'
         group by all
     ),
 
@@ -406,9 +370,6 @@ with
             coalesce(l.attempted_njgpa_ela, false) as attempted_njgpa_ela,
             coalesce(l.attempted_njgpa_math, false) as attempted_njgpa_math,
 
-            coalesce(s.met_sat_ela) as met_sat_ela,
-            coalesce(s.met_sat_math) as met_sat_math,
-
             coalesce(u.met_dlm, false) as met_dlm,
             coalesce(u.met_portfolio, false) as met_portfolio,
             coalesce(u.njgpa_attempt, false) as njgpa_attempt,
@@ -430,15 +391,12 @@ with
             unpivot_calcs as u
             on l.student_number = u.student_number
             and l.discipline = u.discipline
-        left join met_sat_subject_mins as s on l.student_number = s.student_number
         left join attempted_subject_njgpa as n on l.student_number = n.student_number
         left join met_subject as m on l.student_number = m.student_number
     )
 
 select
     r.*,
-
-    if(r.met_sat_ela and r.met_sat_math, true, false) as met_sat_subject_mins,
 
     /* negative value means short; positive value means above min required */
     if(r.scale_score is not null, r.scale_score - r.cutoff, null) as points_short,
