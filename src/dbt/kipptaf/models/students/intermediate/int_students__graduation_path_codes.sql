@@ -233,7 +233,7 @@ with
             end as attempted_njgpa_ela,
 
             case
-                when s.discipline = 'Math' s.ps_grad_path_code = 'M'
+                when s.discipline = 'Math' and s.ps_grad_path_code = 'M'
                 then true
                 when nj.attempted_njgpa_math is not null
                 then true
