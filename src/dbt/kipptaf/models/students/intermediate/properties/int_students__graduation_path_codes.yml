@@ -73,8 +73,6 @@ models:
         data_type: boolean
       - name: rn_highest
         data_type: int64
-      - name: met_sat_subject_mins
-        data_type: boolean
       - name: points_short
         data_type: numeric
       - name: final_grad_path_code

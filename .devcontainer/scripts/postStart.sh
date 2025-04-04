@@ -8,4 +8,7 @@ uv self update
 uv tool upgrade datamodel-code-generator dagster-dg
 
 # update trunk
-trunk upgrade -y --no-progress
+# trunk-ignore(shellcheck/SC2312)
+if [[ $(git symbolic-ref --short HEAD) == "main" ]]; then
+  trunk upgrade -y --no-progress
+fi
