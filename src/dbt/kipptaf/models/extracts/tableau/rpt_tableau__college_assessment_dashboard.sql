@@ -213,8 +213,13 @@ select
     coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
 from roster as e
 left join
+<<<<<<< HEAD
     scores as o
     on e.contact_id = o.salesforce_id
+=======
+    {{ ref("int_assessments__college_assessment") }} as o
+    on e.student_number = o.student_number
+>>>>>>> 72d81821108d4c73cedf7611fd0e9a5caae66b1b
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_score_type = o.score_type
