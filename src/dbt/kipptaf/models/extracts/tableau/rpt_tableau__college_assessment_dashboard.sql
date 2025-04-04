@@ -33,7 +33,7 @@ with
             t.month_round as expected_month_round,
             t.actual_month_round as expected_actual_month_round,
             t.subject_area as expected_subject_area,
-            t.strategy,
+            t.strategy as expected_strategy,
 
             if(e.iep_status = 'No IEP', 0, 1) as sped,
 
@@ -174,8 +174,9 @@ select
     e.expected_month_round,
     e.expected_actual_month_round,
     e.expected_subject_area,
-    e.strategy,
+    e.expected_strategy,
 
+    o.strategy
     o.test_type,
     o.scope,
 
@@ -256,8 +257,9 @@ select
     e.expected_month_round,
     e.expected_actual_month_round,
     e.expected_subject_area,
-    true as strategy,
+    true as expected_strategy,
 
+    true as strategy,
     p.test_type,
     p.scope,
     p.scope_round,
