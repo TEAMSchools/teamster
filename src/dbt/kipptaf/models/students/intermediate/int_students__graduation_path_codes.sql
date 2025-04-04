@@ -1,5 +1,3 @@
-{{ config(materialized="table") }}
-
 with
     students as (
         select
@@ -47,6 +45,7 @@ with
                 when u.values_column in ('O', 'P')
                 then false
             end as pre_met_pathway_cutoff,
+
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
             {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as u
@@ -226,10 +225,20 @@ with
 
             s.pre_met_pathway_cutoff as met_pathway_cutoff,
 
-            if(nj.attempted_njgpa_ela is not null, true, false) as attempted_njgpa_ela,
-            if(
-                nj.attempted_njgpa_math is not null, true, false
-            ) as attempted_njgpa_math,
+            case
+                when s.discipline = 'ELA' and s.ps_grad_path_code = 'M'
+                then true
+                when nj.attempted_njgpa_ela is not null
+                then true
+            end as attempted_njgpa_ela,
+
+            case
+                when s.discipline = 'Math' s.ps_grad_path_code = 'M'
+                then true
+                when nj.attempted_njgpa_math is not null
+                then true
+            end as attempted_njgpa_math,
+
         from students as s
         left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         where s.ps_grad_path_code in ('M', 'N', 'O', 'P')
