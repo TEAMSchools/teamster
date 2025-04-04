@@ -17,13 +17,19 @@ select
     ds.measurement_name,
     ds.row_score_value,
 from
-    /* hardcode archive table */
-    kipptaf_performance_management.stg_performance_management__scores_overall_archive
-    as os
+    {{
+        source(
+            "performance_management",
+            "stg_performance_management__scores_overall_archive",
+        )
+    }} as os
 inner join
-    /* hardcode archive table */
-    kipptaf_performance_management.stg_performance_management__scores_detail_archive
-    as ds
+    {{
+        source(
+            "performance_management",
+            "stg_performance_management__scores_detail_archive",
+        )
+    }} as ds
     on os.employee_number = ds.employee_number
     and os.academic_year = ds.academic_year
     and os.form_term = ds.form_term
