@@ -52,8 +52,20 @@ models:
         data_type: string
       - name: expected_scope
         data_type: string
+      - name: expected_scope_round
+        data_type: string
+      - name: expected_score_type
+        data_type: string
+      - name: expected_admin_season
+        data_type: string
+      - name: expected_month_round
+        data_type: string
+      - name: expected_actual_month_round
+        data_type: string
       - name: expected_subject_area
         data_type: string
+      - name: strategy
+        data_type: boolean
       - name: test_type
         data_type: string
       - name: scope
