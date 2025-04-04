@@ -44,10 +44,14 @@ with
             spedlep,
             special_education_code,
             special_education,
-            rn_row_year_asc,
+
+            1 as rn_row_year_asc,
+
             nj_se_consenttoimplementdate,
             nj_se_delayreason,
-            nj_se_earlyintervention,
+
+            null as nj_se_earlyintervention,
+
             nj_se_eligibilityddate,
             nj_se_initialiepmeetingdate,
             nj_se_lastiepmeetingdate,
@@ -62,8 +66,7 @@ with
             ti_serv_other,
             ti_serv_physical,
             ti_serv_speech,
-        from
-            {{ generate_schema_name("edplan") }}.stg_edplan__njsmart_powerschool_archive
+        from {{ source("edplan", "stg_edplan__njsmart_powerschool_archive") }}
     )
 
 select
@@ -97,7 +100,6 @@ select
     ti_serv_speech,
 
     row_number() over (
-        partition by student_number, fiscal_year
-        order by effective_date desc, _dbt_source_relation desc
+        partition by student_number, fiscal_year order by effective_date desc
     ) as rn_student_year_desc,
 from union_relations
