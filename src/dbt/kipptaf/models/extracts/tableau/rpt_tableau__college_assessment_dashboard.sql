@@ -176,7 +176,7 @@ select
     e.expected_subject_area,
     e.expected_strategy,
 
-    o.strategy
+    o.strategy,
     o.test_type,
     o.scope,
 
