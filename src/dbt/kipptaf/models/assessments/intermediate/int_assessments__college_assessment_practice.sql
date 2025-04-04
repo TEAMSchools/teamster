@@ -76,6 +76,7 @@ with
             r.powerschool_student_number,
             r.assessment_id,
             r.points as raw_score,
+
             case
                 when
                     r.scope = 'SAT'
@@ -84,6 +85,7 @@ with
                 then (ssk.scale_score * 10)
                 else ssk.scale_score
             end as scale_score,
+
         from responses as r
         inner join
             {{ ref("stg_assessments__act_scale_score_key") }} as ssk
@@ -137,16 +139,20 @@ select distinct
     test_month,
     'NA' as response_type,
     'NA' as response_type_description,
+
     sum(points) over (
         partition by
             academic_year, powerschool_student_number, scope_round, administration_round
     ) as points,
+
     null as percent_correct,
     total_subjects_tested,
+
     sum(points) over (
         partition by
             academic_year, powerschool_student_number, scope_round, administration_round
     ) as raw_score,
+
     round(
         avg(scale_score) over (
             partition by
@@ -157,6 +163,7 @@ select distinct
         ),
         0
     ) as scale_score,
+
 from responses
 where scope = 'ACT' and response_type = 'overall' and total_subjects_tested = 4
 
@@ -177,16 +184,20 @@ select distinct
     test_month,
     'NA' as response_type,
     'NA' as response_type_description,
+
     sum(points) over (
         partition by
             academic_year, powerschool_student_number, scope_round, administration_round
     ) as points,
+
     null as percent_correct,
     total_subjects_tested,
+
     sum(points) over (
         partition by
             academic_year, powerschool_student_number, scope_round, administration_round
     ) as raw_score,
+
     round(
         sum(scale_score) over (
             partition by
@@ -197,5 +208,6 @@ select distinct
         ),
         0
     ) as scale_score,
+
 from responses
 where scope = 'SAT' and response_type = 'overall' and total_subjects_tested = 3
