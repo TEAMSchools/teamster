@@ -2,9 +2,9 @@ version: 2
 models:
   - name: stg_surveys__cmo_engagement_regional_survey_detail_archive
     config:
+      enabled: false
       contract:
         enforced: true
-      tags: google_sheet
     columns:
       - name: respondent_legal_entity_name
         data_type: string

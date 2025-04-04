@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: alchemer
+    schema: "{{ project_name }}_alchemer"
+    tables:
+      - name: base_alchemer__survey_results
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - alchemer
+              - base_alchemer__survey_results

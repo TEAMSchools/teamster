@@ -7,6 +7,8 @@ sources:
       {{ project_name }}_njdoe
     tables:
       - name: src_njdoe__parcc
+        config:
+          enabled: false
         external:
           options:
             format: CSV
