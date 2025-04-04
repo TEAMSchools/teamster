@@ -21,6 +21,8 @@ sources:
               - performance_management
               - leadership_development_metrics
       - name: src_performance_management__scores_overall_archive
+        config:
+          enabled: false
         external:
           options:
             format: CSV
@@ -34,6 +36,8 @@ sources:
               - performance_management
               - scores_overall_archive
       - name: src_performance_management__scores_detail_archive
+        config:
+          enabled: false
         external:
           options:
             format: CSV
