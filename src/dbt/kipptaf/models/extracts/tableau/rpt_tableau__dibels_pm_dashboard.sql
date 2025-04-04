@@ -187,9 +187,35 @@ with
             max(orf) as orf,
 
             case
-                when max(psf) or (max(cls) and max(wrc))
+                when
+                    grade_level = '1'
+                    and expected_round = '3'
+                    and (max(psf) = true or (max(cls) = true and max(wrc) = true))
                 then true
-                when max(orf_acc) and max(orf) and max(cls) and max(wrc)
+                when
+                    grade_level = '1'
+                    and expected_round = '4'
+                    and (max(psf) = true or (max(cls) = true and max(wrc) = true))
+                then true
+                when
+                    grade_level = '1'
+                    and expected_round = '7'
+                    and (
+                        max(orf_acc) = true
+                        and max(orf) = true
+                        and max(cls) = true
+                        and max(wrc) = true
+                    )
+                then true
+                when
+                    grade_level = '2'
+                    and expected_round = '7'
+                    and (
+                        max(orf_acc) = true
+                        and max(orf) = true
+                        and max(cls) = true
+                        and max(wrc) = true
+                    )
                 then true
                 else false
             end as met_overall_goal,
@@ -223,9 +249,13 @@ with
             max(orf) as orf,
 
             case
-                when max(psf) or (max(cls) and max(wrc))
+                when max(psf) = true or (max(cls) = true and max(wrc) = true)
                 then true
-                when max(orf_acc) and max(orf) and max(cls) and max(wrc)
+                when
+                    max(orf_acc) = true
+                    and max(orf) = true
+                    and max(cls) = true
+                    and max(wrc) = true
                 then true
                 else false
             end as met_bm_benchmark,
@@ -336,18 +366,6 @@ select
             and a.mclass_measure_standard_score is null
         then null
         when
-            s.grade_level = '0'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round = '4'
-            and a.mclass_measure_standard_score is not null
-        then mod.met_overall_goal
-        when
-            s.grade_level = '0'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round = '4'
-            and a.mclass_measure_standard_score is null
-        then null
-        when
             s.grade_level = '1'
             and s.expected_test = 'MOY->EOY'
             and s.expected_round = '7'
@@ -388,18 +406,6 @@ select
             s.grade_level = '1'
             and s.expected_test = 'BOY->MOY'
             and s.expected_round in ('3', '4')
-            and a.mclass_measure_standard_score is null
-        then null
-        when
-            s.grade_level = '0'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round = '4'
-            and a.mclass_measure_standard_score is not null
-        then bm_mod.met_bm_benchmark
-        when
-            s.grade_level = '0'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round = '4'
             and a.mclass_measure_standard_score is null
         then null
         when
