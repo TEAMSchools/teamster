@@ -366,18 +366,6 @@ select
             and a.mclass_measure_standard_score is null
         then null
         when
-            s.grade_level = '0'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round = '4'
-            and a.mclass_measure_standard_score is not null
-        then mod.met_overall_goal
-        when
-            s.grade_level = '0'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round = '4'
-            and a.mclass_measure_standard_score is null
-        then null
-        when
             s.grade_level = '1'
             and s.expected_test = 'MOY->EOY'
             and s.expected_round = '7'
@@ -418,18 +406,6 @@ select
             s.grade_level = '1'
             and s.expected_test = 'BOY->MOY'
             and s.expected_round in ('3', '4')
-            and a.mclass_measure_standard_score is null
-        then null
-        when
-            s.grade_level = '0'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round = '4'
-            and a.mclass_measure_standard_score is not null
-        then bm_mod.met_bm_benchmark
-        when
-            s.grade_level = '0'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round = '4'
             and a.mclass_measure_standard_score is null
         then null
         when
