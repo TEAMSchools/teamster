@@ -249,13 +249,35 @@ with
             max(orf) as orf,
 
             case
-                when max(psf) = true or (max(cls) = true and max(wrc) = true)
+                when
+                    grade_level = '1'
+                    and expected_round = '3'
+                    and (max(psf) = true or (max(cls) = true and max(wrc) = true))
                 then true
                 when
-                    max(orf_acc) = true
-                    and max(orf) = true
-                    and max(cls) = true
-                    and max(wrc) = true
+                    grade_level = '1'
+                    and expected_round = '4'
+                    and (max(psf) = true or (max(cls) = true and max(wrc) = true))
+                then true
+                when
+                    grade_level = '1'
+                    and expected_round = '7'
+                    and (
+                        max(orf_acc) = true
+                        and max(orf) = true
+                        and max(cls) = true
+                        and max(wrc) = true
+                    )
+                then true
+                when
+                    grade_level = '2'
+                    and expected_round = '7'
+                    and (
+                        max(orf_acc) = true
+                        and max(orf) = true
+                        and max(cls) = true
+                        and max(wrc) = true
+                    )
                 then true
                 else false
             end as met_bm_benchmark,
