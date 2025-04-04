@@ -162,8 +162,8 @@ select
     lower(sr.reports_to_sam_account_name) as subject_manager_samaccountname,
     lower(sr.user_principal_name) as subject_userprincipalname,
     lower(sr.reports_to_user_principal_name) as subject_manager_userprincipalname,
-/* hardcode archive table */
-from kipptaf_surveys.stg_surveys__manager_survey_detail_archive as sda
+
+from {{ source("surveys", "stg_surveys__manager_survey_detail_archive") }} as sda
 inner join
     {{ ref("stg_google_forms__form_items_extension") }} as fi
     on sda.question_shortname = fi.abbreviation

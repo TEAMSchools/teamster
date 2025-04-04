@@ -108,8 +108,13 @@ select
     eh.home_work_location_name as respondent_primary_site,
     eh.race_ethnicity_reporting,
     eh.gender_identity as gender,
-/* hardcode archive table */
-from kipptaf_surveys.stg_surveys__cmo_engagement_regional_survey_detail_archive as sda
+
+from
+    {{
+        source(
+            "surveys", "stg_surveys__cmo_engagement_regional_survey_detail_archive"
+        )
+    }} as sda
 inner join
     {{ ref("stg_google_forms__form_items_extension") }} as fi
     on sda.question_shortname = fi.abbreviation

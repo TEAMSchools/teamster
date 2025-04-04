@@ -5,8 +5,7 @@ select
     pivot_column_value,
     item_abbreviation,
 from
-    /* hardcode archive table */
-    kipptaf_surveys.stg_surveys__staff_info_archive unpivot (
+    {{ source("surveys", "stg_surveys__staff_info_archive") }} unpivot (
         pivot_column_value for item_abbreviation in (
             alumni_status,
             community_grew_up,
