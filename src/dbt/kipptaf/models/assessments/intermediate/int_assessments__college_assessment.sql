@@ -11,16 +11,9 @@ select
     rn_highest,
 
     format_date('%B', latest_psat_date) as test_month,
-
     'Official' as test_type,
-<<<<<<< HEAD
-<<<<<<< HEAD
     null as salesforce_id,
-    format_date('%B', latest_psat_date) as test_month,
-=======
->>>>>>> 72d81821108d4c73cedf7611fd0e9a5caae66b1b
-=======
->>>>>>> 72d81821108d4c73cedf7611fd0e9a5caae66b1b
+
 from {{ ref("int_collegeboard__psat_unpivot") }}
 
 union all
@@ -37,21 +30,10 @@ select
     score as scale_score,
     rn_highest,
 
-<<<<<<< HEAD
-<<<<<<< HEAD
+    format_date('%B', `date`) as test_month,
     'Official' as test_type,
     contact as salesforce_id,
-    format_date('%B', `date`) as test_month,
-=======
-    format_date('%B', `date`) as test_month,
 
-    'Official' as test_type,
->>>>>>> 72d81821108d4c73cedf7611fd0e9a5caae66b1b
-=======
-    format_date('%B', `date`) as test_month,
-
-    'Official' as test_type,
->>>>>>> 72d81821108d4c73cedf7611fd0e9a5caae66b1b
 from {{ ref("int_kippadb__standardized_test_unpivot") }}
 where
     `date` is not null
