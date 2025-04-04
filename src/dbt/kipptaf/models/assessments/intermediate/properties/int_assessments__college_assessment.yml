@@ -20,6 +20,8 @@ models:
         data_type: numeric
       - name: rn_highest
         data_type: int64
+      - name: test_month
+        data_type: string
       - name: test_type
         data_type: string
       - name: salesforce_id
