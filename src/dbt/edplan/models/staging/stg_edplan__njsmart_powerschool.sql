@@ -74,6 +74,7 @@ with
     deduplicate as (
         select
             *,
+
             row_number() over (
                 partition by row_hash, fiscal_year order by effective_date asc
             ) as rn_row_year_asc,

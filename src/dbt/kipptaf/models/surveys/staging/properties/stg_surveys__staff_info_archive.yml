@@ -2,9 +2,9 @@ version: 2
 models:
   - name: stg_surveys__staff_info_archive
     config:
+      enabled: false
       contract:
         enforced: true
-      tags: google_sheet
     columns:
       - name: respondent_email
         data_type: string

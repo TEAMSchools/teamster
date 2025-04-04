@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: stg_njdoe__parcc
+    config:
+      enabled: false
     columns:
       - name: test_season
         data_type: string

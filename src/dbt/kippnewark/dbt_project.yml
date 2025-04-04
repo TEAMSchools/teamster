@@ -39,6 +39,9 @@ models:
     +materialized: table
   edplan:
     +materialized: table
+    staging:
+      stg_edplan__njsmart_powerschool_archive:
+        +enabled: false
   iready:
     +materialized: table
   overgrad:
@@ -70,6 +73,22 @@ models:
         +enabled: false
 
 sources:
+  edplan:
+    edplan:
+      src_edplan__njsmart_powerschool_archive:
+        +enabled: false
+  iready:
+    iready:
+      src_iready__diagnostic_and_instruction:
+        +enabled: false
+  powerschool:
+    powerschool:
+      src_powerschool__period:
+        +enabled: false
+      src_powerschool__sced_code_mapping:
+        +enabled: false
+      src_powerschool__u_def_ext_students:
+        +enabled: false
   renlearn:
     renlearn:
       src_renlearn__star_skill_area:
@@ -81,16 +100,4 @@ sources:
   titan:
     titan:
       src_titan__income_form_data:
-        +enabled: false
-  powerschool:
-    powerschool:
-      src_powerschool__period:
-        +enabled: false
-      src_powerschool__sced_code_mapping:
-        +enabled: false
-      src_powerschool__u_def_ext_students:
-        +enabled: false
-  iready:
-    iready:
-      src_iready__diagnostic_and_instruction:
         +enabled: false
