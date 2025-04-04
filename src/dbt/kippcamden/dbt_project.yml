@@ -37,6 +37,9 @@ models:
     +materialized: table
   edplan:
     +materialized: table
+    staging:
+      stg_edplan__njsmart_powerschool_archive:
+        +enabled: false
   overgrad:
     +materialized: table
   pearson:
@@ -57,6 +60,10 @@ models:
         +enabled: false
 
 sources:
+  edplan:
+    edplan:
+      src_edplan__njsmart_powerschool_archive:
+        +enabled: false
   titan:
     titan:
       src_titan__income_form_data:
