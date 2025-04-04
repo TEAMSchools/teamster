@@ -14,8 +14,11 @@ select
 
     'Official' as test_type,
 <<<<<<< HEAD
+<<<<<<< HEAD
     null as salesforce_id,
     format_date('%B', latest_psat_date) as test_month,
+=======
+>>>>>>> 72d81821108d4c73cedf7611fd0e9a5caae66b1b
 =======
 >>>>>>> 72d81821108d4c73cedf7611fd0e9a5caae66b1b
 from {{ ref("int_collegeboard__psat_unpivot") }}
@@ -35,9 +38,15 @@ select
     rn_highest,
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     'Official' as test_type,
     contact as salesforce_id,
     format_date('%B', `date`) as test_month,
+=======
+    format_date('%B', `date`) as test_month,
+
+    'Official' as test_type,
+>>>>>>> 72d81821108d4c73cedf7611fd0e9a5caae66b1b
 =======
     format_date('%B', `date`) as test_month,
 

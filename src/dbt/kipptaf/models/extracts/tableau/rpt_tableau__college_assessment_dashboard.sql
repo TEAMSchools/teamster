@@ -214,8 +214,13 @@ select
 from roster as e
 left join
 <<<<<<< HEAD
+<<<<<<< HEAD
     scores as o
     on e.contact_id = o.salesforce_id
+=======
+    {{ ref("int_assessments__college_assessment") }} as o
+    on e.student_number = o.student_number
+>>>>>>> 72d81821108d4c73cedf7611fd0e9a5caae66b1b
 =======
     {{ ref("int_assessments__college_assessment") }} as o
     on e.student_number = o.student_number
