@@ -89,6 +89,7 @@ with
             and s.courses_credittype in ('ENG', 'MATH')
             and not s.is_dropped_section
         where e.school_level = 'HS'
+        and e.academic_year = {{ var("current_academic_year") }}
     ),
 
     custom_scores as (
