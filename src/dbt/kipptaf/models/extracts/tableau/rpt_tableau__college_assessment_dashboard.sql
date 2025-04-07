@@ -138,9 +138,7 @@ with
             and t.assessment_subject_area = o.score_type
             and t.actual_month_round = o.test_month
             and e.student_number = o.student_number
-        where
-            e.academic_year = {{ var("current_academic_year") }}
-            and e.school_level = 'HS'
+        where e.school_level = 'HS'
     )
 
 select
