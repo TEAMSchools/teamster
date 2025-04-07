@@ -301,4 +301,4 @@ left join
     on p.academic_year = c.academic_year
     and p.powerschool_student_number = c.student_number
     and p.course_discipline = c.courses_credittype
-where e.expected_test_type = 'Practice' and e.strategy
+where e.expected_test_type = 'Practice'
