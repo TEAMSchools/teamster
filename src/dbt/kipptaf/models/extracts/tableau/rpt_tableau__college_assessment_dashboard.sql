@@ -95,7 +95,8 @@ with
 
     custom_scores as (
         select
-            e.academic_year,
+            {{ var("current_academic_year") }} as academic_year,
+            e.academic_year as test_academic_year,
             e.region,
             e.student_number,
             e.grade_level,
@@ -205,10 +206,12 @@ select
     c.is_math_double_blocked,
 
     coalesce(c.is_exempt_state_testing, false) as is_exempt_state_testing,
+
 from roster as e
 left join
     custom_scores as o
-    on e.student_number = o.student_number
+    and e.academic_year = o.academic_year
+    and e.student_number = o.student_number
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_score_type = o.score_type
