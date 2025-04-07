@@ -59,7 +59,7 @@ with
             and t.subject_area != 'Science'
             and t.strategy
         where
-            e.academic_year = {{ var("current_academic_year") - 3 }}
+            e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
     ),
 
@@ -91,7 +91,7 @@ with
             and not s.is_dropped_section
         where
             e.school_level = 'HS'
-            and e.academic_year = {{ var("current_academic_year") - 3 }}
+            and e.academic_year = {{ var("current_academic_year") }}
     ),
 
     custom_scores as (
