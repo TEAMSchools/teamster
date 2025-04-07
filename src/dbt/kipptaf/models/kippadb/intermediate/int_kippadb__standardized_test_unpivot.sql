@@ -60,6 +60,7 @@ with
             row_number() over (
                 partition by contact, test_type, score_type order by score desc
             ) as rn_highest,
+
         from
             {{ ref("int_kippadb__standardized_test") }} unpivot (
                 score for score_type in (
