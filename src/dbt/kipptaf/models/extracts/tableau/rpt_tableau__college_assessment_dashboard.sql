@@ -1,8 +1,8 @@
 with
     roster as (
         select
-            e.academic_year,
-            e.academic_year_display,
+            e.academic_year as test_academic_year,
+            e.academic_year_display as test_academic_year_display,
             e.region,
             e.schoolid,
             e.school,
@@ -35,6 +35,8 @@ with
             t.subject_area as expected_subject_area,
             t.strategy as expected_strategy,
 
+            {{ var("current_academic_year") }} as current_academic_year,
+
             if(e.iep_status = 'No IEP', 0, 1) as sped,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
@@ -58,7 +60,7 @@ with
             and t.assessment_type = 'College Entrance'
             and t.strategy
         where
-            e.academic_year = {{ var("current_academic_year") }}
+            e.academic_year >= {{ var("current_academic_year") - 3 }}
             and e.school_level = 'HS'
     ),
 
@@ -90,16 +92,15 @@ with
             and not s.is_dropped_section
         where
             e.school_level = 'HS'
-            and e.academic_year = {{ var("current_academic_year") }}
+            and e.academic_year >= {{ var("current_academic_year") - 3 }}
     ),
 
     custom_scores as (
         select
-            {{ var("current_academic_year") }} as academic_year,
             e.academic_year as test_academic_year,
-            e.region,
-            e.student_number,
-            e.grade_level,
+            e.region as test_region,
+            e.student_number as test_student_number,
+            e.grade_level as test_grade_level,
 
             t.test_type as expected_test_type,
             t.scope as expected_scope,
@@ -142,8 +143,9 @@ with
     )
 
 select
-    e.academic_year,
-    e.academic_year_display,
+    e.current_academic_year,
+    e.test_academic_year,
+    e.test_academic_year_display,
     e.region,
     e.schoolid,
     e.school,
@@ -208,15 +210,15 @@ select
 from roster as e
 left join
     custom_scores as o
-    on e.academic_year = o.academic_year
-    and e.student_number = o.student_number
+    on e.test_academic_year = o.test_academic_year
+    and e.student_number = o.test_student_number
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_score_type = o.score_type
     and e.expected_month_round = o.expected_month_round
 left join
     course_subjects_roster as c
-    on e.academic_year = c.academic_year
+    on e.test_academic_year = c.academic_year
     and e.student_number = c.student_number
     and o.course_discipline = c.courses_credittype
 where e.expected_test_type = 'Official'
@@ -226,8 +228,9 @@ where e.expected_test_type = 'Official'
 union all
 
 select
-    e.academic_year,
-    e.academic_year_display,
+    e.current_academic_year,
+    e.test_academic_year,
+    e.test_academic_year_display,
     e.region,
     e.schoolid,
     e.school,
@@ -291,7 +294,7 @@ select
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment_practice") }} as p
-    on e.academic_year = p.academic_year
+    on e.test_academic_year = p.academic_year
     and e.student_number = p.powerschool_student_number
     and e.expected_test_type = p.test_type
     and e.expected_scope = p.scope
