@@ -232,68 +232,6 @@ with
                 )
             ) as pvt
         group by all
-    ),
-
-    met_overall_bm_calculation_modified as (
-        select
-            academic_year,
-            student_number,
-            grade_level,
-            expected_test,
-            expected_round,
-
-            max(psf) as psf,
-            max(cls) as cls,
-            max(wrc) as wrc,
-            max(orf_acc) as orf_acc,
-            max(orf) as orf,
-
-            case
-                when
-                    grade_level = '1'
-                    and expected_round = '3'
-                    and (max(psf) = true or (max(cls) = true and max(wrc) = true))
-                then true
-                when
-                    grade_level = '1'
-                    and expected_round = '4'
-                    and (max(psf) = true or (max(cls) = true and max(wrc) = true))
-                then true
-                when
-                    grade_level = '1'
-                    and expected_round = '7'
-                    and (
-                        max(orf_acc) = true
-                        and max(orf) = true
-                        and max(cls) = true
-                        and max(wrc) = true
-                    )
-                then true
-                when
-                    grade_level = '2'
-                    and expected_round = '7'
-                    and (
-                        max(orf_acc) = true
-                        and max(orf) = true
-                        and max(cls) = true
-                        and max(wrc) = true
-                    )
-                then true
-                else false
-            end as met_bm_benchmark,
-
-        from
-            met_overall_goal_or_bm_modified pivot (
-                max(met_admin_benchmark)
-                for expected_mclass_measure_standard in (
-                    'Phonemic Awareness (PSF)' as psf,
-                    'Letter Sounds (NWF-CLS)' as cls,
-                    'Decoding (NWF-WRC)' as wrc,
-                    'Reading Accuracy (ORF-Accu)' as orf_acc,
-                    'Reading Fluency (ORF)' as orf
-                )
-            ) as pvt
-        group by all
     )
 
 select
@@ -418,42 +356,6 @@ select
     end as met_overall_goal,
 
     case
-        when
-            s.grade_level = '1'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round in ('3', '4')
-            and a.mclass_measure_standard_score is not null
-        then bm_mod.met_bm_benchmark
-        when
-            s.grade_level = '1'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round in ('3', '4')
-            and a.mclass_measure_standard_score is null
-        then null
-        when
-            s.grade_level = '1'
-            and s.expected_test = 'MOY->EOY'
-            and s.expected_round = '7'
-            and a.mclass_measure_standard_score is not null
-        then bm_mod.met_bm_benchmark
-        when
-            s.grade_level = '1'
-            and s.expected_test = 'MOY->EOY'
-            and s.expected_round = '7'
-            and a.mclass_measure_standard_score is null
-        then null
-        when
-            s.grade_level = '2'
-            and s.expected_test = 'MOY->EOY'
-            and s.expected_round = '7'
-            and a.mclass_measure_standard_score is not null
-        then bm_mod.met_bm_benchmark
-        when
-            s.grade_level = '2'
-            and s.expected_test = 'MOY->EOY'
-            and s.expected_round = '7'
-            and a.mclass_measure_standard_score is null
-        then null
         when a.mclass_measure_standard_score is null
         then null
         when a.mclass_measure_standard_score >= s.admin_benchmark
@@ -481,12 +383,6 @@ left join
     and s.student_number = mod.student_number
     and s.expected_test = mod.expected_test
     and s.expected_round = mod.expected_round
-left join
-    met_overall_bm_calculation_modified as bm_mod
-    on s.academic_year = bm_mod.academic_year
-    and s.student_number = bm_mod.student_number
-    and s.expected_test = bm_mod.expected_test
-    and s.expected_round = bm_mod.expected_round
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as f
     on s.academic_year = f.academic_year
