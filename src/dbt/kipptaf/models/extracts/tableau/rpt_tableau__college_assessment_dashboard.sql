@@ -210,7 +210,7 @@ select
 from roster as e
 left join
     custom_scores as o
-    and e.academic_year = o.academic_year
+    on e.academic_year = o.academic_year
     and e.student_number = o.student_number
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
@@ -218,7 +218,7 @@ left join
     and e.expected_month_round = o.expected_month_round
 left join
     course_subjects_roster as c
-    on e.academic_year = o.academic_year
+    on e.academic_year = c.academic_year
     and e.student_number = c.student_number
     and o.course_discipline = c.courses_credittype
 where e.expected_test_type = 'Official'
