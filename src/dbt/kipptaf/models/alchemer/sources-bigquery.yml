@@ -3,6 +3,8 @@ version: 2
 sources:
   - name: alchemer
     schema: "{{ project_name }}_alchemer"
+    config:
+      enabled: true
     tables:
       - name: base_alchemer__survey_results
         meta:

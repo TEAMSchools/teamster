@@ -5,6 +5,8 @@ sources:
     schema: "{{ project_name }}_people"
     tables:
       - name: stg_people__employee_numbers
+        config:
+          enabled: true
         meta:
           dagster:
             asset_key:
@@ -12,6 +14,8 @@ sources:
               - people
               - stg_people__employee_numbers
       - name: stg_people__student_logins
+        config:
+          enabled: true
         meta:
           dagster:
             asset_key:
