@@ -19,7 +19,9 @@ with
             if(app.type_for_roll_ups = 'Alternative Program', true, false) as is_cte,
             if(
                 app.type_for_roll_ups
-                in ('Alternative Program', 'Organization', 'Other', 'Private 2 yr'),
+                in ('Alternative Program', 'Organization', 'Other')
+                or app.type_for_roll_ups = 'College'
+                and acc.type = 'Private 2 yr',
                 true,
                 false
             ) as is_certificate,
@@ -82,7 +84,9 @@ with
                 app.type_for_roll_ups = 'College' and acc.type like '%4 yr', true, false
             ) as is_4yr_college,
             if(
-                app.type_for_roll_ups = 'College' and acc.type like '%2 yr', true, false
+                app.type_for_roll_ups = 'College' and acc.type = 'Public 2 yr',
+                true,
+                false
             ) as is_2yr_college,
 
             row_number() over (
