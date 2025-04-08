@@ -389,7 +389,7 @@ left join
 left join
     prev_yr_state_test as py
     {# TODO: find records that only match on SID #}
-    on co.student_number = py.localstudentidentifier
+    on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus
     and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
     and sj.illuminate_subject_area = py.subject
