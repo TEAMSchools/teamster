@@ -1,0 +1,114 @@
+version: 2
+models:
+  - name: int_students__graduation_path_codes
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: students_dcid
+        data_type: int64
+      - name: studentsid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: state_studentnumber
+        data_type: string
+      - name: salesforce_id
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: discipline
+        data_type: string
+      - name: powerschool_credittype
+        data_type: string
+      - name: ps_grad_path_code
+        data_type: string
+      - name: has_fafsa
+      - name: njgpa_season_11th
+        data_type: boolean
+      - name: fafsa_season_12th
+        data_type: boolean
+      - name: pathway_option
+        data_type: string
+      - name: score_type
+        data_type: string
+      - name: pathway_code
+        data_type: string
+      - name: cutoff
+        data_type: numeric
+      - name: scale_score
+        data_type: numeric
+      - name: subject_area
+        data_type: string
+      - name: met_pathway_cutoff
+        data_type: boolean
+      - name: met_sat_ela
+        data_type: boolean
+      - name: met_sat_math
+        data_type: boolean
+      - name: met_dlm
+        data_type: boolean
+      - name: met_portfolio
+        data_type: boolean
+      - name: njgpa_attempt
+        data_type: boolean
+      - name: met_njgpa
+        data_type: boolean
+      - name: met_act
+        data_type: boolean
+      - name: met_sat
+        data_type: boolean
+      - name: met_psat10
+        data_type: boolean
+      - name: met_psat_nmsqt
+        data_type: boolean
+      - name: attempted_njgpa_ela
+        data_type: boolean
+      - name: attemped_njgpa_math
+        data_type: boolean
+      - name: met_ela
+        data_type: boolean
+      - name: met_math
+        data_type: boolean
+      - name: rn_highest
+        data_type: int64
+      - name: points_short
+        data_type: numeric
+      - name: final_grad_path_code
+        description: >-
+          Using the original code entered in PS plus the attempt/passing status 
+          of different pathways, the final graduation code per subject is
+          generated. This is sent to PS via autocomm.
+        data_type: string
+      - name: grad_eligibility
+<<<<<<< HEAD:src/dbt/kipptaf/models/students/properties/int_students__graduation_path_codes.yml
+        description: >-
+          The final graduation eligibility status based on state-mandated
+          conditions, as mapped out on the stg_reporting__graduation_paths_combo
+          G-Sheet.
+=======
+>>>>>>> f25ced5a005d8576d294b4bc3ae4e46b9467d610:src/dbt/kipptaf/models/students/intermediate/properties/int_students__graduation_path_codes.yml
+        data_type: string
+        tests:
+          - accepted_values:
+              values:
+                - Grad Eligible
+                - ELA Only
+                - Not Grad Eligible
+                - Math Only
+                - No FAFSA
+                - FAFSA Only
+                - ELA Only / No FAFSA
+                - Math Only / No FAFSA
+<<<<<<< HEAD:src/dbt/kipptaf/models/students/properties/int_students__graduation_path_codes.yml
+                - No FAFSA / No NJGPA
+=======
+              config:
+                severity: warn
+                store_failures: true
+>>>>>>> f25ced5a005d8576d294b4bc3ae4e46b9467d610:src/dbt/kipptaf/models/students/intermediate/properties/int_students__graduation_path_codes.yml
+      - name: test_type
+        data_type: string
+      - name: rn_discipline_distinct
+        data_type: int64

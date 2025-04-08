@@ -1,10 +1,13 @@
 with
     act_valid as (
-        select r.student_number, r.contact_id, count(adb.score_type) as act_count,
-        from {{ ref("int_kippadb__standardized_test_unpivot") }} as adb
-        left join {{ ref("int_kippadb__roster") }} as r on adb.contact = r.contact_id
-        where adb.score_type = 'act_composite'
-        group by r.student_number, r.contact_id
+        select
+            school_specific_id as student_number,
+            contact as contact_id,
+
+            count(score_type) as act_count,
+        from {{ ref("int_kippadb__standardized_test_unpivot") }}
+        where score_type = 'act_composite'
+        group by school_specific_id, contact
     ),
 
     early as (
@@ -53,6 +56,8 @@ select
         then 'currently enrolled'
         when co.enroll_status = 2
         then 'transferred out'
+        when co.enroll_status = 3
+        then 'graduated'
     end as enroll_status,
 
     concat(co.lastfirst, ' - ', co.student_number) as student_identifier,

@@ -70,6 +70,7 @@ with
             co.school_level,
             co.gender,
             co.ethnicity,
+            co.year_in_network,
 
             w.week_start_monday,
             w.week_end_sunday,
@@ -223,6 +224,7 @@ select
     co.school_level,
     co.gender,
     co.ethnicity,
+    co.year_in_network,
     co.week_start_monday,
     co.week_end_sunday,
     co.days_in_session,
@@ -333,6 +335,7 @@ select
     co.school_level,
     co.gender,
     co.ethnicity,
+    co.year_in_network,
     co.week_start_monday,
     co.week_end_sunday,
     co.days_in_session,
@@ -444,6 +447,7 @@ select
 
     null as gender,
     null as ethnicity,
+    null as year_in_network,
 
     w.week_start_monday,
     w.week_end_sunday,

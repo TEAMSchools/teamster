@@ -49,6 +49,7 @@ with
             and e.grade_level = t.grade
             and e.region = t.region
             and t.assessment_type = 'College Entrance'
+            and t.strategy
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
@@ -142,7 +143,7 @@ select
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment") }} as o
-    on e.contact_id = o.salesforce_id
+    on e.student_number = o.student_number
     and e.expected_test_type = o.test_type
     and e.expected_scope = o.scope
     and e.expected_subject_area = o.subject_area
