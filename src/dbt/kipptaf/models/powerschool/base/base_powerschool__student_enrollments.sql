@@ -74,7 +74,6 @@ select
     tpd.total_balance as lunch_balance,
 
     adb.id as salesforce_contact_id,
-    adb.df_has_fafsa as salesforce_contact_df_has_fafsa,
     adb.college_match_display_gpa as salesforce_contact_college_match_display_gpa,
     adb.kipp_hs_class as salesforce_contact_kipp_hs_class,
     adb.owner_id as salesforce_contact_owner_id,
@@ -98,6 +97,8 @@ select
     if(
         ar.region = 'Miami', ar.spedlep, sped.special_education_code
     ) as special_education_code,
+
+    if(adb.latest_fafsa_date is null, false, true) as salesforce_contact_df_has_fafsa,
 
     coalesce(if(ar.region = 'Miami', ar.spedlep, sped.spedlep), 'No IEP') as spedlep,
 
