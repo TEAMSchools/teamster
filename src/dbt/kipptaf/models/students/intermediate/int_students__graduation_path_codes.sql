@@ -471,6 +471,7 @@ select
     row_number() over (
         partition by r.student_number, r.discipline order by r.pathway_option
     ) as rn_discipline_distinct,
+
 from roster as r
 left join
     {{ ref("stg_reporting__graduation_paths_combos") }} as g
