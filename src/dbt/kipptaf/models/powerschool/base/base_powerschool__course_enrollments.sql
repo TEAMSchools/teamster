@@ -45,6 +45,7 @@ select
     csc.illuminate_subject_area,
     csc.is_foundations,
     csc.is_advanced_math,
+    csc.exclude_from_gradebook,
 
     if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 
