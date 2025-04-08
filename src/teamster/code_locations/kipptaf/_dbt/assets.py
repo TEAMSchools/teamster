@@ -30,7 +30,6 @@ google_sheet_dbt_assets = build_dbt_assets(
     dagster_dbt_translator=dagster_dbt_translator,
     name=f"{CODE_LOCATION}__dbt_assets__google_sheets",
     select="tag:google_sheet",
-    exclude="source:adp_payroll+",
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
