@@ -5,6 +5,8 @@ sources:
     schema: "{{ project_name }}_alchemer"
     tables:
       - name: base_alchemer__survey_results
+        config:
+          enabled: true
         meta:
           dagster:
             asset_key:
