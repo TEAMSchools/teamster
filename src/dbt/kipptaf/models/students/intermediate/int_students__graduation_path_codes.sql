@@ -48,9 +48,7 @@ with
                 then false
             end as pre_met_pathway_cutoff,
 
-            case when u.values_column = 'M' then true end as pre_attempted_njgpa_ela,
-
-            case when u.values_column = 'M' then true end as pre_attempted_njgpa_math,
+            if(u.values_column = 'M', true, false) as pre_attempted_njgpa_subject,
 
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
@@ -235,14 +233,14 @@ with
 
             case
                 when s.ps_grad_path_code = 'M'
-                then s.pre_attempted_njgpa_ela
+                then s.pre_attempted_njgpa_subject
                 when nj.attempted_njgpa_ela is not null
                 then true
             end as attempted_njgpa_ela,
 
             case
                 when s.ps_grad_path_code = 'M'
-                then s.pre_attempted_njgpa_math
+                then s.pre_attempted_njgpa_subject
                 when nj.attempted_njgpa_math is not null
                 then true
             end as attempted_njgpa_math,
