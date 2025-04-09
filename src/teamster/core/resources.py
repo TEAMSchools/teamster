@@ -1,8 +1,9 @@
 import os
 
-from dagster import EnvVar, _check
+from dagster import EnvVar
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
+from dagster_shared import check
 from dagster_slack import SlackResource
 
 from teamster import GCS_PROJECT_NAME
@@ -62,7 +63,7 @@ def get_dbt_cli_resource(dbt_project, test=False):
 def get_powerschool_ssh_resource():
     return SSHResource(
         remote_host=EnvVar("PS_SSH_HOST"),
-        remote_port=int(_check.not_none(value=EnvVar("PS_SSH_PORT").get_value())),
+        remote_port=int(check.not_none(value=EnvVar("PS_SSH_PORT").get_value())),
         username=EnvVar("PS_SSH_USERNAME"),
         tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
     )

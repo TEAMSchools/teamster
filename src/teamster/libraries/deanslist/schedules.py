@@ -8,9 +8,9 @@ from dagster import (
     RunRequest,
     ScheduleEvaluationContext,
     StaticPartitionsDefinition,
-    _check,
     schedule,
 )
+from dagster_shared import check
 
 from teamster.core.utils.classes import FiscalYear
 
@@ -46,7 +46,7 @@ def build_deanslist_job_schedule(
                         }
                     )
             elif isinstance(asset.partitions_def, MultiPartitionsDefinition):
-                fy_start_fmt = _check.not_none(
+                fy_start_fmt = check.not_none(
                     value=current_fiscal_year
                 ).start.isoformat()
 
