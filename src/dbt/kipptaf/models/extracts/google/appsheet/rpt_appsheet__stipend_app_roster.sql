@@ -47,17 +47,11 @@ select
         then 3
         /* in-region/state view */
         when
-            contains_substr(r.job_title, 'Director')
-            and r.home_department_name = 'Operations'
-            and contains_substr(r.home_work_location_name, 'Room')
-        then 2
-
-        when
-            r.job_title in (
-                'Head of Schools',
-                'Managing Director of Operations',
-                'Managing Director of School Operations'
+            (
+                contains_substr(r.job_title, 'Director')
+                or contains_substr(r.job_title, 'Head')
             )
+            and contains_substr(r.home_work_location_name, 'Room')
         then 2
         /* in-region/state view: username temp permissions for RDO coverage */
         when r.sam_account_name = 'tmiddleton'
