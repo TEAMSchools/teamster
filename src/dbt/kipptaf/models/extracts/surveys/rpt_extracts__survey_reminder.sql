@@ -1,4 +1,4 @@
-select mail as email,
+select distinct mail as email,
 from {{ ref("rpt_tableau__survey_completion") }}
 where
     mail is not null
