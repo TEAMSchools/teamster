@@ -40,35 +40,47 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             and dbt_resource_props["config"]["materialized"] == "view"
             and dbt_resource_props["name"][:3] == "rpt"
         ):
+            """forked from AutomationCondition.eager()
+            - add code_version_changed()
+            - remove any_deps_updated()
+            - replace since_last_handled() to allow initial_evaluation()
+            """
             return (
-                AutomationCondition.code_version_changed()
-                | AutomationCondition.newly_missing()
+                AutomationCondition.in_latest_time_window()
+                & (
+                    AutomationCondition.newly_missing()
+                    | AutomationCondition.code_version_changed()
+                ).since(
+                    AutomationCondition.newly_requested()
+                    | AutomationCondition.newly_updated()
+                )
+                & ~AutomationCondition.any_deps_missing()
+                & ~AutomationCondition.any_deps_in_progress()
+                & ~AutomationCondition.in_progress()
             )
         else:
             ignore_selection = AssetSelection.keys(
                 *automation_condition_config.get("ignore", {}).get("keys", {})
             )
 
+            """forked from AutomationCondition.eager()
+            - add code_version_changed()
+            - add configurable ignore on any_deps_updated()
+            - replace since_last_handled() to allow initial_evaluation()
+            """
             return (
-                # forked from AutomationCondition.eager()
-                # - added configurable ignore on any_deps_updated()
-                # - replaced since_last_handled() to allow initial_evaluation()
-                (
-                    AutomationCondition.in_latest_time_window()
-                    & (
-                        AutomationCondition.newly_missing()
-                        | AutomationCondition.any_deps_updated().ignore(
-                            ignore_selection
-                        )
-                    ).since(
-                        AutomationCondition.newly_requested()
-                        | AutomationCondition.newly_updated()
-                    )
-                    & ~AutomationCondition.any_deps_missing()
-                    & ~AutomationCondition.any_deps_in_progress()
-                    & ~AutomationCondition.in_progress()
+                AutomationCondition.in_latest_time_window()
+                & (
+                    AutomationCondition.newly_missing()
+                    | AutomationCondition.any_deps_updated().ignore(ignore_selection)
+                    | AutomationCondition.code_version_changed()
+                ).since(
+                    AutomationCondition.newly_requested()
+                    | AutomationCondition.newly_updated()
                 )
-                | AutomationCondition.code_version_changed()
+                & ~AutomationCondition.any_deps_missing()
+                & ~AutomationCondition.any_deps_in_progress()
+                & ~AutomationCondition.in_progress()
             )
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
