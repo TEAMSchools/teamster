@@ -82,7 +82,7 @@ class PowerSchoolODBCResource(ConfigurableResource):
                     }
                 )
 
-            cursor.rowfactory = lambda *args: dict(zip(columns, args))
+            cursor.rowfactory = lambda *args: dict(zip(columns, args, strict=False))
 
             output = self.result_to_avro(
                 cursor=cursor,
