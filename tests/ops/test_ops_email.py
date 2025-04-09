@@ -36,7 +36,6 @@ def test_send_email_job():
             user=EnvVar("MAILTRAP_USER"),
             password=EnvVar("MAILTRAP_PASSWORD"),
             chunk_size=450,
-            test=True,
         ),
         config=SendEmailOpConfig(
             subject="Survey Reminder: You have pending surveys in Survey HQ!",
