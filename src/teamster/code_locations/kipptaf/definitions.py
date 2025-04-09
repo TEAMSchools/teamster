@@ -29,6 +29,7 @@ from teamster.code_locations.kipptaf import (
     resources,
     schoolmint,
     smartrecruiters,
+    surveys,
     tableau,
 )
 from teamster.core.resources import (
@@ -81,6 +82,7 @@ defs = Definitions(
         *ldap.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
+        *surveys.schedules,
     ],
     sensors=[
         *_google.sensors,
@@ -104,6 +106,7 @@ defs = Definitions(
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "dds": resources.DIBELS_DATA_SYSTEM_RESOURCE,
         "dlt": resources.DLT_RESOURCE,
+        "email": resources.EMAIL_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,
         "google_drive": resources.GOOGLE_DRIVE_RESOURCE,

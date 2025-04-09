@@ -1,4 +1,3 @@
-import time
 from pathlib import Path
 
 from dagster import Config, OpExecutionContext, op
@@ -30,19 +29,13 @@ def send_email_op(
     else:
         alternative_args = None
 
-    for i, batch in enumerate(chunk(obj=recipients, size=450)):
+    for i, batch in enumerate(chunk(obj=recipients, size=email.chunk_size)):
         context.log.info(f"Processing batch {i} ({len(batch)} recipients)")
 
-        for recipient in batch:
-            email.send_message(
-                subject=config.subject,
-                from_email=email.user,
-                to_email=recipient["email"],
-                content_args=(config.text_body,),
-                alternative_args=alternative_args,
-            )
-
-            if email.test:
-                time.sleep(1)
-
-        time.sleep(60)
+        email.send_message(
+            subject=config.subject,
+            from_email=email.user,
+            bcc_emails=",".join([r["email"] for r in batch]),
+            content_args=(config.text_body,),
+            alternative_args=alternative_args,
+        )

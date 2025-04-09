@@ -7,6 +7,8 @@ from teamster.libraries.google.bigquery.ops import BigQueryOpConfig, bigquery_qu
 
 
 def test_send_email_job():
+    # from teamster.code_locations.kipptaf.resources import OUTLOOK_RESOURCE
+
     TEXT_BODY = """
     Please take a few minutes to complete your pending surveys on Survey HQ.
 
@@ -27,11 +29,13 @@ def test_send_email_job():
 
     data = send_email_op(
         context=context,
+        # email=OUTLOOK_RESOURCE,
         email=EmailResource(
             host=EnvVar("MAILTRAP_HOST"),
             port=int(_check.not_none(value=EnvVar("MAILTRAP_PORT").get_value())),
             user=EnvVar("MAILTRAP_USER"),
             password=EnvVar("MAILTRAP_PASSWORD"),
+            chunk_size=450,
             test=True,
         ),
         config=SendEmailOpConfig(
