@@ -1,6 +1,8 @@
 import time
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+
+# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._utils.backoff import backoff
 from dagster_shared import check
 from google.auth import compute_engine, default, iam, load_credentials_from_file
