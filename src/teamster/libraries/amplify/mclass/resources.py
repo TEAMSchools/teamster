@@ -1,7 +1,8 @@
 import json
 
 from bs4 import BeautifulSoup, Tag
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Response, Session, exceptions
 
@@ -16,13 +17,13 @@ class MClassResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         portal_redirect = self.get(path="reports/myReports")
 
         soup = BeautifulSoup(markup=portal_redirect.text, features="html.parser")
 
-        kc_form_login = _check.inst(
+        kc_form_login = check.inst(
             obj=soup.find(name="form", id="kc-form-login"), ttype=Tag
         )
 

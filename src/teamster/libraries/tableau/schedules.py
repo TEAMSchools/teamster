@@ -4,7 +4,7 @@ from dagster import (
     MultiPartitionsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
-    _check,
+    check,
     define_asset_job,
     schedule,
 )
@@ -24,9 +24,7 @@ def build_tableau_workbook_stats_schedule(
         execution_timezone=execution_timezone,
     )
     def _schedule(context: ScheduleEvaluationContext):
-        partitions_def = _check.inst(
-            asset_def.partitions_def, MultiPartitionsDefinition
-        )
+        partitions_def = check.inst(asset_def.partitions_def, MultiPartitionsDefinition)
 
         workbook_id_partition = partitions_def.get_partitions_def_for_dimension(
             "workbook_id"
@@ -34,7 +32,7 @@ def build_tableau_workbook_stats_schedule(
         date_partition = partitions_def.get_partitions_def_for_dimension("date")
 
         workbook_id_partition_keys = workbook_id_partition.get_partition_keys()
-        last_date_partition_key = _check.not_none(
+        last_date_partition_key = check.not_none(
             value=date_partition.get_last_partition_key()
         )
 

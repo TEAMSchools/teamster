@@ -1,4 +1,4 @@
-from dagster import EnvVar, _check, build_init_resource_context
+from dagster import EnvVar, build_init_resource_context, check
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -15,9 +15,7 @@ def _test_listdir_attr_r(ssh: SSHResource, remote_dir: str = "~"):
 def test_couchdrop():
     _test_listdir_attr_r(
         ssh=SSHResource(
-            remote_host=_check.not_none(
-                value=EnvVar("COUCHDROP_SFTP_HOST").get_value()
-            ),
+            remote_host=check.not_none(value=EnvVar("COUCHDROP_SFTP_HOST").get_value()),
             username=EnvVar("COUCHDROP_SFTP_USERNAME").get_value(),
             password=EnvVar("COUCHDROP_SFTP_PASSWORD").get_value(),
         ),
@@ -28,7 +26,7 @@ def test_couchdrop():
 def test_coupa():
     _test_listdir_attr_r(
         ssh=SSHResource(
-            remote_host=_check.not_none(value=EnvVar("COUPA_SFTP_HOST").get_value()),
+            remote_host=check.not_none(value=EnvVar("COUPA_SFTP_HOST").get_value()),
             username=EnvVar("COUPA_SFTP_USERNAME").get_value(),
             password=EnvVar("COUPA_SFTP_PASSWORD").get_value(),
         ),

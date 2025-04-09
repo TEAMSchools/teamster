@@ -1,6 +1,7 @@
 import time
 
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Session
 from requests.exceptions import HTTPError
@@ -17,7 +18,7 @@ class OvergradResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
         self._session.headers["ApiKey"] = self.api_key
 
     def _get_url(self, path, *args):

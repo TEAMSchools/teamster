@@ -1,6 +1,6 @@
 import random
 
-from dagster import _check, materialize
+from dagster import check, materialize
 
 from teamster.core.resources import (
     get_io_manager_gcs_file,
@@ -32,7 +32,7 @@ def _test_asset(assets, asset_name: str, code_location: str):
 
     asset_materialization_event = result.get_asset_materialization_events()[0]
 
-    records = _check.inst(
+    records = check.inst(
         # trunk-ignore(pyright/reportAttributeAccessIssue,pyright/reportOptionalMemberAccess)
         asset_materialization_event.event_specific_data.materialization.metadata[
             "records"

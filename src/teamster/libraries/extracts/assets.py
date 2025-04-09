@@ -12,9 +12,9 @@ from dagster import (
     AssetKey,
     MultiPartitionKey,
     MultiPartitionsDefinition,
-    _check,
     asset,
 )
+from dagster_shared import check
 from google.cloud.bigquery import Client
 from google.cloud.storage import Blob
 from sqlalchemy.sql.expression import literal_column, select, table, text
@@ -102,7 +102,7 @@ def load_sftp(
     destination_path: str,
 ):
     with ssh.get_connection().open_sftp() as sftp:
-        _check.not_none(value=sftp.get_channel()).settimeout(ssh.timeout)
+        check.not_none(value=sftp.get_channel()).settimeout(ssh.timeout)
 
         sftp.chdir(".")
 
@@ -134,7 +134,6 @@ def load_sftp(
         if isinstance(data, Blob):
             context.log.info(f"Saving file to {destination_filepath}")
             with sftp.open(filename=str(destination_filepath), mode="w") as file_obj:
-                # trunk-ignore(pyright/reportCallIssue)
                 data.download_to_file(file_obj=file_obj)
         else:
             # if destination_path given, chdir after confirming
@@ -185,7 +184,7 @@ def build_bigquery_query_sftp_asset(
         if context.has_partition_key and isinstance(
             context.assets_def.partitions_def, MultiPartitionsDefinition
         ):
-            partition_key = _check.inst(
+            partition_key = check.inst(
                 obj=context.partition_key, ttype=MultiPartitionKey
             )
 
