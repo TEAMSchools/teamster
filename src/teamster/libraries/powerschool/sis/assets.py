@@ -9,9 +9,9 @@ from dagster import (
     MonthlyPartitionsDefinition,
     Output,
     TimeWindowPartitionsDefinition,
-    _check,
     asset,
 )
+from dagster_shared import check
 from dateutil.relativedelta import relativedelta
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
@@ -136,7 +136,7 @@ def build_powerschool_table_asset(
             raise e
 
         try:
-            file_path = _check.inst(
+            file_path = check.inst(
                 obj=db_powerschool.execute_query(
                     connection=connection,
                     query=sql,

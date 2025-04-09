@@ -13,7 +13,7 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
-    _check,
+    check,
     define_asset_job,
     sensor,
 )
@@ -72,7 +72,7 @@ def build_titan_sftp_sensor(
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()
-            partitions_def = _check.not_none(value=a.partitions_def)
+            partitions_def = check.not_none(value=a.partitions_def)
             context.log.info(asset_identifier)
 
             last_run = cursor.get(asset_identifier, 0)
@@ -86,7 +86,7 @@ def build_titan_sftp_sensor(
                 if (
                     match is not None
                     and f.st_mtime > last_run
-                    and _check.not_none(value=f.st_size) > 0
+                    and check.not_none(value=f.st_size) > 0
                 ):
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     run_request_kwargs.append(

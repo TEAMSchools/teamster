@@ -23,24 +23,25 @@ with
             co.grade_level between 9 and 12
             and co.is_enrolled_y1
             and co.academic_year >= {{ var("current_academic_year") }} - 1
+    ),
+
+    prepivot as (
+        select academic_year, school_name, student_number, grade_level, cs_hours,
+        from cs_roster
     )
 
 select
     academic_year,
     school_name,
     student_number as `StudentID`,
-    _9 as `HOURS-9TH`,
-    _10 as `HOURS-10TH`,
-    _11 as `HOURS-11TH`,
-    _12 as `HOURS-12TH`,
+
+    `HOURS-9TH`,
+    `HOURS-10TH`,
+    `HOURS-11TH`,
+    `HOURS-12TH`,
 from
-    (
-        select
-            hs.academic_year,
-            hs.school_name,
-            hs.student_number,
-            hs.grade_level,
-            hs.cs_hours,
-        from cs_roster as hs
+    prepivot pivot (
+        sum(cs_hours) for grade_level in (
+            9 as `HOURS-9TH`, 10 as `HOURS-10TH`, 11 as `HOURS-11TH`, 12 as `HOURS-12TH`
+        )
     )
-    pivot (sum(cs_hours) for grade_level in (9, 10, 11, 12))

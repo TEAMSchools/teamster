@@ -1,7 +1,7 @@
 import pathlib
 
 import yaml
-from dagster import EnvVar, _check
+from dagster import EnvVar, check
 from dlt.common.configuration.specs import ConnectionStringCredentials
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
@@ -11,7 +11,7 @@ config_file = pathlib.Path(__file__).parent / "config" / "illuminate.yaml"
 
 sql_database_credentials = ConnectionStringCredentials(
     {
-        "drivername": _check.not_none(
+        "drivername": check.not_none(
             value=EnvVar("ILLUMINATE_DB_DRIVERNAME").get_value()
         ),
         "database": EnvVar("ILLUMINATE_DB_DATABASE").get_value(),

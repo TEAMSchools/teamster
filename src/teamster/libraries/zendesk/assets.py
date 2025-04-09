@@ -5,8 +5,8 @@ from dagster import (
     AssetExecutionContext,
     MonthlyPartitionsDefinition,
     Output,
-    _check,
     asset,
+    check,
 )
 from dateutil.relativedelta import relativedelta
 from fastavro import block_reader, parse_schema, writer
@@ -30,7 +30,7 @@ def build_ticket_metrics_archive(code_location, timezone, avro_schema):
         kinds={"python"},
     )
     def _asset(context: AssetExecutionContext, zendesk: ZendeskResource):
-        partition_key = _check.not_none(value=context.partition_key)
+        partition_key = check.not_none(value=context.partition_key)
 
         partition_key_datetime = datetime.fromisoformat(partition_key)
 
@@ -43,7 +43,7 @@ def build_ticket_metrics_archive(code_location, timezone, avro_schema):
         context.log.info(
             f"Searching closed tickets: updated>{start_date} updated<{end_date}"
         )
-        archived_tickets = _check.inst(
+        archived_tickets = check.inst(
             zendesk._client.search_export(
                 type="ticket", status="closed", updated_between=[start_date, end_date]
             ),
@@ -67,9 +67,7 @@ def build_ticket_metrics_archive(code_location, timezone, avro_schema):
             ticket_id = ticket.id
 
             context.log.info(f"Getting metrics for ticket #{ticket_id}")
-            metrics = _check.inst(
-                zendesk._client.tickets.metrics(ticket_id), BaseObject
-            )
+            metrics = check.inst(zendesk._client.tickets.metrics(ticket_id), BaseObject)
 
             try:
                 writer(

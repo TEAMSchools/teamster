@@ -1,6 +1,7 @@
 import time
 
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Response
@@ -22,7 +23,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         # instantiate client
         self._session = OAuth2Session(

@@ -10,10 +10,10 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    _check,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.adp.payroll.assets import general_ledger_file
@@ -62,11 +62,11 @@ def adp_payroll_sftp_sensor(
     asset_identifier = general_ledger_file.key.to_python_identifier()
     metadata_by_key = general_ledger_file.metadata_by_key[general_ledger_file.key]
 
-    partitions_def = _check.inst(
+    partitions_def = check.inst(
         obj=general_ledger_file.partitions_def, ttype=MultiPartitionsDefinition
     )
 
-    date_partition = _check.inst(
+    date_partition = check.inst(
         obj=partitions_def.get_partitions_def_for_dimension("date"),
         ttype=DynamicPartitionsDefinition,
     )
@@ -83,12 +83,12 @@ def adp_payroll_sftp_sensor(
         (f, path)
         for f, path in files
         if pattern.match(string=path)
-        and _check.not_none(value=f.st_mtime) > tick_cursor
-        and _check.not_none(value=f.st_size) > 0
+        and check.not_none(value=f.st_mtime) > tick_cursor
+        and check.not_none(value=f.st_size) > 0
     ]
 
     for f, path in file_matches:
-        match = _check.not_none(value=pattern.match(string=path))
+        match = check.not_none(value=pattern.match(string=path))
 
         group_dict = match.groupdict()
 
@@ -105,7 +105,7 @@ def adp_payroll_sftp_sensor(
 
     dynamic_partitions_requests.append(
         AddDynamicPartitionsRequest(
-            partitions_def_name=_check.str_param(
+            partitions_def_name=check.str_param(
                 obj=date_partition.name, param_name="partitions_def_name"
             ),
             partition_keys=list(add_dynamic_partition_keys),

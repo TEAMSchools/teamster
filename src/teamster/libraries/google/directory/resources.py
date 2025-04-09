@@ -1,9 +1,8 @@
 import time
 
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster._utils.backoff import backoff
+from dagster_shared import check
 from google.auth import compute_engine, default, iam, load_credentials_from_file
 from google.auth.transport import requests
 from google.oauth2 import service_account
@@ -29,14 +28,14 @@ class GoogleDirectoryResource(ConfigurableResource):
     _exceptions: list[tuple] = PrivateAttr(default=[])
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         if self.service_account_file_path is not None:
             credentials, project_id = load_credentials_from_file(
                 filename=self.service_account_file_path, scopes=self.scopes
             )
 
-            credentials = _check.inst(
+            credentials = check.inst(
                 credentials, service_account.Credentials
             ).with_subject(self.delegated_account)
         else:
@@ -45,7 +44,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             request = requests.Request()
             source_credentials, project_id = default()
 
-            source_credentials = _check.inst(
+            source_credentials = check.inst(
                 obj=source_credentials, ttype=compute_engine.Credentials
             )
 

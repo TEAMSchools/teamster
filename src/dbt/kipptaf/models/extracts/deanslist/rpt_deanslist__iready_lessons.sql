@@ -4,7 +4,7 @@ with
             co.academic_year,
             co.student_number,
 
-            `subject`,
+            subj as `subject`,
 
             w.week_start_monday,
             w.quarter,
@@ -13,7 +13,7 @@ with
             lu.lesson_id,
             lu.passed_or_not_passed_numeric,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join unnest(['Reading', 'Math']) as `subject`
+        cross join unnest(['Reading', 'Math']) as subj
         inner join
             {{ ref("int_powerschool__calendar_week") }} as w
             on co.academic_year = w.academic_year
@@ -23,7 +23,7 @@ with
             {{ ref("int_iready__instruction_by_lesson_union") }} as lu
             on co.student_number = lu.student_id
             and co.academic_year = lu.academic_year_int
-            and `subject` = lu.subject
+            and subj = lu.subject
             and lu.completion_date between w.week_start_monday and w.week_end_sunday
         where
             co.academic_year = {{ var("current_academic_year") }} and co.grade_level < 9

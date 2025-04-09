@@ -6,9 +6,9 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    _check,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf._google.forms.assets import (
     GOOGLE_FORMS_PARTITIONS_DEF,
@@ -70,7 +70,7 @@ def google_forms_responses_sensor(
         cursor=json.dumps(obj=cursor),
         dynamic_partitions_requests=[
             AddDynamicPartitionsRequest(
-                partitions_def_name=_check.not_none(
+                partitions_def_name=check.not_none(
                     value=GOOGLE_FORMS_PARTITIONS_DEF.name
                 ),
                 partition_keys=[f["id"] for f in forms],
