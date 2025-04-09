@@ -16,20 +16,9 @@ select
     ds.observed_at,
     ds.measurement_name,
     ds.row_score_value,
-from
-    {{
-        source(
-            "performance_management",
-            "stg_performance_management__scores_overall_archive",
-        )
-    }} as os
+from {{ ref("stg_performance_management__scores_overall_archive") }} as os
 inner join
-    {{
-        source(
-            "performance_management",
-            "stg_performance_management__scores_detail_archive",
-        )
-    }} as ds
+    {{ ref("stg_performance_management__scores_detail_archive") }} as ds
     on os.employee_number = ds.employee_number
     and os.academic_year = ds.academic_year
     and os.form_term = ds.form_term
