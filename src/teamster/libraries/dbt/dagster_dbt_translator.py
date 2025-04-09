@@ -33,6 +33,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             "automation_condition", {}
         )
 
+        ignore_selection = AssetSelection.keys(
+            *automation_condition_config.get("ignore", {}).get("keys", {})
+        )
+
         if not automation_condition_config.get("enabled", True):
             return None
         elif (
@@ -42,8 +46,9 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         ):
             """forked from AutomationCondition.eager()
             - add code_version_changed()
-            - remove any_deps_updated()
+            - add ignore external assets
             - replace since_last_handled() to allow initial_evaluation()
+            - remove any_deps_updated()
             """
             return (
                 AutomationCondition.in_latest_time_window()
@@ -54,19 +59,16 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     AutomationCondition.newly_requested()
                     | AutomationCondition.newly_updated()
                 )
-                & ~AutomationCondition.any_deps_missing()
-                & ~AutomationCondition.any_deps_in_progress()
+                & ~AutomationCondition.any_deps_missing().ignore(ignore_selection)
+                & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
                 & ~AutomationCondition.in_progress()
-            )
+            ).ignore(AssetSelection.all(include_sources=True).sources())
         else:
-            ignore_selection = AssetSelection.keys(
-                *automation_condition_config.get("ignore", {}).get("keys", {})
-            )
-
             """forked from AutomationCondition.eager()
             - add code_version_changed()
-            - add configurable ignore on any_deps_updated()
+            - add ignore external assets
             - replace since_last_handled() to allow initial_evaluation()
+            - add ignore on any_deps_updated()
             """
             return (
                 AutomationCondition.in_latest_time_window()
@@ -78,10 +80,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     AutomationCondition.newly_requested()
                     | AutomationCondition.newly_updated()
                 )
-                & ~AutomationCondition.any_deps_missing()
-                & ~AutomationCondition.any_deps_in_progress()
+                & ~AutomationCondition.any_deps_missing().ignore(ignore_selection)
+                & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
                 & ~AutomationCondition.in_progress()
-            )
+            ).ignore(AssetSelection.all(include_sources=True).sources())
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         group = super().get_group_name(dbt_resource_props)
