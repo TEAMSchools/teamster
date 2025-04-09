@@ -23,7 +23,9 @@ Survey Team
             "send_email_op": SendEmailOpConfig(
                 subject="Survey Reminder: You have pending surveys in Survey HQ!",
                 text_body=TEXT_BODY,
-                template_path=Path(__file__).parent / "template.html",
+                template_path=(
+                    "src/teamster/code_locations/kipptaf/surveys/template.html"
+                ),
             ),
         }
     ),
