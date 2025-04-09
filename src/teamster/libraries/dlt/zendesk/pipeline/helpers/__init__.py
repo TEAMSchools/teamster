@@ -1,8 +1,9 @@
 """Zendesk source helpers"""
 
-from datetime import timedelta
-
 from dlt.common import pendulum
+
+# trunk-ignore(pyright/reportPrivateImportUsage)
+from dlt.common.time import timedelta
 
 
 def make_date_ranges(
