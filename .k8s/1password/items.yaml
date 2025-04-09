@@ -1,3 +1,4 @@
+# trunk-ignore-all(trivy/KSV039,trivy/KSV040)
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
@@ -334,3 +335,11 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Slack API - Teamster
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-outlook-pm
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Outlook - Performance Management
