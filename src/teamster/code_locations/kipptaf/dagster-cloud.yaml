@@ -404,6 +404,26 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api-kippnewark
                     key: credential
+              - name: OUTLOOK_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: host
+              - name: OUTLOOK_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: port
+              - name: OUTLOOK_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: username
+              - name: OUTLOOK_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: password
         run_k8s_config:
           container_config:
             env:
@@ -777,3 +797,23 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api-kippnewark
                     key: credential
+              - name: OUTLOOK_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: host
+              - name: OUTLOOK_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: port
+              - name: OUTLOOK_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: username
+              - name: OUTLOOK_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: password

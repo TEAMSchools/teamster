@@ -10,8 +10,8 @@ class EmailResource(ConfigurableResource):
     port: int
     user: str
     password: str
+    chunk_size: int = 1
     timeout: int = 30
-    test: bool = False
 
     _server: SMTP = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
@@ -24,31 +24,28 @@ class EmailResource(ConfigurableResource):
 
         # SMTP handshake
         self._server.ehlo()
+        self._server.starttls()
 
-        if self.test or self.port in [587, 2525]:
-            self._server.starttls()
-
-        # authenticate
-        if self.test:
-            self._server.login(user=self.user, password=self.password)
-        else:
-            self._server.docmd(cmd="AUTH LOGIN")
-            self._server.docmd(cmd=self.user.encode("utf-8").hex())
-            self._server.docmd(cmd=self.password.encode("utf-8").hex())
+        self._server.login(user=self.user, password=self.password)
 
     def send_message(
         self,
         subject: str,
         from_email: str,
-        to_email: str,
+        bcc_emails: str,
         content_args: tuple,
+        to_emails: str | None = None,
         alternative_args: tuple | None = None,
     ):
+        if to_emails is None:
+            to_emails = from_email
+
         msg = EmailMessage()
 
         msg["Subject"] = subject
         msg["From"] = from_email
-        msg["To"] = to_email
+        msg["To"] = to_emails
+        msg["Bcc"] = bcc_emails
         msg.set_content(*content_args)
 
         if alternative_args is not None:
@@ -56,6 +53,6 @@ class EmailResource(ConfigurableResource):
 
         try:
             self._server.send_message(msg=msg)
-            self._log.info(f"Email sent to {to_email}")
+            self._log.info(f"Email sent to {to_emails} {bcc_emails}")
         except Exception as e:
             self._log.error(msg=e)
