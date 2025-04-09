@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from dagster import RunConfig, job
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
