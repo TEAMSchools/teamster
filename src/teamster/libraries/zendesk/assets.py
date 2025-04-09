@@ -6,8 +6,8 @@ from dagster import (
     MonthlyPartitionsDefinition,
     Output,
     asset,
-    check,
 )
+from dagster_shared import check
 from dateutil.relativedelta import relativedelta
 from fastavro import block_reader, parse_schema, writer
 from zenpy.lib.api_objects import BaseObject  # type: ignore

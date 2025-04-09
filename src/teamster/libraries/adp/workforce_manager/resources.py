@@ -1,4 +1,5 @@
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Response, Session, exceptions
 from tenacity import retry, stop_after_attempt, wait_exponential_jitter

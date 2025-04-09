@@ -1,6 +1,7 @@
 from typing import Generator
 
-from dagster import DagsterInstance, build_schedule_context, check
+from dagster import DagsterInstance, build_schedule_context
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf.adp.workforce_now.api.schedules import (
     adp_wfn_api_workers_asset_schedule,

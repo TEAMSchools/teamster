@@ -9,8 +9,8 @@ from dagster import (
     MultiPartitionsDefinition,
     Output,
     asset,
-    check,
 )
+from dagster_shared import check
 from numpy import nan
 from pandas import read_csv
 from pypdf import PdfReader

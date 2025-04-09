@@ -1,4 +1,5 @@
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Response, Session
 from requests.exceptions import HTTPError

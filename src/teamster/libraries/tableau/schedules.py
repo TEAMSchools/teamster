@@ -4,10 +4,10 @@ from dagster import (
     MultiPartitionsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
-    check,
     define_asset_job,
     schedule,
 )
+from dagster_shared import check
 
 
 def build_tableau_workbook_stats_schedule(

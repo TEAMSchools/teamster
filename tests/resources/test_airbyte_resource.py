@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
-from dagster import AssetKey, EnvVar, build_resources, check
+from dagster import AssetKey, EnvVar, build_resources
 from dagster_airbyte import AirbyteCloudWorkspace
+from dagster_shared import check
 
 
 def test_resource():

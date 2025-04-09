@@ -1,4 +1,5 @@
-from dagster import EnvVar, check
+from dagster import EnvVar
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.libraries.dlt.salesforce.assets import build_salesforce_kippadb_dlt_assets
