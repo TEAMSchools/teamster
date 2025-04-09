@@ -1,16 +1,15 @@
 with
     progress_report_region as (
-        select assessment_id, progress_report_region,
-        from
-            {{ ref("stg_google_appsheet__illuminate_assessments_extension") }},
-            unnest(split(regions_progress_report, ' , ')) as progress_report_region
+        select iae.assessment_id, progress_report_region,
+        from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
+        cross join
+            unnest(split(iae.regions_progress_report, ' , ')) as progress_report_region
     ),
 
     report_card_region as (
-        select assessment_id, report_card_region,
-        from
-            {{ ref("stg_google_appsheet__illuminate_assessments_extension") }},
-            unnest(split(regions_report_card, ' , ')) as report_card_region
+        select iae.assessment_id, report_card_region,
+        from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
+        cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
     )
 
 select

@@ -1,12 +1,12 @@
 # Code Review
 
-Once a pull request is opened, another member of the team must first review and approve it for
-merging. During this review
+Once a pull request is opened, another member of the team must first review and
+approve it for merging. During this review
 
 Rules:
 
-- CMO-level reporting models (models located under `src/dbt/kipptaf/models/extracts`) can be
-  reviewed by anyone on the team
+- CMO-level reporting models (models located under
+  `src/dbt/kipptaf/models/extracts`) can be reviewed by anyone on the team
 - Core models can only be reviewed by
 
 1.

@@ -1,6 +1,7 @@
-from dagster import EnvVar, _check
+from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudWorkspace
 from dagster_dlt import DagsterDltResource
+from dagster_shared import check
 
 from teamster.libraries.adp.workforce_manager.resources import (
     AdpWorkforceManagerResource,
@@ -61,7 +62,7 @@ DLT_RESOURCE = DagsterDltResource()
 
 OUTLOOK_RESOURCE = EmailResource(
     host=EnvVar("OUTLOOK_HOST"),
-    port=int(_check.not_none(value=EnvVar("OUTLOOK_PORT").get_value())),
+    port=int(check.not_none(value=EnvVar("OUTLOOK_PORT").get_value())),
     user=EnvVar("OUTLOOK_USER"),
     password=EnvVar("OUTLOOK_PASSWORD"),
     chunk_size=450,
@@ -168,7 +169,7 @@ SSH_RESOURCE_IDAUTO = SSHResource(
 
 SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_host=EnvVar("LITTLESIS_SFTP_HOST"),
-    remote_port=int(_check.not_none(value=EnvVar("LITTLESIS_SFTP_PORT").get_value())),
+    remote_port=int(check.not_none(value=EnvVar("LITTLESIS_SFTP_PORT").get_value())),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
 )

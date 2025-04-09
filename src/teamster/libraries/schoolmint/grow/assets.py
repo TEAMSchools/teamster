@@ -6,9 +6,9 @@ from dagster import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
-    _check,
     asset,
 )
+from dagster_shared import check
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
@@ -31,7 +31,7 @@ def build_schoolmint_grow_asset(
     )
     def _asset(context: AssetExecutionContext, schoolmint_grow: SchoolMintGrowResource):
         if isinstance(context.assets_def.partitions_def, MultiPartitionsDefinition):
-            partition_key = _check.inst(context.partition_key, MultiPartitionKey)
+            partition_key = check.inst(context.partition_key, MultiPartitionKey)
 
             archived_key = partition_key.keys_by_dimension["archived"]
             last_modified_key = partition_key.keys_by_dimension["last_modified"]

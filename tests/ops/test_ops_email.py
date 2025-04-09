@@ -1,4 +1,5 @@
-from dagster import EnvVar, _check, build_op_context
+from dagster import EnvVar, build_op_context
+from dagster_shared import check
 
 from teamster.core.resources import BIGQUERY_RESOURCE
 from teamster.libraries.email.ops import SendEmailOpConfig, send_email_op
@@ -32,7 +33,7 @@ def test_send_email_job():
         # email=OUTLOOK_RESOURCE,
         email=EmailResource(
             host=EnvVar("MAILTRAP_HOST"),
-            port=int(_check.not_none(value=EnvVar("MAILTRAP_PORT").get_value())),
+            port=int(check.not_none(value=EnvVar("MAILTRAP_PORT").get_value())),
             user=EnvVar("MAILTRAP_USER"),
             password=EnvVar("MAILTRAP_PASSWORD"),
             chunk_size=450,
