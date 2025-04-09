@@ -1,4 +1,5 @@
-from dagster import EnvVar, build_init_resource_context, check
+from dagster import EnvVar, build_init_resource_context
+from dagster_shared import check
 
 from teamster.libraries.ssh.resources import SSHResource
 

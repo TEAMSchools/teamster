@@ -1,6 +1,7 @@
 import random
 
-from dagster import check, materialize
+from dagster import materialize
+from dagster_shared import check
 
 from teamster.core.resources import (
     get_io_manager_gcs_file,

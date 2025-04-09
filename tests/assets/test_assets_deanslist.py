@@ -1,9 +1,10 @@
 import random
 
-from dagster import TextMetadataValue, check, materialize
+from dagster import TextMetadataValue, materialize
 
 # trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._core.events import StepMaterializationData
+from dagster_shared import check
 
 from teamster.core.resources import (
     DEANSLIST_RESOURCE,

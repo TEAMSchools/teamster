@@ -1,7 +1,8 @@
 import pathlib
 
 import yaml
-from dagster import EnvVar, check
+from dagster import EnvVar
+from dagster_shared import check
 from dlt.common.configuration.specs import ConnectionStringCredentials
 
 from teamster.code_locations.kipptaf import CODE_LOCATION

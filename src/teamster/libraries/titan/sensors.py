@@ -13,10 +13,10 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
-    check,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 from paramiko.ssh_exception import SSHException
 
 from teamster.libraries.ssh.resources import SSHResource

@@ -1,4 +1,5 @@
-from dagster import EnvVar, check
+from dagster import EnvVar
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.libraries.dlt.zendesk.assets import build_zendesk_support_dlt_assets

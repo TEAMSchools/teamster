@@ -1,4 +1,5 @@
-from dagster import EnvVar, build_op_context, check
+from dagster import EnvVar, build_op_context
+from dagster_shared import check
 
 from teamster.core.resources import BIGQUERY_RESOURCE
 from teamster.libraries.email.ops import SendEmailOpConfig, send_email_op
