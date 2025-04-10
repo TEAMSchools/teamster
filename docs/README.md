@@ -21,20 +21,21 @@ Next-gen data orchestration
 
 Dagster is our data orchestrator. Every ETL step takes place here.
 
-[Dagster Cloud](https://kipptaf.dagster.cloud/) is a hosted front-end for our Dagster servers where
-you can observe and run integration jobs.
+[Dagster Cloud](https://kipptaf.dagster.cloud/) is a hosted front-end for our
+Dagster servers where you can observe and run integration jobs.
 
-Dagster hosts multiple "code locations", one for each of our business units, including a separate
-one for our CMO:
+Dagster hosts multiple "code locations", one for each of our business units,
+including a separate one for our CMO:
 
 - kippnewark
 - kippcamden
 - kippmiami
 - kipptaf
 
-Each code location hosts and runs the code and configurations for each respective business unit.
-Behind-the-scenes, these are containers run on Google Cloud Kubernetes. Each code location has it's
-own respective jobs, schedules, sensors, and assets.
+Each code location hosts and runs the code and configurations for each
+respective business unit. Behind-the-scenes, these are containers run on Google
+Cloud Kubernetes. Each code location has it's own respective jobs, schedules,
+sensors, and assets.
 
 ### dbt & Github
 
@@ -48,8 +49,8 @@ Before you merge:
 
 - [Private GKE Autopilot](https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters#public_cp)
   cluster
-- [Cloud NAT](https://cloud.google.com/nat/docs/gke-example#create-nat) provided static external IP
-  for the cluster
+- [Cloud NAT](https://cloud.google.com/nat/docs/gke-example#create-nat) provided
+  static external IP for the cluster
 - [Google Artifact Registry](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images)
 - Google Cloud services access prodivded by
   [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to)

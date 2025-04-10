@@ -6,10 +6,10 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    _check,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_now.sftp.assets import assets
@@ -45,7 +45,7 @@ def adp_wfn_sftp_sensor(
             if (
                 match is not None
                 and f.st_mtime > last_run
-                and _check.not_none(value=f.st_size) > 0
+                and check.not_none(value=f.st_size) > 0
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                 updates.append({"mtime": f.st_mtime})

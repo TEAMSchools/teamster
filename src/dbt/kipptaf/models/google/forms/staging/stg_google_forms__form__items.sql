@@ -80,20 +80,21 @@ with
         union all
 
         select
-            form_id,
-            item_id,
-            item_title,
-            item_description,
+            items.form_id,
+            items.item_id,
+            items.item_title,
+            items.item_description,
 
-            question_group_item.image.alttext as image_alt_text,
-            question_group_item.image.contenturi as image_content_uri,
-            question_group_item.image.properties.alignment as image_alignment,
-            question_group_item.image.properties.width as image_width,
-            question_group_item.image.sourceuri as image_source_uri,
+            items.question_group_item.image.alttext as image_alt_text,
+            items.question_group_item.image.contenturi as image_content_uri,
+            items.question_group_item.image.properties.alignment as image_alignment,
+            items.question_group_item.image.properties.width as image_width,
+            items.question_group_item.image.sourceuri as image_source_uri,
 
-            question_group_item.grid.shufflequestions
+            items.question_group_item.grid.shufflequestions
             as question_group_grid_shuffle_questions,
-            question_group_item.grid.columns.type as question_group_grid_columns_type,
+            items.question_group_item.grid.columns.type
+            as question_group_grid_columns_type,
 
             question,
 
@@ -113,8 +114,8 @@ with
             gco.gotosectionid as go_to_section_id,
         #}
         from items
-        cross join unnest(question_group_item.questions) as question
-        where question_group_item is not null
+        cross join unnest(items.question_group_item.questions) as question
+        where items.question_group_item is not null
     {#
         cross join unnest(question_group_item.grid.columns.options) as gco
     #}

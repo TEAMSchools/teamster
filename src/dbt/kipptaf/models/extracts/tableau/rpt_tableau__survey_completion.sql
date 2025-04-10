@@ -1,3 +1,4 @@
+{# TODO: check uniqueness #}
 select
     sl.employee_number,
     sl.assignment_status,
@@ -23,7 +24,6 @@ select
     if(sr.date_submitted is not null, 1, 0) as completion,
 
     max(datetime(sr.date_submitted, 'America/New_York')) as date_submitted,
-
 from {{ ref("rpt_tableau__survey_links") }} as sl
 left join
     {{ ref("rpt_tableau__survey_responses") }} as sr
@@ -31,6 +31,8 @@ left join
     and sl.academic_year = sr.academic_year
     and sl.survey_round = sr.survey_code
     and sr.rn = 1
+    and (sl.survey_round not like '%TNTP%' or sl.survey_round not like '%GAL%')
+
 group by
     sl.employee_number,
     sl.assignment_status,

@@ -2,14 +2,15 @@ import re
 from datetime import datetime, timezone
 from typing import Mapping
 
-from dagster import MultiPartitionKey, _check
+from dagster import MultiPartitionKey
+from dagster_shared import check
 
 from teamster.core.utils.classes import FiscalYear
 
 
 def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):
     for group in re.findall(r"\(\?P<\w+>[\w\+\-\.\[\]\{\}\/\\\|]*\)", pattern):
-        match = _check.not_none(
+        match = check.not_none(
             value=re.search(pattern=r"(?<=<)(\w+)(?=>)", string=group)
         )
 

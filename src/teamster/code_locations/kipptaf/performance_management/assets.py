@@ -6,10 +6,10 @@ from dagster import (
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
-    _check,
     asset,
 )
 from dagster_gcp import BigQueryResource
+from dagster_shared import check
 from google.cloud.bigquery import DatasetReference
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
@@ -143,7 +143,7 @@ def get_isolation_forest(df: pandas.DataFrame):
     ],
 )
 def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResource):
-    partition_key = _check.inst(context.partition_key, MultiPartitionKey)
+    partition_key = check.inst(context.partition_key, MultiPartitionKey)
 
     # load data from extract view
     with db_bigquery.get_client() as bq:
@@ -163,7 +163,7 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
     df_global.reset_index(inplace=True, drop=True)
 
     # subset current year/term
-    df_current = _check.inst(
+    df_current = check.inst(
         obj=df_global[
             (
                 df_global["academic_year"]

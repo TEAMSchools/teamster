@@ -1,4 +1,5 @@
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Response, Session, exceptions
 from tenacity import retry, stop_after_attempt, wait_exponential_jitter
@@ -18,7 +19,7 @@ class AdpWorkforceManagerResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
         self._base_url = f"https://{self.subdomain}.mykronos.com/api"
 
         self._session.headers["appkey"] = self.app_key

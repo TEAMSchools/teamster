@@ -4,10 +4,10 @@ from dagster import (
     AssetsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
-    _check,
     instance_for_test,
     materialize,
 )
+from dagster_shared import check
 
 from teamster.core.resources import SSH_COUCHDROP, get_io_manager_gcs_avro
 
@@ -57,16 +57,16 @@ def test_adp_payroll_general_ledger_file_kipptaf():
     date_key = "20241130"
     group_code_key = "47S"
 
-    partitions_def = _check.inst(
+    partitions_def = check.inst(
         obj=general_ledger_file.partitions_def, ttype=MultiPartitionsDefinition
     )
 
-    date_partitions_def = _check.inst(
+    date_partitions_def = check.inst(
         obj=partitions_def.get_partitions_def_for_dimension("date"),
         ttype=DynamicPartitionsDefinition,
     )
 
-    partitions_def_name = _check.not_none(value=date_partitions_def.name)
+    partitions_def_name = check.not_none(value=date_partitions_def.name)
 
     with instance_for_test() as instance:
         instance.add_dynamic_partitions(
