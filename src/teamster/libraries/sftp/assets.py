@@ -8,9 +8,9 @@ from dagster import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
-    _check,
     asset,
 )
+from dagster_shared import check
 from numpy import nan
 from pandas import read_csv
 from pypdf import PdfReader
@@ -133,11 +133,11 @@ def build_sftp_file_asset(
             partition_key = None
 
         if group_name == "iready":
-            partition_key = _check.inst(obj=partition_key, ttype=MultiPartitionKey)
+            partition_key = check.inst(obj=partition_key, ttype=MultiPartitionKey)
 
             academic_year_key, subject_key = partition_key.keys_by_dimension.values()
 
-            multi_partitions_def = _check.inst(
+            multi_partitions_def = check.inst(
                 obj=context.assets_def.partitions_def, ttype=MultiPartitionsDefinition
             )
 
@@ -214,7 +214,7 @@ def build_sftp_file_asset(
         elif remote_file_regex[-4:] == ".pdf":
             records, n_rows = extract_pdf_to_dict(
                 stream=local_filepath,
-                pdf_row_pattern=_check.not_none(value=pdf_row_pattern),
+                pdf_row_pattern=check.not_none(value=pdf_row_pattern),
             )
         else:
             read_csv_kwargs: dict[str, object] = {

@@ -1,7 +1,8 @@
 from email.message import EmailMessage
 from smtplib import SMTP
 
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
 
 
@@ -17,7 +18,7 @@ class EmailResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext):
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         self._server = SMTP(host=self.host, port=self.port, timeout=self.timeout)
         self._server.set_debuglevel(1)  # Enable for troubleshooting
