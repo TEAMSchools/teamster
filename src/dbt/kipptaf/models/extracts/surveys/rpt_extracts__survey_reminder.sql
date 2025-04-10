@@ -5,3 +5,4 @@ where
     and is_current
     and completion = 0
     and academic_year = {{ var("current_academic_year") }}
+    and survey not in ('Gallup Q12 Survey', 'TNTP Insight')
