@@ -52,7 +52,7 @@ with
             and sr.primary_indicator
             and sr.work_assignment_actual_start_date
             >= date_sub(current_date(), interval 3 week)
-    ),
+    )
 /* Staff Info and Cert */
 select
     r.employee_number,
