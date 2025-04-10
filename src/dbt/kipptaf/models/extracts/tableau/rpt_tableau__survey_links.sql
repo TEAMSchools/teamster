@@ -47,9 +47,12 @@ with
         left join
             {{ ref("int_people__staff_roster") }} as mgr
             on sr.reports_to_employee_number = mgr.employee_number
-        where sr.assignment_status in ('Active', 'Leave')
+        where
+            sr.assignment_status = 'Active'
+            and sr.primary_indicator
+            and sr.work_assignment_actual_start_date
+            >= date_sub(current_date(), interval 3 week)
     )
-
 /* Staff Info and Cert */
 select
     r.employee_number,
