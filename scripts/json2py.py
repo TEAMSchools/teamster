@@ -17,6 +17,7 @@ def main() -> None:
 
     input_file: pathlib.Path = args.input_file
 
+    # trunk-ignore(bandit/B603)
     subprocess.run(
         args=[
             "datamodel-codegen",

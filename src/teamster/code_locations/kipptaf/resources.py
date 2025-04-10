@@ -1,6 +1,7 @@
-from dagster import EnvVar, _check
+from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudWorkspace
 from dagster_dlt import DagsterDltResource
+from dagster_shared import check
 
 from teamster.libraries.adp.workforce_manager.resources import (
     AdpWorkforceManagerResource,
@@ -9,6 +10,7 @@ from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowRe
 from teamster.libraries.amplify.dibels.resources import DibelsDataSystemResource
 from teamster.libraries.amplify.mclass.resources import MClassResource
 from teamster.libraries.coupa.resources import CoupaResource
+from teamster.libraries.email.resources import EmailResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
@@ -57,6 +59,14 @@ DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
 )
 
 DLT_RESOURCE = DagsterDltResource()
+
+OUTLOOK_RESOURCE = EmailResource(
+    host=EnvVar("OUTLOOK_HOST"),
+    port=int(check.not_none(value=EnvVar("OUTLOOK_PORT").get_value())),
+    user=EnvVar("OUTLOOK_USER"),
+    password=EnvVar("OUTLOOK_PASSWORD"),
+    chunk_size=450,
+)
 
 GOOGLE_DRIVE_RESOURCE = GoogleDriveResource()
 
@@ -159,7 +169,7 @@ SSH_RESOURCE_IDAUTO = SSHResource(
 
 SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_host=EnvVar("LITTLESIS_SFTP_HOST"),
-    remote_port=int(_check.not_none(value=EnvVar("LITTLESIS_SFTP_PORT").get_value())),
+    remote_port=int(check.not_none(value=EnvVar("LITTLESIS_SFTP_PORT").get_value())),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
 )

@@ -14,10 +14,11 @@
 
 ### SQL
 
-- [ ] Ensure you are using the `union_dataset_join_clause()` macro for queries that employ any
-      models using these datasets: `deanslist` `edplan` `iready` `overgrad` `pearson` `powerschool`
-      `renlearn` `titan`
-- [ ] All `distinct` usage must be accompanied by an comment explaining it's necessity
+- [ ] Ensure you are using the `union_dataset_join_clause()` macro for queries
+      that employ any models using these datasets: `deanslist` `edplan` `iready`
+      `overgrad` `pearson` `powerschool` `renlearn` `titan`
+- [ ] All `distinct` usage must be accompanied by an comment explaining it's
+      necessity
 - [ ] If you are adding a new external source, run:
 
       dbt run-operation stage_external_sources --vars
