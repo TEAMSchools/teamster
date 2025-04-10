@@ -15,10 +15,10 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     StaticPartitionsDefinition,
-    _check,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -85,8 +85,8 @@ def build_couchdrop_sftp_sensor(
                 (f, path)
                 for f, path in files
                 if pattern.match(string=path)
-                and _check.not_none(value=f.st_mtime) > cursor_st_mtime
-                and _check.not_none(value=f.st_size) > 0
+                and check.not_none(value=f.st_mtime) > cursor_st_mtime
+                and check.not_none(value=f.st_size) > 0
             ]
 
             for f, path in file_matches:
@@ -95,7 +95,7 @@ def build_couchdrop_sftp_sensor(
                 if f_st_mtime > max_st_mtime:
                     max_st_mtime = f_st_mtime
 
-                match = _check.not_none(value=pattern.match(string=path))
+                match = check.not_none(value=pattern.match(string=path))
 
                 if isinstance(a.partitions_def, MultiPartitionsDefinition):
                     partition_key = MultiPartitionKey(match.groupdict())

@@ -5,9 +5,11 @@ from urllib.parse import urlparse
 
 import fastavro
 from dagster import Any, InputContext, MultiPartitionKey, OutputContext
+
+# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._utils.backoff import backoff
-from dagster._utils.cached_method import cached_method
 from dagster_gcp.gcs import GCSPickleIOManager, PickledObjectGCSIOManager
+from dagster_shared.utils.cached_method import cached_method
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud.storage import Bucket
 from upath import UPath

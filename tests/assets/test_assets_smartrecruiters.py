@@ -1,5 +1,8 @@
-from dagster import _check, materialize
+from dagster import materialize
+
+# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._core.events import StepMaterializationData
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf.resources import SMARTRECRUITERS_RESOURCE
 from teamster.code_locations.kipptaf.smartrecruiters.assets import (
@@ -25,11 +28,11 @@ def _test_asset(asset):
     asset_materialization_event = result.get_asset_materialization_events()[0]
     asset_check_evaluation = result.get_asset_check_evaluations()[0]
 
-    step_materialization_data = _check.inst(
+    step_materialization_data = check.inst(
         asset_materialization_event.event_specific_data, StepMaterializationData
     )
 
-    records = _check.inst(
+    records = check.inst(
         step_materialization_data.materialization.metadata["records"].value, int
     )
 

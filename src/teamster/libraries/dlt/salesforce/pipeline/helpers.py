@@ -60,6 +60,7 @@ def get_records(
 
         order_by = f"ORDER BY {replication_key} ASC"
 
+    # trunk-ignore(bandit/B608)
     query = f"SELECT {', '.join(fields)} FROM {sobject} {predicate} {order_by}"
 
     if not IS_PRODUCTION:

@@ -1,4 +1,5 @@
-from dagster import DagsterInstance, SensorResult, _check, build_sensor_context
+from dagster import DagsterInstance, SensorResult, build_sensor_context
+from dagster_shared import check
 
 from tests.utils import get_db_powerschool_resource, get_ssh_powerschool_resource
 
@@ -15,7 +16,7 @@ def _test(sensor, ssh_powerschool, db_powerschool):
     ) as context:
         sensor_results = sensor(context=context)
 
-    sensor_results = _check.inst(obj=sensor_results, ttype=SensorResult)
+    sensor_results = check.inst(obj=sensor_results, ttype=SensorResult)
 
     assert sensor_results.run_requests is not None
 

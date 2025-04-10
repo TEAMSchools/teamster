@@ -10,6 +10,7 @@ def main() -> None:
     commands = ["uv lock --upgrade", "uv sync"]
 
     for cmd in commands:
+        # trunk-ignore(bandit/B603)
         subprocess.run(args=cmd.split())
 
 

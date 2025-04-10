@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
-from dagster import AssetKey, EnvVar, _check, build_resources
+from dagster import AssetKey, EnvVar, build_resources
 from dagster_airbyte import AirbyteCloudWorkspace
+from dagster_shared import check
 
 
 def test_resource():
@@ -15,11 +16,11 @@ def test_resource():
     ) as resources:
         airbyte: AirbyteCloudWorkspace = resources.airbyte
 
-    connections_response = _check.not_none(
+    connections_response = check.not_none(
         airbyte.make_request(endpoint="/connections", method="GET")
     )
 
-    connections = _check.inst(connections_response["data"], dict)
+    connections = check.inst(connections_response["data"], dict)
 
     # airbyte_outputs: list[AirbyteOutput] = []
     for connection in connections:
@@ -35,7 +36,7 @@ def test_resource():
             }
         )
 
-        succeeded_jobs_response = _check.not_none(
+        succeeded_jobs_response = check.not_none(
             airbyte.make_request(endpoint=f"/jobs?{params}", method="GET")
         )
 

@@ -4,10 +4,10 @@ from dagster import (
     MultiPartitionsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
-    _check,
     define_asset_job,
     schedule,
 )
+from dagster_shared import check
 
 
 def build_amplify_dibels_schedule(
@@ -26,7 +26,7 @@ def build_amplify_dibels_schedule(
         execution_timezone=execution_timezone,
     )
     def _schedule(context: ScheduleEvaluationContext):
-        partitions_def = _check.inst(
+        partitions_def = check.inst(
             obj=job.partitions_def,
             ttype=MultiPartitionsDefinition,
         )
@@ -34,7 +34,7 @@ def build_amplify_dibels_schedule(
         grade_partitions_def = partitions_def.get_partitions_def_for_dimension("grade")
         date_partitions_def = partitions_def.get_partitions_def_for_dimension("date")
 
-        date_partition_key = _check.not_none(
+        date_partition_key = check.not_none(
             value=date_partitions_def.get_last_partition_key()
         )
 
