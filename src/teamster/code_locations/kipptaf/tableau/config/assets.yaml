@@ -152,6 +152,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__assignment_checks]
       - [kipptaf, tableau, rpt_tableau__gradebook_audit]
       - [kipptaf, tableau, rpt_tableau__gradebook_es_comments]
+      - [kipptaf, tableau, rpt_tableau__gradebook_ms_hs_comments]
       - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
     metadata:
       id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
