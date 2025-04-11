@@ -63,7 +63,7 @@ with
 
             max(audit_flag_value) as audit_flag_value,
         from {{ ref("int_tableau__gradebook_audit_flags") }}
-        where audit_category = 'Comments'
+        where audit_flag_name = 'qt_grade_70_comment_missing'
         group by all
     ),
 
@@ -123,7 +123,7 @@ with
             audit_flag_name,
             audit_flag_value as flag_value,
         from {{ ref("int_tableau__gradebook_audit_flags") }}
-        where audit_category = 'Comments'
+        where audit_flag_name = 'qt_grade_70_comment_missing'
     )
 
 select
@@ -168,8 +168,6 @@ select
     v.is_late,
     v.is_missing,
 
-    e.category_quarter_percent_grade as effort_grade,
-
     coalesce(v.flag_value, 0) as flag_value,
 from teacher_aggs as t
 inner join
@@ -184,17 +182,7 @@ inner join
     and t.audit_category = v.audit_category
     and t.cte_grouping = v.cte_grouping
     and t.audit_flag_name = v.audit_flag_name
-left join
-    {{ ref("int_tableau__gradebook_audit_flags") }} as e
-    on v.academic_year = e.academic_year
-    and v.region = e.region
-    and v.schoolid = e.schoolid
-    and v.quarter = e.quarter
-    and v.audit_qt_week_number = e.week_number_quarter
-    and v.sectionid = e.sectionid
-    and v.student_number = e.student_number
-    and e.audit_category = 'Effort Grade'
 where
     t.code_type = 'Quarter'
-    and t.audit_category = 'Comments'
+    and t.audit_flag_name = 'qt_grade_70_comment_missing'
     and t.audit_start_date <= current_date('{{ var("local_timezone") }}')
