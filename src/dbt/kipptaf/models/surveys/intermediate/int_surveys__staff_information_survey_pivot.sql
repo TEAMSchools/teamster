@@ -37,7 +37,7 @@ with
             last_submitted_timestamp,
             item_abbreviation,
             pivot_column_value,
-        from {{ ref("int_surveys__staff_info_archive_unpivot") }}
+        from {{ source("surveys", "int_surveys__staff_info_archive_unpivot") }}
     ),
 
     deduplicate as (

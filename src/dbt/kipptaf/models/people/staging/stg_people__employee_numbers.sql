@@ -23,7 +23,7 @@
 
 {% if env_var("DBT_CLOUD_ENVIRONMENT_TYPE", "") == "dev" %}
     select employee_number, adp_associate_id, adp_associate_id_legacy, is_active,
-    from {{ source("people", "stg_people__employee_numbers") }}
+    from {{ source("people", "src_people__employee_numbers") }}
     where is_active
 {% elif is_incremental() %}
     with

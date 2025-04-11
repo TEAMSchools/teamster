@@ -4,10 +4,10 @@ from dagster import (
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
-    _check,
     define_asset_job,
     schedule,
 )
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_now.api.assets import workers
@@ -35,7 +35,7 @@ job = define_asset_job(
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 def adp_wfn_api_workers_asset_schedule(context: ScheduleEvaluationContext) -> Generator:
-    partitions_def = _check.not_none(job.partitions_def)
+    partitions_def = check.not_none(job.partitions_def)
 
     partition_keys = partitions_def.get_partition_keys()
 

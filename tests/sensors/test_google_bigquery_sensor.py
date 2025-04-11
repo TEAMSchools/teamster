@@ -1,4 +1,5 @@
-from dagster import SensorResult, _check, build_sensor_context
+from dagster import SensorResult, build_sensor_context
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf._google.bigquery.sensors import (
     bigquery_table_modified_sensor,
@@ -13,7 +14,7 @@ def test_bigquery_table_sensor():
         context=context, db_bigquery=BIGQUERY_RESOURCE
     )
 
-    sensor_result = _check.inst(obj=sensor_result, ttype=SensorResult)
+    sensor_result = check.inst(obj=sensor_result, ttype=SensorResult)
 
     assert sensor_result.asset_events is not None
 

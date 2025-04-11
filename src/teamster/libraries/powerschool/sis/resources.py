@@ -1,7 +1,8 @@
 import pathlib
 
 import fastavro
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from oracledb import Connection, ConnectParams, Cursor, connect, defaults
 from pydantic import PrivateAttr
 from sqlalchemy import Select, TextClause
@@ -24,10 +25,9 @@ class PowerSchoolODBCResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        # trunk-ignore(pyright/reportAttributeAccessIssue)
         defaults.fetch_lobs = False
 
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         self._connect_params = ConnectParams(
             user=self.user,
@@ -82,7 +82,7 @@ class PowerSchoolODBCResource(ConfigurableResource):
                     }
                 )
 
-            cursor.rowfactory = lambda *args: dict(zip(columns, args))
+            cursor.rowfactory = lambda *args: dict(zip(columns, args, strict=False))
 
             output = self.result_to_avro(
                 cursor=cursor,

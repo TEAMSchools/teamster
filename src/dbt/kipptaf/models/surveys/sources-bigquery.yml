@@ -5,35 +5,27 @@ sources:
     schema: "{{ project_name }}_surveys"
     tables:
       - name: int_surveys__response_identifiers
-        config:
-          enabled: true
         meta:
           dagster:
             asset_key:
               - kipptaf
               - surveys
               - int_surveys__response_identifiers
+      - name: int_surveys__staff_info_archive_unpivot
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - surveys
+              - int_surveys__staff_info_archive_unpivot
       - name: stg_surveys__manager_survey_detail_archive
-        config:
-          enabled: true
         meta:
           dagster:
             asset_key:
               - kipptaf
               - surveys
               - stg_surveys__manager_survey_detail_archive
-      - name: stg_surveys__staff_info_archive
-        config:
-          enabled: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - surveys
-              - stg_surveys__staff_info_archive
       - name: stg_surveys__cmo_engagement_regional_survey_detail_archive
-        config:
-          enabled: true
         meta:
           dagster:
             asset_key:
