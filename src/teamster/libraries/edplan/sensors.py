@@ -8,10 +8,10 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    _check,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -53,12 +53,12 @@ def build_edplan_sftp_sensor(
             if (
                 match is not None
                 and f.st_mtime > last_run
-                and _check.not_none(value=f.st_size) > 0
+                and check.not_none(value=f.st_size) > 0
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                 partition_key = (
                     datetime.fromtimestamp(
-                        timestamp=_check.not_none(value=f.st_mtime), tz=timezone.utc
+                        timestamp=check.not_none(value=f.st_mtime), tz=timezone.utc
                     )
                     .date()
                     .isoformat()

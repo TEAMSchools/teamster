@@ -2,7 +2,8 @@ import re
 from datetime import datetime
 from io import StringIO
 
-from dagster import AssetExecutionContext, MultiPartitionKey, Output, _check, asset
+from dagster import AssetExecutionContext, MultiPartitionKey, Output, asset
+from dagster_shared import check
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
@@ -42,7 +43,7 @@ def build_amplify_dds_report_asset(
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: AssetExecutionContext, dds: DibelsDataSystemResource):
-        partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
+        partition_key = check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
 
         date_partition_key = datetime.fromisoformat(
             partition_key.keys_by_dimension["date"]

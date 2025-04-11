@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: int_surveys__staff_info_archive_unpivot
+    config:
+      enabled: false
     columns:
       - name: respondent_email
         data_type: string

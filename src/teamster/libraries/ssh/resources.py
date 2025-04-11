@@ -1,7 +1,7 @@
 import pathlib
 from stat import S_ISDIR, S_ISREG
 
-from dagster import _check
+from dagster import check
 from dagster_ssh import SSHResource as DagsterSSHResource
 from paramiko import SFTPAttributes, SFTPClient
 
@@ -42,14 +42,14 @@ class SSHResource(DagsterSSHResource):
         for file in sftp_client.listdir_attr(remote_dir):
             path = str(pathlib.Path(remote_dir) / file.filename)
 
-            if S_ISDIR(_check.not_none(value=file.st_mode)):
+            if S_ISDIR(check.not_none(value=file.st_mode)):
                 self._inner_listdir_attr_r(
                     sftp_client=sftp_client,
                     remote_dir=path,
                     exclude_dirs=exclude_dirs,
                     files=files,
                 )
-            elif S_ISREG(_check.not_none(value=file.st_mode)):
+            elif S_ISREG(check.not_none(value=file.st_mode)):
                 files.append((file, path))
 
         return files

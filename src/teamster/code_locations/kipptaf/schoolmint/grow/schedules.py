@@ -4,11 +4,11 @@ from dagster import (
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
-    _check,
     build_schedule_from_partitioned_job,
     define_asset_job,
     schedule,
 )
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.schoolmint.grow.assets import assignments
@@ -58,7 +58,7 @@ def schoolmint_grow_static_partition_asset_job_schedule(
 def schoolmint_grow_observations_asset_job_schedule(
     context: ScheduleEvaluationContext,
 ):
-    multi_partitions_def = _check.inst(
+    multi_partitions_def = check.inst(
         obj=schoolmint_grow_observations_asset_job.partitions_def,
         ttype=MultiPartitionsDefinition,
     )
@@ -70,7 +70,7 @@ def schoolmint_grow_observations_asset_job_schedule(
         multi_partitions_def.get_partitions_def_for_dimension("last_modified")
     )
 
-    last_modified_partition_key = _check.not_none(
+    last_modified_partition_key = check.not_none(
         value=last_modified_partitions_def.get_last_partition_key()
     )
 

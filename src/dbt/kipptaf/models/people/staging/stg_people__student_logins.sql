@@ -24,7 +24,7 @@
 
 {% if env_var("DBT_CLOUD_ENVIRONMENT_TYPE", "") == "dev" %}
     select student_number, username, default_password, google_email,
-    from {{ source("people", "stg_people__student_logins") }}
+    from {{ source("people", "src_people__student_logins") }}
 {% elif is_incremental() %}
     with
         components as (

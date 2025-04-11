@@ -14,10 +14,10 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
-    _check,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 from dateutil.relativedelta import relativedelta
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
@@ -117,7 +117,7 @@ def build_powerschool_asset_sensor(
                         )
                         continue
 
-                    metadata = _check.not_none(
+                    metadata = check.not_none(
                         value=latest_materialization_event.asset_materialization
                     ).metadata
 
@@ -125,7 +125,7 @@ def build_powerschool_asset_sensor(
 
                     # request run if table modified count > 0
                     if partition_column is not None:
-                        timestamp = _check.inst(
+                        timestamp = check.inst(
                             obj=metadata["latest_materialization_timestamp"].value,
                             ttype=float,
                         )
@@ -138,7 +138,7 @@ def build_powerschool_asset_sensor(
                             .isoformat(timespec="microseconds")
                         )
 
-                        [(modified_count,)] = _check.inst(
+                        [(modified_count,)] = check.inst(
                             db_powerschool.execute_query(
                                 connection=connection,
                                 query=get_query_text(
@@ -169,7 +169,7 @@ def build_powerschool_asset_sensor(
                             continue
 
                     # request run if table count doesn't match latest materialization
-                    [(table_count,)] = _check.inst(
+                    [(table_count,)] = check.inst(
                         db_powerschool.execute_query(
                             connection=connection,
                             query=get_query_text(table=table_name, column=None),
@@ -230,7 +230,7 @@ def build_powerschool_asset_sensor(
                             )
                             continue
 
-                        metadata = _check.not_none(
+                        metadata = check.not_none(
                             value=event_records.records[0].asset_materialization
                         ).metadata
 
@@ -241,7 +241,7 @@ def build_powerschool_asset_sensor(
 
                         # request run if last partition modified count > 0
                         if partition_key == last_partition_key:
-                            timestamp = _check.inst(
+                            timestamp = check.inst(
                                 obj=metadata["latest_materialization_timestamp"].value,
                                 ttype=float,
                             )
@@ -254,7 +254,7 @@ def build_powerschool_asset_sensor(
                                 .isoformat(timespec="microseconds")
                             )
 
-                            [(modified_count,)] = _check.inst(
+                            [(modified_count,)] = check.inst(
                                 db_powerschool.execute_query(
                                     connection=connection,
                                     query=get_query_text(
@@ -301,7 +301,7 @@ def build_powerschool_asset_sensor(
                             timespec="microseconds"
                         )
 
-                        [(partition_count,)] = _check.inst(
+                        [(partition_count,)] = check.inst(
                             db_powerschool.execute_query(
                                 connection=connection,
                                 query=get_query_text(
