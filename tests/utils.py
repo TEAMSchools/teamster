@@ -12,7 +12,9 @@ def get_ssh_powerschool_resource(code_location: str):
             check.not_none(value=EnvVar(f"PS_SSH_PORT_{code_location}").get_value())
         ),
         username=EnvVar(f"PS_SSH_USERNAME_{code_location}"),
+        password=EnvVar(f"PS_SSH_PASSWORD_{code_location}"),
         tunnel_remote_host=EnvVar(f"PS_SSH_REMOTE_BIND_HOST_{code_location}"),
+        test=True,
     )
 
 
