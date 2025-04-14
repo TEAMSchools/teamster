@@ -3,13 +3,13 @@ import random
 from dagster import materialize
 from dagster_shared import check
 
-from teamster.core.resources import (
-    get_io_manager_gcs_file,
-)
-from tests.utils import get_db_powerschool_resource, get_ssh_powerschool_resource
-
 
 def _test_asset(assets, asset_name: str, code_location: str):
+    from teamster.core.resources import (
+        get_io_manager_gcs_file,
+    )
+    from tests.utils import get_db_powerschool_resource, get_ssh_powerschool_resource
+
     asset = [a for a in assets if a.key.path[-1] == asset_name][0]
 
     if asset.partitions_def is not None:
@@ -218,4 +218,124 @@ def test_u_storedgrades_de_kippcamden():
         assets=assets,
         asset_name="u_storedgrades_de",
         code_location=CODE_LOCATION.upper(),
+    )
+
+
+def test_gpnode_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(assets=assets, asset_name="gpnode", code_location=CODE_LOCATION.upper())
+
+
+def test_gpprogresssubject_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpprogresssubject",
+        code_location=CODE_LOCATION.upper(),
+    )
+
+
+def test_gpprogresssubjectearned_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpprogresssubjectearned",
+        code_location=CODE_LOCATION.upper(),
+    )
+
+
+def test_gpprogresssubjectenrolled_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpprogresssubjectenrolled",
+        code_location=CODE_LOCATION.upper(),
+    )
+
+
+def test_gpprogresssubjectrequested_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpprogresssubjectrequested",
+        code_location=CODE_LOCATION.upper(),
+    )
+
+
+def test_gpprogresssubjectwaived_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpprogresssubjectwaived",
+        code_location=CODE_LOCATION.upper(),
+    )
+
+
+def test_gpprogresssubjwaivedapplied_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpprogresssubjwaivedapplied",
+        code_location=CODE_LOCATION.upper(),
+    )
+
+
+def test_gpselectedcrs_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets, asset_name="gpselectedcrs", code_location=CODE_LOCATION.upper()
+    )
+
+
+def test_gpselectedcrtype_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets,
+        asset_name="gpselectedcrtype",
+        code_location=CODE_LOCATION.upper(),
+    )
+
+
+def test_gpselector_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets, asset_name="gpselector", code_location=CODE_LOCATION.upper()
+    )
+
+
+def test_gptarget_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets, asset_name="gptarget", code_location=CODE_LOCATION.upper()
+    )
+
+
+def test_gpversion_kippcamden():
+    from teamster.code_locations.kippcamden import CODE_LOCATION
+    from teamster.code_locations.kippcamden.powerschool import assets
+
+    _test_asset(
+        assets=assets, asset_name="gpversion", code_location=CODE_LOCATION.upper()
     )
