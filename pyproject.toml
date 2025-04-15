@@ -30,6 +30,7 @@ dependencies = [
   "pypdf>=5.0.0",
   "python-dateutil>=2.9.0.post0",
   "scikit-learn>=1.4.0",
+  "simple-salesforce>=1.12.6",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
 ]
