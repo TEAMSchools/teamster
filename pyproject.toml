@@ -15,7 +15,6 @@ dependencies = [
   "dagster-dlt",
   "dagster-gcp",
   "dagster-k8s",
-  "dagster-slack",
   "dagster-ssh",
   "dbt-bigquery>=1.9,<1.10",
   "dbt-core",

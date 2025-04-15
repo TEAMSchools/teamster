@@ -1,38 +1,31 @@
-from dagster import OpExecutionContext, op
-from dagster_slack import SlackResource
+from dagster import Failure, OpExecutionContext, op
 
 from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 
 
 @op
 def schoolmint_grow_user_update_op(
-    context: OpExecutionContext,
-    schoolmint_grow: SchoolMintGrowResource,
-    slack: SlackResource,
-    users,
+    context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource, users
 ):
     exceptions = []
-
-    slack_client = slack.get_client()
 
     for u in users:
         if u["surrogate_key_source"] == u["surrogate_key_destination"]:
             continue
 
+        method = None
         request_args = ["users"]
 
         user_id = u["user_id"]
         inactive = u["inactive"]
         user_email = u["user_email"]
 
-        exception_str = [user_email]
-
         # restore
         if inactive == 0 and u["archived_at"] is not None:
             try:
                 context.log.info(f"RESTORING\t{user_email}")
+                method = "PUT"
                 request_args.extend([user_id, "restore"])
-                exception_str.extend([*request_args, "PUT"])
 
                 schoolmint_grow.put(
                     *request_args, params={"district": schoolmint_grow.district_id}
@@ -40,11 +33,16 @@ def schoolmint_grow_user_update_op(
 
                 # reset vars for update
                 request_args = ["users"]
-                exception_str = [user_email]
             except Exception as e:
-                exception_str.append(str(e))
+                exception_details = {
+                    "user_email": user_email,
+                    "request_args": request_args,
+                    "method": method,
+                    "exception": e,
+                }
 
-                exceptions.append("\t".join(exception_str))
+                context.log.error(exception_details)
+                exceptions.append(exception_details)
 
                 continue
 
@@ -68,7 +66,7 @@ def schoolmint_grow_user_update_op(
             # create
             if inactive == 0 and user_id is None:
                 context.log.info(f"CREATING\t{user_email}")
-                exception_str.extend([*request_args, "POST"])
+                method = "POST"
 
                 create_response = schoolmint_grow.post(*request_args, json=payload)
 
@@ -76,34 +74,33 @@ def schoolmint_grow_user_update_op(
             # update
             elif inactive == 0 and user_id is not None:
                 context.log.info(f"UPDATING\t{user_email}")
+                method = "PUT"
                 request_args.append(user_id)
-                exception_str.extend([*request_args, "PUT"])
 
                 schoolmint_grow.put(*request_args, json=payload)
             # archive
             elif inactive == 1 and user_id is not None and u["archived_at"] is None:
                 context.log.info(f"ARCHIVING\t{user_email}")
+                method = "DELETE"
                 request_args.append(user_id)
-                exception_str.extend([*request_args, "DELETE"])
 
                 schoolmint_grow.delete(*request_args)
         except Exception as e:
-            exception_str.append(str(e))
-            exception_str.append(str(payload))
+            exception_details = {
+                "user_email": user_email,
+                "request_args": request_args,
+                "method": method,
+                "payload": payload,
+                "exception": e,
+            }
 
-            exceptions.append("\n".join(exception_str))
+            context.log.error(exception_details)
+            exceptions.append(exception_details)
 
             continue
 
     if exceptions:
-        exceptions.insert(0, "*`schoolmint_grow_user_update_op` errors:*")
-        exceptions.insert(
-            1, f"https://kipptaf.dagster.cloud/prod/runs/{context.run_id}"
-        )
-
-        slack_client.chat_postMessage(
-            channel="#dagster-alerts", text="\n".join(exceptions)
-        )
+        raise Failure(metadata={"exceptions": exceptions}, allow_retries=False)
 
     return users
 
