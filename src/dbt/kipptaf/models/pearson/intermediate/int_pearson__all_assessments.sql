@@ -26,6 +26,8 @@ with
                     "period",
                     "statestudentidentifier",
                     "localstudentidentifier",
+                    "firstname",
+                    "lastorsurname",
                     "studentwithdisabilities",
                     "subject",
                     "testcode",
