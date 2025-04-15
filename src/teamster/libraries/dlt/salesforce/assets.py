@@ -1,3 +1,5 @@
+import logging
+
 from dagster import AssetExecutionContext, AssetKey
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import pipeline
@@ -45,7 +47,7 @@ def build_salesforce_kippadb_dlt_assets(
         pipeline_name="kippadb",
         destination=bigquery(),
         dataset_name=f"dagster_{code_location}_dlt_kippadb",
-        progress=LogCollector(dump_system_stats=False),
+        progress=LogCollector(dump_system_stats=False, log_level=logging.DEBUG),
     )
 
     @dlt_assets(
