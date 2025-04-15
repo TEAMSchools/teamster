@@ -1,9 +1,7 @@
 select
-    coursenumber,
-    -- whencreated,
     /* records */
     id.int_value as id,
-    gpprogresssubjectid.int_value as gpprogresssubjectid,
-    schedulerequestsdcid.int_value as schedulerequestsdcid,
-    requestedcredits.double_value as requestedcredits,
+    gpselectorid.int_value as gpselectorid,
+    gpnodeid.int_value as gpnodeid,
+    sortorder.int_value as sortorder,
 from {{ source("powerschool", "src_powerschool__gptarget") }}
