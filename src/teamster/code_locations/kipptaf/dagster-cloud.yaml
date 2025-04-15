@@ -369,11 +369,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: SLACK_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-slack-api
-                    key: credential
               - name: ILLUMINATE_DB_DRIVERNAME
                 valueFrom:
                   secretKeyRef:
@@ -762,11 +757,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: SLACK_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-slack-api
-                    key: credential
               - name: ILLUMINATE_DB_DRIVERNAME
                 valueFrom:
                   secretKeyRef:

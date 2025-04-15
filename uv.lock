@@ -523,19 +523,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-slack"
-version = "0.26.10"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "dagster" },
-    { name = "slack-sdk" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/de/d9/884d8cb9d7651059aac64b2c887a451903157127da8ec8c628d75876ab85/dagster-slack-0.26.10.tar.gz", hash = "sha256:8fdbbc764c3b7617c43f0f615f6abd3daa45b72d4374dd7c9436330f1dbbb463", size = 9955 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/a0/f1bdb4edcc9f5a2ad0bd2e0255d3d06c182e787b6c8d05af41df505805a1/dagster_slack-0.26.10-py3-none-any.whl", hash = "sha256:0d3c0d9279f9ce71d44577a570615fedd2123ee9969f4af98c293742a3a430fb", size = 11118 },
-]
-
-[[package]]
 name = "dagster-ssh"
 version = "0.26.10"
 source = { registry = "https://pypi.org/simple" }
@@ -2565,15 +2552,6 @@ wheels = [
 ]
 
 [[package]]
-name = "slack-sdk"
-version = "3.35.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/32/a5/13077a5696ded22cc955ff6314028b7e6140b1c989b19ca27a6b26590e6e/slack_sdk-3.35.0.tar.gz", hash = "sha256:8183b6cbf26a0c1e2441478cd9c0dc4eef08d60c1394cfdc9a769e309a9b6459", size = 232887 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/32/8e/eed71dc79a187ba32681f12a104786ab89355bc474082211d92e1fba6bcf/slack_sdk-3.35.0-py2.py3-none-any.whl", hash = "sha256:00933d171fbd8a068b321ebb5f89612cc781d3183d8e3447c85499eca9d865be", size = 293272 },
-]
-
-[[package]]
 name = "smmap"
 version = "5.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2747,7 +2725,6 @@ dependencies = [
     { name = "dagster-dlt" },
     { name = "dagster-gcp" },
     { name = "dagster-k8s" },
-    { name = "dagster-slack" },
     { name = "dagster-ssh" },
     { name = "dbt-bigquery" },
     { name = "dbt-core" },
@@ -2782,7 +2759,6 @@ requires-dist = [
     { name = "dagster-dlt" },
     { name = "dagster-gcp" },
     { name = "dagster-k8s" },
-    { name = "dagster-slack" },
     { name = "dagster-ssh" },
     { name = "dbt-bigquery", specifier = ">=1.9,<1.10" },
     { name = "dbt-core" },
