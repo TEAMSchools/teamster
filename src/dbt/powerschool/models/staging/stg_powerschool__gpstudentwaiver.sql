@@ -14,13 +14,13 @@ select
     waiveddate,
 
     /* records */
-    gpwaiverconfigidforsource,
-    gpwaiverconfigidforreason,
-
     id.int_value as id,
     studentid.int_value as studentid,
     gpnodeidforwaived.int_value as gpnodeidforwaived,
     gpnodeidforelective.int_value as gpnodeidforelective,
     gpwaiverconfigidfortype.int_value as gpwaiverconfigidfortype,
     credithourswaived.double_value as credithourswaived,
+
+    gpwaiverconfigidforsource,
+    gpwaiverconfigidforreason,
 from deduplicate
