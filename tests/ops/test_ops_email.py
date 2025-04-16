@@ -23,8 +23,7 @@ def test_send_email_job():
         context=context,
         db_bigquery=BIGQUERY_RESOURCE,
         config=BigQueryOpConfig(
-            dataset_id="z_dev_kipptaf_extracts",
-            table_id="rpt_extracts__survey_reminder",
+            dataset_id="kipptaf_extracts", table_id="rpt_extracts__survey_reminder"
         ),
     )
 

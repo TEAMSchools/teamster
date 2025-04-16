@@ -1,6 +1,8 @@
 select
     statestudentidentifier,
     localstudentidentifier,
+    firstname,
+    lastorsurname,
 
     assessmentgrade,
     assessmentyear,
