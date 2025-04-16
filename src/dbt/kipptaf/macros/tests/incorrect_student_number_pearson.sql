@@ -15,4 +15,4 @@ left join
     and a.localstudentidentifier = e.student_number
 where
     a.academic_year >= 2017
-    and (student_number is null or localstudentidentifier is null)
+    and (e.student_number is null or a.localstudentidentifier is null)
