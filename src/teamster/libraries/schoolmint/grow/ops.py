@@ -1,4 +1,4 @@
-from dagster import Failure, OpExecutionContext, op
+from dagster import AssetCheckResult, OpExecutionContext, op
 
 from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 
@@ -100,7 +100,8 @@ def schoolmint_grow_user_update_op(
             continue
 
     if exceptions:
-        raise Failure(metadata={"exceptions": exceptions}, allow_retries=False)
+        yield AssetCheckResult(passed=False)
+        # raise Failure(metadata={"exceptions": exceptions}, allow_retries=False)
 
     return users
 
