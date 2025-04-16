@@ -5,7 +5,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
             - student_number
-            - final_grad_path
+            - grad_eligibility
           config:
             severity: warn
             store_failures: true
