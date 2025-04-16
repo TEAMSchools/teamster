@@ -104,9 +104,8 @@ def get_dbscan(df):
 
 
 def get_isolation_forest(df: pandas.DataFrame):
-    model = IsolationForest(
-        contamination="0.1"
-    )  # assuming 10% of the data are outliers
+    # trunk-ignore(pyright/reportArgumentType)
+    model = IsolationForest(contamination=0.1)  # assuming 10% of the data are outliers
 
     model.fit(X=df[FIT_TRANSFORM_COLUMNS])
 
