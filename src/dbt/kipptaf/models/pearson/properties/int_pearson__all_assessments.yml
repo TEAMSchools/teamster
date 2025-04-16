@@ -20,6 +20,10 @@ models:
         data_type: string
       - name: localstudentidentifier
         data_type: float64
+      - name: firstname
+        data_type: string
+      - name: lastorsurname
+        data_type: string
       - name: nativehawaiianorotherpacificislander
         data_type: string
       - name: period
