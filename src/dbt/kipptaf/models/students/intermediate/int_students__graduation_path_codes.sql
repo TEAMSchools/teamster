@@ -10,6 +10,7 @@ with
             e.state_studentnumber,
             e.salesforce_id,
             e.grade_level,
+            e.enroll_status,
             e.cohort,
             e.discipline,
             e.powerschool_credittype,
@@ -133,6 +134,7 @@ with
             s.state_studentnumber,
             s.salesforce_id,
             s.grade_level,
+            s.enroll_status,
             s.cohort,
             s.discipline,
             s.powerschool_credittype,
@@ -183,6 +185,7 @@ with
             s.state_studentnumber,
             s.salesforce_id,
             s.grade_level,
+            s.enroll_status,
             s.cohort,
             s.discipline,
             s.powerschool_credittype,
@@ -369,6 +372,7 @@ with
             l.state_studentnumber,
             l.salesforce_id,
             l.grade_level,
+            l.enroll_status,
             l.cohort,
             l.discipline,
             l.powerschool_credittype,
@@ -481,3 +485,5 @@ left join
     and r.attempted_njgpa_math = g.attempted_njgpa_math
     and r.met_ela = g.met_ela
     and r.met_math = g.met_math
+    -- where r.enroll_status = 0
+    
