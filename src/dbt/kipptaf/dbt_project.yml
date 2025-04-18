@@ -237,6 +237,8 @@ models:
     surveys:
       +schema: surveys
       +materialized: table
+      disabled:
+        +enabled: false
     tableau:
       +schema: tableau
       staging:

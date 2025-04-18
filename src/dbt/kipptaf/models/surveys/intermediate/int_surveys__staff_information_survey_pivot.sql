@@ -6,7 +6,7 @@ with
             last_submitted_timestamp,
 
             coalesce(text_value, file_upload_file_id) as pivot_column_value,
-        from {{ ref("base_google_forms__form_responses") }}
+        from {{ ref("int_google_forms__form_responses") }}
         where form_id = '1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA'
     ),
 
