@@ -48,6 +48,8 @@ with
                 then false
             end as pre_met_pathway_cutoff,
 
+            if(u.values_column = 'M', true, false) as pre_attempted_njgpa_subject,
+
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
             {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as u
@@ -150,9 +152,11 @@ with
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
 
             if(nj.attempted_njgpa_ela is not null, true, false) as attempted_njgpa_ela,
+
             if(
                 nj.attempted_njgpa_math is not null, true, false
             ) as attempted_njgpa_math,
+
         from students as s
         left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         left join
@@ -228,15 +232,15 @@ with
             s.pre_met_pathway_cutoff as met_pathway_cutoff,
 
             case
-                when s.discipline = 'ELA' and s.ps_grad_path_code = 'M'
-                then true
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
                 when nj.attempted_njgpa_ela is not null
                 then true
             end as attempted_njgpa_ela,
 
             case
-                when s.discipline = 'Math' and s.ps_grad_path_code = 'M'
-                then true
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
                 when nj.attempted_njgpa_math is not null
                 then true
             end as attempted_njgpa_math,
@@ -465,6 +469,7 @@ select
     row_number() over (
         partition by r.student_number, r.discipline order by r.pathway_option
     ) as rn_discipline_distinct,
+
 from roster as r
 left join
     {{ ref("stg_reporting__graduation_paths_combos") }} as g

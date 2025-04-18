@@ -79,7 +79,7 @@ models:
         data_type: string
       - name: grad_eligibility
         data_type: string
-        tests:
+        data_tests:
           - accepted_values:
               values:
                 - Grad Eligible

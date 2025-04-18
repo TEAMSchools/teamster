@@ -1,6 +1,14 @@
 version: 2
 models:
   - name: rpt_tableau__graduation_requirements
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - student_number
+            - grad_eligibility
+          config:
+            severity: warn
+            store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string

@@ -4,7 +4,6 @@ from dagster import EnvVar
 from dagster_dbt import DbtCliResource
 from dagster_gcp import BigQueryResource, GCSResource
 from dagster_shared import check
-from dagster_slack import SlackResource
 
 from teamster import GCS_PROJECT_NAME
 from teamster.core.io_managers.gcs import GCSIOManager
@@ -85,8 +84,6 @@ DEANSLIST_RESOURCE = DeansListResource(
 )
 
 OVERGRAD_RESOURCE = OvergradResource(api_key=EnvVar("OVERGRAD_API_KEY"), page_limit=100)
-
-SLACK_RESOURCE = SlackResource(token=EnvVar("SLACK_TOKEN"))
 
 SSH_COUCHDROP = SSHResource(
     remote_host=EnvVar("COUCHDROP_SFTP_HOST"),

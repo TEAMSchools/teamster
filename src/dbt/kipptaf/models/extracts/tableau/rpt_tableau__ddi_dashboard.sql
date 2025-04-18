@@ -103,11 +103,17 @@ with
             cc.teachernumber as course_teachernumber,
             cc.teacher_lastfirst as course_teacher_name,
 
+            sf.dibels_most_recent_composite,
+            sf.state_test_proficiency,
+            sf.is_exempt_iready,
+
             hr.sections_section_number as homeroom_section,
             hr.teachernumber as homeroom_teachernumber,
             hr.teacher_lastfirst as homeroom_teacher_name,
 
             lc.head_of_school_preferred_name_lastfirst as head_of_school,
+
+            coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
 
             cast(r.assessment_id as string) as assessment_id,
 
@@ -159,6 +165,10 @@ with
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
         left join
+            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
+            on co.student_number = sf.student_number
+            and cc.courses_credittype = sf.powerschool_credittype
+        left join
             {{ ref("base_powerschool__course_enrollments") }} as hr
             on co.studentid = hr.cc_studentid
             and co.yearid = hr.cc_yearid
@@ -172,7 +182,7 @@ with
             on co.schoolid = lc.home_work_location_powerschool_school_id
         where
             co.enroll_status = 0
-            and co.academic_year >= {{ var("current_academic_year") - 1 }}
+            and co.academic_year = {{ var("current_academic_year") }}
             and not co.is_out_of_district
             {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
@@ -264,6 +274,10 @@ select
     co.assessment_id,
     co.is_mastery_int,
     co.is_complete,
+    co.dibels_most_recent_composite,
+    co.state_test_proficiency,
+    co.is_exempt_iready,
+    co.nj_student_tier,
 
     qbls.qbl,
 
@@ -272,18 +286,12 @@ select
     g.region_goal,
     g.organization_goal,
 
-    sf.dibels_most_recent_composite,
-    sf.state_test_proficiency,
-    sf.is_exempt_iready,
-
     coalesce(
         ip.total_iready_lessons_passed_reading, 0
     ) as total_iready_lessons_passed_reading,
     coalesce(
         ip.total_iready_lessons_passed_math, 0
     ) as total_iready_lessons_passed_math,
-
-    coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
 
     if(qbls.qbl is not null, true, false) as is_qbl,
 
@@ -375,6 +383,10 @@ select
     co.assessment_id,
     co.is_mastery_int,
     co.is_complete,
+    co.dibels_most_recent_composite,
+    co.state_test_proficiency,
+    co.is_exempt_iready,
+    co.nj_student_tier,
 
     qbls.qbl,
 
@@ -383,13 +395,8 @@ select
     g.region_goal,
     g.organization_goal,
 
-    null as dibels_most_recent_composite,
-    null as state_test_proficiency,
-    null as is_exempt_iready,
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
-
-    coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
 
     if(qbls.qbl is not null, true, false) as is_qbl,
 
@@ -509,17 +516,17 @@ select
     o.row_score as is_mastery_int,
 
     null as is_complete,
+    null as dibels_most_recent_composite,
+    null as state_test_proficiency,
+    null as is_exempt_iready,
+    null as nj_student_tier,
     null as qbl,
     null as grade_goal,
     null as school_goal,
     null as region_goal,
     null as organization_goal,
-    null as dibels_most_recent_composite,
-    null as state_test_proficiency,
-    null as is_exempt_iready,
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
-    null as nj_student_tier,
     null as is_qbl,
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
@@ -549,4 +556,6 @@ left join
     microgoals as m
     on r.employee_number = m.employee_number
     and w.week_start_monday = m.week_start_monday
-where o.observation_type_abbreviation = 'WT'
+where
+    o.observation_type_abbreviation = 'WT'
+    and w.academic_year = {{ var("current_academic_year") }}

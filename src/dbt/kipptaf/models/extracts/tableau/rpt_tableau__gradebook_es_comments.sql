@@ -63,10 +63,7 @@ with
 
             max(audit_flag_value) as audit_flag_value,
         from {{ ref("int_tableau__gradebook_audit_flags") }}
-        where
-            audit_category = 'Comments'
-            or concat(region_school_level, audit_flag_name)
-            = 'MiamiMSqt_grade_70_comment_missing'
+        where audit_category = 'Comments'
         group by all
     ),
 
@@ -126,10 +123,7 @@ with
             audit_flag_name,
             audit_flag_value as flag_value,
         from {{ ref("int_tableau__gradebook_audit_flags") }}
-        where
-            audit_category = 'Comments'
-            or concat(region_school_level, audit_flag_name)
-            = 'MiamiMSqt_grade_70_comment_missing'
+        where audit_category = 'Comments'
     )
 
 select
@@ -200,4 +194,7 @@ left join
     and v.sectionid = e.sectionid
     and v.student_number = e.student_number
     and e.audit_category = 'Effort Grade'
-where t.audit_start_date <= current_date('{{ var("local_timezone") }}')
+where
+    t.code_type = 'Quarter'
+    and t.audit_category = 'Comments'
+    and t.audit_start_date <= current_date('{{ var("local_timezone") }}')
