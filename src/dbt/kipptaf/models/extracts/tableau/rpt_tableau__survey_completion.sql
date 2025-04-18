@@ -1,4 +1,3 @@
-
 select
     sl.employee_number,
     sl.assignment_status,
