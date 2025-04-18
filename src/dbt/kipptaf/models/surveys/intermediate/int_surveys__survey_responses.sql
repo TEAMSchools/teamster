@@ -6,7 +6,6 @@ select
     fr.text_value as answer,
     fr.item_title as question_title,
     fr.item_abbreviation as question_shortname,
-    fr.rn_form_item_respondent_submitted_desc as rn,
     fr.respondent_email,
 
     rt.academic_year,
@@ -32,6 +31,10 @@ select
     ) as survey_response_link,
 
     if(safe_cast(fr.text_value as int) is null, 1, 0) as is_open_ended,
+    dense_rank() over (
+        partition by fr.respondent_email, rt.academic_year, rt.code, fr.form_id
+        order by fr.last_submitted_time desc
+    ) as round_rn,
 from {{ ref("base_google_forms__form_responses") }} as fr
 left join
     {{ ref("stg_ldap__user_person") }} as ldap
@@ -61,8 +64,6 @@ select
     sr.question_title_english as question_title,
     sr.question_short_name as question_shortname,
 
-    1 as rn,
-
     ri.respondent_mail as respondent_email,
 
     coalesce(sr.campaign_fiscal_year - 1, rt.academic_year) as academic_year,
@@ -85,6 +86,7 @@ select
     ) as survey_response_link,
 
     if(safe_cast(sr.response_value as int) is null, 1, 0) as is_open_ended,
+    1 as rn_round,
 from {{ source("alchemer", "base_alchemer__survey_results") }} as sr
 inner join
     {{ ref("stg_reporting__terms") }} as rt
