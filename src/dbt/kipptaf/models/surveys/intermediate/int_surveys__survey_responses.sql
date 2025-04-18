@@ -35,7 +35,7 @@ select
         partition by fr.respondent_email, rt.academic_year, rt.code, fr.form_id
         order by fr.last_submitted_time desc
     ) as round_rn,
-from {{ ref("base_google_forms__form_responses") }} as fr
+from {{ ref("int_google_forms__form_responses") }} as fr
 left join
     {{ ref("stg_ldap__user_person") }} as ldap
     on fr.respondent_email = ldap.google_email
