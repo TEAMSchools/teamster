@@ -13,7 +13,7 @@ with
             rt.academic_year as campaign_academic_year,
             rt.name as campaign_name,
             rt.code as campaign_reporting_term,
-        from {{ ref("base_google_forms__form_responses") }} as fr
+        from {{ ref("int_google_forms__form_responses") }} as fr
         inner join
             {{ ref("stg_ldap__user_person") }} as up
             on fr.respondent_email = up.google_email
@@ -59,7 +59,7 @@ select
     eh.gender_identity as gender,
 from response_identifiers as ri
 inner join
-    {{ ref("base_google_forms__form_responses") }} as fr
+    {{ ref("int_google_forms__form_responses") }} as fr
     on ri.survey_id = fr.form_id
     and ri.survey_response_id = fr.response_id
     and fr.item_abbreviation != 'respondent_name'
