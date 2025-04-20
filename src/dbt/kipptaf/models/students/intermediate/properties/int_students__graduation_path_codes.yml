@@ -5,8 +5,6 @@ models:
       - duplicate_check:
           group_by: student_number
           distinct_field: grad_eligibility
-          operator: ">"
-          threshold: 1
           config:
             severity: warn
             store_failures: true
