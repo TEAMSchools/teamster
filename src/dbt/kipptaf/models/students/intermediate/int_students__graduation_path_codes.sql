@@ -485,3 +485,4 @@ left join
     and r.attempted_njgpa_math = g.attempted_njgpa_math
     and r.met_ela = g.met_ela
     and r.met_math = g.met_math
+where r.enroll_status = 0
