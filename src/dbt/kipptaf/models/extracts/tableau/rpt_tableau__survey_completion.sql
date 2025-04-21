@@ -20,4 +20,4 @@ left join
     on sl.employee_number = sr.employee_number
     and sl.academic_year = sr.academic_year
     and sl.survey_round = sr.survey_code
-where sr.round_rn is null or <= 1
+where sr.round_rn is null or sr.round_rn <= 1
