@@ -67,6 +67,7 @@ with
             and a.grade = g.grade_level
             and a.admin_season = g.state_assessment_code
             and g.illuminate_subject_area = 'Early Literacy'
+            and e.schoolid = g.school_id
         where
             not e.is_self_contained
             and e.academic_year >= {{ var("current_academic_year") - 1 }}
