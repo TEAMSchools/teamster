@@ -65,6 +65,38 @@ with
             end as njsla_proficiency,
             if(testperformancelevel > 3, true, false) as is_proficient,
         from {{ ref("stg_pearson__njsla") }}
+
+        union all
+
+        select
+            _dbt_source_relation,
+            null as localstudentidentifier,
+            student_id as statestudentidentifier,
+
+            academic_year + 1 as academic_year_plus,
+
+            case
+                when assessment_subject like 'English Language Arts%'
+                then 'Text Study'
+                when assessment_subject in ('Algebra I', 'Algebra II', 'Geometry')
+                then 'Mathematics'
+                else assessment_subject
+            end as `subject`,
+
+            case
+                when achievement_level_int = 1
+                then 'Below/Far Below'
+                when achievement_level_int = 2
+                then 'Approaching'
+                when achievement_level_int >= 3
+                then 'At/Above'
+            end as proficiency,
+            is_proficient,
+        from {{ ref("int_fldoe__all_assessments") }}
+        where
+            scale_score is not null
+            and assessment_name = 'FAST'
+            and administration_window = 'PM3'
     ),
 
     psat_bucket1 as (
@@ -159,6 +191,24 @@ with
             ) as rn_year,
         from {{ ref("int_amplify__all_assessments") }}
         where mclass_measure_standard = 'Composite'
+    ),
+
+    dibels_recent as (
+        select
+            mclass_academic_year,
+            mclass_student_number,
+            mclass_client_date,
+            mclass_measure_standard_level,
+            mclass_measure_standard_level_int,
+
+            'Reading' as iready_subject,
+
+            row_number() over (
+                partition by mclass_academic_year, mclass_student_number
+                order by mclass_client_date desc
+            ) as rn_benchmark,
+        from {{ ref("int_amplify__all_assessments") }}
+        where mclass_measure_standard = 'Composite'
     )
 
 -- current year and current year - 1 only to honor bucket calcs
@@ -173,6 +223,8 @@ select
 
     a.is_iep_eligible as is_grad_iep_exempt,
 
+    dr.mclass_measure_standard_level_int as dibels_most_recent_composite_int,
+
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
@@ -180,11 +232,9 @@ select
     coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
     coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
     coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
+
     coalesce(
-        db.eoy_composite,
-        db.moy_composite,
-        db.boy_composite,
-        'No Composite Score Available'
+        dr.mclass_measure_standard_level, 'No Composite Score Available'
     ) as dibels_most_recent_composite,
 
     if(ie.student_number is not null, true, false) as is_exempt_iready,
@@ -249,7 +299,7 @@ left join
 left join
     prev_yr_state_test as py
     {# TODO: find records that only match on SID #}
-    on co.student_number = py.localstudentidentifier
+    on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus
     and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
     and sj.illuminate_subject_area = py.subject
@@ -264,6 +314,12 @@ left join
     and co.academic_year = db.mclass_academic_year
     and sj.iready_subject = db.iready_subject
     and db.rn_year = 1
+left join
+    dibels_recent as dr
+    on co.student_number = dr.mclass_student_number
+    and co.academic_year = dr.mclass_academic_year
+    and sj.iready_subject = dr.iready_subject
+    and dr.rn_benchmark = 1
 left join
     iready_exempt as ie
     on co.student_number = ie.student_number
@@ -288,7 +344,8 @@ left join
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
 
 union all
--- academic year < current year - 1
+
+/* academic year < current year - 1 */
 select
     co.*,
 
@@ -300,6 +357,8 @@ select
 
     a.is_iep_eligible as is_grad_iep_exempt,
 
+    null as dibels_most_recent_composite_int,
+
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
@@ -307,12 +366,8 @@ select
     coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
     coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
     coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
-    coalesce(
-        db.eoy_composite,
-        db.moy_composite,
-        db.boy_composite,
-        'No Composite Score Available'
-    ) as dibels_most_recent_composite,
+
+    null as dibels_most_recent_composite,
 
     if(ie.student_number is not null, true, false) as is_exempt_iready,
 
@@ -356,7 +411,7 @@ left join
 left join
     prev_yr_state_test as py
     {# TODO: find records that only match on SID #}
-    on co.student_number = py.localstudentidentifier
+    on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus
     and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
     and sj.illuminate_subject_area = py.subject

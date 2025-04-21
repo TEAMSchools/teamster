@@ -159,6 +159,7 @@ inner join
     on sd.observer_employee_number = srh.employee_number
     and sd.end_date_timestamp
     between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
+    and srh.primary_indicator
 inner join
     score_aggs as sa
     on sd.observer_employee_number = sa.observer_employee_number

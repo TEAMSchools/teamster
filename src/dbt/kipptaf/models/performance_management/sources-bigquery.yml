@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: performance_management
+    schema: "{{ project_name }}_performance_management"
+    tables:
+      - name: stg_performance_management__observation_details_archive
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - performance_management
+              - stg_performance_management__observation_details_archive
+      - name: int_performance_management__overall_scores_archive
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - performance_management
+              - int_performance_management__overall_scores_archive

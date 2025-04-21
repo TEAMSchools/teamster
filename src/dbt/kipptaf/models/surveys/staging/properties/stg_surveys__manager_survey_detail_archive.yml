@@ -2,6 +2,7 @@ version: 2
 models:
   - name: stg_surveys__manager_survey_detail_archive
     config:
+      enabled: false
       contract:
         enforced: true
     columns:

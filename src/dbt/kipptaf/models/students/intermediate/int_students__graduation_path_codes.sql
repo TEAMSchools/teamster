@@ -18,15 +18,8 @@ with
             code */
             u.values_column as ps_grad_path_code,
 
-            case
-                when u.values_column in ('M', 'N')
-                then true
-                when u.values_column in ('O', 'P')
-                then false
-            end as pre_met_pathway_cutoff,
-
             /* needed to join on transfer njgpa scores */
-            safe_cast(e.state_studentnumber as numeric) as state_studentnumber_int,
+            safe_cast(e.state_studentnumber as int) as state_studentnumber_int,
 
             if(e.has_fafsa = 'Yes', true, false) as has_fafsa,
 
@@ -48,6 +41,15 @@ with
                 true
             ) as fafsa_season_12th,
 
+            case
+                when u.values_column in ('M', 'N')
+                then true
+                when u.values_column in ('O', 'P')
+                then false
+            end as pre_met_pathway_cutoff,
+
+            if(u.values_column = 'M', true, false) as pre_attempted_njgpa_subject,
+
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
             {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as u
@@ -62,8 +64,6 @@ with
         /* njgpa transfer scores */
         select
             s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
 
             x.testscalescore as scale_score,
             x.testcode as score_type,
@@ -81,15 +81,12 @@ with
         /* njgpa scores from file */
         select
             s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
 
             n.testscalescore as scale_score,
             n.testcode as score_type,
             n.testcode as subject_area,
             n.assessment_name as pathway_option,
             n.discipline,
-
         from students as s
         inner join
             {{ ref("stg_pearson__njgpa") }} as n
@@ -99,61 +96,32 @@ with
 
         union all
 
-        /* act/sat scores */
-        select
-            s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
-
-            a.scale_score,
-            a.score_type,
-            a.subject_area,
-            a.scope as pathway_option,
-
-            if(a.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
-
-        from students as s
-        inner join
-            {{ ref("int_assessments__college_assessment") }} as a
-            on s.salesforce_id = a.salesforce_id
-            and s.powerschool_credittype = a.course_discipline
-            and a.scope in ('ACT', 'SAT')
-            and a.course_discipline in ('MATH', 'ENG')
-            and a.score_type not in ('act_english', 'act_science')
-
-        union all
-
-        /* psat scores */
-        select
-            s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
-
-            p.scale_score,
-            p.score_type,
-            p.subject_area,
-            p.scope as pathway_option,
-
-            if(p.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
-
-        from students as s
-        inner join
-            {{ ref("int_assessments__college_assessment") }} as p
-            on s.student_number = p.student_number
-            and s.powerschool_credittype = p.course_discipline
-            and p.scope in ('PSAT10', 'PSAT NMSQT')
-            and p.course_discipline in ('MATH', 'ENG')
-    ),
-
-    /* calculating if the student attempted njgpa for the discipline */
-    attempted_subject_njgpa as (
+        /* act/sat/psat scores */
         select
             student_number,
+            scale_score,
+            score_type,
+            subject_area,
+            scope as pathway_option,
+
+            if(course_discipline = 'ENG', 'ELA', 'Math') as discipline,
+        from {{ ref("int_assessments__college_assessment") }}
+        where
+            scope in ('ACT', 'SAT', 'PSAT10', 'PSAT NMSQT')
+            and course_discipline in ('MATH', 'ENG')
+            and score_type != 'act_english'
+    ),
+
+    attempted_subject_njgpa as (
+        /* calculating if the student attempted njgpa for the discipline */
+        select
+            student_number,
+
             max(ela) as attempted_njgpa_ela,
             max(math) as attempted_njgpa_math,
         from scores pivot (max(score_type) for discipline in ('ELA', 'Math'))
         where pathway_option = 'NJGPA'
-        group by all
+        group by student_number
     ),
 
     lookup_table as (
@@ -184,6 +152,7 @@ with
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
 
             if(nj.attempted_njgpa_ela is not null, true, false) as attempted_njgpa_ela,
+
             if(
                 nj.attempted_njgpa_math is not null, true, false
             ) as attempted_njgpa_math,
@@ -262,29 +231,28 @@ with
 
             s.pre_met_pathway_cutoff as met_pathway_cutoff,
 
-            if(nj.attempted_njgpa_ela is not null, true, false) as attempted_njgpa_ela,
-            if(
-                nj.attempted_njgpa_math is not null, true, false
-            ) as attempted_njgpa_math,
+            case
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
+                when nj.attempted_njgpa_ela is not null
+                then true
+            end as attempted_njgpa_ela,
+
+            case
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
+                when nj.attempted_njgpa_math is not null
+                then true
+            end as attempted_njgpa_math,
 
         from students as s
         left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         where s.ps_grad_path_code in ('M', 'N', 'O', 'P')
     ),
 
-    /* did the student ever meet the min reqs for college readiness for SAT? */
-    met_sat_subject_mins as (
-        select student_number, max(ela) as met_sat_ela, max(math) as met_sat_math,
-        from
-            lookup_table
-            pivot (max(met_pathway_cutoff) for discipline in ('ELA', 'Math'))
-        where score_type in ('sat_ebrw', 'sat_math')
-        group by all
-    ),
-
-    /* determining if any of the scores for the score_type (if it exists)
-    met the pathway option */
     unpivot_calcs as (
+        /* determining if any of the scores for the score_type (if it exists) met the 
+        pathway option */
         select
             _dbt_source_relation,
             student_number,
@@ -311,7 +279,6 @@ with
             max(met_sat) as met_sat,
             max(met_psat10) as met_psat10,
             max(met_psat_nmsqt) as met_psat_nmsqt,
-
         from
             lookup_table pivot (
                 max(met_pathway_cutoff)
@@ -326,11 +293,16 @@ with
                 )
             )
         where scale_score is not null
-        group by all
+        group by
+            _dbt_source_relation,
+            student_number,
+            discipline,
+            attempted_njgpa_ela,
+            attempted_njgpa_math
     ),
 
-    /* need the ps_grad_path_code to not lose null/null students */
     unpivot_calcs_ps_code as (
+        /* need the ps_grad_path_code to not lose null/null students */
         select u.*, s.ps_grad_path_code
         from unpivot_calcs as u
         inner join
@@ -339,9 +311,9 @@ with
             and u.discipline = s.discipline
     ),
 
-    /* calculating if the student met the discipline overall, regardless of how they 
-    did it, assuming they took the njgpa */
     met_subject as (
+        /* calculating if the student met the discipline overall, regardless of how 
+        they  did it, assuming they took the njgpa */
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
             unpivot_calcs_ps_code pivot (
@@ -357,7 +329,7 @@ with
                 in ('ELA', 'Math')
             )
         where njgpa_attempt and ps_grad_path_code is null
-        group by all
+        group by student_number
 
         union all
 
@@ -375,8 +347,17 @@ with
                 ) for discipline
                 in ('ELA', 'Math')
             )
-        where njgpa_attempt and ps_grad_path_code is not null
-        group by all
+        where
+            njgpa_attempt and ps_grad_path_code is not null and ps_grad_path_code != 'M'
+        group by student_number
+
+        union all
+
+        select student_number, max(ela) as met_ela, max(math) as met_math,
+        from
+            unpivot_calcs_ps_code pivot (max(met_dlm) for discipline in ('ELA', 'Math'))
+        where ps_grad_path_code = 'M'
+        group by student_number
     ),
 
     roster as (
@@ -406,9 +387,6 @@ with
             coalesce(l.attempted_njgpa_ela, false) as attempted_njgpa_ela,
             coalesce(l.attempted_njgpa_math, false) as attempted_njgpa_math,
 
-            coalesce(s.met_sat_ela) as met_sat_ela,
-            coalesce(s.met_sat_math) as met_sat_math,
-
             coalesce(u.met_dlm, false) as met_dlm,
             coalesce(u.met_portfolio, false) as met_portfolio,
             coalesce(u.njgpa_attempt, false) as njgpa_attempt,
@@ -424,13 +402,11 @@ with
             row_number() over (
                 partition by l.student_number, l.score_type order by l.scale_score desc
             ) as rn_highest,
-
         from lookup_table as l
         left join
             unpivot_calcs as u
             on l.student_number = u.student_number
             and l.discipline = u.discipline
-        left join met_sat_subject_mins as s on l.student_number = s.student_number
         left join attempted_subject_njgpa as n on l.student_number = n.student_number
         left join met_subject as m on l.student_number = m.student_number
     )
@@ -438,10 +414,18 @@ with
 select
     r.*,
 
-    if(r.met_sat_ela and r.met_sat_math, true, false) as met_sat_subject_mins,
-
     /* negative value means short; positive value means above min required */
     if(r.scale_score is not null, r.scale_score - r.cutoff, null) as points_short,
+
+    case
+        when r.pathway_code in ('M', 'N', 'O', 'P')
+        then r.pathway_option
+        when r.pathway_code = 'S'
+        then r.subject_area
+        when r.pathway_code in ('E', 'D', 'J', 'K')
+        then concat(r.pathway_option, ' ', r.subject_area)
+        else 'No Data'
+    end as test_type,
 
     case
         when r.grade_level <= 10
@@ -481,16 +465,6 @@ select
         end,
         'New category. Need new logic.'
     ) as grad_eligibility,
-
-    case
-        when r.pathway_code in ('M', 'N', 'O', 'P')
-        then r.pathway_option
-        when r.pathway_code = 'S'
-        then r.subject_area
-        when r.pathway_code in ('E', 'D', 'J', 'K')
-        then concat(r.pathway_option, ' ', r.subject_area)
-        else 'No Data'
-    end as test_type,
 
     row_number() over (
         partition by r.student_number, r.discipline order by r.pathway_option

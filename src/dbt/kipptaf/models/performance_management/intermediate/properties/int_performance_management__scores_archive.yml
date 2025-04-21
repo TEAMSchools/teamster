@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: int_performance_management__scores_archive
+    config:
+      enabled: false
     columns:
       - name: employee_number
         data_type: int64

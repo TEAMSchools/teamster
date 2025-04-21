@@ -1,4 +1,5 @@
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from google import auth
 from google.auth.credentials import Credentials
 from gspread import Client, SpreadsheetNotFound, authorize, service_account, utils
@@ -16,7 +17,7 @@ class GoogleSheetsResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         if self.service_account_file_path is not None:
             self._client = service_account(
@@ -26,7 +27,7 @@ class GoogleSheetsResource(ConfigurableResource):
             credentials, project_id = auth.default(scopes=self.scopes)
 
             self._client = authorize(
-                credentials=_check.inst(obj=credentials, ttype=Credentials)
+                credentials=check.inst(obj=credentials, ttype=Credentials)
             )
 
     def open(self, **kwargs):

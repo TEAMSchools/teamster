@@ -10,15 +10,16 @@ select
     score as scale_score,
     rn_highest,
 
+    format_date('%B', latest_psat_date) as test_month,
     'Official' as test_type,
     null as salesforce_id,
+
 from {{ ref("int_collegeboard__psat_unpivot") }}
 
 union all
 
 select
-    null as student_number,
-
+    school_specific_id as student_number,
     administration_round,
     academic_year,
     `date` as test_date,
@@ -29,9 +30,10 @@ select
     score as scale_score,
     rn_highest,
 
+    format_date('%B', `date`) as test_month,
     'Official' as test_type,
-
     contact as salesforce_id,
+
 from {{ ref("int_kippadb__standardized_test_unpivot") }}
 where
     `date` is not null

@@ -17,7 +17,10 @@ with
 
             'Practice' as test_type,
 
+            format_date('%B', a.date_taken) as test_month,
+
             round(a.percent_correct / 100, 2) as percent_correct,
+
             concat(
                 format_date('%b', a.administered_at),
                 ' ',
@@ -25,6 +28,7 @@ with
             ) as administration_round,
 
             if(a.subject_area = 'Mathematics', 'Math', a.subject_area) as subject_area,
+
             case
                 when a.subject_area in ('Reading', 'Writing', 'English')
                 then 'ENG'
@@ -57,6 +61,7 @@ with
                     a.powerschool_student_number,
                     ssk.administration_round
             ) as total_subjects_tested,
+
         from {{ ref("int_assessments__response_rollup") }} as a
         inner join
             {{ ref("stg_assessments__act_scale_score_key") }} as ssk
@@ -71,6 +76,7 @@ with
             r.powerschool_student_number,
             r.assessment_id,
             r.points as raw_score,
+
             case
                 when
                     r.scope = 'SAT'
@@ -79,6 +85,7 @@ with
                 then (ssk.scale_score * 10)
                 else ssk.scale_score
             end as scale_score,
+
         from responses as r
         inner join
             {{ ref("stg_assessments__act_scale_score_key") }} as ssk
@@ -99,6 +106,7 @@ select
     r.course_discipline,
     r.subject_area,
     r.test_date,
+    r.test_month,
     r.response_type,
     r.response_type_description,
     r.points,
@@ -128,18 +136,23 @@ select distinct
     course_discipline,
     'Composite' as subject_area,
     test_date,
+    test_month,
     'NA' as response_type,
     'NA' as response_type_description,
+
     sum(points) over (
         partition by
             academic_year, powerschool_student_number, scope_round, administration_round
     ) as points,
+
     null as percent_correct,
     total_subjects_tested,
+
     sum(points) over (
         partition by
             academic_year, powerschool_student_number, scope_round, administration_round
     ) as raw_score,
+
     round(
         avg(scale_score) over (
             partition by
@@ -150,6 +163,7 @@ select distinct
         ),
         0
     ) as scale_score,
+
 from responses
 where scope = 'ACT' and response_type = 'overall' and total_subjects_tested = 4
 
@@ -165,20 +179,25 @@ select distinct
     'NA' as assessment_title,
     administration_round,
     course_discipline,
-    'Composite' as subject_area,
+    'Combined' as subject_area,
     test_date,
+    test_month,
     'NA' as response_type,
     'NA' as response_type_description,
+
     sum(points) over (
         partition by
             academic_year, powerschool_student_number, scope_round, administration_round
     ) as points,
+
     null as percent_correct,
     total_subjects_tested,
+
     sum(points) over (
         partition by
             academic_year, powerschool_student_number, scope_round, administration_round
     ) as raw_score,
+
     round(
         sum(scale_score) over (
             partition by
@@ -189,5 +208,6 @@ select distinct
         ),
         0
     ) as scale_score,
+
 from responses
 where scope = 'SAT' and response_type = 'overall' and total_subjects_tested = 3

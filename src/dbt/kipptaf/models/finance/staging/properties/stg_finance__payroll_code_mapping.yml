@@ -4,6 +4,7 @@ models:
     config:
       contract:
         enforced: true
+      tags: google_sheet
     columns:
       - name: Old_Project_ID_Alt_NJ
         data_type: int64

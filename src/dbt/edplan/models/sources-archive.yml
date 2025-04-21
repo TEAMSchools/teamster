@@ -7,3 +7,4 @@ sources:
       {{ var('edplan_schema', project_name + '_edplan') }}
     tables:
       - name: src_edplan__njsmart_powerschool_archive
+      - name: stg_edplan__njsmart_powerschool_archive

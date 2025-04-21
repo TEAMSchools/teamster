@@ -1,7 +1,7 @@
 with
     survey_reconciliation_raw as (
         select response_id, item_title, text_value, create_timestamp,
-        from {{ ref("base_google_forms__form_responses") }}
+        from {{ ref("int_google_forms__form_responses") }}
         where
             form_id = '1oUBls4Kaj0zcbQyeWowe8Es1BFqunolAPEamzT6enQs'
             and item_title in ('Survey response ID', 'Salesforce contact ID')
@@ -158,11 +158,9 @@ with
             cast(ri.survey_id as string) as survey_id,
             cast(ri.response_id as string) as response_id,
             lower(ri.respondent_user_principal_name) as respondent_user_principal_name,
-        /* hardcode disabled model */
-        from kipptaf_surveys.int_surveys__response_identifiers as ri
+        from {{ source("surveys", "int_surveys__response_identifiers") }} as ri
         inner join
-            /* hardcode disabled model */
-            kipptaf_alchemer.base_alchemer__survey_results as sr
+            {{ source("alchemer", "base_alchemer__survey_results") }} as sr
             on ri.survey_id = sr.survey_id
             and ri.response_id = sr.response_id
         where ri.survey_id = 6734664  /* 'KIPP Forward Career Launch Survey' */
@@ -178,7 +176,7 @@ with
             cast(fr.form_id as string) as survey_id,
             cast(fr.response_id as string) as response_id,
             lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("base_google_forms__form_responses") }} as fr
+        from {{ ref("int_google_forms__form_responses") }} as fr
         /* 'KIPP Forward Career Launch Survey - OLD' */
         where fr.form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
 
@@ -193,7 +191,7 @@ with
             cast(fr.form_id as string) as survey_id,
             cast(fr.response_id as string) as response_id,
             lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("base_google_forms__form_responses") }} as fr
+        from {{ ref("int_google_forms__form_responses") }} as fr
         /* 'KIPP Forward Career Launch Survey' */
         where fr.form_id = '1c4SLP61YIVnUUvRl_IUdFuLXdtI1Vsq9OE3Jrz3HR0U'
     ),

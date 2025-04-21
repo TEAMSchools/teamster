@@ -73,15 +73,13 @@ models:
         data_type: boolean
       - name: rn_highest
         data_type: int64
-      - name: met_sat_subject_mins
-        data_type: boolean
       - name: points_short
         data_type: numeric
       - name: final_grad_path_code
         data_type: string
       - name: grad_eligibility
         data_type: string
-        tests:
+        data_tests:
           - accepted_values:
               values:
                 - Grad Eligible
