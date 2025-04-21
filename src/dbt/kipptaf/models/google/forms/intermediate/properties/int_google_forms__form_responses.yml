@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: base_google_forms__form_responses
+  - name: int_google_forms__form_responses
     columns:
       - name: form_id
         data_type: string
