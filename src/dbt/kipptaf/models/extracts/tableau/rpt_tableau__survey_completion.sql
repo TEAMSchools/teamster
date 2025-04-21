@@ -11,11 +11,12 @@ select
     sl.academic_year,
     sl.survey_round,
     sl.is_current,
+    sl.mail,
     sr.survey_response_id,
+    if(survey_response_id is not null, 1,0) as completion,
 from {{ ref("rpt_tableau__survey_links") }} as sl
 left join
     {{ ref("rpt_tableau__survey_responses") }} as sr
     on sl.employee_number = sr.employee_number
     and sl.academic_year = sr.academic_year
     and sl.survey_round = sr.survey_code
-where sr.round_rn = 1
