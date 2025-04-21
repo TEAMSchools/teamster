@@ -106,7 +106,7 @@ with
             s.mclass_measure_standard,
             s.avg_score as starting_words,
 
-            c.round,
+            c.`round`,
             c.n_days,
 
             (coalesce(e.moy_benchmark, e.eoy_benchmark) + 3) as bm_benchmark,
@@ -115,22 +115,22 @@ with
                 (coalesce(e.moy_benchmark, e.eoy_benchmark) + 3) - s.avg_score, 0
             ) as required_growth_words,
 
-            min(c.round) over (
+            min(c.`round`) over (
                 partition by
                     s.mclass_academic_year,
                     s.region,
                     s.pm_period,
                     s.mclass_assessment_grade
-                order by c.round
+                order by c.`round`
             ) as min_pm_round,
 
-            max(c.round) over (
+            max(c.`round`) over (
                 partition by
                     s.mclass_academic_year,
                     s.region,
                     s.pm_period,
                     s.mclass_assessment_grade
-                order by c.round desc
+                order by c.`round` desc
             ) as max_pm_round,
 
         from avg_scores as s
