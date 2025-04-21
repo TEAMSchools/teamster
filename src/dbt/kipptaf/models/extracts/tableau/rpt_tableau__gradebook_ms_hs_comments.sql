@@ -63,7 +63,7 @@ with
 
             max(audit_flag_value) as audit_flag_value,
         from {{ ref("int_tableau__gradebook_audit_flags") }}
-        where audit_flag_name = 'qt_grade_70_comment_missing'
+        where audit_flag_name = 'qt_grade_70_comment_missing' and credit_type != 'HR'
         group by all
     ),
 
@@ -123,7 +123,7 @@ with
             audit_flag_name,
             audit_flag_value as flag_value,
         from {{ ref("int_tableau__gradebook_audit_flags") }}
-        where audit_flag_name = 'qt_grade_70_comment_missing'
+        where audit_flag_name = 'qt_grade_70_comment_missing' and credit_type != 'HR'
     )
 
 select
