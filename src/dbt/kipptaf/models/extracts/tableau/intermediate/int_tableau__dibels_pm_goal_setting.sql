@@ -27,7 +27,7 @@ with
 
             cast(right(t.code, 1) as int) as `round`,
 
-            count(distinct d.date_value) n_days,
+            count(distinct d.date_value) as n_days,
 
         from school_directory as d
         left join
@@ -71,7 +71,7 @@ with
             and s.assessment_type = 'Benchmark'
             and s.mclass_period != 'EOY'
             and s.mclass_assessment_grade_int is not null
-            and mclass_measure_standard in (
+            and s.mclass_measure_standard in (
                 'Phonemic Awareness (PSF)',
                 'Letter Sounds (NWF-CLS)',
                 'Decoding (NWF-WRC)',
@@ -92,7 +92,8 @@ with
         group by all
     ),
 
-    /* this will be simplified once we figure out how to calculate bm_benchmark on the fly */
+    /* this will be simplified once we figure out how to calculate bm_benchmark on the
+    fly */
     days_and_goals as (
         -- only need this distinct for now because standard are not the same across
         -- rounds
@@ -137,7 +138,7 @@ with
             day_count as c
             on s.mclass_academic_year = c.academic_year
             and s.region = c.region
-            and s.pm_period = name
+            and s.pm_period = c.name
         inner join
             {{ ref("stg_amplify__dibels_pm_expectations") }} as e
             on s.mclass_academic_year = e.academic_year
@@ -237,7 +238,7 @@ with
                             mclass_measure_standard
                         rows between unbounded preceding and current row
                     )
-            end as cumulative_growth_words
+            end as cumulative_growth_words,
 
         from calcs
     )
