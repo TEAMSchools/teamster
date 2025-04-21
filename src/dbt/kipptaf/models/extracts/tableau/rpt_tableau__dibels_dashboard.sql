@@ -30,6 +30,11 @@ with
             a.month_round,
             a.grade as expected_grade_level,
 
+<<<<<<< HEAD
+=======
+            g.grade_goal as admin_benchmark,
+
+>>>>>>> d829fc732c8d4d94a8a77374443b3cba5cdc1f25
             regexp_extract(
                 a.assessment_subject_area, r'^[^_]*'
             ) as expected_mclass_measure_name_code,
@@ -58,6 +63,14 @@ with
             and e.region = a.region
             and e.grade_level = a.grade
             and a.scope = 'DIBELS'
+        left join
+            {{ ref("int_assessments__academic_goals") }} as g
+            on a.academic_year = g.academic_year
+            and a.region = g.region
+            and a.grade = g.grade_level
+            and a.admin_season = g.state_assessment_code
+            and g.illuminate_subject_area = 'Early Literacy'
+            and e.schoolid = g.school_id
         where
             not e.is_self_contained
             and e.academic_year >= {{ var("current_academic_year") - 1 }}
@@ -136,9 +149,8 @@ select
     s.expected_mclass_measure_name_code,
     s.expected_mclass_measure_name,
     s.expected_mclass_measure_standard,
-
     null as goal,
-    null as admin_benchmark,
+    s.admin_benchmark,
 
     m.schedule_student_number,
     m.schedule_student_grade_level,
