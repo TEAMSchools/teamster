@@ -13,7 +13,7 @@ select
     sl.is_current,
     sl.mail,
     sr.survey_response_id,
-    if(survey_response_id is not null, 1,0) as completion,
+    if(survey_response_id is not null, 1, 0) as completion,
 from {{ ref("rpt_tableau__survey_links") }} as sl
 left join
     {{ ref("rpt_tableau__survey_responses") }} as sr
