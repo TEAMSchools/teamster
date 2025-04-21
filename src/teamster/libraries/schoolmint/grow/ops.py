@@ -1,11 +1,15 @@
-from dagster import AssetCheckResult, OpExecutionContext, op
+from typing import Any
+
+from dagster import ExpectationResult, OpExecutionContext, op
 
 from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 
 
 @op
 def schoolmint_grow_user_update_op(
-    context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource, users
+    context: OpExecutionContext,
+    schoolmint_grow: SchoolMintGrowResource,
+    users: list[dict[str, Any]],
 ):
     exceptions = []
 
@@ -99,11 +103,10 @@ def schoolmint_grow_user_update_op(
 
             continue
 
-    if exceptions:
-        yield AssetCheckResult(passed=False)
-        # raise Failure(metadata={"exceptions": exceptions}, allow_retries=False)
-
-    return users
+    yield users
+    yield ExpectationResult(
+        success=(len(exceptions) == 0), metadata={"exceptions": exceptions}
+    )
 
 
 @op
