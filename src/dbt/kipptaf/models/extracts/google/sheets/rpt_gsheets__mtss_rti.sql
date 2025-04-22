@@ -130,6 +130,6 @@ with
             and co.academic_year = sr.create_ts_academic_year
     )
 
-select *
+select *,
 from roster
 where academic_year = {{ var("current_academic_year") }}
