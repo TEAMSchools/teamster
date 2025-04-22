@@ -52,20 +52,7 @@ with
             academic_year,
             term,
             column_name,
-            count(column_value) as count_done,
-            case
-                when column_name = 'notes_boy' and count(column_value) >= 2
-                then 1
-                when
-                    contains_substr(column_name, 'manager_rating')
-                    and count(column_value) >= 10
-                then 1
-                when column_name = 'rating_moy' and count(column_value) >= 3
-                then 1
-                when column_name = 'rating_eoy' and count(column_value) >= 3
-                then 1
-                else 0
-            end as round_completion,
+            count(column_value) as response_rows,
         from pivot
         group by employee_number, academic_year, term, column_name
     ),
@@ -94,8 +81,6 @@ select
     m.type,
     m.fiscal_year,
 
-    c.round_completion,
-
     r.formatted_name as preferred_name_lastfirst,
     r.sam_account_name,
     r.job_title,
@@ -108,6 +93,22 @@ select
 
     case when m.bucket = 'Goals' then p.notes_boy else m.description end as description,
 
+    case
+        when c.term = 'BOY' and c.column_name = 'notes_boy' and response_rows >= 2
+        then 1
+        when c.column_name = 'rating_moy' and response_rows >= 3
+        then 1
+        when c.column_name = 'rating_eoy' and response_rows >= 3
+        then 1
+        else 0
+    end as round_completion,
+    case
+        when c.term = 'BOY' and c.column_name = 'notes_boy' and response_rows >= 2
+        then 1
+        when contains_substr(c.column_name, 'manager_rating') and response_rows >= 10
+        then 1
+        else 0
+    end as round_completion_manager,
 from pivot as p
 left join
     {{ ref("stg_leadership_development__active_users") }} as a
