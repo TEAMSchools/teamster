@@ -125,10 +125,9 @@ with
             and co.yearid = g.yearid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="g") }}
         left join
-            {{ ref("int_reporting__referral_suspension_rollup") }} as sr
+            {{ ref("int_deanslist__referral_suspension_rollup") }} as sr
             on co.student_number = sr.student_school_id
             and co.academic_year = sr.create_ts_academic_year
-        where co.academic_year >= {{ var("current_academic_year") - 1 }}
     )
 
 select *
