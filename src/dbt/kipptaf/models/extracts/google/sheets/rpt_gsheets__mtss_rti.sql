@@ -54,7 +54,6 @@ with
             co.student_name,
             co.grade_level,
             co.advisory,
-            co.enroll_status,
             co.boy_status,
             co.iep_status,
             co.lep_status,
@@ -63,6 +62,16 @@ with
 
             g.gpa_y1 as gpa_y1_current,
 
+            case
+                when co.enroll_status = 0
+                then 'Currently Enrolled'
+                when co.enroll_status = 2
+                then 'Transferred Out'
+                when co.enroll_status = 3
+                then 'Graduated'
+                when co.enroll_status = -1
+                then 'Pre-Enrolled'
+            end as enrollment_status,
             lag(co.ada, 1) over (
                 partition by co.student_number order by co.academic_year asc
             ) as ada_prev_year,
