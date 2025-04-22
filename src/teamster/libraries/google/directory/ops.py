@@ -35,7 +35,9 @@ def google_directory_user_create_op(
 
 @op
 def google_directory_member_create_op(
-    context: OpExecutionContext, google_directory: GoogleDirectoryResource, members
+    context: OpExecutionContext,
+    google_directory: GoogleDirectoryResource,
+    members: list[dict[str, Any]],
 ):
     context.log.info(f"Adding {len(members)} members to groups")
 
@@ -49,7 +51,9 @@ def google_directory_member_create_op(
 
 @op
 def google_directory_user_update_op(
-    context: OpExecutionContext, google_directory: GoogleDirectoryResource, users
+    context: OpExecutionContext,
+    google_directory: GoogleDirectoryResource,
+    users: list[dict[str, Any]],
 ):
     update_users = [u for u in users if u["is_update"]]
     context.log.info(f"Updating {len(update_users)} users")
@@ -66,7 +70,7 @@ def google_directory_user_update_op(
 def google_directory_role_assignment_create_op(
     context: OpExecutionContext,
     google_directory: GoogleDirectoryResource,
-    role_assignments,
+    role_assignments: list[dict[str, Any]],
 ):
     context.log.info(f"Adding {len(role_assignments)} role assignments")
 
