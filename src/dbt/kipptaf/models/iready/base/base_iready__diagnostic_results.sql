@@ -78,6 +78,10 @@ with
                 partition by _dbt_source_relation, student_id, academic_year, `subject`
             ) as most_recent_rush_flag,
 
+            max(if(most_recent_diagnostic_ytd_y_n = 'Y', completion_date, null)) over (
+                partition by _dbt_source_relation, student_id, academic_year, `subject`
+            ) as most_recent_completion_date,
+
             row_number() over (
                 partition by _dbt_source_relation, student_id, academic_year, `subject`
                 order by completion_date desc
@@ -118,6 +122,7 @@ select
     dr.most_recent_lexile_measure,
     dr.most_recent_lexile_range,
     dr.most_recent_rush_flag,
+    dr.most_recent_completion_date,
     dr.rn_subj_year,
 
     lc.region,
