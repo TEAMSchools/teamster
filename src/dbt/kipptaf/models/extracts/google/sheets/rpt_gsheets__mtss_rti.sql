@@ -11,8 +11,8 @@ with
                 most_recent_completion_date,
                 ')'
             ) as iready_most_recent,
-        from {{ ref("base_iready__diagnostic_results") }} as ir
-        where ir.rn_subj_year = 1
+        from {{ ref("base_iready__diagnostic_results") }}
+        where rn_subj_year = 1
     ),
 
     iready_pivot as (

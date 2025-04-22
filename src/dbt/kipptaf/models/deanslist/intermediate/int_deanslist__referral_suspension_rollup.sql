@@ -117,4 +117,4 @@ left join
     and {{ union_dataset_join_clause(left_alias="dli", right_alias="cf") }}
 left join suspension_type as st on dlp.penalty_name = st.penalty_name
 where dli.referral_tier not in ('Non-Behavioral', 'Social Work')
-group by all
+group by dli.student_school_id, dli.create_ts_academic_year
