@@ -64,6 +64,6 @@ def build_dbt_assets(
         # build models
         dbt_build = dbt_cli.cli(args=["build"], context=context)
 
-        yield from dbt_build.stream().fetch_column_metadata()
+        yield from dbt_build.stream().fetch_column_metadata(with_column_lineage=False)
 
     return _assets
