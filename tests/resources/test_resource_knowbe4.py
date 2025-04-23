@@ -1,11 +1,14 @@
-import requests
+from dagster import EnvVar, build_resources
+
+from teamster.libraries.knowbe4.resources import KnowBe4Resource
 
 
-def test_foo():
-    session = requests.Session()
-
-    session.headers["Authorization"] = "Bearer ..."
-
-    response = session.get(url="https://us.api.knowbe4.com/v1/users")
-
-    response
+def test_knowbe4_resource():
+    with build_resources(
+        {
+            "knowbe4": KnowBe4Resource(
+                api_key=EnvVar("KNOWBE4_API_KEY"), server="us", page_size=500
+            )
+        }
+    ) as resources:
+        knowbe4: KnowBe4Resource = resources.knowbe4
