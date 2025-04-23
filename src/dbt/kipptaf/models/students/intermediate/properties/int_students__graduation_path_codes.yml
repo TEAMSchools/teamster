@@ -1,6 +1,13 @@
 version: 2
 models:
   - name: int_students__graduation_path_codes
+    data_tests:
+      - distinct_count:
+          group_by: student_number
+          distinct_field: grad_eligibility
+          config:
+            severity: warn
+            store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
