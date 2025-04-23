@@ -30,7 +30,7 @@ models:
         data_type: string
       - name: Cutoff
         data_type: float64
-      - name: Cutoff Alt
-        data_type: float64
       - name: Is_Exempt
         data_type: boolean
+      - name: Cutoff_Alt
+        data_type: float64
