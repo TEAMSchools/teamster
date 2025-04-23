@@ -1,6 +1,6 @@
 from typing import Any
 
-from dagster import ExpectationResult, OpExecutionContext, op
+from dagster import ExpectationResult, OpExecutionContext, Output, op
 
 from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 
@@ -103,7 +103,7 @@ def schoolmint_grow_user_update_op(
 
             continue
 
-    yield users
+    yield Output(value=users)
     yield ExpectationResult(
         success=(len(exceptions) == 0), metadata={"exceptions": exceptions}
     )
