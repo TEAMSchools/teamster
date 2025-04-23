@@ -1,8 +1,8 @@
 version: 2
 models:
   - name: int_students__graduation_path_codes
-    tests:
-      - duplicate_check:
+    data_tests:
+      - distinct_count:
           group_by: student_number
           distinct_field: grad_eligibility
           config:
