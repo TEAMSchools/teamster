@@ -30,11 +30,8 @@ with
             a.month_round,
             a.grade as expected_grade_level,
 
-<<<<<<< HEAD
-=======
             g.grade_goal as admin_benchmark,
 
->>>>>>> d829fc732c8d4d94a8a77374443b3cba5cdc1f25
             regexp_extract(
                 a.assessment_subject_area, r'^[^_]*'
             ) as expected_mclass_measure_name_code,
