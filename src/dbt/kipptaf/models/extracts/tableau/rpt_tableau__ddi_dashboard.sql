@@ -237,6 +237,7 @@ select
     co.gender,
     co.ethnicity,
     co.year_in_network,
+    co.is_self_contained,
     co.week_start_monday,
     co.week_end_sunday,
     co.days_in_session,
@@ -263,6 +264,7 @@ select
     co.course_credittype,
     co.course_teachernumber,
     co.course_teacher_name,
+    co.is_foundations,
     co.homeroom_section,
     co.homeroom_teachernumber,
     co.homeroom_teacher_name,
@@ -346,6 +348,7 @@ select
     co.gender,
     co.ethnicity,
     co.year_in_network,
+    co.is_self_contained,
     co.week_start_monday,
     co.week_end_sunday,
     co.days_in_session,
@@ -372,6 +375,7 @@ select
     co.course_credittype,
     co.course_teachernumber,
     co.course_teacher_name,
+    co.is_foundations,
     co.homeroom_section,
     co.homeroom_teachernumber,
     co.homeroom_teacher_name,
@@ -457,6 +461,7 @@ select
     null as gender,
     null as ethnicity,
     null as year_in_network,
+    null as is_self_contained,
 
     w.week_start_monday,
     w.week_end_sunday,
@@ -496,6 +501,7 @@ select
 
     null as homeroom_section,
     null as homeroom_teachernumber,
+    null as is_foundations,
 
     r.reports_to_sam_account_name as homeroom_teacher_name,
 
