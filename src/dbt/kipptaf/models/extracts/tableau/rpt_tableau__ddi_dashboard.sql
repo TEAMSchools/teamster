@@ -71,6 +71,7 @@ with
             co.gender,
             co.ethnicity,
             co.year_in_network,
+            co.is_self_contained,
 
             w.week_start_monday,
             w.week_end_sunday,
@@ -102,6 +103,7 @@ with
             cc.courses_credittype as course_credittype,
             cc.teachernumber as course_teachernumber,
             cc.teacher_lastfirst as course_teacher_name,
+            cc.is_foundations,
 
             sf.dibels_most_recent_composite,
             sf.state_test_proficiency,
