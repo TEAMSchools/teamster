@@ -20,8 +20,7 @@ with
             if(
                 app.type_for_roll_ups
                 in ('Alternative Program', 'Organization', 'Other')
-                or (app.type_for_roll_ups = 'College'
-                and acc.type = 'Private 2 yr'),
+                or (app.type_for_roll_ups = 'College' and acc.type = 'Private 2 yr'),
                 true,
                 false
             ) as is_certificate,
