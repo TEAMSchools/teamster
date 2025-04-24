@@ -1,8 +1,10 @@
 select
     l.preferred_name_lastfirst,
+
     sr.mail,
     sr.reports_to_formatted_name as manager,
     sr.reports_to_mail as manager_mail,
+
     max(l.round_completion_self) as round_completion_self,
     max(l.round_completion_manager) as round_completion_manager,
 from `kipptaf_tableau.rpt_tableau__leadership_development` as l
