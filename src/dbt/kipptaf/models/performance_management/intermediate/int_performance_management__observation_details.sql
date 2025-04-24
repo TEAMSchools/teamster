@@ -81,4 +81,10 @@ select
     measurement_name,
     measurement_group_name as strand_name,
     text_box as measurement_comments,
-from {{ ref("stg_performance_management__observation_details_archive") }}
+from
+    {{
+        source(
+            "performance_management",
+            "stg_performance_management__observation_details_archive",
+        )
+    }}

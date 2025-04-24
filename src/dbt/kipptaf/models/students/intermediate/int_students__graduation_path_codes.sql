@@ -10,6 +10,7 @@ with
             e.state_studentnumber,
             e.salesforce_id,
             e.grade_level,
+            e.enroll_status,
             e.cohort,
             e.discipline,
             e.powerschool_credittype,
@@ -47,6 +48,8 @@ with
                 when u.values_column in ('O', 'P')
                 then false
             end as pre_met_pathway_cutoff,
+
+            if(u.values_column = 'M', true, false) as pre_attempted_njgpa_subject,
 
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
@@ -131,6 +134,7 @@ with
             s.state_studentnumber,
             s.salesforce_id,
             s.grade_level,
+            s.enroll_status,
             s.cohort,
             s.discipline,
             s.powerschool_credittype,
@@ -150,9 +154,11 @@ with
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
 
             if(nj.attempted_njgpa_ela is not null, true, false) as attempted_njgpa_ela,
+
             if(
                 nj.attempted_njgpa_math is not null, true, false
             ) as attempted_njgpa_math,
+
         from students as s
         left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         left join
@@ -179,6 +185,7 @@ with
             s.state_studentnumber,
             s.salesforce_id,
             s.grade_level,
+            s.enroll_status,
             s.cohort,
             s.discipline,
             s.powerschool_credittype,
@@ -228,15 +235,15 @@ with
             s.pre_met_pathway_cutoff as met_pathway_cutoff,
 
             case
-                when s.discipline = 'ELA' and s.ps_grad_path_code = 'M'
-                then true
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
                 when nj.attempted_njgpa_ela is not null
                 then true
             end as attempted_njgpa_ela,
 
             case
-                when s.discipline = 'Math' and s.ps_grad_path_code = 'M'
-                then true
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
                 when nj.attempted_njgpa_math is not null
                 then true
             end as attempted_njgpa_math,
@@ -365,6 +372,7 @@ with
             l.state_studentnumber,
             l.salesforce_id,
             l.grade_level,
+            l.enroll_status,
             l.cohort,
             l.discipline,
             l.powerschool_credittype,
@@ -465,6 +473,7 @@ select
     row_number() over (
         partition by r.student_number, r.discipline order by r.pathway_option
     ) as rn_discipline_distinct,
+
 from roster as r
 left join
     {{ ref("stg_reporting__graduation_paths_combos") }} as g
@@ -476,3 +485,4 @@ left join
     and r.attempted_njgpa_math = g.attempted_njgpa_math
     and r.met_ela = g.met_ela
     and r.met_math = g.met_math
+where r.enroll_status = 0

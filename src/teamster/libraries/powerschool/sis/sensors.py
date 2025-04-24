@@ -22,7 +22,7 @@ from dateutil.relativedelta import relativedelta
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
-from teamster.libraries.powerschool.sis.utils import get_query_text, open_ssh_tunnel
+from teamster.libraries.powerschool.sis.utils import get_query_text
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -73,7 +73,7 @@ def build_powerschool_asset_sensor(
         )
 
         context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
-        ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
+        ssh_tunnel = ssh_powerschool.open_ssh_tunnel()
 
         try:
             connection = db_powerschool.connect()
