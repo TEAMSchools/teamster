@@ -64,6 +64,7 @@ with
             cast(mem.attendancevalue as numeric) as is_present,
             abs(mem.attendancevalue - 1) as is_absent,
 
+            if(att.att_code in ('T', 'T10'), 1, 0) as is_tardy,
             if(att.att_code in ('T', 'T10'), 0.0, 1.0) as pct_ontime_running,
             if(
                 att.att_code in ('OS', 'OSS', 'OSSP', 'SHI'), 1.0, 0.0
