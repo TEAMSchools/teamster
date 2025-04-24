@@ -182,7 +182,7 @@ with
                         mclass_assessment_grade_int,
                         mclass_measure_standard
                 ),
-                1
+                2
             ) as daily_growth_rate,
 
             round(
