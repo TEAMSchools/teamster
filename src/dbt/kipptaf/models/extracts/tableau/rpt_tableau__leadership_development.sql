@@ -46,7 +46,6 @@ with
                     )
                 ]
             ) as pivot
-        where column_value is not null
     ),
 
     self_completion as (
@@ -119,7 +118,7 @@ select
         else 0
     end as round_completion_self,
     case
-        when mc.term = 'BOY' and c.response_rows_self >= 2
+        when c.term = 'BOY' and c.response_rows_self >= 2
         then 1
         when mc.term = 'MOY' and mc.response_rows_manager >= 10
         then 1
