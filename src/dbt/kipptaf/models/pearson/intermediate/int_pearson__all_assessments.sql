@@ -31,6 +31,7 @@ with
                     "studentwithdisabilities",
                     "subject",
                     "testcode",
+                    "studenttestuuid",
                     "test_grade",
                     "testperformancelevel_text",
                     "testperformancelevel",
