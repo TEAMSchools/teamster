@@ -9,6 +9,7 @@ select
     `period`,
     `subject`,
     testcode,
+    studenttestuuid,
     testperformancelevel,
     testscalescore,
     testscorecomplete,
