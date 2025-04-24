@@ -129,55 +129,78 @@ with
             and mem.calendardate between date(
                 ({{ var("current_academic_year") - 1 }}), 7, 1
             ) and current_date('{{ var("local_timezone") }}')
+    ),
+
+    calcs as (
+        select
+            studentid,
+            calendardate,
+            membershipvalue,
+            is_present,
+            is_absent,
+            student_number,
+            lastfirst,
+            enroll_status,
+            academic_year,
+            region,
+            school_level,
+            schoolid,
+            school_abbreviation,
+            grade_level,
+            team,
+            iep_status,
+            lep_status,
+            c_504_status,
+            gender,
+            ethnicity,
+            is_self_contained,
+            section_number,
+            teacher_name,
+            att_code,
+            is_counselingservices,
+            is_studentathlete,
+            term,
+            ms_attended,
+            if(
+                nj_overall_student_tier = 0,
+                'Unbucketed',
+                concat('Bucket ', nj_overall_student_tier)
+            ) as nj_overall_student_tier,
+            avg(is_present) over (
+                partition by studentid, academic_year order by calendardate
+            ) as ada_running,
+            avg(pct_ontime_running) over (
+                partition by student_number, academic_year order by calendardate
+            ) as pct_ontime_running,
+            max(is_oss_running) over (
+                partition by student_number, academic_year order by calendardate
+            ) as is_oss_running,
+            max(is_iss_running) over (
+                partition by student_number, academic_year order by calendardate
+            ) as is_iss_running,
+            max(is_suspended_running) over (
+                partition by student_number, academic_year order by calendardate
+            ) as is_suspended_running,
+
+            if(
+                mod(
+                    sum(if(att_code in ('T', 'T10'), 1, 0)) over (
+                        partition by student_number, academic_year
+                        order by calendardate asc
+                    ),
+                    3
+                )
+                = 0
+                and sum(if(att_code in ('T', 'T10'), 1, 0)) over (
+                    partition by student_number, academic_year order by calendardate asc
+                )
+                != 0
+                and att_code in ('T', 'T10'),
+                true,
+                false
+            ) as is_present_flip,
+        from attendance_dash
     )
 
-select
-    studentid,
-    calendardate,
-    membershipvalue,
-    is_present,
-    is_absent,
-    student_number,
-    lastfirst,
-    enroll_status,
-    academic_year,
-    region,
-    school_level,
-    schoolid,
-    school_abbreviation,
-    grade_level,
-    team,
-    iep_status,
-    lep_status,
-    c_504_status,
-    gender,
-    ethnicity,
-    is_self_contained,
-    section_number,
-    teacher_name,
-    att_code,
-    is_counselingservices,
-    is_studentathlete,
-    term,
-    ms_attended,
-    if(
-        nj_overall_student_tier = 0,
-        'Unbucketed',
-        concat('Bucket ', nj_overall_student_tier)
-    ) as nj_overall_student_tier,
-    avg(is_present) over (
-        partition by studentid, academic_year order by calendardate
-    ) as ada_running,
-    avg(pct_ontime_running) over (
-        partition by student_number, academic_year order by calendardate
-    ) as pct_ontime_running,
-    max(is_oss_running) over (
-        partition by student_number, academic_year order by calendardate
-    ) as is_oss_running,
-    max(is_iss_running) over (
-        partition by student_number, academic_year order by calendardate
-    ) as is_iss_running,
-    max(is_suspended_running) over (
-        partition by student_number, academic_year order by calendardate
-    ) as is_suspended_running,
-from attendance_dash
+select *, if(is_present_flip, 0, is_present) as is_present_hs_alt,
+from calcs
