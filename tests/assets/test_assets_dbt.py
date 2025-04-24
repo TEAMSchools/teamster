@@ -27,10 +27,5 @@ def test_dbt_assets_kipptaf():
     _test_dbt_assets(
         assets=[dbt_assets],
         code_location="kipptaf",
-        selection=[
-            "kipptaf/schoolmint_grow/stg_schoolmint_grow__users",
-            "kipptaf/schoolmint_grow/stg_schoolmint_grow__schools",
-            "kipptaf/schoolmint_grow/int_schoolmint_grow__observations",
-            "kipptaf/illuminate/stg_illuminate__reporting_groups",
-        ],
+        selection=["kipptaf/deanslist/stg_deanslist__incidents"],
     )
