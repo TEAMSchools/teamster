@@ -10,15 +10,17 @@ with
             column_name,
             column_value,
             case
-                when contains_substr(column_name, 'boy')
+                when column_name like '%boy%'
                 then 'BOY'
-                when contains_substr(column_name, 'moy')
+                when column_name like '%moy%'
                 then 'MOY'
-                when contains_substr(column_name, 'eoy')
+                when column_name like '%eoy%'
                 then 'EOY'
-            end as term,
+            end as term
         from
-            {{ ref("stg_leadership_development__output") }} as o,
+            `teamster-332318`.`kipptaf_google_appsheet`.`stg_leadership_development__output`
+            as o
+        cross join
             unnest(
                 [
                     struct('notes_boy' as column_name, o.notes_boy as column_value),
@@ -44,17 +46,31 @@ with
                     )
                 ]
             ) as pivot
+        where column_value is not null
     ),
 
-    completion as (
+    self_completion as (
         select
             employee_number,
             academic_year,
             term,
-            column_name,
-            count(column_value) as response_rows,
+            count(column_value) as response_rows_self,
         from pivot
-        group by employee_number, academic_year, term, column_name
+        where column_name in ('notes_boy', 'rating_moy', 'rating_eoy')
+        group by employee_number, academic_year, term
+
+    ),
+
+    manager_completion as (
+        select
+            employee_number,
+            academic_year,
+            term,
+            count(column_value) as response_rows_manager,
+        from pivot
+        where column_name in ('manager_rating_moy', 'manager_rating_eoy')
+        group by employee_number, academic_year, term
+
     ),
 
     metrics_lookup as (
@@ -94,18 +110,20 @@ select
     case when m.bucket = 'Goals' then p.notes_boy else m.description end as description,
 
     case
-        when c.term = 'BOY' and c.column_name = 'notes_boy' and response_rows >= 2
+        when c.term = 'BOY' and c.response_rows_self >= 2
         then 1
-        when c.column_name = 'rating_moy' and response_rows >= 3
+        when c.term = 'MOY' and c.response_rows_self >= 3
         then 1
-        when c.column_name = 'rating_eoy' and response_rows >= 3
+        when c.term = 'EOY' and c.response_rows_self >= 3
         then 1
         else 0
-    end as round_completion,
+    end as round_completion_self,
     case
-        when c.term = 'BOY' and c.column_name = 'notes_boy' and response_rows >= 2
+        when mc.term = 'BOY' and c.response_rows_self >= 2
         then 1
-        when contains_substr(c.column_name, 'manager_rating') and response_rows >= 10
+        when mc.term = 'MOY' and mc.response_rows_manager >= 10
+        then 1
+        when mc.term = 'EOY' and mc.response_rows_manager >= 10
         then 1
         else 0
     end as round_completion_manager,
@@ -114,10 +132,15 @@ left join
     {{ ref("stg_leadership_development__active_users") }} as a
     on p.employee_number = a.employee_number
 left join
-    completion as c
+    self_completion as c
     on p.employee_number = c.employee_number
     and p.academic_year = c.academic_year
-    and p.column_name = c.column_name
+    and p.term = c.term
+left join
+    manager_completion as mc
+    on p.employee_number = mc.employee_number
+    and p.academic_year = mc.academic_year
+    and p.term = mc.term
 left join metrics_lookup as m on p.metric_id = m.metric_id
 left join
     {{ ref("int_people__staff_roster") }} as r on p.employee_number = r.employee_number
