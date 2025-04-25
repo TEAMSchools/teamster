@@ -43,8 +43,8 @@ with
         }}
     )
 
+-- noqa: RF02
 select
-    -- noqa: RF02
     * except (
         localstudentidentifier,
         statestudentidentifier,
