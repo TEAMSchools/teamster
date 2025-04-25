@@ -5,6 +5,8 @@ select
     sr.mail,
     sr.reports_to_formatted_name as manager,
     sr.reports_to_mail as manager_mail,
+    sr.home_work_location_name as `location`,
+    sr.home_business_unit_code as entity,
 
     max(l.round_completion_self) as round_completion_self,
     max(l.round_completion_manager) as round_completion_manager,
@@ -27,4 +29,6 @@ group by
     l.term,
     sr.mail,
     sr.reports_to_formatted_name,
-    sr.reports_to_mail
+    sr.reports_to_mail,
+    sr.home_work_location_name,
+    sr.home_business_unit_code
