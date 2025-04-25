@@ -1,0 +1,3 @@
+version: 2
+models:
+  - name: stg_assessments__student_number_xwalk
