@@ -43,8 +43,8 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04)
 select
+    -- noqa: RF02
     * except (
         localstudentidentifier,
         statestudentidentifier,
