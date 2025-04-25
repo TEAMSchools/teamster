@@ -43,17 +43,31 @@ with
         }}
     )
 
--- noqa: RF02
 select
-    * except (
-        localstudentidentifier,
-        statestudentidentifier,
-        _dbt_source_relation_2,
-        test_academic_year,
-        state_student_identifier,
-        test_code,
-        student_number
-    ),
+    u._dbt_source_relation,
+    u.academic_year,
+    u.americanindianoralaskanative,
+    u.asian,
+    u.assessment_name,
+    u.assessmentgrade,
+    u.assessmentyear,
+    u.blackorafricanamerican,
+    u.discipline,
+    u.hispanicorlatinoethnicity,
+    u.is_proficient,
+    u.nativehawaiianorotherpacificislander,
+    u.period,
+    u.firstname,
+    u.lastorsurname,
+    u.subject,
+    u.testcode,
+    u.studenttestuuid,
+    u.test_grade,
+    u.testperformancelevel_text,
+    u.testperformancelevel,
+    u.testscalescore,
+    u.twoormoreraces,
+    u.white,
 
     safe_cast(u.statestudentidentifier as string) as statestudentidentifier,
 
