@@ -190,7 +190,7 @@ sources:
             sheet_range: src_assessments__student_number_xwalk
             skip_leading_rows: 1
         columns:
-          - name: Test_Academic_Year
+          - name: Academic_Year
             data_type: int64
           - name: State_Student_Identifier
             data_type: int64
