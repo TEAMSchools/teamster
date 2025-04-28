@@ -186,6 +186,13 @@ select
     cf.ssds_incident_id,
     cf.referral_to_law_enforcement,
     cf.arrested_for_school_related_activity,
+    cf.final_approval,
+    cf.board_approval_date,
+    cf.approver_name,
+    cf.hi_start_date,
+    cf.hi_end_date,
+    cf.hours_per_week,
+    cf.approver_name,
 
     st.suspension_type,
 
