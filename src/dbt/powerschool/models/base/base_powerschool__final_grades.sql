@@ -1,6 +1,7 @@
 with
     enr_termbins as (
         select
+            enr.cc_dcid,
             enr.cc_studentid,
             enr.cc_sectionid,
             enr.cc_yearid,
@@ -51,6 +52,7 @@ with
 
     enr_grades as (
         select
+            et.cc_dcid,
             et.cc_studentid,
             et.cc_schoolid,
             et.cc_yearid,
@@ -148,6 +150,7 @@ with
 
     final_grades as (
         select
+            cc_dcid,
             cc_studentid,
             cc_schoolid,
             cc_yearid,
@@ -211,6 +214,7 @@ with
 
     fg_running as (
         select
+            cc_dcid,
             cc_studentid,
             cc_schoolid,
             cc_yearid,
@@ -288,6 +292,7 @@ with
 
     y1 as (
         select
+            cc_dcid,
             cc_studentid,
             cc_schoolid,
             cc_yearid,
@@ -377,6 +382,7 @@ with
     )
 
 select
+    y1.cc_dcid as dcid,
     y1.cc_studentid as studentid,
     y1.cc_sectionid as sectionid,
     y1.cc_course_number as course_number,
