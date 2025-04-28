@@ -192,7 +192,6 @@ select
     cf.hi_start_date,
     cf.hi_end_date,
     cf.hours_per_week,
-    cf.approver_name,
 
     st.suspension_type,
 
