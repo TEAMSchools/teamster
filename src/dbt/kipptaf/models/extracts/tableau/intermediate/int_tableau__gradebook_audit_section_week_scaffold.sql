@@ -131,6 +131,10 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
+    concat(
+        tw.region_school_level, sec.courses_credittype
+    ) as region_school_level_credit_type,
+
     case
         when
             tw.region_school_level = 'MiamiES'
