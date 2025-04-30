@@ -7,6 +7,8 @@ with
 
             e.students_dcid,
 
+            concat(e.cc_schoolid, e.courses_credittype) as schoolid_credit_type,
+
             coalesce(s.islate, 0) as islate,
             coalesce(s.isexempt, 0) as isexempt,
             coalesce(s.ismissing, 0) as ismissing,
@@ -36,6 +38,7 @@ with
             round(
                 safe_divide(s.scorepoints, a.totalpointvalue) * 100, 2
             ) as score_percent,
+
         from {{ ref("int_powerschool__gradebook_assignments") }} as a
         /* PS automatically assigns ALL assignments to a student when they enroll into
         a section, including those from before their enrollment date. This join ensures
@@ -96,10 +99,13 @@ select
     countif(s.is_expected_scored) as n_expected_scored,
 
     avg(if(s.is_expected_scored, s.score_percent, null)) as avg_expected_scored_percent,
+
 from scores as s
 left join
     school_course_exceptions as e
     on s.sectionsdcid = e.dcid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="e") }}
-where e.dcid is not null
+where
+    e.dcid is not null
+    and s.schoolid_credit_type not in ('30200804COCUR', '30200804RHET', '30200804SCI')
 group by s._dbt_source_relation, s.assignmentsectionid
