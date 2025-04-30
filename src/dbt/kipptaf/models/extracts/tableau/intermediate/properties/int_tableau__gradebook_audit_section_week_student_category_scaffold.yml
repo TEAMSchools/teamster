@@ -180,3 +180,7 @@ models:
         data_type: boolean
       - name: qt_effort_grade_missing
         data_type: boolean
+      - name: qt_formative_grade_missing
+        data_type: boolean
+      - name: qt_summative_grade_missing
+        data_type: boolean

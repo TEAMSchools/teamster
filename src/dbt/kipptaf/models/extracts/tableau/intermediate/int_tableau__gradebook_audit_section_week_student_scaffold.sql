@@ -72,6 +72,10 @@ select
     qg.citizenship as quarter_citizenship,
     qg.comment_value as quarter_comment_value,
 
+    concat(
+        s.region_school_level, ce.courses_credittype
+    ) as region_school_level_credit_type,
+
     if(
         s.grade_level <= 8, ce.sections_section_number, ce.sections_external_expression
     ) as section_or_period,
