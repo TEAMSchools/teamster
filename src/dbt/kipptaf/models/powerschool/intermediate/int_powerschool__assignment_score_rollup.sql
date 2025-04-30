@@ -107,5 +107,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="s", right_alias="e") }}
 where
     e.dcid is not null
-    and s.schoolid_credit_type not in ('30200804COCUR', '30200804RHET', '30200804SCI')
+    and s.schoolid_credit_type
+    not in ('30200804COCUR', '30200804RHET', '30200804SCI', '30200804SOC')
 group by s._dbt_source_relation, s.assignmentsectionid
