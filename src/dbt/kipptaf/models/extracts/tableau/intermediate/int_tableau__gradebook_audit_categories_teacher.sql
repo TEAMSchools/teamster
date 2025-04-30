@@ -91,6 +91,7 @@ with
             week_number_academic_year,
             week_number_quarter,
             region_school_level,
+            region_school_level_credit_type,
             academic_year_display,
             quarter_end_date_insession,
             sections_dcid,
