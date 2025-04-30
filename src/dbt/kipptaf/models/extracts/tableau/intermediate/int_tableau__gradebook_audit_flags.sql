@@ -146,12 +146,7 @@ with
                 )
             }}
             unpivot (
-                audit_flag_value for audit_flag_name in (
-                    qt_effort_grade_missing,
-                    qt_formative_grade_missing,
-                    qt_summative_grade_missing,
-                    w_grade_inflation
-                )
+                audit_flag_value for audit_flag_name in (qt_effort_grade_missing)
             ) as r
         inner join
             {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -162,6 +157,69 @@ with
             and r.assignment_category_code = 'W'
             and f.cte_grouping = 'student_course_category'
 
+        union all
+
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
+
+        from
+            {{
+                ref(
+                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
+                )
+            }}
+            unpivot (audit_flag_value for audit_flag_name in (w_grade_inflation)) as r
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.quarter = f.code
+            and r.audit_flag_name = f.audit_flag_name
+            and r.assignment_category_code = 'W'
+            and f.cte_grouping = 'student_course_category'
+
+        union all
+
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
+
+        from
+            {{
+                ref(
+                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
+                )
+            }}
+            unpivot (
+                audit_flag_value for audit_flag_name in (qt_formative_grade_missing)
+            ) as r
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.quarter = f.code
+            and r.audit_flag_name = f.audit_flag_name
+            and r.assignment_category_code = 'F'
+            and f.cte_grouping = 'student_course_category'
+
+        union all
+
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
+
+        from
+            {{
+                ref(
+                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
+                )
+            }}
+            unpivot (
+                audit_flag_value for audit_flag_name in (qt_summative_grade_missing)
+            ) as r
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.quarter = f.code
+            and r.audit_flag_name = f.audit_flag_name
+            and r.assignment_category_code = 'S'
+            and f.cte_grouping = 'student_course_category'
     )
 
 -- this captures all flags from assignment_student
