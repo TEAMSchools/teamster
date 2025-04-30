@@ -147,6 +147,7 @@ select
                 tw.quarter_end_date_insession + interval 14 day
             )
         then true
+        else false
     end as is_quarter_end_date_range,
 
     if(
