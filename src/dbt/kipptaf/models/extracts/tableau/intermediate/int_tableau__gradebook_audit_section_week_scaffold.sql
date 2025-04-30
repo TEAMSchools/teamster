@@ -131,15 +131,23 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
-    if(
-        current_date(
-            '{{ var("local_timezone") }}'
-        ) between (tw.quarter_end_date_insession - interval 7 day) and (
-            tw.quarter_end_date_insession + interval 14 day
-        ),
-        true,
-        false
-    ) as is_quarter_end_date_range,
+    case
+        when
+            tw.region_school_level = 'MiamiES'
+            and current_date(
+                '{{ var("local_timezone") }}'
+            ) between (tw.quarter_end_date_insession - interval 40 day) and (
+                tw.quarter_end_date_insession + interval 14 day
+            )
+        then true
+        when
+            current_date(
+                '{{ var("local_timezone") }}'
+            ) between (tw.quarter_end_date_insession - interval 7 day) and (
+                tw.quarter_end_date_insession + interval 14 day
+            )
+        then true
+    end as is_quarter_end_date_range,
 
     if(
         tw.school_level = 'HS',
