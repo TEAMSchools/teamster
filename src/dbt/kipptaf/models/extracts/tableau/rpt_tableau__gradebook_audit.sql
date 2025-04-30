@@ -63,6 +63,7 @@ with
             audit_flag_name,
 
             max(audit_flag_value) as audit_flag_value,
+
         from {{ ref("int_tableau__gradebook_audit_flags") }}
         group by all
     ),
@@ -122,6 +123,7 @@ with
             code_type,
             audit_flag_name,
             audit_flag_value as flag_value,
+
         from {{ ref("int_tableau__gradebook_audit_flags") }}
         where audit_flag_value = 1
     )
@@ -170,6 +172,7 @@ select
     v.is_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -237,6 +240,7 @@ select
     v.is_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -302,6 +306,7 @@ select
     v.is_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -367,6 +372,7 @@ select
     v.is_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -434,6 +440,7 @@ select
     v.is_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 left join
     valid_flags as v
