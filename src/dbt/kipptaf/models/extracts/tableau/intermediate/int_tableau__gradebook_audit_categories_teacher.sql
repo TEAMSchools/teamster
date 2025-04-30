@@ -52,7 +52,9 @@ with
             on a.assignmentsectionid = asg.assignmentsectionid
             and regexp_extract(a._dbt_source_relation, r'(kipp\w+)_')
             = regexp_extract(asg._dbt_source_relation, r'(kipp\w+)_')
-
+        where
+            sec.region_school_level_credit_type
+            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI')
     ),
 
     percent_graded as (
@@ -112,18 +114,23 @@ with
             notes,
 
             avg(expectation) as expectation,
+
             avg(
                 running_count_assignments_section_category_term
             ) as running_count_assignments_section_category_term,
+
             avg(
                 sum_totalpointvalue_section_quarter_category
             ) as sum_totalpointvalue_section_quarter_category,
+
             avg(
                 total_expected_section_quarter_week_category
             ) as total_expected_section_quarter_week_category,
+
             avg(
                 total_expected_scored_section_quarter_week_category
             ) as total_expected_scored_section_quarter_week_category,
+
             avg(
                 percent_graded_for_quarter_week_class
             ) as percent_graded_for_quarter_week_class,
