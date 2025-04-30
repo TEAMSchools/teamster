@@ -131,15 +131,28 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
-    if(
-        current_date(
-            '{{ var("local_timezone") }}'
-        ) between (tw.quarter_end_date_insession - interval 7 day) and (
-            tw.quarter_end_date_insession + interval 14 day
-        ),
-        true,
-        false
-    ) as is_quarter_end_date_range,
+    concat(
+        tw.region_school_level, sec.courses_credittype
+    ) as region_school_level_credit_type,
+
+    case
+        when
+            tw.region_school_level = 'MiamiES'
+            and current_date(
+                '{{ var("local_timezone") }}'
+            ) between (tw.quarter_end_date_insession - interval 40 day) and (
+                tw.quarter_end_date_insession + interval 14 day
+            )
+        then true
+        when
+            current_date(
+                '{{ var("local_timezone") }}'
+            ) between (tw.quarter_end_date_insession - interval 7 day) and (
+                tw.quarter_end_date_insession + interval 14 day
+            )
+        then true
+        else false
+    end as is_quarter_end_date_range,
 
     if(
         tw.school_level = 'HS',
@@ -160,3 +173,4 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on tw.schoolid = hos.home_work_location_powerschool_school_id
+where concat(tw.region_school_level, sec.courses_credittype) != 'MiamiESSOC'

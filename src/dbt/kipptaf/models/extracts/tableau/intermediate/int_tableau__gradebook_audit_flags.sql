@@ -18,6 +18,9 @@ with
                     assign_s_hs_score_not_conversion_chart_options
                 )
             )
+        where
+            region_school_level_credit_type
+            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI')
     ),
 
     teacher_unpivot_cca as (
@@ -37,6 +40,9 @@ with
             and r.assignment_category_code = f.code
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'class_category_assignment'
+        where
+            r.region_school_level_credit_type
+            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI')
     ),
 
     teacher_unpivot_cc as (
@@ -63,6 +69,9 @@ with
             and r.assignment_category_code = f.code
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'class_category'
+        where
+            r.region_school_level_credit_type
+            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI')
     ),
 
     eoq_items as (
@@ -90,6 +99,12 @@ with
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping in ('student_course', 'student')
             and f.audit_category != 'Conduct Code'
+        where
+            concat(r.region_school_level_credit_type, r.audit_flag_name) not in (
+                'MiamiESCOCURqt_comment_missing',
+                'MiamiESRHETqt_comment_missing',
+                'MiamiESSCIqt_comment_missing'
+            )
     ),
 
     eoq_items_conduct_code as (
@@ -119,9 +134,10 @@ with
         where r.school_level = 'ES'
     ),
 
+    /* w_grade_inflation, qt_effort_grade_missing, qt_formative_grade_missing,
+    qt_summative_grade_missing */
     student_course_category as (
-        select  -- w_grade_inflation and qt_effort_grade_missing
-            r.*, f.cte_grouping, f.audit_category, f.code_type,
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
             {{
@@ -130,8 +146,12 @@ with
                 )
             }}
             unpivot (
-                audit_flag_value for audit_flag_name
-                in (qt_effort_grade_missing, w_grade_inflation)
+                audit_flag_value for audit_flag_name in (
+                    qt_effort_grade_missing,
+                    qt_formative_grade_missing,
+                    qt_summative_grade_missing,
+                    w_grade_inflation
+                )
             ) as r
         inner join
             {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -291,8 +311,9 @@ left join
     and r.assignmentid = t.assignmentid
 
 union all
--- this captures all student_course_category: qt_effort_grade_missing and
--- w_grade_inflation
+/* this captures all student_course_category: qt_effort_grade_missing,
+qt_formative_grade_missing, qt_summative_grade_missing, and
+w_grade_inflation */
 select
     _dbt_source_relation,
     academic_year,
