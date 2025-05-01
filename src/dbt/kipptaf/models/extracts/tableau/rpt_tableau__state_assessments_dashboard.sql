@@ -281,11 +281,14 @@ with
             region,
             city,
             `state`,
+            neighborhood_schools,
             'Spring' as season,
 
         from
-            {{ ref("stg_assessments__state_test_comparison") }}
-            pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
+            {{ ref("stg_assessments__state_test_comparison") }} pivot (
+                avg(percent_proficient) for comparison_entity
+                in ('City', 'State', 'Neighborhood Schools' as neighborhood_schools)
+            )
     ),
 
     goals as (
