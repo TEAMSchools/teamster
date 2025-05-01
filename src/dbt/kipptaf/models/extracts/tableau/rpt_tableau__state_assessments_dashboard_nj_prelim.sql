@@ -1,5 +1,11 @@
 {#- CHANGE YEAR HERE ONLY -#}
-{%- set academic_year = "2023" -%}
+{%- set academic_year = "2024" -%}
+
+{% set comparison_entities = [
+    {"label": "City", "prefix": "city"},
+    {"label": "State", "prefix": "state"},
+    {"label": "Neighborhood Schools", "prefix": "neighborhood_schools"},
+] %}
 
 with
     students_nj as (
@@ -136,10 +142,30 @@ with
     ),
 
     state_comps as (
-        select academic_year, test_name, test_code, region, city, `state`,
-        from
-            {{ ref("stg_assessments__state_test_comparison") }}
-            pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
+        select
+            academic_year,
+            test_name,
+            test_code,
+            region,
+            'Spring' as season,
+            {% for entity in comparison_entities %}
+                avg(
+                    case
+                        when comparison_entity = '{{ entity.label }}'
+                        then percent_proficient
+                    end
+                ) as {{ entity.prefix }}_percent_proficient,
+                avg(
+                    case
+                        when comparison_entity = '{{ entity.label }}'
+                        then total_students
+                    end
+                ) as {{ entity.prefix }}_total_students
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+
+        from {{ ref("stg_assessments__state_test_comparison") }}
+        group by academic_year, test_name, test_code, region
     )
 
 select
@@ -184,8 +210,13 @@ select
     mcur.teachernumber as teacher_number_current,
     mcur.teacher_name as teacher_name_current,
 
-    c.city as proficiency_city,
-    c.state as proficiency_state,
+    c.city_percent_proficient as proficiency_city,
+    c.state_percent_proficient as proficiency_state,
+    c.neighborhood_schools_percent_proficient as proficiency_neighborhood_schools,
+
+    c.city_total_students as total_students_city,
+    c.state_total_students as total_students_state,
+    c.neighborhood_schools_total_students as total_students_neighborhood_schools,
 
     g.grade_level as assessment_grade_level,
     g.grade_goal,

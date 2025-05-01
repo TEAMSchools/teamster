@@ -1,3 +1,9 @@
+{% set comparison_entities = [
+    {"label": "City", "prefix": "city"},
+    {"label": "State", "prefix": "state"},
+    {"label": "Neighborhood Schools", "prefix": "neighborhood_schools"},
+] %}
+
 with
     students as (
         select
@@ -279,16 +285,25 @@ with
             test_name,
             test_code,
             region,
-            city,
-            `state`,
-            neighborhood_schools,
             'Spring' as season,
+            {% for entity in comparison_entities %}
+                avg(
+                    case
+                        when comparison_entity = '{{ entity.label }}'
+                        then percent_proficient
+                    end
+                ) as {{ entity.prefix }}_percent_proficient,
+                avg(
+                    case
+                        when comparison_entity = '{{ entity.label }}'
+                        then total_students
+                    end
+                ) as {{ entity.prefix }}_total_students
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
 
-        from
-            {{ ref("stg_assessments__state_test_comparison") }} pivot (
-                avg(percent_proficient) for comparison_entity
-                in ('City', 'State', 'Neighborhood Schools' as neighborhood_schools)
-            )
+        from {{ ref("stg_assessments__state_test_comparison") }}
+        group by academic_year, test_name, test_code, region
     ),
 
     goals as (
@@ -341,8 +356,13 @@ select
     s.performance_band_level,
     s.is_proficient,
 
-    c.city as proficiency_city,
-    c.state as proficiency_state,
+    c.city_percent_proficient as proficiency_city,
+    c.state_percent_proficient as proficiency_state,
+    c.neighborhood_schools_percent_proficient as proficiency_neighborhood_schools,
+
+    c.city_total_students as total_students_city,
+    c.state_total_students as total_students_state,
+    c.neighborhood_schools_total_students as total_students_neighborhood_schools,
 
     g.grade_level as assessment_grade_level,
     g.grade_goal,
@@ -433,6 +453,11 @@ select
     is_proficient,
     proficiency_city,
     proficiency_state,
+    proficiency_neighborhood_schools,
+
+    total_students_city,
+    total_students_state,
+    total_students_neighborhood_schools,
     assessment_grade_level,
     grade_goal,
     school_goal,
