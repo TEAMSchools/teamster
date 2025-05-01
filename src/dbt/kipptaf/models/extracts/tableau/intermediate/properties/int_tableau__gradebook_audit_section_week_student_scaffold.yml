@@ -140,6 +140,8 @@ models:
         data_type: string
       - name: quarter_comment_value
         data_type: string
+      - name: region_school_level_credit_type
+        data_type: sting
       - name: section_or_period
         data_type: string
       - name: qt_percent_grade_greater_100
