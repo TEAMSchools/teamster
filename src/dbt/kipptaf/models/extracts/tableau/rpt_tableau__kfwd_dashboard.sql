@@ -308,6 +308,7 @@ select
 
     apps.name as application_name,
     apps.account_type as application_account_type,
+    apps.account_name as application_school_name,
 
     ar.n_submitted,
     ar.n_accepted,
