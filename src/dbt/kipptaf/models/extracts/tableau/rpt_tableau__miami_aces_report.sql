@@ -4,37 +4,17 @@ with
         from
             unnest(
                 generate_date_array(
-                    '2022-07-31',  -- Start date (first day of a month)
-                    date_add(
-                        current_date('{{ var("local_timezone") }}'), interval 100 year
-                    ),  -- Far-future cutoff
-                    interval 3 month  -- Quarterly interval
+                    date '2022-07-31',
+                    date({{ var("current_fiscal_year") }}, 6, 30),
+                    interval 3 month
                 )
             ) as date_quarter
-    ),
-
-    latest_sr as (
-        select *,
-        from
-            (
-                select
-                    sr.*,
-                    ds.quarter_end_date,
-                    row_number() over (
-                        partition by ds.quarter_end_date, sr.employee_number
-                        order by sr.effective_date_start desc
-                    ) as rn,
-                from {{ ref("int_people__staff_roster_history") }} as sr
-                left join
-                    date_spine as ds
-                    on ds.quarter_end_date between sr.effective_date_start and date(
-                        {{ var("current_fiscal_year") }}, 07, 30
-                    )
-            )
     )
 
 select
-    sr.quarter_end_date as report_date,
+    ds.quarter_end_date as report_date,
+    sr.effective_date_start,
+    sr.effective_date_end,
     sr.job_title,
     sr.home_work_location_name,
     sr.assignment_status,
@@ -59,10 +39,14 @@ select
     'N/A' as teacher_eval,
     'N/A' as contribution504b,
     'B' as basiclifeplan,
-from latest_sr as sr
+from {{ ref("int_people__staff_roster_history") }} as sr
+left join
+    date_spine as ds
+    on ds.quarter_end_date between sr.effective_date_start and sr.effective_date_end
+    and sr.primary_indicator
 where
-    sr.home_business_unit_name = 'KIPP Miami'
-    and sr.rn = 1
+    ds.quarter_end_date is not null
+    and sr.home_business_unit_name = 'KIPP Miami'
     and (
         sr.worker_termination_date > date({{ var("current_academic_year") }}, 07, 01)
         or sr.worker_termination_date is null
