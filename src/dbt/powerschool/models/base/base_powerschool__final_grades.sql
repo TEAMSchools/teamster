@@ -382,7 +382,7 @@ with
     )
 
 select
-    y1.cc_dcid as dcid,
+    y1.cc_dcid,
     y1.cc_studentid as studentid,
     y1.cc_sectionid as sectionid,
     y1.cc_course_number as course_number,
