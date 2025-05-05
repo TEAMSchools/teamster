@@ -25,3 +25,24 @@ sources:
               - kipptaf
               - collegeboard
               - id_crosswalk
+      - name: src_collegeboard__ap_code_table
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE
+            sheet_range: src_collegeboard__ap_code_table
+            skip_leading_rows: 1
+        columns:
+          - name: Domain
+            data_type: string
+          - name: Code
+            data_type: string
+          - name: Description
+            data_type: string
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - collegeboard
+              - ap_code_table
