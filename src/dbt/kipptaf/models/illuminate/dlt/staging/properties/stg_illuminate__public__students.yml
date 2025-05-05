@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_illuminate__public__students
+    columns:
+      - name: student_id
+        data_type: int64
+      - name: local_student_id
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true

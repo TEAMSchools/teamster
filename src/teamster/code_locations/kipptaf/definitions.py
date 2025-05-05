@@ -29,13 +29,13 @@ from teamster.code_locations.kipptaf import (
     resources,
     schoolmint,
     smartrecruiters,
+    surveys,
     tableau,
 )
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     GCS_RESOURCE,
     OVERGRAD_RESOURCE,
-    SLACK_RESOURCE,
     SSH_COUCHDROP,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
@@ -81,6 +81,7 @@ defs = Definitions(
         *ldap.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
+        *surveys.schedules,
     ],
     sensors=[
         *_google.sensors,
@@ -104,6 +105,7 @@ defs = Definitions(
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "dds": resources.DIBELS_DATA_SYSTEM_RESOURCE,
         "dlt": resources.DLT_RESOURCE,
+        "email": resources.OUTLOOK_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,
         "google_drive": resources.GOOGLE_DRIVE_RESOURCE,
@@ -117,7 +119,6 @@ defs = Definitions(
         "overgrad": OVERGRAD_RESOURCE,
         "ps_enrollment": resources.POWERSCHOOL_ENROLLMENT_RESOURCE,
         "schoolmint_grow": resources.SCHOOLMINT_GROW_RESOURCE,
-        "slack": SLACK_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
         "ssh_adp_workforce_now": resources.SSH_RESOURCE_ADP_WORKFORCE_NOW,
         "ssh_clever": resources.SSH_RESOURCE_CLEVER,

@@ -3,6 +3,7 @@ with
         select
             id,
             contact,
+            school_specific_id,
             academic_year,
             administration_round,
             `date`,
@@ -59,8 +60,9 @@ with
             row_number() over (
                 partition by contact, test_type, score_type order by score desc
             ) as rn_highest,
+
         from
-            {{ ref("stg_kippadb__standardized_test") }} unpivot (
+            {{ ref("int_kippadb__standardized_test") }} unpivot (
                 score for score_type in (
                     act_composite,
                     act_ela,

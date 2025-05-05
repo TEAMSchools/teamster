@@ -14,10 +14,10 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    _check,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -68,9 +68,7 @@ def build_renlearn_sftp_sensor(
 
             last_run = cursor.get(asset_identifier, 0)
 
-            partitions_def = _check.inst(
-                asset.partitions_def, MultiPartitionsDefinition
-            )
+            partitions_def = check.inst(asset.partitions_def, MultiPartitionsDefinition)
 
             subjects = partitions_def.get_partitions_def_for_dimension("subject")
             job_name = (
@@ -85,7 +83,7 @@ def build_renlearn_sftp_sensor(
                 if (
                     match is not None
                     and f.st_mtime > last_run
-                    and _check.not_none(value=f.st_size) > 0
+                    and check.not_none(value=f.st_size) > 0
                 ):
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     for subject in subjects.get_partition_keys():

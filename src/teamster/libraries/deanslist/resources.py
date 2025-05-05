@@ -3,7 +3,8 @@ import pathlib
 import fastavro
 import fastavro.types
 import yaml
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Session
 from requests.exceptions import HTTPError
@@ -20,7 +21,7 @@ class DeansListResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
         self._base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
 
         with open(self.api_key_map) as f:

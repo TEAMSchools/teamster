@@ -822,3 +822,67 @@ sources:
               - kippcamden
               - powerschool
               - stg_powerschool__u_storedgrades_de
+      - name: stg_powerschool__gpprogresssubjectearned
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpprogresssubjectearned
+      - name: stg_powerschool__gpprogresssubjectenrolled
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpprogresssubjectenrolled
+      - name: stg_powerschool__gpprogresssubjectrequested
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpprogresssubjectrequested
+      - name: stg_powerschool__gpprogresssubjwaivedapplied
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpprogresssubjwaivedapplied
+      - name: stg_powerschool__gpselectedcrs
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpselectedcrs
+      - name: stg_powerschool__gpselectedcrtype
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpselectedcrtype
+      - name: stg_powerschool__gpselector
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gpselector
+      - name: stg_powerschool__gptarget
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__gptarget

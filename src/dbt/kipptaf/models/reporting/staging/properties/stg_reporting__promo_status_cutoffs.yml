@@ -4,6 +4,7 @@ models:
     config:
       contract:
         enforced: true
+      tags: google_sheet
     columns:
       - name: Region
         data_type: string
@@ -31,3 +32,5 @@ models:
         data_type: float64
       - name: Is_Exempt
         data_type: boolean
+      - name: Cutoff_Alt
+        data_type: float64

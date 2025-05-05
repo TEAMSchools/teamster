@@ -106,7 +106,7 @@ with
 
     college_assessments_official as (
         select
-            salesforce_id as contact,
+            student_number,
             scope,
             test_date,
             administration_round,
@@ -125,7 +125,6 @@ with
                     date_field="test_date", start_month=7, year_source="start"
                 )
             }} as test_academic_year,
-
         from {{ ref("int_assessments__college_assessment") }}
         where
             score_type in (
@@ -196,7 +195,7 @@ select
 from roster as e
 left join
     college_assessments_official as o
-    on e.contact_id = o.contact
+    on e.student_number = o.student_number
     and e.academic_year = o.test_academic_year
 where o.test_type = 'Official'
 

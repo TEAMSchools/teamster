@@ -308,6 +308,7 @@ select
 
     apps.name as application_name,
     apps.account_type as application_account_type,
+    apps.account_name as application_school_name,
 
     ar.n_submitted,
     ar.n_accepted,
@@ -610,6 +611,8 @@ select
     if(
         ei.ecc_pursuing_degree_type = "Bachelor's (4-year)", true, false
     ) as has_4yr_ecc_enrollment,
+
+    coalesce(ei.ecc_adjusted_6_year_minority_graduation_rate, 0) as urm_ecc_school,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student

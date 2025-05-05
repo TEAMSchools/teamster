@@ -28,14 +28,18 @@ with
             a.admin_season as expected_test,
             a.test_code,
             a.month_round,
-
             a.grade as expected_grade_level,
+
+            g.grade_goal as admin_benchmark,
+
             regexp_extract(
                 a.assessment_subject_area, r'^[^_]*'
             ) as expected_mclass_measure_name_code,
+
             regexp_substr(
                 a.assessment_subject_area, r'_(.*?)_'
             ) as expected_mclass_measure_name,
+
             regexp_substr(
                 a.assessment_subject_area, r'[^_]+$'
             ) as expected_mclass_measure_standard,
@@ -48,6 +52,7 @@ with
                 true,
                 false
             ) as year_grade_filter,
+
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
             {{ ref("stg_assessments__assessment_expectations") }} as a
@@ -55,6 +60,14 @@ with
             and e.region = a.region
             and e.grade_level = a.grade
             and a.scope = 'DIBELS'
+        left join
+            {{ ref("int_assessments__academic_goals") }} as g
+            on a.academic_year = g.academic_year
+            and a.region = g.region
+            and a.grade = g.grade_level
+            and a.admin_season = g.state_assessment_code
+            and g.illuminate_subject_area = 'Early Literacy'
+            and e.schoolid = g.school_id
         where
             not e.is_self_contained
             and e.academic_year >= {{ var("current_academic_year") - 1 }}
@@ -80,6 +93,7 @@ with
             1 as scheduled,
 
             right(m.courses_course_name, 1) as schedule_student_grade_level,
+
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
             {{ ref("int_people__leadership_crosswalk") }} as hos
@@ -133,9 +147,8 @@ select
     s.expected_mclass_measure_name_code,
     s.expected_mclass_measure_name,
     s.expected_mclass_measure_standard,
-
     null as goal,
-    null as admin_benchmark,
+    s.admin_benchmark,
 
     m.schedule_student_number,
     m.schedule_student_grade_level,
@@ -181,6 +194,7 @@ select
     if(
         s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
     ) as expected_grade_level,
+
 from students as s
 left join
     schedules as m
@@ -278,4 +292,5 @@ select
     met_bm_goal,
     expected_round,
     expected_grade_level,
+
 from {{ ref("rpt_tableau__dibels_pm_dashboard") }}

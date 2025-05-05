@@ -2,12 +2,12 @@ with
     ap_assessments_official as (
         select
             contact,
-            date as test_date,
+            `date` as test_date,
             score as scale_score,
             rn_highest,
 
             concat(
-                format_date('%b', date), ' ', format_date('%g', date)
+                format_date('%b', `date`), ' ', format_date('%g', `date`)
             ) as administration_round,
 
             case

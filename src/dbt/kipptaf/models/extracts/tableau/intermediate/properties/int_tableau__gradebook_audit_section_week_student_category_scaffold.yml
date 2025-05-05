@@ -1,0 +1,186 @@
+version: 2
+models:
+  - name: int_tableau__gradebook_audit_section_week_student_category_scaffold
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_display
+        data_type: string
+      - name: yearid
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: students_dcid
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: salesforce_id
+        data_type: string
+      - name: ktc_cohort
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: advisory
+        data_type: string
+      - name: hos
+        data_type: string
+      - name: region_school_level
+        data_type: string
+      - name: year_in_school
+        data_type: int64
+      - name: year_in_network
+        data_type: int64
+      - name: rn_undergrad
+        data_type: int64
+      - name: is_out_of_district
+        data_type: boolean
+      - name: is_self_contained
+        data_type: boolean
+      - name: is_retained_year
+        data_type: boolean
+      - name: is_retained_ever
+        data_type: boolean
+      - name: lunch_status
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: is_504
+        data_type: boolean
+      - name: is_counseling_services
+        data_type: int64
+      - name: is_student_athlete
+        data_type: int64
+      - name: ada
+        data_type: float64
+      - name: ada_above_or_at_80
+        data_type: boolean
+      - name: sectionid
+        data_type: int64
+      - name: course_number
+        data_type: string
+      - name: date_enrolled
+        data_type: date
+      - name: sections_dcid
+        data_type: int64
+      - name: section_number
+        data_type: string
+      - name: external_expression
+        data_type: string
+      - name: termid
+        data_type: int64
+      - name: credit_type
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: exclude_from_gpa
+        data_type: int64
+      - name: teacher_number
+        data_type: string
+      - name: teacher_name
+        data_type: string
+      - name: is_ap_course
+        data_type: boolean
+      - name: tableau_username
+        data_type: string
+      - name: quarter
+        data_type: string
+      - name: semester
+        data_type: string
+      - name: quarter_start_date
+        data_type: date
+      - name: quarter_end_date
+        data_type: date
+      - name: is_current_term
+        data_type: boolean
+      - name: is_quarter_end_date_range
+        data_type: boolean
+      - name: week_start_date
+        data_type: date
+      - name: week_end_date
+        data_type: date
+      - name: week_start_monday
+        data_type: date
+      - name: week_end_sunday
+        data_type: date
+      - name: school_week_start_date_lead
+        data_type: date
+      - name: week_number_academic_year
+        data_type: int64
+      - name: week_number_quarter
+        data_type: int64
+      - name: quarter_course_percent_grade_that_matters
+        data_type: float64
+      - name: quarter_course_grade_points_that_matters
+        data_type: float64
+      - name: quarter_citizenship
+        data_type: string
+      - name: quarter_comment_value
+        data_type: string
+      - name: section_or_period
+        data_type: string
+      - name: qt_percent_grade_greater_100
+        data_type: boolean
+      - name: qt_grade_70_comment_missing
+        data_type: boolean
+      - name: qt_g1_g8_conduct_code_missing
+        data_type: boolean
+      - name: qt_g1_g8_conduct_code_incorrect
+        data_type: boolean
+      - name: qt_kg_conduct_code_missing
+        data_type: boolean
+      - name: qt_kg_conduct_code_not_hr
+        data_type: boolean
+      - name: qt_kg_conduct_code_incorrect
+        data_type: boolean
+      - name: qt_comment_missing
+        data_type: boolean
+      - name: qt_es_comment_missing
+        data_type: boolean
+      - name: qt_student_is_ada_80_plus_gpa_less_2
+        data_type: boolean
+      - name: assignment_category_name
+        data_type: string
+      - name: assignment_category_code
+        data_type: string
+      - name: assignment_category_term
+        data_type: string
+      - name: expectation
+        data_type: int64
+      - name: notes
+        data_type: string
+      - name: category_quarter_percent_grade
+        data_type: float64
+      - name: category_quarter_average_all_courses
+        data_type: float64
+      - name: w_grade_inflation
+        data_type: boolean
+      - name: qt_effort_grade_missing
+        data_type: boolean
+      - name: qt_formative_grade_missing
+        data_type: boolean
+      - name: qt_summative_grade_missing
+        data_type: boolean

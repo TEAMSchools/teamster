@@ -1,0 +1,130 @@
+version: 2
+models:
+  - name: int_google_forms__form_responses
+    columns:
+      - name: form_id
+        data_type: string
+      - name: revision_id
+        data_type: string
+      - name: responder_uri
+        data_type: string
+      - name: linked_sheet_id
+        data_type: string
+      - name: info_title
+        data_type: string
+      - name: info_document_title
+        data_type: string
+      - name: info_description
+        data_type: string
+      - name: settings_quiz_settings_is_quiz
+        data_type: boolean
+      - name: item_id
+        data_type: string
+      - name: item_title
+        data_type: string
+      - name: item_description
+        data_type: string
+      - name: item_kind
+        data_type: string
+      - name: image_alt_text
+        data_type: string
+      - name: image_content_uri
+        data_type: string
+      - name: image_alignment
+        data_type: string
+      - name: image_width
+        data_type: int64
+      - name: image_source_uri
+        data_type: string
+      - name: video_caption
+        data_type: string
+      - name: video_alignment
+        data_type: string
+      - name: video_width
+        data_type: int64
+      - name: video_youtube_uri
+        data_type: string
+      - name: question_group_grid_shuffle_questions
+        data_type: boolean
+      - name: question_group_grid_columns_type
+        data_type: string
+      - name: question_id
+        data_type: string
+      - name: question_required
+        data_type: boolean
+      - name: question_kind
+        data_type: string
+      - name: question_point_value
+        data_type: int64
+      - name: question_general_feedback_text
+        data_type: string
+      - name: question_when_right_text
+        data_type: string
+      - name: question_when_wrong_text
+        data_type: string
+      - name: question_include_time
+        data_type: boolean
+      - name: question_include_year
+        data_type: boolean
+      - name: question_folder_id
+        data_type: string
+      - name: question_max_files
+        data_type: int64
+      - name: question_max_file_size
+        data_type: string
+      - name: question_types
+        data_type: string
+      - name: question_title
+        data_type: string
+      - name: question_high
+        data_type: int64
+      - name: question_high_label
+        data_type: string
+      - name: question_low
+        data_type: int64
+      - name: question_low_label
+        data_type: string
+      - name: question_paragraph
+        data_type: boolean
+      - name: question_duration
+        data_type: boolean
+      - name: question_choice_shuffle
+        data_type: boolean
+      - name: question_choice_type
+        data_type: string
+      - name: item_abbreviation
+        data_type: string
+      - name: item_url_id
+        data_type: string
+      - name: response_id
+        data_type: string
+      - name: create_time
+        data_type: string
+      - name: last_submitted_time
+        data_type: string
+      - name: respondent_email
+        data_type: string
+      - name: total_score
+        data_type: float64
+      - name: rn_form_respondent_submitted_desc
+        data_type: int64
+      - name: text_value
+        data_type: string
+      - name: text_is_null_value
+        data_type: boolean
+      - name: file_upload_file_id
+        data_type: string
+      - name: file_upload_file_name
+        data_type: string
+      - name: file_upload_mime_type
+        data_type: string
+      - name: rn_form_item_respondent_submitted_desc
+        data_type: int64
+      - name: last_submitted_timestamp
+        data_type: timestamp
+      - name: create_timestamp
+        data_type: timestamp
+      - name: last_submitted_date_local
+        data_type: date
+      - name: employee_number
+        data_type: int64
