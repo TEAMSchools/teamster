@@ -3,6 +3,7 @@ with
         select
             student_id,
             academic_year_int,
+            overall_scale_score,
 
             lower(subject) as subject,
             concat(
@@ -20,6 +21,21 @@ with
         from
             iready_long
             pivot (max(iready_most_recent) for subject in ('reading', 'math'))
+    ),
+
+    iready_pivot_scale as (
+        select
+            student_id,
+            academic_year_int,
+            iready_recent_scale_reading,
+            iready_recent_scale_math,
+        from
+            iready_long pivot (
+                max(overall_scale_score) for subject in (
+                    'reading' as iready_recent_scale_reading,
+                    'math' as iready_recent_scale_math
+                )
+            )
     ),
 
     dibels_recent as (
