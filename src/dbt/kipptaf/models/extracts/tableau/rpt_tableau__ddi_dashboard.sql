@@ -169,6 +169,7 @@ with
         left join
             {{ ref("int_extracts__student_enrollments_subjects") }} as sf
             on co.student_number = sf.student_number
+            and co.academic_year = sf.academic_year
             and cc.courses_credittype = sf.powerschool_credittype
         left join
             {{ ref("base_powerschool__course_enrollments") }} as hr
