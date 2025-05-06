@@ -414,7 +414,7 @@ left join
     on s.academic_year = sf2.academic_year - 1
     and s.discipline = sf2.discipline
     and s.student_number = sf2.student_number
-    /*
+
 union all
 
 select
@@ -427,6 +427,7 @@ select
     state_studentnumber,
     student_name,
     grade_level,
+    null as most_recent_grade_level,
     cohort,
     enroll_status,
     gender,
@@ -438,6 +439,7 @@ select
     iep_status,
     ms_attended,
     advisory,
+    year_in_network,
     assessment_name,
     discipline,
     `subject`,
@@ -451,6 +453,7 @@ select
     performance_band,
     performance_band_level,
     is_proficient,
+
     proficiency_city,
     proficiency_state,
     proficiency_neighborhood_schools,
@@ -458,21 +461,27 @@ select
     total_students_city,
     total_students_state,
     total_students_neighborhood_schools,
+
     assessment_grade_level,
+
     grade_goal,
     school_goal,
     region_goal,
     organization_goal,
+
     nj_student_tier,
     tutoring_nj,
     iready_proficiency_eoy,
+
     teachernumber,
     teacher_name,
     course_number,
     course_name,
+    null as school_current,
+
     teacher_number_current as teachernumber_current,
     teacher_name_current,
+
     results_type,
+
 from {{ ref("rpt_tableau__state_assessments_dashboard_nj_prelim") }}
-*/
-    
