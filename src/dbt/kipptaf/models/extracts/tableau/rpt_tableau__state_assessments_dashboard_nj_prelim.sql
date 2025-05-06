@@ -36,7 +36,7 @@ with
         from {{ ref("int_extracts__student_enrollments") }}
         where
             region in ('Camden', 'Newark')
-            and academic_year >= {{ academic_year }}
+            and academic_year = {{ academic_year }}
             and grade_level > 2
     ),
 
@@ -66,7 +66,7 @@ with
             e.rn_credittype_year = 1
             and not e.is_dropped_section
             and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
-            and e.cc_academic_year >= {{ academic_year }}
+            and e.cc_academic_year = {{ academic_year }}
     ),
 
     assessments_nj as (
@@ -139,7 +139,10 @@ with
                 then concat('ELA', regexp_extract(test_name, r'.{6}(.{2})'))
             end as test_code,
         from {{ ref("stg_pearson__student_list_report") }}
-        where state_student_identifier is not null and administration = 'Spring'
+        where
+            state_student_identifier is not null
+            and administration = 'Spring'
+            and academic_year = {{ academic_year }}
     ),
 
     state_comps as (
@@ -166,6 +169,7 @@ with
             {% endfor %}
 
         from {{ ref("stg_assessments__state_test_comparison") }}
+        where academic_year = {{ academic_year }}
         group by academic_year, test_name, test_code, region
     )
 
