@@ -23,7 +23,6 @@ select
     sg.is_transfer_grade,
 
     'Earned' as credit_status,
-
 from {{ ref("int_powerschool__gpnode") }} as gpn
 inner join
     {{ ref("stg_powerschool__gpprogresssubject") }} as sub
@@ -55,19 +54,19 @@ select
     sub.studentsdcid,
 
     fg.academic_year,
-    fg.schoolname,
+    fg.school_name as schoolname,
     fg.studentid,
-    fg.teacher_name,
+    fg.teacher_lastfirst as teacher_name,
     fg.course_name,
     fg.course_number,
     fg.sectionid,
-    fg.credit_type,
+    fg.credittype as credit_type,
     fg.y1_letter_grade_adjusted as letter_grade,
     fg.potential_credit_hours as credits,
-    fg.is_transfer_grade,
+
+    false as is_transfer_grade,
 
     'Enrolled' as credit_status,
-
 from {{ ref("int_powerschool__gpnode") }} as gpn
 inner join
     {{ ref("stg_powerschool__gpprogresssubject") }} as sub
@@ -81,5 +80,5 @@ inner join
 inner join
     {{ ref("base_powerschool__final_grades") }} as fg
     on se.ccdcid = fg.cc_dcid
-    and fg.storecode = 'Y1'
     and {{ union_dataset_join_clause(left_alias="se", right_alias="fg") }}
+    and fg.storecode = 'Y1'
