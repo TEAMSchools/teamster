@@ -80,6 +80,6 @@ inner join
     and {{ union_dataset_join_clause(left_alias="sub", right_alias="se") }}
 inner join
     {{ ref("base_powerschool__final_grades") }} as fg
-    on se.ccdcid = fg.dcid
+    on se.ccdcid = fg.cc_dcid
     and fg.storecode = 'Y1'
     and {{ union_dataset_join_clause(left_alias="se", right_alias="fg") }}
