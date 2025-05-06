@@ -9,6 +9,7 @@ select
     `period`,
     `subject`,
     testcode,
+    studenttestuuid,
     testperformancelevel,
     testscalescore,
     testscorecomplete,
@@ -34,6 +35,7 @@ select
         staffmemberidentifier.long_value,
         cast(staffmemberidentifier.double_value as int)
     ) as staffmemberidentifier,
+
     coalesce(
         testadministrator.long_value, cast(testadministrator.double_value as int)
     ) as testadministrator,
@@ -42,18 +44,22 @@ select
         testcsemprobablerange.double_value,
         safe_cast(trim(testcsemprobablerange.string_value) as numeric)
     ) as testcsemprobablerange,
+
     coalesce(
         testreadingcsem.double_value,
         safe_cast(trim(testreadingcsem.string_value) as numeric)
     ) as testreadingcsem,
+
     coalesce(
         testreadingscalescore.double_value,
         safe_cast(trim(testreadingscalescore.string_value) as numeric)
     ) as testreadingscalescore,
+
     coalesce(
         testwritingcsem.double_value,
         safe_cast(trim(testwritingcsem.string_value) as numeric)
     ) as testwritingcsem,
+
     coalesce(
         testwritingscalescore.double_value,
         safe_cast(trim(testwritingscalescore.string_value) as numeric)
@@ -74,5 +80,6 @@ select
         when 1
         then 'Not Yet Graduation Ready'
     end as testperformancelevel_text,
+
 from {{ source("pearson", "src_pearson__njgpa") }}
 where summativeflag = 'Y' and testattemptednessflag = 'Y'
