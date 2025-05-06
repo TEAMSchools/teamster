@@ -46,7 +46,7 @@ student_list_report = build_sftp_file_asset(
         {
             "test_type": StaticPartitionsDefinition(["njsla", "njgpa"]),
             "administration_fiscal_year": StaticPartitionsDefinition(
-                ["Spring2024", "Spring2023", "Spring2022"]
+                ["Spring2025", "Spring2024", "Spring2023", "Spring2022"]
             ),
         }
     ),
