@@ -39,6 +39,7 @@ with
             co.academic_year = {{ var("current_academic_year") }}
             and co.enroll_status = 0
             and co.grade_level >= 5
+            and co.rn_year = 1
     )
 
 select

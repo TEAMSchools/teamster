@@ -97,7 +97,11 @@ with
             on s.cc_academic_year = f.academic_year
             and s.students_student_number = f.student_number
             and s.courses_credittype = f.powerschool_credittype
-        where e.school_level = 'HS' and ec.courses_course_name_expected is not null
+            and f.rn_year = 1
+        where
+            e.school_level = 'HS'
+            and ec.courses_course_name_expected is not null
+            and e.rn_year = 1
     ),
 
     college_assessments_official as (

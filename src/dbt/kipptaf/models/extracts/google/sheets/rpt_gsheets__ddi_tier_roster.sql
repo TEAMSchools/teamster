@@ -19,4 +19,5 @@ inner join
     and co.rn_year = 1
 where
     f.nj_student_tier is not null
+    and f.rn_year = 1
     and f.academic_year = {{ var("current_academic_year") }}

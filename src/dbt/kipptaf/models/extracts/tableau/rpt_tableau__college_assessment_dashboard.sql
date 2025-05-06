@@ -61,6 +61,7 @@ with
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
+            and e.rn_year = 1
     ),
 
     course_subjects_roster as (
@@ -89,6 +90,9 @@ with
             and s.rn_course_number_year = 1
             and s.courses_credittype in ('ENG', 'MATH')
             and not s.is_dropped_section
+<<<<<<< HEAD
+        where e.school_level = 'HS' and e.rn_year = 1
+=======
         where
             e.school_level = 'HS'
             and e.academic_year = {{ var("current_academic_year") }}
@@ -139,6 +143,7 @@ with
             and t.actual_month_round = o.test_month
             and e.student_number = o.student_number
         where e.school_level = 'HS' and t.subject_area != 'Science'
+>>>>>>> e694ca691879c9a30b916f2f6d4e7e6644262f9f
     )
 
 select
