@@ -32,6 +32,7 @@ with
             ms_attended,
             iep_status,
             advisory,
+            year_in_network,
         from {{ ref("int_extracts__student_enrollments") }}
         where
             region in ('Camden', 'Newark')
@@ -189,6 +190,7 @@ select
     s.ms_attended,
     s.lep_status,
     s.advisory,
+    s.year_in_network,
 
     a.state_id,
     a.assessment_name,
@@ -231,6 +233,7 @@ select
 
     'Preliminary' as results_type,
     null as test_grade,
+
 from students_nj as s
 inner join
     assessments_nj as a
