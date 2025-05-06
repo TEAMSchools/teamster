@@ -69,13 +69,11 @@ select
     u.twoormoreraces,
     u.white,
 
-    safe_cast(u.statestudentidentifier as string) as statestudentidentifier,
+    cast(u.statestudentidentifier as string) as statestudentidentifier,
 
     coalesce(u.studentwithdisabilities in ('504', 'B'), false) as is_504,
 
-    if(
-        x.student_number is null, u.localstudentidentifier, x.student_number
-    ) as localstudentidentifier,
+    coalesce(x.student_number, u.localstudentidentifier) as localstudentidentifier,
 
     if(u.englishlearnerel = 'Y', true, false) as lep_status,
 
@@ -97,8 +95,7 @@ select
         when u.white = 'Y'
         then 'W'
     end as race_ethnicity,
-
 from union_relations as u
 left join
-    {{ ref("stg_assessments__student_number_xwalk") }} as x
-    on u.studenttestuuid = x.student_test_uid
+    {{ ref("stg_pearson__student_crosswalk") }} as x
+    on u.studenttestuuid = x.student_test_uuid
