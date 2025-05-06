@@ -1,6 +1,3 @@
-{#- CHANGE YEAR HERE ONLY -#}
-{%- set academic_year = "2024" -%}
-
 {% set comparison_entities = [
     {"label": "City", "prefix": "city"},
     {"label": "State", "prefix": "state"},
@@ -36,7 +33,7 @@ with
         from {{ ref("int_extracts__student_enrollments") }}
         where
             region in ('Camden', 'Newark')
-            and academic_year = {{ academic_year }}
+            and academic_year = {{ var("current_academic_year") }}
             and grade_level > 2
     ),
 
@@ -66,7 +63,7 @@ with
             e.rn_credittype_year = 1
             and not e.is_dropped_section
             and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
-            and e.cc_academic_year = {{ academic_year }}
+            and e.cc_academic_year = {{ var("current_academic_year") }}
     ),
 
     assessments_nj as (
@@ -142,7 +139,7 @@ with
         where
             state_student_identifier is not null
             and administration = 'Spring'
-            and academic_year = {{ academic_year }}
+            and academic_year = {{ var("current_academic_year") }}
     ),
 
     state_comps as (
@@ -169,7 +166,7 @@ with
             {% endfor %}
 
         from {{ ref("stg_assessments__state_test_comparison") }}
-        where academic_year = {{ academic_year }}
+        where academic_year = {{ var("current_academic_year") }}
         group by academic_year, test_name, test_code, region
     )
 
