@@ -101,6 +101,4 @@ select
 from union_relations as u
 left join
     {{ ref("stg_assessments__student_number_xwalk") }} as x
-    on u.academic_year = x.academic_year
-    and u.statestudentidentifier = x.state_student_identifier
-    and u.testcode = x.test_code
+    on u.studenttestuuid = x.student_test_uid
