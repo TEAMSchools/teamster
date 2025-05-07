@@ -261,4 +261,4 @@ left join
     and c3.`domain` = 'Irregularity Scores'
 left join
     {{ ref("stg_collegeboard__ap_id_crosswalk") }} as x
-    on ap_number_ap_id = x.college_board_id
+    on a.ap_number_ap_id = x.college_board_id
