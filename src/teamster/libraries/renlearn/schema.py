@@ -323,7 +323,7 @@ class FastStarCore(BaseModel):
     TID: int | None = None
     TotalCorrect: float | None = None
     TotalPossible: float | None = None
-    TotalTime: int | None = None
+    TotalTime: int | float | None = None
     UnifiedScore: int | None = None
 
     FAST_ES_Max: float | int | None = None
