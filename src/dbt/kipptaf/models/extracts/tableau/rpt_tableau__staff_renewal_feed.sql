@@ -236,7 +236,7 @@ select
                     ''
                 ),
                 '&entry.1059490956=',
-                coalesce(salary_modification_explanation, ''),
+                coalesce(replace(salary_modification_explanation, '%', ' percent'), ''),
                 '&entry.1601656476=',
                 coalesce(add_comp_name_1, ''),
                 '&entry.298530295=',
