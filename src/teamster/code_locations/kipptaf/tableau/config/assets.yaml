@@ -214,7 +214,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__leadership_development]
     metadata:
       id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
-      cron_schedule: 0 * * * *
+      # cron_schedule: 0 * * * *
   - name: KIPP Miami FAST & i-Ready Analysis
     deps:
       - [kipptaf, tableau, rpt_tableau__miami_fast]
