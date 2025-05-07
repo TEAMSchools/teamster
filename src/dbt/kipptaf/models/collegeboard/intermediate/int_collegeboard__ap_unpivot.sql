@@ -11,261 +11,13 @@ select
 
     extract(year from parse_date('%y', admin_year)) as admin_year,
 
-    -- trunk-ignore-begin(sqlfluff/CV10)
-    case
-        exam_code
-        when "07"
-        then "United States History"
-        when "10"
-        then "African American Studies"
-        when "13"
-        then "Art History"
-        when "14"
-        then "Drawing"
-        when "15"
-        then "2-D Art and Design"
-        when "16"
-        then "3-D Art and Design"
-        when "20"
-        then "Biology"
-        when "22"
-        then "Seminar"
-        when "23"
-        then "Research"
-        when "25"
-        then "Chemistry"
-        when "28"
-        then "Chinese Language and Culture"
-        when "31"
-        then "Computer Science A"
-        when "32"
-        then "Computer Science Principles"
-        when "33"
-        then "Computer Science AB 2010"
-        when "34"
-        then "Microeconomics"
-        when "35"
-        then "Macroeconomics"
-        when "36"
-        then "English Language and Composition"
-        when "37"
-        then "English Literature and Composition"
-        when "40"
-        then "Environmental Science"
-        when "43"
-        then "European History"
-        when "48"
-        then "French Language and Culture"
-        when "51"
-        then "French Literature 2010"
-        when "53"
-        then "Human Geography"
-        when "55"
-        then "German Language and Culture"
-        when "57"
-        then "United States Government and Politics"
-        when "58"
-        then "Comparative Government and Politics"
-        when "60"
-        then "Latin"
-        when "61"
-        then "Latin Literature 2010"
-        when "62"
-        then "Italian Language and Culture"
-        when "64"
-        then "Japanese Language and Culture"
-        when "65"
-        then "Precalculus"
-        when "66"
-        then "Calculus AB"
-        when "68"
-        then "Calculus BC"
-        when "69"
-        then "Calculus BC: AB Subscore"
-        when "75"
-        then "Music Theory"
-        when "76"
-        then "Music Aural Subscore"
-        when "77"
-        then "Music Non-Aural Subscore"
-        when "78"
-        then "Physics B 2014"
-        when "80"
-        then "Physics C: Mechanics"
-        when "82"
-        then "Physics C: Electricity and Magnetism"
-        when "83"
-        then "Physics 1"
-        when "84"
-        then "Physics 2"
-        when "85"
-        then "Psychology"
-        when "87"
-        then "Spanish Language and Culture"
-        when "89"
-        then "Spanish Literature and Culture"
-        when "90"
-        then "Statistics"
-        when "93"
-        then "World History: Modern"
-    end as exam_code_description,
-    case
-        when irregularity_code_1 = "01"
-        then "Score not yet available - student will be contacted by 8/1"
-        when irregularity_code_1 = "04"
-        then "Score canceled - student's choice per options received"
-        when irregularity_code_1 = "07"
-        then "Pending student response to options provided"
-        when irregularity_code_1 = "11"
-        then "Score not available"
-        when irregularity_code_1 = "16"
-        then "No score available: Makeup exam was requested but not taken"
-        when irregularity_code_1 = "17"
-        then "Score Canceled: Makeup exam was requested but not taken"
-        when irregularity_code_1 = "20"
-        then "School reported undertiming of 5 minutes or less"
-        when irregularity_code_1 = "34"
-        then "School reported distraction during exam"
-        when irregularity_code_1 = "37"
-        then "Portion of exam lost - score projected from remainder"
-        when irregularity_code_1 = "38"
-        then "Media not scorable - score projected from remainder"
-        when irregularity_code_1 = "39"
-        then "School started exam late"
-        when irregularity_code_1 = "40"
-        then "School reported undertiming of more than 5 minutes"
-        when irregularity_code_1 = "42"
-        then "Portion unscorable - score projected from remainder"
-        when irregularity_code_1 = "44"
-        then "Score projected from multiple-choice section"
-        when irregularity_code_1 = "51"
-        then "Score projected from free-response section"
-        when irregularity_code_1 = "57"
-        then "Score projected from multiple-choice and free-resp. sections"
-        when irregularity_code_1 = "66"
-        then "School reported overtiming of more than 5 minutes"
-        when irregularity_code_1 = "87"
-        then "Score canceled due to missing portion of exam"
-        when irregularity_code_1 = "91"
-        then "One or more performance tasks not scored"
-        when irregularity_code_1 = "94"
-        then "Score canceled at student's request"
-        when irregularity_code_1 = "95"
-        then "Second exam canceled - was not authorized"
-        when irregularity_code_1 = "96"
-        then "Score not yet available"
-        when irregularity_code_1 = "98"
-        then "Score withheld on college report at student's request"
-        when irregularity_code_1 in ("19", "92")
-        then "Score canceled"
-        when
-            irregularity_code_1 in (
-                "02"
-                "03",
-                "05",
-                "06",
-                "08",
-                "09",
-                "10",
-                "12",
-                "13",
-                "14",
-                "15",
-                "18",
-                "80",
-                "81",
-                "82",
-                "83",
-                "84",
-                "85",
-                "86",
-                "88",
-                "89",
-                "90",
-                "93",
-                "97"
-            )
-        then "Score delayed - will be reported as soon as possible"
-    end as irregularity_code_1_description,
-    case
-        when irregularity_code_2 = "01"
-        then "Score not yet available - student will be contacted by 8/1"
-        when irregularity_code_2 = "04"
-        then "Score canceled - student's choice per options received"
-        when irregularity_code_2 = "07"
-        then "Pending student response to options provided"
-        when irregularity_code_2 = "11"
-        then "Score not available"
-        when irregularity_code_2 = "16"
-        then "No score available: Makeup exam was requested but not taken"
-        when irregularity_code_2 = "17"
-        then "Score Canceled: Makeup exam was requested but not taken"
-        when irregularity_code_2 = "20"
-        then "School reported undertiming of 5 minutes or less"
-        when irregularity_code_2 = "34"
-        then "School reported distraction during exam"
-        when irregularity_code_2 = "37"
-        then "Portion of exam lost - score projected from remainder"
-        when irregularity_code_2 = "38"
-        then "Media not scorable - score projected from remainder"
-        when irregularity_code_2 = "39"
-        then "School started exam late"
-        when irregularity_code_2 = "40"
-        then "School reported undertiming of more than 5 minutes"
-        when irregularity_code_2 = "42"
-        then "Portion unscorable - score projected from remainder"
-        when irregularity_code_2 = "44"
-        then "Score projected from multiple-choice section"
-        when irregularity_code_2 = "51"
-        then "Score projected from free-response section"
-        when irregularity_code_2 = "57"
-        then "Score projected from multiple-choice and free-resp. sections"
-        when irregularity_code_2 = "66"
-        then "School reported overtiming of more than 5 minutes"
-        when irregularity_code_2 = "87"
-        then "Score canceled due to missing portion of exam"
-        when irregularity_code_2 = "91"
-        then "One or more performance tasks not scored"
-        when irregularity_code_2 = "94"
-        then "Score canceled at student's request"
-        when irregularity_code_2 = "95"
-        then "Second exam canceled - was not authorized"
-        when irregularity_code_2 = "96"
-        then "Score not yet available"
-        when irregularity_code_2 = "98"
-        then "Score withheld on college report at student's request"
-        when irregularity_code_2 in ("19", "92")
-        then "Score canceled"
-        when
-            irregularity_code_2 in (
-                "02"
-                "03",
-                "05",
-                "06",
-                "08",
-                "09",
-                "10",
-                "12",
-                "13",
-                "14",
-                "15",
-                "18",
-                "80",
-                "81",
-                "82",
-                "83",
-                "84",
-                "85",
-                "86",
-                "88",
-                "89",
-                "90",
-                "93",
-                "97"
-            )
-        then "Score delayed - will be reported as soon as possible"
-    end as irregularity_code_2_description,
--- trunk-ignore-end(sqlfluff/CV10)
+    x.powerschool_student_number,
+
+    c1.description as exam_code_description,
+
+    c2.description as irregularity_code_1_description,
+
+    c3.description as irregularity_code_2_description,
 from
     {{ ref("stg_collegeboard__ap") }} unpivot (
         (
@@ -486,4 +238,19 @@ from
                 irregularity_code_2_30
             ) as 30
         )
-    )
+    ) as u
+left join
+    {{ ref("stg_collegeboard__ap_codes") }} as c1
+    on u.exam_code = c1.code
+    and c1.`domain` = 'Exam Codes'
+left join
+    {{ ref("stg_collegeboard__ap_codes") }} as c2
+    on u.exam_code = c2.code
+    and c2.`domain` = 'Irregularity Scores'
+left join
+    {{ ref("stg_collegeboard__ap_codes") }} as c3
+    on u.exam_code = c3.code
+    and c3.`domain` = 'Irregularity Scores'
+left join
+    {{ ref("stg_collegeboard__ap_id_crosswalk") }} as x
+    on ap_number_ap_id = x.college_board_id
