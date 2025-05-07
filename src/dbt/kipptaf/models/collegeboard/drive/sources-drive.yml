@@ -6,32 +6,51 @@ sources:
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ project_name }}_collegeboard
     tables:
-      - name: src_collegeboard__id_crosswalk
+      - name: src_collegeboard__sat_id_crosswalk
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE
-            sheet_range: src_collegeboard__id_crosswalk
+            sheet_range: src_collegeboard__sat_id_crosswalk
             skip_leading_rows: 1
         columns:
-          - name: college_board_id
+          - name: College_Board_ID
             data_type: int64
-          - name: powerschool_student_number
+          - name: PowerSchool_Student_Number
             data_type: int64
         meta:
           dagster:
             asset_key:
               - kipptaf
               - collegeboard
-              - id_crosswalk
-      - name: src_collegeboard__ap_code_table
+              - sat_id_crosswalk
+      - name: src_collegeboard__ap_id_crosswalk
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE
-            sheet_range: src_collegeboard__ap_code_table
+            sheet_range: src_collegeboard__ap_id_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: College_Board_ID
+            data_type: string
+          - name: PowerSchool_Student_Number
+            data_type: int64
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - collegeboard
+              - ap_id_crosswalk
+      - name: src_collegeboard__ap_codes
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE
+            sheet_range: src_collegeboard__ap_codes
             skip_leading_rows: 1
         columns:
           - name: Domain
@@ -45,4 +64,27 @@ sources:
             asset_key:
               - kipptaf
               - collegeboard
-              - ap_code_table
+              - ap_codes
+      - name: src_collegeboard__ap_course_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE
+            sheet_range: src_collegeboard__ap_course_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: PS_AP_Course_Subject_Code
+            data_type: string
+          - name: PS_AP_Course_Subject_Name
+            data_type: string
+          - name: ADB_Test_Subject
+            data_type: string
+          - name: AP_Course_Name
+            data_type: string
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - collegeboard
+              - ap_course_crosswalk

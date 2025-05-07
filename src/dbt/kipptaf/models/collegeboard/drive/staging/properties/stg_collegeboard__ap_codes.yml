@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_collegeboard__ap_code_table
+  - name: stg_collegeboard__ap_codes
     config:
       contract:
         enforced: true
