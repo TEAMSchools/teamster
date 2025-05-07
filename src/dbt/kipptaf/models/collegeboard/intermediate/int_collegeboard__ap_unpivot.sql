@@ -7,10 +7,6 @@ select
     irregularity_code_1,
     irregularity_code_2,
 
-    cast(exam_grade as int) as exam_grade,
-
-    extract(year from parse_date('%y', admin_year)) as admin_year,
-
     x.powerschool_student_number,
 
     c1.description as exam_code_description,
@@ -18,6 +14,11 @@ select
     c2.description as irregularity_code_1_description,
 
     c3.description as irregularity_code_2_description,
+
+    cast(exam_grade as int) as exam_grade,
+
+    extract(year from parse_date('%y', admin_year)) as admin_year,
+
 from
     {{ ref("stg_collegeboard__ap") }} unpivot (
         (
@@ -238,18 +239,18 @@ from
                 irregularity_code_2_30
             ) as 30
         )
-    ) as u
+    )
 left join
     {{ ref("stg_collegeboard__ap_codes") }} as c1
-    on u.exam_code = c1.code
+    on exam_code = c1.code
     and c1.`domain` = 'Exam Codes'
 left join
     {{ ref("stg_collegeboard__ap_codes") }} as c2
-    on u.exam_code = c2.code
+    on exam_code = c2.code
     and c2.`domain` = 'Irregularity Scores'
 left join
     {{ ref("stg_collegeboard__ap_codes") }} as c3
-    on u.exam_code = c3.code
+    on exam_code = c3.code
     and c3.`domain` = 'Irregularity Scores'
 left join
     {{ ref("stg_collegeboard__ap_id_crosswalk") }} as x
