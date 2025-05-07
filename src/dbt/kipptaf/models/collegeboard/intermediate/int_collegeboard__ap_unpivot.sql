@@ -12,7 +12,6 @@ with
             cast(exam_grade as int) as exam_grade,
 
             extract(year from parse_date('%y', admin_year)) as admin_year,
-
         from
             {{ ref("stg_collegeboard__ap") }} unpivot (
                 (
@@ -248,17 +247,17 @@ select
     c3.description as irregularity_code_2_description,
 from ap_data as a
 left join
+    {{ ref("stg_collegeboard__ap_id_crosswalk") }} as x
+    on a.ap_number_ap_id = x.college_board_id
+left join
     {{ ref("stg_collegeboard__ap_codes") }} as c1
     on a.exam_code = c1.code
     and c1.`domain` = 'Exam Codes'
 left join
     {{ ref("stg_collegeboard__ap_codes") }} as c2
-    on a.exam_code = c2.code
+    on a.irregularity_code_1 = c2.code
     and c2.`domain` = 'Irregularity Scores'
 left join
     {{ ref("stg_collegeboard__ap_codes") }} as c3
-    on a.exam_code = c3.code
+    on a.irregularity_code_2 = c3.code
     and c3.`domain` = 'Irregularity Scores'
-left join
-    {{ ref("stg_collegeboard__ap_id_crosswalk") }} as x
-    on a.ap_number_ap_id = x.college_board_id
