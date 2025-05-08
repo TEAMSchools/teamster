@@ -42,7 +42,7 @@ with
             and f.cte_grouping = 'class_category_assignment'
         where
             r.region_school_level_credit_type
-            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI')
+            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI', 'MiamiESSOC')
     ),
 
     teacher_unpivot_cc as (
@@ -69,9 +69,6 @@ with
             and r.assignment_category_code = f.code
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'class_category'
-        where
-            r.region_school_level_credit_type
-            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI')
     ),
 
     eoq_items as (
@@ -104,6 +101,12 @@ with
                 'MiamiESCOCURqt_comment_missing',
                 'MiamiESRHETqt_comment_missing',
                 'MiamiESSCIqt_comment_missing'
+            )
+            and concat(r.region_school_level_credit_type, r.audit_flag_name)
+            in ('MiamiESSOCqt_percent_grade_greater_100')
+            and concat(r.region_school_level, r.course_number, r.audit_flag_name) in (
+                'MiamiESWRI01133G4qt_percent_grade_greater_100',
+                'MiamiESWRI01134G5qt_percent_grade_greater_100'
             )
     ),
 

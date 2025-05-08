@@ -60,3 +60,6 @@ left join
     {{ ref("int_powerschool__assignment_score_rollup") }} as asg
     on a.assignmentsectionid = asg.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
+where
+    concat(sec.region_school_level, sec.course_number)
+    not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
