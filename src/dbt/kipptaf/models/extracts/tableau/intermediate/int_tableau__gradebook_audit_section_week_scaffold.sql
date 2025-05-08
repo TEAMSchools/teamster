@@ -173,4 +173,3 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on tw.schoolid = hos.home_work_location_powerschool_school_id
-where concat(tw.region_school_level, sec.courses_credittype) != 'MiamiESSOC'
