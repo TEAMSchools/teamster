@@ -69,7 +69,6 @@ select
     njs.other_related_services_yn,
     njs.lepbegindate,
     njs.lependdate,
-    njs.gifted_and_talented,
 
     tpd.total_balance as lunch_balance,
 
@@ -81,6 +80,8 @@ select
     adbu.name as salesfoce_contact_owner_name,
 
     ill.student_id as illuminate_student_id,
+
+    coalesce(njs.gifted_and_talented, suf.gifted_and_talented) as gifted_and_talented,
 
     coalesce(njr.pid_504_tf, suf.is_504, false) as is_504,
 
