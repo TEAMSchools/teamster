@@ -12,3 +12,5 @@ def test_knowbe4_resource():
         }
     ) as resources:
         knowbe4: KnowBe4Resource = resources.knowbe4
+
+    assert knowbe4 is not None
