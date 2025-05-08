@@ -117,6 +117,8 @@ class UserPerson(BaseModel):
     msNPAllowDialin: bool | None = None
     msTSExpireDate: float | None = None
     msTSLicenseVersion: str | None = None
+    msTSLicenseVersion2: str | None = None
+    msTSLicenseVersion3: str | None = None
     msTSManagingLS: str | None = None
     name: str | None = None
     o: str | None = None
