@@ -1,6 +1,6 @@
 from typing import Any
 
-from dagster import AssetCheckResult, OpExecutionContext, Output, op
+from dagster import ExpectationResult, OpExecutionContext, Output, op
 
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 
@@ -28,8 +28,8 @@ def google_directory_user_create_op(
     ]
 
     yield Output(value=members)
-    yield AssetCheckResult(
-        passed=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
+    yield ExpectationResult(
+        success=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
     )
 
 
@@ -44,8 +44,8 @@ def google_directory_member_create_op(
     exceptions = google_directory.batch_insert_members(members)
 
     yield Output(value=None)
-    yield AssetCheckResult(
-        passed=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
+    yield ExpectationResult(
+        success=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
     )
 
 
@@ -61,8 +61,8 @@ def google_directory_user_update_op(
     exceptions = google_directory.batch_update_users(update_users)
 
     yield Output(value=None)
-    yield AssetCheckResult(
-        passed=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
+    yield ExpectationResult(
+        success=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
     )
 
 
@@ -77,6 +77,6 @@ def google_directory_role_assignment_create_op(
     exceptions = google_directory.batch_insert_role_assignments(role_assignments)
 
     yield Output(value=None)
-    yield AssetCheckResult(
-        passed=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
+    yield ExpectationResult(
+        success=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
     )
