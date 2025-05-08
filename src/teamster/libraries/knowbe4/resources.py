@@ -44,14 +44,13 @@ class KnowBe4Resource(ConfigurableResource):
         return self._request(method="GET", resource=resource, id=id, **kwargs)
 
     def list(self, resource, **kwargs):
+        params = {"per_page": self.page_size} | kwargs.get("params", {})
+
         all_data = []
         page = 1
-        per_page = self.page_size
 
         while True:
-            kwargs.update({"params": {"page": page, "per_page": per_page}})
-
-            data = self.get(resource=resource, **kwargs).json()
+            data = self.get(resource=resource, params={"page": page, **params}).json()
 
             if data:
                 all_data.extend(data)

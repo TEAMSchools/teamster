@@ -15,6 +15,7 @@ from teamster.libraries.google.directory.resources import GoogleDirectoryResourc
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
 from teamster.libraries.google.sheets.resources import GoogleSheetsResource
+from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.ldap.resources import LdapResource
 from teamster.libraries.powerschool.enrollment.resources import (
     PowerSchoolEnrollmentResource,
@@ -78,6 +79,10 @@ GOOGLE_DIRECTORY_RESOURCE = GoogleDirectoryResource(
 )
 
 GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource()
+
+KNOWBE4_RESOURCE = KnowBe4Resource(
+    api_key=EnvVar("KNOWBE4_API_KEY"), server="us", page_size=500
+)
 
 LDAP_RESOURCE = LdapResource(
     host=EnvVar("LDAP_HOST_IP"),
