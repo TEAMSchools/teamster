@@ -55,7 +55,6 @@ with
 /* tracking for current year */
 select
     srh.employee_number,
-    srh.formatted_name as teammate,
     srh.home_business_unit_name as entity,
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
@@ -104,7 +103,10 @@ select
     tr.teacher_moves_track,
     tr.student_habits_track,
     tr.number_of_kids,
+
     sr.assignment_status as current_assignment_status,
+    sr.formatted_name as teammate,
+
     sro.formatted_name as observer_name,
 
     tgl.grade_level as grade_taught,
@@ -192,7 +194,6 @@ union all
 /* actual responses from past years*/
 select
     srh.employee_number,
-    srh.formatted_name as teammate,
     srh.home_business_unit_name as entity,
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
@@ -243,6 +244,8 @@ select
     null as number_of_kids,
 
     sr.assignment_status as current_assignment_status,
+    sr.formatted_name as teammate,
+
     sro.formatted_name as observer_name,
 
     tgl.grade_level as grade_taught,

@@ -9,6 +9,8 @@ select
 
     {{ dbt_utils.star(from=ref_terms, relation_alias="term", prefix="terms_") }},
 
+    sch.name as school_name,
+
     t.teachernumber,
     t.lastfirst as teacher_lastfirst,
 
@@ -30,6 +32,8 @@ from {{ ref_sections }} as sec
 inner join {{ ref_courses }} as cou on sec.course_number = cou.course_number
 inner join
     {{ ref_terms }} as term on sec.termid = term.id and sec.schoolid = term.schoolid
+inner join
+    {{ ref("stg_powerschool__schools") }} as sch on sec.schoolid = sch.school_number
 left join
     {{ ref("int_powerschool__teachers") }} as t
     on sec.teacher = t.id

@@ -202,6 +202,9 @@ models:
       +schema: overgrad
     pearson:
       +schema: pearson
+      drive:
+        staging:
+          +materialized: table
     people:
       +schema: people
       +materialized: table
