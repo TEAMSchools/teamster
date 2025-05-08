@@ -186,6 +186,11 @@ select
     cf.ssds_incident_id,
     cf.referral_to_law_enforcement,
     cf.arrested_for_school_related_activity,
+    cf.final_approval,
+    cf.board_approval_date,
+    cf.hi_start_date,
+    cf.hi_end_date,
+    cf.hours_per_week,
 
     st.suspension_type,
 
@@ -199,6 +204,8 @@ select
 
     ats.attachments,
     atr.attachments as attachments_uploaded,
+
+    u.last_name || ', ' || u.first_name as hi_approver_name,
 
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
@@ -354,6 +361,10 @@ left join
     {{ ref("int_deanslist__incidents__custom_fields__pivot") }} as cf
     on dli.incident_id = cf.incident_id
     and {{ union_dataset_join_clause(left_alias="dli", right_alias="cf") }}
+left join
+    {{ ref("stg_deanslist__users") }} as u
+    on cast(cf.approver_name as int64) = u.dl_user_id
+    and {{ union_dataset_join_clause(left_alias="cf", right_alias="u") }}
 left join suspension_type as st on dlp.penalty_name = st.penalty_name
 left join
     {{ ref("int_powerschool__ada") }} as ada

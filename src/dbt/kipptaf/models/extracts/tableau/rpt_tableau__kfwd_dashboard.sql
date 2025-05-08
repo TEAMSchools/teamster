@@ -163,21 +163,6 @@ with
         select 'AA' as matriculation_type, 'Public 2 yr' as application_account_type,
     ),
 
-    es_grad as (
-        select
-            student_number,
-            max(
-                if(
-                    grade_level = 4 and exitdate >= date(academic_year + 1, 6, 1),
-                    true,
-                    false
-                )
-            ) as is_es_grad,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where rn_year = 1
-        group by student_number
-    ),
-
     test_attempts as (
         select
             contact,
@@ -308,6 +293,7 @@ select
 
     apps.name as application_name,
     apps.account_type as application_account_type,
+    apps.account_name as application_school_name,
 
     ar.n_submitted,
     ar.n_accepted,
@@ -464,6 +450,7 @@ select
 
     c.contact_opt_out_national_contact,
     c.contact_opt_out_regional_contact,
+    c.entry_school,
 
     coalesce(ar.max_ecc_accepted, 0) as max_ecc_accepted,
 
@@ -517,7 +504,8 @@ select
     coalesce(ar.is_accepted_certificate, false) as is_accepted_cert,
     coalesce(ar.is_eof_applicant, false) as is_eof_applicant,
     coalesce(ar.is_matriculated, false) as is_matriculated,
-    coalesce(e.is_es_grad, false) as is_es_grad,
+
+    coalesce(c.is_es_grad, false) as is_es_grad,
 
     case
         when
@@ -658,7 +646,6 @@ left join
     and b.rn_benchmark = 1
 left join persist_pivot as p on c.contact_id = p.sf_contact_id
 left join matriculation_type as m on apps.account_type = m.application_account_type
-left join es_grad as e on e.student_number = c.student_number
 left join
     {{ ref("stg_overgrad__students") }} as os on c.contact_id = os.external_student_id
 left join

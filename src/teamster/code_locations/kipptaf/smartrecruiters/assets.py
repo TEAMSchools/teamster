@@ -13,7 +13,7 @@ applicants = build_smartrecruiters_report_asset(
 
 applications = build_smartrecruiters_report_asset(
     asset_key=[CODE_LOCATION, "smartrecruiters", "applications"],
-    report_id="878d114e-8e48-4ffe-a81b-cb3c92ee653f",
+    report_id="a20ad557-3026-4520-bd00-e7e91a84e306",
     schema=APPLICATIONS_SCHEMA,
 )
 
