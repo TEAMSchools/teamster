@@ -6,6 +6,7 @@ with
             mclass_assessment_grade_int,
             mclass_pm_season,
             max(pm_eligible) as pm_eligible,
+
         from
             {{ ref("int_amplify__all_assessments") }} unpivot (
                 pm_eligible
@@ -80,6 +81,7 @@ with
                 then 'Oral Reading Fluency'
                 else a.measure_level_code
             end as expected_mclass_measure_name,
+
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
             {{ ref("stg_amplify__dibels_pm_expectations") }} as a
@@ -117,6 +119,7 @@ with
             1 as scheduled,
 
             right(m.courses_course_name, 1) as schedule_student_grade_level,
+
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
             {{ ref("int_people__leadership_crosswalk") }} as hos
@@ -167,8 +170,14 @@ with
             and a.mclass_client_date between s.start_date and s.end_date
             and a.assessment_type = 'PM'
         where
-            s.goal_filter
-            in ('1BOY->MOY3', '1BOY->MOY4', '0BOY->MOY4', '1MOY->EOY7', '2MOY->EOY7')
+            s.goal_filter in (
+                '1BOY->MOY3',
+                '1BOY->MOY4',
+                '0BOY->MOY4',
+                '1MOY->EOY7',
+                '2MOY->EOY7',
+                '0MOY->EOY9'
+            )
             and a.mclass_measure_standard_score is not null
     ),
 
@@ -217,6 +226,11 @@ with
                         and max(wrc) = true
                     )
                 then true
+                when
+                    grade_level = '0'
+                    and expected_round = '9'
+                    and (max(wrf) = true and max(wrc) = true)
+                then true
                 else false
             end as met_overall_goal,
 
@@ -228,7 +242,8 @@ with
                     'Letter Sounds (NWF-CLS)' as cls,
                     'Decoding (NWF-WRC)' as wrc,
                     'Reading Accuracy (ORF-Accu)' as orf_acc,
-                    'Reading Fluency (ORF)' as orf
+                    'Reading Fluency (ORF)' as orf,
+                    'Word Reading (WRF)' as wrf
                 )
             ) as pvt
         group by all
@@ -347,6 +362,18 @@ select
             s.grade_level = '2'
             and s.expected_test = 'MOY->EOY'
             and s.expected_round = '7'
+            and a.mclass_measure_standard_score is null
+        then null
+        when
+            s.grade_level = '0'
+            and s.expected_test = 'MOY->EOY'
+            and s.expected_round = '9'
+            and a.mclass_measure_standard_score is not null
+        then mod.met_overall_goal
+        when
+            s.grade_level = '0'
+            and s.expected_test = 'MOY->EOY'
+            and s.expected_round = '9'
             and a.mclass_measure_standard_score is null
         then null
         when a.mclass_measure_standard_score is null
