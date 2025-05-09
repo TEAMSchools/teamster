@@ -419,6 +419,11 @@ locations:
                   secretKeyRef:
                     name: op-outlook-pm
                     key: password
+              - name: KNOWBE4_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-knowbe4
+                    key: credential
         run_k8s_config:
           container_config:
             env:
@@ -807,3 +812,8 @@ locations:
                   secretKeyRef:
                     name: op-outlook-pm
                     key: password
+              - name: KNOWBE4_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-knowbe4
+                    key: credential
