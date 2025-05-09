@@ -28,13 +28,14 @@ with
         from {{ ref("base_kippadb__application") }}
         where matriculation_decision = 'Matriculated (Intent to Enroll)'
     ),
-with
+
     dps_responses as (
         select
             respondent_email, item_abbreviation, text_value, last_submitted_date_local,
-        from {{ ref("base_google") }}
+        from {{ ref("int_google_forms__form_responses") }}
         where form_id = '1KD8HAfJNdaGNg2VJbxnJ5Wedf8wrPp1QnBYBEG2Elu4'
     ),
+
     dps_pivot as (
         select
             respondent_email,
@@ -149,6 +150,8 @@ select
     dps.dps_additional_future_plans,
     dps.dps_kfwd_support,
     dps.dps_dream_career,
+
+    if(dps.dps_submit_date_most_recent is not null, 1, 0) as is_submitted_dps_int,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
@@ -174,6 +177,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
 left join
     dps_pivot as dps
-    on dps.dps_respondent_email = co.student_email_google
+    on dps.respondent_email = co.student_email_google
     and dps.rn_response = 1
 where co.rn_undergrad = 1 and co.grade_level != 99
