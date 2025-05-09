@@ -20,7 +20,7 @@ with
             )
         where
             region_school_level_credit_type
-            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI')
+            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI', 'MiamiESSOC')
     ),
 
     teacher_unpivot_cca as (
@@ -42,7 +42,7 @@ with
             and f.cte_grouping = 'class_category_assignment'
         where
             r.region_school_level_credit_type
-            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI')
+            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI', 'MiamiESSOC')
     ),
 
     teacher_unpivot_cc as (
@@ -69,9 +69,6 @@ with
             and r.assignment_category_code = f.code
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'class_category'
-        where
-            r.region_school_level_credit_type
-            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI')
     ),
 
     eoq_items as (
@@ -105,6 +102,23 @@ with
                 'MiamiESRHETqt_comment_missing',
                 'MiamiESSCIqt_comment_missing'
             )
+            and concat(r.region_school_level_credit_type, r.audit_flag_name) not in (
+                'MiamiESSOCqt_comment_missing',
+                'MiamiESSOCqt_g1_g8_conduct_code_missing',
+                'MiamiESSOCqt_g1_g8_conduct_code_incorrect'
+            )
+            and concat(
+                r.region_school_level,
+                r.course_number,
+                r.audit_flag_name
+            ) not in (
+                'MiamiESWRI01133G4qt_comment_missing',
+                'MiamiESWRI01134G5qt_comment_missing',
+                'MiamiESWRI01133G4qt_g1_g8_conduct_code_missing',
+                'MiamiESWRI01134G5qt_g1_g8_conduct_code_missing',
+                'MiamiESWRI01133G4qt_g1_g8_conduct_code_incorrect',
+                'MiamiESWRI01134G5qt_g1_g8_conduct_code_incorrectg'
+            )
     ),
 
     eoq_items_conduct_code as (
@@ -131,7 +145,11 @@ with
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'student_course'
             and f.audit_category = 'Conduct Code'
-        where r.school_level = 'ES'
+        where
+            r.school_level = 'ES'
+            and r.region_school_level_credit_type != 'MiamiESSOC'
+            and concat(r.region_school_level, r.course_number)
+            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
     ),
 
     /* w_grade_inflation, qt_effort_grade_missing, qt_formative_grade_missing,
@@ -176,6 +194,10 @@ with
             and r.audit_flag_name = f.audit_flag_name
             and r.assignment_category_code = 'W'
             and f.cte_grouping = 'student_course_category'
+        where
+            r.region_school_level_credit_type != 'MiamiESSOC'
+            and concat(r.region_school_level, r.course_number)
+            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
 
         union all
 
@@ -198,6 +220,10 @@ with
             and r.audit_flag_name = f.audit_flag_name
             and r.assignment_category_code = 'F'
             and f.cte_grouping = 'student_course_category'
+        where
+            r.region_school_level_credit_type != 'MiamiESSOC'
+            and concat(r.region_school_level, r.course_number)
+            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
 
         union all
 
@@ -220,6 +246,10 @@ with
             and r.audit_flag_name = f.audit_flag_name
             and r.assignment_category_code = 'S'
             and f.cte_grouping = 'student_course_category'
+        where
+            r.region_school_level_credit_type != 'MiamiESSOC'
+            and concat(r.region_school_level, r.course_number)
+            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
     )
 
 -- this captures all flags from assignment_student
