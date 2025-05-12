@@ -38,7 +38,7 @@ with
             max(last_submitted_date_local) over (
                 partition by respondent_email, item_abbreviation, text_value
             )
-            = last_submitted_date_local as most_recent_submission
+            = last_submitted_date_local as most_recent_submission,
         from {{ ref("int_google_forms__form_responses") }}
         where form_id = '1KD8HAfJNdaGNg2VJbxnJ5Wedf8wrPp1QnBYBEG2Elu4'
     ),
