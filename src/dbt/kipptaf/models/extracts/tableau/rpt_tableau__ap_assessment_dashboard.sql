@@ -22,8 +22,7 @@ with
         left join
             {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
             on a.test_subject = c.adb_test_subject
-        where
-            a.score_type = 'ap' and a.academic_year < 2018 and c.ap_course_name is null
+        where a.score_type = 'ap' and a.academic_year < 2018
 
         union all
 
@@ -80,8 +79,12 @@ select
     a.test_date,
     a.scale_score,
     a.rn_highest,
+    a.test_subject,
+    a.irregularity_code_1,
+    a.irregularity_code_2,
 
     a.ap_course_name,
+    a.ps_ap_course_subject_code,
 
     coalesce(s.courses_course_name, 'Not an AP course') as course_name,
 
