@@ -14,7 +14,7 @@ select
     s.date_submitted,
     s.survey_response_link,
     s.round_rn,
-    max(case when s.question_title = 'School Name:' then s.answer else null end) over (
+    max(case when s.question_title = 'School Name:' then s.answer end) over (
         partition by s.survey_response_id
     ) as school_name,
 from {{ ref("int_surveys__survey_responses") }} as s
