@@ -22,8 +22,7 @@ with
         left join
             {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
             on a.test_subject = c.adb_test_subject
-        where
-            a.score_type = 'ap' and a.academic_year < 2018 and c.ap_course_name is null
+        where a.score_type = 'ap' and a.academic_year < 2018
 
         union all
 
