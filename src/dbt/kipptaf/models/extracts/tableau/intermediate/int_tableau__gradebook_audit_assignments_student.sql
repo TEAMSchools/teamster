@@ -50,6 +50,9 @@ with
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="s") }}
             and a.assignmentsectionid = s.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
+        where
+            concat(ce.region_school_level, ce.course_number)
+            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
     )
 
 select

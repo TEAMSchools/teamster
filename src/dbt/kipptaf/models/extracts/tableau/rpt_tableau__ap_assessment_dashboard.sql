@@ -1,29 +1,50 @@
 with
     ap_assessments_official as (
         select
-            contact,
-            `date` as test_date,
-            score as scale_score,
-            rn_highest,
+            a.academic_year,
+            a.school_specific_id as powerschool_student_number,
+            a.`date` as test_date,
+            a.score as scale_score,
+            a.rn_highest,
+            a.test_subject,
+
+            null as irregularity_code_1,
+            null as irregularity_code_2,
+
+            c.ps_ap_course_subject_code,
+            c.ap_course_name,
 
             concat(
-                format_date('%b', `date`), ' ', format_date('%g', `date`)
+                format_date('%b', a.`date`), ' ', format_date('%g', a.`date`)
             ) as administration_round,
 
-            case
-                test_subject
-                when 'Physics 1: Algebra-Based'
-                then 'AP Physics 1'
-                when 'Studio Art: 2-D Design Portfolio'
-                then 'AP Studio Art: Two-Dimensional'
-                when 'United States Government and Politics'
-                then 'AP US Government and Politics'
-                when 'United States History'
-                then 'AP US History'
-                else concat('AP ', test_subject)
-            end as test_subject_area,
-        from {{ ref("int_kippadb__standardized_test_unpivot") }}
-        where score_type = 'ap'
+        from {{ ref("int_kippadb__standardized_test_unpivot") }} as a
+        left join
+            {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
+            on a.test_subject = c.adb_test_subject
+        where a.score_type = 'ap' and a.academic_year < 2018
+
+        union all
+
+        select
+            a.admin_year as academic_year,
+            a.powerschool_student_number,
+            null as test_date,
+            a.exam_grade as scale_score,
+            null as rn_highest,
+            a.exam_code_description as test_subject,
+            a.irregularity_code_1,
+            a.irregularity_code_2,
+
+            c.ps_ap_course_subject_code,
+            c.ap_course_name,
+
+            null as administration_round,
+
+        from {{ ref("int_collegeboard__ap_unpivot") }} as a
+        left join
+            {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
+            on a.exam_code = c.ps_ap_course_subject_code
     )
 
 select
@@ -58,23 +79,31 @@ select
     a.test_date,
     a.scale_score,
     a.rn_highest,
+    a.test_subject,
+    a.irregularity_code_1,
+    a.irregularity_code_2,
 
-    if(e.iep_status = 'No IEP', 0, 1) as sped,
+    a.ap_course_name,
+    a.ps_ap_course_subject_code,
 
-    coalesce(s.courses_course_name, 'Not an AP course') as ap_course_name,
-
-    if(s.courses_course_name is null, 'Not applicable', 'AP') as expected_scope,
-    if(
-        s.courses_course_name is null, 'Not applicable', 'Official'
-    ) as expected_test_type,
+    coalesce(s.courses_course_name, 'Not an AP course') as course_name,
 
     case
         when s.courses_course_name is null
         then 'Not applicable'
-        when s.courses_course_name is not null and a.test_subject_area is null
+        when s.courses_course_name is not null and a.ap_course_name is null
         then 'Took course, but not AP exam.'
-        else a.test_subject_area
+        else a.ap_course_name
     end as test_subject_area,
+
+    if(e.iep_status = 'No IEP', 0, 1) as sped,
+
+    if(s.courses_course_name is null, 'Not applicable', 'AP') as expected_scope,
+
+    if(
+        s.courses_course_name is null, 'Not applicable', 'Official'
+    ) as expected_test_type,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join
     {{ ref("base_powerschool__course_enrollments") }} as s
@@ -86,8 +115,8 @@ left join
     and not s.is_dropped_section
 left join
     ap_assessments_official as a
-    on e.salesforce_id = a.contact
-    and s.courses_course_name = a.test_subject_area
+    on e.student_number = a.powerschool_student_number
+    and s.ap_course_subject = a.ps_ap_course_subject_code
 where
     e.school_level = 'HS'
     and date(e.academic_year + 1, 05, 15) between e.entrydate and e.exitdate

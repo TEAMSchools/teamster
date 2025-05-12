@@ -190,6 +190,10 @@ models:
       drive:
         staging:
           +materialized: table
+    knowbe4:
+      +schema: knowbe4
+      staging:
+        +materialized: table
     ldap:
       +schema: ldap
       staging:
@@ -202,6 +206,9 @@ models:
       +schema: overgrad
     pearson:
       +schema: pearson
+      drive:
+        staging:
+          +materialized: table
     people:
       +schema: people
       +materialized: table
