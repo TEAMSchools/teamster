@@ -12,7 +12,7 @@ select
     fr.respondent_email,
     fr.text_value,
     safe_cast(fr.text_value as decimal) as answer_value,
-    max(case when fr.question_title = 'School Name:' then fr.text_value end) over (
+    max(case when fr.item_title = 'School Name:' then fr.text_value end) over (
         partition by fr.response_id
     ) as school_name,
 from {{ ref("int_google_forms__form_responses") }} as fr
