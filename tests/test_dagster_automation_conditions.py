@@ -8,16 +8,12 @@ from dagster import (
     evaluate_automation_conditions,
     materialize,
 )
-
-# trunk-ignore-begin(pyright/reportPrivateImportUsage)
 from dagster._annotations import public
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.declarative_automation.operators import (
     AnyDepsCondition,
     DepsAutomationCondition,
 )
-
-# trunk-ignore-end(pyright/reportPrivateImportUsage)
 
 
 class DbtTableAnyDepsCondition(AnyDepsCondition):
@@ -125,6 +121,7 @@ def test_foo():
         defs=[upstream_table, intermediate_view, downstream_table], instance=instance
     )
 
-    assert {downstream_table.key} == {
+    assert result_2.total_requested == 1
+    assert {
         r.key for r in result_2.results if r.true_subset.get_internal_bool_value()
-    }
+    } == {downstream_table.key}
