@@ -1,24 +1,23 @@
 select
-    s.survey_id,
-    s.survey_title,
-    s.survey_response_id,
-    s.survey_question_id,
-    s.answer,
-    s.question_title,
-    s.question_shortname,
-    s.respondent_email,
-    s.respondent_employee_number,
-    s.respondent_preferred_name,
-    s.answer_value,
-    s.date_started,
-    s.date_submitted,
-    s.survey_response_link,
-    s.round_rn,
-    max(case when s.question_title = 'School Name:' then s.answer end) over (
-        partition by s.survey_response_id
+    fr.form_id,
+    fr.info_title,
+    fr.info_document_title,
+    fr.item_id,
+    fr.item_title,
+    fr.question_id,
+    fr.question_title,
+    fr.item_abbreviation,
+    fr.response_id,
+    fr.last_submitted_date_local,
+    fr.respondent_email,
+    fr.text_value,
+    safe_cast(fr.text_value as decimal) as answer_value,
+    max(case when fr.question_title = 'School Name:' then fr.text_value end) over (
+        partition by fr.response_id
     ) as school_name,
-from {{ ref("int_surveys__survey_responses") }} as s
+from {{ ref("int_google_forms__form_responses") }} as fr
 left join
-    {{ ref("int_people__staff_roster") }} as r
-    on s.respondent_employee_number = r.employee_number
-where s.survey_id = '1lYa4PDXK9_SfTx72BfJKgbA8F7NUS0ifYRo0pTp6ynQ'
+    {{ ref("int_people__staff_roster") }} as sr on fr.respondent_email = sr.google_email
+where
+    fr.form_id = '1lYa4PDXK9_SfTx72BfJKgbA8F7NUS0ifYRo0pTp6ynQ'
+    and fr.text_value is not null
