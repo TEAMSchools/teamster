@@ -152,7 +152,7 @@ def build_deanslist_paginated_multi_partition_asset(
         params = {}
 
     @asset(
-        key=[code_location, "deanslist", "behavior"],
+        key=[code_location, "deanslist", endpoint],
         metadata=params,
         io_manager_key="io_manager_gcs_file",
         partitions_def=partitions_def,

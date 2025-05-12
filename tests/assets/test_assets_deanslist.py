@@ -1,8 +1,6 @@
 import random
 
 from dagster import TextMetadataValue, materialize
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
@@ -368,8 +366,4 @@ def test_asset_deanslist_incidents_kippnewark():
         month_partitioned_assets,
     )
 
-    _test_asset(
-        assets=month_partitioned_assets,
-        asset_name="incidents",
-        partition_key="2024-11-01|124",
-    )
+    _test_asset(assets=month_partitioned_assets, asset_name="incidents")
