@@ -10,7 +10,7 @@ with
             c.ps_ap_course_subject_name,
             c.ap_course_name,
 
-            'ADB' as source,
+            'ADB' as data_source,
 
             row_number() over (
                 partition by
@@ -41,7 +41,7 @@ select
     ps_ap_course_subject_name,
     ap_course_name,
 
-    source,
+    data_source,
 
 from adb_scores
 where rn_distinct = 1
@@ -61,7 +61,7 @@ select
     c.ps_ap_course_subject_name,
     c.ap_course_name,
 
-    'CB File' as source,
+    'CB File' as data_source,
 
 from {{ ref("int_collegeboard__ap_unpivot") }} as a
 left join
