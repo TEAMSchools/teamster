@@ -3,23 +3,19 @@ with
         select
             a.academic_year,
             a.school_specific_id as powerschool_student_number,
-            a.`date` as test_date,
             a.score as scale_score,
-            a.rn_highest,
             a.test_subject,
 
             c.ps_ap_course_subject_code,
             c.ps_ap_course_subject_name,
             c.ap_course_name,
 
-            concat(
-                format_date('%b', a.`date`), ' ', format_date('%g', a.`date`)
-            ) as administration_round,
+            'ADB' as source,
 
             row_number() over (
                 partition by
                     a.academic_year, a.school_specific_id, a.test_subject, a.score
-                order by a.rn_highest desc
+                order by a.`date` desc
             ) as rn_distinct,
 
         from {{ ref("int_kippadb__standardized_test_unpivot") }} as a
@@ -45,9 +41,7 @@ select
     ps_ap_course_subject_name,
     ap_course_name,
 
-    administration_round,
-    test_date,
-    rn_highest,
+    source,
 
 from adb_scores
 where rn_distinct = 1
@@ -67,9 +61,7 @@ select
     c.ps_ap_course_subject_name,
     c.ap_course_name,
 
-    null as administration_round,
-    null as test_date,
-    null as rn_highest,
+    'CB File' as source,
 
 from {{ ref("int_collegeboard__ap_unpivot") }} as a
 left join
