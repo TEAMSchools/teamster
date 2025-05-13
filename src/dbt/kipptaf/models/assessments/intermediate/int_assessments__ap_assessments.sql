@@ -30,7 +30,7 @@ with
 
     cb_scores as (
         select
-            a.admin_year as academic_year,
+            a.academic_year,
             a.powerschool_student_number,
             a.exam_code_description as test_subject,
             a.exam_grade as exam_score,
@@ -46,7 +46,7 @@ with
 
             row_number() over (
                 partition by
-                    a.admin_year,
+                    a.academic_year,
                     a.powerschool_student_number,
                     a.exam_code_description,
                     a.exam_grade
@@ -60,7 +60,7 @@ with
         where
             a.exam_code_description != 'Calculus BC: AB Subscore'
             and a.rn_distinct = 1
-            and a.admin_year >= 2018
+            and a.academic_year >= 2018
     )
 
 select

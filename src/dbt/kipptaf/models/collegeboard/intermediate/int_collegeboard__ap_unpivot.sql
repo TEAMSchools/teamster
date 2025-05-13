@@ -12,6 +12,8 @@ with
             cast(exam_grade as int) as exam_grade,
 
             extract(year from parse_date('%y', admin_year)) as admin_year,
+
+            extract(year from parse_date('%y', admin_year)) - 1 as academic_year,
         from
             {{ ref("stg_collegeboard__ap") }} unpivot (
                 (
@@ -248,7 +250,7 @@ select
 
     row_number() over (
         partition by
-            a.admin_year, x.powerschool_student_number, a.exam_code, a.exam_grade
+            a.academic_year, x.powerschool_student_number, a.exam_code, a.exam_grade
         order by a.rn_exam_number
     ) as rn_distinct,
 
