@@ -9,12 +9,12 @@ plugins:
 lint:
   enabled:
     - bandit@1.8.3
-    - checkov@3.2.417
+    - checkov@3.2.420
     - terrascan@1.19.1
     - trivy@0.62.1
     - actionlint@1.7.7
     - git-diff-check
-    - gitleaks@8.25.1
+    - gitleaks@8.26.0
     - hadolint@2.12.1-beta
     - isort@6.0.1
     - markdownlint@0.44.0
