@@ -60,7 +60,7 @@ left join
     and e.academic_year = s.cc_academic_year
     and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
     and s.rn_course_number_year = 1
-    and s.courses_course_name like 'AP%'
+    and s.ap_course_subject is not null
     and not s.is_dropped_section
 left join
     {{ ref("int_assessments__ap_assessments") }} as a
