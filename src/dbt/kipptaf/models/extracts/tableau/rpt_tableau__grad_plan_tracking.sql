@@ -19,10 +19,12 @@ select
     sg.sectionid,
     sg.credit_type,
     sg.grade as letter_grade,
-    sg.earnedcrhrs as credits,
     sg.is_transfer_grade,
 
     'Earned' as credit_status,
+
+    sg.earnedcrhrs as credits,
+
 from {{ ref("int_powerschool__gpnode") }} as gpn
 inner join
     {{ ref("stg_powerschool__gpprogresssubject") }} as sub
@@ -62,11 +64,13 @@ select
     fg.sectionid,
     fg.credittype as credit_type,
     fg.y1_letter_grade_adjusted as letter_grade,
-    fg.potential_credit_hours as credits,
 
     false as is_transfer_grade,
 
     'Enrolled' as credit_status,
+
+    if(fg.y1_grade_points_unweighted = 0.0, 0.0, fg.potential_credit_hours) as credits,
+
 from {{ ref("int_powerschool__gpnode") }} as gpn
 inner join
     {{ ref("stg_powerschool__gpprogresssubject") }} as sub
