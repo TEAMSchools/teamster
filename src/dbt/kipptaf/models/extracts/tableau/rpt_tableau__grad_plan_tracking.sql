@@ -81,4 +81,5 @@ inner join
     {{ ref("base_powerschool__final_grades") }} as fg
     on se.ccdcid = fg.cc_dcid
     and {{ union_dataset_join_clause(left_alias="se", right_alias="fg") }}
-    and fg.storecode = 'Y1'
+    and fg.academic_year = {{ var("current_academic_year") }}
+    and fg.termbin_is_current
