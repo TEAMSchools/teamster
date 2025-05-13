@@ -268,3 +268,4 @@ left join
     {{ ref("stg_collegeboard__ap_codes") }} as c3
     on a.irregularity_code_2 = c3.code
     and c3.`domain` = 'Irregularity Scores'
+where a.exam_grade is not null
