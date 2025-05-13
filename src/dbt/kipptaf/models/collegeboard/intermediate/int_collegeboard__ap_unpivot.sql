@@ -245,6 +245,13 @@ select
     c2.description as irregularity_code_1_description,
 
     c3.description as irregularity_code_2_description,
+
+    row_number() over (
+        partition by
+            a.admin_year, x.powerschool_student_number, a.exam_code, a.exam_grade
+        order by a.rn_exam_number
+    ) as rn_distinct,
+
 from ap_data as a
 left join
     {{ ref("stg_collegeboard__ap_id_crosswalk") }} as x
