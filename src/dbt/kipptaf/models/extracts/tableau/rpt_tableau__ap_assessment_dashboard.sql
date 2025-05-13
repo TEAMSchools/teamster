@@ -1,52 +1,3 @@
-with
-    ap_assessments_official as (
-        select
-            a.academic_year,
-            a.school_specific_id as powerschool_student_number,
-            a.`date` as test_date,
-            a.score as scale_score,
-            a.rn_highest,
-            a.test_subject,
-
-            null as irregularity_code_1,
-            null as irregularity_code_2,
-
-            c.ps_ap_course_subject_code,
-            c.ap_course_name,
-
-            concat(
-                format_date('%b', a.`date`), ' ', format_date('%g', a.`date`)
-            ) as administration_round,
-
-        from {{ ref("int_kippadb__standardized_test_unpivot") }} as a
-        left join
-            {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
-            on a.test_subject = c.adb_test_subject
-        where a.score_type = 'ap' and a.academic_year < 2018
-
-        union all
-
-        select
-            a.admin_year as academic_year,
-            a.powerschool_student_number,
-            null as test_date,
-            a.exam_grade as scale_score,
-            null as rn_highest,
-            a.exam_code_description as test_subject,
-            a.irregularity_code_1,
-            a.irregularity_code_2,
-
-            c.ps_ap_course_subject_code,
-            c.ap_course_name,
-
-            null as administration_round,
-
-        from {{ ref("int_collegeboard__ap_unpivot") }} as a
-        left join
-            {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
-            on a.exam_code = c.ps_ap_course_subject_code
-    )
-
 select
     e.academic_year,
     e.academic_year_display,
@@ -75,16 +26,14 @@ select
     s.teacher_lastfirst as ap_teacher_name,
     s.ap_course_subject,
 
-    a.administration_round,
-    a.test_date,
-    a.scale_score,
-    a.rn_highest,
     a.test_subject,
+    a.exam_score,
+    a.ps_ap_course_subject_code,
+    a.ps_ap_course_subject_name,
+    a.ap_course_name,
     a.irregularity_code_1,
     a.irregularity_code_2,
-
-    a.ap_course_name,
-    a.ps_ap_course_subject_code,
+    a.data_source,
 
     coalesce(s.courses_course_name, 'Not an AP course') as course_name,
 
@@ -114,7 +63,7 @@ left join
     and s.courses_course_name like 'AP%'
     and not s.is_dropped_section
 left join
-    ap_assessments_official as a
+    {{ ref("int_assessments__ap_assessments") }} as a
     on e.student_number = a.powerschool_student_number
     and s.ap_course_subject = a.ps_ap_course_subject_code
 where
