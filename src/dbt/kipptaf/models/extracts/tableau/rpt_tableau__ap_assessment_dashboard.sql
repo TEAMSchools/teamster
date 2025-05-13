@@ -64,7 +64,8 @@ left join
     and not s.is_dropped_section
 left join
     {{ ref("int_assessments__ap_assessments") }} as a
-    on e.student_number = a.powerschool_student_number
+    on e.academic_year = a.academic_year
+    and e.student_number = a.powerschool_student_number
     and s.ap_course_subject = a.ps_ap_course_subject_code
 where
     e.school_level = 'HS'
