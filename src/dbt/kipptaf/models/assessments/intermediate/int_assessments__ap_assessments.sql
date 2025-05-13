@@ -50,7 +50,7 @@ with
                     a.powerschool_student_number,
                     a.exam_code_description,
                     a.exam_grade
-                order by c.ap_course_name desc
+                order by a.rn_exam_number desc
             ) as rn_distinct,
 
         from {{ ref("int_collegeboard__ap_unpivot") }} as a
