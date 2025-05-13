@@ -58,7 +58,9 @@ with
             {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
             on a.exam_code_description = c.ps_ap_course_subject_name
         where
-            a.exam_code_description != 'Calculus BC: AB Subscore' and a.rn_distinct = 1
+            a.exam_code_description != 'Calculus BC: AB Subscore'
+            and a.rn_distinct = 1
+            and a.admin_year >= 2018
     )
 
 select
