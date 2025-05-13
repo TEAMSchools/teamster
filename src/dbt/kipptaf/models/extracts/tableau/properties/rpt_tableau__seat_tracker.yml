@@ -40,3 +40,37 @@ models:
         data_type: int64
       - name: mid_year_hire
         data_type: int64
+
+semantic_models:
+  - name: seat_tracker
+    description: "Counts of seats by status in Seat Tracker App"
+    model: ref('rpt_tableau__seat_tracker')
+    defaults:
+      agg_time_dimension: academic_year
+
+    entities:
+      - name: surrogate_key
+        type: primary
+    
+    dimensions:
+      - name: academic_year
+        type: categorical
+      - name: adp_location
+        type: categorical
+      - name: entity
+        type: categorical
+      - name: grade_band
+        type: categorical
+      - name: recruiter
+        type: categorical
+    
+    measures: 
+    - name: seats
+      description: "Number of seats"
+      agg: count
+      create_metric: true
+      expr: surrogate_key
+
+
+
+      

@@ -10,6 +10,7 @@ select
     s.staffing_status,
     s.status_detail,
     s.staffing_model_id,
+    s.surrogate_key,
 
     srr.formatted_name as recruiter,
     srr.reports_to_formatted_name as recruiter_manager,
