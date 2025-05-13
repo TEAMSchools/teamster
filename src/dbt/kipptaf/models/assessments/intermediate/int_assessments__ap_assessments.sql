@@ -26,6 +26,39 @@ with
             a.score_type = 'ap'
             and a.academic_year < 2018
             and a.test_subject != 'Calculus BC: AB Subscore'
+    ),
+
+    cb_scores as (
+        select
+            a.admin_year as academic_year,
+            a.powerschool_student_number,
+            a.exam_code_description as test_subject,
+            a.exam_grade as exam_score,
+
+            a.irregularity_code_1,
+            a.irregularity_code_2,
+
+            c.ps_ap_course_subject_code,
+            c.ps_ap_course_subject_name,
+            c.ap_course_name,
+
+            'CB File' as data_source,
+
+            row_number() over (
+                partition by
+                    a.admin_year,
+                    a.powerschool_student_number,
+                    a.exam_code_description,
+                    a.exam_grade
+                order by c.ap_course_name desc
+            ) as rn_distinct,
+
+        from {{ ref("int_collegeboard__ap_unpivot") }} as a
+        left join
+            {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
+            on a.exam_code_description = c.ps_ap_course_subject_name
+        where
+            a.exam_code_description != 'Calculus BC: AB Subscore' and a.rn_distinct = 1
     )
 
 select
@@ -34,12 +67,12 @@ select
     test_subject,
     exam_score,
 
-    null as irregularity_code_1,
-    null as irregularity_code_2,
-
     ps_ap_course_subject_code,
     ps_ap_course_subject_name,
     ap_course_name,
+
+    null as irregularity_code_1,
+    null as irregularity_code_2,
 
     data_source,
 
@@ -49,22 +82,19 @@ where rn_distinct = 1
 union all
 
 select
-    a.admin_year as academic_year,
-    a.powerschool_student_number,
-    a.exam_code_description as test_subject,
-    a.exam_grade as exam_score,
+    academic_year,
+    powerschool_student_number,
+    test_subject,
+    exam_score,
 
-    a.irregularity_code_1,
-    a.irregularity_code_2,
+    ps_ap_course_subject_code,
+    ps_ap_course_subject_name,
+    ap_course_name,
 
-    c.ps_ap_course_subject_code,
-    c.ps_ap_course_subject_name,
-    c.ap_course_name,
+    irregularity_code_1,
+    irregularity_code_2,
 
-    'CB File' as data_source,
+    data_source,
 
-from {{ ref("int_collegeboard__ap_unpivot") }} as a
-left join
-    {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
-    on a.exam_code_description = c.ps_ap_course_subject_name
-where a.exam_code_description != 'Calculus BC: AB Subscore' and a.rn_distinct = 1
+from cb_scores
+where rn_distinct = 1
