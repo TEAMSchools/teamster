@@ -9,6 +9,7 @@ with
             a.test_subject,
 
             c.ps_ap_course_subject_code,
+            c.ps_ap_course_subject_name,
             c.ap_course_name,
 
             concat(
@@ -41,6 +42,7 @@ select
     null as irregularity_code_2,
 
     ps_ap_course_subject_code,
+    ps_ap_course_subject_name,
     ap_course_name,
 
     administration_round,
@@ -62,6 +64,7 @@ select
     a.irregularity_code_2,
 
     c.ps_ap_course_subject_code,
+    c.ps_ap_course_subject_name,
     c.ap_course_name,
 
     null as administration_round,
