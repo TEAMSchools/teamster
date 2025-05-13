@@ -3,7 +3,7 @@ with
         select
             a.academic_year,
             a.school_specific_id as powerschool_student_number,
-            a.score as scale_score,
+            a.score as exam_score,
             a.test_subject,
 
             c.ps_ap_course_subject_code,
@@ -32,7 +32,7 @@ select
     academic_year,
     powerschool_student_number,
     test_subject,
-    scale_score,
+    exam_score,
 
     null as irregularity_code_1,
     null as irregularity_code_2,
@@ -52,7 +52,7 @@ select
     a.admin_year as academic_year,
     a.powerschool_student_number,
     a.exam_code_description as test_subject,
-    a.exam_grade as scale_score,
+    a.exam_grade as exam_score,
 
     a.irregularity_code_1,
     a.irregularity_code_2,
