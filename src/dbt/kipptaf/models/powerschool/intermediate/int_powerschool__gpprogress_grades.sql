@@ -13,7 +13,7 @@ select
     sub.studentsdcid,
 
     sg.academic_year,
-    sg.dcid,
+    sg.dcid as cc_dcid,
     sg.schoolname,
     sg.studentid,
     sg.teacher_name,
