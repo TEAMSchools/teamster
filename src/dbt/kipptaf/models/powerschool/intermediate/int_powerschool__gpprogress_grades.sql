@@ -69,7 +69,7 @@ select
 
     'Enrolled' as credit_status,
 
-    if(fg.y1_grade_points_unweighted = 0.0, 0.0, fg.potential_credit_hours) as credits,
+    if(fg.y1_letter_grade not like 'F%', fg.potential_credit_hours, 0.0) as credits,
 
 from {{ ref("int_powerschool__gpnode") }} as gpn
 inner join
