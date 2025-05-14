@@ -30,12 +30,13 @@ with
             gp.name,
 
             sub.studentsdcid,
-            coalesce(sub.requiredcredits, gp.credit_capacity) as requiredcredits,
             sub.enrolledcredits,
             sub.requestedcredits,
             sub.earnedcredits,
             sub.waivedcredits,
             sub.appliedwaivedcredits,
+
+            coalesce(sub.requiredcredits, gp.credit_capacity) as requiredcredits,
 
             row_number() over (
                 partition by
@@ -54,6 +55,18 @@ with
             and {{ union_dataset_join_clause(left_alias="gp", right_alias="sub") }}
     )
 
-select *
+select
+    _dbt_source_relation,
+    id,
+    degree_plan_section,
+    name,
+    studentsdcid,
+    requiredcredits,
+    enrolledcredits,
+    requestedcredits,
+    earnedcredits,
+    waivedcredits,
+    appliedwaivedcredits,
+
 from subjects
 where rn_distinct = 1
