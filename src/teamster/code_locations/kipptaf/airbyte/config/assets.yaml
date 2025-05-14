@@ -4,10 +4,15 @@ assets:
     dataset_id: kipptaf_zendesk
     destination_tables:
       - groups
+      - organization_fields
+      - organization_memberships
+      - organizations
       - ticket_audits
       - ticket_fields
       - ticket_metrics
       - tickets
+      - user_fields
+      - user_identities
       - users
   - connection_id: e4856fb7-1f97-4bcd-bc4e-e616c5ae4e52
     group_name: kippadb
