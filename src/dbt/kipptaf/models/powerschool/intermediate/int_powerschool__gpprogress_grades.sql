@@ -1,6 +1,8 @@
 select
     gpn._dbt_source_relation,
+    gpn.plan_id,
     gpn.plan_name,
+    gpn.discipline_id,
     gpn.discipline_name,
     gpn.subject_id,
     gpn.subject_name,
@@ -45,7 +47,9 @@ union all
 
 select
     gpn._dbt_source_relation,
+    gpn.plan_id,
     gpn.plan_name,
+    gpn.discipline_id,
     gpn.discipline_name,
     gpn.subject_id,
     gpn.subject_name,
