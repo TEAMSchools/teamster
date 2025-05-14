@@ -93,8 +93,8 @@ left join
     on y.academic_year = pss.academic_year
     and h.home_business_unit_name = pss.region
     and h.job_title = pss.job_title
-    and h.home_work_location_grade_band
-    = coalesce(pss.school_level, h.home_work_location_grade_band)
+    and coalesce(h.home_work_location_grade_band, 'no band')
+    = coalesce(pss.school_level, h.home_work_location_grade_band, 'no band')
     and (
         h.base_remuneration_annual_rate_amount + 150
         between pss.scale_cy_salary and pss.scale_ny_salary_plus_1_cent
