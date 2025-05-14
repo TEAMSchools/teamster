@@ -1,5 +1,18 @@
 select
-    e._dbt_source_relation,
+    g._dbt_source_relation,
+    g.plan_name,
+    g.discipline_name,
+    g.subject_name,
+    g.teacher_name,
+    g.course_number,
+    g.course_name,
+    g.sectionid,
+    g.credit_type,
+    g.letter_grade,
+    g.is_transfer_grade,
+    g.credit_status,
+    g.credits,
+
     e.academic_year,
     e.academic_year_display,
     e.region,
@@ -41,19 +54,6 @@ select
     e.ada_above_or_at_80,
     e.advisory,
 
-    g.plan_name,
-    g.discipline_name,
-    g.subject_name,
-    g.teacher_name,
-    g.course_number,
-    g.course_name,
-    g.sectionid,
-    g.credit_type,
-    g.letter_grade,
-    g.is_transfer_grade,
-    g.credit_status,
-    g.credits,
-
     sp.requiredcredits as plan_required_credits,
     sp.enrolledcredits as plan_enrolled_crdits,
     sp.requestedcredits as plan_requested_credits,
@@ -75,12 +75,12 @@ select
     ss.waivedcredits as subject_waived_credits,
     ss.appliedwaivedcredits as subject_applied_waived_credits,
 
-from {{ ref("int_extracts__student_enrollments") }} as e
-inner join
-    {{ ref("int_powerschool__gpprogress_grades") }} as g
-    on e.academic_year = g.academic_year
-    and e.students_dcid = g.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="g") }}
+from {{ ref("int_powerschool__gpprogress_grades") }} as g
+left join
+    {{ ref("int_extracts__student_enrollments") }} as e
+    on g.academic_year = e.academic_year
+    and g.studentsdcid = e.students_dcid
+    and {{ union_dataset_join_clause(left_alias="g", right_alias="e") }}
 left join
     {{ ref("int_powerschool__gpprogresssubject") }} as sp
     on g.studentsdcid = sp.studentsdcid
