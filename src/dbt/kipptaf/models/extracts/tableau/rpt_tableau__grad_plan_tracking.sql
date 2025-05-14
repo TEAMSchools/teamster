@@ -1,5 +1,6 @@
 select
     g._dbt_source_relation,
+    g.academic_year,
     g.plan_name,
     g.discipline_name,
     g.subject_name,
@@ -13,8 +14,6 @@ select
     g.credit_status,
     g.credits,
 
-    e.academic_year,
-    e.academic_year_display,
     e.region,
     e.schoolid,
     e.school,
