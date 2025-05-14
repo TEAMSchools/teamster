@@ -38,8 +38,8 @@ inner join
 inner join
     {{ ref("stg_powerschool__storedgrades") }} as sg
     on se.storedgradesdcid = sg.dcid
-    and sg.storecode = 'Y1'
     and {{ union_dataset_join_clause(left_alias="se", right_alias="sg") }}
+    and sg.storecode = 'Y1'
 
 union all
 
