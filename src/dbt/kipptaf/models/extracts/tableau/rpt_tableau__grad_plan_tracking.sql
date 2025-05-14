@@ -74,6 +74,8 @@ select
     ss.waivedcredits as subject_waived_credits,
     ss.appliedwaivedcredits as subject_applied_waived_credits,
 
+    gty.gpa_y1,
+
 from {{ ref("int_powerschool__gpprogress_grades") }} as g
 left join
     {{ ref("int_extracts__student_enrollments") }} as e
@@ -98,3 +100,10 @@ left join
     and g.discipline_id = ss.id
     and {{ union_dataset_join_clause(left_alias="g", right_alias="ss") }}
     and ss.degree_plan_section = 'Subject'
+left join
+    {{ ref("int_powerschool__gpa_term") }} as gty
+    on e.studentid = gty.studentid
+    and e.yearid = gty.yearid
+    and e.schoolid = gty.schoolid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="gty") }}
+    and gty.is_current
