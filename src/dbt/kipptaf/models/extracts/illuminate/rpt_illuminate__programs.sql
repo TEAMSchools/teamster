@@ -71,6 +71,7 @@ where
 union all
 /* buckets */
 select
+    -- trunk-ignore-begin(sqlfluff/RF05)
     student_number as `01 Import Student ID`,
 
     null as `02 State Student ID`,
