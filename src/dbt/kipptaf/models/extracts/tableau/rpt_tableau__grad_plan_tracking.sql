@@ -78,9 +78,9 @@ select
 from {{ ref("int_powerschool__gpprogress_grades") }} as g
 left join
     {{ ref("int_extracts__student_enrollments") }} as e
-    on g.academic_year = e.academic_year
-    and g.studentsdcid = e.students_dcid
+    on g.studentsdcid = e.students_dcid
     and {{ union_dataset_join_clause(left_alias="g", right_alias="e") }}
+    and e.academic_year = {{ var("current_academic_year") }}
 left join
     {{ ref("int_powerschool__gpprogresssubject") }} as sp
     on g.studentsdcid = sp.studentsdcid
@@ -99,4 +99,3 @@ left join
     and g.discipline_id = ss.id
     and {{ union_dataset_join_clause(left_alias="g", right_alias="ss") }}
     and ss.degree_plan_section = 'Subject'
-where e.academic_year >= {{ var("current_academic_year") - 3 }}
