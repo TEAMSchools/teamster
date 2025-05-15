@@ -11,7 +11,6 @@ with
             u.organization_id,
             u.secondary_location,
 
-            u.id as zendesk_user_id,
             u.name as zendesk_name,
             u.suspended as zendesk_suspended,
             u.organization_id as zendesk_organization_id,
@@ -39,8 +38,6 @@ with
         select
             *,
 
-            if(zendesk_user_id is null, true, false) as is_create,
-
             {{
                 dbt_utils.generate_surrogate_key(
                     field_list=[
@@ -67,21 +64,15 @@ with
 
 select
     external_id,
-    zendesk_user_id as user_id,
     `name`,
     suspended,
     email,
     `role`,
     organization_id,
     secondary_location,
-    is_create,
 
     /* user identities */
     mail_alias,
     google_email,
     personal_email,
-
-    if(
-        not is_create and adp_surrogate_key != zendesk_surrogate_key, true, false
-    ) as is_update,
 from comparison
