@@ -76,6 +76,14 @@ select
 
     gty.gpa_y1,
 
+    if(
+        g.academic_year = {{ var("current_academic_year") }}, true, false
+    ) as current_academic_year,
+
+    sum(g.credits) over (
+        partition by g._dbt_source_relation, g.academic_year, g.plan_id, g.studentsdcid
+    ) as academic_year_credits_earned,
+
 from {{ ref("int_powerschool__gpprogress_grades") }} as g
 left join
     {{ ref("int_extracts__student_enrollments") }} as e
