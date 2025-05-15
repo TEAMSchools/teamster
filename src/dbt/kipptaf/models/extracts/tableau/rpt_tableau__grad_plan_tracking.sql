@@ -83,13 +83,12 @@ with
             ) as current_academic_year,
 
             case
-                when g.credit_status = 'Earned'
-                then g.credits
                 when
                     g.credit_status = 'Enrolled'
                     and g.credits is not null
                     and g.credits != ss.enrolledcredits
                 then ss.enrolledcredits
+                else g.credits
             end as credits_adjusted,
 
         from {{ ref("int_powerschool__gpprogress_grades") }} as g
