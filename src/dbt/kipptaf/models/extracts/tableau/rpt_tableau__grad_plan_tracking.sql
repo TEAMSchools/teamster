@@ -87,7 +87,7 @@ with
                 then g.credits
                 when
                     g.credit_status = 'Enrolled'
-                    and (g.credits is not null or g.credits != 0)
+                    and g.credits is not null
                     and g.credits != ss.enrolledcredits
                 then ss.enrolledcredits
             end as credits_adjusted,
