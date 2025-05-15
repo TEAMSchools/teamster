@@ -303,7 +303,6 @@ select
     lc.location_dagster_code_location as home_work_location_dagster_code_location,
     lc.location_clean_name as home_work_location_reporting_name,
     lc.location_abbreviation as home_work_location_abbreviation,
-    lc.location_grade_band as home_work_location_grade_band,
     lc.location_reporting_school_id as home_work_location_reporting_school_id,
     lc.location_powerschool_school_id as home_work_location_powerschool_school_id,
     lc.location_deanslist_school_id as home_work_location_deanslist_school_id,
@@ -334,6 +333,8 @@ select
     sis.years_teaching_outside_njfl,
 
     rtldap.google_email as reports_to_google_email,
+
+    coalesce(lc.location_grade_band, 'N/A') as home_work_location_grade_band,
 
     lower(ldap.sam_account_name) as sam_account_name,
     lower(ldap.user_principal_name) as user_principal_name,
