@@ -58,21 +58,18 @@ select
     sp.requestedcredits as plan_requested_credits,
     sp.earnedcredits as plan_earned_credits,
     sp.waivedcredits as plan_waived_credits,
-    sp.appliedwaivedcredits as plan_applied_waived_credits,
 
     sd.requiredcredits as discipline_required_credits,
     sd.enrolledcredits as discipline_enrolled_crdits,
     sd.requestedcredits as discipline_requested_credits,
     sd.earnedcredits as discipline_earned_credits,
     sd.waivedcredits as discipline_waived_credits,
-    sd.appliedwaivedcredits as discipline_applied_waived_credits,
 
     ss.requiredcredits as subject_required_credits,
     ss.enrolledcredits as subject_enrolled_crdits,
     ss.requestedcredits as subject_requested_credits,
     ss.earnedcredits as subject_earned_credits,
     ss.waivedcredits as subject_waived_credits,
-    ss.appliedwaivedcredits as subject_applied_waived_credits,
 
     gty.gpa_y1,
 
