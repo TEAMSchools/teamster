@@ -1,8 +1,11 @@
 select
     g._dbt_source_relation,
     g.academic_year,
+    g.plan_id,
     g.plan_name,
+    g.discipline_id,
     g.discipline_name,
+    g.subject_id,
     g.subject_name,
     g.teacher_name,
     g.course_number,
