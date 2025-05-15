@@ -105,7 +105,7 @@ left join
 left join
     {{ ref("int_powerschool__gpprogresssubject") }} as ss
     on g.studentsdcid = ss.studentsdcid
-    and g.discipline_id = ss.id
+    and g.subject_id = ss.id
     and {{ union_dataset_join_clause(left_alias="g", right_alias="ss") }}
     and ss.degree_plan_section = 'Subject'
 left join
