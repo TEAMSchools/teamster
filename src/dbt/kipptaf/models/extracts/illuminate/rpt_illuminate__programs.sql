@@ -110,4 +110,4 @@ select
     null as `15 Site ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments_subjects") }}
-where academic_year = {{ var("current_academic_year") }} and nj_student_tier is not null
+where academic_year = {{ var("current_academic_year") }}
