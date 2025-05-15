@@ -82,6 +82,10 @@ with
                 g.academic_year = {{ var("current_academic_year") }}, true, false
             ) as current_academic_year,
 
+            if(
+                g.academic_year = {{ var("current_academic_year") - 1 }}, true, false
+            ) as previous_academic_year,
+
             case
                 when
                     g.credit_status = 'Enrolled'
