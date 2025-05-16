@@ -90,7 +90,7 @@ with
                 when
                     g.credit_status = 'Enrolled'
                     and g.credits is not null
-                    and g.credits != ss.enrolledcredits
+                    and g.credits > ss.enrolledcredits
                 then ss.enrolledcredits
                 else g.credits
             end as credits_adjusted,
