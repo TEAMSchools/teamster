@@ -183,4 +183,5 @@ from yearly_credits as y
 inner join
     custom_yearly_credits as c
     on y.student_number = c.student_number
+    and y.plan_id = c.plan_id
     and {{ union_dataset_join_clause(left_alias="y", right_alias="c") }}
