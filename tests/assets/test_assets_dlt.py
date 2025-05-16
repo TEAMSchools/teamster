@@ -1,6 +1,4 @@
 from dagster import TextMetadataValue, materialize
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._core.events import StepMaterializationData
 from dagster_dlt import DagsterDltResource
 from dagster_shared import check
