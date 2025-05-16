@@ -18,7 +18,7 @@ with
             g.letter_grade,
             g.is_transfer_grade,
             g.credit_status,
-            g.credits,
+            g.current_credits,
 
             e.region,
             e.schoolid,
@@ -89,11 +89,11 @@ with
             case
                 when
                     g.credit_status = 'Enrolled'
-                    and g.credits is not null
-                    and g.credits > ss.enrolledcredits
+                    and g.current_credits is not null
+                    and g.current_credits > ss.enrolledcredits
                 then ss.enrolledcredits
-                else g.credits
-            end as credits_adjusted,
+                else g.current_credits
+            end as potential_credits,
 
         from {{ ref("int_powerschool__gpprogress_grades") }} as g
         left join
@@ -132,9 +132,13 @@ with
         select
             *,
 
-            sum(credits_adjusted) over (
+            sum(current_credits) over (
                 partition by academic_year, student_number, plan_id
             ) as academic_year_credits_earned,
+
+            sum(potential_credits) over (
+                partition by academic_year, student_number, plan_id
+            ) as academic_year_credits_potential,
 
         from credits
     ),
@@ -152,9 +156,7 @@ with
             ) as credits_previous_year,
 
             avg(
-                case
-                    when is_current_academic_year then (academic_year_credits_earned)
-                end
+                case when is_current_academic_year then academic_year_credits_earned end
             ) as credits_current_year,
 
             avg(
@@ -163,6 +165,12 @@ with
                     then (0.5 * academic_year_credits_earned)
                 end
             ) as half_credits_current_year,
+
+            avg(
+                case
+                    when is_current_academic_year then academic_year_credits_potential
+                end
+            ) as potential_credits_current_year,
 
         from yearly_credits
         group by all
@@ -174,9 +182,10 @@ select
     c.credits_previous_year,
     c.credits_current_year,
     c.half_credits_current_year,
+    c.potential_credits_current_year,
 
     if(
-        c.credits_current_year / 2 = c.half_credits_current_year, true, false
+        potential_credits_current_year / 2 = c.half_credits_current_year, true, false
     ) as is_cy_credits_on_track,
 
 from yearly_credits as y

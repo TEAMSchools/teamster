@@ -26,7 +26,7 @@ select
 
     'Earned' as credit_status,
 
-    sg.earnedcrhrs as credits,
+    sg.earnedcrhrs as current_credits,
 
 from {{ ref("int_powerschool__gpnode") }} as gpn
 inner join
@@ -75,7 +75,9 @@ select
 
     'Enrolled' as credit_status,
 
-    if(fg.y1_letter_grade not like 'F%', fg.potential_credit_hours, 0.0) as credits,
+    if(
+        fg.y1_letter_grade not like 'F%', fg.potential_credit_hours, 0.0
+    ) as current_credits,
 
 from {{ ref("int_powerschool__gpnode") }} as gpn
 inner join
