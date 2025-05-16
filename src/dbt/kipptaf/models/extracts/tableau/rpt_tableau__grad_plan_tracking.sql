@@ -176,6 +176,8 @@ select
     c.half_earned_credits_current_year,
     c.potential_credits_current_year,
 
+    {{ var("current_academic_year") }} as current_academic_year,
+
     if(
         potential_credits_current_year / 2 = c.half_earned_credits_current_year,
         true,
