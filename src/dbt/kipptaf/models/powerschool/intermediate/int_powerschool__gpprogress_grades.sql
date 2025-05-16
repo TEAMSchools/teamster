@@ -26,7 +26,8 @@ select
 
     'Earned' as credit_status,
 
-    sg.earnedcrhrs as current_credits,
+    sg.earnedcrhrs as potential_credits,
+    sg.earnedcrhrs as earned_credits,
 
 from {{ ref("int_powerschool__gpnode") }} as gpn
 inner join
@@ -75,9 +76,9 @@ select
 
     'Enrolled' as credit_status,
 
-    if(
-        fg.y1_letter_grade not like 'F%', fg.potential_credit_hours, 0.0
-    ) as current_credits,
+    gps.enrolledcredits as potential_credits,
+
+    if(fg.y1_letter_grade not like 'F%', gps.enrolledcredits, 0.0) as earned_credits,
 
 from {{ ref("int_powerschool__gpnode") }} as gpn
 inner join
@@ -95,3 +96,9 @@ inner join
     and {{ union_dataset_join_clause(left_alias="se", right_alias="fg") }}
     and fg.academic_year = {{ var("current_academic_year") }}
     and fg.termbin_is_current
+inner join
+    {{ ref("int_powerschool__gpprogresssubject") }} as gps
+    on sub.gpnodeid = gps.id
+    and sub.studentsdcid = gps.studentsdcid
+    and gps.degree_plan_section = 'Subject'
+    and {{ union_dataset_join_clause(left_alias="sub", right_alias="gps") }}

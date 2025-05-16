@@ -18,7 +18,8 @@ with
             g.letter_grade,
             g.is_transfer_grade,
             g.credit_status,
-            g.current_credits,
+            g.earned_credits,
+            g.potential_credits,
 
             e.region,
             e.schoolid,
@@ -86,15 +87,6 @@ with
                 g.academic_year = {{ var("current_academic_year") - 1 }}, true, false
             ) as is_previous_academic_year,
 
-            case
-                when
-                    g.credit_status = 'Enrolled'
-                    and g.current_credits is not null
-                    and g.current_credits > ss.enrolledcredits
-                then ss.enrolledcredits
-                else g.current_credits
-            end as potential_credits,
-
         from {{ ref("int_powerschool__gpprogress_grades") }} as g
         left join
             {{ ref("int_extracts__student_enrollments") }} as e
@@ -132,7 +124,7 @@ with
         select
             *,
 
-            sum(current_credits) over (
+            sum(earned_credits) over (
                 partition by academic_year, student_number, plan_id
             ) as academic_year_credits_earned,
 
