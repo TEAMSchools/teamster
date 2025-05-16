@@ -153,6 +153,12 @@ with
 
             avg(
                 case
+                    when is_current_academic_year then (academic_year_credits_earned)
+                end
+            ) as credits_current_year,
+
+            avg(
+                case
                     when is_current_academic_year
                     then (0.5 * academic_year_credits_earned)
                 end
@@ -162,7 +168,16 @@ with
         group by all
     )
 
-select y.*, c.credits_previous_year, half_credits_current_year,
+select
+    y.*,
+
+    c.credits_previous_year,
+    c.credits_current_year,
+    c.half_credits_current_year,
+
+    if(
+        c.credits_current_year / 2 = c.half_credits_current_year, true, false
+    ) as is_cy_credits_on_track,
 
 from yearly_credits as y
 inner join
