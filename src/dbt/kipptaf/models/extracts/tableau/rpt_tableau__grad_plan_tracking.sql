@@ -134,7 +134,7 @@ select
     (credits_adjusted / 2) as credits_adjusted_half,
 
     sum(credits_adjusted) over (
-        partition by _dbt_source_relation, academic_year, plan_id, studentsdcid
+        partition by academic_year, student_number, plan_id
     ) as academic_year_credits_earned,
 
 from credits
