@@ -145,18 +145,18 @@ with
                 case
                     when is_previous_academic_year then academic_year_credits_earned
                 end
-            ) as credits_previous_year,
+            ) as earned_credits_previous_year,
 
             avg(
                 case when is_current_academic_year then academic_year_credits_earned end
-            ) as credits_current_year,
+            ) as earned_credits_current_year,
 
             avg(
                 case
                     when is_current_academic_year
                     then (0.5 * academic_year_credits_earned)
                 end
-            ) as half_credits_current_year,
+            ) as half_earned_credits_current_year,
 
             avg(
                 case
@@ -171,13 +171,15 @@ with
 select
     y.*,
 
-    c.credits_previous_year,
-    c.credits_current_year,
-    c.half_credits_current_year,
+    c.earned_credits_previous_year,
+    c.earned_credits_current_year,
+    c.half_earned_credits_current_year,
     c.potential_credits_current_year,
 
     if(
-        potential_credits_current_year / 2 = c.half_credits_current_year, true, false
+        potential_credits_current_year / 2 = c.half_earned_credits_current_year,
+        true,
+        false
     ) as is_cy_credits_on_track,
 
 from yearly_credits as y
