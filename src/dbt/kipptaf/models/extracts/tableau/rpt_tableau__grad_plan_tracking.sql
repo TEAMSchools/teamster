@@ -80,11 +80,11 @@ with
 
             if(
                 g.academic_year = {{ var("current_academic_year") }}, true, false
-            ) as current_academic_year,
+            ) as is_current_academic_year,
 
             if(
                 g.academic_year = {{ var("current_academic_year") - 1 }}, true, false
-            ) as previous_academic_year,
+            ) as is_previous_academic_year,
 
             case
                 when
@@ -126,15 +126,50 @@ with
             and e.schoolid = gty.schoolid
             and {{ union_dataset_join_clause(left_alias="e", right_alias="gty") }}
             and gty.is_current
+    ),
+
+    yearly_credits as (
+        select
+            *,
+
+            sum(credits_adjusted * 0.5) over (
+                partition by academic_year, student_number, plan_id
+            ) as academic_year_credits_earned_half,
+
+            sum(credits_adjusted) over (
+                partition by academic_year, student_number, plan_id
+            ) as academic_year_credits_earned,
+
+        from credits
+    ),
+
+    custom_yearly_credits as (
+        select
+            _dbt_source_relation,
+            student_number,
+            plan_id,
+
+            avg(
+                case
+                    when is_previous_academic_year then academic_year_credits_earned
+                end
+            ) as credits_previous_year,
+
+            avg(
+                case
+                    when is_current_academic_year then academic_year_credits_earned_half
+                end
+            ) as half_current_year_credits
+
+        from yearly_credits
+        group by all
     )
 
-select
-    *,
+select y.*, c.credits_previous_year, half_current_year_credits,
 
-    (credits_adjusted / 2) as credits_adjusted_half,
+from yearly_credits as y
 
-    sum(credits_adjusted) over (
-        partition by academic_year, student_number, plan_id
-    ) as academic_year_credits_earned,
-
-from credits
+inner join
+    custom_yearly_credits as c
+    on y.student_number = c.student_number
+    and {{ union_dataset_join_clause(left_alias="y", right_alias="c") }}
