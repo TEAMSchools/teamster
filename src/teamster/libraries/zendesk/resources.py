@@ -1,3 +1,5 @@
+import time
+
 from dagster import ConfigurableResource, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
@@ -78,3 +80,43 @@ class ZendeskResource(ConfigurableResource):
                 params["page[after]"] = data["meta"]["after_cursor"]
             else:
                 return all_data
+
+    def handle_limit_exceeded(self, limit_header_reset_time):
+        wait_time = limit_header_reset_time - time.time() + 1  # Add 1 second buffer
+
+        print(f"Rate limit exceeded. Waiting for {wait_time} seconds...")
+        time.sleep(wait_time)
+
+        return False
+
+    def handle_rate_limits(self, response: Response):
+        rate_limit_remaining = response.headers.get("ratelimit-remaining")
+        rate_limit_endpoint: str = response.headers.get(
+            "Zendesk-RateLimit-Endpoint", ""
+        )
+
+        rate_limit_reset: int = int(response.headers.get("ratelimit-reset", "60"))
+
+        endpoint_remaining = int(rate_limit_endpoint.split(";")[1].split("=")[1])
+        endpoint_limit_reset_seconds = int(
+            rate_limit_endpoint.split(";")[2].split("=")[1]
+        )
+
+        if rate_limit_remaining:
+            account_remaining = int(rate_limit_remaining)
+
+            if account_remaining > 0:
+                if rate_limit_endpoint:
+                    if endpoint_remaining > 0:
+                        return True
+                    else:
+                        # Endpoint-specific limit exceeded; stop making more calls
+                        self.handle_limit_exceeded(endpoint_limit_reset_seconds)
+                else:
+                    # No endpoint-specific limit
+                    return True
+            else:
+                # Account-wide limit exceeded
+                self.handle_limit_exceeded(rate_limit_reset)
+        else:
+            return False

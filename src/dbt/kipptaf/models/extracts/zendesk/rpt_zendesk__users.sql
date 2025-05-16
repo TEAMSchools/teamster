@@ -63,10 +63,10 @@ with
     )
 
 select
+    email,
     external_id,
     `name`,
     suspended,
-    email,
     `role`,
     organization_id,
     secondary_location,
