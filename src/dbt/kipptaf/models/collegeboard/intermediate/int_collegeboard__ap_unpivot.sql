@@ -12,6 +12,8 @@ with
             cast(exam_grade as int) as exam_grade,
 
             extract(year from parse_date('%y', admin_year)) as admin_year,
+
+            extract(year from parse_date('%y', admin_year)) - 1 as academic_year,
         from
             {{ ref("stg_collegeboard__ap") }} unpivot (
                 (
@@ -245,6 +247,13 @@ select
     c2.description as irregularity_code_1_description,
 
     c3.description as irregularity_code_2_description,
+
+    row_number() over (
+        partition by
+            a.academic_year, x.powerschool_student_number, a.exam_code, a.exam_grade
+        order by a.rn_exam_number
+    ) as rn_distinct,
+
 from ap_data as a
 left join
     {{ ref("stg_collegeboard__ap_id_crosswalk") }} as x
@@ -261,3 +270,4 @@ left join
     {{ ref("stg_collegeboard__ap_codes") }} as c3
     on a.irregularity_code_2 = c3.code
     and c3.`domain` = 'Irregularity Scores'
+where a.exam_grade is not null
