@@ -95,6 +95,18 @@ with
                 else g.credits
             end as credits_adjusted,
 
+            (
+                case
+                    when
+                        g.credit_status = 'Enrolled'
+                        and g.credits is not null
+                        and g.credits != ss.enrolledcredits
+                    then ss.enrolledcredits
+                    else g.credits
+                end
+            )
+            * 0.5 as credits_adjusted_half,
+
         from {{ ref("int_powerschool__gpprogress_grades") }} as g
         left join
             {{ ref("int_extracts__student_enrollments") }} as e
@@ -132,7 +144,7 @@ with
         select
             *,
 
-            sum(credits_adjusted * 0.5) over (
+            sum(credits_adjusted_half) over (
                 partition by academic_year, student_number, plan_id
             ) as academic_year_credits_earned_half,
 
@@ -159,16 +171,15 @@ with
                 case
                     when is_current_academic_year then academic_year_credits_earned_half
                 end
-            ) as half_current_year_credits
+            ) as half_credits_current_year,
 
         from yearly_credits
         group by all
     )
 
-select y.*, c.credits_previous_year, half_current_year_credits,
+select y.*, c.credits_previous_year, half_credits_current_year,
 
 from yearly_credits as y
-
 inner join
     custom_yearly_credits as c
     on y.student_number = c.student_number
