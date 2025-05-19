@@ -212,7 +212,7 @@ models:
     people:
       +schema: people
       +materialized: table
-      base:
+      disabled:
         +enabled: false
     performance_management:
       +schema: performance_management
