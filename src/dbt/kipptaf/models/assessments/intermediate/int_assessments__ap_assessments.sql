@@ -19,7 +19,10 @@ with
         left join
             {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
             on a.test_subject = c.adb_test_subject
-        where a.score_type = 'ap' and a.test_subject != 'Calculus BC: AB Subscore'
+        where
+            a.score_type = 'ap'
+            and a.academic_year < 2017
+            and a.test_subject != 'Calculus BC: AB Subscore'
     ),
 
     cb_scores as (
@@ -48,7 +51,9 @@ with
         left join
             {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
             on a.exam_code_description = c.ps_ap_course_subject_name
-        where a.exam_code_description != 'Calculus BC: AB Subscore'
+        where
+            a.exam_code_description != 'Calculus BC: AB Subscore'
+            and a.academic_year >= 2018
     )
 
 select
