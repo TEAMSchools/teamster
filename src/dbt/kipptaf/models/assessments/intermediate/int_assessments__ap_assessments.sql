@@ -44,15 +44,11 @@ with
                     a.exam_grade
                 order by a.rn_exam_number desc
             ) as rn_distinct,
-
         from {{ ref("int_collegeboard__ap_unpivot") }} as a
         left join
             {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
             on a.exam_code_description = c.ps_ap_course_subject_name
-        where
-            a.exam_code_description != 'Calculus BC: AB Subscore'
-            and a.rn_distinct = 1
-            and a.academic_year >= 2018
+        where a.exam_code_description != 'Calculus BC: AB Subscore'
     )
 
 select
