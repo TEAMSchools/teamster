@@ -13,7 +13,6 @@ with
             cast(exam_grade as int) as exam_grade,
 
             extract(year from parse_date('%y', admin_year)) as admin_year,
-
             extract(year from parse_date('%y', admin_year)) - 1 as academic_year,
         from
             {{ ref("stg_collegeboard__ap") }} unpivot (
