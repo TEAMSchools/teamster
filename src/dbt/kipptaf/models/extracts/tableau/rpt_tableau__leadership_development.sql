@@ -17,8 +17,7 @@ with
                 when column_name like '%eoy%'
                 then 'EOY'
             end as term
-        from {{ ref('stg_leadership_development__output') }}
-            as o
+        from {{ ref("stg_leadership_development__output") }} as o
         cross join
             unnest(
                 [
