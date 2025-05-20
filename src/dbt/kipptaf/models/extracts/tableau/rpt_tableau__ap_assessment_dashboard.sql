@@ -48,11 +48,9 @@ select
     if(e.iep_status = 'No IEP', 0, 1) as sped,
 
     if(s.courses_course_name is null, 'Not applicable', 'AP') as expected_scope,
-
     if(
         s.courses_course_name is null, 'Not applicable', 'Official'
     ) as expected_test_type,
-
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join
     {{ ref("base_powerschool__course_enrollments") }} as s
