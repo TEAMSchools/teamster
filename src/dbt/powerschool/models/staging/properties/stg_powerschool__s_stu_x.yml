@@ -1,0 +1,136 @@
+version: 2
+models:
+  - name: stg_powerschool__s_stu_x
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__s_stu_x") | replace("`", "") }}')
+    columns:
+      - name: priorityforservice
+        data_type: string
+      - name: sealofbiliteracy
+        data_type: string
+      - name: twentyfirstcenturyserved
+        data_type: string
+      - name: activedutyparent
+        data_type: string
+      - name: immigrant
+        data_type: string
+      - name: jobcorps
+        data_type: string
+      - name: youthchallenge
+        data_type: string
+      - name: entrydateintousschool
+        data_type: date
+      - name: singleparent
+        data_type: string
+      - name: virtualstudent
+        data_type: string
+      - name: steamstemparticipant
+        data_type: string
+      - name: birthcity
+        data_type: string
+      - name: birthcountry
+        data_type: string
+      - name: birthcounty
+        data_type: string
+      - name: birthstate
+        data_type: string
+      - name: residencystatus
+        data_type: string
+      - name: economicdisadvantage
+        data_type: string
+      - name: luncheligibility
+        data_type: string
+      - name: maritalstatus
+        data_type: string
+      - name: reportedvalue
+        data_type: string
+      - name: suffix
+        data_type: string
+      - name: healthid
+        data_type: string
+      - name: deviceaccess
+        data_type: string
+      - name: devicetype
+        data_type: string
+      - name: internetaccess
+        data_type: string
+      - name: internetinresidence
+        data_type: string
+      - name: internetperformance
+        data_type: string
+      - name: pref_first
+        data_type: string
+      - name: pref_last
+        data_type: string
+      - name: pref_middle
+        data_type: string
+      - name: tribal_affiliation_1
+        data_type: string
+      - name: tribal_affiliation_2
+        data_type: string
+      - name: tribal_affiliation_3
+        data_type: string
+      - name: tribal_affiliation_sif_1
+        data_type: string
+      - name: tribal_affiliation_sif_2
+        data_type: string
+      - name: tribal_affiliation_sif_3
+        data_type: string
+      - name: county
+        data_type: string
+      - name: maiden_name
+        data_type: string
+      - name: ontracktograduate
+        data_type: string
+      - name: privateschool
+        data_type: string
+      - name: graduation_class_rank
+        data_type: string
+      - name: contact_email
+        data_type: string
+      - name: contact_fname
+        data_type: string
+      - name: contact_lname
+        data_type: string
+      - name: contact_phone
+        data_type: string
+      - name: barrierintaccess
+        data_type: string
+      - name: fafsa
+        data_type: string
+      - name: programenddate
+        data_type: date
+      - name: programstartdate
+        data_type: date
+      - name: outofdistrict_distoverride
+        data_type: string
+      - name: section504_yn
+        data_type: string
+      - name: careertechedu_yn
+        data_type: string
+      - name: careerworkreadiness_yn
+        data_type: string
+      - name: clgcareerreadiness_yn
+        data_type: string
+      - name: comctzn_yn
+        data_type: string
+      - name: postsecedu_yn
+        data_type: string
+      - name: studentsdcid
+        data_type: int64
+      - name: excludefromedfi
+        data_type: int64
+      - name: repeatgradeindicator
+        data_type: int64
+      - name: schoolchoicetransfer
+        data_type: int64
+      - name: home_language
+        data_type: int64
+      - name: native_language
+        data_type: int64
+      - name: foster_care
+        data_type: int64
+      - name: parentrefusalofimmaccuracy
+        data_type: int64
