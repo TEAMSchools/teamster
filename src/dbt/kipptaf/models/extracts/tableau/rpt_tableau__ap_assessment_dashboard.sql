@@ -65,6 +65,7 @@ left join
     on e.academic_year = a.academic_year
     and e.student_number = a.powerschool_student_number
     and s.ap_course_subject = a.ps_ap_course_subject_code
+    and a.test_subject != 'Calculus BC: AB Subscore'
 where
     e.school_level = 'HS'
     and date(e.academic_year + 1, 05, 15) between e.entrydate and e.exitdate
