@@ -6,11 +6,11 @@ models:
         enforced: true
       tags: google_sheet
     columns:
-      - name: PS_AP_Course_Subject_Code
+      - name: Data_Source
         data_type: string
-      - name: PS_AP_Course_Subject_Name
-        data_type: string
-      - name: ADB_Test_Subject
+      - name: Test_Name
         data_type: string
       - name: AP_Course_Name
+        data_type: string
+      - name: ps_ap_course_subject_code
         data_type: string
