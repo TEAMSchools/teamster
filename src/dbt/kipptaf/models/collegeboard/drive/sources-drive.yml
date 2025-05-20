@@ -74,11 +74,11 @@ sources:
             sheet_range: src_collegeboard__ap_course_crosswalk
             skip_leading_rows: 1
         columns:
+          - name: Data_Source
+            data_type: string
+          - name: Test_Name
+            data_type: string
           - name: PS_AP_Course_Subject_Code
-            data_type: string
-          - name: PS_AP_Course_Subject_Name
-            data_type: string
-          - name: ADB_Test_Subject
             data_type: string
           - name: AP_Course_Name
             data_type: string
