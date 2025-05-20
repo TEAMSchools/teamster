@@ -57,7 +57,7 @@ def main() -> None:
             "dbt",
             "run-operation",
             "generate_model_yaml",
-            "--target=prod",
+            f"--target={args.project if args.dev else 'prod'}",
             f"--project-dir={project_dir}",
             "--args",
             json.dumps({"model_names": [model_name]}),
