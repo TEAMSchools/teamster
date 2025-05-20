@@ -17,6 +17,7 @@ with
             enr.courses_credit_hours,
             enr.courses_gradescaleid,
             enr.courses_gradescaleid_unweighted,
+            enr.gp_enrolledcredits as gp_credit_hours,
             enr.teacher_lastfirst,
             enr.school_name,
             enr.is_dropped_section,
@@ -24,6 +25,7 @@ with
             tb.storecode,
             tb.date1 as termbin_start_date,
             tb.date2 as termbin_end_date,
+
             if(
                 current_date('{{ var("local_timezone") }}')
                 between tb.date1 and tb.date2,
@@ -134,7 +136,7 @@ with
             *,
 
             coalesce(
-                sg_potential_credit_hours, courses_credit_hours
+                sg_potential_credit_hours, gp_credit_hours, courses_credit_hours
             ) as potential_credit_hours,
             coalesce(sg_exclude_from_gpa, courses_excludefromgpa) as exclude_from_gpa,
             coalesce(sg_exclude_from_graduation, 0) as exclude_from_graduation,
@@ -284,6 +286,7 @@ select
     y1.potential_credit_hours,
     y1.sg_potential_credit_hours,
     y1.courses_credit_hours,
+    y1.gp_credit_hours,
     y1.term_weighted_points_possible,
     y1.term_weighted_points_earned,
     y1.term_weighted_points_earned_adjusted,
