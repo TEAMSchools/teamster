@@ -6,19 +6,22 @@ with
             a.score as exam_score,
             a.test_subject,
 
+            c.test_name,
             c.ps_ap_course_subject_code,
-            c.ps_ap_course_subject_name,
             c.ap_course_name,
+            c.data_source,
 
             row_number() over (
                 partition by
                     a.academic_year, a.school_specific_id, a.test_subject, a.score
                 order by a.date desc
             ) as rn_distinct,
+
         from {{ ref("int_kippadb__standardized_test_unpivot") }} as a
         left join
             {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
-            on a.test_subject = c.adb_test_subject
+            on a.test_subject = c.test_name
+            and c.data_source = 'ADB'
         where a.score_type = 'ap' and a.academic_year < 2018
     ),
 
@@ -32,9 +35,10 @@ with
             a.irregularity_code_1,
             a.irregularity_code_2,
 
+            c.test_name,
             c.ps_ap_course_subject_code,
-            c.ps_ap_course_subject_name,
             c.ap_course_name,
+            c.data_source,
 
             row_number() over (
                 partition by
@@ -44,10 +48,12 @@ with
                     a.exam_grade
                 order by a.rn_exam_number desc
             ) as rn_distinct,
+
         from {{ ref("int_collegeboard__ap_unpivot") }} as a
         left join
             {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
-            on a.exam_code_description = c.ps_ap_course_subject_name
+            on a.exam_code_description = c.test_name
+            and c.data_source = 'CB File'
         where a.academic_year >= 2018
     )
 
@@ -56,13 +62,14 @@ select
     powerschool_student_number,
     test_subject,
     exam_score,
+    test_name,
     ps_ap_course_subject_code,
-    ps_ap_course_subject_name,
     ap_course_name,
+    data_source,
 
     null as irregularity_code_1,
     null as irregularity_code_2,
-    'ADB' as `data_source`,
+
 from adb_scores
 where rn_distinct = 1
 
@@ -73,12 +80,13 @@ select
     powerschool_student_number,
     test_subject,
     exam_score,
+    test_name,
     ps_ap_course_subject_code,
-    ps_ap_course_subject_name,
     ap_course_name,
+    data_source,
+
     irregularity_code_1,
     irregularity_code_2,
 
-    'CB File' as `data_source`,
 from cb_scores
 where rn_distinct = 1
