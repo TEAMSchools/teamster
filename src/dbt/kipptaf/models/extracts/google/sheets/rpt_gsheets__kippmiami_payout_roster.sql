@@ -76,29 +76,21 @@ with
 
         select
             academic_year,
-
-            concat('FAST ', lower(assessment_subject), ' proficiency') as measure,
-
-            cast(assessment_grade as string) as grade_level,
-
-            round(avg(if(is_proficient, 1, 0)), 2) as criteria,
-        from {{ ref("stg_fldoe__fast") }}
-        where administration_window = 'PM3'
-        group by academic_year, assessment_subject, assessment_grade
-
-        union all
-
-        select
-            academic_year,
-
-            concat('STAR ', `subject`, ' proficiency') as measure,
-
+            concat('STAR ', star_discipline, ' proficiency') as measure,
             cast(grade_level as string) as grade_level,
-
-            round(avg(if(star_is_proficient = 'Yes', 1, 0)), 2) as criteria,
-        from star
-        where rn_subj_round = 1
-        group by academic_year, `subject`, grade_level
+            round(
+                avg(
+                    if(
+                        grade_level = 0,
+                        is_district_benchmark_proficient_int,
+                        is_state_benchmark_proficient_int
+                    )
+                ),
+                2
+            ) as criteria,
+        from {{ ref("int_renlearn__star_rollup") }}
+        where screening_period_window_name = 'Spring' and rn_subj_round = 1
+        group by academic_year, star_discipline, grade_level
 
         union all
 
@@ -172,21 +164,51 @@ with
 
         select
             academic_year,
-            'science assessment' as measure,
-            cast(enrolled_grade as string) as grade_level,
+            if(
+                assessment_subject = 'Science',
+                'Science proficiency',
+                concat(assessment_name, ' ', assessment_subject, ' proficiency')
+            ) as measure,
+            cast(assessment_grade as string) as grade_level,
             round(avg(if(is_proficient, 1, 0)), 2) as criteria,
-        from {{ ref("stg_fldoe__science") }}
-        group by academic_year, enrolled_grade
+        from {{ ref("int_fldoe__all_assessments") }}
+        group by academic_year, assessment_name, assessment_subject, assessment_grade
 
         union all
 
         select
-            academic_year,
-            concat(lower(test_name), ' eoc') as measure,
-            cast(enrolled_grade as string) as grade_level,
-            round(avg(if(is_proficient, 1, 0)), 2) as criteria,
-        from {{ ref("stg_fldoe__eoc") }}
-        group by academic_year, test_name, enrolled_grade
+            fl.academic_year,
+            concat(fl.assessment_subject, ' growth') as measure,
+            fl.assessment_grade,
+            round(
+                avg(
+                    case
+                        when
+                            py.prev_pm3_scale is not null
+                            and fl.sublevel_number > py.prev_pm3_sublevel_number
+                        then 1
+                        when py.prev_pm3_scale is not null and fl.sublevel_number = 8
+                        then 1
+                        when
+                            py.prev_pm3_scale is not null
+                            and py.prev_pm3_sublevel_number in (6, 7)
+                            and py.prev_pm3_sublevel_number = fl.sublevel_number
+                            and fl.scale_score > py.prev_pm3_scale
+                        then 1
+                        when py.prev_pm3_scale is not null
+                        then 0
+                    end
+                ),
+                2
+            ) as criteria,
+        from {{ ref("int_fldoe__all_assessments") }} as fl
+        left join
+            {{ ref("int_assessments__fast_previous_year") }} as py
+            on fl.student_id = py.student_id
+            and fl.assessment_subject = py.assessment_subject
+            and fl.academic_year = py.academic_year
+        where fl.assessment_name = 'FAST' and fl.administration_window = 'PM3'
+        group by fl.academic_year, fl.assessment_subject, fl.assessment_grade
     )
 
 select
