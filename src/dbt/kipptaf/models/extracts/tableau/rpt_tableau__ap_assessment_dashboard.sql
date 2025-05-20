@@ -28,8 +28,8 @@ select
 
     a.test_subject,
     a.exam_score,
+    a.test_name,
     a.ps_ap_course_subject_code,
-    a.ps_ap_course_subject_name,
     a.ap_course_name,
     a.irregularity_code_1,
     a.irregularity_code_2,
