@@ -17,9 +17,7 @@ with
                 when column_name like '%eoy%'
                 then 'EOY'
             end as term
-        from
-            `teamster-332318`.`kipptaf_google_appsheet`.`stg_leadership_development__output`
-            as o
+        from {{ ref("stg_leadership_development__output") }} as o
         cross join
             unnest(
                 [
@@ -143,3 +141,4 @@ left join
 left join metrics_lookup as m on p.metric_id = m.metric_id
 left join
     {{ ref("int_people__staff_roster") }} as r on p.employee_number = r.employee_number
+where a.active_title and not a.special_case
