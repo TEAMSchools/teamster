@@ -1,9 +1,18 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
+    ap as (
+        select a.*, x.powerschool_student_number,
+        from {{ source("collegeboard", "src_collegeboard__ap") }} as a
+        left join
+            {{ ref("stg_collegeboard__ap_id_crosswalk") }} as x
+            on a.ap_number_ap_id = x.college_board_id
+    ),
+
     deduplicate as (
         {{
             dbt_utils.deduplicate(
-                relation=source("collegeboard", "src_collegeboard__ap"),
-                partition_by="ap_number_ap_id",
+                relation="ap",
+                partition_by="powerschool_student_number",
                 order_by="_dagster_partition_school_year desc",
             )
         }}
@@ -12,6 +21,7 @@ with
 select
     _dagster_partition_school_year as enrollment_school_year,
     ap_number_ap_id,
+    powerschool_student_number,
     student_identifier,
     first_name,
     middle_initial,
@@ -175,92 +185,90 @@ select
 
     case
         grade_level when '4' then 9 when '5' then 10 when '6' then 11 when '7' then 12
-    -- when '3' then '< 9th Grade'
-    -- when '8' then 'No longer in high school'
-    -- when '11' then 'Unknown'
     end as grade_level,
-/* unused cols */
--- _dagster_partition_school,
--- ai_country_code,
--- ai_international_postal_code,
--- ai_province,
--- ai_state,
--- ai_street_address_1,
--- ai_street_address_2,
--- ai_street_address_3,
--- ai_zip_code,
--- award_type_1,
--- award_type_2,
--- award_type_3,
--- award_type_4,
--- award_type_5,
--- award_type_6,
--- award_year_1,
--- award_year_2,
--- award_year_3,
--- award_year_4,
--- award_year_5,
--- award_year_6,
--- best_language,
--- college_code,
--- contact_name,
--- date_grades_released_to_college,
--- date_of_last_student_update,
--- date_of_this_report,
--- derived_aggregate_race_ethnicity_2016_and_forward,
--- di_country_code,
--- di_institution_name,
--- di_international_postal_code,
--- di_province,
--- di_state,
--- di_street_address_1,
--- di_street_address_2,
--- di_street_address_3,
--- di_zip_code,
--- previous_ai_code_1,
--- previous_ai_code_2,
--- previous_ai_year_1,
--- previous_ai_year_2,
--- race_ethnicity_student_response_2016_and_forward,
--- student_country_code,
--- student_international_postal_code,
--- student_province,
--- student_state,
--- student_street_address_1,
--- student_street_address_2,
--- student_street_address_3,
--- student_zip_code,
-/* always blank */
--- ethnic_group_2015_and_prior,
--- school_id,
--- class_section_code_01,
--- class_section_code_02,
--- class_section_code_03,
--- class_section_code_04,
--- class_section_code_05,
--- class_section_code_06,
--- class_section_code_07,
--- class_section_code_08,
--- class_section_code_09,
--- class_section_code_10,
--- class_section_code_11,
--- class_section_code_12,
--- class_section_code_13,
--- class_section_code_14,
--- class_section_code_15,
--- class_section_code_16,
--- class_section_code_17,
--- class_section_code_18,
--- class_section_code_19,
--- class_section_code_20,
--- class_section_code_21,
--- class_section_code_22,
--- class_section_code_23,
--- class_section_code_24,
--- class_section_code_25,
--- class_section_code_26,
--- class_section_code_27,
--- class_section_code_28,
--- class_section_code_29,
--- class_section_code_30,
+
+{# unused columns #}
+{# _dagster_partition_school, #}
+{# ai_country_code, #}
+{# ai_international_postal_code, #}
+{# ai_province, #}
+{# ai_state, #}
+{# ai_street_address_1, #}
+{# ai_street_address_2, #}
+{# ai_street_address_3, #}
+{# ai_zip_code, #}
+{# award_type_1, #}
+{# award_type_2, #}
+{# award_type_3, #}
+{# award_type_4, #}
+{# award_type_5, #}
+{# award_type_6, #}
+{# award_year_1, #}
+{# award_year_2, #}
+{# award_year_3, #}
+{# award_year_4, #}
+{# award_year_5, #}
+{# award_year_6, #}
+{# best_language, #}
+{# college_code, #}
+{# contact_name, #}
+{# date_grades_released_to_college, #}
+{# date_of_last_student_update, #}
+{# date_of_this_report, #}
+{# derived_aggregate_race_ethnicity_2016_and_forward, #}
+{# di_country_code, #}
+{# di_institution_name, #}
+{# di_international_postal_code, #}
+{# di_province, #}
+{# di_state, #}
+{# di_street_address_1, #}
+{# di_street_address_2, #}
+{# di_street_address_3, #}
+{# di_zip_code, #}
+{# previous_ai_code_1, #}
+{# previous_ai_code_2, #}
+{# previous_ai_year_1, #}
+{# previous_ai_year_2, #}
+{# race_ethnicity_student_response_2016_and_forward, #}
+{# student_country_code, #}
+{# student_international_postal_code, #}
+{# student_province, #}
+{# student_state, #}
+{# student_street_address_1, #}
+{# student_street_address_2, #}
+{# student_street_address_3, #}
+{# student_zip_code, #}
+{# always blank */ #}
+{# ethnic_group_2015_and_prior, #}
+{# school_id, #}
+{# class_section_code_01, #}
+{# class_section_code_02, #}
+{# class_section_code_03, #}
+{# class_section_code_04, #}
+{# class_section_code_05, #}
+{# class_section_code_06, #}
+{# class_section_code_07, #}
+{# class_section_code_08, #}
+{# class_section_code_09, #}
+{# class_section_code_10, #}
+{# class_section_code_11, #}
+{# class_section_code_12, #}
+{# class_section_code_13, #}
+{# class_section_code_14, #}
+{# class_section_code_15, #}
+{# class_section_code_16, #}
+{# class_section_code_17, #}
+{# class_section_code_18, #}
+{# class_section_code_19, #}
+{# class_section_code_20, #}
+{# class_section_code_21, #}
+{# class_section_code_22, #}
+{# class_section_code_23, #}
+{# class_section_code_24, #}
+{# class_section_code_25, #}
+{# class_section_code_26, #}
+{# class_section_code_27, #}
+{# class_section_code_28, #}
+{# class_section_code_29, #}
+{# class_section_code_30, #}
 from deduplicate
