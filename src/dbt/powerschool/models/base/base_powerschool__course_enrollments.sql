@@ -11,6 +11,8 @@ with
             s.dcid as students_dcid,
             s.student_number as students_student_number,
 
+            gp.enrolledcredits as gp_enrolledcredits,
+
             case
                 when cc.sectionid < 0 and cc.dateleft = s.exitdate
                 then false
@@ -23,6 +25,9 @@ with
         from {{ ref_cc }} as cc
         inner join {{ ref_sections }} as sec on cc.abs_sectionid = sec.sections_id
         inner join {{ ref("stg_powerschool__students") }} as s on cc.studentid = s.id
+        left join
+            {{ ref("int_powerschool__gpprogresssubjectenrolled_rollup") }} as gp
+            on cc.dcid = gp.ccdcid
         left join
             {{ ref("int_powerschool__calendar_rollup") }} as cr
             on cc.schoolid = cr.schoolid
