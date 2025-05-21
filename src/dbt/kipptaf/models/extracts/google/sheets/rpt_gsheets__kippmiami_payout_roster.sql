@@ -134,6 +134,7 @@ with
             cast(assessment_grade as string) as grade_level,
             round(avg(if(is_proficient, 1, 0)), 2) as criteria,
         from {{ ref("int_fldoe__all_assessments") }}
+        where administration_window = 'PM3'
         group by academic_year, assessment_name, assessment_subject, assessment_grade
 
         union all
@@ -209,6 +210,7 @@ with
             and co.academic_year = fl.academic_year
             and fl.assessment_name = 'FAST'
             and fl.assessment_subject = 'English Language Arts'
+            and fl.administration_window = 'PM3'
         where co.rn_year = 1 and co.grade_level = 3
         group by co.academic_year, co.grade_level
     )
