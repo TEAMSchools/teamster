@@ -110,6 +110,10 @@ models:
         data_type: string
       - name: hos
         data_type: string
+      - name: overgrad_has_fafsa
+        data_type: string
+      - name: overgrad_fafsa_opt_out
+        data_type: string
       - name: district
         data_type: string
       - name: region_school_level
@@ -120,6 +124,10 @@ models:
         data_type: string
       - name: ada
         data_type: float64
+      - name: overall_has_fafsa
+        data_type: boolean
+      - name: met_fafsa_requirement
+        data_type: boolean
       - name: state_studentnumber
         data_type: string
       - name: iep_status
