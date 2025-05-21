@@ -1,42 +1,4 @@
 with
-    star_crosswalk as (
-        select 'K' as grade, `subject`,
-        from unnest(['SM', 'SEL']) as `subject`
-
-        union all
-
-        -- trunk-ignore(sqlfluff/RF01)
-        select grade, `subject`,
-        from unnest(['1', '2']) as grade
-        cross join unnest(['SM', 'SR']) as `subject`
-    ),
-
-    star as (
-        select
-            s.student_display_id,
-            s.district_benchmark_proficient as star_is_proficient,
-
-            safe_cast(left(s.school_year, 4) as numeric) as academic_year,
-            safe_cast(if(s.grade = 'K', '0', s.grade) as numeric) as grade_level,
-
-            if(s._dagster_partition_subject = 'SM', 'math', 'reading') as `subject`,
-
-            row_number() over (
-                partition by
-                    s.student_display_id,
-                    s._dagster_partition_subject,
-                    s.school_year,
-                    s.screening_period_window_name
-                order by s.completed_date desc
-            ) as rn_subj_round,
-        from {{ ref("stg_renlearn__star") }} as s
-        inner join
-            star_crosswalk as c
-            on s.grade = c.grade
-            and s._dagster_partition_subject = c.`subject`
-        where s.screening_period_window_name = 'Spring'
-    ),
-
     criteria_union as (
         select
             academic_year_int as academic_year,
@@ -209,6 +171,46 @@ with
             and fl.academic_year = py.academic_year
         where fl.assessment_name = 'FAST' and fl.administration_window = 'PM3'
         group by fl.academic_year, fl.assessment_subject, fl.assessment_grade
+
+        union all
+
+        select
+            mclass_academic_year as academic_year,
+            'DIBELS EOY composite' as measure,
+            cast(mclass_assessment_grade_int as string) as grade_level,
+            round(
+                avg(
+                    case
+                        when eoy_composite in ('Above Benchmark', 'At Benchmark')
+                        then 1
+                        when eoy_composite not in ('Above Benchmark', 'At Benchmark')
+                        then 0
+                    end
+                ),
+                2
+            ) as criteria,
+        from {{ ref("int_amplify__all_assessments") }}
+        where mclass_measure_standard = 'Composite'
+        group by mclass_academic_year, mclass_assessment_grade_int
+
+        union all
+
+        select
+            co.academic_year,
+            'Grade 3 promotion' as measure,
+            cast(co.grade_level as string) as grade_level,
+            round(
+                avg(if(co.is_retained_year or fl.achievement_level_int > 1, 1, 0)), 2
+            ) as criteria,
+        from {{ ref("base_powerschool__student_enrollments") }} as co
+        inner join
+            {{ ref("int_fldoe__all_assessments") }} as fl
+            on co.fleid = fl.student_id
+            and co.academic_year = fl.academic_year
+            and fl.assessment_name = 'FAST'
+            and fl.assessment_subject = 'English Language Arts'
+        where co.rn_year = 1 and co.grade_level = 3
+        group by co.academic_year, co.grade_level
     )
 
 select
