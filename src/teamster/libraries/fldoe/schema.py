@@ -38,7 +38,234 @@ class FLDOECore(BaseModel):
     enrolled_grade: int | float | None = None
 
 
-class FAST(FLDOECore):
+class FLDOECategories(BaseModel):
+    benchmark: str | None = None
+    category: str | None = None
+    points_earned: int | float | None = None
+    points_possible: int | float | None = None
+
+    benchmark_1: str | None = None
+    category_1: str | None = None
+    points_earned_1: int | float | None = None
+    points_possible_1: int | float | None = None
+
+    benchmark_2: str | None = None
+    category_2: str | None = None
+    points_earned_2: int | float | None = None
+    points_possible_2: int | float | None = None
+
+    benchmark_3: str | None = None
+    category_3: str | None = None
+    points_earned_3: int | float | None = None
+    points_possible_3: int | float | None = None
+
+    benchmark_4: str | None = None
+    category_4: str | None = None
+    points_earned_4: int | float | None = None
+    points_possible_4: int | float | None = None
+
+    benchmark_5: str | None = None
+    category_5: str | None = None
+    points_earned_5: int | float | None = None
+    points_possible_5: int | float | None = None
+
+    benchmark_6: str | None = None
+    category_6: str | None = None
+    points_earned_6: int | float | None = None
+    points_possible_6: int | float | None = None
+
+    benchmark_7: str | None = None
+    category_7: str | None = None
+    points_earned_7: int | float | None = None
+    points_possible_7: int | float | None = None
+
+    benchmark_8: str | None = None
+    category_8: str | None = None
+    points_earned_8: int | float | None = None
+    points_possible_8: int | float | None = None
+
+    benchmark_9: str | None = None
+    category_9: str | None = None
+    points_earned_9: int | float | None = None
+    points_possible_9: int | float | None = None
+
+    benchmark_10: str | None = None
+    category_10: str | None = None
+    points_earned_10: int | float | None = None
+    points_possible_10: int | float | None = None
+
+    benchmark_11: str | None = None
+    category_11: str | None = None
+    points_earned_11: int | float | None = None
+    points_possible_11: int | float | None = None
+
+    benchmark_12: str | None = None
+    category_12: str | None = None
+    points_earned_12: int | float | None = None
+    points_possible_12: int | float | None = None
+
+    benchmark_13: str | None = None
+    category_13: str | None = None
+    points_earned_13: int | float | None = None
+    points_possible_13: int | float | None = None
+
+    benchmark_14: str | None = None
+    category_14: str | None = None
+    points_earned_14: int | float | None = None
+    points_possible_14: int | float | None = None
+
+    benchmark_15: str | None = None
+    category_15: str | None = None
+    points_earned_15: int | float | None = None
+    points_possible_15: int | float | None = None
+
+    benchmark_16: str | None = None
+    category_16: str | None = None
+    points_earned_16: int | float | None = None
+    points_possible_16: int | float | None = None
+
+    benchmark_17: str | None = None
+    category_17: str | None = None
+    points_earned_17: int | float | None = None
+    points_possible_17: int | float | None = None
+
+    benchmark_18: str | None = None
+    category_18: str | None = None
+    points_earned_18: int | float | None = None
+    points_possible_18: int | float | None = None
+
+    benchmark_19: str | None = None
+    category_19: str | None = None
+    points_earned_19: int | float | None = None
+    points_possible_19: int | float | None = None
+
+    benchmark_20: str | None = None
+    category_20: str | None = None
+    points_earned_20: int | float | None = None
+    points_possible_20: int | float | None = None
+
+    benchmark_21: str | None = None
+    category_21: str | None = None
+    points_earned_21: int | float | None = None
+    points_possible_21: int | float | None = None
+
+    benchmark_22: str | None = None
+    category_22: str | None = None
+    points_earned_22: int | float | None = None
+    points_possible_22: int | float | None = None
+
+    benchmark_23: str | None = None
+    category_23: str | None = None
+    points_earned_23: int | float | None = None
+    points_possible_23: int | float | None = None
+
+    benchmark_24: str | None = None
+    category_24: str | None = None
+    points_earned_24: int | float | None = None
+    points_possible_24: int | float | None = None
+
+    benchmark_25: str | None = None
+    category_25: str | None = None
+    points_earned_25: int | float | None = None
+    points_possible_25: int | float | None = None
+
+    benchmark_26: str | None = None
+    category_26: str | None = None
+    points_earned_26: int | float | None = None
+    points_possible_26: int | float | None = None
+
+    benchmark_27: str | None = None
+    category_27: str | None = None
+    points_earned_27: int | float | None = None
+    points_possible_27: int | float | None = None
+
+    benchmark_28: str | None = None
+    category_28: str | None = None
+    points_earned_28: int | float | None = None
+    points_possible_28: int | float | None = None
+
+    benchmark_29: str | None = None
+    category_29: str | None = None
+    points_earned_29: int | float | None = None
+    points_possible_29: int | float | None = None
+
+    benchmark_30: str | None = None
+    category_30: str | None = None
+    points_earned_30: int | float | None = None
+    points_possible_30: int | float | None = None
+
+    benchmark_31: str | None = None
+    category_31: str | None = None
+    points_earned_31: int | float | None = None
+    points_possible_31: int | float | None = None
+
+    benchmark_32: str | None = None
+    category_32: str | None = None
+    points_earned_32: int | float | None = None
+    points_possible_32: int | float | None = None
+
+    benchmark_33: str | None = None
+    category_33: str | None = None
+    points_earned_33: int | float | None = None
+    points_possible_33: int | float | None = None
+
+    benchmark_34: str | None = None
+    category_34: str | None = None
+    points_earned_34: int | float | None = None
+    points_possible_34: int | float | None = None
+
+    benchmark_35: str | None = None
+    category_35: str | None = None
+    points_earned_35: int | float | None = None
+    points_possible_35: int | float | None = None
+
+    benchmark_36: str | None = None
+    category_36: str | None = None
+    points_earned_36: int | float | None = None
+    points_possible_36: int | float | None = None
+
+    benchmark_37: str | None = None
+    category_37: str | None = None
+    points_earned_37: int | float | None = None
+    points_possible_37: int | float | None = None
+
+    benchmark_38: str | None = None
+    category_38: str | None = None
+    points_earned_38: int | float | None = None
+    points_possible_38: int | float | None = None
+
+    benchmark_39: str | None = None
+    category_39: str | None = None
+    points_earned_39: int | float | None = None
+    points_possible_39: int | float | None = None
+
+    benchmark_40: str | None = None
+    category_40: str | None = None
+    points_earned_40: int | float | None = None
+    points_possible_40: int | float | None = None
+
+    benchmark_41: str | None = None
+    category_41: str | None = None
+    points_earned_41: int | float | None = None
+    points_possible_41: int | float | None = None
+
+    benchmark_42: str | None = None
+    category_42: str | None = None
+    points_earned_42: int | float | None = None
+    points_possible_42: int | float | None = None
+
+    benchmark_43: str | None = None
+    category_43: str | None = None
+    points_earned_43: int | float | None = None
+    points_possible_43: int | float | None = None
+
+    benchmark_44: str | None = None
+    category_44: str | None = None
+    points_earned_44: int | float | None = None
+    points_possible_44: int | float | None = None
+
+
+class FAST(FLDOECore, FLDOECategories):
     fast_grade_3_ela_reading_achievement_level: str | None = None
     fast_grade_3_mathematics_achievement_level: str | None = None
     fast_grade_4_ela_reading_achievement_level: str | None = None
@@ -112,151 +339,6 @@ class FAST(FLDOECore):
     grade_8_fast_ela_reading_scale_score: int | str | None = None
     grade_8_fast_mathematics_percentile_rank: str | int | None = None
     grade_8_fast_mathematics_scale_score: str | int | None = None
-
-    benchmark_1: str | None = None
-    benchmark_10: str | None = None
-    benchmark_11: str | None = None
-    benchmark_12: str | None = None
-    benchmark_13: str | None = None
-    benchmark_14: str | None = None
-    benchmark_15: str | None = None
-    benchmark_16: str | None = None
-    benchmark_17: str | None = None
-    benchmark_18: str | None = None
-    benchmark_19: str | None = None
-    benchmark_2: str | None = None
-    benchmark_20: str | None = None
-    benchmark_21: str | None = None
-    benchmark_22: str | None = None
-    benchmark_23: str | None = None
-    benchmark_24: str | None = None
-    benchmark_25: str | None = None
-    benchmark_26: str | None = None
-    benchmark_27: str | None = None
-    benchmark_28: str | None = None
-    benchmark_29: str | None = None
-    benchmark_3: str | None = None
-    benchmark_30: str | None = None
-    benchmark_31: str | None = None
-    benchmark_32: str | None = None
-    benchmark_33: str | None = None
-    benchmark_34: str | None = None
-    benchmark_35: str | None = None
-    benchmark_4: str | None = None
-    benchmark_5: str | None = None
-    benchmark_6: str | None = None
-    benchmark_7: str | None = None
-    benchmark_8: str | None = None
-    benchmark_9: str | None = None
-    benchmark: str | None = None
-    category_1: str | None = None
-    category_10: str | None = None
-    category_11: str | None = None
-    category_12: str | None = None
-    category_13: str | None = None
-    category_14: str | None = None
-    category_15: str | None = None
-    category_16: str | None = None
-    category_17: str | None = None
-    category_18: str | None = None
-    category_19: str | None = None
-    category_2: str | None = None
-    category_20: str | None = None
-    category_21: str | None = None
-    category_22: str | None = None
-    category_23: str | None = None
-    category_24: str | None = None
-    category_25: str | None = None
-    category_26: str | None = None
-    category_27: str | None = None
-    category_28: str | None = None
-    category_29: str | None = None
-    category_3: str | None = None
-    category_30: str | None = None
-    category_31: str | None = None
-    category_32: str | None = None
-    category_33: str | None = None
-    category_34: str | None = None
-    category_35: str | None = None
-    category_4: str | None = None
-    category_5: str | None = None
-    category_6: str | None = None
-    category_7: str | None = None
-    category_8: str | None = None
-    category_9: str | None = None
-    category: str | None = None
-    points_earned_1: int | None = None
-    points_earned_10: int | None = None
-    points_earned_11: int | None = None
-    points_earned_12: int | None = None
-    points_earned_13: int | None = None
-    points_earned_14: int | None = None
-    points_earned_15: int | None = None
-    points_earned_16: int | None = None
-    points_earned_17: int | None = None
-    points_earned_18: int | None = None
-    points_earned_19: int | None = None
-    points_earned_2: int | None = None
-    points_earned_20: int | None = None
-    points_earned_21: int | None = None
-    points_earned_22: int | None = None
-    points_earned_23: int | None = None
-    points_earned_24: int | None = None
-    points_earned_25: int | None = None
-    points_earned_26: int | None = None
-    points_earned_27: int | None = None
-    points_earned_28: int | None = None
-    points_earned_29: int | None = None
-    points_earned_3: int | None = None
-    points_earned_30: int | None = None
-    points_earned_31: int | None = None
-    points_earned_32: int | None = None
-    points_earned_33: int | None = None
-    points_earned_34: int | None = None
-    points_earned_35: float | None = None
-    points_earned_4: int | None = None
-    points_earned_5: int | None = None
-    points_earned_6: int | None = None
-    points_earned_7: int | None = None
-    points_earned_8: int | None = None
-    points_earned_9: int | None = None
-    points_earned: int | None = None
-    points_possible_1: int | None = None
-    points_possible_10: int | None = None
-    points_possible_11: int | None = None
-    points_possible_12: int | None = None
-    points_possible_13: int | None = None
-    points_possible_14: int | None = None
-    points_possible_15: int | None = None
-    points_possible_16: int | None = None
-    points_possible_17: int | None = None
-    points_possible_18: int | None = None
-    points_possible_19: int | None = None
-    points_possible_2: int | None = None
-    points_possible_20: int | None = None
-    points_possible_21: int | None = None
-    points_possible_22: int | None = None
-    points_possible_23: int | None = None
-    points_possible_24: int | None = None
-    points_possible_25: int | None = None
-    points_possible_26: int | None = None
-    points_possible_27: int | None = None
-    points_possible_28: int | None = None
-    points_possible_29: int | None = None
-    points_possible_3: int | None = None
-    points_possible_30: int | None = None
-    points_possible_31: int | None = None
-    points_possible_32: int | None = None
-    points_possible_33: int | None = None
-    points_possible_34: int | None = None
-    points_possible_35: float | None = None
-    points_possible_4: int | None = None
-    points_possible_5: int | None = None
-    points_possible_6: int | None = None
-    points_possible_7: int | None = None
-    points_possible_8: int | None = None
-    points_possible_9: int | None = None
-    points_possible: int | None = None
 
     field_1_ela_reading: str | None = Field(
         default=None, alias="1_reading_prose_and_poetry_performance"
@@ -365,7 +447,7 @@ class EOC(FLDOECore):
     )
 
 
-class Science(FLDOECore):
+class Science(FLDOECore, FLDOECategories):
     grade_5_science_achievement_level: str | None = None
     grade_5_science_scale_score: int | None = None
     grade_8_science_achievement_level: str | None = None
