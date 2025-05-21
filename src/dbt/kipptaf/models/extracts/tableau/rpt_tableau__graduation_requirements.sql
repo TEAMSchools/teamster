@@ -109,7 +109,7 @@ select
     c.met_math,
     c.final_grad_path_code,
     c.grad_eligibility,
-    
+
 from roster as r
 left join
     {{ ref("int_students__graduation_path_codes") }} as c
