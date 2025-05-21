@@ -72,6 +72,7 @@ def test_renlearn_star_kippmiami():
     _test_asset(
         asset=star,
         ssh_resource={"ssh_renlearn": get_renlearn_ssh_resource("kippmiami")},
+        partition_key="2024-07-01|SR",
     )
 
 
