@@ -29,6 +29,26 @@ with
             {{ ref("stg_deanslist__roster_assignments") }} as a
             on r.roster_id = a.dl_roster_id
         where r.school_id = 472 and r.roster_type = 'House' and r.active = 'Y'
+    ),
+
+    overgrad_fafsa as (
+        select
+            p._dbt_source_relation,
+
+            if(
+                p.fafsa_status = 'FAFSA Complete, Good to Go', 'Yes', 'No'
+            ) as overgrad_has_fafsa,
+
+            if(p.fafsa_opt_out is null, 'No', 'Yes') as overgrad_fafsa_opt_out,
+
+            s.external_student_id as salesforce_contact_id,
+
+        from {{ ref("int_overgrad__custom_fields_pivot") }} as p
+        inner join
+            {{ ref("stg_overgrad__students") }} as s
+            on p.id = s.id
+            and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
+        where p._dbt_source_model = 'stg_overgrad__students'
     )
 
 select
@@ -90,17 +110,37 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
+    ovg.overgrad_has_fafsa,
+    ovg.overgrad_fafsa_opt_out,
+
     'KTAF' as district,
 
     concat(e.region, e.school_level) as region_school_level,
+
     coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
+
     cast(e.academic_year as string)
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
     round(ada.ada, 3) as ada,
 
+    if(
+        e.salesforce_contact_df_has_fafsa = 'Yes' or ovg.overgrad_has_fafsa = 'Yes',
+        true,
+        false
+    ) as overall_has_fafsa,
+
+    if(
+        e.salesforce_contact_df_has_fafsa = 'Yes'
+        or ovg.overgrad_has_fafsa = 'Yes'
+        or ovg.overgrad_fafsa_opt_out = 'Yes',
+        true,
+        false
+    ) as met_fafsa_requirement,
+
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
+
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
     if(
@@ -143,6 +183,7 @@ select
         when e.region = 'Miami'
         then 'FL'
     end as `state`,
+
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     ms_grad_sub as m
@@ -189,4 +230,8 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
+left join
+    overgrad_fafsa as ovg
+    on e.salesforce_contact_id = ovg.salesforce_contact_id
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="ovg") }}
 where e.rn_year = 1 and e.schoolid != 999999
