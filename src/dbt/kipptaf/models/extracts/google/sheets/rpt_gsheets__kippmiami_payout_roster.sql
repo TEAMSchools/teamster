@@ -209,6 +209,7 @@ with
             and co.academic_year = fl.academic_year
             and fl.assessment_name = 'FAST'
             and fl.assessment_subject = 'English Language Arts'
+            and fl.administration_window = 'PM3'
         where co.rn_year = 1 and co.grade_level = 3
         group by co.academic_year, co.grade_level
     )
