@@ -125,6 +125,39 @@ select
 
     round(ada.ada, 3) as ada,
 
+    case
+        e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
+    end as race_ethnicity,
+
+    case
+        when e.school_level in ('ES', 'MS')
+        then e.advisory_name
+        when e.school_level = 'HS'
+        then e.advisor_lastfirst
+    end as advisory,
+
+    case
+        when e.region in ('Camden', 'Newark')
+        then 'NJ'
+        when e.region = 'Miami'
+        then 'FL'
+    end as `state`,
+
+    case
+        when e.salesforce_contact_df_has_fafsa != ovg.overgrad_has_fafsa
+        then 'Salesforce/Overgrad has FAFSA complete mismatch'
+        when
+            (
+                e.salesforce_contact_df_has_fafsa = 'Yes'
+                or ovg.overgrad_has_fafsa = 'Yes'
+            )
+            and ovg.overgrad_fafsa_opt_out = 'Yes'
+        then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
+        when ovg.overgrad_has_fafsa = 'Yes' and ovg.overgrad_fafsa_opt_out = 'Yes'
+        then 'Overgrad FASFSA complete and opt-out mismatch'
+        else 'No issues'
+    end as fafsa_status_mismatch_category,
+
     if(
         e.salesforce_contact_df_has_fafsa = 'Yes' or ovg.overgrad_has_fafsa = 'Yes',
         true,
@@ -165,24 +198,6 @@ select
     ) as is_tutoring,
 
     if(round(ada.ada, 3) >= 0.80, true, false) as ada_above_or_at_80,
-
-    case
-        e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
-    end as race_ethnicity,
-
-    case
-        when e.school_level in ('ES', 'MS')
-        then e.advisory_name
-        when e.school_level = 'HS'
-        then e.advisor_lastfirst
-    end as advisory,
-
-    case
-        when e.region in ('Camden', 'Newark')
-        then 'NJ'
-        when e.region = 'Miami'
-        then 'FL'
-    end as `state`,
 
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
