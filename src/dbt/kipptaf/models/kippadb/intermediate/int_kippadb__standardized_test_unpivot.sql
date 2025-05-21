@@ -23,6 +23,8 @@ with
                 then 'ENG'
                 when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
                 then 'MATH'
+                when score_type = 'act_science'
+                then 'SCI'
             end as course_discipline,
 
             if(
@@ -60,6 +62,7 @@ with
             row_number() over (
                 partition by contact, test_type, score_type order by score desc
             ) as rn_highest,
+
         from
             {{ ref("int_kippadb__standardized_test") }} unpivot (
                 score for score_type in (
