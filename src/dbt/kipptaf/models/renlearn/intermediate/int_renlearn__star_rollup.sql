@@ -9,6 +9,19 @@ select
     unified_score,
     screening_period_window_name,
 
+    case
+        when state_benchmark_proficient = 'Yes'
+        then 1
+        when state_benchmark_proficient = 'No'
+        then 0
+    end as is_state_benchmark_proficient_int,
+    case
+        when district_benchmark_proficient = 'Yes'
+        then 1
+        when district_benchmark_proficient = 'No'
+        then 0
+    end as is_district_benchmark_proficient_int,
+
     safe_cast(left(school_year, 4) as int) as academic_year,
     safe_cast(if(grade = 'K', '0', grade) as int) as grade_level,
     case
