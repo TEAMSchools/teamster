@@ -146,10 +146,12 @@ select
     case
         when
             e.academic_year >= 2024
+            and e.grade_level = 12
             and e.salesforce_contact_df_has_fafsa != ovg.overgrad_has_fafsa
         then 'Salesforce/Overgrad has FAFSA complete mismatch'
         when
             e.academic_year >= 2024
+            and e.grade_level = 12
             and (
                 e.salesforce_contact_df_has_fafsa = 'Yes'
                 or ovg.overgrad_has_fafsa = 'Yes'
@@ -158,6 +160,7 @@ select
         then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
         when
             e.academic_year >= 2024
+            and e.grade_level = 12
             and ovg.overgrad_has_fafsa = 'Yes'
             and ovg.overgrad_fafsa_opt_out = 'Yes'
         then 'Overgrad FASFSA complete and opt-out mismatch'
