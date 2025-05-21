@@ -68,6 +68,7 @@ select
     e.is_enrolled_y1,
     e.is_retained_year,
     e.is_retained_ever,
+    e.is_fldoe_fte_all,
     e.year_in_school,
     e.year_in_network,
     e.boy_status,
