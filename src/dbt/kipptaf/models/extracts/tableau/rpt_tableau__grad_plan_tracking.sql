@@ -165,7 +165,7 @@ with
             ) as potential_credits_current_year,
 
         from yearly_credits
-        group by all
+        group by _dbt_source_relation, student_number, plan_id
     )
 
 select
