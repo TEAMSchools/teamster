@@ -168,15 +168,7 @@ select
     end as fafsa_status_mismatch_category,
 
     if(
-        e.salesforce_contact_df_has_fafsa = 'Yes' or ovg.overgrad_has_fafsa = 'Yes',
-        true,
-        false
-    ) as overall_has_fafsa,
-
-    if(
-        e.salesforce_contact_df_has_fafsa = 'Yes'
-        or ovg.overgrad_has_fafsa = 'Yes'
-        or ovg.overgrad_fafsa_opt_out = 'Yes',
+        e.salesforce_contact_df_has_fafsa = 'Yes' or ovg.overgrad_fafsa_opt_out = 'Yes',
         true,
         false
     ) as met_fafsa_requirement,
