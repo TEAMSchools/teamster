@@ -1,6 +1,6 @@
-from dagster import EnvVar, SensorResult, build_sensor_context
+from dagster import SensorResult, build_sensor_context
 
-from teamster.libraries.ssh.resources import SSHResource
+from tests.utils import get_renlearn_ssh_resource
 
 
 def _test_sensor(sftp_sensor, **kwargs):
@@ -19,12 +19,7 @@ def test_renlearn_sftp_sensor_kippnewark():
     from teamster.code_locations.kippnewark.renlearn.sensors import sftp_sensor
 
     _test_sensor(
-        sftp_sensor=sftp_sensor,
-        ssh_renlearn=SSHResource(
-            remote_host=EnvVar("RENLEARN_SFTP_HOST"),
-            username=EnvVar("RENLEARN_SFTP_USERNAME_KIPPNJ"),
-            password=EnvVar("RENLEARN_SFTP_PASSWORD_KIPPNJ"),
-        ),
+        sftp_sensor=sftp_sensor, ssh_renlearn=get_renlearn_ssh_resource("kippnj")
     )
 
 
@@ -32,10 +27,5 @@ def test_renlearn_sftp_sensor_kippmiami():
     from teamster.code_locations.kippmiami.renlearn.sensors import sftp_sensor
 
     _test_sensor(
-        sftp_sensor=sftp_sensor,
-        ssh_renlearn=SSHResource(
-            remote_host=EnvVar("RENLEARN_SFTP_HOST"),
-            username=EnvVar("RENLEARN_SFTP_USERNAME_KIPPMIAMI"),
-            password=EnvVar("RENLEARN_SFTP_PASSWORD_KIPPMIAMI"),
-        ),
+        sftp_sensor=sftp_sensor, ssh_renlearn=get_renlearn_ssh_resource("kippmiami")
     )
