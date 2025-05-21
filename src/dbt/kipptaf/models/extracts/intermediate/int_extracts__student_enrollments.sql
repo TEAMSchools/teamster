@@ -35,13 +35,13 @@ with
         select
             p._dbt_source_relation,
 
+            s.external_student_id as salesforce_contact_id,
+
             if(
                 p.fafsa_status = 'FAFSA Complete, Good to Go', 'Yes', 'No'
             ) as overgrad_has_fafsa,
 
             if(p.fafsa_opt_out is null, 'No', 'Yes') as overgrad_fafsa_opt_out,
-
-            s.external_student_id as salesforce_contact_id,
 
         from {{ ref("int_overgrad__custom_fields_pivot") }} as p
         inner join
