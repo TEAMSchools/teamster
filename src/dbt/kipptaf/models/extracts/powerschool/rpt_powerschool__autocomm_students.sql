@@ -94,7 +94,8 @@ left join
     and {{ union_dataset_join_clause(left_alias="se", right_alias="g") }}
 left join
     {{ ref("int_extracts__student_enrollments") }} as f
-    on se.student_number = f.student_number
+    on se.academic_year = f.academic_year
+    and se.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="se", right_alias="f") }}
 left join
     ps_fafsa_status as pfs
