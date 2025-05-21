@@ -51,7 +51,6 @@ select
         then 'E'
         when f.overall_has_fafsa = 'Yes'
         then 'C'
-        else null
     end as s_stu_x__fafsa,
 
     if(se.enroll_status = 0, 1, 0) as student_allowwebaccess,
