@@ -139,8 +139,6 @@ models:
               config:
                 severity: warn
                 store_failures: true
-      - name: overall_has_fafsa
-        data_type: boolean
       - name: met_fafsa_requirement
         data_type: boolean
       - name: state_studentnumber

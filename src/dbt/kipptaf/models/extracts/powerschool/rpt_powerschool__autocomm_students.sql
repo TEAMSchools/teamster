@@ -44,15 +44,6 @@ select
 
     regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
 
-    case
-        when pfs.ps_fafsa_status = 'N'
-        then pfs.ps_fafsa_status
-        when f.overgrad_fafsa_opt_out = 'Yes'
-        then 'E'
-        when f.overall_has_fafsa
-        then 'C'
-    end as s_stu_x__fafsa,
-
     if(se.enroll_status = 0, 1, 0) as student_allowwebaccess,
     if(se.enroll_status = 0, 1, 0) as allowwebaccess,
     if(se.is_retained_year, 1, 0) as retained_tf,
@@ -77,6 +68,15 @@ select
         when se.grade_level = 4
         then 'E'
     end as track,
+
+    case
+        when se.grade_level = 12 and pfs.ps_fafsa_status = 'N'
+        then pfs.ps_fafsa_status
+        when se.grade_level = 12 and f.overgrad_fafsa_opt_out = 'Yes'
+        then 'E'
+        when se.grade_level = 12 and f.has_fafsa = 'Yes'
+        then 'C'
+    end as s_stu_x__fafsa,
 
 from {{ ref("base_powerschool__student_enrollments") }} as se
 left join
