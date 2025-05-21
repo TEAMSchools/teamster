@@ -7,8 +7,7 @@ with
             degree_plan_section,
             id,
             name,
-            credit_capacity,
-            safe_cast(credit_capacity as string) as credit_capacity_string,
+            max(credit_capacity) as credit_capacity,
 
         from
             {{ ref("int_powerschool__gpnode") }} unpivot (
@@ -20,6 +19,7 @@ with
                     (subject_id, subject_name, subject_credit_capacity) as 'Subject'
                 )
             )
+        group by _dbt_source_relation, degree_plan_section, id, name
     ),
 
     subjects as (
@@ -37,16 +37,6 @@ with
             sub.appliedwaivedcredits,
 
             coalesce(sub.requiredcredits, gp.credit_capacity) as requiredcredits,
-
-            row_number() over (
-                partition by
-                    gp._dbt_source_relation,
-                    sub.studentsdcid,
-                    gp.id,
-                    gp.degree_plan_section,
-                    gp.name,
-                    gp.credit_capacity_string
-            ) as rn_distinct,
 
         from gpnode as gp
         inner join
@@ -69,4 +59,3 @@ select
     appliedwaivedcredits,
 
 from subjects
-where rn_distinct = 1
