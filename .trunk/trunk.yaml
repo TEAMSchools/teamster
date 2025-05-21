@@ -9,7 +9,7 @@ plugins:
 lint:
   enabled:
     - bandit@1.8.3
-    - checkov@3.2.423
+    - checkov@3.2.427
     - terrascan@1.19.1
     - trivy@0.62.1
     - actionlint@1.7.7
@@ -17,19 +17,19 @@ lint:
     - gitleaks@8.26.0
     - hadolint@2.12.1-beta
     - isort@6.0.1
-    - markdownlint@0.44.0
+    - markdownlint@0.45.0
     - osv-scanner@2.0.2
     - oxipng@9.1.5
     - prettier@3.5.3
     - pyright@1.1.400
-    - ruff@0.11.9
+    - ruff@0.11.10
     - shellcheck@0.10.0
     - shfmt@3.6.0
     - sqlfluff@3.4.0
     - sqlfmt@0.26.0
     - svgo@3.3.2
     - taplo@0.9.3
-    - trufflehog@3.88.29
+    - trufflehog@3.88.31
     - yamllint@1.37.1
   disabled:
     - black
