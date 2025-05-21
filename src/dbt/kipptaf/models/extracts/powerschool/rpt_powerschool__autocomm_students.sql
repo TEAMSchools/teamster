@@ -49,7 +49,7 @@ select
         then pfs.ps_fafsa_status
         when f.overgrad_fafsa_opt_out = 'Yes'
         then 'E'
-        when f.overall_has_fafsa = 'Yes'
+        when f.overall_has_fafsa
         then 'C'
     end as s_stu_x__fafsa,
 
@@ -98,7 +98,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="se", right_alias="f") }}
 left join
     ps_fafsa_status as pfs
-    on se.students_dcid = f.studentsdcid
+    on se.students_dcid = pfs.studentsdcid
     and {{ union_dataset_join_clause(left_alias="se", right_alias="pfs") }}
 where
     se.academic_year = {{ var("current_academic_year") }}
