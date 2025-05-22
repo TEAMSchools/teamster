@@ -56,6 +56,7 @@ select
     e.school_name,
     e.school_abbreviation as school,
     e.grade_level,
+    e.grade_level_prev,
     e.studentid,
     e.students_dcid,
     e.student_number,
