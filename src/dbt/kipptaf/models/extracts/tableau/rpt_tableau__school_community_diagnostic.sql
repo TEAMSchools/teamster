@@ -157,8 +157,7 @@ left join
     {{ ref("stg_surveys__scd_question_crosswalk") }} as qc
     on sr.data_item_key = qc.question_code
 where
-    sr.published_action_id = 39362
-    and sr.data_item_key in (
+    sr.data_item_key in (
         'School_Survey_01',
         'School_Survey_02',
         'School_Survey_03',
