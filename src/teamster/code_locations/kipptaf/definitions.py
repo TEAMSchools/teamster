@@ -82,6 +82,7 @@ defs = Definitions(
         *extracts.schedules,
         *knowbe4.schedules,
         *ldap.schedules,
+        *powerschool.schedules,
         *schoolmint.schedules,
         *smartrecruiters.schedules,
         *surveys.schedules,
