@@ -198,114 +198,115 @@ select
     a.`ada`,
 
     g.gpa_term,
+    gp.gpa_y1 as py_gpa,
 
     e.grade_level,
     e.grade_level_prev,
 
     case
         -- 9th grade exceptions
-        when a.grade_level = 9 and e.grade_level_prev = 8 and a.term = 'Q1'
+        when e.grade_level = 9 and e.grade_level_prev = 8 and a.term = 'Q1'
         then 'Eligible'
         when
-            a.grade_level = 9
+            e.grade_level = 9
             and e.grade_level_prev = 8
             and a.term = 'Q2'
-            and and gpa_term >= 2.5
+            and g.gpa_term >= 2.5
             and a.`ada` >= .9
         then 'Eligible'
         when
-            a.grade_level = 9
+            e.grade_level = 9
             and e.grade_level_prev = 8
             and a.term = 'Q2'
             and g.gpa_term >= 2.5
             and a.`ada` < .9
         then 'Probabtion - ADA'
         when
-            a.grade_level = 9
+            e.grade_level = 9
             and e.grade_level_prev = 8
             and a.term = 'Q2'
             and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
             and a.`ada` >= .9
         then 'Probation - GPA'
         when
-            a.grade_level = 9
+            e.grade_level = 9
             and e.grade_level_prev = 8
             and a.term = 'Q2'
             and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
             and a.`ada` < .9
         then 'Probation - GPA and ADA'
 
-        -- semester 1 conditions
+        -- Q1 conditions
         when
-            a.semester = 'S1'
+            a.semester = 'Q1'
             and c.earned_credits_previous_year >= 30
-            and gpa_term >= 2.5
+            and gp.gpa_y1 >= 2.5
             and a.`ada` >= .9
         then 'Eligible'
         when
-            a.semester = 'S1'
+            a.semester = 'Q1'
             and c.earned_credits_previous_year >= 30
-            and g.gpa_term >= 2.5
+            and gp.gpa_y1 >= 2.5
             and a.`ada` < .9
         then 'Probabtion - ADA'
         when
-            a.semester = 'S1'
+            a.semester = 'Q1'
             and c.earned_credits_previous_year >= 30
-            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
+            and (gp.gpa_y1 >= 2.2 and gp.gpa_y1 <= 2.4)
             and a.`ada` >= .9
         then 'Probation - GPA'
         when
-            a.semester = 'S1'
+            a.semester = 'Q1'
             and c.earned_credits_previous_year >= 30
-            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
+            and (gp.gpa_y1 >= 2.2 and gp.gpa_y1 <= 2.4)
             and a.`ada` < .9
         then 'Probation - GPA and ADA'
         when
-            a.semester = 'S1'
+            a.semester = 'Q1'
             and c.earned_credits_previous_year < 30
-            and gpa_term >= 2.5
+            and gp.gpa_y1 >= 2.5
             and a.`ada` >= .9
         then 'Ineligible - Credits'
         when
-            a.semester = 'S1'
+            a.semester = 'Q1'
             and c.earned_credits_previous_year >= 30
-            and g.gpa_term < 2.2
+            and gp.gpa_y1 < 2.2
             and a.`ada` >= .9
         then 'Ineligible - GPA'
 
-        -- semester 2 conditions
+        -- Q2 conditions
         when
-            a.semester = 'S2'
+            a.semester = 'Q2'
             and c.is_cy_credits_on_track
-            and gpa_term >= 2.5
+            and g.gpa_term >= 2.5
             and a.`ada` >= .9
         then 'Eligible'
         when
-            a.semester = 'S2'
+            a.semester = 'Q2'
             and c.is_cy_credits_on_track
             and g.gpa_term >= 2.5
             and a.`ada` < .9
         then 'Probabtion - ADA'
         when
-            a.semester = 'S2'
+            a.semester = 'Q2'
             and c.is_cy_credits_on_track
             and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
             and a.`ada` >= .9
         then 'Probation - GPA'
         when
-            a.semester = 'S2'
+            a.semester = 'Q2'
             and not c.is_cy_credits_on_track
             and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
             and a.`ada` < .9
         then 'Probation - GPA and ADA'
         when
-            a.semester = 'S2'
+            a.semester = 'Q2'
             and not c.is_cy_credits_on_track
-            and gpa_term >= 2.5
+            and g.gpa_term >= 2.5
             and a.`ada` >= .9
         then 'Ineligible - Credits'
         when
-            a.semester = 'S2'
+            a.semester = 'Q2'
             and c.is_cy_credits_on_track
             and g.gpa_term < 2.2
             and a.`ada` >= .9
@@ -327,7 +328,13 @@ left join
     and a.term = g.term_name
     and {{ union_dataset_join_clause(left_alias="a", right_alias="g") }}
 left join
+    {{ ref("int_powerschool__gpa_term") }} as gp
+    on a.studentid = gp.studentid
+    and a.yearid - 1 = gp.yearid
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="gp") }}
+    and gp.is_current
+left join
     {{ ref("int_extracts__student_enrollments") }} as e
-    on on c.academic_year = e.academic_year
+    on c.academic_year = e.academic_year
     and c.studentsdcid = e.students_dcid
-    and and {{ union_dataset_join_clause(left_alias="c", right_alias="e") }}
+    and {{ union_dataset_join_clause(left_alias="c", right_alias="e") }}
