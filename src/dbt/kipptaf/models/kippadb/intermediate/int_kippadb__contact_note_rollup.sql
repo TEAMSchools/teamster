@@ -168,7 +168,6 @@ select
     if(bqutil.fn.typeof(`TD_NR`) = 'DATE', 1, 0) as td_nr,
     if(bqutil.fn.typeof(`TD_P`) = 'DATE', 1, 0) as td_p,
     if(bqutil.fn.typeof(`TAS`) = 'DATE', 1, 0) as tas,
-
 from
     pre_pivot pivot (
         min(contact_date) for input_column in (
