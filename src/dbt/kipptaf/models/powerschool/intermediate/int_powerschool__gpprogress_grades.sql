@@ -26,8 +26,8 @@ select
 
     'Earned' as credit_status,
 
-    sg.earnedcrhrs as official_earned_credits,
-    sg.earnedcrhrs as potential_credits,
+    sg.potentialcrhrs as official_potential_credits,
+    sg.potentialcrhrs as potential_credits,
     sg.earnedcrhrs as earned_credits,
 
 from {{ ref("int_powerschool__gpnode") }} as gpn
@@ -77,7 +77,7 @@ select
 
     'Enrolled' as credit_status,
 
-    fg.courses_credit_hours as official_earned_credits,
+    fg.courses_credit_hours as official_potential_credits,
 
     gps.enrolledcredits as potential_credits,
 
