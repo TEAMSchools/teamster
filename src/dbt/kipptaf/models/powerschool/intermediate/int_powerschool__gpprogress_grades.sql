@@ -26,6 +26,7 @@ select
 
     'Earned' as credit_status,
 
+    sg.earnedcrhrs as official_earned_credits,
     sg.earnedcrhrs as potential_credits,
     sg.earnedcrhrs as earned_credits,
 
@@ -75,6 +76,8 @@ select
     false as is_transfer_grade,
 
     'Enrolled' as credit_status,
+
+    fg.courses_credit_hours as official_earned_credits,
 
     gps.enrolledcredits as potential_credits,
 

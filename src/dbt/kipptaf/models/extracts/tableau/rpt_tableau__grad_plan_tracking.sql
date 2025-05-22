@@ -171,8 +171,6 @@ with
 select
     y.*,
 
-    cc.credit_hours as official_credit_hours,
-
     c.earned_credits_previous_year,
     c.earned_credits_current_year,
     c.half_earned_credits_current_year,
@@ -192,10 +190,6 @@ inner join
     on y.student_number = c.student_number
     and y.plan_id = c.plan_id
     and {{ union_dataset_join_clause(left_alias="y", right_alias="c") }}
-left join
-    {{ ref("stg_powerschool__courses") }} as cc
-    on y.dcid = cc.dcid
-    and {{ union_dataset_join_clause(left_alias="y", right_alias="cc") }}
 where
     y.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
     and y.enroll_status = 0
