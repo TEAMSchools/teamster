@@ -191,3 +191,4 @@ inner join
     and y.plan_id = c.plan_id
     and {{ union_dataset_join_clause(left_alias="y", right_alias="c") }}
 where y.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
+and y.enroll_status = 0
