@@ -31,6 +31,8 @@ with
                 then regexp_extract(`subject`, r'Q\d\s?(SM\d)')
                 when `subject` like '%HV'
                 then 'HV'
+                when `subject` like '%Transition AS'
+                then 'TAS'
                 else `subject`
             end as contact_subject,
 
@@ -109,6 +111,7 @@ select
     `CC3` as cc3_date,
     `CC4` as cc4_date,
     `CC5` as cc5_date,
+    `TAS` as tas_date,
 
     if(bqutil.fn.typeof(`AS1`) = 'DATE', 1, 0) as as1,
     if(bqutil.fn.typeof(`AS2`) = 'DATE', 1, 0) as as2,
@@ -164,6 +167,8 @@ select
     if(bqutil.fn.typeof(`SC`) = 'DATE', 1, 0) as sc,
     if(bqutil.fn.typeof(`TD_NR`) = 'DATE', 1, 0) as td_nr,
     if(bqutil.fn.typeof(`TD_P`) = 'DATE', 1, 0) as td_p,
+    if(bqutil.fn.typeof(`TAS`) = 'DATE', 1, 0) as tas,
+
 from
     pre_pivot pivot (
         min(contact_date) for input_column in (
@@ -220,6 +225,7 @@ from
             'PSC',
             'SC',
             'TD_NR',
-            'TD_P'
+            'TD_P',
+            'TAS'
         )
     )
