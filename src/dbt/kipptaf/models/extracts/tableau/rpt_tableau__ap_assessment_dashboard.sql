@@ -44,11 +44,9 @@ select
     case
         when s.courses_course_name is null
         then 'Not applicable'
-        when
-            s.courses_course_name is not null
-            and coalesce(a.ap_course_name, x.ap_course_name) is null
+        when s.courses_course_name is not null and a.test_name is null
         then 'Took course, but not AP exam.'
-        else coalesce(a.ap_course_name, x.ap_course_name)
+        else a.ap_course_name
     end as test_subject_area,
 
     if(e.iep_status = 'No IEP', 0, 1) as sped,
