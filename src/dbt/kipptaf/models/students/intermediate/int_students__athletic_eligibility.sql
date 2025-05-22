@@ -199,7 +199,42 @@ select
 
     g.gpa_term,
 
+    e.grade_level,
+    e.grade_level_prev,
+
     case
+        -- 9th grade exceptions
+        when a.grade_level = 9 and e.grade_level_prev = 8 and a.term = 'Q1'
+        then 'Eligible'
+        when
+            a.grade_level = 9
+            and e.grade_level_prev = 8
+            and a.term = 'Q2'
+            and and gpa_term >= 2.5
+            and a.`ada` >= .9
+        then 'Eligible'
+        when
+            a.grade_level = 9
+            and e.grade_level_prev = 8
+            and a.term = 'Q2'
+            and g.gpa_term >= 2.5
+            and a.`ada` < .9
+        then 'Probabtion - ADA'
+        when
+            a.grade_level = 9
+            and e.grade_level_prev = 8
+            and a.term = 'Q2'
+            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
+            and a.`ada` >= .9
+        then 'Probation - GPA'
+        when
+            a.grade_level = 9
+            and e.grade_level_prev = 8
+            and a.term = 'Q2'
+            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
+            and a.`ada` < .9
+        then 'Probation - GPA and ADA'
+
         -- semester 1 conditions
         when
             a.semester = 'S1'
@@ -291,3 +326,8 @@ left join
     and a.yearid = g.yearid
     and a.term = g.term_name
     and {{ union_dataset_join_clause(left_alias="a", right_alias="g") }}
+left join
+    {{ ref("int_extracts__student_enrollments") }} as e
+    on on c.academic_year = e.academic_year
+    and c.studentsdcid = e.students_dcid
+    and and {{ union_dataset_join_clause(left_alias="c", right_alias="e") }}
