@@ -18,3 +18,5 @@ models:
         data_type: float64
       - name: criteria_group
         data_type: string
+      - name: Grouped_Measure
+        data_type: string
