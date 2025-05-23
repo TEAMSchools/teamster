@@ -87,6 +87,10 @@ with
             c.academic_year - 1990 as yearid,
 
             if(
+                cy.earned_credits_previous_year >= 30, true, false
+            ) as is_py_credits_on_track,
+
+            if(
                 cy.potential_credits_current_year / 2
                 = cy.half_earned_credits_current_year,
                 true,
@@ -164,7 +168,6 @@ with
     ),
 
     ada_component as (
-
         select
             _dbt_source_relation,
             studentid,
@@ -191,6 +194,7 @@ select
     c.earned_credits_current_year,
     c.half_earned_credits_current_year,
     c.potential_credits_current_year,
+    c.is_py_credits_on_track,
     c.is_cy_credits_on_track,
 
     a.semester,
