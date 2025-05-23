@@ -207,33 +207,33 @@ select
         -- 9th grade exceptions
         when
             e.grade_level = 9
-            and (e.grade_level_prev = 8 or e.grade_level_prev is null)
+            and (e.grade_level_prev <= 8 or e.grade_level_prev is null)
             and a.term = 'Q1'
         then 'Eligible'
         when
             e.grade_level = 9
-            and e.grade_level_prev = 8
+            and e.grade_level_prev <= 8
             and a.term = 'Q2'
             and g.gpa_term >= 2.5
             and a.`ada` >= .9
         then 'Eligible'
         when
             e.grade_level = 9
-            and e.grade_level_prev = 8
+            and e.grade_level_prev <= 8
             and a.term = 'Q2'
             and g.gpa_term >= 2.5
             and a.`ada` < .9
         then 'Probabtion - ADA'
         when
             e.grade_level = 9
-            and e.grade_level_prev = 8
+            and e.grade_level_prev <= 8
             and a.term = 'Q2'
             and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
             and a.`ada` >= .9
         then 'Probation - GPA'
         when
             e.grade_level = 9
-            and e.grade_level_prev = 8
+            and e.grade_level_prev <= 8
             and a.term = 'Q2'
             and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
             and a.`ada` < .9
