@@ -56,6 +56,7 @@ select
     e.school_name,
     e.school_abbreviation as school,
     e.grade_level,
+    e.grade_level_prev,
     e.studentid,
     e.students_dcid,
     e.student_number,
@@ -209,4 +210,4 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
-where e.rn_year = 1 and e.schoolid != 999999
+where e.rn_year = 1 and e.schoolid != 999999 and e.enroll_status != -1
