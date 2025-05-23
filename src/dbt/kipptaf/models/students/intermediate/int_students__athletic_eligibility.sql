@@ -1,4 +1,103 @@
 with
+    gpa_and_grade_level as (
+        select
+            e._dbt_source_relation,
+            e.academic_year,
+            e.yearid,
+            e.student_number,
+            e.students_dcid,
+            e.studentid,
+            e.grade_level,
+            e.grade_level_prev,
+
+            term,
+
+            g.gpa_term,
+            gc.gpa_y1 as q2_y1_gpa,
+            gp.gpa_y1 as py_gpa,
+
+            if(
+                e.grade_level = 9
+                and (e.grade_level_prev <= 8 or e.grade_level_prev is null),
+                true,
+                false
+            ) as is_first_time_ninth,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        cross join unnest(['Q1', 'Q2']) as term
+        left join
+            {{ ref("int_powerschool__gpa_term") }} as g
+            on e.studentid = g.studentid
+            and e.yearid = g.yearid
+            and term = g.term_name
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="g") }}
+        left join
+            {{ ref("int_powerschool__gpa_term") }} as gc
+            on g.studentid = gc.studentid
+            and g.yearid = gc.yearid
+            and {{ union_dataset_join_clause(left_alias="g", right_alias="gc") }}
+            and gc.term_name = 'Q2'
+        left join
+            {{ ref("int_powerschool__gpa_term") }} as gp
+            on g.studentid = gp.studentid
+            and g.yearid - 1 = gp.yearid
+            and {{ union_dataset_join_clause(left_alias="g", right_alias="gp") }}
+            and gp.is_current
+        where
+            e.enroll_status = 0
+            and e.grade_level >= 9
+            and e.academic_year = {{ var("current_academic_year") }}
+    ),
+
+    gpa_and_grade_level_component as (
+        select
+            _dbt_source_relation,
+            academic_year,
+            yearid,
+            student_number,
+            students_dcid,
+            studentid,
+            grade_level,
+            grade_level_prev,
+            is_first_time_ninth,
+            py_gpa,
+            q2_y1_gpa,
+
+            case
+                when is_first_time_ninth
+                then 'Eligible'
+                when py_gpa is null
+                then 'No PY GPA'
+                when py_gpa >= 2.5
+                then 'Eligible'
+                when py_gpa >= 2.2 and py_gpa <= 2.49
+                then 'Probation'
+                else 'Ineligible'
+            end as q1_gpa_eligibility_status,
+
+            case
+                when q1 is null
+                then 'No Q1 GPA'
+                when q1 >= 2.5
+                then 'Eligible'
+                when q1 >= 2.2 and q1 <= 2.49
+                then 'Probation'
+                else 'Ineligible'
+            end as q2_gpa_eligibility_status,
+
+            case
+                when q2_y1_gpa is null
+                then 'No S1 GPA'
+                when q2_y1_gpa >= 2.5
+                then 'Eligible'
+                when q2_y1_gpa >= 2.2 and q2_y1_gpa <= 2.49
+                then 'Probation'
+                else 'Ineligible'
+            end as s2_gpa_eligibility_status,
+
+        from gpa_and_grade_level pivot (avg(gpa_term) for term in ('Q1', 'Q2'))
+    ),
+
     credits as (
         select
             _dbt_source_relation,
@@ -141,6 +240,23 @@ with
         where t.isyearrec = 1
     ),
 
+    ada_py as (
+        select
+            _dbt_source_relation,
+            yearid,
+            studentid,
+
+            yearid + 1990 as academic_year,
+
+            avg(attendancevalue) as py_ada,
+
+        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+        where
+            membershipvalue = 1
+            and calendardate <= current_date('{{ var("local_timezone") }}')
+        group by _dbt_source_relation, yearid, studentid
+    ),
+
     membership_days as (
         select
             a._dbt_source_relation,
@@ -164,10 +280,10 @@ with
             and a.calendardate <= t.term_end_date
         where
             a.membershipvalue = 1
-            and a.calendardate <= current_date('{{ var("local_timezone") }}')
+            and t.academic_year = {{ var("current_academic_year") }}
     ),
 
-    ada_component as (
+    ada_by_quarter as (
         select
             _dbt_source_relation,
             studentid,
@@ -176,20 +292,60 @@ with
             semester,
             term,
 
-            sum(membershipvalue) as days_in_membership,
-            sum(attendancevalue) as days_present,
-            sum(abs(attendancevalue - 1)) as days_absent_unexcused,
-            avg(attendancevalue) as `ada`,
+            avg(attendancevalue) as quarter_ada,
 
         from membership_days
         group by _dbt_source_relation, academic_year, yearid, studentid, semester, term
+    ),
+
+    ada_by_semester as (
+        select
+            _dbt_source_relation,
+            studentid,
+            academic_year,
+            yearid,
+            semester,
+
+            avg(attendancevalue) as semester_ada,
+
+        from membership_days
+        group by _dbt_source_relation, academic_year, yearid, studentid, semester
+    ),
+
+    ada_component as (
+        select
+            p._dbt_source_relation,
+            p.studentid,
+            p.academic_year,
+            p.yearid,
+
+            s.semester_ada as s1_ada,
+
+            q1,
+
+        from
+            ada_by_quarter
+            pivot (avg(quarter_ada) for term in ('Q1', 'Q2', 'Q3', 'Q4')) as p
+        left join
+            ada_by_semester as s
+            on p.studentid = s.studentid
+            and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
+            and s.semester = 'S1'
     )
 
 select
-    c._dbt_source_relation,
-    c.academic_year,
-    c.studentsdcid,
-    c.studentid,
+    e._dbt_source_relation,
+    e.academic_year,
+    e.yearid,
+    e.student_number,
+    e.students_dcid,
+    e.studentid,
+    e.grade_level,
+    e.grade_level_prev,
+    e.term,
+    e.gpa_term,
+    e.py_gpa,
+
     c.earned_credits_previous_year,
     c.earned_credits_current_year,
     c.half_earned_credits_current_year,
@@ -200,12 +356,6 @@ select
     a.semester,
     a.term,
     a.`ada`,
-
-    g.gpa_term,
-    gp.gpa_y1 as py_gpa,
-
-    e.grade_level,
-    e.grade_level_prev,
 
     case
         -- 9th grade exceptions
@@ -336,26 +486,10 @@ select
         else 'New combination'
     end as quarter_athletic_eligibility_status,
 
-from credits_component as c
+from gpa_and_grade_level_component as e
+left join credits_component as c on
 left join
     ada_component as a
     on c.studentid = a.studentid
     and a.academic_year = c.academic_year
     and {{ union_dataset_join_clause(left_alias="c", right_alias="a") }}
-left join
-    {{ ref("int_powerschool__gpa_term") }} as g
-    on a.studentid = g.studentid
-    and a.yearid = g.yearid
-    and a.term = g.term_name
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="g") }}
-left join
-    {{ ref("int_powerschool__gpa_term") }} as gp
-    on a.studentid = gp.studentid
-    and a.yearid - 1 = gp.yearid
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="gp") }}
-    and gp.is_current
-left join
-    {{ ref("int_extracts__student_enrollments") }} as e
-    on c.academic_year = e.academic_year
-    and c.studentsdcid = e.students_dcid
-    and {{ union_dataset_join_clause(left_alias="c", right_alias="e") }}
