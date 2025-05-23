@@ -228,14 +228,14 @@ select
             e.grade_level = 9
             and (e.grade_level_prev <= 8 or e.grade_level_prev is null)
             and a.term = 'Q2'
-            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
+            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.49)
             and a.`ada` >= .9
         then 'Probation - GPA'
         when
             e.grade_level = 9
             and (e.grade_level_prev <= 8 or e.grade_level_prev is null)
             and a.term = 'Q2'
-            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
+            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.49)
             and a.`ada` < .9
         then 'Probation - GPA and ADA'
         when
@@ -269,13 +269,13 @@ select
         when
             a.term = 'Q1'
             and c.earned_credits_previous_year >= 30
-            and (gp.gpa_y1 >= 2.2 and gp.gpa_y1 <= 2.4)
+            and (gp.gpa_y1 >= 2.2 and gp.gpa_y1 <= 2.49)
             and a.`ada` >= .9
         then 'Probation - GPA'
         when
             a.term = 'Q1'
             and c.earned_credits_previous_year >= 30
-            and (gp.gpa_y1 >= 2.2 and gp.gpa_y1 <= 2.4)
+            and (gp.gpa_y1 >= 2.2 and gp.gpa_y1 <= 2.49)
             and a.`ada` < .9
         then 'Probation - GPA and ADA'
         when
@@ -307,13 +307,13 @@ select
         when
             a.term = 'Q2'
             and c.is_cy_credits_on_track
-            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
+            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.49)
             and a.`ada` >= .9
         then 'Probation - GPA'
         when
             a.term = 'Q2'
             and not c.is_cy_credits_on_track
-            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.4)
+            and (g.gpa_term >= 2.2 and g.gpa_term <= 2.49)
             and a.`ada` < .9
         then 'Probation - GPA and ADA'
         when
