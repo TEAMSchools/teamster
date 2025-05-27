@@ -327,6 +327,7 @@ select
     `group`,
     grade_level,
     criteria_summary,
+    measures,
     grouped_measure,
     payout_potential,
     if(is_met_criteria, payout_potential, 0) as payout_actual,
