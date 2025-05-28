@@ -50,10 +50,6 @@ with
 
             s.external_student_id as salesforce_contact_id,
 
-            if(
-                p.fafsa_status = 'FAFSA Complete, Good to Go', 'Yes', 'No'
-            ) as overgrad_has_fafsa,
-
             if(p.fafsa_opt_out is null, 'No', 'Yes') as overgrad_fafsa_opt_out,
 
         from {{ ref("int_overgrad__custom_fields_pivot") }} as p
@@ -126,7 +122,6 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
-    ovg.overgrad_has_fafsa,
     ovg.overgrad_fafsa_opt_out,
 
     'KTAF' as district,
@@ -163,23 +158,9 @@ select
         when
             e.academic_year >= 2024
             and e.grade_level = 12
-            and e.salesforce_contact_df_has_fafsa != ovg.overgrad_has_fafsa
-        then 'Salesforce/Overgrad has FAFSA complete mismatch'
-        when
-            e.academic_year >= 2024
-            and e.grade_level = 12
-            and (
-                e.salesforce_contact_df_has_fafsa = 'Yes'
-                or ovg.overgrad_has_fafsa = 'Yes'
-            )
+            and e.salesforce_contact_df_has_fafsa = 'Yes'
             and ovg.overgrad_fafsa_opt_out = 'Yes'
         then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
-        when
-            e.academic_year >= 2024
-            and e.grade_level = 12
-            and ovg.overgrad_has_fafsa = 'Yes'
-            and ovg.overgrad_fafsa_opt_out = 'Yes'
-        then 'Overgrad FASFSA complete and opt-out mismatch'
         else 'No issues'
     end as fafsa_status_mismatch_category,
 
