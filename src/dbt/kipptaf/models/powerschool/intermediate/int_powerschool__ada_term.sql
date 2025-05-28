@@ -48,6 +48,14 @@ select
         partition by a._dbt_source_relation, a.yearid, a.studentid, t.term
     ) as ada_term,
 
+    avg(a.attendancevalue) over (
+        partition by a._dbt_source_relation, a.yearid, a.studentid, t.semester
+    ) as ada_semester,
+
+    avg(a.attendancevalue) over (
+        partition by a._dbt_source_relation, a.yearid, a.studentid
+    ) as ada_year,
+
 from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
 inner join
     term as t
