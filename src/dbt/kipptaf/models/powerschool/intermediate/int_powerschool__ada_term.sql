@@ -40,12 +40,12 @@ with
             a._dbt_source_relation,
             a.yearid,
             a.studentid,
+            a.attendancevalue,
+            a.calendardate,
 
             t.academic_year,
             t.semester,
             t.term,
-
-            avg(a.attendancevalue) as attendancevalue,
 
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
         inner join
@@ -58,13 +58,6 @@ with
         where
             a.membershipvalue = 1
             and a.calendardate <= current_date('{{ var("local_timezone") }}')
-        group by
-            a._dbt_source_relation,
-            a.yearid,
-            a.studentid,
-            t.academic_year,
-            t.semester,
-            t.term
     )
 
 select
@@ -88,3 +81,8 @@ select
     ) as ada_year,
 
 from membership_days
+qualify
+    row_number() over (
+        partition by _dbt_source_relation, studentid, yearid, term order by calendardate
+    )
+    = 1
