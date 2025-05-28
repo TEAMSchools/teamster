@@ -66,7 +66,7 @@ select
     if(
         s.region = 'Miami'
         and s.school_level = 'ES'
-        and s.credit_type in ('ENG', 'MATH')
+        and s.credit_type not in ('ENG', 'MATH')
         and ge.assignment_category_code = 'S'
         and cg.percent_grade is null
         and s.is_quarter_end_date_range,

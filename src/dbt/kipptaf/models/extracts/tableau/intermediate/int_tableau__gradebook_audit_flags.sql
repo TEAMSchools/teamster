@@ -3,6 +3,7 @@
 with
     student_unpivot as (
         select *, 'assignment_student' as cte_grouping,
+
         from
             {{ ref("int_tableau__gradebook_audit_assignments_student") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -25,6 +26,7 @@ with
 
     teacher_unpivot_cca as (
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
+
         from
             {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -47,6 +49,7 @@ with
 
     teacher_unpivot_cc as (
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
+        
         from
             {{ ref("int_tableau__gradebook_audit_categories_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -166,6 +169,7 @@ with
             unpivot (
                 audit_flag_value for audit_flag_name in (qt_effort_grade_missing)
             ) as r
+
         inner join
             {{ ref("stg_reporting__gradebook_flags") }} as f
             on r.region = f.region
@@ -186,6 +190,7 @@ with
                 )
             }}
             unpivot (audit_flag_value for audit_flag_name in (w_grade_inflation)) as r
+
         inner join
             {{ ref("stg_reporting__gradebook_flags") }} as f
             on r.region = f.region
@@ -238,6 +243,7 @@ with
             unpivot (
                 audit_flag_value for audit_flag_name in (qt_summative_grade_missing)
             ) as r
+
         inner join
             {{ ref("stg_reporting__gradebook_flags") }} as f
             on r.region = f.region
