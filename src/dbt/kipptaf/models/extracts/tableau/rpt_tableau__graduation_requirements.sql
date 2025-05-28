@@ -27,7 +27,6 @@ with
             e.student_email as student_email_google,
             e.salesforce_id as kippadb_contact_id,
             e.ktc_cohort,
-            e.has_fafsa,
 
             discipline,
 
@@ -35,6 +34,9 @@ with
             s.teacher_lastfirst,
             s.sections_external_expression,
             s.sections_section_number as section_number,
+
+            if(e.met_fafsa_requirement, 'Yes', 'No') as has_fafsa,
+
         from {{ ref("int_extracts__student_enrollments") }} as e
         cross join unnest(['Math', 'ELA']) as discipline
         left join
@@ -107,6 +109,7 @@ select
     c.met_math,
     c.final_grad_path_code,
     c.grad_eligibility,
+
 from roster as r
 left join
     {{ ref("int_students__graduation_path_codes") }} as c
