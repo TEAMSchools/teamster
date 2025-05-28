@@ -1,4 +1,14 @@
 with
+    school_grade_cw as (
+        select 'Royalty' as school, grade_level,
+        from unnest(['0', '1', '2', '3', '4']) as grade_level
+
+        union all
+
+        select 'Courage' as school, grade_level,
+        from unnest(['5', '6', '7', '8']) as grade_level
+    ),
+
     criteria_union as (
         select
             academic_year_int as academic_year,
@@ -53,6 +63,26 @@ with
         from {{ ref("int_renlearn__star_rollup") }}
         where screening_period_window_name = 'Spring' and rn_subj_round = 1
         group by academic_year, star_discipline, grade_level
+
+        union all
+
+        select
+            academic_year,
+            concat('STAR ', star_discipline, ' proficiency') as measure,
+            'K-2' as grade_level,
+            round(
+                avg(
+                    if(
+                        grade_level = 0,
+                        is_district_benchmark_proficient_int,
+                        is_state_benchmark_proficient_int
+                    )
+                ),
+                2
+            ) as criteria,
+        from {{ ref("int_renlearn__star_rollup") }}
+        where screening_period_window_name = 'Spring' and rn_subj_round = 1
+        group by academic_year, star_discipline
 
         union all
 
@@ -140,6 +170,32 @@ with
         union all
 
         select
+            academic_year,
+            concat('FAST ', assessment_subject, ' proficiency') as measure,
+            '3-4' as grade_level,
+            round(avg(if(is_proficient, 1, 0)), 2) as criteria,
+        from {{ ref("int_fldoe__all_assessments") }}
+        where
+            administration_window = 'PM3'
+            and assessment_name = 'FAST'
+            and assessment_grade in ('3', '4')
+        group by academic_year, assessment_subject
+
+        union all
+
+        select
+            fl.academic_year,
+            concat('FAST ', fl.assessment_subject, ' proficiency') as measure,
+            gs.school as grade_level,
+            round(avg(if(fl.is_proficient, 1, 0)), 2) as criteria,
+        from {{ ref("int_fldoe__all_assessments") }} as fl
+        inner join school_grade_cw as gs on fl.assessment_grade = gs.grade_level
+        where fl.administration_window = 'PM3' and fl.assessment_name = 'FAST'
+        group by fl.academic_year, fl.assessment_subject, gs.school
+
+        union all
+
+        select
             fl.academic_year,
             concat(fl.assessment_subject, ' growth') as measure,
             fl.assessment_grade,
@@ -204,32 +260,64 @@ with
                 avg(if(co.is_retained_year or fl.achievement_level_int > 1, 1, 0)), 2
             ) as criteria,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        inner join
+        left join
             {{ ref("int_fldoe__all_assessments") }} as fl
             on co.fleid = fl.student_id
             and co.academic_year = fl.academic_year
             and fl.assessment_name = 'FAST'
             and fl.assessment_subject = 'English Language Arts'
             and fl.administration_window = 'PM3'
-        where co.rn_year = 1 and co.grade_level = 3
+        where
+            co.rn_year = 1
+            and co.grade_level = 3
+            and co.enroll_status = 0
+            and co.region = 'Miami'
         group by co.academic_year, co.grade_level
+    ),
+
+    criteria_eval as (
+        select
+            pc.academic_year,
+            pc.criteria_group as `group`,
+            pc.grade_level,
+            pc.measure,
+            pc.criteria as criteria_cutoff,
+            pc.payout_amount as payout_potential,
+            pc.grouped_measure,
+
+            cu.criteria as criteria_actual,
+
+            if(cu.criteria >= pc.criteria, true, false) as is_met_criteria,
+        -- if(cu.criteria >= pc.criteria, pc.payout_amount, 0) as payout_actual,
+        from {{ ref("stg_people__miami_performance_criteria") }} as pc
+        left join
+            criteria_union as cu
+            on pc.academic_year = cu.academic_year
+            and pc.grade_level = cu.grade_level
+            and pc.measure = cu.measure
+        where pc.academic_year is not null
+    ),
+
+    criteria_grouped as (
+        select
+            academic_year,
+            `group`,
+            grade_level,
+            grouped_measure,
+
+            string_agg(measure, ', ') as measures,
+            max(payout_potential) as payout_potential,
+            min(is_met_criteria) as is_met_criteria,
+        from criteria_eval
+        group by academic_year, `group`, grade_level, grouped_measure
     )
 
 select
-    pc.academic_year,
-    pc.criteria_group as `group`,
-    pc.grade_level,
-    pc.measure,
-    pc.criteria as criteria_cutoff,
-    pc.payout_amount as payout_potential,
-
-    cu.criteria as criteria_actual,
-
-    if(cu.criteria >= pc.criteria, pc.payout_amount, 0) as payout_actual,
-from {{ ref("stg_people__miami_performance_criteria") }} as pc
-left join
-    criteria_union as cu
-    on pc.academic_year = cu.academic_year
-    and pc.grade_level = cu.grade_level
-    and pc.measure = cu.measure
-where pc.academic_year is not null
+    academic_year,
+    `group`,
+    grade_level,
+    measures,
+    grouped_measure,
+    payout_potential,
+    if(is_met_criteria, payout_potential, 0) as payout_actual,
+from criteria_grouped

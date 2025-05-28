@@ -9,7 +9,7 @@ plugins:
 lint:
   enabled:
     - bandit@1.8.3
-    - checkov@3.2.427
+    - checkov@3.2.432
     - terrascan@1.19.1
     - trivy@0.62.1
     - actionlint@1.7.7
@@ -22,14 +22,14 @@ lint:
     - oxipng@9.1.5
     - prettier@3.5.3
     - pyright@1.1.400
-    - ruff@0.11.10
+    - ruff@0.11.11
     - shellcheck@0.10.0
     - shfmt@3.6.0
     - sqlfluff@3.4.0
     - sqlfmt@0.26.0
     - svgo@3.3.2
     - taplo@0.9.3
-    - trufflehog@3.88.31
+    - trufflehog@3.88.33
     - yamllint@1.37.1
   disabled:
     - black
