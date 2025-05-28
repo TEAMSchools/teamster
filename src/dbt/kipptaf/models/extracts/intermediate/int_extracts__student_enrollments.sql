@@ -14,6 +14,19 @@ with
         where school_level = 'MS'
     ),
 
+    es_grad_sub as (
+        select
+            _dbt_source_relation,
+            student_number,
+            school_abbreviation as es_attended,
+
+            row_number() over (
+                partition by student_number order by exitdate desc
+            ) as rn,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where school_level = 'ES'
+    ),
+
     mia_territory as (
         select
             r._dbt_source_relation,
@@ -103,6 +116,8 @@ select
     e.illuminate_student_id,
 
     m.ms_attended,
+
+    es.es_attended,
 
     mt.territory,
 
@@ -206,6 +221,11 @@ left join
     on e.student_number = m.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
     and m.rn = 1
+left join
+    es_grad_sub as es
+    on e.student_number = es.student_number
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="es") }}
+    and es.rn = 1
 left join
     mia_territory as mt
     on e.student_number = mt.student_school_id
