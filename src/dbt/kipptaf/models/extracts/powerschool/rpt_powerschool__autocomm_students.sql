@@ -17,11 +17,6 @@ with
                     'ELA' as `s_nj_stu_x__graduation_pathway_ela`
                 )
             )
-    ),
-
-    ps_fafsa_status as (
-        select _dbt_source_relation, studentsdcid, fafsa as ps_fafsa_status,
-        from {{ ref("stg_powerschool__s_stu_x") }}
     )
 
 select
@@ -70,8 +65,8 @@ select
     end as track,
 
     case
-        when se.grade_level = 12 and pfs.ps_fafsa_status = 'N'
-        then pfs.ps_fafsa_status
+        when se.grade_level = 12 and pfs.fafsa = 'N'
+        then pfs.fafsa
         when se.grade_level = 12 and f.overgrad_fafsa_opt_out = 'Yes'
         then 'E'
         when se.grade_level = 12 and f.has_fafsa = 'Yes'
@@ -98,7 +93,7 @@ left join
     and se.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="se", right_alias="f") }}
 left join
-    ps_fafsa_status as pfs
+    {{ ref("stg_powerschool__s_stu_x") }} as pfs
     on se.students_dcid = pfs.studentsdcid
     and {{ union_dataset_join_clause(left_alias="se", right_alias="pfs") }}
 where
