@@ -305,6 +305,16 @@ with
             grade_level,
             grouped_measure,
 
+            string_agg(
+                format(
+                    '%s: %.2f/%.2f (%s)',
+                    measure,
+                    criteria_actual,
+                    criteria_cutoff,
+                    if(criteria_actual >= criteria_cutoff, 'Pass', 'Fail')
+                ),
+                '; '
+            ) as criteria_summary,
             string_agg(measure, ', ') as measures,
             max(payout_potential) as payout_potential,
             min(is_met_criteria) as is_met_criteria,
@@ -316,6 +326,7 @@ select
     academic_year,
     `group`,
     grade_level,
+    criteria_summary,
     measures,
     grouped_measure,
     payout_potential,
