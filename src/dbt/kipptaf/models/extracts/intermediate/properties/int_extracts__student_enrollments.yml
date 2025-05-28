@@ -110,8 +110,6 @@ models:
         data_type: string
       - name: hos
         data_type: string
-      - name: overgrad_has_fafsa
-        data_type: string
       - name: overgrad_fafsa_opt_out
         data_type: string
       - name: district
