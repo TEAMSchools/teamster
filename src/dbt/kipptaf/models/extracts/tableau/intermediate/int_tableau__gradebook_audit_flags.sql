@@ -49,7 +49,7 @@ with
 
     teacher_unpivot_cc as (
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
-        
+
         from
             {{ ref("int_tableau__gradebook_audit_categories_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
