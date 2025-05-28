@@ -33,37 +33,58 @@ with
             and {{ union_dataset_join_clause(left_alias="t", right_alias="tb") }}
             and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
         where t.isyearrec = 1
+    ),
+
+    membership_days as (
+        select
+            a._dbt_source_relation,
+            a.yearid,
+            a.studentid,
+
+            t.academic_year,
+            t.semester,
+            t.term,
+
+            avg(a.attendancevalue) as attendancevalue,
+
+        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
+        inner join
+            term as t
+            on a.yearid = t.yearid
+            and a.schoolid = t.schoolid
+            and {{ union_dataset_join_clause(left_alias="a", right_alias="t") }}
+            and a.calendardate >= t.term_start_date
+            and a.calendardate <= t.term_end_date
+        where
+            a.membershipvalue = 1
+            and a.calendardate <= current_date('{{ var("local_timezone") }}')
+        group by
+            a._dbt_source_relation,
+            a.yearid,
+            a.studentid,
+            t.academic_year,
+            t.semester,
+            t.term
     )
 
 select
-    a._dbt_source_relation,
-    a.yearid,
-    a.studentid,
+    _dbt_source_relation,
+    studentid,
+    academic_year,
+    yearid,
+    semester,
+    term,
 
-    t.academic_year,
-    t.semester,
-    t.term,
-
-    avg(a.attendancevalue) over (
-        partition by a._dbt_source_relation, a.yearid, a.studentid, t.term
+    avg(attendancevalue) over (
+        partition by _dbt_source_relation, yearid, studentid, term
     ) as ada_term,
 
-    avg(a.attendancevalue) over (
-        partition by a._dbt_source_relation, a.yearid, a.studentid, t.semester
+    avg(attendancevalue) over (
+        partition by _dbt_source_relation, yearid, studentid, semester
     ) as ada_semester,
 
-    avg(a.attendancevalue) over (
-        partition by a._dbt_source_relation, a.yearid, a.studentid
+    avg(attendancevalue) over (
+        partition by _dbt_source_relation, yearid, studentid
     ) as ada_year,
 
-from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
-inner join
-    term as t
-    on a.yearid = t.yearid
-    and a.schoolid = t.schoolid
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="t") }}
-    and a.calendardate >= t.term_start_date
-    and a.calendardate <= t.term_end_date
-where
-    a.membershipvalue = 1
-    and a.calendardate <= current_date('{{ var("local_timezone") }}')
+from membership_days
