@@ -248,12 +248,8 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
-<<<<<<< HEAD
-where e.rn_year = 1 and e.schoolid != 999999 and e.enroll_status != -1
-=======
 left join
     overgrad_fafsa as ovg
     on e.salesforce_contact_id = ovg.salesforce_contact_id
     and {{ union_dataset_join_clause(left_alias="e", right_alias="ovg") }}
-where e.rn_year = 1 and e.schoolid != 999999
->>>>>>> fab1781c1ec9c596c9b0906e3b7bedd02f5f3dd0
+where e.rn_year = 1 and e.schoolid != 999999 and e.enroll_status != -1
