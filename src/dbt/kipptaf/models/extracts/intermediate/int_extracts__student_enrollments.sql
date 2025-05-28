@@ -42,6 +42,26 @@ with
             {{ ref("stg_deanslist__roster_assignments") }} as a
             on r.roster_id = a.dl_roster_id
         where r.school_id = 472 and r.roster_type = 'House' and r.active = 'Y'
+    ),
+
+    overgrad_fafsa as (
+        select
+            p._dbt_source_relation,
+
+            s.external_student_id as salesforce_contact_id,
+
+            if(
+                p.fafsa_status = 'FAFSA Complete, Good to Go', 'Yes', 'No'
+            ) as overgrad_has_fafsa,
+
+            if(p.fafsa_opt_out is null, 'No', 'Yes') as overgrad_fafsa_opt_out,
+
+        from {{ ref("int_overgrad__custom_fields_pivot") }} as p
+        inner join
+            {{ ref("stg_overgrad__students") }} as s
+            on p.id = s.id
+            and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
+        where p._dbt_source_model = 'stg_overgrad__students'
     )
 
 select
@@ -106,17 +126,71 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
+    ovg.overgrad_has_fafsa,
+    ovg.overgrad_fafsa_opt_out,
+
     'KTAF' as district,
 
     concat(e.region, e.school_level) as region_school_level,
+
     coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
+
     cast(e.academic_year as string)
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
     round(ada.ada, 3) as ada,
 
+    case
+        e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
+    end as race_ethnicity,
+
+    case
+        when e.school_level in ('ES', 'MS')
+        then e.advisory_name
+        when e.school_level = 'HS'
+        then e.advisor_lastfirst
+    end as advisory,
+
+    case
+        when e.region in ('Camden', 'Newark')
+        then 'NJ'
+        when e.region = 'Miami'
+        then 'FL'
+    end as `state`,
+
+    case
+        when
+            e.academic_year >= 2024
+            and e.grade_level = 12
+            and e.salesforce_contact_df_has_fafsa != ovg.overgrad_has_fafsa
+        then 'Salesforce/Overgrad has FAFSA complete mismatch'
+        when
+            e.academic_year >= 2024
+            and e.grade_level = 12
+            and (
+                e.salesforce_contact_df_has_fafsa = 'Yes'
+                or ovg.overgrad_has_fafsa = 'Yes'
+            )
+            and ovg.overgrad_fafsa_opt_out = 'Yes'
+        then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
+        when
+            e.academic_year >= 2024
+            and e.grade_level = 12
+            and ovg.overgrad_has_fafsa = 'Yes'
+            and ovg.overgrad_fafsa_opt_out = 'Yes'
+        then 'Overgrad FASFSA complete and opt-out mismatch'
+        else 'No issues'
+    end as fafsa_status_mismatch_category,
+
+    if(
+        e.salesforce_contact_df_has_fafsa = 'Yes' or ovg.overgrad_fafsa_opt_out = 'Yes',
+        true,
+        false
+    ) as met_fafsa_requirement,
+
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
+
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
     if(
@@ -142,23 +216,6 @@ select
 
     if(round(ada.ada, 3) >= 0.80, true, false) as ada_above_or_at_80,
 
-    case
-        e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
-    end as race_ethnicity,
-
-    case
-        when e.school_level in ('ES', 'MS')
-        then e.advisory_name
-        when e.school_level = 'HS'
-        then e.advisor_lastfirst
-    end as advisory,
-
-    case
-        when e.region in ('Camden', 'Newark')
-        then 'NJ'
-        when e.region = 'Miami'
-        then 'FL'
-    end as `state`,
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     ms_grad_sub as m
@@ -210,4 +267,12 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
+<<<<<<< HEAD
 where e.rn_year = 1 and e.schoolid != 999999 and e.enroll_status != -1
+=======
+left join
+    overgrad_fafsa as ovg
+    on e.salesforce_contact_id = ovg.salesforce_contact_id
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="ovg") }}
+where e.rn_year = 1 and e.schoolid != 999999
+>>>>>>> fab1781c1ec9c596c9b0906e3b7bedd02f5f3dd0
