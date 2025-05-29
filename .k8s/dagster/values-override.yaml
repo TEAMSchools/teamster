@@ -53,10 +53,10 @@ workspace:
   resources:
     requests:
       cpu: 250m
-      memory: 1.0Gi
+      memory: 0.5Gi
     limits:
       cpu: 750m
-      memory: 1.5Gi
+      memory: 1.0Gi
 
     # securityContext:
     #   runAsNonRoot: true
@@ -89,10 +89,10 @@ workspace:
       resources:
         requests:
           cpu: 250m
-          memory: 0.5Gi
-        limits:
-          cpu: 7500m
           memory: 1.0Gi
+        limits:
+          cpu: 750m
+          memory: 1.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
