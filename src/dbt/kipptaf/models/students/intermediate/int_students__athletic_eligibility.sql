@@ -172,7 +172,7 @@ with
                 then 'Eligible'
                 when py_earned_credits < 30
                 then 'Ineligble - Credits'
-                when py_earned_credits >= 30 and py_y1_gpa < 2.2
+                when py_earned_credits >= 30 and cy_q1_gpa < 2.2
                 then 'Ineligible - GPA'
                 when cy_q1_ada >= 0.9 and cy_q1_gpa >= 2.5 and py_earned_credits >= 30
                 then 'Eligible'
