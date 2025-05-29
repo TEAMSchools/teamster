@@ -14,6 +14,7 @@ with
             e.cohort,
             e.discipline,
             e.powerschool_credittype,
+            e.met_fafsa_requirement as has_fafsa,
 
             /* this is not their final code, but it is used to calculate their final 
             code */
@@ -21,8 +22,6 @@ with
 
             /* needed to join on transfer njgpa scores */
             safe_cast(e.state_studentnumber as int) as state_studentnumber_int,
-
-            if(e.has_fafsa = 'Yes', true, false) as has_fafsa,
 
             /* this is the date we start holding 11th graders accountable to 
             fulfilling the NJGPA test requirement */
