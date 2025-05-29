@@ -74,8 +74,6 @@ with
             e.grade_level,
             e.grade_level_prev,
 
-            quarter,
-
             a.ada_term as cy_q1_ada,
             a.ada_semester as cy_s1_ada,
 
@@ -89,8 +87,6 @@ with
 
             c.py_earned_credits,
 
-            if(quarter in ('Q1', 'Q2'), 'S1', 'S2') as semester,
-
             if(
                 e.grade_level = 9
                 and (e.grade_level_prev <= 8 or e.grade_level_prev is null),
@@ -103,7 +99,6 @@ with
             ) as cy_credits_percent_passed,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
-        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as quarter
         left join
             {{ ref("int_powerschool__ada_term") }} as a
             on e.academic_year = a.academic_year
