@@ -80,9 +80,9 @@ select
         partition by _dbt_source_relation, yearid, studentid
     ) as ada_year,
 
-from membership_days
-qualify
     row_number() over (
         partition by _dbt_source_relation, studentid, yearid, term order by calendardate
-    )
-    = 1
+    ) as rn,
+
+from membership_days
+qualify rn = 1

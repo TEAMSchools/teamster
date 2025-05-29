@@ -139,7 +139,146 @@ with
             and e.academic_year = {{ var("current_academic_year") }}
     ),
 
-    calcs as (select * from base)
+    calcs as (
+        select
+            *,
 
-select *
-from calcs
+            case
+                when is_first_time_ninth
+                then 'Eligible'
+                when py_earned_credits < 30
+                then 'Ineligble - Credits'
+                when py_earned_credits >= 30 and py_y1_gpa < 2.2
+                then 'Ineligible - GPA'
+                when py_y1_ada >= 0.9 and py_y1_gpa >= 2.5 and py_earned_credits >= 30
+                then 'Eligible'
+                when
+                    py_y1_ada >= 0.9
+                    and (py_y1_gpa >= 2.2 and py_y1_gpa <= 2.49)
+                    and py_earned_credits >= 30
+                then 'Probation - GPA'
+                when py_y1_ada < 0.9 and py_y1_gpa >= 2.5 and py_earned_credits >= 30
+                then 'Probation - ADA'
+                when
+                    py_y1_ada < 0.9
+                    and (py_y1_gpa >= 2.2 and py_y1_gpa <= 2.49)
+                    and py_earned_credits >= 30
+                then 'Probation - ADA and GPA'
+            end as q1_eligibility,
+
+            case
+                when is_first_time_ninth and cy_q1_ada >= 0.9
+                then 'Eligible'
+                when py_earned_credits < 30
+                then 'Ineligble - Credits'
+                when py_earned_credits >= 30 and py_y1_gpa < 2.2
+                then 'Ineligible - GPA'
+                when cy_q1_ada >= 0.9 and cy_q1_gpa >= 2.5 and py_earned_credits >= 30
+                then 'Eligible'
+                when
+                    cy_q1_ada >= 0.9
+                    and (cy_q1_gpa >= 2.2 and cy_q1_gpa <= 2.49)
+                    and py_earned_credits >= 30
+                then 'Probation - GPA'
+                when cy_q1_ada < 0.9 and cy_q1_gpa >= 2.5 and py_earned_credits >= 30
+                then 'Probation - ADA'
+                when
+                    cy_q1_ada < 0.9
+                    and (cy_q1_gpa >= 2.2 and cy_q1_gpa <= 2.49)
+                    and py_earned_credits >= 30
+                then 'Probation - ADA and GPA'
+            end as q2_eligibility,
+
+            case
+                when cy_credits_percent_passed < 1
+                then 'Ineligble - Credits'
+                when cy_credits_percent_passed = 1 and cy_s1_gpa < 2.2
+                then 'Ineligible - GPA'
+                when
+                    cy_s1_ada >= 0.9
+                    and cy_s1_gpa >= 2.5
+                    and cy_credits_percent_passed = 1
+                then 'Eligible'
+                when
+                    cy_s1_ada >= 0.9
+                    and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
+                    and cy_credits_percent_passed = 1
+                then 'Probation - GPA'
+                when
+                    cy_s1_ada < 0.9
+                    and cy_s1_gpa >= 2.5
+                    and cy_credits_percent_passed = 1
+                then 'Probation - ADA'
+                when
+                    cy_s1_ada < 0.9
+                    and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
+                    and cy_credits_percent_passed = 1
+                then 'Probation - ADA and GPA'
+            end as q3_eligibility,
+
+            case
+                when cy_credits_percent_passed < 1
+                then 'Ineligble - Credits'
+                when cy_credits_percent_passed = 1 and cy_s1_gpa < 2.2
+                then 'Ineligible - GPA'
+                when
+                    cy_s1_ada >= 0.9
+                    and cy_s1_gpa >= 2.5
+                    and cy_credits_percent_passed = 1
+                then 'Eligible'
+                when
+                    cy_s1_ada >= 0.9
+                    and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
+                    and cy_credits_percent_passed = 1
+                then 'Probation - GPA'
+                when
+                    cy_s1_ada < 0.9
+                    and cy_s1_gpa >= 2.5
+                    and cy_credits_percent_passed = 1
+                then 'Probation - ADA'
+                when
+                    cy_s1_ada < 0.9
+                    and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
+                    and cy_credits_percent_passed = 1
+                then 'Probation - ADA and GPA'
+            end as q4_eligibility,
+
+        from base
+    )
+
+select
+    _dbt_source_relation,
+    academic_year,
+    yearid,
+    student_number,
+    students_dcid,
+    studentid,
+    grade_level,
+    grade_level_prev,
+    is_first_time_ninth,
+
+    cy_q1_ada,
+    cy_s1_ada,
+    py_y1_ada,
+    cy_q1_gpa,
+    cy_s1_gpa,
+    py_y1_gpa,
+    py_earned_credits,
+    cy_credits_percent_passed,
+
+    quarter,
+    eligibility,
+
+    case
+        when quarter = 'Q1' then 'Fall' when quarter = 'Q2' then 'Winter' else 'Spring'
+    end as season,
+
+from
+    calcs unpivot (
+        eligibility for quarter in (
+            q1_eligibility as 'Q1',
+            q2_eligibility as 'Q2',
+            q3_eligibility as 'Q3',
+            q4_eligibility as 'Q4'
+        )
+    )
