@@ -273,23 +273,62 @@ with
             and co.enroll_status = 0
             and co.region = 'Miami'
         group by co.academic_year, co.grade_level
+    ),
+
+    criteria_eval as (
+        select
+            pc.academic_year,
+            pc.criteria_group as `group`,
+            pc.grade_level,
+            pc.measure,
+            pc.criteria as criteria_cutoff,
+            pc.payout_amount as payout_potential,
+            pc.grouped_measure,
+
+            cu.criteria as criteria_actual,
+
+            if(cu.criteria >= pc.criteria, true, false) as is_met_criteria,
+        -- if(cu.criteria >= pc.criteria, pc.payout_amount, 0) as payout_actual,
+        from {{ ref("stg_people__miami_performance_criteria") }} as pc
+        left join
+            criteria_union as cu
+            on pc.academic_year = cu.academic_year
+            and pc.grade_level = cu.grade_level
+            and pc.measure = cu.measure
+        where pc.academic_year is not null
+    ),
+
+    criteria_grouped as (
+        select
+            academic_year,
+            `group`,
+            grade_level,
+            grouped_measure,
+
+            string_agg(
+                format(
+                    '%s: %.2f/%.2f (%s)',
+                    measure,
+                    criteria_actual,
+                    criteria_cutoff,
+                    if(criteria_actual >= criteria_cutoff, 'Pass', 'Fail')
+                ),
+                '; '
+            ) as criteria_summary,
+            string_agg(measure, ', ') as measures,
+            max(payout_potential) as payout_potential,
+            min(is_met_criteria) as is_met_criteria,
+        from criteria_eval
+        group by academic_year, `group`, grade_level, grouped_measure
     )
 
 select
-    pc.academic_year,
-    pc.criteria_group as `group`,
-    pc.grade_level,
-    pc.measure,
-    pc.criteria as criteria_cutoff,
-    pc.payout_amount as payout_potential,
-
-    cu.criteria as criteria_actual,
-
-    if(cu.criteria >= pc.criteria, pc.payout_amount, 0) as payout_actual,
-from {{ ref("stg_people__miami_performance_criteria") }} as pc
-left join
-    criteria_union as cu
-    on pc.academic_year = cu.academic_year
-    and pc.grade_level = cu.grade_level
-    and pc.measure = cu.measure
-where pc.academic_year is not null
+    academic_year,
+    `group`,
+    grade_level,
+    criteria_summary,
+    measures,
+    grouped_measure,
+    payout_potential,
+    if(is_met_criteria, payout_potential, 0) as payout_actual,
+from criteria_grouped
