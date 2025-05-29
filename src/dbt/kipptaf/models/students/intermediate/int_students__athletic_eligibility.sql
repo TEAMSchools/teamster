@@ -12,10 +12,6 @@ with
             if(earned_credits = 0.0, 0.0, official_potential_credits) as credits_earned,
 
             if(
-                academic_year = {{ var("current_academic_year") }}, true, false
-            ) as is_current_academic_year,
-
-            if(
                 academic_year = {{ var("current_academic_year") - 1 }}, true, false
             ) as is_previous_academic_year,
 
@@ -38,7 +34,7 @@ with
         from credits
     ),
 
-    custom_yearly_credits as (
+    py_credits as (
         select
             _dbt_source_relation,
             studentsdcid,
@@ -49,18 +45,21 @@ with
                 end
             ) as py_earned_credits,
 
-            avg(
-                case when is_current_academic_year then academic_year_credits_earned end
-            ) as cy_earned_credits,
-
-            avg(
-                case
-                    when is_current_academic_year then academic_year_credits_potential
-                end
-            ) as cy_potential_credits,
-
         from yearly_credits
         group by _dbt_source_relation, studentsdcid
+    ),
+
+    cy_credits as (
+        select
+            _dbt_source_relation,
+            yearid,
+            studentid,
+
+            sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) as n_failing,
+
+        from {{ ref("base_powerschool__final_grades") }}
+        where storecode = 'Q2'
+        group by _dbt_source_relation, yearid, studentid
     ),
 
     base as (
@@ -85,7 +84,9 @@ with
 
             gp.gpa_y1 as py_y1_gpa,
 
-            c.py_earned_credits,
+            pyc.py_earned_credits,
+
+            if(cyc.n_failing = 0, true, false) as met_cy_credits,
 
             if(
                 e.grade_level = 9
@@ -93,10 +94,6 @@ with
                 true,
                 false
             ) as is_first_time_ninth,
-
-            safe_divide(
-                c.cy_earned_credits, cy_potential_credits
-            ) as cy_credits_percent_passed,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join
@@ -130,9 +127,13 @@ with
             and {{ union_dataset_join_clause(left_alias="e", right_alias="gp") }}
             and gp.is_current
         left join
-            custom_yearly_credits as c
-            on e.students_dcid = c.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="c") }}
+            py_credits as pyc
+            on e.students_dcid = pyc.studentsdcid
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="pyc") }}
+        left join
+            cy_credits as cyc
+            on e.studentid = cyc.studentid
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="cyc") }}
         where
             e.enroll_status = 0
             and e.grade_level >= 9
@@ -190,56 +191,44 @@ with
             end as q2_eligibility,
 
             case
-                when cy_credits_percent_passed < 1
+                when not met_cy_credits
                 then 'Ineligble - Credits'
-                when cy_credits_percent_passed = 1 and cy_s1_gpa < 2.2
+                when met_cy_credits and cy_s1_gpa < 2.2
                 then 'Ineligible - GPA'
-                when
-                    cy_s1_ada >= 0.9
-                    and cy_s1_gpa >= 2.5
-                    and cy_credits_percent_passed = 1
+                when cy_s1_ada >= 0.9 and cy_s1_gpa >= 2.5 and met_cy_credits
                 then 'Eligible'
                 when
                     cy_s1_ada >= 0.9
                     and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
-                    and cy_credits_percent_passed = 1
+                    and met_cy_credits
                 then 'Probation - GPA'
-                when
-                    cy_s1_ada < 0.9
-                    and cy_s1_gpa >= 2.5
-                    and cy_credits_percent_passed = 1
+                when cy_s1_ada < 0.9 and cy_s1_gpa >= 2.5 and met_cy_credits
                 then 'Probation - ADA'
                 when
                     cy_s1_ada < 0.9
                     and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
-                    and cy_credits_percent_passed = 1
+                    and met_cy_credits
                 then 'Probation - ADA and GPA'
             end as q3_eligibility,
 
             case
-                when cy_credits_percent_passed < 1
+                when not met_cy_credits
                 then 'Ineligble - Credits'
-                when cy_credits_percent_passed = 1 and cy_s1_gpa < 2.2
+                when met_cy_credits and cy_s1_gpa < 2.2
                 then 'Ineligible - GPA'
-                when
-                    cy_s1_ada >= 0.9
-                    and cy_s1_gpa >= 2.5
-                    and cy_credits_percent_passed = 1
+                when cy_s1_ada >= 0.9 and cy_s1_gpa >= 2.5 and met_cy_credits
                 then 'Eligible'
                 when
                     cy_s1_ada >= 0.9
                     and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
-                    and cy_credits_percent_passed = 1
+                    and met_cy_credits
                 then 'Probation - GPA'
-                when
-                    cy_s1_ada < 0.9
-                    and cy_s1_gpa >= 2.5
-                    and cy_credits_percent_passed = 1
+                when cy_s1_ada < 0.9 and cy_s1_gpa >= 2.5 and met_cy_credits
                 then 'Probation - ADA'
                 when
                     cy_s1_ada < 0.9
                     and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
-                    and cy_credits_percent_passed = 1
+                    and met_cy_credits
                 then 'Probation - ADA and GPA'
             end as q4_eligibility,
 
@@ -264,7 +253,7 @@ select
     cy_s1_gpa,
     py_y1_gpa,
     py_earned_credits,
-    cy_credits_percent_passed,
+    met_cy_credits,
 
     quarter,
     eligibility,
