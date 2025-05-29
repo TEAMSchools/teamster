@@ -53,10 +53,10 @@ workspace:
   resources:
     requests:
       cpu: 250m
-      memory: 0.5Gi
+      memory: 1.0Gi
     limits:
       cpu: 750m
-      memory: 1.0Gi
+      memory: 1.5Gi
 
     # securityContext:
     #   runAsNonRoot: true
