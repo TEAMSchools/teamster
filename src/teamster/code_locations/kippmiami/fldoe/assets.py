@@ -48,10 +48,11 @@ fast = build_sftp_folder_asset(
 
 eoc = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "fldoe", "eoc"],
-    remote_dir_regex=(r"/data-team/kippmiami/fldoe/eoc/(?P<school_year_term>\d+)"),
-    remote_file_regex=(
-        r"\w+-\w+_(?P<grade_level_subject>[\w\.]+)EOC_StudentData_\d+\s[AP]M\.csv"
+    remote_dir_regex=(
+        r"/data-team/kippmiami/fldoe/eoc/(?P<school_year_term>\d+)/"
+        r"(?P<grade_level_subject>[\w\.]+)"
     ),
+    remote_file_regex=r".+\.csv$",
     ssh_resource_key="ssh_couchdrop",
     avro_schema=EOC_SCHEMA,
     partitions_def=MultiPartitionsDefinition(
