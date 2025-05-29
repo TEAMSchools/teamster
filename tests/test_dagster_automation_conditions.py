@@ -3,6 +3,8 @@ from typing import AbstractSet
 from dagster import (
     AssetKey,
     AutomationCondition,
+    AutomationContext,
+    AutomationResult,
     DagsterInstance,
     asset,
     evaluate_automation_conditions,
@@ -15,10 +17,11 @@ from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAsset
 from dagster._core.definitions.declarative_automation.operators import AnyDepsCondition
 from dagster._core.definitions.declarative_automation.operators.dep_operators import (
     DepsAutomationCondition,
+    EntityMatchesCondition,
 )
 
 
-class DbtDepsAutomationCondition(DepsAutomationCondition):
+class DbtAnyDepsCondition(AnyDepsCondition):
     def _get_dep_keys(
         self, key: T_EntityKey, asset_graph: BaseAssetGraph[BaseAssetNode]
     ) -> AbstractSet[AssetKey]:
@@ -49,53 +52,65 @@ class DbtDepsAutomationCondition(DepsAutomationCondition):
 
         return dep_keys
 
+    async def evaluate(
+        self, context: AutomationContext[T_EntityKey]
+    ) -> AutomationResult[T_EntityKey]:
+        dep_results = []
+        true_subset = context.get_empty_subset()
 
-class DbtAnyDepsCondition(DbtDepsAutomationCondition, AnyDepsCondition): ...
+        for i, dep_key in enumerate(
+            sorted(self._get_dep_keys(key=context.key, asset_graph=context.asset_graph))
+        ):
+            dep_result = await context.for_child_condition(
+                child_condition=EntityMatchesCondition(
+                    key=dep_key, operand=self.operand
+                ),
+                # Prefer a non-indexed ID in case asset keys move around, but fall back
+                # to the indexed one for back-compat
+                child_indices=[None, i],
+                candidate_subset=context.candidate_subset,
+            ).evaluate_async()
+
+            dep_results.append(dep_result)
+            true_subset = true_subset.compute_union(dep_result.true_subset)
+
+        true_subset = context.candidate_subset.compute_intersection(true_subset)
+
+        return AutomationResult(
+            context, true_subset=true_subset, child_results=dep_results
+        )
 
 
 class DbtAutomationCondition(AutomationCondition):
     @public
     @staticmethod
-    # trunk-ignore(pyright/reportIncompatibleMethodOverride)
-    def any_deps_match(
-        condition: "DbtAutomationCondition",
-    ) -> "DbtDepsAutomationCondition":
-        """Returns an AutomationCondition that is true for a if at least one partition
-        of the any of the target's dependencies evaluate to True for the given
-        condition.
-
-        Args:
-            condition (AutomationCondition): The AutomationCondition that will be
-            evaluated against
-                this target's dependencies.
-        """
+    def dbt_any_deps_match(
+        condition: "AutomationCondition",
+    ) -> "DepsAutomationCondition":
         return DbtAnyDepsCondition(operand=condition)
 
     @public
     @staticmethod
-    def any_deps_updated() -> DbtDepsAutomationCondition:
-        return DbtAutomationCondition.any_deps_match(
+    def any_deps_updated() -> "DepsAutomationCondition":
+        return DbtAutomationCondition.dbt_any_deps_match(
             (
-                DbtAutomationCondition.newly_updated()
-                # executed_with_root_target is fairly expensive on a per-partition
-                # basis, but newly_updated is bounded in the number of partitions that
-                # might be updated on a single tick
-                & ~DbtAutomationCondition.executed_with_root_target()
+                AutomationCondition.newly_updated()
+                & ~AutomationCondition.executed_with_root_target()
             ).with_label("newly_updated_without_root")
-            | DbtAutomationCondition.will_be_requested()
+            | AutomationCondition.will_be_requested()
         ).with_label("any_deps_updated")
 
 
 test_automation_condition = (
-    DbtAutomationCondition.in_latest_time_window()
+    AutomationCondition.in_latest_time_window()
     & (
-        DbtAutomationCondition.newly_missing()
+        AutomationCondition.newly_missing()
         | DbtAutomationCondition.any_deps_updated()
-        | DbtAutomationCondition.code_version_changed()
+        | AutomationCondition.code_version_changed()
     ).since(AutomationCondition.newly_requested() | AutomationCondition.newly_updated())
-    & ~DbtAutomationCondition.any_deps_missing()
-    & ~DbtAutomationCondition.any_deps_in_progress()
-    & ~DbtAutomationCondition.in_progress()
+    & ~AutomationCondition.any_deps_missing()
+    & ~AutomationCondition.any_deps_in_progress()
+    & ~AutomationCondition.in_progress()
 )
 
 
