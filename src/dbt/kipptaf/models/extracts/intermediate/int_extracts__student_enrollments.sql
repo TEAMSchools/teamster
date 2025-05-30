@@ -72,6 +72,7 @@ select
     e.school_name,
     e.school_abbreviation as school,
     e.grade_level,
+    e.grade_level_prev,
     e.studentid,
     e.students_dcid,
     e.student_number,
@@ -251,4 +252,4 @@ left join
     overgrad_fafsa as ovg
     on e.salesforce_contact_id = ovg.salesforce_contact_id
     and {{ union_dataset_join_clause(left_alias="e", right_alias="ovg") }}
-where e.rn_year = 1 and e.schoolid != 999999
+where e.rn_year = 1 and e.schoolid != 999999 and e.enroll_status != -1
