@@ -36,6 +36,7 @@ from teamster.code_locations.kipptaf import (
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     GCS_RESOURCE,
+    GOOGLE_DRIVE_RESOURCE,
     OVERGRAD_RESOURCE,
     SSH_COUCHDROP,
     get_dbt_cli_resource,
@@ -112,7 +113,7 @@ defs = Definitions(
         "email": resources.OUTLOOK_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,
-        "google_drive": resources.GOOGLE_DRIVE_RESOURCE,
+        "google_drive": GOOGLE_DRIVE_RESOURCE,
         "google_forms": resources.GOOGLE_FORMS_RESOURCE,
         "gsheets": resources.GOOGLE_SHEETS_RESOURCE,
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
