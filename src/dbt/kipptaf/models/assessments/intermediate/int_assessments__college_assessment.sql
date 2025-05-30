@@ -23,7 +23,7 @@ select
         then 'MOY'
         when format_date('%B', latest_psat_date) in ('April', 'May', 'June', 'July')
         then 'EOY'
-    end as admin_season
+    end as admin_season,
 
 from {{ ref("int_collegeboard__psat_unpivot") }}
 
@@ -54,7 +54,7 @@ select
         then 'MOY'
         when format_date('%B', `date`) in ('April', 'May', 'June', 'July')
         then 'EOY'
-    end as admin_season
+    end as admin_season,
 
 from {{ ref("int_kippadb__standardized_test_unpivot") }}
 where
