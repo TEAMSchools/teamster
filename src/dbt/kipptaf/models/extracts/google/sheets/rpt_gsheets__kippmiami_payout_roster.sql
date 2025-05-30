@@ -70,16 +70,7 @@ with
             academic_year,
             concat('STAR ', star_discipline, ' proficiency') as measure,
             'K-2' as grade_level,
-            round(
-                avg(
-                    if(
-                        grade_level = 0,
-                        is_district_benchmark_proficient_int,
-                        is_state_benchmark_proficient_int
-                    )
-                ),
-                2
-            ) as criteria,
+            round(avg(is_district_benchmark_proficient_int), 2) as criteria,
         from {{ ref("int_renlearn__star_rollup") }}
         where screening_period_window_name = 'Spring' and rn_subj_round = 1
         group by academic_year, star_discipline
