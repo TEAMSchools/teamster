@@ -232,23 +232,31 @@ with
         union all
 
         select
-            mclass_academic_year as academic_year,
+            amp.mclass_academic_year as academic_year,
             'DIBELS EOY composite' as measure,
-            cast(mclass_assessment_grade_int as string) as grade_level,
+            cast(amp.mclass_assessment_grade_int as string) as grade_level,
             round(
                 avg(
                     case
-                        when eoy_composite in ('Above Benchmark', 'At Benchmark')
+                        when amp.eoy_composite in ('Above Benchmark', 'At Benchmark')
                         then 1
-                        when eoy_composite not in ('Above Benchmark', 'At Benchmark')
+                        when
+                            amp.eoy_composite not in ('Above Benchmark', 'At Benchmark')
                         then 0
                     end
                 ),
                 2
             ) as criteria,
-        from {{ ref("int_amplify__all_assessments") }}
-        where mclass_measure_standard = 'Composite'
-        group by mclass_academic_year, mclass_assessment_grade_int
+        from {{ ref("int_amplify__all_assessments") }} as amp
+        inner join
+            {{ ref("stg_powerschool__students") }} as s
+            on amp.mclass_student_number = s.student_number
+            and s.enroll_status = 0
+            and regexp_extract(s._dbt_source_relation, r'(kipp\w+)_') = 'kippmiami'
+        where
+            amp.mclass_measure_standard = 'Composite'
+            and amp.mclass_academic_year = 2024
+        group by amp.mclass_academic_year, amp.mclass_assessment_grade_int
 
         union all
 
