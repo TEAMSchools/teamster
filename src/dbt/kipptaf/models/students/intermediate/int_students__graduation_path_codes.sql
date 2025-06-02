@@ -14,6 +14,7 @@ with
             e.cohort,
             e.discipline,
             e.powerschool_credittype,
+            e.met_fafsa_requirement as has_fafsa,
 
             /* this is not their final code, but it is used to calculate their final 
             code */
@@ -22,13 +23,11 @@ with
             /* needed to join on transfer njgpa scores */
             safe_cast(e.state_studentnumber as int) as state_studentnumber_int,
 
-            if(e.has_fafsa = 'Yes', true, false) as has_fafsa,
-
             /* this is the date we start holding 11th graders accountable to 
             fulfilling the NJGPA test requirement */
             if(
                 current_date('{{ var("local_timezone") }}')
-                < date({{ var("current_academic_year") + 1 }}, 05, 31),
+                < date({{ var("current_academic_year") + 1 }}, 06, 05),
                 false,
                 true
             ) as njgpa_season_11th,

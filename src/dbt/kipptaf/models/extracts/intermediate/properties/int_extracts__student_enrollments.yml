@@ -110,6 +110,8 @@ models:
         data_type: string
       - name: hos
         data_type: string
+      - name: overgrad_fafsa_opt_out
+        data_type: string
       - name: district
         data_type: string
       - name: region_school_level
@@ -120,6 +122,23 @@ models:
         data_type: string
       - name: ada
         data_type: float64
+      - name: race_ethnicity
+        data_type: string
+      - name: advisory
+        data_type: string
+      - name: state
+        data_type: string
+      - name: fafsa_status_mismatch_category
+        data_type: string
+        data_tests:
+          - accepted_values:
+              values:
+                - No issues
+              config:
+                severity: warn
+                store_failures: true
+      - name: met_fafsa_requirement
+        data_type: boolean
       - name: state_studentnumber
         data_type: string
       - name: iep_status
@@ -132,11 +151,5 @@ models:
         data_type: boolean
       - name: ada_above_or_at_80
         data_type: boolean
-      - name: race_ethnicity
-        data_type: string
-      - name: advisory
-        data_type: string
-      - name: state
-        data_type: string
       - name: college_match_gpa_bands
         data_type: string

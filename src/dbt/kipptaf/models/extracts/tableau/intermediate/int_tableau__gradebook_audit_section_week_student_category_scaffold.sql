@@ -13,6 +13,7 @@ with
                 ),
                 2
             ) as category_quarter_average_all_courses,
+
         from {{ ref("int_powerschool__category_grades") }}
         where
             yearid = {{ var("current_academic_year") - 1990 }}
@@ -65,6 +66,7 @@ select
     if(
         s.region = 'Miami'
         and s.school_level = 'ES'
+        and s.credit_type not in ('ENG', 'MATH')
         and ge.assignment_category_code = 'S'
         and cg.percent_grade is null
         and s.is_quarter_end_date_range,
