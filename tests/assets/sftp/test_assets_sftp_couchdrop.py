@@ -79,13 +79,13 @@ def test_fldoe_fast_kippmiami():
 def test_fldoe_eoc_kippmiami():
     from teamster.code_locations.kippmiami.fldoe.assets import eoc
 
-    _test_asset(asset=eoc)
+    _test_asset(asset=eoc, partition_key="B.E.S.T.Algebra1|2024")
 
 
 def test_fldoe_science_kippmiami():
     from teamster.code_locations.kippmiami.fldoe.assets import science
 
-    _test_asset(asset=science)
+    _test_asset(asset=science, partition_key="8|2024")
 
 
 def test_fldoe_fte_kippmiami():

@@ -102,8 +102,11 @@ def build_titan_sftp_sensor(
 
                 cursor[asset_identifier] = now_timestamp
 
+        item_getter_key = itemgetter("job_name", "partition_key")
+
         for (job_name, partition_key), group in groupby(
-            iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
+            iterable=sorted(run_request_kwargs, key=item_getter_key),
+            key=item_getter_key,
         ):
             run_requests.append(
                 RunRequest(
