@@ -7,14 +7,11 @@ from dagster import (
     TextMetadataValue,
     materialize,
 )
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
 from teamster.code_locations.kipptaf._google.forms.assets import form, responses
-from teamster.code_locations.kipptaf.resources import GOOGLE_FORMS_RESOURCE
-from teamster.core.resources import get_io_manager_gcs_avro
+from teamster.core.resources import GOOGLE_FORMS_RESOURCE, get_io_manager_gcs_avro
 
 
 def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
