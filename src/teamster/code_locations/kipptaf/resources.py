@@ -12,7 +12,6 @@ from teamster.libraries.amplify.mclass.resources import MClassResource
 from teamster.libraries.coupa.resources import CoupaResource
 from teamster.libraries.email.resources import EmailResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
-from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
 from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
@@ -68,8 +67,6 @@ OUTLOOK_RESOURCE = EmailResource(
     password=EnvVar("OUTLOOK_PASSWORD"),
     chunk_size=450,
 )
-
-GOOGLE_DRIVE_RESOURCE = GoogleDriveResource()
 
 GOOGLE_FORMS_RESOURCE = GoogleFormsResource()
 

@@ -27,6 +27,7 @@ on:
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/fldoe/**
+      - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/iready/**
       - src/teamster/libraries/powerschool/sis/**
       - src/teamster/libraries/renlearn/**
