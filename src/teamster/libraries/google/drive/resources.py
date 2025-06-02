@@ -112,7 +112,7 @@ class GoogleDriveResource(ConfigurableResource):
             supportsAllDrives=supports_all_drives,
             includePermissionsForView=include_permissions_for_view,
             includeLabels=include_labels,
-            fields=f"files({fields})",
+            fields=fields,
         )
 
         while request is not None:

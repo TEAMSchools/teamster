@@ -71,7 +71,7 @@ def build_couchdrop_sftp_sensor(
             drive_id="0AKZ2G1Z8rxooUk9PVA",
             include_items_from_all_drives=True,
             supports_all_drives=True,
-            fields="id,name,mimeType,modifiedTime,size",
+            fields="files(id,name,mimeType,modifiedTime,size)",
             folder_id=folder_id,
             file_path=f"/data-team/{code_location}",
             exclude=exclude_dirs,
