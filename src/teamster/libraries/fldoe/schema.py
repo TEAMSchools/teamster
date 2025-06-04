@@ -416,11 +416,12 @@ class FAST(FLDOECore, FLDOECategories):
     )
 
 
-class EOC(FLDOECore):
+class EOC(FLDOECore, FLDOECategories):
     b_e_s_t_algebra_1_eoc_achievement_level: str | None = None
-    b_e_s_t_algebra_1_eoc_scale_score: str | None = None
     civics_eoc_achievement_level: str | None = None
-    civics_eoc_scale_score: str | None = None
+
+    b_e_s_t_algebra_1_eoc_scale_score: str | int | None = None
+    civics_eoc_scale_score: str | int | None = None
 
     field_1_civics: str | None = Field(
         default=None, alias="1_origins_and_purposes_of_law_and_government_performance"

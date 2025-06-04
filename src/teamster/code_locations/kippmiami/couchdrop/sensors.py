@@ -7,6 +7,7 @@ couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
     local_timezone=LOCAL_TIMEZONE,
     asset_selection=assets,
     minimum_interval_seconds=(60 * 10),
+    folder_id="1BLu_qlbcw_jcRZ8m9KIib0UbkPgK4uiM",
     exclude_dirs=[f"/data-team/{CODE_LOCATION}/fldoe/fsa"],
 )
 
