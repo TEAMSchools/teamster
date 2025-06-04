@@ -33,7 +33,14 @@ with
             cast(_dagster_partition_school_year_term as int) as academic_year,
 
             coalesce(
-                b_e_s_t_algebra_1_eoc_scale_score, civics_eoc_scale_score
+                coalesce(
+                    b_e_s_t_algebra_1_eoc_scale_score.string_value,
+                    cast(b_e_s_t_algebra_1_eoc_scale_score.long_value as string)
+                ),
+                coalesce(
+                    civics_eoc_scale_score.string_value,
+                    cast(civics_eoc_scale_score.long_value as string)
+                )
             ) as scale_score,
 
             coalesce(
