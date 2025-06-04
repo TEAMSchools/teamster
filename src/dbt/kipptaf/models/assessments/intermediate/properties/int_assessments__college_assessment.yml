@@ -8,24 +8,53 @@ models:
       - name: administration_round
         description: The date the test was taken, in MMM YY format.
         data_type: string
+      - name: academic_year
+        description: The academic year when the test was taken, in YYYY format.
+        data_type: int64
       - name: test_date
         description: The date the test was taken, in YYYY-MM-DD.
         data_type: date
       - name: scope
+        description:
+          The name of the assessment (ACT, SAT, PSAT NMSQT, PSAT10, PSAT 8/9)
         data_type: string
       - name: subject_area
+        description:
+          The subject area of the test (Math, EBRW, English, Combined,
+          Composite, etc)
         data_type: string
       - name: course_discipline
+        description:
+          The powerschool credit_type field equivalent (MATH, ENG, SCI or NULL
+          for Composite/Combine)
         data_type: string
       - name: score_type
+        description:
+          A concatenated field that shows the scope and the subject area of the
+          score. It assists with connecting this table with the graduation path
+          combos table, and the goals/cutoff tables.
         data_type: string
       - name: scale_score
+        description: The scale score for the test.
         data_type: numeric
       - name: rn_highest
+        description:
+          Tags the scores for the same score_type from highest to lowest, per
+          student.
         data_type: int64
       - name: test_month
+        description: The name of the month the test was taken.
         data_type: string
       - name: test_type
+        description:
+          The only value of this field is "Official". It is used to later
+          distinguish these scores from in-house Practice tests from Illuminate.
         data_type: string
       - name: salesforce_id
+        description: The student's Salesforce ID.
+        data_type: string
+      - name: admin_season
+        description:
+          A grouping of the tests, based on the scope, so that each score falls
+          under one of the 3 seasons categories to address off-schedule testing.
         data_type: string
