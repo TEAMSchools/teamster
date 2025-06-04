@@ -414,7 +414,7 @@ left join
     on s.academic_year = sf2.academic_year - 1
     and s.discipline = sf2.discipline
     and s.student_number = sf2.student_number
-
+    /*
 union all
 
 select
@@ -485,3 +485,5 @@ select
     results_type,
 
 from {{ ref("rpt_tableau__state_assessments_dashboard_nj_prelim") }}
+*/
+    

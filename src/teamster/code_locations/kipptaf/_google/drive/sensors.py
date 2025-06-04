@@ -20,12 +20,15 @@ from teamster.libraries.google.drive.resources import GoogleDriveResource
 def google_forms_partition_sensor(
     context: SensorEvaluationContext, google_drive: GoogleDriveResource
 ):
-    files = google_drive.list_files(
-        q="mimeType='application/vnd.google-apps.form' and '1ZJAXcPfmdTDmJCqcMRje0czrwR7cF6hC' in parents",
+    files = google_drive.files_list(
         corpora="drive",
-        driveId="0AKZ2G1Z8rxooUk9PVA",
-        includeItemsFromAllDrives=True,
-        supportsAllDrives=True,
+        drive_id="0AKZ2G1Z8rxooUk9PVA",
+        include_items_from_all_drives=True,
+        q=(
+            "mimeType='application/vnd.google-apps.form' and "
+            "'1ZJAXcPfmdTDmJCqcMRje0czrwR7cF6hC' in parents"
+        ),
+        supports_all_drives=True,
     )
 
     return SensorResult(
