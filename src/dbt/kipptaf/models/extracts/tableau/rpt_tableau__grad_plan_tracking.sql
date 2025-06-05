@@ -3,13 +3,14 @@ with
         select
             _dbt_source_relation,
             studentid,
+            season,
             q1_ae_status,
             q2_ae_status,
             q3_ae_status,
             q4_ae_status,
         from
             {{ ref("int_students__athletic_eligibility") }} pivot (
-                max(quarter_athletic_eligibility_status) for term in (
+                max(eligibility) for quarter in (
                     'Q1' as q1_ae_status,
                     'Q2' as q2_ae_status,
                     'Q3' as q3_ae_status,
