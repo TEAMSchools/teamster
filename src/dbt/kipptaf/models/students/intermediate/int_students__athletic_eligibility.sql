@@ -254,6 +254,7 @@ select
     studentid,
     grade_level,
     grade_level_prev,
+    dob,
     age_eligible,
     is_first_time_ninth,
 
