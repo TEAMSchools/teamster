@@ -72,6 +72,7 @@ with
             e.studentid,
             e.grade_level,
             e.grade_level_prev,
+            e.dob,
 
             a.ada_term as cy_q1_ada,
             a.ada_semester as cy_s1_ada,
@@ -94,6 +95,15 @@ with
                 true,
                 false
             ) as is_first_time_ninth,
+
+            if(
+                date_diff(
+                    date({{ var("current_academic_year") - 1 }}, 09, 01), e.dob, year
+                )
+                >= 19,
+                false,
+                true
+            ) as age_eligible,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join
@@ -244,6 +254,7 @@ select
     studentid,
     grade_level,
     grade_level_prev,
+    age_eligible,
     is_first_time_ninth,
 
     cy_q1_ada,
