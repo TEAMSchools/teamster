@@ -105,7 +105,7 @@ def schoolmint_grow_user_update_op(
 
     yield Output(value=users)
     yield ExpectationResult(
-        success=(len(exceptions) == 0), metadata={"exceptions": exceptions}
+        success=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
     )
 
 

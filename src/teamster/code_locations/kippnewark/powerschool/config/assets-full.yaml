@@ -38,6 +38,8 @@ assets:
     partition_column: whenmodified
   - asset_name: s_nj_usr_x
     partition_column: whenmodified
+  - asset_name: s_stu_x
+    partition_column: whenmodified
   - asset_name: schoolstaff
     partition_column: whenmodified
   - asset_name: sectionteacher

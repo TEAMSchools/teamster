@@ -80,40 +80,6 @@ with
             2022 as academic_year,
             'FAST_NEW' as source_system,
             'FL' as destination_system,
-    ),
-
-    prev_pm3 as (
-        select
-            f.student_id,
-            f.assessment_subject,
-            f.scale_score as prev_pm3_scale,
-            f.achievement_level_int as prev_pm3_level_int,
-
-            i.sublevel_name as prev_pm3_sublevel_name,
-            i.sublevel_number as prev_pm3_sublevel_number,
-
-            f.academic_year + 1 as academic_year_next,
-
-            round(
-                rank() over (
-                    partition by
-                        f.academic_year, f.assessment_grade, f.assessment_subject
-                    order by f.scale_score asc
-                ) / count(*) over (
-                    partition by
-                        f.academic_year, f.assessment_grade, f.assessment_subject
-                ),
-                4
-            ) as fldoe_percentile_rank,
-        from {{ ref("stg_fldoe__fast") }} as f
-        left join
-            {{ ref("stg_assessments__iready_crosswalk") }} as i
-            on f.assessment_subject = i.test_name
-            and f.assessment_grade = i.grade_level
-            and f.scale_score between i.scale_low and i.scale_high
-            and i.source_system = 'FAST_NEW'
-            and i.destination_system = 'FL'
-        where f.administration_window = 'PM3'
     )
 
 select

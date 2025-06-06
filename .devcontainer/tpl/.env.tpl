@@ -56,6 +56,7 @@ ILLUMINATE_SFTP_USERNAME=op://Data Team/Illuminate SFTP/username
 IREADY_SFTP_HOST=op://Data Team/iReady SFTP/host
 IREADY_SFTP_PASSWORD=op://Data Team/iReady SFTP/password
 IREADY_SFTP_USERNAME=op://Data Team/iReady SFTP/username
+KNOWBE4_API_KEY=op://Data Team/KnowBe4 Reporting REST API/credential
 KTAF_SFTP_HOST_IP=op://Data Team/ID Auto SFTP/host
 KTAF_SFTP_PASSWORD=op://Data Team/ID Auto SFTP/password
 KTAF_SFTP_USERNAME=op://Data Team/ID Auto SFTP/username

@@ -29,7 +29,7 @@ def google_directory_user_create_op(
 
     yield Output(value=members)
     yield ExpectationResult(
-        success=(len(exceptions) == 0), metadata={"exceptions": exceptions}
+        success=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
     )
 
 
@@ -45,7 +45,7 @@ def google_directory_member_create_op(
 
     yield Output(value=None)
     yield ExpectationResult(
-        success=(len(exceptions) == 0), metadata={"exceptions": exceptions}
+        success=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
     )
 
 
@@ -62,7 +62,7 @@ def google_directory_user_update_op(
 
     yield Output(value=None)
     yield ExpectationResult(
-        success=(len(exceptions) == 0), metadata={"exceptions": exceptions}
+        success=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
     )
 
 
@@ -78,5 +78,5 @@ def google_directory_role_assignment_create_op(
 
     yield Output(value=None)
     yield ExpectationResult(
-        success=(len(exceptions) == 0), metadata={"exceptions": exceptions}
+        success=(len(exceptions) == 0), metadata={"exceptions": str(exceptions)}
     )

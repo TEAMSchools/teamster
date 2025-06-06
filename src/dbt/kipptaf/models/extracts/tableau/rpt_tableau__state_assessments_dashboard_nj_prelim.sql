@@ -1,5 +1,8 @@
-{#- CHANGE YEAR HERE ONLY -#}
-{%- set academic_year = "2023" -%}
+{% set comparison_entities = [
+    {"label": "City", "prefix": "city"},
+    {"label": "State", "prefix": "state"},
+    {"label": "Neighborhood Schools", "prefix": "neighborhood_schools"},
+] %}
 
 with
     students_nj as (
@@ -26,10 +29,11 @@ with
             ms_attended,
             iep_status,
             advisory,
+            year_in_network,
         from {{ ref("int_extracts__student_enrollments") }}
         where
             region in ('Camden', 'Newark')
-            and academic_year >= {{ academic_year }}
+            and academic_year = {{ var("current_academic_year") }}
             and grade_level > 2
             and rn_year = 1
     ),
@@ -60,7 +64,7 @@ with
             e.rn_credittype_year = 1
             and not e.is_dropped_section
             and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
-            and e.cc_academic_year >= {{ academic_year }}
+            and e.cc_academic_year = {{ var("current_academic_year") }}
     ),
 
     assessments_nj as (
@@ -133,14 +137,38 @@ with
                 then concat('ELA', regexp_extract(test_name, r'.{6}(.{2})'))
             end as test_code,
         from {{ ref("stg_pearson__student_list_report") }}
-        where state_student_identifier is not null and administration = 'Spring'
+        where
+            state_student_identifier is not null
+            and administration = 'Spring'
+            and academic_year = {{ var("current_academic_year") }}
     ),
 
     state_comps as (
-        select academic_year, test_name, test_code, region, city, `state`,
-        from
-            {{ ref("stg_assessments__state_test_comparison") }}
-            pivot (avg(percent_proficient) for comparison_entity in ('City', 'State'))
+        select
+            academic_year,
+            test_name,
+            test_code,
+            region,
+            'Spring' as season,
+            {% for entity in comparison_entities %}
+                avg(
+                    case
+                        when comparison_entity = '{{ entity.label }}'
+                        then percent_proficient
+                    end
+                ) as {{ entity.prefix }}_percent_proficient,
+                avg(
+                    case
+                        when comparison_entity = '{{ entity.label }}'
+                        then total_students
+                    end
+                ) as {{ entity.prefix }}_total_students
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+
+        from {{ ref("stg_assessments__state_test_comparison") }}
+        where academic_year = {{ var("current_academic_year") }}
+        group by academic_year, test_name, test_code, region
     )
 
 select
@@ -164,6 +192,7 @@ select
     s.ms_attended,
     s.lep_status,
     s.advisory,
+    s.year_in_network,
 
     a.state_id,
     a.assessment_name,
@@ -185,8 +214,13 @@ select
     mcur.teachernumber as teacher_number_current,
     mcur.teacher_name as teacher_name_current,
 
-    c.city as proficiency_city,
-    c.state as proficiency_state,
+    c.city_percent_proficient as proficiency_city,
+    c.state_percent_proficient as proficiency_state,
+    c.neighborhood_schools_percent_proficient as proficiency_neighborhood_schools,
+
+    c.city_total_students as total_students_city,
+    c.state_total_students as total_students_state,
+    c.neighborhood_schools_total_students as total_students_neighborhood_schools,
 
     g.grade_level as assessment_grade_level,
     g.grade_goal,
@@ -201,6 +235,7 @@ select
 
     'Preliminary' as results_type,
     null as test_grade,
+
 from students_nj as s
 inner join
     assessments_nj as a
