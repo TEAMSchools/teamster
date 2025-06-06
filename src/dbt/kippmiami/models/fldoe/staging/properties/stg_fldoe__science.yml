@@ -1,13 +1,11 @@
 version: 2
 models:
-  - name: stg_fldoe__eoc
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("fldoe",
-        "src_fldoe__eoc") | replace("`", "") }}')
+  - name: stg_fldoe__science
+    # config:
+    #   pre_hook:
+    #     CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("fldoe",
+    #     "src_fldoe__science") | replace("`", "") }}')
     columns:
-      - name: test_name
-        data_type: string
       - name: student_id
         data_type: string
       - name: local_id
@@ -42,39 +40,35 @@ models:
         data_type: string
       - name: testing_location
         data_type: string
-      - name: 1_origins_and_purposes_of_law_and_government_performance
+      - name: 1_nature_of_science_performance
         data_type: string
-      - name: 2_roles_rights_and_responsibilities_of_citizens_performance
+      - name: 2_earth_and_space_science_performance
         data_type: string
-      - name: 3_government_policies_and_political_processes_performance
+      - name: 3_physical_science_performance
         data_type: string
-      - name: 4_organization_and_function_of_government_performance
-        data_type: string
-      - name: 1_expressions_functions_and_data_analysis_performance
-        data_type: string
-      - name: 2_linear_relationships_performance
-        data_type: string
-      - name: 3_non_linear_relationships_performance
+      - name: 4_life_science_performance
         data_type: string
       - name: administration_window
         data_type: string
       - name: season
         data_type: string
+      - name: discipline
+        data_type: string
+      - name: assessment_subject
+        data_type: string
+      - name: assessment_grade
+        data_type: int64
       - name: academic_year
+        data_type: int64
+      - name: scale_score
         data_type: int64
       - name: achievement_level
         data_type: string
       - name: enrolled_grade
         data_type: int64
-      - name: discipline
-        data_type: string
-      - name: assessment_subject
-        data_type: string
-      - name: test_code
-        data_type: string
-      - name: scale_score
-        data_type: int64
       - name: achievement_level_int
         data_type: int64
       - name: is_proficient
         data_type: boolean
+      - name: test_code
+        data_type: string

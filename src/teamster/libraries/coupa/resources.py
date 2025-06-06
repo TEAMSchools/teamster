@@ -24,6 +24,7 @@ class CoupaResource(ConfigurableResource):
 
         # instantiate client
         self._session = OAuth2Session(
+            # trunk-ignore(pyright/reportArgumentType)
             client=BackendApplicationClient(client_id=self.client_id, scope=self.scope)
         )
 

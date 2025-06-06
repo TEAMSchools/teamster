@@ -27,6 +27,47 @@ with
             row_number() over (partition by applicant order by id asc) as rn_applicant,
         from {{ ref("base_kippadb__application") }}
         where matriculation_decision = 'Matriculated (Intent to Enroll)'
+    ),
+
+    dps_responses as (
+        select
+            respondent_email,
+            item_abbreviation,
+            text_value,
+            last_submitted_date_local,
+            max(last_submitted_date_local) over (
+                partition by respondent_email, item_abbreviation, text_value
+            )
+            = last_submitted_date_local as most_recent_submission,
+        from {{ ref("int_google_forms__form_responses") }}
+        where form_id = '1KD8HAfJNdaGNg2VJbxnJ5Wedf8wrPp1QnBYBEG2Elu4'
+    ),
+
+    dps_pivot as (
+        select
+            respondent_email,
+            last_submitted_date_local as dps_submit_date_most_recent,
+            desired_pathway as dps_desired_pathway,
+            secondary_pathway as dps_secondary_pathway,
+            interested_career_industry as dps_interested_career_industry,
+            additional_future_plans as dps_additional_future_plans,
+            kfwd_support as dps_kfwd_support,
+            dream_career as dps_dream_career,
+            row_number() over (
+                partition by respondent_email order by last_submitted_date_local desc
+            ) as rn_response,
+        from
+            dps_responses pivot (
+                max(text_value) for item_abbreviation in (
+                    'desired_pathway',
+                    'secondary_pathway',
+                    'interested_career_industry',
+                    'additional_future_plans',
+                    'kfwd_support',
+                    'dream_career'
+                )
+            )
+        where most_recent_submission
     )
 
 -- trunk-ignore(sqlfluff/ST06)
@@ -109,6 +150,16 @@ select
 
     if(kt.overgrad_students_id is not null, 'Yes', 'No') as has_overgrad_account_yn,
     kt.overgrad_students_assigned_counselor_lastfirst as overgrad_counselor,
+
+    dps.dps_submit_date_most_recent,
+    dps.dps_desired_pathway,
+    dps.dps_secondary_pathway,
+    dps.dps_interested_career_industry,
+    dps.dps_additional_future_plans,
+    dps.dps_kfwd_support,
+    dps.dps_dream_career,
+
+    if(dps.dps_submit_date_most_recent is not null, 1, 0) as is_submitted_dps_int,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
@@ -132,4 +183,5 @@ left join
     on co.studentid = gpa.studentid
     and co.schoolid = gpa.schoolid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+left join dps_pivot as dps on dps.respondent_email = co.student_email_google
 where co.rn_undergrad = 1 and co.grade_level != 99

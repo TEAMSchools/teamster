@@ -1,6 +1,6 @@
 from dagster import MultiPartitionsDefinition, StaticPartitionsDefinition
 
-from teamster.code_locations.kippnewark import CODE_LOCATION
+from teamster.code_locations.kippnewark import CODE_LOCATION, CURRENT_FISCAL_YEAR
 from teamster.code_locations.kippnewark.pearson.schema import (
     NJGPA_SCHEMA,
     NJSLA_SCHEMA,
@@ -25,7 +25,12 @@ njgpa = build_sftp_file_asset(
     ssh_resource_key=ssh_resource_key,
     partitions_def=MultiPartitionsDefinition(
         {
-            "fiscal_year": StaticPartitionsDefinition(["22", "23", "24"]),
+            "fiscal_year": StaticPartitionsDefinition(
+                [
+                    str(year)[-2:]
+                    for year in range(2022, CURRENT_FISCAL_YEAR.fiscal_year + 1)
+                ]
+            ),
             "administration": StaticPartitionsDefinition(["spr", "fbk"]),
         }
     ),
@@ -46,7 +51,10 @@ student_list_report = build_sftp_file_asset(
         {
             "test_type": StaticPartitionsDefinition(["njsla", "njgpa"]),
             "administration_fiscal_year": StaticPartitionsDefinition(
-                ["Spring2024", "Spring2023", "Spring2022"]
+                [
+                    f"Spring{year}"
+                    for year in range(2022, CURRENT_FISCAL_YEAR.fiscal_year + 1)
+                ]
             ),
         }
     ),
@@ -58,7 +66,9 @@ njsla = build_sftp_file_asset(
     remote_file_regex=r"pcspr(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+\.csv",
     avro_schema=NJSLA_SCHEMA,
     ssh_resource_key=ssh_resource_key,
-    partitions_def=StaticPartitionsDefinition(["19", "22", "23", "24"]),
+    partitions_def=StaticPartitionsDefinition(
+        [str(year)[-2:] for year in range(2019, CURRENT_FISCAL_YEAR.fiscal_year + 1)]
+    ),
 )
 
 njsla_science = build_sftp_file_asset(
@@ -67,7 +77,9 @@ njsla_science = build_sftp_file_asset(
     remote_file_regex=r"njs(?P<fiscal_year>\d+)_NJ-\d+_\w+\.csv",
     avro_schema=NJSLA_SCIENCE_SCHEMA,
     ssh_resource_key=ssh_resource_key,
-    partitions_def=StaticPartitionsDefinition(["22", "23", "24"]),
+    partitions_def=StaticPartitionsDefinition(
+        [str(year)[-2:] for year in range(2022, CURRENT_FISCAL_YEAR.fiscal_year + 1)]
+    ),
 )
 
 parcc = build_sftp_file_asset(

@@ -1,0 +1,26 @@
+version: 2
+
+sources:
+  - name: knowbe4
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_knowbe4
+    tables:
+      - name: src_knowbe4__training_enrollments
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base') }}/knowbe4/training/enrollments/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            group: knowbe4
+            asset_key:
+              - kipptaf
+              - knowbe4
+              - training
+              - enrollments

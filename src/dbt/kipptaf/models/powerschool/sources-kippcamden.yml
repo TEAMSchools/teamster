@@ -886,3 +886,11 @@ sources:
               - kippcamden
               - powerschool
               - stg_powerschool__gptarget
+      - name: stg_powerschool__s_stu_x
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippcamden
+              - powerschool
+              - stg_powerschool__s_stu_x
