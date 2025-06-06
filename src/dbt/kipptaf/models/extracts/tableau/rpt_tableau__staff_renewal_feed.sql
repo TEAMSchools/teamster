@@ -83,7 +83,7 @@ with
             s.ny_entity,
             s.ny_location,
             s.ny_dept,
-            s.ny_title,
+            trim(s.ny_title) as ny_title,
             s.nonrenewal_reason,
             s.nonrenewal_notes,
             s.ny_salary,
@@ -179,7 +179,7 @@ with
             {{ ref("stg_people__renewal_letter_mapping") }} as rlm
             on rlm.entity = s.ny_entity
             and rlm.department = s.ny_dept
-            and rlm.jobs = s.ny_title
+            and rlm.jobs = trim(s.ny_title)
     )
 
 select
@@ -210,7 +210,13 @@ select
                 '&entry.678233722=',
                 coalesce(
                     concat(
-                        ny_entity, ' - ', ny_location, ' - ', ny_dept, ' ', ny_title
+                        ny_entity,
+                        ' - ',
+                        ny_location,
+                        ' - ',
+                        ny_dept,
+                        ' ',
+                        trim(ny_title)
                     ),
                     ''
                 ),
