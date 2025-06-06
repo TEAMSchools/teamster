@@ -103,7 +103,7 @@ with
                 >= 19,
                 false,
                 true
-            ) as age_eligible,
+            ) as is_age_eligible,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join
@@ -155,6 +155,8 @@ with
             *,
 
             case
+                when not is_age_eligible
+                then 'Ineligible - Age'
                 when is_first_time_ninth
                 then 'Eligible'
                 when py_earned_credits < 30
@@ -255,7 +257,7 @@ select
     grade_level,
     grade_level_prev,
     dob,
-    age_eligible,
+    is_age_eligible,
     is_first_time_ninth,
 
     cy_q1_ada,
