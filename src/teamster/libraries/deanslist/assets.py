@@ -10,9 +10,9 @@ from dagster import (
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
-    _check,
     asset,
 )
+from dagster_shared import check
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
@@ -95,10 +95,10 @@ def build_deanslist_multi_partition_asset(
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
-        partitions_def = _check.inst(
+        partitions_def = check.inst(
             obj=context.assets_def.partitions_def, ttype=MultiPartitionsDefinition
         )
-        partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
+        partition_key = check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
 
         date_partition_def = partitions_def.get_partitions_def_for_dimension("date")
         date_partition_key = datetime.fromisoformat(
@@ -152,7 +152,7 @@ def build_deanslist_paginated_multi_partition_asset(
         params = {}
 
     @asset(
-        key=[code_location, "deanslist", "behavior"],
+        key=[code_location, "deanslist", endpoint],
         metadata=params,
         io_manager_key="io_manager_gcs_file",
         partitions_def=partitions_def,
@@ -161,7 +161,7 @@ def build_deanslist_paginated_multi_partition_asset(
         kinds={"python"},
     )
     def _asset(context: AssetExecutionContext, deanslist: DeansListResource):
-        partition_key = _check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
+        partition_key = check.inst(obj=context.partition_key, ttype=MultiPartitionKey)
 
         date_partition_key = datetime.fromisoformat(
             partition_key.keys_by_dimension["date"]

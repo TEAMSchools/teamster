@@ -9,16 +9,15 @@ from dagster import (
     MonthlyPartitionsDefinition,
     Output,
     TimeWindowPartitionsDefinition,
-    _check,
     asset,
 )
+from dagster_shared import check
 from dateutil.relativedelta import relativedelta
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
-from teamster.libraries.powerschool.sis.utils import open_ssh_tunnel
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -127,7 +126,7 @@ def build_powerschool_table_asset(
         )
 
         context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
-        ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
+        ssh_tunnel = ssh_powerschool.open_ssh_tunnel()
 
         try:
             connection = db_powerschool.connect()
@@ -136,7 +135,7 @@ def build_powerschool_table_asset(
             raise e
 
         try:
-            file_path = _check.inst(
+            file_path = check.inst(
                 obj=db_powerschool.execute_query(
                     connection=connection,
                     query=sql,

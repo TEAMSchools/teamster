@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: stg_people__campus_crosswalk
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Name
+        data_type: string
+      - name: Location_Name
+        data_type: string
+      - name: Region
+        data_type: string
+      - name: Grade_Band
+        data_type: string
+      - name: PowerSchool_School_ID
+        data_type: int64
+      - name: Reporting_School_ID
+        data_type: int64
+      - name: Abbreviation
+        data_type: string
+      - name: Is_Pathways
+        data_type: boolean

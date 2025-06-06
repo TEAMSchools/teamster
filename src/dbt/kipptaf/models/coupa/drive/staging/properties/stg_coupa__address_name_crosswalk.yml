@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_coupa__address_name_crosswalk
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: adp_home_work_location_name
+        data_type: string
+      - name: coupa_address_name
+        data_type: string

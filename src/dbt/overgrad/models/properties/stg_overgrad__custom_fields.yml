@@ -1,6 +1,10 @@
 version: 2
 models:
   - name: stg_overgrad__custom_fields
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("overgrad",
+        "src_overgrad__custom_fields") | replace("`", "") }}')
     columns:
       - name: id
         data_type: int64

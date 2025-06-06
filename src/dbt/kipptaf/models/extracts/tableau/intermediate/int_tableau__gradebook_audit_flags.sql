@@ -3,6 +3,7 @@
 with
     student_unpivot as (
         select *, 'assignment_student' as cte_grouping,
+
         from
             {{ ref("int_tableau__gradebook_audit_assignments_student") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -18,10 +19,14 @@ with
                     assign_s_hs_score_not_conversion_chart_options
                 )
             )
+        where
+            region_school_level_credit_type
+            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI', 'MiamiESSOC')
     ),
 
     teacher_unpivot_cca as (
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
+
         from
             {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -37,15 +42,21 @@ with
             and r.assignment_category_code = f.code
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'class_category_assignment'
+        where
+            r.region_school_level_credit_type
+            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI', 'MiamiESSOC')
     ),
 
     teacher_unpivot_cc as (
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
+
         from
             {{ ref("int_tableau__gradebook_audit_categories_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_teacher_s_total_greater_200,
                     qt_teacher_s_total_less_200,
+                    qt_teacher_s_total_greater_100,
+                    qt_teacher_s_total_less_100,
                     w_expected_assign_count_not_met,
                     f_expected_assign_count_not_met,
                     s_expected_assign_count_not_met,
@@ -88,6 +99,29 @@ with
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping in ('student_course', 'student')
             and f.audit_category != 'Conduct Code'
+        where
+            concat(r.region_school_level_credit_type, r.audit_flag_name) not in (
+                'MiamiESCOCURqt_comment_missing',
+                'MiamiESRHETqt_comment_missing',
+                'MiamiESSCIqt_comment_missing'
+            )
+            and concat(r.region_school_level_credit_type, r.audit_flag_name) not in (
+                'MiamiESSOCqt_comment_missing',
+                'MiamiESSOCqt_g1_g8_conduct_code_missing',
+                'MiamiESSOCqt_g1_g8_conduct_code_incorrect'
+            )
+            and concat(
+                r.region_school_level,
+                r.course_number,
+                r.audit_flag_name
+            ) not in (
+                'MiamiESWRI01133G4qt_comment_missing',
+                'MiamiESWRI01134G5qt_comment_missing',
+                'MiamiESWRI01133G4qt_g1_g8_conduct_code_missing',
+                'MiamiESWRI01134G5qt_g1_g8_conduct_code_missing',
+                'MiamiESWRI01133G4qt_g1_g8_conduct_code_incorrect',
+                'MiamiESWRI01134G5qt_g1_g8_conduct_code_incorrectg'
+            )
     ),
 
     eoq_items_conduct_code as (
@@ -114,12 +148,17 @@ with
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'student_course'
             and f.audit_category = 'Conduct Code'
-        where r.school_level = 'ES'
+        where
+            r.school_level = 'ES'
+            and r.region_school_level_credit_type != 'MiamiESSOC'
+            and concat(r.region_school_level, r.course_number)
+            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
     ),
 
+    /* w_grade_inflation, qt_effort_grade_missing, qt_formative_grade_missing,
+    qt_summative_grade_missing */
     student_course_category as (
-        select  -- w_grade_inflation and qt_effort_grade_missing
-            r.*, f.cte_grouping, f.audit_category, f.code_type,
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
             {{
@@ -128,9 +167,9 @@ with
                 )
             }}
             unpivot (
-                audit_flag_value for audit_flag_name
-                in (qt_effort_grade_missing, w_grade_inflation)
+                audit_flag_value for audit_flag_name in (qt_effort_grade_missing)
             ) as r
+
         inner join
             {{ ref("stg_reporting__gradebook_flags") }} as f
             on r.region = f.region
@@ -140,6 +179,83 @@ with
             and r.assignment_category_code = 'W'
             and f.cte_grouping = 'student_course_category'
 
+        union all
+
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
+
+        from
+            {{
+                ref(
+                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
+                )
+            }}
+            unpivot (audit_flag_value for audit_flag_name in (w_grade_inflation)) as r
+
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.quarter = f.code
+            and r.audit_flag_name = f.audit_flag_name
+            and r.assignment_category_code = 'W'
+            and f.cte_grouping = 'student_course_category'
+        where
+            r.region_school_level_credit_type != 'MiamiESSOC'
+            and concat(r.region_school_level, r.course_number)
+            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
+
+        union all
+
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
+
+        from
+            {{
+                ref(
+                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
+                )
+            }}
+            unpivot (
+                audit_flag_value for audit_flag_name in (qt_formative_grade_missing)
+            ) as r
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.quarter = f.code
+            and r.audit_flag_name = f.audit_flag_name
+            and r.assignment_category_code = 'F'
+            and f.cte_grouping = 'student_course_category'
+        where
+            r.region_school_level_credit_type != 'MiamiESSOC'
+            and concat(r.region_school_level, r.course_number)
+            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
+
+        union all
+
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
+
+        from
+            {{
+                ref(
+                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
+                )
+            }}
+            unpivot (
+                audit_flag_value for audit_flag_name in (qt_summative_grade_missing)
+            ) as r
+
+        inner join
+            {{ ref("stg_reporting__gradebook_flags") }} as f
+            on r.region = f.region
+            and r.school_level = f.school_level
+            and r.quarter = f.code
+            and r.audit_flag_name = f.audit_flag_name
+            and r.assignment_category_code = 'S'
+            and f.cte_grouping = 'student_course_category'
+        where
+            r.region_school_level_credit_type != 'MiamiESSOC'
+            and concat(r.region_school_level, r.course_number)
+            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
     )
 
 -- this captures all flags from assignment_student
@@ -263,6 +379,14 @@ select
     f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between r.week_start_monday and r.week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from student_unpivot as r
 inner join
     {{ ref("stg_reporting__gradebook_flags") }} as f
@@ -281,8 +405,9 @@ left join
     and r.assignmentid = t.assignmentid
 
 union all
--- this captures all student_course_category: qt_effort_grade_missing and
--- w_grade_inflation
+/* this captures all student_course_category: qt_effort_grade_missing,
+qt_formative_grade_missing, qt_summative_grade_missing, and
+w_grade_inflation */
 select
     _dbt_source_relation,
     academic_year,
@@ -402,6 +527,14 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between week_start_monday and week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from student_course_category
 
 union all
@@ -525,6 +658,14 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between week_start_monday and week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from eoq_items
 
 union all
@@ -650,6 +791,14 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between week_start_monday and week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from eoq_items_conduct_code
 
 union all
@@ -787,6 +936,14 @@ select
     r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between r.week_start_monday and r.week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from teacher_unpivot_cca as r
 
 union all
@@ -923,4 +1080,12 @@ select
     r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between r.week_start_monday and r.week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from teacher_unpivot_cc as r

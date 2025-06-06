@@ -13,6 +13,7 @@ with
                 ),
                 2
             ) as category_quarter_average_all_courses,
+
         from {{ ref("int_powerschool__category_grades") }}
         where
             yearid = {{ var("current_academic_year") - 1990 }}
@@ -51,6 +52,27 @@ select
         true,
         false
     ) as qt_effort_grade_missing,
+
+    if(
+        s.region = 'Miami'
+        and s.school_level = 'ES'
+        and ge.assignment_category_code = 'F'
+        and cg.percent_grade is null
+        and s.is_quarter_end_date_range,
+        true,
+        false
+    ) as qt_formative_grade_missing,
+
+    if(
+        s.region = 'Miami'
+        and s.school_level = 'ES'
+        and s.credit_type not in ('ENG', 'MATH')
+        and ge.assignment_category_code = 'S'
+        and cg.percent_grade is null
+        and s.is_quarter_end_date_range,
+        true,
+        false
+    ) as qt_summative_grade_missing,
 
 from {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }} as s
 inner join

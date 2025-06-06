@@ -1,0 +1,36 @@
+version: 2
+models:
+  - name: stg_reporting__promo_status_cutoffs
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Region
+        data_type: string
+      - name: Academic_Year
+        data_type: int64
+      - name: Cohort
+        data_type: int64
+      - name: Grade_Level
+        data_type: int64
+      - name: Special_Population
+        data_type: string
+      - name: Domain
+        data_type: string
+      - name: Discipline
+        data_type: string
+      - name: Subject
+        data_type: string
+      - name: Code
+        data_type: string
+      - name: Type
+        data_type: string
+      - name: SF_Standardized_Test
+        data_type: string
+      - name: Cutoff
+        data_type: float64
+      - name: Is_Exempt
+        data_type: boolean
+      - name: Cutoff_Alt
+        data_type: float64

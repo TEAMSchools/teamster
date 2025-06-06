@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_collegeboard__sat_id_crosswalk
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: College_Board_ID
+        data_type: int64
+      - name: PowerSchool_Student_Number
+        data_type: int64

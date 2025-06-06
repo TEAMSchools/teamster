@@ -1,0 +1,150 @@
+version: 2
+models:
+  - name: stg_powerschool__users
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__users") | replace("`", "") }}')
+    columns:
+      - name: lastfirst
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: title
+        data_type: string
+      - name: homeroom
+        data_type: string
+      - name: email_addr
+        data_type: string
+      - name: password
+        data_type: string
+      - name: ipaddrrestrict
+        data_type: string
+      - name: accessvalue
+        data_type: string
+      - name: homepage
+        data_type: string
+      - name: loginid
+        data_type: string
+      - name: defaultstudscrn
+        data_type: string
+      - name: teachernumber
+        data_type: string
+      - name: ssn
+        data_type: string
+      - name: home_phone
+        data_type: string
+      - name: school_phone
+        data_type: string
+      - name: street
+        data_type: string
+      - name: city
+        data_type: string
+      - name: state
+        data_type: string
+      - name: zip
+        data_type: string
+      - name: periodsavail
+        data_type: string
+      - name: powergradepw
+        data_type: string
+      - name: canchangeschool
+        data_type: string
+      - name: teacherloginpw
+        data_type: string
+      - name: nameasimported
+        data_type: string
+      - name: teacherloginid
+        data_type: string
+      - name: teacherloginip
+        data_type: string
+      - name: wm_status
+        data_type: string
+      - name: wm_statusdate
+        data_type: date
+      - name: wm_address
+        data_type: string
+      - name: wm_password
+        data_type: string
+      - name: wm_createdate
+        data_type: date
+      - name: wm_ta_flag
+        data_type: string
+      - name: wm_ta_date
+        data_type: date
+      - name: wm_alias
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: preferredname
+        data_type: string
+      - name: lastmeal
+        data_type: string
+      - name: staffpers_guid
+        data_type: string
+      - name: sif_stateprid
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: psguid
+        data_type: string
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: dcid
+        data_type: int64
+      - name: homeschoolid
+        data_type: int64
+      - name: photo
+        data_type: int64
+      - name: numlogins
+        data_type: int64
+      - name: allowloginstart
+        data_type: int64
+      - name: allowloginend
+        data_type: int64
+      - name: psaccess
+        data_type: int64
+      - name: groupvalue
+        data_type: int64
+      - name: lunch_id
+        data_type: float64
+      - name: supportcontact
+        data_type: int64
+      - name: wm_tier
+        data_type: int64
+      - name: wm_createtime
+        data_type: int64
+      - name: wm_exclude
+        data_type: int64
+      - name: adminldapenabled
+        data_type: int64
+      - name: teacherldapenabled
+        data_type: int64
+      - name: maximum_load
+        data_type: int64
+      - name: gradebooktype
+        data_type: int64
+      - name: fedethnicity
+        data_type: int64
+      - name: fedracedecline
+        data_type: int64
+      - name: ptaccess
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64

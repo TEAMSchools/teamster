@@ -8,9 +8,9 @@ from dagster import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
-    _check,
     asset,
 )
+from dagster_shared import check
 from numpy import nan
 from pandas import read_csv
 from pypdf import PdfReader
@@ -46,16 +46,15 @@ def compose_regex(
 
 def convert_file_to_dict(
     local_filepath: str,
-    sep: str,
-    encoding: str,
     slugify_cols: bool,
     slugify_replacements: list[list[str]] | None = None,
+    **read_csv_kwargs,
 ):
     if slugify_replacements is None:
         slugify_replacements = []
 
     df = read_csv(
-        filepath_or_buffer=local_filepath, sep=sep, encoding=encoding, low_memory=False
+        filepath_or_buffer=local_filepath, low_memory=False, **read_csv_kwargs
     )
 
     df.replace({nan: None}, inplace=True)
@@ -97,6 +96,7 @@ def build_sftp_file_asset(
     exclude_dirs: list[str] | None = None,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
+    file_dtype: type | None = None,
     slugify_cols: bool = True,
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
@@ -133,11 +133,11 @@ def build_sftp_file_asset(
             partition_key = None
 
         if group_name == "iready":
-            partition_key = _check.inst(obj=partition_key, ttype=MultiPartitionKey)
+            partition_key = check.inst(obj=partition_key, ttype=MultiPartitionKey)
 
             academic_year_key, subject_key = partition_key.keys_by_dimension.values()
 
-            multi_partitions_def = _check.inst(
+            multi_partitions_def = check.inst(
                 obj=context.assets_def.partitions_def, ttype=MultiPartitionsDefinition
             )
 
@@ -214,15 +214,22 @@ def build_sftp_file_asset(
         elif remote_file_regex[-4:] == ".pdf":
             records, n_rows = extract_pdf_to_dict(
                 stream=local_filepath,
-                pdf_row_pattern=_check.not_none(value=pdf_row_pattern),
+                pdf_row_pattern=check.not_none(value=pdf_row_pattern),
             )
         else:
+            read_csv_kwargs: dict[str, object] = {
+                "sep": file_sep,
+                "encoding": file_encoding,
+            }
+
+            if file_dtype is not None:
+                read_csv_kwargs["dtype"] = file_dtype
+
             records, (n_rows, _) = convert_file_to_dict(
                 local_filepath=local_filepath,
-                sep=file_sep,
-                encoding=file_encoding,
                 slugify_cols=slugify_cols,
                 slugify_replacements=slugify_replacements,
+                **read_csv_kwargs,
             )
 
             if n_rows == 0:

@@ -31,7 +31,7 @@ with
     )
 
 select
-    a.*,
+    *,
 
     date(new_datetime) as new_date,
     date(phone_screen_complete_datetime) as phone_screen_complete_date,
@@ -39,4 +39,4 @@ select
     date(demo_datetime) as demo_date,
     date(offer_datetime) as offer_date,
     date(hired_datetime) as hired_date,
-from applications as a
+from applications

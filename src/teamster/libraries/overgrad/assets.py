@@ -14,8 +14,12 @@ def build_overgrad_asset(
     partitions_def=None,
     automation_condition=None,
     deps: list | None = None,
+    pool: str | None = None,
 ):
     key = [code_location, "overgrad", name]
+
+    if pool is None:
+        pool = f"overgrad_api_limit_{code_location}"
 
     @asset(
         key=key,
@@ -25,8 +29,8 @@ def build_overgrad_asset(
         automation_condition=automation_condition,
         check_specs=[build_check_spec_avro_schema_valid(key)],
         deps=deps,
+        pool=pool,
         kinds={"python"},
-        pool=f"overgrad_api_limit_{code_location}",
     )
     def _asset(context: AssetExecutionContext, overgrad: OvergradResource):
         if context.assets_def.partitions_def is not None:
@@ -34,7 +38,7 @@ def build_overgrad_asset(
 
             data = [response_json["data"]]
         else:
-            data = overgrad.get_list(path=name)
+            data = overgrad.list(path=name)
 
         if name in ["admissions", "followings"]:
             university_ids = set()

@@ -2,14 +2,10 @@ import json
 
 import py_avro_schema
 
-from teamster.libraries.fldoe.schema import EOC, FAST, FSA, FTE, Science
+from teamster.libraries.fldoe.schema import EOC, FAST, FTE, Science
 
 
 class fast_record(FAST):
-    """helper class for backwards compatibility"""
-
-
-class fsa_record(FSA):
     """helper class for backwards compatibility"""
 
 
@@ -21,10 +17,6 @@ pas_options = (
 
 FAST_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=fast_record, options=pas_options)
-)
-
-FSA_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=fsa_record, options=pas_options)
 )
 
 SCIENCE_SCHEMA = json.loads(

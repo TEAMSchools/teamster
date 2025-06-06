@@ -2,7 +2,6 @@ from dagster import EnvVar, build_resources
 from sqlalchemy import TextClause
 
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
-from teamster.libraries.powerschool.sis.utils import open_ssh_tunnel
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -11,7 +10,7 @@ def test():
         resources={
             "ssh_powerschool": SSHResource(
                 remote_host=EnvVar("PS_SSH_HOST"),
-                remote_port=EnvVar("PS_SSH_PORT"),
+                remote_port=int(EnvVar("PS_SSH_PORT")),
                 username=EnvVar("PS_SSH_USERNAME"),
                 tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
             ),
@@ -27,7 +26,7 @@ def test():
         ssh_powerschool: SSHResource = resources.ssh_powerschool
         db_powerschool: PowerSchoolODBCResource = resources.db_powerschool
 
-    ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
+    ssh_tunnel = ssh_powerschool.open_ssh_tunnel()
 
     try:
         connection = db_powerschool.connect()

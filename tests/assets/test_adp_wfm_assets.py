@@ -4,11 +4,11 @@ from dagster import (
     AssetsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
-    _check,
     instance_for_test,
     materialize,
 )
 from dagster._core.events import StepMaterializationData
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf.adp.workforce_manager.assets import (
     accrual_reporting_period_summary,
@@ -19,7 +19,7 @@ from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(asset: AssetsDefinition):
-    partitions_def = _check.inst(
+    partitions_def = check.inst(
         obj=asset.partitions_def, ttype=MultiPartitionsDefinition
     )
     date_partitions_def = partitions_def.get_partitions_def_for_dimension("date")
@@ -27,7 +27,7 @@ def _test_asset(asset: AssetsDefinition):
     with instance_for_test() as instance:
         if isinstance(date_partitions_def, DynamicPartitionsDefinition):
             instance.add_dynamic_partitions(
-                partitions_def_name=_check.not_none(value=date_partitions_def.name),
+                partitions_def_name=check.not_none(value=date_partitions_def.name),
                 partition_keys=["foo"],
             )
 
@@ -55,11 +55,11 @@ def _test_asset(asset: AssetsDefinition):
 
     asset_materialization_event = result.get_asset_materialization_events()[0]
 
-    step_materialization_data = _check.inst(
+    step_materialization_data = check.inst(
         asset_materialization_event.event_specific_data, StepMaterializationData
     )
 
-    records = _check.inst(
+    records = check.inst(
         step_materialization_data.materialization.metadata["records"].value, int
     )
 

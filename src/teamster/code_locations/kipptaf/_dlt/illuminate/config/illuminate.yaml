@@ -9,9 +9,23 @@ assets:
         filter_date_taken: true
         op_tags:
           dagster/priority: "1"
+          dagster-k8s/config:
+            container_config:
+              resources:
+                requests:
+                  cpu: 250m
+                limits:
+                  cpu: 1000m
       - table_name: agg_student_responses_group
         op_tags:
           dagster/priority: "1"
+          dagster-k8s/config:
+            container_config:
+              resources:
+                requests:
+                  cpu: 250m
+                limits:
+                  cpu: 1000m
       - table_name: agg_student_responses_standard
         op_tags:
           dagster/priority: "1"
@@ -19,7 +33,7 @@ assets:
             container_config:
               resources:
                 requests:
-                  cpu: 500m
+                  cpu: 250m
                 limits:
                   cpu: 1250m
       - table_name: assessment_grade_levels
@@ -38,11 +52,6 @@ assets:
       - table_name: fields
       - table_name: repositories
       - table_name: repository_grade_levels
-  - schema: national_assessments
-    tables:
-      - table_name: psat_2023
-      - table_name: psat_2024
-      - table_name: psat89_2025
   - schema: public
     tables:
       - table_name: sessions

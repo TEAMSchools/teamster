@@ -10,15 +10,18 @@ sources:
         config:
           enabled: false
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/zendesk/ticket_metrics_archive/*"
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/zendesk/ticket_metrics_archive/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
             hive_partition_uri_prefix:
-              "{{ var('cloud_storage_uri_base') }}/zendesk/ticket_metrics_archive/"
+              "{{ var('cloud_storage_uri_base')
+              }}/zendesk/ticket_metrics_archive/"
         meta:
           dagster:
             asset_key:

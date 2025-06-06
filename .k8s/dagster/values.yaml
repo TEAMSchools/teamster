@@ -328,6 +328,9 @@ workspace:
   # Override the default K8s scheduler
   # schedulerName: ~
 
+  # Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails.
+  failPodOnRunFailure: false
+
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
   # Branch deployments servers have a default TTL of 24 hours
@@ -359,8 +362,9 @@ workspace:
   # runK8sConfig:
   #   containerConfig: # raw config for the pod's main container
   #     resources:
-  #       cpu: 100m
-  #       memory: 128Mi
+  #       limits:
+  #         cpu: 100m
+  #         memory: 128Mi
   #   podTemplateSpecMetadata: # raw config for the pod's metadata
   #     annotations:
   #       mykey: myvalue
@@ -380,8 +384,9 @@ workspace:
   # serverK8sConfig:
   #   containerConfig: # raw config for the pod's main container
   #     resources:
-  #       cpu: 100m
-  #       memory: 128Mi
+  #       limits:
+  #         cpu: 100m
+  #         memory: 128Mi
   #   podTemplateSpecMetadata: # raw config for the pod's metadata
   #     annotations:
   #       mykey: myvalue

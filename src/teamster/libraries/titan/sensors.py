@@ -13,10 +13,10 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
-    _check,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 from paramiko.ssh_exception import SSHException
 
 from teamster.libraries.ssh.resources import SSHResource
@@ -72,7 +72,7 @@ def build_titan_sftp_sensor(
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()
-            partitions_def = _check.not_none(value=a.partitions_def)
+            partitions_def = check.not_none(value=a.partitions_def)
             context.log.info(asset_identifier)
 
             last_run = cursor.get(asset_identifier, 0)
@@ -86,7 +86,7 @@ def build_titan_sftp_sensor(
                 if (
                     match is not None
                     and f.st_mtime > last_run
-                    and _check.not_none(value=f.st_size) > 0
+                    and check.not_none(value=f.st_size) > 0
                 ):
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     run_request_kwargs.append(
@@ -102,8 +102,11 @@ def build_titan_sftp_sensor(
 
                 cursor[asset_identifier] = now_timestamp
 
+        item_getter_key = itemgetter("job_name", "partition_key")
+
         for (job_name, partition_key), group in groupby(
-            iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
+            iterable=sorted(run_request_kwargs, key=item_getter_key),
+            key=item_getter_key,
         ):
             run_requests.append(
                 RunRequest(

@@ -3,7 +3,7 @@
 from dagster import (
     RunRequest,
     SensorResult,
-    _check,
+    check,
     build_sensor_context,
     instance_for_test,
 )
@@ -29,7 +29,7 @@ def test_alchemer_survey_metadata_asset_sensor():
         )
 
     assert isinstance(sensor_result, SensorResult)
-    run_requests = _check.inst(sensor_result.run_requests, list[RunRequest])
+    run_requests = check.inst(sensor_result.run_requests, list[RunRequest])
 
     assert len(run_requests) > 0
 
@@ -48,7 +48,7 @@ def test_alchemer_survey_response_asset_sensor():
         )
 
     assert isinstance(sensor_result, SensorResult)
-    run_requests = _check.inst(sensor_result.run_requests, list[RunRequest])
+    run_requests = check.inst(sensor_result.run_requests, list[RunRequest])
 
     assert len(run_requests) > 0
 """

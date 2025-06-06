@@ -1,7 +1,8 @@
 import json
 
 from bs4 import BeautifulSoup, Tag
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Response, Session, exceptions
 
@@ -9,19 +10,20 @@ from requests import Response, Session, exceptions
 class MClassResource(ConfigurableResource):
     username: str
     password: str
+    request_timeout: float = 60.0
 
     _base_url: str = PrivateAttr(default="https://mclass.amplify.com")
     _session: Session = PrivateAttr(default_factory=Session)
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         portal_redirect = self.get(path="reports/myReports")
 
         soup = BeautifulSoup(markup=portal_redirect.text, features="html.parser")
 
-        kc_form_login = _check.inst(
+        kc_form_login = check.inst(
             obj=soup.find(name="form", id="kc-form-login"), ttype=Tag
         )
 
@@ -42,7 +44,9 @@ class MClassResource(ConfigurableResource):
         response = Response()
 
         try:
-            response = self._session.request(method=method, url=url, **kwargs)
+            response = self._session.request(
+                method=method, url=url, timeout=self.request_timeout, **kwargs
+            )
 
             response.raise_for_status()
             return response

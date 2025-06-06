@@ -25,6 +25,7 @@ select
     w.person__legal_name__given_name,
     w.person__race_code_name,
     w.race_ethnicity_reporting,
+    w.worker_hire_date_recent,
 
     wa.item_id,
     wa.position_id,
@@ -53,9 +54,20 @@ select
     com.communication__work_email__email_uri,
 
     cf.employee_number as custom_field__employee_number,
+    cf.life_experience_in_communities_we_serve,
+    cf.miami_aces_number,
+    cf.nj_pension_number,
+    cf.preferred_race_ethnicity,
+    cf.professional_experience_in_communities_we_serve,
+    cf.received_sign_on_bonus,
+    cf.remote_work_status,
+    cf.teacher_prep_program,
     cf.wf_mgr_accrual_profile,
     cf.wf_mgr_badge_number,
     cf.wf_mgr_ee_type,
+    cf.wf_mgr_home_hyperfind,
+    cf.wf_mgr_loa_return_date,
+    cf.wf_mgr_loa,
     cf.wf_mgr_pay_rule,
     cf.wf_mgr_trigger,
 
@@ -73,10 +85,6 @@ select
     rtw.person__family_name_1
     || ', '
     || rtw.person__given_name as reports_to_formatted_name,
-
-    coalesce(
-        w.worker_dates__rehire_date, w.worker_dates__original_hire_date
-    ) as worker_hire_date_recent,
 
     {{
         dbt_utils.generate_surrogate_key(

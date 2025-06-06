@@ -60,7 +60,11 @@ with
             min(performance_band_set_id) as performance_band_set_id,
             min(date_taken) as date_taken,
 
+            count(distinct assessment_id) as n_assessments,
+
             sum(points) as points,
+
+            array_agg(assessment_id) as assessment_ids,
 
             round(
                 safe_divide(sum(points), sum(points_possible)) * 100, 1
@@ -90,6 +94,8 @@ with
             date_taken,
             points,
             percent_correct,
+            n_assessments,
+            assessment_ids,
             powerschool_school_id,
 
             if(
@@ -153,6 +159,8 @@ with
                 ),
                 performance_band_set_id
             ) as performance_band_set_id,
+
+            if(n_assessments > 1, true, false) as is_multipart_assessment,
         from internal_assessment_rollup
 
         union all
@@ -176,11 +184,18 @@ with
             date_taken,
             points,
             percent_correct,
+
+            1 as n_assessments,
+
+            [assessment_id] as assessment_ids,
+
             powerschool_school_id,
             title,
             assessment_id,
             administered_at,
             performance_band_set_id,
+
+            false as is_multipart_assessment,
         from scaffold_responses
         where not is_internal_assessment
     )
@@ -208,6 +223,9 @@ select
     ru.assessment_id,
     ru.administered_at,
     ru.performance_band_set_id,
+    ru.n_assessments,
+    ru.is_multipart_assessment,
+    ru.assessment_ids,
 
     pbl.label as performance_band_label,
     pbl.label_number as performance_band_label_number,

@@ -29,19 +29,15 @@ op inject -f --in-file=.devcontainer/tpl/adp_wfn_api.key.tpl \
   --out-file=env/adp_wfn_api.key &&
   sudo mv -f env/adp_wfn_api.key /etc/secret-volume/adp_wfn_api.key
 
-op inject -f --in-file=.devcontainer/tpl/dbt_user_creds_json.tpl \
-  --out-file=env/dbt_user_creds_json &&
-  sudo mv -f env/dbt_user_creds_json /etc/secret-volume/dbt_user_creds_json
-
 op inject -f --in-file=.devcontainer/tpl/deanslist_api_key_map_yaml.tpl \
   --out-file=env/deanslist_api_key_map_yaml &&
   sudo mv -f env/deanslist_api_key_map_yaml \
     /etc/secret-volume/deanslist_api_key_map_yaml
 
-op inject -f --in-file=.devcontainer/tpl/gcloud_service_account_json.tpl \
-  --out-file=env/gcloud_service_account_json &&
-  sudo mv -f env/gcloud_service_account_json \
-    /etc/secret-volume/gcloud_service_account_json
+op inject -f --in-file=.devcontainer/tpl/gcloud_dagster_service_account.json.tpl \
+  --out-file=env/gcloud_dagster_service_account.json &&
+  sudo mv -f env/gcloud_dagster_service_account.json \
+    /etc/secret-volume/gcloud_dagster_service_account.json
 
 op inject -f --in-file=.devcontainer/tpl/id_rsa_egencia.tpl \
   --out-file=env/id_rsa_egencia &&
@@ -51,23 +47,20 @@ op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
   --out-file=env/dbt_cloud.yml &&
   sudo mv -f env/dbt_cloud.yml /home/vscode/.dbt/dbt_cloud.yml
 
-op inject -f --in-file=.devcontainer/tpl/gcloud_teamster_dlt_keyfile.json.tpl \
-  --out-file=env/gcloud_teamster_dlt_keyfile.json &&
-  sudo mv -f env/gcloud_teamster_dlt_keyfile.json /etc/secret-volume/gcloud_teamster_dlt_keyfile.json
-
 op inject -f --in-file=.devcontainer/tpl/powerschool_ssh_password.txt.tpl \
   --out-file=env/powerschool_ssh_password.txt &&
   sudo mv -f env/powerschool_ssh_password.txt /etc/secret-volume/powerschool_ssh_password.txt
 
 # auth gcloud
 gcloud auth activate-service-account \
-  --key-file=/etc/secret-volume/gcloud_service_account_json
+  --key-file=/etc/secret-volume/gcloud_dagster_service_account.json
 
 # install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh || true
 
 # install dependencies
 uv tool install datamodel-code-generator
+uv tool install dagster-dg
 uv sync --frozen
 
 # prepare dbt projects

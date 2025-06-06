@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: stg_people__salary_scale
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Scale_Name
+        data_type: string
+      - name: Job_Title
+        data_type: string
+      - name: Salary_Rule
+        data_type: string
+      - name: Region
+        data_type: string
+      - name: School_Level
+        data_type: string
+      - name: Scale_CY_Salary
+        data_type: int64
+      - name: Scale_NY_Salary
+        data_type: int64
+      - name: Scale_Step
+        data_type: int64
+      - name: Academic_Year
+        data_type: int64
+      - name: scale_ny_salary_plus_1_cent
+        data_type: float64
+      - name: scale_ny_salary_plus_1_dollar
+        data_type: int64
+      - name: scale_ny_salary_minus_1_dollar
+        data_type: int64

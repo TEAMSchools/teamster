@@ -1,0 +1,152 @@
+version: 2
+models:
+  - name: stg_illuminate__national_assessments__psat89
+    config:
+      enabled: false
+    columns:
+      - name: id
+        data_type: int64
+      - name: form_code
+        data_type: string
+      - name: cb_student_id
+        data_type: string
+      - name: district_student_id
+        data_type: string
+      - name: state_student_id
+        data_type: string
+      - name: new_district_id
+        data_type: string
+      - name: new_ssid
+        data_type: string
+      - name: grade_assessed
+        data_type: string
+      - name: test_date
+        data_type: date
+      - name: report_date
+        data_type: date
+      - name: self_assessment_date
+        data_type: date
+      - name: gpa
+        data_type: string
+      - name: student_first_name
+        data_type: string
+      - name: student_last_name
+        data_type: string
+      - name: student_middle_initial
+        data_type: string
+      - name: cohort_year
+        data_type: int64
+      - name: birth_date
+        data_type: date
+      - name: latest_psat_access_code
+        data_type: string
+      - name: hs_student
+        data_type: boolean
+      - name: ebrw_ccr_benchmark
+        data_type: boolean
+      - name: math_ccr_benchmark
+        data_type: boolean
+      - name: algebra_rep_percentile
+        data_type: int64
+      - name: command_rep_percentile
+        data_type: int64
+      - name: ebrw_rep_percentile
+        data_type: int64
+      - name: eng_conventions_rep_percentile
+        data_type: int64
+      - name: expression_idea_rep_percentile
+        data_type: int64
+      - name: hist_rep_percentile
+        data_type: int64
+      - name: math_rep_percentile
+        data_type: int64
+      - name: math_sect_rep_percentile
+        data_type: int64
+      - name: problem_solve_rep_percentile
+        data_type: int64
+      - name: reading_rep_percentile
+        data_type: int64
+      - name: sci_rep_percentile
+        data_type: int64
+      - name: total_rep_percentile
+        data_type: int64
+      - name: words_context_rep_percentile
+        data_type: int64
+      - name: writing_lang_rep_percentile
+        data_type: int64
+      - name: algebra_usr_percentile
+        data_type: int64
+      - name: command_usr_percentile
+        data_type: int64
+      - name: ebrw_usr_percentile
+        data_type: int64
+      - name: eng_conventions_usr_percentile
+        data_type: int64
+      - name: expression_idea_usr_percentile
+        data_type: int64
+      - name: hist_usr_percentile
+        data_type: int64
+      - name: math_sect_usr_percentile
+        data_type: int64
+      - name: math_usr_percentile
+        data_type: int64
+      - name: problem_solve_usr_percentile
+        data_type: int64
+      - name: reading_usr_percentile
+        data_type: int64
+      - name: sci_usr_percentile
+        data_type: int64
+      - name: total_usr_percentile
+        data_type: int64
+      - name: words_context_usr_percentile
+        data_type: int64
+      - name: writing_lang_usr_percentile
+        data_type: int64
+      - name: ap_art_hist
+        data_type: string
+      - name: ap_euro_hist
+        data_type: string
+      - name: ap_hum_geo
+        data_type: string
+      - name: ap_phys_ii
+        data_type: string
+      - name: ap_seminar
+        data_type: string
+      - name: ap_world_hist
+        data_type: string
+      - name: local_student_id
+        data_type: int64
+      - name: selection_index
+        data_type: numeric
+      - name: total_score
+        data_type: numeric
+      - name: math_test_score
+        data_type: numeric
+      - name: history_cross_test_score
+        data_type: numeric
+      - name: reading_test_score
+        data_type: numeric
+      - name: science_cross_test_score
+        data_type: numeric
+      - name: writing_test_score
+        data_type: numeric
+      - name: eb_read_write_section_score
+        data_type: numeric
+      - name: math_section_score
+        data_type: numeric
+      - name: advanced_math_subscore
+        data_type: numeric
+      - name: command_evidence_subscore
+        data_type: numeric
+      - name: english_conv_subscore
+        data_type: numeric
+      - name: expression_ideas_subscore
+        data_type: numeric
+      - name: heart_algebra_subscore
+        data_type: numeric
+      - name: prob_solve_data_subscore
+        data_type: numeric
+      - name: relevant_words_subscore
+        data_type: numeric
+      - name: academic_year
+        data_type: int64

@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: stg_finance__enrollment_targets
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Fiscal_Year
+        data_type: int64
+      - name: Region
+        data_type: string
+      - name: Schoolid
+        data_type: int64
+      - name: School_Name
+        data_type: string
+      - name: Grade_Level
+        data_type: int64
+      - name: Target_Enrollment
+        data_type: int64
+      - name: Adjustment
+        data_type: int64
+      - name: Attrition_Factor
+        data_type: float64
+      - name: Financial_Model_Enrollment
+        data_type: float64
+      - name: Grade_Band_Ratio
+        data_type: float64
+      - name: At_Risk_and_LEP_Ratio
+        data_type: float64
+      - name: At_Risk_Only_Ratio
+        data_type: float64
+      - name: LEP_Only_Ratio
+        data_type: float64
+      - name: SPED_Ratio
+        data_type: float64
+      - name: academic_year
+        data_type: int64

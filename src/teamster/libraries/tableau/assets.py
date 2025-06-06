@@ -6,10 +6,10 @@ from dagster import (
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
-    _check,
     asset,
 )
 from dagster._core.definitions.declarative_automation import OrAutomationCondition
+from dagster_shared import check
 from slugify import slugify
 
 from teamster.core.asset_checks import (
@@ -33,7 +33,7 @@ def build_tableau_workbook_refresh_asset(
     if cron_schedule is None:
         automation_condition = None
     else:
-        cron_timezone = _check.not_none(value=cron_timezone)
+        cron_timezone = check.not_none(value=cron_timezone)
 
         automation_condition = OrAutomationCondition(
             operands=[
@@ -98,7 +98,7 @@ def build_tableau_workbook_stats_asset(
         op_tags={"dagster/priority": "-1"},
     )
     def _asset(context: AssetExecutionContext, tableau: TableauServerResource):
-        partition_key = _check.inst(context.partition_key, MultiPartitionKey)
+        partition_key = check.inst(context.partition_key, MultiPartitionKey)
 
         workbook = tableau._server.workbooks.get_by_id(
             partition_key.keys_by_dimension["workbook_id"]

@@ -47,7 +47,8 @@ with
                 'SEM72250G3133570965',
                 'SEM72250G373252',
                 'SEM72250G4133570965',
-                'SEM72250G473252'
+                'SEM72250G473252',
+                'HR30200803,'
             )
     ),
 
@@ -85,6 +86,7 @@ with
             max(cw.week_end_date) over (
                 partition by t._dbt_source_relation, t.schoolid, t.yearid, tb.storecode
             ) as quarter_end_date_insession,
+
         from {{ ref("stg_powerschool__terms") }} as t
         inner join
             {{ ref("stg_powerschool__termbins") }} as tb
@@ -129,21 +131,35 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
-    if(
-        current_date(
-            '{{ var("local_timezone") }}'
-        ) between (tw.quarter_end_date_insession - interval 7 day) and (
-            tw.quarter_end_date_insession + interval 14 day
-        ),
-        true,
-        false
-    ) as is_quarter_end_date_range,
+    concat(
+        tw.region_school_level, sec.courses_credittype
+    ) as region_school_level_credit_type,
+
+    case
+        when
+            tw.region_school_level = 'MiamiES'
+            and current_date(
+                '{{ var("local_timezone") }}'
+            ) between (tw.quarter_end_date_insession - interval 40 day) and (
+                tw.quarter_end_date_insession + interval 14 day
+            )
+        then true
+        when
+            current_date(
+                '{{ var("local_timezone") }}'
+            ) between (tw.quarter_end_date_insession - interval 7 day) and (
+                tw.quarter_end_date_insession + interval 14 day
+            )
+        then true
+        else false
+    end as is_quarter_end_date_range,
 
     if(
         tw.school_level = 'HS',
         sec.sections_external_expression,
         sec.sections_section_number
     ) as section_or_period,
+
 from term_weeks as tw
 inner join
     sections as sec

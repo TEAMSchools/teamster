@@ -1,0 +1,82 @@
+version: 2
+models:
+  - name: stg_powerschool__assignmentscore
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__assignmentscore") | replace("`", "") }}')
+    columns:
+      - name: actualscoreentered
+        data_type: string
+      - name: actualscorekind
+        data_type: string
+      - name: scorelettergrade
+        data_type: string
+      - name: scoreentrydate
+        data_type: timestamp
+      - name: altalphagrade
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: ip_address
+        data_type: string
+      - name: whomodifiedtype
+        data_type: string
+      - name: transaction_date
+        data_type: timestamp
+      - name: executionid
+        data_type: string
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_date
+        data_type: date
+      - name: _dagster_partition_hour
+        data_type: int64
+      - name: _dagster_partition_minute
+        data_type: int64
+      - name: actualscoregradescaledcid
+        data_type: int64
+      - name: altscoregradescaledcid
+        data_type: int64
+      - name: assignmentscoreid
+        data_type: int64
+      - name: assignmentsectionid
+        data_type: int64
+      - name: authoredbyuc
+        data_type: int64
+      - name: hasretake
+        data_type: int64
+      - name: isabsent
+        data_type: int64
+      - name: iscollected
+        data_type: int64
+      - name: isexempt
+        data_type: int64
+      - name: isincomplete
+        data_type: int64
+      - name: islate
+        data_type: int64
+      - name: ismissing
+        data_type: int64
+      - name: scoregradescaledcid
+        data_type: int64
+      - name: studentsdcid
+        data_type: int64
+      - name: whomodifiedid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: altnumericgrade
+        data_type: numeric
+      - name: scorenumericgrade
+        data_type: numeric
+      - name: scorepercent
+        data_type: numeric
+      - name: scorepoints
+        data_type: float64

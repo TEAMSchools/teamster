@@ -1,6 +1,11 @@
 version: 2
 models:
   - name: stg_edplan__njsmart_powerschool_archive
+    config:
+      enabled: false
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("edplan",
+        "src_edplan__njsmart_powerschool_archive") | replace("`", "") }}')
     columns:
       - name: academic_year
         data_type: int64

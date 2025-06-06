@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: stg_coupa__intacct_location_lookup
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: adp_business_unit_home_code
+        data_type: string
+      - name: adp_department_home_name
+        data_type: string
+      - name: adp_job_title
+        data_type: string
+      - name: sage_intacct_location
+        data_type: string

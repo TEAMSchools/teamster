@@ -12,7 +12,7 @@ select
     sr.date_submitted,
     sr.answer_value,
     sr.is_open_ended,
-    sr.rn,
+    sr.round_rn,
 
     eh.employee_number,
     eh.formatted_name as respondent_name,

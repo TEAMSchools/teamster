@@ -3,6 +3,7 @@ with
         select
             id,
             contact,
+            school_specific_id,
             academic_year,
             administration_round,
             `date`,
@@ -22,6 +23,8 @@ with
                 then 'ENG'
                 when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
                 then 'MATH'
+                when score_type = 'act_science'
+                then 'SCI'
             end as course_discipline,
 
             if(
@@ -59,8 +62,9 @@ with
             row_number() over (
                 partition by contact, test_type, score_type order by score desc
             ) as rn_highest,
+
         from
-            {{ ref("stg_kippadb__standardized_test") }} unpivot (
+            {{ ref("int_kippadb__standardized_test") }} unpivot (
                 score for score_type in (
                     act_composite,
                     act_ela,
@@ -109,6 +113,8 @@ select
     case
         score_type
         when 'sat_total_score'
+        then 'Combined'
+        when 'psat_total_score'
         then 'Combined'
         when 'sat_reading_test_score'
         then 'Reading Test'

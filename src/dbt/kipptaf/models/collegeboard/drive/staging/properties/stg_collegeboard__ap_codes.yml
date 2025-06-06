@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: stg_collegeboard__ap_codes
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Domain
+        data_type: string
+      - name: Code
+        data_type: string
+      - name: Description
+        data_type: string

@@ -31,21 +31,6 @@ locations:
                     items:
                       - key: id_rsa_egencia
                         path: id_rsa_egencia
-                - secret:
-                    name: op-gcp-service-account-dbt
-                    items:
-                      - key: dbt_user_credentials.json
-                        path: dbt_user_creds_json
-                - secret:
-                    name: op-gcp-service-account-teamster
-                    items:
-                      - key: service_account_gserviceaccount.json
-                        path: gcloud_service_account_json
-                - secret:
-                    name: op-gcp-service-account-dlt
-                    items:
-                      - key: keyfile.json
-                        path: gcloud_teamster_dlt_keyfile.json
         server_k8s_config:
           container_config:
             env:
@@ -194,21 +179,6 @@ locations:
                   secretKeyRef:
                     name: op-egencia-sftp
                     key: username
-              - name: FIVETRAN_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-key
-              - name: FIVETRAN_API_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-secret
-              - name: FIVETRAN_ACCOUNT_ID
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: account-id
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -399,11 +369,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: SLACK_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-slack-api
-                    key: credential
               - name: ILLUMINATE_DB_DRIVERNAME
                 valueFrom:
                   secretKeyRef:
@@ -429,6 +394,36 @@ locations:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: password
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api-kippnewark
+                    key: credential
+              - name: OUTLOOK_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: host
+              - name: OUTLOOK_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: port
+              - name: OUTLOOK_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: username
+              - name: OUTLOOK_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: password
+              - name: KNOWBE4_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-knowbe4
+                    key: credential
         run_k8s_config:
           container_config:
             env:
@@ -562,21 +557,6 @@ locations:
                   secretKeyRef:
                     name: op-egencia-sftp
                     key: username
-              - name: FIVETRAN_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-key
-              - name: FIVETRAN_API_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-secret
-              - name: FIVETRAN_ACCOUNT_ID
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: account-id
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -782,11 +762,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: SLACK_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-slack-api
-                    key: credential
               - name: ILLUMINATE_DB_DRIVERNAME
                 valueFrom:
                   secretKeyRef:
@@ -812,3 +787,33 @@ locations:
                   secretKeyRef:
                     name: op-illuminate-db
                     key: password
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api-kippnewark
+                    key: credential
+              - name: OUTLOOK_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: host
+              - name: OUTLOOK_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: port
+              - name: OUTLOOK_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: username
+              - name: OUTLOOK_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: password
+              - name: KNOWBE4_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-knowbe4
+                    key: credential

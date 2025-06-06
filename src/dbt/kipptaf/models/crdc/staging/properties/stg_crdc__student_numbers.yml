@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_crdc__student_numbers
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: crdc_question_section
+        data_type: string
+      - name: student_number
+        data_type: numeric

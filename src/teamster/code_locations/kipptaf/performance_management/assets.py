@@ -6,25 +6,22 @@ from dagster import (
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
-    _check,
     asset,
 )
 from dagster_gcp import BigQueryResource
-from google.cloud.bigquery import DatasetReference
+from dagster_shared import check
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.performance_management.schema import (
-    OBSERVATION_DETAILS_SCHEMA,
     OUTLIER_DETECTION_SCHEMA,
 )
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.libraries.sftp.assets import build_sftp_file_asset
 
 FIT_TRANSFORM_COLUMNS = [
     "etr1a",
@@ -80,9 +77,7 @@ def get_pca(df: pandas.DataFrame):
     principal_components = pca.fit_transform(X=df[FIT_TRANSFORM_COLUMNS])
 
     pca_df = pandas.DataFrame(
-        data=principal_components,
-        # trunk-ignore(pyright/reportArgumentType)
-        columns=["pc1", "pc2"],
+        data=principal_components, columns=pandas.Index(["pc1", "pc2"])
     )
 
     df = pandas.merge(left=df, right=pca_df, left_index=True, right_index=True)
@@ -101,8 +96,7 @@ def get_dbscan(df):
 
     clusters = outlier_detection.fit_predict(X=df[["pc1", "pc2"]])
 
-    # trunk-ignore(pyright/reportArgumentType)
-    cluster_df = pandas.DataFrame(data=clusters, columns=["cluster"])
+    cluster_df = pandas.DataFrame(data=clusters, columns=pandas.Index(["cluster"]))
 
     df = pandas.merge(left=df, right=cluster_df, left_index=True, right_index=True)
 
@@ -117,8 +111,7 @@ def get_isolation_forest(df: pandas.DataFrame):
 
     outliers = model.predict(X=df[FIT_TRANSFORM_COLUMNS])
 
-    # trunk-ignore(pyright/reportArgumentType)
-    tree_df = pandas.DataFrame(data=outliers, columns=["tree_outlier"])
+    tree_df = pandas.DataFrame(data=outliers, columns=pandas.Index(["tree_outlier"]))
 
     df = pandas.merge(left=df, right=tree_df, left_index=True, right_index=True)
 
@@ -143,27 +136,24 @@ def get_isolation_forest(df: pandas.DataFrame):
     ],
 )
 def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResource):
-    partition_key = _check.inst(context.partition_key, MultiPartitionKey)
+    partition_key = check.inst(context.partition_key, MultiPartitionKey)
 
     # load data from extract view
     with db_bigquery.get_client() as bq:
         bq_client = bq
 
-    dataset_ref = DatasetReference(
-        project=bq_client.project, dataset_id="kipptaf_extracts"
+    query = bq.query(
+        query="select * from kipptaf_extracts.rpt_python__manager_pm_averages",
+        project=bq_client.project,
     )
 
-    rows = bq_client.list_rows(
-        table=dataset_ref.table("rpt_python__manager_pm_averages")
-    )
-
-    df_global: pandas.DataFrame = rows.to_dataframe()
+    df_global: pandas.DataFrame = query.to_dataframe()
 
     df_global.dropna(inplace=True)
     df_global.reset_index(inplace=True, drop=True)
 
     # subset current year/term
-    df_current = _check.inst(
+    df_current = check.inst(
         obj=df_global[
             (
                 df_global["academic_year"]
@@ -216,8 +206,7 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
         how="left",
         left_on=["observer_employee_number", "academic_year", "form_term"],
         right_on=["observer_employee_number", "academic_year", "form_term"],
-        # trunk-ignore(pyright/reportArgumentType)
-        suffixes=["_current", "_global"],
+        suffixes=("_current", "_global"),
     )
 
     data = df_current.to_dict(orient="records")
@@ -232,24 +221,24 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
     )
 
 
-observation_details = build_sftp_file_asset(
-    asset_key=[CODE_LOCATION, "performance_management", "observation_details"],
-    remote_dir_regex=(
-        r"/data-team/kipptaf/performance-management/observation-details/"
-        r"(?P<academic_year>\d+)/(?P<term>PM\d)"
-    ),
-    remote_file_regex=r"[\w-]+\.csv",
-    avro_schema=OBSERVATION_DETAILS_SCHEMA,
-    ssh_resource_key="ssh_couchdrop",
-    partitions_def=MultiPartitionsDefinition(
-        {
-            "academic_year": StaticPartitionsDefinition(
-                ["2018", "2019", "2020", "2021", "2022", "2023"]
-            ),
-            "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
-        }
-    ),
-)
+# observation_details = build_sftp_file_asset(
+#     asset_key=[CODE_LOCATION, "performance_management", "observation_details"],
+#     remote_dir_regex=(
+#         r"/data-team/kipptaf/performance-management/observation-details/"
+#         r"(?P<academic_year>\d+)/(?P<term>PM\d)"
+#     ),
+#     remote_file_regex=r"[\w-]+\.csv",
+#     avro_schema=OBSERVATION_DETAILS_SCHEMA,
+#     ssh_resource_key="ssh_couchdrop",
+#     partitions_def=MultiPartitionsDefinition(
+#         {
+#             "academic_year": StaticPartitionsDefinition(
+#                 ["2018", "2019", "2020", "2021", "2022", "2023"]
+#             ),
+#             "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
+#         }
+#     ),
+# )
 
 assets = [
     outlier_detection,

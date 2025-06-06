@@ -10,14 +10,14 @@ from dagster import (
     MonthlyPartitionsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
-    _check,
     schedule,
 )
+from dagster_shared import check
 from dateutil.relativedelta import relativedelta
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
-from teamster.libraries.powerschool.sis.utils import get_query_text, open_ssh_tunnel
+from teamster.libraries.powerschool.sis.utils import get_query_text
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -48,7 +48,7 @@ def build_powerschool_sis_asset_schedule(
         )
 
         context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
-        ssh_tunnel = open_ssh_tunnel(ssh_powerschool)
+        ssh_tunnel = ssh_powerschool.open_ssh_tunnel()
 
         try:
             connection = db_powerschool.connect()
@@ -84,7 +84,7 @@ def build_powerschool_sis_asset_schedule(
                         )
                         continue
 
-                    metadata = _check.not_none(
+                    metadata = check.not_none(
                         value=latest_materialization_event.asset_materialization
                     ).metadata
 
@@ -92,7 +92,7 @@ def build_powerschool_sis_asset_schedule(
 
                     # request run if table modified count > 0
                     if partition_column is not None:
-                        timestamp = _check.inst(
+                        timestamp = check.inst(
                             obj=metadata["latest_materialization_timestamp"].value,
                             ttype=float,
                         )
@@ -105,7 +105,7 @@ def build_powerschool_sis_asset_schedule(
                             .isoformat(timespec="microseconds")
                         )
 
-                        [(modified_count,)] = _check.inst(
+                        [(modified_count,)] = check.inst(
                             db_powerschool.execute_query(
                                 connection=connection,
                                 query=get_query_text(
@@ -136,7 +136,7 @@ def build_powerschool_sis_asset_schedule(
                             continue
 
                     # request run if table count doesn't match latest materialization
-                    [(table_count,)] = _check.inst(
+                    [(table_count,)] = check.inst(
                         db_powerschool.execute_query(
                             connection=connection,
                             query=get_query_text(table=table_name, column=None),
@@ -201,7 +201,7 @@ def build_powerschool_sis_asset_schedule(
                             )
                             continue
 
-                        metadata = _check.not_none(
+                        metadata = check.not_none(
                             value=event_records.records[0].asset_materialization
                         ).metadata
 
@@ -212,7 +212,7 @@ def build_powerschool_sis_asset_schedule(
 
                         # request run if last partition modified count > 0
                         if partition_key == last_partition_key:
-                            timestamp = _check.inst(
+                            timestamp = check.inst(
                                 obj=metadata["latest_materialization_timestamp"].value,
                                 ttype=float,
                             )
@@ -225,7 +225,7 @@ def build_powerschool_sis_asset_schedule(
                                 .isoformat(timespec="microseconds")
                             )
 
-                            [(modified_count,)] = _check.inst(
+                            [(modified_count,)] = check.inst(
                                 db_powerschool.execute_query(
                                     connection=connection,
                                     query=get_query_text(
@@ -272,7 +272,7 @@ def build_powerschool_sis_asset_schedule(
                             timespec="microseconds"
                         )
 
-                        [(partition_count,)] = _check.inst(
+                        [(partition_count,)] = check.inst(
                             db_powerschool.execute_query(
                                 connection=connection,
                                 query=get_query_text(

@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: people
+    schema: "{{ project_name }}_people"
+    tables:
+      - name: src_people__employee_numbers
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - people
+              - src_people__employee_numbers
+      - name: src_people__student_logins
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - people
+              - src_people__student_logins

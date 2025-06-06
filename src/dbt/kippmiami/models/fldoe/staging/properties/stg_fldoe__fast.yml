@@ -1,0 +1,78 @@
+version: 2
+models:
+  - name: stg_fldoe__fast
+    # config:
+    #   pre_hook:
+    #     CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("fldoe",
+    #     "src_fldoe__fast") | replace("`", "") }}')
+    columns:
+      - name: student_id
+        data_type: string
+      - name: local_id
+        data_type: string
+      - name: reading_prose_and_poetry
+        data_type: string
+      - name: reading_informational_text
+        data_type: string
+      - name: reading_across_genres_vocabulary
+        data_type: string
+      - name: number_sense_and_additive_reasoning
+        data_type: string
+      - name: number_sense_and_operations_and_algebraic_reasoning
+        data_type: string
+      - name: number_sense_and_operations_and_probability
+        data_type: string
+      - name: number_sense_and_operations
+        data_type: string
+      - name: number_sense_and_operations_with_whole_numbers
+        data_type: string
+      - name: number_sense_and_multiplicative_reasoning
+        data_type: string
+      - name: number_sense_and_operations_with_fractions_and_decimals
+        data_type: string
+      - name: proportional_reasoning_and_relationships
+        data_type: string
+      - name: fractional_reasoning
+        data_type: string
+      - name: geometric_reasoning_data_analysis_and_probability
+        data_type: string
+      - name: linear_relationships_data_analysis_and_functions
+        data_type: string
+      - name: data_analysis_and_probability
+        data_type: string
+      - name: date_taken
+        data_type: date
+      - name: test_completion_date
+        data_type: date
+      - name: achievement_level
+        data_type: string
+      - name: algebraic_reasoning
+        data_type: string
+      - name: geometric_reasoning
+        data_type: string
+      - name: geometric_reasoning_measurement_and_data_analysis_and_probability
+        data_type: string
+      - name: scale_score
+        data_type: int64
+      - name: administration_window
+        data_type: string
+      - name: assessment_grade
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: percentile_rank
+        data_type: numeric
+      - name: achievement_level_int
+        data_type: int64
+      - name: test_code
+        data_type: string
+      - name: assessment_subject
+        data_type: string
+      - name: season
+        data_type: string
+      - name: discipline
+        data_type: string
+      - name: scale_score_prev
+        data_type: int64
+      - name: is_proficient
+        data_type: boolean

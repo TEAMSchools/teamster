@@ -36,6 +36,7 @@ assets:
       cron_schedule: 0 13 * * *
   - name: High School Early Warning Dashboard
     deps:
+      - [kipptaf, tableau, rpt_tableau__community_service]
       - [kipptaf, tableau, rpt_tableau__graduation_requirements]
       - [kipptaf, tableau, rpt_tableau__hs_early_warning_dashboard]
     metadata:
@@ -148,7 +149,10 @@ assets:
       cron_schedule: 0 4 * * *
   - name: Gradebook Audit - Teacher Report
     deps:
+      - [kipptaf, tableau, rpt_tableau__assignment_checks]
       - [kipptaf, tableau, rpt_tableau__gradebook_audit]
+      - [kipptaf, tableau, rpt_tableau__gradebook_es_comments]
+      - [kipptaf, tableau, rpt_tableau__gradebook_ms_hs_comments]
       - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
     metadata:
       id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
@@ -161,6 +165,8 @@ assets:
       id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
       cron_schedule:
         - 0 1 * * *
+        - 40 14 * * 3
+        - 0 16 * * 5
         - 0 18 * * *
   - name: APM Dashboard
     deps:
@@ -209,7 +215,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__leadership_development]
     metadata:
       id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
-      cron_schedule: 0 * * * *
+      # cron_schedule: 0 * * * *
   - name: KIPP Miami FAST & i-Ready Analysis
     deps:
       - [kipptaf, tableau, rpt_tableau__miami_fast]
@@ -239,4 +245,4 @@ assets:
       - [kipptaf, tableau, rpt_tableau__survey_completion]
     metadata:
       id: b11542a2-6780-4feb-a1dd-534ffe724faf
-      # cron_schedule: 0 * * * *
+      cron_schedule: 0 * * * *

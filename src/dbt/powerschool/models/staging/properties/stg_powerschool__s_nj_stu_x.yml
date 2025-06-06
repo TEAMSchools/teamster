@@ -1,0 +1,868 @@
+version: 2
+models:
+  - name: stg_powerschool__s_nj_stu_x
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
+        "src_powerschool__s_nj_stu_x") | replace("`", "") }}')
+    columns:
+      - name: examiner_smid
+        data_type: string
+      - name: parcc_braille_paper
+        data_type: string
+      - name: parcc_ela_test_code
+        data_type: string
+      - name: parcc_ell_paper_accom
+        data_type: string
+      - name: parcc_examiner_smid_ela
+        data_type: string
+      - name: parcc_examiner_smid_math
+        data_type: string
+      - name: parcc_exempt_from_passing
+        data_type: string
+      - name: parcc_iep_paper_accom
+        data_type: string
+      - name: parcc_large_print_paper
+        data_type: string
+      - name: parcc_math_test_code
+        data_type: string
+      - name: parcc_reader_signer_for_paper
+        data_type: string
+      - name: parcc_retest
+        data_type: string
+      - name: parcc_sec504_paper_accom
+        data_type: string
+      - name: parcc_session_location_ela
+        data_type: string
+      - name: parcc_session_location_math
+        data_type: string
+      - name: parcc_test_format
+        data_type: string
+      - name: parcc_testing_site_county
+        data_type: string
+      - name: parcc_testing_site_district
+        data_type: string
+      - name: parcc_testing_site_school
+        data_type: string
+      - name: parcc_translation_math_paper
+        data_type: string
+      - name: whocreated
+        data_type: string
+      - name: whencreated
+        data_type: timestamp
+      - name: whomodified
+        data_type: string
+      - name: whenmodified
+        data_type: timestamp
+      - name: asmt_alt_rep_paper
+        data_type: string
+      - name: asmt_alternate_location
+        data_type: string
+      - name: asmt_answer_masking
+        data_type: string
+      - name: asmt_answers_recorded_paper
+        data_type: string
+      - name: asmt_asl_video
+        data_type: string
+      - name: asmt_braille_response
+        data_type: string
+      - name: asmt_braille_tactile_paper
+        data_type: string
+      - name: asmt_closed_caption_ela
+        data_type: string
+      - name: asmt_color_contrast
+        data_type: string
+      - name: asmt_dictionary
+        data_type: string
+      - name: asmt_directions_aloud
+        data_type: string
+      - name: asmt_directions_clarified
+        data_type: string
+      - name: asmt_emergency_accommodation
+        data_type: string
+      - name: asmt_extended_time
+        data_type: string
+      - name: asmt_frequent_breaks
+        data_type: string
+      - name: asmt_human_signer
+        data_type: string
+      - name: asmt_humanreader_signer
+        data_type: string
+      - name: asmt_math_response
+        data_type: string
+      - name: asmt_math_response_el
+        data_type: string
+      - name: asmt_monitor_response
+        data_type: string
+      - name: asmt_non_screen_reader
+        data_type: string
+      - name: asmt_read_aloud
+        data_type: string
+      - name: asmt_refresh_braille_ela
+        data_type: string
+      - name: asmt_screen_reader
+        data_type: string
+      - name: asmt_selected_response_ela
+        data_type: string
+      - name: asmt_small_group
+        data_type: string
+      - name: asmt_special_equip
+        data_type: string
+      - name: asmt_specified_area
+        data_type: string
+      - name: asmt_text_to_speech
+        data_type: string
+      - name: asmt_time_of_day
+        data_type: string
+      - name: asmt_unique_accommodation
+        data_type: string
+      - name: asmt_word_prediction
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string
+      - name: parcc_class_name_override_ela
+        data_type: string
+      - name: parcc_class_name_override_math
+        data_type: string
+      - name: parcc_constructed_response_ela
+        data_type: string
+      - name: parcc_math_tools
+        data_type: string
+      - name: parcc_staff_smid_override_ela
+        data_type: string
+      - name: parcc_staff_smid_override_math
+        data_type: string
+      - name: parcc_student_identifier
+        data_type: string
+      - name: state_lep_status
+        data_type: string
+      - name: access_test_format_override
+        data_type: string
+      - name: access_tier_paper_tests
+        data_type: string
+      - name: alternate_access
+        data_type: string
+      - name: asmt_ac
+        data_type: string
+      - name: asmt_at
+        data_type: string
+      - name: asmt_bw
+        data_type: string
+      - name: asmt_em
+        data_type: string
+      - name: asmt_es
+        data_type: string
+      - name: asmt_et
+        data_type: string
+      - name: asmt_ih
+        data_type: string
+      - name: asmt_length_in_ell
+        data_type: string
+      - name: asmt_lh
+        data_type: string
+      - name: asmt_mc
+        data_type: string
+      - name: asmt_ns
+        data_type: string
+      - name: asmt_ra
+        data_type: string
+      - name: asmt_rd
+        data_type: string
+      - name: asmt_ri
+        data_type: string
+      - name: asmt_rl
+        data_type: string
+      - name: asmt_sd
+        data_type: string
+      - name: asmt_wd
+        data_type: string
+      - name: asmt_first_enroll_in_us_school
+        data_type: date
+      - name: calculation_device_math_tools
+        data_type: string
+      - name: math_state_assessment_name
+        data_type: string
+      - name: state_assessment_name
+        data_type: string
+      - name: state_ell_status
+        data_type: string
+      - name: parcc_text_to_speech
+        data_type: string
+      - name: annual_iep_review_meeting_date
+        data_type: date
+      - name: counseling_services_yn
+        data_type: string
+      - name: determined_ineligible_yn
+        data_type: string
+      - name: early_intervention_yn
+        data_type: string
+      - name: eligibility_determ_date
+        data_type: date
+      - name: iep_begin_date
+        data_type: date
+      - name: iep_end_date
+        data_type: date
+      - name: iep_level
+        data_type: string
+      - name: initial_iep_meeting_date
+        data_type: date
+      - name: initial_process_delay_reason
+        data_type: string
+      - name: nonpublic
+        data_type: string
+      - name: occupational_therapy_serv_yn
+        data_type: string
+      - name: other_related_services_yn
+        data_type: string
+      - name: parent_consent_intial_iep_date
+        data_type: date
+      - name: parent_consent_obtain_code
+        data_type: string
+      - name: parental_consent_eval_date
+        data_type: date
+      - name: physical_therapy_services_yn
+        data_type: string
+      - name: reevaluation_date
+        data_type: date
+      - name: referral_date
+        data_type: date
+      - name: special_education_placement
+        data_type: string
+      - name: specialed_classification
+        data_type: string
+      - name: speech_lang_theapy_services_yn
+        data_type: string
+      - name: time_in_regular_program
+        data_type: string
+      - name: block_schedule_session_ela
+        data_type: string
+      - name: block_schedule_session_math
+        data_type: string
+      - name: parcc_text_to_speech_math
+        data_type: string
+      - name: asmt_extended_time_math
+        data_type: string
+      - name: pid_testformat
+        data_type: string
+      - name: pid_brailletest_yn
+        data_type: string
+      - name: pid_contentareatutoring_yn
+        data_type: string
+      - name: pid_contentbasedesl_yn
+        data_type: string
+      - name: pid_developbilingual_yn
+        data_type: string
+      - name: pid_heritagelanguage_yn
+        data_type: string
+      - name: pid_inclusionarysupport_yn
+        data_type: string
+      - name: pid_largeprint_yn
+        data_type: string
+      - name: pid_noadditionalservices_yn
+        data_type: string
+      - name: pid_notapplicable_yn
+        data_type: string
+      - name: pid_parentalrefusal_yn
+        data_type: string
+      - name: pid_pullout_yn
+        data_type: string
+      - name: pid_pulloutesl_yn
+        data_type: string
+      - name: pid_scribedresponse_yn
+        data_type: string
+      - name: pid_selfcontained_yn
+        data_type: string
+      - name: pid_shelteredenginstruct_yn
+        data_type: string
+      - name: pid_structengimmersion_yn
+        data_type: string
+      - name: pid_transbilingual_yn
+        data_type: string
+      - name: pid_twowayimmersion_yn
+        data_type: string
+      - name: ctepostsecondaryinstitution
+        data_type: string
+      - name: cteprogramofstudy_yn
+        data_type: string
+      - name: cteprogramstatus
+        data_type: string
+      - name: ctesingleparentstatus_yn
+        data_type: string
+      - name: ctetestskillassesment
+        data_type: string
+      - name: primarycipcode
+        data_type: string
+      - name: access_accountablecounty
+        data_type: string
+      - name: access_accountabledistrict
+        data_type: string
+      - name: access_accountableschool
+        data_type: string
+      - name: access_testingsitecounty
+        data_type: string
+      - name: access_testingsitedistrict
+        data_type: string
+      - name: access_testingsiteschool
+        data_type: string
+      - name: districttimeless1year_yn
+        data_type: string
+      - name: pid_sendingcds
+        data_type: string
+      - name: schooltimeless1year_yn
+        data_type: string
+      - name: school_disabled
+        data_type: string
+      - name: special_status
+        data_type: string
+      - name: pid_title3status
+        data_type: string
+      - name: ask_specialcodesa
+        data_type: string
+      - name: ask_specialcodesb
+        data_type: string
+      - name: ask_specialcodesc
+        data_type: string
+      - name: ask_specialcodesd
+        data_type: string
+      - name: datelastleadtest
+        data_type: date
+      - name: datelastmedexam
+        data_type: date
+      - name: dateofpolioimmun
+        data_type: date
+      - name: district_studentid
+        data_type: string
+      - name: examinersmid1
+        data_type: string
+      - name: examinersmid2
+        data_type: string
+      - name: examinersmid3
+        data_type: string
+      - name: examinersmid4
+        data_type: string
+      - name: examinersmid5
+        data_type: string
+      - name: leadlevel
+        data_type: string
+      - name: native_language
+        data_type: string
+      - name: pid_apatestingcds
+        data_type: string
+      - name: pid_audioamplification
+        data_type: string
+      - name: pid_classroom
+        data_type: string
+      - name: pid_computerassisted
+        data_type: string
+      - name: pid_lowvisionaids
+        data_type: string
+      - name: pid_modifiedtestdirections
+        data_type: string
+      - name: pid_nativelang
+        data_type: string
+      - name: pid_otherapproved
+        data_type: string
+      - name: pid_presentationformat
+        data_type: string
+      - name: pid_settingformat
+        data_type: string
+      - name: pid_timingscheduling
+        data_type: string
+      - name: spedtier
+        data_type: string
+      - name: supplementaleduserv
+        data_type: string
+      - name: programtypecode
+        data_type: string
+      - name: cityofbirth
+        data_type: string
+      - name: countryofbirth
+        data_type: string
+      - name: countycodeattending
+        data_type: string
+      - name: countycodereceiving
+        data_type: string
+      - name: countycoderesident
+        data_type: string
+      - name: districtcodeattending
+        data_type: string
+      - name: districtcodereceiving
+        data_type: string
+      - name: districtcoderesident
+        data_type: string
+      - name: firstentrydateintoausschool
+        data_type: date
+      - name: generationcodesuffix
+        data_type: string
+      - name: gradelevelcode
+        data_type: string
+      - name: immigrantstatus_yn
+        data_type: string
+      - name: lepbegindate
+        data_type: date
+      - name: lependdate
+        data_type: date
+      - name: residentmunicipalcode
+        data_type: string
+      - name: schoolcodeattending
+        data_type: string
+      - name: schoolcodereceiving
+        data_type: string
+      - name: schoolcoderesident
+        data_type: string
+      - name: shared_time_code
+        data_type: string
+      - name: stateofbirth
+        data_type: string
+      - name: tuition_code
+        data_type: string
+      - name: alternativeeducationprogram_yn
+        data_type: string
+      - name: eighthtechlit
+        data_type: string
+      - name: healthinsprovider
+        data_type: string
+      - name: healthinsstatus_yn
+        data_type: string
+      - name: home_language
+        data_type: string
+      - name: home_language_name
+        data_type: string
+      - name: titleilanguage_yn
+        data_type: string
+      - name: titleimath_yn
+        data_type: string
+      - name: titleiscience_yn
+        data_type: string
+      - name: pid_supplementaleduserv
+        data_type: string
+      - name: pid_timeinlep2
+        data_type: string
+      - name: charter_assigned_school
+        data_type: string
+      - name: charter_date
+        data_type: date
+      - name: charter_school_loc
+        data_type: string
+      - name: charter_school_name
+        data_type: string
+      - name: ctetestdevelopercode
+        data_type: string
+      - name: ctetestname
+        data_type: string
+      - name: nces_course_id
+        data_type: string
+      - name: nces_subject_area
+        data_type: string
+      - name: graduation_pathway_ela
+        data_type: string
+      - name: graduation_pathway_math
+        data_type: string
+      - name: former_iep
+        data_type: string
+      - name: liep_classification
+        data_type: string
+      - name: liep_data
+        data_type: string
+      - name: liep_refusal
+        data_type: string
+      - name: secondary_disability
+        data_type: string
+      - name: sla_class_name_override
+        data_type: string
+      - name: sla_retest
+        data_type: string
+      - name: sla_session_loc_override
+        data_type: string
+      - name: sla_test_code
+        data_type: string
+      - name: sla_test_format
+        data_type: string
+      - name: sla_testing_site_county
+        data_type: string
+      - name: sla_testing_site_district
+        data_type: string
+      - name: sla_testing_site_school
+        data_type: string
+      - name: student_type
+        data_type: string
+      - name: sla_accountable_site_county
+        data_type: string
+      - name: sla_accountable_site_district
+        data_type: string
+      - name: sla_accountable_site_school
+        data_type: string
+      - name: sla_braille_response
+        data_type: string
+      - name: sla_braille_tactile_paper
+        data_type: string
+      - name: sla_color_contrast
+        data_type: string
+      - name: sla_constructed_response
+        data_type: string
+      - name: sla_directions_aloud
+        data_type: string
+      - name: sla_emergency_accommodation
+        data_type: string
+      - name: sla_examiner_smid
+        data_type: string
+      - name: sla_extended_time
+        data_type: string
+      - name: sla_humanreader_signer
+        data_type: string
+      - name: sla_science_response_el
+        data_type: string
+      - name: sla_selected_response
+        data_type: string
+      - name: sla_spanish_trans
+        data_type: string
+      - name: sla_staffoverride_smid
+        data_type: string
+      - name: sla_text_to_speech
+        data_type: string
+      - name: family_care_release_yn
+        data_type: string
+      - name: indistrictplacement
+        data_type: string
+      - name: liep_type
+        data_type: string
+      - name: stureporting_name
+        data_type: string
+      - name: biliterate_yn
+        data_type: string
+      - name: worldlang_assessed1
+        data_type: string
+      - name: worldlang_assessed1_name
+        data_type: string
+      - name: worldlang_assessed2
+        data_type: string
+      - name: worldlang_assessed2_name
+        data_type: string
+      - name: worldlang_assessed3
+        data_type: string
+      - name: worldlang_assessed3_name
+        data_type: string
+      - name: worldlang_assessed4
+        data_type: string
+      - name: worldlang_assessed4_name
+        data_type: string
+      - name: worldlang_assessed5
+        data_type: string
+      - name: worldlang_assessed5_name
+        data_type: string
+      - name: worldlang_assessment1
+        data_type: string
+      - name: worldlang_assessment2
+        data_type: string
+      - name: worldlang_assessment3
+        data_type: string
+      - name: worldlang_assessment4
+        data_type: string
+      - name: worldlang_assessment5
+        data_type: string
+      - name: assessmt_ms_accomm_resp
+        data_type: string
+      - name: birthplace_refusal
+        data_type: string
+      - name: ctewblearning
+        data_type: string
+      - name: withdrawal_date
+        data_type: date
+      - name: firsthsmathassessment_yn
+        data_type: string
+      - name: remotelearninghelpline_yn
+        data_type: string
+      - name: speassessmentparticipant_yn
+        data_type: string
+      - name: speassignmentsubmissions_yn
+        data_type: string
+      - name: specoachingorcheckin_yn
+        data_type: string
+      - name: speechtotextwordprediction
+        data_type: string
+      - name: speelectroniccomm_yn
+        data_type: string
+      - name: speonlinelearningplatforms
+        data_type: string
+      - name: speother_yn
+        data_type: string
+      - name: spesynchonlineclass_yn
+        data_type: string
+      - name: studentslearningmodel
+        data_type: string
+      - name: bridge_year
+        data_type: string
+      - name: federalhsmathtestingreq
+        data_type: string
+      - name: iepgradcourserequirement
+        data_type: string
+      - name: iepgraduationattendance
+        data_type: string
+      - name: typeofearnedcollegecredits
+        data_type: string
+      - name: typeofworkbasedlearning
+        data_type: string
+      - name: liep_languageofinstruction
+        data_type: string
+      - name: reportedsharedvoc_yn
+        data_type: string
+      - name: science_test_name
+        data_type: string
+      - name: deafhardofhearing_yn
+        data_type: string
+      - name: district_status_override
+        data_type: string
+      - name: sid_entrydate
+        data_type: date
+      - name: sid_exitdate
+        data_type: date
+      - name: proofofage
+        data_type: string
+      - name: declassificationspeddate
+        data_type: date
+      - name: homelessinstrucservice
+        data_type: string
+      - name: homelesssupportservice
+        data_type: string
+      - name: lunchstatusoverride
+        data_type: string
+      - name: mddisablingcondition1
+        data_type: string
+      - name: mddisablingcondition2
+        data_type: string
+      - name: mddisablingcondition3
+        data_type: string
+      - name: mddisablingcondition4
+        data_type: string
+      - name: mddisablingcondition5
+        data_type: string
+      - name: titleiindicator
+        data_type: string
+      - name: eligible_for_liep
+        data_type: string
+      - name: elp_screener_date
+        data_type: date
+      - name: home_language2
+        data_type: string
+      - name: home_language3
+        data_type: string
+      - name: home_language4
+        data_type: string
+      - name: home_language5
+        data_type: string
+      - name: home_language_name2
+        data_type: string
+      - name: home_language_name3
+        data_type: string
+      - name: home_language_name4
+        data_type: string
+      - name: home_language_name5
+        data_type: string
+      - name: lepbegindate2
+        data_type: date
+      - name: liep_parent_refusal_date
+        data_type: date
+      - name: liependdate2
+        data_type: date
+      - name: sld_basic_reading_yn
+        data_type: string
+      - name: sld_listen_comp_yn
+        data_type: string
+      - name: sld_math_cal_yn
+        data_type: string
+      - name: sld_math_prob_solve_yn
+        data_type: string
+      - name: sld_oral_expresn_yn
+        data_type: string
+      - name: sld_read_fluency_yn
+        data_type: string
+      - name: sld_reading_comp_yn
+        data_type: string
+      - name: sld_writn_exprsn_yn
+        data_type: string
+      - name: studentsdcid
+        data_type: int64
+      - name: lep_completion_date_refused
+        data_type: int64
+      - name: military_connected_indicator
+        data_type: int64
+      - name: asmt_exclude_ela
+        data_type: int64
+      - name: asmt_exclude_math
+        data_type: int64
+      - name: iep_exemptpassinglal_tf
+        data_type: int64
+      - name: iep_exemptpassingmath_tf
+        data_type: int64
+      - name: iep_exempttakinglal_tf
+        data_type: int64
+      - name: iep_exempttakingmath_tf
+        data_type: int64
+      - name: pid_title1langartslit_tf
+        data_type: int64
+      - name: pid_title1math_tf
+        data_type: int64
+      - name: ctecollegecredits
+        data_type: int64
+      - name: pid_504_tf
+        data_type: int64
+      - name: pid_accommodations_a_tf
+        data_type: int64
+      - name: pid_accommodations_b_tf
+        data_type: int64
+      - name: pid_accommodations_c_tf
+        data_type: int64
+      - name: pid_accommodations_d_tf
+        data_type: int64
+      - name: pid_apascience_tf
+        data_type: int64
+      - name: adulths_nb_credits
+        data_type: numeric
+      - name: pid_lepexemptlal_tf
+        data_type: int64
+      - name: pid_apalangartsliteracy_tf
+        data_type: int64
+      - name: pid_apamath_tf
+        data_type: int64
+      - name: pid_madetape_tf
+        data_type: int64
+      - name: pid_outofdistplacement_tf
+        data_type: int64
+      - name: pid_outresidenceplacement_tf
+        data_type: int64
+      - name: pid_shortsegmenttestadmin_tf
+        data_type: int64
+      - name: pid_title1science_tf
+        data_type: int64
+      - name: title1_status_tf
+        data_type: int64
+      - name: tiv_serv_aide_tf
+        data_type: int64
+      - name: tiv_serv_assist_tf
+        data_type: int64
+      - name: tiv_serv_extyear_tf
+        data_type: int64
+      - name: tiv_serv_ind_instr_tf
+        data_type: int64
+      - name: tiv_serv_indnursing_tf
+        data_type: int64
+      - name: tiv_serv_intensive_tf
+        data_type: int64
+      - name: tiv_serv_interpreter_tf
+        data_type: int64
+      - name: tiv_serv_pupil_tf
+        data_type: int64
+      - name: tiv_serv_resplacement_tf
+        data_type: int64
+      - name: lep_tf
+        data_type: int64
+      - name: retained_tf
+        data_type: int64
+      - name: cumdaysinmembershipaddto_tf
+        data_type: int64
+      - name: cumdayspresentaddto_tf
+        data_type: int64
+      - name: cumdaystowardtruancyaddto_tf
+        data_type: int64
+      - name: cumulativedaysinmembership
+        data_type: numeric
+      - name: cumulativedayspresent
+        data_type: numeric
+      - name: cumulativedaystowardtruancy
+        data_type: numeric
+      - name: homelessprimarynighttimeres
+        data_type: int64
+      - name: migrant_tf
+        data_type: int64
+      - name: includeinctereport_tf
+        data_type: int64
+      - name: includeinnjsmart_tf
+        data_type: int64
+      - name: includeinstucourse_tf
+        data_type: int64
+      - name: eoc_title1biology_tf
+        data_type: int64
+      - name: iep_exemptpassingbiology_tf
+        data_type: int64
+      - name: iep_exempttakingbiology_tf
+        data_type: int64
+      - name: sla_alt_rep_paper
+        data_type: int64
+      - name: sla_alternate_location
+        data_type: int64
+      - name: sla_answer_masking
+        data_type: int64
+      - name: sla_answers_recorded_paper
+        data_type: int64
+      - name: sla_asl_video
+        data_type: int64
+      - name: sla_closed_caption
+        data_type: int64
+      - name: sla_dictionary
+        data_type: int64
+      - name: sla_directions_clarified
+        data_type: int64
+      - name: sla_exclude_tf
+        data_type: int64
+      - name: sla_frequent_breaks
+        data_type: int64
+      - name: sla_human_signer
+        data_type: int64
+      - name: sla_large_print_paper
+        data_type: int64
+      - name: sla_monitor_response
+        data_type: int64
+      - name: sla_non_screen_reader
+        data_type: int64
+      - name: sla_read_aloud
+        data_type: int64
+      - name: sla_refresh_braille
+        data_type: int64
+      - name: sla_screen_reader
+        data_type: int64
+      - name: sla_small_group
+        data_type: int64
+      - name: sla_special_equip
+        data_type: int64
+      - name: sla_specified_area
+        data_type: int64
+      - name: sla_time_of_day
+        data_type: int64
+      - name: sla_unique_accommodation
+        data_type: int64
+      - name: sla_word_prediction
+        data_type: int64
+      - name: includeinassareport_tf
+        data_type: int64
+      - name: caresactfunds
+        data_type: int64
+      - name: deviceowner
+        data_type: int64
+      - name: devicetype
+        data_type: int64
+      - name: internetconnectivity
+        data_type: int64
+      - name: learningenvironment
+        data_type: int64
+      - name: remotedaysmembership
+        data_type: numeric
+      - name: remotedayspresent
+        data_type: numeric
+      - name: remotepercentageofday
+        data_type: int64
+      - name: cumulativedaysabsent
+        data_type: numeric
+      - name: cumulativestateabs
+        data_type: int64
+      - name: daysopen
+        data_type: int64
+      - name: remotedaysabsent
+        data_type: numeric
+      - name: languageacquisition
+        data_type: int64
+      - name: collegecreditsearned
+        data_type: int64
+      - name: cteworkbasedlearning
+        data_type: int64
+      - name: sid_excludeenrollment
+        data_type: int64

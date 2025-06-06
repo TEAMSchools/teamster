@@ -26,9 +26,12 @@ with
                     "period",
                     "statestudentidentifier",
                     "localstudentidentifier",
+                    "firstname",
+                    "lastorsurname",
                     "studentwithdisabilities",
                     "subject",
                     "testcode",
+                    "studenttestuuid",
                     "test_grade",
                     "testperformancelevel_text",
                     "testperformancelevel",
@@ -40,31 +43,59 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04)
 select
-    * except (statestudentidentifier, _dbt_source_relation_2),
+    u._dbt_source_relation,
+    u.academic_year,
+    u.americanindianoralaskanative,
+    u.asian,
+    u.assessment_name,
+    u.assessmentgrade,
+    u.assessmentyear,
+    u.blackorafricanamerican,
+    u.discipline,
+    u.hispanicorlatinoethnicity,
+    u.is_proficient,
+    u.nativehawaiianorotherpacificislander,
+    u.period,
+    u.firstname,
+    u.lastorsurname,
+    u.subject,
+    u.testcode,
+    u.studenttestuuid,
+    u.test_grade,
+    u.testperformancelevel_text,
+    u.testperformancelevel,
+    u.testscalescore,
+    u.twoormoreraces,
+    u.white,
 
-    safe_cast(statestudentidentifier as string) as statestudentidentifier,
+    cast(u.statestudentidentifier as string) as statestudentidentifier,
 
-    coalesce(studentwithdisabilities in ('504', 'B'), false) as is_504,
+    coalesce(u.studentwithdisabilities in ('504', 'B'), false) as is_504,
 
-    if(englishlearnerel = 'Y', true, false) as lep_status,
-    if(studentwithdisabilities in ('IEP', 'B'), 'Has IEP', 'No IEP') as iep_status,
+    coalesce(x.student_number, u.localstudentidentifier) as localstudentidentifier,
+
+    if(u.englishlearnerel = 'Y', true, false) as lep_status,
+
+    if(u.studentwithdisabilities in ('IEP', 'B'), 'Has IEP', 'No IEP') as iep_status,
 
     case
-        when twoormoreraces = 'Y'
+        when u.twoormoreraces = 'Y'
         then 'T'
-        when hispanicorlatinoethnicity = 'Y'
+        when u.hispanicorlatinoethnicity = 'Y'
         then 'H'
-        when americanindianoralaskanative = 'Y'
+        when u.americanindianoralaskanative = 'Y'
         then 'I'
-        when asian = 'Y'
+        when u.asian = 'Y'
         then 'A'
-        when blackorafricanamerican = 'Y'
+        when u.blackorafricanamerican = 'Y'
         then 'B'
-        when nativehawaiianorotherpacificislander = 'Y'
+        when u.nativehawaiianorotherpacificislander = 'Y'
         then 'P'
-        when white = 'Y'
+        when u.white = 'Y'
         then 'W'
     end as race_ethnicity,
-from union_relations
+from union_relations as u
+left join
+    {{ ref("stg_pearson__student_crosswalk") }} as x
+    on u.studenttestuuid = x.student_test_uuid

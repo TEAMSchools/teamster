@@ -45,14 +45,14 @@ with
             on sec.sections_dcid = a.sectionsdcid
             and sec.assignment_category_name = a.category_name
             and a.duedate between sec.week_start_monday and sec.week_end_sunday
-            and regexp_extract(sec._dbt_source_relation, r'(kipp\w+)_')
-            = regexp_extract(a._dbt_source_relation, r'(kipp\w+)_')
+            and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
         left join
             {{ ref("int_powerschool__assignment_score_rollup") }} as asg
             on a.assignmentsectionid = asg.assignmentsectionid
-            and regexp_extract(a._dbt_source_relation, r'(kipp\w+)_')
-            = regexp_extract(asg._dbt_source_relation, r'(kipp\w+)_')
-
+            and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
+        where
+            concat(sec.region_school_level, sec.course_number)
+            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
     ),
 
     percent_graded as (
@@ -65,6 +65,9 @@ with
             ) as percent_graded_for_quarter_week_class,
 
         from assignments
+        where
+            region_school_level_credit_type
+            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI', 'MiamiESSOC')
     ),
 
     final as (
@@ -89,6 +92,7 @@ with
             week_number_academic_year,
             week_number_quarter,
             region_school_level,
+            region_school_level_credit_type,
             academic_year_display,
             quarter_end_date_insession,
             sections_dcid,
@@ -112,18 +116,23 @@ with
             notes,
 
             avg(expectation) as expectation,
+
             avg(
                 running_count_assignments_section_category_term
             ) as running_count_assignments_section_category_term,
+
             avg(
                 sum_totalpointvalue_section_quarter_category
             ) as sum_totalpointvalue_section_quarter_category,
+
             avg(
                 total_expected_section_quarter_week_category
             ) as total_expected_section_quarter_week_category,
+
             avg(
                 total_expected_scored_section_quarter_week_category
             ) as total_expected_scored_section_quarter_week_category,
+
             avg(
                 percent_graded_for_quarter_week_class
             ) as percent_graded_for_quarter_week_class,
@@ -176,6 +185,7 @@ select
 
     if(
         assignment_category_code = 'S'
+        and region_school_level != 'MiamiES'
         and sum_totalpointvalue_section_quarter_category > 200,
         true,
         false
@@ -183,9 +193,26 @@ select
 
     if(
         assignment_category_code = 'S'
+        and region_school_level != 'MiamiES'
         and sum_totalpointvalue_section_quarter_category < 200,
         true,
         false
     ) as qt_teacher_s_total_less_200,
+
+    if(
+        assignment_category_code = 'S'
+        and region_school_level = 'MiamiES'
+        and sum_totalpointvalue_section_quarter_category > 100,
+        true,
+        false
+    ) as qt_teacher_s_total_greater_100,
+
+    if(
+        assignment_category_code = 'S'
+        and region_school_level = 'MiamiES'
+        and sum_totalpointvalue_section_quarter_category < 100,
+        true,
+        false
+    ) as qt_teacher_s_total_less_100,
 
 from final

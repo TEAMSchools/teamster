@@ -38,6 +38,8 @@ assets:
     partition_column: whenmodified
   - asset_name: s_nj_usr_x
     partition_column: whenmodified
+  - asset_name: s_stu_x
+    partition_column: whenmodified
   - asset_name: schoolstaff
     partition_column: whenmodified
   - asset_name: sectionteacher
@@ -57,6 +59,8 @@ assets:
   - asset_name: gpstudentwaiver
     partition_column: whenmodified
   - asset_name: userscorefields
+    partition_column: whenmodified
+  - asset_name: u_storedgrades_de
     partition_column: whenmodified
   - asset_name: u_studentsuserfields
     partition_column: whenmodified

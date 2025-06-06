@@ -1,7 +1,6 @@
-from dagster import EnvVar, _check
+from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudWorkspace
-from dagster_dlt import DagsterDltResource
-from dagster_fivetran import FivetranWorkspace
+from dagster_shared import check
 
 from teamster.libraries.adp.workforce_manager.resources import (
     AdpWorkforceManagerResource,
@@ -10,10 +9,9 @@ from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowRe
 from teamster.libraries.amplify.dibels.resources import DibelsDataSystemResource
 from teamster.libraries.amplify.mclass.resources import MClassResource
 from teamster.libraries.coupa.resources import CoupaResource
+from teamster.libraries.email.resources import EmailResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
-from teamster.libraries.google.drive.resources import GoogleDriveResource
-from teamster.libraries.google.forms.resources import GoogleFormsResource
-from teamster.libraries.google.sheets.resources import GoogleSheetsResource
+from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.ldap.resources import LdapResource
 from teamster.libraries.powerschool.enrollment.resources import (
     PowerSchoolEnrollmentResource,
@@ -22,10 +20,6 @@ from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
-
-"""
-Dagster resources
-"""
 
 ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
     subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
@@ -61,30 +55,21 @@ DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
     username=EnvVar("AMPLIFY_DDS_USERNAME"), password=EnvVar("AMPLIFY_DDS_PASSWORD")
 )
 
-DLT_RESOURCE = DagsterDltResource()
-
-FIVETRAN_RESOURCE = FivetranWorkspace(
-    account_id=EnvVar("FIVETRAN_ACCOUNT_ID"),
-    api_key=EnvVar("FIVETRAN_API_KEY"),
-    api_secret=EnvVar("FIVETRAN_API_SECRET"),
-)
-
-GOOGLE_DRIVE_RESOURCE = GoogleDriveResource(
-    service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
-)
-
-GOOGLE_FORMS_RESOURCE = GoogleFormsResource(
-    service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
+OUTLOOK_RESOURCE = EmailResource(
+    host=EnvVar("OUTLOOK_HOST"),
+    port=int(check.not_none(value=EnvVar("OUTLOOK_PORT").get_value())),
+    user=EnvVar("OUTLOOK_USER"),
+    password=EnvVar("OUTLOOK_PASSWORD"),
+    chunk_size=450,
 )
 
 GOOGLE_DIRECTORY_RESOURCE = GoogleDirectoryResource(
     customer_id=EnvVar("GOOGLE_WORKSPACE_CUSTOMER_ID"),
     delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
-    service_account_file_path="/etc/secret-volume/gcloud_service_account_json",
 )
 
-GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource(
-    service_account_file_path="/etc/secret-volume/gcloud_service_account_json"
+KNOWBE4_RESOURCE = KnowBe4Resource(
+    api_key=EnvVar("KNOWBE4_API_KEY"), server="us", page_size=500
 )
 
 LDAP_RESOURCE = LdapResource(
@@ -95,7 +80,9 @@ LDAP_RESOURCE = LdapResource(
 )
 
 MCLASS_RESOURCE = MClassResource(
-    username=EnvVar("AMPLIFY_USERNAME"), password=EnvVar("AMPLIFY_PASSWORD")
+    username=EnvVar("AMPLIFY_USERNAME"),
+    password=EnvVar("AMPLIFY_PASSWORD"),
+    request_timeout=(60 * 10),
 )
 
 POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(
@@ -175,7 +162,7 @@ SSH_RESOURCE_IDAUTO = SSHResource(
 
 SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_host=EnvVar("LITTLESIS_SFTP_HOST"),
-    remote_port=int(_check.not_none(value=EnvVar("LITTLESIS_SFTP_PORT").get_value())),
+    remote_port=int(check.not_none(value=EnvVar("LITTLESIS_SFTP_PORT").get_value())),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
 )
