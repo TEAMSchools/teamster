@@ -2,7 +2,7 @@ version: 2
 models:
   - name: base_powerschool__student_enrollments
     description: |
-      This view is a complete enrollment history of all students with enrollments in
+      This view is a complete enrollment history of all students with enrollmen ts in
       PowerSchool.
       The exception to this are students with the same entry and exit dates in
       PowerSchool ("no-show" students who never attended a KTAF school) and students
@@ -26,7 +26,7 @@ models:
         description: "{{ doc('_dbt_source_relation') }}"
         data_type: string
       - name: studentid
-        description: "{{doc('studentid')}}"
+        description: "{{ doc('studentid') }}"
         data_type: int64
       - name: students_dcid
         data_type: int64
