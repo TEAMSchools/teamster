@@ -8,33 +8,41 @@ columns:
     data_type: int64
   - name: yearid
     data_type: int64
+  - name: student_number
+    data_type: int64
   - name: studentsdcid
     data_type: int64
   - name: studentid
     data_type: int64
-  - name: earned_credits_previous_year
-    data_type: numeric
-  - name: earned_credits_current_year
-    data_type: numeric
-  - name: half_earned_credits_current_year
-    data_type: numeric
-  - name: potential_credits_current_year
-    data_type: numeric
-  - name: is_cy_credits_on_track
-    data_type: boolean
-  - name: semester
-    data_type: string
-  - name: term
-    data_type: string
-  - name: ada
-    data_type: numeric
-  - name: gpa_term
-    data_type: numeric
-  - name: py_gpa
-    data_type: numeric
   - name: grade_level
     data_type: int64
   - name: grade_level_prev
     data_type: int64
-  - name: quarter_athletic_eligibility_status
+  - name: dob
+    data_type: date
+  - name: age_eligible
+    data_type: boolean
+  - name: is_first_time_ninth
+    data_type: boolean
+  - name: cy_q1_ada
+    data_type: numeric
+  - name: cy_s1_ada
+    data_type: numeric
+  - name: py_y1_ada
+    data_type: numeric
+  - name: cy_q1_gpa
+    data_type: numeric
+  - name: cy_s1_gpa
+    data_type: numeric
+  - name: py_y1_gpa
+    data_type: numeric
+  - name: py_earned_credits
+    data_type: numeric
+  - name: met_cy_credits
+    data_type: boolean
+  - name: quarter
+    data_type: string
+  - name: eligibility
+    data_type: string
+  - name: season
     data_type: string
