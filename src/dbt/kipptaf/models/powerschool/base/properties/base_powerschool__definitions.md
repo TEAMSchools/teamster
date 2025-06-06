@@ -12,3 +12,26 @@ joining on this field, \_dbt_source_relation must also be used as part of the
 join.
 
 {% enddocs %}
+
+{% docs students_dcid %}
+
+The DCID (District Code ID) for the student's record. This is not unique across
+regions. If joining on this field, \_dbt_source_relation must also be used as
+part of the join.
+
+{% enddocs %}
+
+{% docs student_number %}
+
+Unique student identifier. Source: `stg_powerschool__students`. For students
+registered during and after the 2018-19 school year, the student_number is 6
+digits in length, with the first digit indicating the student's region:
+
+1. Newark
+2. Camden
+3. Miami
+
+Even though this field is unique across regions, \_dbt_source_relation should
+still be used as part of a join for query performance reasons.
+
+{% enddocs %}

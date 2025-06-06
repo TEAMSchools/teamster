@@ -29,17 +29,11 @@ models:
         description: "{{ doc('studentid') }}"
         data_type: int64
       - name: students_dcid
+        description: "{{ doc('students_dcid') }}"
         data_type: int64
       - name: student_number
         data_type: int64
-        description: |
-          Unique student identifier. Source: `stg_powerschool__students`.
-          For students registered during and after the 2018-19 school year, the 
-          student_number is 6 digits in length, with the first digit indicating the 
-          student's region:
-            1. Newark
-            2. Camden
-            3. Miami
+        description: "{{ doc('student_number') }}"
       - name: reenrollments_dcid
         data_type: int64
       - name: grade_level
