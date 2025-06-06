@@ -35,14 +35,19 @@ models:
         data_type: int64
         description: "{{ doc('student_number') }}"
       - name: reenrollments_dcid
+        description: "{{ doc('reenrollments_dcid') }}"
         data_type: int64
       - name: grade_level
+        description: "{{ doc('grade_level') }}"
         data_type: int64
       - name: schoolid
+        description: "{{ doc('schoolid') }}"
         data_type: int64
       - name: entrydate
+        description: "{{ doc('entrydate') }}"
         data_type: date
       - name: exitdate
+        description: "{{ doc('exitdate') }}"
         data_type: date
       - name: entrycode
         data_type: string
