@@ -23,8 +23,10 @@ models:
             store_failures: true
     columns:
       - name: _dbt_source_relation
+        description: "{{ doc('_dbt_source_relation') }}"
         data_type: string
       - name: studentid
+        description: "{{doc('studentid')}}"
         data_type: int64
       - name: students_dcid
         data_type: int64
