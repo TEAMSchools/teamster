@@ -44,24 +44,22 @@ class DeansListResource(ConfigurableResource):
 
         params["apikey"] = self._api_key_map[school_id]
 
+        response = self._session.request(
+            method=method,
+            url=url,
+            params=params,
+            timeout=self.request_timeout,
+            **kwargs,
+        )
+
         try:
-            response = self._session.request(
-                method=method,
-                url=url,
-                params=params,
-                timeout=self.request_timeout,
-                **kwargs,
-            )
-
-            params.pop("apikey")
-
             response.raise_for_status()
-            return response
         except HTTPError as e:
-            params.pop("apikey")
-
             self._log.exception(e)
             raise e
+
+        params.pop("apikey")
+        return response
 
     def get(
         self,

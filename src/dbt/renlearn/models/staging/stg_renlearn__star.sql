@@ -116,7 +116,6 @@ select
     teacheruserid as teacher_user_id,
     totalcorrect as total_correct,
     totalpossible as total_possible,
-    totaltimeinseconds as total_time_in_seconds,
     unifiedscore as unified_score,
     upperlexilezoneofproximaldevelopment as upper_lexile_zone_of_proximal_development,
     upperzoneofproximaldevelopment as upper_zone_of_proximal_development,
@@ -160,4 +159,7 @@ select
     coalesce(
         teacherstateid.long_value, cast(teacherstateid.double_value as int)
     ) as teacher_state_id,
+    coalesce(
+        totaltimeinseconds.long_value, cast(totaltimeinseconds.double_value as int)
+    ) as total_time_in_seconds,
 from {{ source("renlearn", "src_renlearn__star") }}

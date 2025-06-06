@@ -143,7 +143,6 @@ class Star(RenLearningCore):
     TeacherDisplayID: str | None = None
     TotalCorrect: float | None = None
     TotalPossible: float | None = None
-    TotalTimeInSeconds: int | None = None
     UnifiedScore: int | None = None
     # Math
     Quantile: str | None = None
@@ -167,6 +166,7 @@ class Star(RenLearningCore):
     Lexile: str | int | None = None
     RenaissanceBenchmarkCategoryNumberOfLevels: int | float | None = None
     StudentDisplayID: int | float | None = None
+    TotalTimeInSeconds: int | float | None = None
 
 
 class StarDashboardStandard(BaseModel):
@@ -323,7 +323,7 @@ class FastStarCore(BaseModel):
     TID: int | None = None
     TotalCorrect: float | None = None
     TotalPossible: float | None = None
-    TotalTime: int | None = None
+    TotalTime: int | float | None = None
     UnifiedScore: int | None = None
 
     FAST_ES_Max: float | int | None = None

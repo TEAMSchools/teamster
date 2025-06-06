@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 
 class Application(BaseModel):
+    application_custom_step: str | None = None
     application_field_application_review_score: float | None = None
     application_field_job_title: str | None = None
     application_field_phone_interview_score: float | None = None
@@ -38,6 +39,7 @@ class Application(BaseModel):
     candidate_source_type: str | None = None
     candidate_source: str | None = None
     department_internal: str | None = None
+    department_org_field_value: str | None = None
     job_city: str | None = None
     job_title: str | None = None
     recruiters: str | None = None

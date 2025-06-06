@@ -1,6 +1,30 @@
 {%- set ref_contact = ref("base_kippadb__contact") -%}
 
 with
+    es_grad as (
+        select
+            co.student_number,
+
+            s.abbreviation as entry_school,
+
+            max(
+                if(
+                    co.grade_level = 4
+                    and co.exitdate >= date(co.academic_year + 1, 6, 1),
+                    true,
+                    false
+                )
+            ) as is_es_grad,
+        from {{ ref("base_powerschool__student_enrollments") }} as co
+        inner join
+            {{ ref("stg_powerschool__schools") }} as s
+            on co.entry_schoolid = s.school_number
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="s") }}
+
+        where co.rn_year = 1
+        group by all
+    ),
+
     roster as (
         select
             se.student_number,
@@ -29,6 +53,9 @@ with
 
             cf.is_ed_ea,
             cf.best_guess_pathway,
+
+            e.entry_school,
+            e.is_es_grad,
 
             concat(
                 os.assigned_counselor__last_name,
@@ -116,6 +143,7 @@ with
             {{ ref("int_overgrad__custom_fields_pivot") }} as cf
             on os.id = cf.id
             and cf._dbt_source_model = 'stg_overgrad__students'
+        left join es_grad as e on e.student_number = se.student_number
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

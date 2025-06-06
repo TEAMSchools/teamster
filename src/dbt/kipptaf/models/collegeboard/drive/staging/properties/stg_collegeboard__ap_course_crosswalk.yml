@@ -1,16 +1,16 @@
 version: 2
 models:
-  - name: stg_assessments__ap_course_crosswalk
+  - name: stg_collegeboard__ap_course_crosswalk
     config:
       contract:
         enforced: true
       tags: google_sheet
     columns:
-      - name: powerschool_ap_course_name
+      - name: Data_Source
         data_type: string
-      - name: ap_course_name
+      - name: Test_Name
         data_type: string
-      - name: nj_ap_course_subject_code
+      - name: AP_Course_Name
         data_type: string
-      - name: adb_test_subject
+      - name: ps_ap_course_subject_code
         data_type: string

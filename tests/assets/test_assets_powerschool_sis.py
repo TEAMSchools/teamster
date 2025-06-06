@@ -1,8 +1,6 @@
 import random
 
 from dagster import AssetsDefinition, materialize
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 
 
@@ -231,4 +229,15 @@ def test_grad_plan_assets_kippnewark():
             f"{CODE_LOCATION}/powerschool/gptarget",
             f"{CODE_LOCATION}/powerschool/gpversion",
         ],
+    )
+
+
+def test_powerschool_s_stu_x_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_assets(
+        assets=assets,
+        code_location=CODE_LOCATION.upper(),
+        selection=[f"{CODE_LOCATION}/powerschool/s_stu_x"],
     )
