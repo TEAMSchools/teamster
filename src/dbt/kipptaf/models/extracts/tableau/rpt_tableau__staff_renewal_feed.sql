@@ -83,7 +83,6 @@ with
             s.ny_entity,
             s.ny_location,
             s.ny_dept,
-            trim(s.ny_title) as ny_title,
             s.nonrenewal_reason,
             s.nonrenewal_notes,
             s.ny_salary,
@@ -120,6 +119,8 @@ with
             ap.hos_mdo_approval_date,
 
             rlm.renewal_doc,
+
+            trim(s.ny_title) as ny_title,
 
             concat(b.family_name_1, ', ', b.given_name) as preferred_name,
             concat(m.family_name_1, ', ', m.given_name) as manager_name,
