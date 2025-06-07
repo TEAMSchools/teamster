@@ -48,7 +48,7 @@ with
             avg(a.attendancevalue) as running_ada_year_term,
 
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
-        join
+        inner join
             term as t
             on a.yearid = t.yearid
             and a.schoolid = t.schoolid
