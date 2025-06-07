@@ -80,6 +80,8 @@ with
             t.semester,
             t.term,
 
+            r.running_ada_year_term,
+
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
         inner join
             term as t
@@ -88,42 +90,42 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="t") }}
             and a.calendardate >= t.term_start_date
             and a.calendardate <= t.term_end_date
+        inner join
+            running_ada_by_term as r
+            on a.yearid = r.yearid
+            and a.studentid = r.studentid
+            and t.term = r.term
+            and {{ union_dataset_join_clause(left_alias="a", right_alias="r") }}
         where
             a.membershipvalue = 1
             and a.calendardate <= current_date('{{ var("local_timezone") }}')
     )
 
 select
-    m._dbt_source_relation,
-    m.studentid,
-    m.academic_year,
-    m.yearid,
-    m.semester,
-    m.term,
+    _dbt_source_relation,
+    studentid,
+    academic_year,
+    yearid,
+    semester,
+    term,
+    running_ada_year_term,
 
-    r.running_ada_year_term,
-
-    avg(m.attendancevalue) over (
-        partition by m._dbt_source_relation, m.yearid, m.studentid, m.term
+    avg(attendancevalue) over (
+        partition by _dbt_source_relation, yearid, studentid, term
     ) as ada_term,
 
-    avg(m.attendancevalue) over (
-        partition by m._dbt_source_relation, m.yearid, m.studentid, m.semester
+    avg(attendancevalue) over (
+        partition by _dbt_source_relation, yearid, studentid, semester
     ) as ada_semester,
 
-    avg(m.attendancevalue) over (
-        partition by m._dbt_source_relation, m.yearid, m.studentid
+    avg(attendancevalue) over (
+        partition by _dbt_source_relation, yearid, studentid
     ) as ada_year,
 
     row_number() over (
-        partition by m._dbt_source_relation, m.studentid, m.yearid, m.term
-        order by m.calendardate
+        partition by _dbt_source_relation, studentid, yearid, term
+        order by calendardate
     ) as rn,
 
-from membership_days as m
-left join
-    running_ada_by_term as r
-    on m.yearid = r.yearid
-    and m.studentid = r.studentid
-    and {{ union_dataset_join_clause(left_alias="m", right_alias="r") }}
+from membership_days
 qualify rn = 1
