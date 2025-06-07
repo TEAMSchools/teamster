@@ -94,8 +94,9 @@ with
             running_ada_by_term as r
             on a.yearid = r.yearid
             and a.studentid = r.studentid
-            and t.term = r.term
             and {{ union_dataset_join_clause(left_alias="a", right_alias="r") }}
+            and t.term = r.term
+            and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
         where
             a.membershipvalue = 1
             and a.calendardate <= current_date('{{ var("local_timezone") }}')
