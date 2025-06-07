@@ -123,8 +123,7 @@ select
     ) as ada_year,
 
     row_number() over (
-        partition by _dbt_source_relation, studentid, yearid, term
-        order by calendardate
+        partition by _dbt_source_relation, studentid, yearid, term order by calendardate
     ) as rn,
 
 from membership_days
