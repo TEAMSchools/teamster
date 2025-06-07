@@ -107,11 +107,11 @@ select
         partition by m._dbt_source_relation, m.yearid, m.studentid, m.term
     ) as ada_term,
 
-    avg(attendancevalue) over (
+    avg(m.attendancevalue) over (
         partition by m._dbt_source_relation, m.yearid, m.studentid, m.semester
     ) as ada_semester,
 
-    avg(attendancevalue) over (
+    avg(m.attendancevalue) over (
         partition by m._dbt_source_relation, m.yearid, m.studentid
     ) as ada_year,
 
