@@ -16,6 +16,7 @@ with
             u.organization_id as zendesk_organization_id,
             u.secondary_location as zendesk_secondary_location,
             u.email as zendesk_email,
+            u.external_id as zendesk_external_id,
 
             sr.given_name || ' ' || sr.family_name_1 as `name`,
 
@@ -45,6 +46,7 @@ with
                         "suspended",
                         "organization_id",
                         "secondary_location",
+                        "external_id",
                     ]
                 )
             }} as adp_surrogate_key,
@@ -56,6 +58,7 @@ with
                         "zendesk_suspended",
                         "zendesk_organization_id",
                         "zendesk_secondary_location",
+                        "zendesk_external_id",
                     ]
                 )
             }} as zendesk_surrogate_key,
@@ -67,9 +70,16 @@ select
     external_id,
     `name`,
     suspended,
-    `role`,
     organization_id,
     secondary_location,
+    `role`,
+
+    /* existing values */
+    zendesk_external_id,
+    zendesk_name,
+    zendesk_suspended,
+    zendesk_organization_id,
+    zendesk_secondary_location,
 
     /* user identities */
     mail_alias,
