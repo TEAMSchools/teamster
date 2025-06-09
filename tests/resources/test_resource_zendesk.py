@@ -1,6 +1,4 @@
-import random
 import time
-from datetime import datetime, timedelta
 
 from dagster import EnvVar, build_resources
 
@@ -72,55 +70,72 @@ def test_zendesk_update_user():
 
 
 def test_zendesk_create_or_update_many():
-    zendesk = build_zendesk_resource()
-
-    payload = {"users": []}
-
-    response = zendesk.post(resource="users/create_or_update_many", json=payload).json()
-    print(response)
-
-    while response["job_status"]["status"] != "completed":
-        response = zendesk.get(
-            resource="job_statuses", id=response["job_status"]["id"]
-        ).json()
-        print(response)
-
-        time.sleep(1.0)
-
-
-def test_loop():
-    from faker import Faker
-
     from teamster.core.utils.functions import chunk
 
-    fake = Faker()
-    # zendesk = build_zendesk_resource()
-
-    fake_payloads = [
+    user_payloads = [
         {
-            "email": fake.unique.email(),
-            "external_id": str(fake.unique.random_int(min=100000, max=999999)),
-            "name": fake.name(),
-            "suspended": fake.boolean(),
-            "role": fake.random_element(elements=["admin", "agent", "end-user"]),
-            "user_fields": {
-                "organization_id": fake.random_int(),
-                "secondary_location": fake.random_element(
-                    elements=[None, "18th_ave_campus", "bold", "courage"]
-                ),
-            },
-            # "user_identities": [
-            #     {"value": fake.unique.email(), "type": "email"},
-            #     {"value": fake.unique.email(), "type": "email"},
-            #     {"value": fake.unique.email(), "type": "email"},
-            # ],
-        }
-        for _ in range(6000)
+            "email": "python_test_1@kippnj.org",
+            "external_id": "9999991",
+            "name": "Python Test 1",
+            "suspended": False,
+            "role": "end-user",
+            "organization_id": 360037335133,
+            "user_fields": {"secondary_location": "room_9"},
+            "identities": [
+                {"type": "email", "value": "python_test_1@kippteamandfamily.org"},
+                {"type": "email", "value": "python_test_1@gmail.com"},
+                {"type": "google", "value": "python_test_1@apps.teamschools.org"},
+            ],
+        },
+        {
+            "email": "python_test_2@kippteamandfamily.org",
+            "external_id": "9999992",
+            "name": "Python Test 2",
+            "suspended": False,
+            "role": "end-user",
+            "organization_id": 360037335133,
+            "identities": [
+                {"type": "email", "value": "python_test_2@gmail.com"},
+                {"type": "google", "value": "python_test_2@apps.teamschools.org"},
+                # TEST: additional user identity matches existing primary email
+                # {"type": "email", "value": "python_test_1@kippnj.org"},
+                # TEST: additional user identity matches existing additional identity
+                # {"type": "email", "value": "python_test_1@kippteamandfamily.org"},
+            ],
+        },
+        {
+            "email": "python_test_3@kippmiami.org",
+            "external_id": "9999993",
+            "name": "Python Test 3",
+            "suspended": False,
+            "role": "end-user",
+            "organization_id": 360037335133,
+            "identities": [
+                {"type": "email", "value": "python_test_3@kippteamandfamily.org"},
+                {"type": "email", "value": "python_test_3@gmail.com"},
+                {"type": "google", "value": "python_test_3@kippmiami.org"},
+            ],
+        },
+        {
+            "email": "python_test_4@kippmiami.org",
+            "external_id": "9999994",
+            "name": "Python Test 4",
+            "suspended": True,
+            "role": "end-user",
+            "organization_id": 360037335133,
+            "identities": [
+                {"type": "google", "value": "python_test_4@apps.teamschools.org"}
+            ],
+        },
     ]
 
-    chunked_payloads = chunk(obj=fake_payloads, size=100)
-    jobs_queue = []
-    i = 1
+    chunked_payloads = chunk(obj=user_payloads, size=100)
+
+    running_jobs = []
+    failures = []
+    jobs_queue = {}
+
+    zendesk = build_zendesk_resource()
 
     while True:
         try:
@@ -129,53 +144,45 @@ def test_loop():
             payload = None
 
         # add job to queue
-        if len(jobs_queue) == 30:
-            print("Job queue full...")
+        print(f"{len(running_jobs)} jobs running...")
+        if len(running_jobs) == 30:
+            print("Jobs queue full...")
             pass
         elif payload is not None:
-            completed_at = datetime.now() + timedelta(seconds=random.randint(a=1, b=90))
+            post_response = zendesk.post(
+                resource="users/create_or_update_many", json={"users": payload}
+            ).json()
 
-            jobs_queue.append(
-                {"id": i, "status": None, "completed_at": completed_at.timestamp()}
-            )
-            print(f"JOB{i} CREATED")
+            jobs_queue[post_response["job_status"]["id"]] = post_response["job_status"][
+                "status"
+            ]
 
         # check status of jobs in queue
-        for job in jobs_queue:
-            if datetime.now().timestamp() > job["completed_at"]:
-                print(f"JOB{job['id']} COMPLETED")
-                job["status"] = "completed"
+        if running_jobs:
+            job_statuses = zendesk.get(
+                resource="job_statuses/show_many",
+                params={"ids": ",".join(running_jobs)},
+            ).json()
 
-        jobs_queue = [j for j in jobs_queue if j["status"] != "completed"]
-        print(f"{len(jobs_queue)} jobs running...")
+            for js in job_statuses["job_statuses"]:
+                print(js)
+                jobs_queue[js["id"]] = js["status"]
 
-        # job_ids = ",".join([j["id"] for j in jobs_queue])
-        # GET /api/v2/job_statuses/show_many?ids={ids}
-        # """job_statuses = {
-        #     "job_statuses": [
-        #         {"id": "8b726e606741012ffc2d782bcb7848fe", "status": "completed"},
-        #         {"id": "e7665094164c498781ebe4c8db6d2af5", "status": "completed"},
-        #     ]
-        # }"""
-        # for js in job_statuses["job_statuses"]:
-        #     if js["status"] == "completed":
-        #         foo = [jq for jq in jobs_queue if jq["id"] == js["id"]][0]
-        #         jobs_queue.remove(foo)
+                if js["status"] == "completed":
+                    failed_results = [
+                        r for r in js["results"] if r["status"] == "Failed"
+                    ]
+                    failures.extend(failed_results)
+
+        running_jobs = [
+            id for id, status in jobs_queue.items() if status != "completed"
+        ]
 
         # terminate loop when queue is empty
-        if len(jobs_queue) == 0:
-            print("BREAK")
+        if len(running_jobs) == 0:
             break
         else:
-            i += 1
+            # i += 1
             time.sleep(1)
 
-
-"""
-[
-    {"id": 32149551391511, "email": "python_test_1@kippteamandfamily.org"},
-    {"id": 32149551391383, "email": "python_test_2@gmail.com"},
-    {"id": 32149551391255, "email": "python_test_3@kippteamandfamily.org"},
-    {"id": 32149551391127, "email": "python_test_4@apps.teamschools.org"},
-]
-"""
+    print(failures)

@@ -76,3 +76,7 @@ select
     google_email,
     personal_email,
 from comparison
+where
+    adp_surrogate_key != zendesk_surrogate_key
+    /* TODO: remove after account cleanup */
+    and `role` = 'end-user'
