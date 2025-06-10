@@ -23,6 +23,8 @@ with
                 then 'ENG'
                 when score_type in ('act_math', 'sat_math_test_score', 'sat_math')
                 then 'MATH'
+                when score_type = 'act_science'
+                then 'SCI'
             end as course_discipline,
 
             if(
