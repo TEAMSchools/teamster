@@ -1,3 +1,11 @@
+with
+    ap_course_crosswalk as (
+        -- trunk-ignore(sqlfluff/RF02)
+        select x.data_source, x.ap_course_name, p as ps_ap_course_subject_code,
+        from {{ ref("stg_collegeboard__ap_course_crosswalk") }} as x
+        cross join split(x.ps_ap_course_subject_code, ',') as p
+    )
+
 select
     e.academic_year,
     e.academic_year_display,
@@ -67,7 +75,7 @@ left join
     and s.ap_course_subject is not null
     and not s.is_dropped_section
 left join
-    {{ ref("stg_collegeboard__ap_course_crosswalk") }} as x
+    ap_course_crosswalk as x
     on s.ap_course_subject = x.ps_ap_course_subject_code
     and x.data_source = 'CB File'
 left join
