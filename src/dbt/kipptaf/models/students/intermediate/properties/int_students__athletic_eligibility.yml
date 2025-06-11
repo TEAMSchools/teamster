@@ -36,8 +36,8 @@ columns:
     data_type: numeric
   - name: py_y1_gpa
     data_type: numeric
-  - name: py_earned_credits
-    data_type: numeric
+  - name: met_py_credits
+    data_type: boolean
   - name: met_cy_credits
     data_type: boolean
   - name: quarter
