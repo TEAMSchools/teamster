@@ -1,21 +1,20 @@
 with
     adb_scores as (
         select
-            a.academic_year,
-            a.school_specific_id as powerschool_student_number,
-            a.score as exam_score,
-            a.test_subject,
+            academic_year,
+            school_specific_id as powerschool_student_number,
+            score as exam_score,
+            test_subject,
+            test_subject as test_name,
+            ps_ap_course_subject_code,
+            ap_course_name,
 
-            c.test_name,
-            c.ps_ap_course_subject_code,
-            c.ap_course_name,
-            c.data_source,
-        from {{ ref("int_kippadb__standardized_test_unpivot") }} as a
-        left join
-            {{ ref("stg_collegeboard__ap_course_crosswalk") }} as c
-            on a.test_subject = c.test_name
-            and c.data_source = 'ADB'
-        where a.score_type = 'ap' and a.academic_year < 2018  /* 2018+ comes from CB */
+            'ADB' as `data_source`,
+        from {{ ref("int_kippadb__standardized_test_unpivot") }}
+        where
+            score_type = 'ap'
+            /* 2018+ comes from CB */
+            and academic_year < 2018
     ),
 
     cb_scores as (
