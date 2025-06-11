@@ -32,6 +32,7 @@ from teamster.code_locations.kipptaf import (
     smartrecruiters,
     surveys,
     tableau,
+    zendesk,
 )
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
@@ -42,6 +43,7 @@ from teamster.core.resources import (
     GOOGLE_SHEETS_RESOURCE,
     OVERGRAD_RESOURCE,
     SSH_COUCHDROP,
+    ZENDESK_RESOURCE,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
@@ -90,6 +92,7 @@ defs = Definitions(
         *schoolmint.schedules,
         *smartrecruiters.schedules,
         *surveys.schedules,
+        *zendesk.schedules,
     ],
     sensors=[
         *_google.sensors,
@@ -139,5 +142,6 @@ defs = Definitions(
         "ssh_illuminate": resources.SSH_RESOURCE_ILLUMINATE,
         "ssh_littlesis": resources.SSH_RESOURCE_LITTLESIS,
         "tableau": resources.TABLEAU_SERVER_RESOURCE,
+        "zendesk": ZENDESK_RESOURCE,
     },
 )

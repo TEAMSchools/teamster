@@ -79,3 +79,12 @@ def get_partition_key_path(partition_key, path):
 def partition_key_to_vars(partition_key):
     path = get_partition_key_path(partition_key=partition_key, path=[])
     return {"partition_path": "/".join(path)}
+
+
+def chunk(obj: list, size: int):
+    """https://stackoverflow.com/a/312464
+    Yield successive chunks from list object.
+    """
+
+    for i in range(0, len(obj), size):
+        yield obj[i : i + size]

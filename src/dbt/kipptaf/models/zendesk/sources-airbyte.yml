@@ -5,10 +5,10 @@ sources:
     schema: "{{ project_name }}_zendesk"
     tables:
       - name: groups
+      - name: organizations
       - name: ticket_audits
       - name: ticket_fields
-      - name: ticket_fields_custom_field_options
       - name: ticket_metrics
       - name: tickets
-      - name: tickets_custom_fields
+      - name: user_identities
       - name: users
