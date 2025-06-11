@@ -103,10 +103,13 @@ with
     )
 
 select
-    *,
+    u.*,
+
+    acc.ap_course_name,
+    acc.ps_ap_course_subject_code,
 
     case
-        score_type
+        u.score_type
         when 'sat_total_score'
         then 'Combined'
         when 'psat_total_score'
@@ -115,10 +118,15 @@ select
         then 'Reading Test'
         when 'sat_math_test_score'
         then 'Math Test'
-        else test_subject
+        else u.test_subject
     end as subject_area,
 
     row_number() over (
-        partition by contact, test_type, score_type, test_subject order by score desc
+        partition by u.contact, u.test_type, u.score_type, acc.ap_course_name
+        order by u.score desc
     ) as rn_highest,
-from unpivoted
+from unpivoted as u
+left join
+    {{ ref("stg_collegeboard__ap_course_crosswalk") }} as acc
+    on u.test_subject = acc.test_name
+    and acc.data_source = 'ADB'
