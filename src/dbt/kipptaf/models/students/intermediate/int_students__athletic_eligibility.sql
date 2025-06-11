@@ -144,25 +144,29 @@ with
             case
                 when not is_age_eligible
                 then 'Ineligible - Age'
-                when is_first_time_ninth and cy_q1_ada >= 0.9
-                then 'Eligible'
                 when not met_py_credits and not is_first_time_ninth
                 then 'Ineligble - Credits'
-                when met_py_credits and cy_q1_gpa < 2.2
+                when met_py_credits and cy_q1_gpa < 2.2 and not is_first_time_ninth
                 then 'Ineligible - GPA'
-                when cy_q1_ada >= 0.9 and cy_q1_gpa >= 2.5 and met_py_credits
+                when
+                    cy_q1_ada >= 0.9
+                    and cy_q1_gpa >= 2.5
+                    and (met_py_credits or is_first_time_ninth)
                 then 'Eligible'
                 when
                     cy_q1_ada >= 0.9
                     and (cy_q1_gpa >= 2.2 and cy_q1_gpa <= 2.49)
-                    and met_py_credits
+                    and (met_py_credits or is_first_time_ninth)
                 then 'Probation - GPA'
-                when cy_q1_ada < 0.9 and cy_q1_gpa >= 2.5 and met_py_credits
+                when
+                    cy_q1_ada < 0.9
+                    and cy_q1_gpa >= 2.5
+                    and and (met_py_credits or is_first_time_ninth)
                 then 'Probation - ADA'
                 when
                     cy_q1_ada < 0.9
                     and (cy_q1_gpa >= 2.2 and cy_q1_gpa <= 2.49)
-                    and met_py_credits
+                    and and (met_py_credits or is_first_time_ninth)
                 then 'Probation - ADA and GPA'
             end as q2_eligibility,
 
