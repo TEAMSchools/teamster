@@ -1,52 +1,16 @@
 with
-    credits as (
-        select
-            _dbt_source_relation,
-            studentsdcid,
-            studentid,
-            academic_year,
-            cc_dcid,
-            credit_status,
-            official_potential_credits,
-
-            if(earned_credits = 0.0, 0.0, official_potential_credits) as credits_earned,
-
-            if(
-                academic_year = {{ var("current_academic_year") - 1 }}, true, false
-            ) as is_previous_academic_year,
-
-        from {{ ref("int_powerschool__gpprogress_grades") }}
-        where plan_name = 'NJ State Diploma'
-    ),
-
-    yearly_credits as (
-        select
-            *,
-
-            sum(credits_earned) over (
-                partition by _dbt_source_relation, academic_year, studentsdcid
-            ) as academic_year_credits_earned,
-
-            sum(official_potential_credits) over (
-                partition by _dbt_source_relation, academic_year, studentsdcid
-            ) as academic_year_credits_potential,
-
-        from credits
-    ),
-
     py_credits as (
         select
             _dbt_source_relation,
-            studentsdcid,
+            yearid,
+            studentid,
 
-            avg(
-                case
-                    when is_previous_academic_year then academic_year_credits_earned
-                end
-            ) as py_earned_credits,
+            if(sum(earnedchrs) >= 30, true, false) as met_py_credits,
 
-        from yearly_credits
-        group by _dbt_source_relation, studentsdcid
+        from {{ ref("base_powerschool__final_grades") }}
+        where
+            storecode = 'Y1' and academic_year = {{ var("current_academic_year") - 1 }}
+        group by _dbt_source_relation, yearid, studentid
     ),
 
     cy_credits as (
@@ -85,7 +49,7 @@ with
 
             gp.gpa_y1 as py_y1_gpa,
 
-            pyc.py_earned_credits,
+            pyc.met_py_credits,
 
             if(cyc.n_failing = 0, true, false) as met_cy_credits,
 
@@ -159,50 +123,54 @@ with
                 then 'Ineligible - Age'
                 when is_first_time_ninth
                 then 'Eligible'
-                when py_earned_credits < 30
+                when not met_py_credits
                 then 'Ineligble - Credits'
-                when py_earned_credits >= 30 and py_y1_gpa < 2.2
+                when met_py_credits and py_y1_gpa < 2.2
                 then 'Ineligible - GPA'
-                when py_y1_ada >= 0.9 and py_y1_gpa >= 2.5 and py_earned_credits >= 30
+                when py_y1_ada >= 0.9 and py_y1_gpa >= 2.5 and met_py_credits
                 then 'Eligible'
                 when
                     py_y1_ada >= 0.9
                     and (py_y1_gpa >= 2.2 and py_y1_gpa <= 2.49)
-                    and py_earned_credits >= 30
+                    and met_py_credits
                 then 'Probation - GPA'
-                when py_y1_ada < 0.9 and py_y1_gpa >= 2.5 and py_earned_credits >= 30
+                when py_y1_ada < 0.9 and py_y1_gpa >= 2.5 and met_py_credits
                 then 'Probation - ADA'
                 when
                     py_y1_ada < 0.9
                     and (py_y1_gpa >= 2.2 and py_y1_gpa <= 2.49)
-                    and py_earned_credits >= 30
+                    and met_py_credits
                 then 'Probation - ADA and GPA'
             end as q1_eligibility,
 
             case
+                when not is_age_eligible
+                then 'Ineligible - Age'
                 when is_first_time_ninth and cy_q1_ada >= 0.9
                 then 'Eligible'
-                when py_earned_credits < 30
+                when not met_py_credits
                 then 'Ineligble - Credits'
-                when py_earned_credits >= 30 and cy_q1_gpa < 2.2
+                when met_py_credits and cy_q1_gpa < 2.2
                 then 'Ineligible - GPA'
-                when cy_q1_ada >= 0.9 and cy_q1_gpa >= 2.5 and py_earned_credits >= 30
+                when cy_q1_ada >= 0.9 and cy_q1_gpa >= 2.5 and met_py_credits
                 then 'Eligible'
                 when
                     cy_q1_ada >= 0.9
                     and (cy_q1_gpa >= 2.2 and cy_q1_gpa <= 2.49)
-                    and py_earned_credits >= 30
+                    and met_py_credits
                 then 'Probation - GPA'
-                when cy_q1_ada < 0.9 and cy_q1_gpa >= 2.5 and py_earned_credits >= 30
+                when cy_q1_ada < 0.9 and cy_q1_gpa >= 2.5 and met_py_credits
                 then 'Probation - ADA'
                 when
                     cy_q1_ada < 0.9
                     and (cy_q1_gpa >= 2.2 and cy_q1_gpa <= 2.49)
-                    and py_earned_credits >= 30
+                    and met_py_credits
                 then 'Probation - ADA and GPA'
             end as q2_eligibility,
 
             case
+                when not is_age_eligible
+                then 'Ineligible - Age'
                 when not met_cy_credits
                 then 'Ineligble - Credits'
                 when met_cy_credits and cy_s1_gpa < 2.2
@@ -224,6 +192,8 @@ with
             end as q3_eligibility,
 
             case
+                when not is_age_eligible
+                then 'Ineligible - Age'
                 when not met_cy_credits
                 then 'Ineligble - Credits'
                 when met_cy_credits and cy_s1_gpa < 2.2
@@ -266,7 +236,7 @@ select
     cy_q1_gpa,
     cy_s1_gpa,
     py_y1_gpa,
-    py_earned_credits,
+    met_py_credits,
     met_cy_credits,
 
     quarter,
