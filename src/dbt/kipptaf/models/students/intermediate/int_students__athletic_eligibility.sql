@@ -161,12 +161,12 @@ with
                 when
                     cy_q1_ada < 0.9
                     and cy_q1_gpa >= 2.5
-                    and and (met_py_credits or is_first_time_ninth)
+                    and (met_py_credits or is_first_time_ninth)
                 then 'Probation - ADA'
                 when
                     cy_q1_ada < 0.9
                     and (cy_q1_gpa >= 2.2 and cy_q1_gpa <= 2.49)
-                    and and (met_py_credits or is_first_time_ninth)
+                    and (met_py_credits or is_first_time_ninth)
                 then 'Probation - ADA and GPA'
             end as q2_eligibility,
 
