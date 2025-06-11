@@ -17,6 +17,7 @@ with
             on s.school_number = c.schoolid
             and c.insession = 1
         where s.state_excludefromreporting = 0
+        qualify region_distinct = 1
     ),
 
     day_count as (
@@ -30,17 +31,14 @@ with
             count(distinct d.date_value) as n_days,
 
         from school_directory as d
-        left join
+        inner join
             {{ ref("stg_reporting__terms") }} as t
             on d.region = t.region
             and d.date_value between t.start_date and t.end_date
-            and d.region_distinct = 1
             and t.type = 'LIT'
-            and t.region = 'Camden'
             and t.name != 'EOY'
             and t.academic_year = {{ var("current_academic_year") }}
-        where t.academic_year is not null
-        group by all
+        group by t.academic_year, t.region, t.name, t.code
     ),
 
     avg_scores as (
@@ -62,7 +60,7 @@ with
             round(avg(s.mclass_measure_standard_score), 0) as avg_score,
 
         from {{ ref("int_amplify__all_assessments") }} as s
-        left join
+        inner join
             {{ ref("int_extracts__student_enrollments") }} as e
             on s.mclass_academic_year = e.academic_year
             and s.mclass_student_number = e.student_number
@@ -88,14 +86,19 @@ with
                     and s.moy_composite in ('Below Benchmark', 'Well Below Benchmark')
                 )
             )
-            and e.region is not null
-        group by all
+        group by
+            s.mclass_academic_year,
+            s.mclass_assessment_grade,
+            s.mclass_assessment_grade_int,
+            s.mclass_period,
+            s.mclass_measure_standard,
+            e.region
     ),
 
     /* this will be simplified once we figure out how to calculate bm_benchmark on the
     fly */
     days_and_goals as (
-        -- only need this distinct for now because standard are not the same across
+        -- only need this distinct for now because standards are not the same across
         -- rounds
         select distinct
             s.mclass_academic_year,
@@ -153,7 +156,6 @@ with
                 'MOYReading Fluency (ORF)',
                 'MOYReading Accuracy (ORF-Accu)'
             )
-        where s.region = 'Camden'
     ),
 
     calcs as (
@@ -212,39 +214,34 @@ with
             ) as round_growth_words_goal,
 
         from days_and_goals
-    ),
-
-    custom_calc as (
-        select
-            *,
-
-            case
-                when is_max_round
-                then bm_benchmark
-                else
-                    sum(round_growth_words_goal) over (
-                        partition by
-                            mclass_academic_year,
-                            region,
-                            pm_period,
-                            mclass_assessment_grade_int,
-                            mclass_measure_standard
-                        order by
-                            mclass_academic_year,
-                            region,
-                            pm_period,
-                            `round`,
-                            mclass_assessment_grade_int,
-                            mclass_measure_standard
-                        rows between unbounded preceding and current row
-                    )
-            end as cumulative_growth_words,
-
-        from calcs
     )
 
-select *,
-from custom_calc
+select
+    *,
+
+    case
+        when is_max_round
+        then bm_benchmark
+        else
+            sum(round_growth_words_goal) over (
+                partition by
+                    mclass_academic_year,
+                    region,
+                    pm_period,
+                    mclass_assessment_grade_int,
+                    mclass_measure_standard
+                order by
+                    mclass_academic_year,
+                    region,
+                    pm_period,
+                    `round`,
+                    mclass_assessment_grade_int,
+                    mclass_measure_standard
+                rows between unbounded preceding and current row
+            )
+    end as cumulative_growth_words,
+
+from calcs
 order by
     mclass_academic_year,
     region,
