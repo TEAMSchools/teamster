@@ -146,7 +146,7 @@ with
                 then 'Ineligible - Age'
                 when is_first_time_ninth and cy_q1_ada >= 0.9
                 then 'Eligible'
-                when not met_py_credits
+                when not met_py_credits and not is_first_time_ninth
                 then 'Ineligble - Credits'
                 when met_py_credits and cy_q1_gpa < 2.2
                 then 'Ineligible - GPA'
