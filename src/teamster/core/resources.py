@@ -15,6 +15,7 @@ from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 from teamster.libraries.overgrad.resources import OvergradResource
 from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
+from teamster.libraries.zendesk.resources import ZendeskResource
 
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
@@ -96,6 +97,12 @@ GOOGLE_FORMS_RESOURCE = GoogleFormsResource()
 GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource()
 
 OVERGRAD_RESOURCE = OvergradResource(api_key=EnvVar("OVERGRAD_API_KEY"), page_limit=100)
+
+ZENDESK_RESOURCE = ZendeskResource(
+    subdomain=EnvVar("ZENDESK_SUBDOMAIN"),
+    email=EnvVar("ZENDESK_EMAIL"),
+    token=EnvVar("ZENDESK_TOKEN"),
+)
 
 SSH_COUCHDROP = SSHResource(
     remote_host=EnvVar("COUCHDROP_SFTP_HOST"),
