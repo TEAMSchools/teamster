@@ -10,7 +10,6 @@ with
             row_number() over (
                 partition by s.schoolcity, c.date_value
             ) as region_distinct,
-
         from {{ ref("stg_powerschool__schools") }} as s
         inner join
             {{ ref("stg_powerschool__calendar_day") }} as c
@@ -29,7 +28,6 @@ with
             cast(right(t.code, 1) as int) as `round`,
 
             count(distinct d.date_value) as n_days,
-
         from school_directory as d
         inner join
             {{ ref("stg_reporting__terms") }} as t
@@ -59,7 +57,6 @@ with
             avg(s.mclass_measure_standard_score) as avg_score_raw,
 
             round(avg(s.mclass_measure_standard_score), 0) as avg_score,
-
         from {{ ref("int_amplify__all_assessments") }} as s
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
@@ -96,12 +93,23 @@ with
             e.region
     ),
 
+    pm_expectations as (
+        /* TODO: lookup table needs to be refactored */
+        select distinct
+            academic_year,
+            region,
+            `period`,
+            grade_level,
+            measure_standard,
+            moy_benchmark,
+            eoy_benchmark,
+        from {{ ref("stg_amplify__dibels_pm_expectations") }}
+    ),
+
     /* this will be simplified once we figure out how to calculate bm_benchmark on the
     fly */
     days_and_goals as (
-        -- only need this distinct for now because standards are not the same across
-        -- rounds
-        select distinct
+        select
             s.mclass_academic_year,
             s.region,
             s.pm_period,
@@ -110,7 +118,7 @@ with
             s.mclass_measure_standard,
             s.avg_score as starting_words,
 
-            c.`round`,
+            c.round,
             c.n_days,
 
             (coalesce(e.moy_benchmark, e.eoy_benchmark) + 3) as bm_benchmark,
@@ -119,7 +127,7 @@ with
                 (coalesce(e.moy_benchmark, e.eoy_benchmark) + 3) - s.avg_score, 0
             ) as required_growth_words,
 
-            min(c.`round`) over (
+            min(c.round) over (
                 partition by
                     s.mclass_academic_year,
                     s.region,
@@ -136,7 +144,6 @@ with
                     s.mclass_assessment_grade
                 order by c.`round` desc
             ) as max_pm_round,
-
         from avg_scores as s
         inner join
             day_count as c
@@ -144,13 +151,14 @@ with
             and s.region = c.region
             and s.pm_period = c.name
         inner join
-            {{ ref("stg_amplify__dibels_pm_expectations") }} as e
+            pm_expectations as e
             on s.mclass_academic_year = e.academic_year
             and s.region = e.region
             and s.pm_period = e.period
             and s.mclass_assessment_grade_int = e.grade_level
             and s.mclass_measure_standard = e.measure_standard
-            and s.filter_tag in (
+        where
+            s.filter_tag in (
                 'BOYPhonemic Awareness (PSF)',
                 'MOYDecoding (NWF-WRC)',
                 'MOYLetter Sounds (NWF-CLS)',
@@ -213,7 +221,6 @@ with
                 end,
                 0
             ) as round_growth_words_goal,
-
         from days_and_goals
     )
 
@@ -241,12 +248,4 @@ select
                 rows between unbounded preceding and current row
             )
     end as cumulative_growth_words,
-
 from calcs
-order by
-    mclass_academic_year,
-    region,
-    pm_period,
-    mclass_assessment_grade_int,
-    mclass_measure_standard,
-    `round`
