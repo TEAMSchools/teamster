@@ -5,9 +5,9 @@ with
             yearid,
             studentid,
 
-            if(sum(earnedchrs) >= 30, true, false) as met_py_credits,
+            if(sum(earnedcrhrs) >= 30, true, false) as met_py_credits,
 
-        from {{ ref("base_powerschool__storedgrades") }}
+        from {{ ref("stg_powerschool__storedgrades") }}
         where
             storecode = 'Y1' and academic_year = {{ var("current_academic_year") - 1 }}
         group by _dbt_source_relation, yearid, studentid
@@ -100,7 +100,7 @@ with
             and gp.is_current
         left join
             py_credits as pyc
-            on e.students_dcid = pyc.studentsdcid
+            on e.studentid = pyc.studentid
             and {{ union_dataset_join_clause(left_alias="e", right_alias="pyc") }}
         left join
             cy_credits as cyc
