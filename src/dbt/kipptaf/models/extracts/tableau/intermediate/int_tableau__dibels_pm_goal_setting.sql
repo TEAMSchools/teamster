@@ -16,8 +16,8 @@ with
             {{ ref("stg_powerschool__calendar_day") }} as c
             on s.school_number = c.schoolid
             and c.insession = 1
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
         where s.state_excludefromreporting = 0
-        qualify region_distinct = 1
     ),
 
     day_count as (
@@ -35,6 +35,7 @@ with
             {{ ref("stg_reporting__terms") }} as t
             on d.region = t.region
             and d.date_value between t.start_date and t.end_date
+            and d.region_distinct = 1
             and t.type = 'LIT'
             and t.name != 'EOY'
             and t.academic_year = {{ var("current_academic_year") }}
