@@ -7,7 +7,7 @@ with
 
             if(sum(earnedchrs) >= 30, true, false) as met_py_credits,
 
-        from {{ ref("base_powerschool__final_grades") }}
+        from {{ ref("base_powerschool__storedgrades") }}
         where
             storecode = 'Y1' and academic_year = {{ var("current_academic_year") - 1 }}
         group by _dbt_source_relation, yearid, studentid
@@ -61,9 +61,7 @@ with
             ) as is_first_time_ninth,
 
             if(
-                date_diff(
-                    date({{ var("current_academic_year") - 1 }}, 09, 01), e.dob, year
-                )
+                date_diff(date({{ var("current_academic_year") }}, 09, 01), e.dob, year)
                 >= 19,
                 false,
                 true
