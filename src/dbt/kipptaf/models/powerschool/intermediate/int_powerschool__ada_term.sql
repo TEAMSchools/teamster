@@ -18,12 +18,7 @@ with
                 false
             ) as is_current_term,
 
-            case
-                when tb.storecode in ('Q1', 'Q2')
-                then 'S1'
-                when tb.storecode in ('Q3', 'Q4')
-                then 'S2'
-            end as semester,
+            if(tb.storecode in ('Q1', 'Q2'), 'S1', 'S2') as semester,
 
         from {{ ref("stg_powerschool__terms") }} as t
         inner join

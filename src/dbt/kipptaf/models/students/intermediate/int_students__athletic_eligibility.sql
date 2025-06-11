@@ -26,11 +26,38 @@ with
         group by _dbt_source_relation, yearid, studentid
     ),
 
+    term as (
+        select
+            t._dbt_source_relation,
+            t.schoolid,
+            t.yearid,
+
+            tb.storecode as term,
+
+            t.yearid + 1990 as academic_year,
+
+            if(
+                current_date('America/New_York') between tb.date1 and tb.date2,
+                true,
+                false
+            ) as is_current_term,
+
+        from {{ ref("stg_powerschool__terms") }} as t
+        inner join
+            {{ ref("stg_powerschool__termbins") }} as tb
+            on t.id = tb.termid
+            and t.schoolid = tb.schoolid
+            and {{ union_dataset_join_clause(left_alias="t", right_alias="tb") }}
+            and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
+        where t.isyearrec = 1
+    ),
+
     base as (
         select
             e._dbt_source_relation,
             e.academic_year,
             e.yearid,
+            e.schoolid,
             e.student_number,
             e.students_dcid,
             e.studentid,
@@ -220,26 +247,28 @@ with
     )
 
 select
-    _dbt_source_relation,
-    academic_year,
-    yearid,
-    student_number,
-    students_dcid,
-    studentid,
-    grade_level,
-    grade_level_prev,
-    dob,
-    is_age_eligible,
-    is_first_time_ninth,
+    u._dbt_source_relation,
+    u.academic_year,
+    u.yearid,
+    u.student_number,
+    u.students_dcid,
+    u.studentid,
+    u.grade_level,
+    u.grade_level_prev,
+    u.dob,
+    u.is_age_eligible,
+    u.is_first_time_ninth,
 
-    cy_q1_ada,
-    cy_s1_ada,
-    py_y1_ada,
-    cy_q1_gpa,
-    cy_s1_gpa,
-    py_y1_gpa,
-    met_py_credits,
-    met_cy_credits,
+    u.cy_q1_ada,
+    u.cy_s1_ada,
+    u.py_y1_ada,
+    u.cy_q1_gpa,
+    u.cy_s1_gpa,
+    u.py_y1_gpa,
+    u.met_py_credits,
+    u.met_cy_credits,
+
+    t.is_current_term,
 
     quarter,
     eligibility,
@@ -256,4 +285,10 @@ from
             q3_eligibility as 'Q3',
             q4_eligibility as 'Q4'
         )
-    )
+    ) as u
+inner join
+    term as t
+    on u.yearid = t.yearid
+    and u.schoolid = t.schoolid
+    and u.quarter = t.term
+    and {{ union_dataset_join_clause(left_alias="u", right_alias="t") }}
