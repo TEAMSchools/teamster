@@ -1,11 +1,3 @@
-with
-    ap_course_crosswalk as (
-        -- trunk-ignore(sqlfluff/RF02)
-        select x.data_source, x.ap_course_name, p as ps_ap_course_subject_code,
-        from {{ ref("stg_collegeboard__ap_course_crosswalk") }} as x
-        cross join split(x.ps_ap_course_subject_code, ',') as p
-    )
-
 select
     e.academic_year,
     e.academic_year_display,
@@ -40,12 +32,8 @@ select
     a.irregularity_code_1,
     a.irregularity_code_2,
     a.data_source,
-
-    coalesce(
-        a.ps_ap_course_subject_code, x.ps_ap_course_subject_code
-    ) as ps_ap_course_subject_code,
-
-    coalesce(a.ap_course_name, x.ap_course_name) as ap_course_name,
+    a.ps_ap_course_subject_code,
+    a.ap_course_name,
 
     coalesce(s.courses_course_name, 'Not an AP course') as course_name,
 
@@ -60,11 +48,9 @@ select
     if(e.iep_status = 'No IEP', 0, 1) as sped,
 
     if(s.courses_course_name is null, 'Not applicable', 'AP') as expected_scope,
-
     if(
         s.courses_course_name is null, 'Not applicable', 'Official'
     ) as expected_test_type,
-
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join
     {{ ref("base_powerschool__course_enrollments") }} as s
@@ -74,10 +60,6 @@ left join
     and s.rn_course_number_year = 1
     and s.ap_course_subject is not null
     and not s.is_dropped_section
-left join
-    ap_course_crosswalk as x
-    on s.ap_course_subject = x.ps_ap_course_subject_code
-    and x.data_source = 'CB File'
 left join
     {{ ref("int_assessments__ap_assessments") }} as a
     on e.academic_year = a.academic_year
