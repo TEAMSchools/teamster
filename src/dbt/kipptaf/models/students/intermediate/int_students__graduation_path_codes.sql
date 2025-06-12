@@ -281,7 +281,7 @@ with
             max(met_sat) as met_sat,
             max(met_psat10) as met_psat10,
             max(met_psat_nmsqt) as met_psat_nmsqt,
-            
+
         from
             lookup_table pivot (
                 max(met_pathway_cutoff)
