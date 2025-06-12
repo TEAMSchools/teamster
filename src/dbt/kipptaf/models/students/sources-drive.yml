@@ -1,0 +1,36 @@
+version: 2
+
+sources:
+  - name: students
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_students
+    tables:
+      - name: src_students__graduation_path_combos
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1CbSOG-gs0dIPtf7wneJNhSqudRFKWpfcNoefyAEi5AM
+            sheet_range: src_students__graduation_path_combos
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - students
+              - graduation_path_combos
+      - name: src_students__graduation_path_cutoffs
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1CbSOG-gs0dIPtf7wneJNhSqudRFKWpfcNoefyAEi5AM
+            sheet_range: src_students__graduation_path_cutoffs
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - students
+              - graduation_path_cutoffs
