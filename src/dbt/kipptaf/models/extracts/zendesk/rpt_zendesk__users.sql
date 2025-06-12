@@ -27,7 +27,10 @@ with
             if(sr.user_principal_name != sr.mail, sr.mail, null) as mail_alias,
 
             if(
-                sr.assignment_status = 'Terminated' and u.role != 'agent', true, false
+                sr.assignment_status in ('Terminated', 'Deceased')
+                and u.role != 'agent',
+                true,
+                false
             ) as suspended,
         from {{ ref("int_people__staff_roster") }} as sr
         left join
