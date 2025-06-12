@@ -161,7 +161,7 @@ with
         from students as s
         left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         left join
-            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
+            {{ ref("stg_students__graduation_path_cutoffs") }} as c
             on s.cohort = c.cohort
             and s.discipline = c.discipline
             and c.`domain` = 'Graduation Pathway'
@@ -475,7 +475,7 @@ select
 
 from roster as r
 left join
-    {{ ref("stg_reporting__graduation_paths_combos") }} as g
+    {{ ref("stg_students__graduation_path_combos") }} as g
     on r.grade_level = g.grade_level
     and r.has_fafsa = g.has_fafsa
     and r.njgpa_season_11th = g.njgpa_season_11th
