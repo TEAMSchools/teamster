@@ -142,9 +142,9 @@ with
             s.njgpa_season_11th,
             s.fafsa_season_12th,
 
-            c.type as pathway_option,
-            c.subject as score_type,
-            c.code as pathway_code,
+            c.pathway_option,
+            c.score_type,
+            c.pathway_code,
             c.cutoff,
 
             p.scale_score,
@@ -164,11 +164,10 @@ with
             {{ ref("stg_students__graduation_path_cutoffs") }} as c
             on s.cohort = c.cohort
             and s.discipline = c.discipline
-            and c.`domain` = 'Graduation Pathway'
         left join
             scores as p
-            on c.type = p.pathway_option
-            and c.subject = p.score_type
+            on c.pathway_option = p.pathway_option
+            and c.score_type = p.score_type
             and s.student_number = p.student_number
         where
             s.ps_grad_path_code is null
