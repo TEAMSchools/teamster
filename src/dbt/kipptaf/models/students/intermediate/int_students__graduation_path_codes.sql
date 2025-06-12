@@ -70,6 +70,7 @@ with
             x.testcode as subject_area,
             x.test_name as pathway_option,
             x.discipline,
+
         from students as s
         inner join
             {{ ref("int_powerschool__state_assessments_transfer_scores") }} as x
