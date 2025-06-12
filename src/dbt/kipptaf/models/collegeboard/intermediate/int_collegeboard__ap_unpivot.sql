@@ -238,10 +238,15 @@ with
     ),
 
     ap_course_crosswalk_long as (
-        -- trunk-ignore(sqlfluff/RF02)
-        select x.data_source, x.ap_course_name, p as ps_ap_course_subject_code,
+        select
+            x.data_source,
+            x.test_name,
+            x.ap_course_name,
+
+            p as ps_ap_course_subject_code,
         from {{ ref("stg_collegeboard__ap_course_crosswalk") }} as x
-        cross join split(x.ps_ap_course_subject_code, ',') as p
+        cross join unnest(split(x.ps_ap_course_subject_code, ',')) as p
+        where x.data_source = 'CB File'
     )
 
 select
@@ -270,8 +275,5 @@ left join
     {{ ref("stg_collegeboard__ap_codes") }} as c3
     on a.irregularity_code_2 = c3.code
     and c3.`domain` = 'Irregularity Scores'
-left join
-    ap_course_crosswalk_long as x
-    on c1.description = x.test_name
-    and x.data_source = 'CB File'
+left join ap_course_crosswalk_long as x on c1.description = x.test_name
 where a.exam_grade is not null

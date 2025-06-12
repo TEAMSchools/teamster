@@ -3,7 +3,7 @@ select
     school_specific_id as powerschool_student_number,
     test_subject,
     score as exam_score,
-    test_name,
+    test_subject as test_name,
     ps_ap_course_subject_code,
     ap_course_name,
 
