@@ -13,10 +13,14 @@ select
     rt.name as term_name,
 
     ldap.employee_number as respondent_employee_number,
-
     sr.formatted_name as respondent_preferred_name,
     sr.sam_account_name as respondent_samaccountname,
     sr.user_principal_name as respondent_userprincipalname,
+
+    null as subject_employee_number,
+    cast(null as string) as subject_preferred_name,
+    cast(null as string) as subject_samaccountname,
+    cast(null as string) as respondent_userprincipalname,
 
     safe_cast(fr.text_value as numeric) as answer_value,
 
@@ -68,13 +72,18 @@ select
 
     coalesce(sr.campaign_fiscal_year - 1, rt.academic_year) as academic_year,
 
-    coalesce(regexp_extract(sr.campaign_name, r'\s(.*)'), rt.code) as term_code,
+    coalesce(rt.code, regexp_extract(sr.campaign_name, r'\s(.*)')) as term_code,
 
-    null as term_name,
-    null as respondent_employee_number,
-    null as respondent_preferred_name,
-    null as respondent_samaccountname,
-    null as respondent_userprincipalname,
+    coalesce(rt.name, ri.campaign_name) as term_name,
+    ri.respondent_employee_number,
+    srr.formatted_name as respondent_preferred_name,
+    srr.sam_account_name as respondent_samaccountname,
+    srr.user_principal_name as respondent_userprincipalname,
+
+    ri.subject_employee_number,
+    srs.formatted_name as subject_preferred_name,
+    srs.sam_account_name as subject_samaccountname,
+    srs.user_principal_name as subject_userprincipalname,
 
     safe_cast(sr.response_value as numeric) as answer_value,
 
@@ -96,3 +105,9 @@ left join
     {{ source("surveys", "int_surveys__response_identifiers") }} as ri
     on sr.survey_id = ri.survey_id
     and sr.response_id = ri.response_id
+left join
+    {{ ref("int_people__staff_roster") }} as srr
+    on ri.respondent_employee_number = srr.employee_number
+left join
+    {{ ref("int_people__staff_roster") }} as srs
+    on ri.subject_employee_number = srs.employee_number
