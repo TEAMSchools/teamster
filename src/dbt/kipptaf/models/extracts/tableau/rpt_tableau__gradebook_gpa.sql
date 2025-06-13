@@ -67,7 +67,7 @@ with
             enr.is_counseling_services,
             enr.is_student_athlete,
 
-            term.storecode as term,
+            term.term,
             term.term_start_date,
             term.term_end_date,
             term.is_current_term,
@@ -126,7 +126,7 @@ with
             and enr.yearid = gtq.yearid
             and enr.schoolid = gtq.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gtq") }}
-            and term.storecode = gtq.term_name
+            and term.term = gtq.term_name
             and {{ union_dataset_join_clause(left_alias="term", right_alias="gtq") }}
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty
