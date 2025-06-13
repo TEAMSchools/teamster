@@ -12,5 +12,5 @@ models:
         data_type: string
       - name: AP_Course_Name
         data_type: string
-      - name: ps_ap_course_subject_code
+      - name: PS_AP_Course_Subject_Code
         data_type: string
