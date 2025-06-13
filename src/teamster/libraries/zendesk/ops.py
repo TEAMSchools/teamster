@@ -11,31 +11,55 @@ from teamster.libraries.zendesk.resources import ZendeskResource
 def zendesk_user_sync_op(
     context: OpExecutionContext, zendesk: ZendeskResource, users: list[dict[str, Any]]
 ):
-    chunked_payloads = chunk(obj=users, size=100)
+    chunked_users = chunk(obj=users, size=100)
 
     running_jobs = []
     failures = []
     jobs_queue = {}
 
     while True:
-        try:
-            payload = next(chunked_payloads)
-        except StopIteration:
-            payload = None
-
         # add job to queue
-        context.log.info(f"{len(running_jobs)} jobs running...")
         if len(running_jobs) == 30:
             context.log.warning("Jobs queue full...")
-            pass
-        elif payload is not None:
-            post_response = zendesk.post(
-                resource="users/create_or_update_many", json={"users": payload}
-            ).json()
+        else:
+            try:
+                users_chunk: list[dict] = next(chunked_users)
 
-            jobs_queue[post_response["job_status"]["id"]] = post_response["job_status"][
-                "status"
-            ]
+                payload = [
+                    {
+                        k: v
+                        for k, v in u.items()
+                        if k
+                        in [
+                            "email",
+                            "external_id",
+                            "name",
+                            "suspended",
+                            "organization_id",
+                            "role",
+                            "user_fields",
+                        ]
+                    }
+                    for u in users_chunk
+                ]
+
+                post_response = zendesk.post(
+                    resource="users/create_or_update_many", json={"users": payload}
+                ).json()
+
+                jobs_queue[post_response["job_status"]["id"]] = post_response[
+                    "job_status"
+                ]["status"]
+            except StopIteration:
+                pass
+
+        running_jobs = [
+            id
+            for id, status in jobs_queue.items()
+            if status not in ["completed", "failed"]
+        ]
+
+        context.log.info(f"{len(running_jobs)} job(s) running...")
 
         # check status of jobs in queue
         if running_jobs:
@@ -45,7 +69,11 @@ def zendesk_user_sync_op(
             ).json()
 
             for js in job_statuses["job_statuses"]:
-                context.log.debug(js)
+                context.log.debug(
+                    f"{js['id']} {js['job_type']}: {js['status']} "
+                    f"({js['progress'] or 0}/{js['total']} records)"
+                    + (f"\n{js['message']}" if js["message"] else "")
+                )
                 jobs_queue[js["id"]] = js["status"]
 
                 # capture failures
@@ -55,12 +83,6 @@ def zendesk_user_sync_op(
                     )
                 elif js["status"] == "failed":
                     failures.append(js)
-
-        running_jobs = [
-            id
-            for id, status in jobs_queue.items()
-            if status not in ["completed", "failed"]
-        ]
 
         # terminate loop when queue is empty
         if len(running_jobs) == 0:
