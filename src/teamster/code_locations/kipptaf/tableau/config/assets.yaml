@@ -192,7 +192,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__promo_status]
     metadata:
       id: 5698ccc2-b952-4123-878b-48166b686b16
-      cron_schedule: 0 1 * * *
+      # cron_schedule: 0 1 * * *
   - name: Stipend and Bonus Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__stipend_and_bonus_app]
@@ -245,4 +245,10 @@ assets:
       - [kipptaf, tableau, rpt_tableau__survey_completion]
     metadata:
       id: b11542a2-6780-4feb-a1dd-534ffe724faf
-      cron_schedule: 0 * * * *
+      # cron_schedule: 0 * * * *
+  - name: Compliance Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__nj_school_register]
+    metadata:
+      id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
+      cron_schedule: 0 5 * * *
