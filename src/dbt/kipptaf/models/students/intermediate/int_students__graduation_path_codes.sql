@@ -88,7 +88,7 @@ with
             n.testcode as subject_area,
             n.assessment_name as pathway_option,
             n.discipline,
-            
+
         from students as s
         inner join
             {{ ref("stg_pearson__njgpa") }} as n
