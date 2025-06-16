@@ -47,7 +47,8 @@ left join
     {{ ref("stg_egencia__traveler_group_exceptions") }} as tgx
     on sr.employee_number = tgx.employee_number
 where
-    (sr.worker_type_code not in ('Intern', 'Part Time') or sr.worker_type_code is null)
+    sr.mail is not null
+    and coalesce(sr.worker_type_code, '') not in ('Intern', 'Part Time')
     and coalesce(
         sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
     )
