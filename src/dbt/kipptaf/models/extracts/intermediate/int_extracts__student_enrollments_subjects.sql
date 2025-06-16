@@ -177,8 +177,8 @@ with
 
     dibels as (
         select
-            mclass_student_number,
-            mclass_academic_year,
+            student_number,
+            academic_year,
             boy_composite,
             moy_composite,
             eoy_composite,
@@ -186,29 +186,27 @@ with
             'Reading' as iready_subject,
 
             row_number() over (
-                partition by mclass_student_number, mclass_academic_year
-                order by mclass_client_date desc
+                partition by student_number, academic_year order by client_date desc
             ) as rn_year,
         from {{ ref("int_amplify__all_assessments") }}
-        where mclass_measure_standard = 'Composite'
+        where measure_standard = 'Composite'
     ),
 
     dibels_recent as (
         select
-            mclass_academic_year,
-            mclass_student_number,
-            mclass_client_date,
-            mclass_measure_standard_level,
-            mclass_measure_standard_level_int,
+            academic_year,
+            student_number,
+            client_date,
+            measure_standard_level,
+            measure_standard_level_int,
 
             'Reading' as iready_subject,
 
             row_number() over (
-                partition by mclass_academic_year, mclass_student_number
-                order by mclass_client_date desc
+                partition by academic_year, student_number order by client_date desc
             ) as rn_benchmark,
         from {{ ref("int_amplify__all_assessments") }}
-        where mclass_measure_standard = 'Composite'
+        where measure_standard = 'Composite'
     )
 
 -- current year and current year - 1 only to honor bucket calcs
@@ -223,7 +221,7 @@ select
 
     a.is_iep_eligible as is_grad_iep_exempt,
 
-    dr.mclass_measure_standard_level_int as dibels_most_recent_composite_int,
+    dr.measure_standard_level_int as dibels_most_recent_composite_int,
 
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
@@ -234,7 +232,7 @@ select
     coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
 
     coalesce(
-        dr.mclass_measure_standard_level, 'No Composite Score Available'
+        dr.measure_standard_level, 'No Composite Score Available'
     ) as dibels_most_recent_composite,
 
     if(ie.student_number is not null, true, false) as is_exempt_iready,
@@ -310,14 +308,14 @@ left join
     and sj.iready_subject = pr.subject
 left join
     dibels as db
-    on co.student_number = db.mclass_student_number
-    and co.academic_year = db.mclass_academic_year
+    on co.student_number = db.student_number
+    and co.academic_year = db.academic_year
     and sj.iready_subject = db.iready_subject
     and db.rn_year = 1
 left join
     dibels_recent as dr
-    on co.student_number = dr.mclass_student_number
-    and co.academic_year = dr.mclass_academic_year
+    on co.student_number = dr.student_number
+    and co.academic_year = dr.academic_year
     and sj.iready_subject = dr.iready_subject
     and dr.rn_benchmark = 1
 left join
@@ -422,8 +420,8 @@ left join
     and sj.iready_subject = pr.subject
 left join
     dibels as db
-    on co.student_number = db.mclass_student_number
-    and co.academic_year = db.mclass_academic_year
+    on co.student_number = db.student_number
+    and co.academic_year = db.academic_year
     and sj.iready_subject = db.iready_subject
     and db.rn_year = 1
 left join
