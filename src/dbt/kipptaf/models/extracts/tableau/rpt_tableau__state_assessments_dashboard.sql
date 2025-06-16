@@ -299,6 +299,7 @@ select
     a.performance_band,
     a.performance_band_level,
     a.is_proficient,
+    a.results_type,
 
     c.city_percent_proficient as proficiency_city,
     c.state_percent_proficient as proficiency_state,
@@ -406,6 +407,7 @@ select
     a.performance_band,
     a.performance_band_level,
     a.is_proficient,
+    a.results_type,
 
     c.city_percent_proficient as proficiency_city,
     c.state_percent_proficient as proficiency_state,
