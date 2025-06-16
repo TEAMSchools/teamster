@@ -8,3 +8,5 @@ models:
     columns:
       - name: Academic_Year
         data_type: integer
+      - name: Region
+        data_type: string
