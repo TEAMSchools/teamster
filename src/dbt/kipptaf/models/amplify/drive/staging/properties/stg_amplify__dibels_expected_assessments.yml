@@ -1,0 +1,10 @@
+version: 2
+models:
+  - name: stg_amplify__dibels_expected_assessments
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Academic_Year
+data_type: integer
