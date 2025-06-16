@@ -7,13 +7,13 @@ with
             `date`,
             form,
             `remote`,
-            score as mclass_measure_standard_score,
+            score as measure_standard_score,
             benchmark_status,
-            national_dds_percentile as mclass_measure_percentile,
+            national_dds_percentile as measure_percentile,
             district_percentile,
             school_percentile,
 
-            split(name_column, '|')[0] as mclass_measure_standard,
+            split(name_column, '|')[0] as measure_standard,
             split(name_column, '|')[1] as assessment_period,
 
         from
@@ -248,18 +248,13 @@ with
             *,
 
             case
-                mclass_measure_standard
+                measure_standard
                 when 'Composite'
                 then 'Composite'
                 when 'Reading Comprehension (Maze)'
                 then 'Comprehension'
-                else
-                    substr(
-                        mclass_measure_standard,
-                        strpos(mclass_measure_standard, '(') + 1,
-                        3
-                    )
-            end as mclass_measure_name_code,
+                else substr(measure_standard, strpos(measure_standard, '(') + 1, 3)
+            end as measure_name_code,
 
             case
                 assessment_period
@@ -269,7 +264,7 @@ with
                 then 'MOY'
                 when 'End'
                 then 'EOY'
-            end as mclass_period,
+            end as period,
 
             case
                 benchmark_status
@@ -281,7 +276,7 @@ with
                 then 'Below Benchmark'
                 when 'Intensive Support'
                 then 'Well Below Benchmark'
-            end as mclass_measure_standard_level,
+            end as measure_standard_level,
 
             case
                 benchmark_status
@@ -293,7 +288,7 @@ with
                 then 2
                 when 'Intensive Support'
                 then 1
-            end as mclass_measure_standard_level_int,
+            end as measure_standard_level_int,
 
             {{
                 dbt_utils.generate_surrogate_key(
@@ -306,7 +301,7 @@ with
 select
     *,
     case
-        mclass_measure_name_code
+        measure_name_code
         when 'LNF'
         then 'Letter Names'
         when 'PSF'
@@ -317,6 +312,6 @@ select
         then 'Word Reading Fluency'
         when 'ORF'
         then 'Oral Reading Fluency'
-        else mclass_measure_name_code
-    end as mclass_measure_name,
+        else measure_name_code
+    end as measure_name,
 from df_data
