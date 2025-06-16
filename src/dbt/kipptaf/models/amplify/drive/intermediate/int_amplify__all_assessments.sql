@@ -1,32 +1,32 @@
 with
     assessments_scores as (
         select
-            bss.academic_year as mclass_academic_year,
-            bss.student_primary_id as mclass_student_number,
-            bss.assessment_grade as mclass_assessment_grade,
-            bss.assessment_grade_int as mclass_assessment_grade_int,
-            bss.benchmark_period as mclass_period,
-            bss.client_date as mclass_client_date,
-            bss.sync_date as mclass_sync_date,
+            bss.academic_year,
+            bss.student_primary_id,
+            bss.assessment_grade,
+            bss.assessment_grade_int,
+            bss.benchmark_period as period,
+            bss.client_date as client_date,
+            bss.sync_date as sync_date,
 
-            u.mclass_measure_name,
-            u.mclass_measure_name_code,
-            u.mclass_measure_standard,
-            u.mclass_measure_standard_score,
-            u.mclass_measure_standard_level,
-            u.mclass_measure_standard_level_int,
-            u.mclass_measure_percentile,
-            u.mclass_measure_semester_growth,
-            u.mclass_measure_year_growth,
+            u.measure_name,
+            u.measure_name_code,
+            u.measure_standard,
+            u.measure_standard_score,
+            u.measure_standard_level,
+            u.measure_standard_level_int,
+            u.measure_percentile,
+            u.measure_semester_growth,
+            u.measure_year_growth,
 
             'Benchmark' as assessment_type,
-            null as mclass_probe_number,
-            null as mclass_total_number_of_probes,
-            null as mclass_score_change,
+            null as probe_number,
+            null as total_number_of_probes,
+            null as score_change,
 
             row_number() over (
-                partition by u.surrogate_key, u.mclass_measure_standard
-                order by u.mclass_measure_standard_level_int desc
+                partition by u.surrogate_key, u.measure_standard
+                order by u.measure_standard_level_int desc
             ) as rn_highest,
 
             row_number() over (
@@ -44,34 +44,34 @@ with
         union all
 
         select
-            academic_year as mclass_academic_year,
-            student_id as mclass_student_number,
+            academic_year as academic_year,
+            student_id as student_number,
 
-            cast(null as string) as mclass_assessment_grade,
-            null as mclass_assessment_grade_int,
+            cast(null as string) as assessment_grade,
+            null as assessment_grade_int,
 
-            mclass_period,
-            `date` as mclass_client_date,
-            `date` as mclass_sync_date,
+            period,
+            `date` as client_date,
+            `date` as sync_date,
 
-            mclass_measure_name,
-            mclass_measure_name_code,
-            mclass_measure_standard,
-            mclass_measure_standard_score,
-            mclass_measure_standard_level,
-            mclass_measure_standard_level_int,
-            mclass_measure_percentile,
+            measure_name,
+            measure_name_code,
+            measure_standard,
+            measure_standard_score,
+            measure_standard_level,
+            measure_standard_level_int,
+            measure_percentile,
 
-            cast(null as string) as mclass_measure_semester_growth,
-            cast(null as string) as mclass_measure_year_growth,
+            cast(null as string) as measure_semester_growth,
+            cast(null as string) as measure_year_growth,
             'Benchmark' as assessment_type,
-            null as mclass_probe_number,
-            null as mclass_total_number_of_probes,
-            null as mclass_score_change,
+            null as probe_number,
+            null as total_number_of_probes,
+            null as score_change,
 
             row_number() over (
-                partition by surrogate_key, mclass_measure_standard
-                order by mclass_measure_standard_level_int desc
+                partition by surrogate_key, measure_standard
+                order by measure_standard_level_int desc
             ) as rn_highest,
 
             row_number() over (
@@ -80,40 +80,40 @@ with
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }}
 
         where
-            mclass_measure_standard
+            measure_standard
             in ('Reading Fluency (ORF)', 'Reading Comprehension (Maze)', 'Composite')
 
         union all
 
         select
-            p.academic_year as mclass_academic_year,
-            p.student_primary_id as mclass_student_number,
-            p.assessment_grade as mclass_assessment_grade,
-            p.assessment_grade_int as mclass_assessment_grade_int,
-            p.pm_period as mclass_period,
-            p.client_date as mclass_client_date,
-            p.sync_date as mclass_sync_date,
-            p.mclass_measure_name,
-            p.mclass_measure_name_code,
-            p.measure as mclass_measure_standard,
-            p.mclass_measure_standard_score,
+            p.academic_year as academic_year,
+            p.student_primary_id as student_number,
+            p.assessment_grade as assessment_grade,
+            p.assessment_grade_int as assessment_grade_int,
+            p.pm_period as period,
+            p.client_date as client_date,
+            p.sync_date as sync_date,
+            p.measure_name,
+            p.measure_name_code,
+            p.measure as measure_standard,
+            p.measure_standard_score,
 
-            'NA' as mclass_measure_standard_level,
+            'NA' as measure_standard_level,
 
-            null as mclass_measure_standard_level_int,
-            null as mclass_measure_percentile,
+            null as measure_standard_level_int,
+            null as measure_percentile,
 
-            'NA' as mclass_measure_semester_growth,
-            'NA' as mclass_measure_year_growth,
+            'NA' as measure_semester_growth,
+            'NA' as measure_year_growth,
             'PM' as assessment_type,
 
-            p.probe_number as mclass_probe_number,
-            p.total_number_of_probes as mclass_total_number_of_probes,
-            p.mclass_measure_standard_score_change,
+            p.probe_number as probe_number,
+            p.total_number_of_probes as total_number_of_probes,
+            p.measure_standard_score_change,
 
             row_number() over (
                 partition by p.surrogate_key, p.measure, a.pm_round
-                order by p.mclass_measure_standard_score desc
+                order by p.measure_standard_score desc
             ) as rn_highest,
 
             row_number() over (
@@ -134,34 +134,28 @@ with
     ),
 
     composite_only as (
-        select
-            mclass_academic_year,
-            mclass_student_number,
-            mclass_period,
-            mclass_measure_standard_level,
+        select academic_year, student_number, period, measure_standard_level,
         from assessments_scores
-        where mclass_measure_standard = 'Composite' and rn_highest = 1
+        where measure_standard = 'Composite' and rn_highest = 1
     ),
 
     overall_composite_by_window as (
         select
-            mclass_academic_year,
-            mclass_student_number,
+            academic_year,
+            student_number,
 
             coalesce(p.boy, 'No data') as boy,
             coalesce(p.moy, 'No data') as moy,
             coalesce(p.eoy, 'No data') as eoy,
         from
-            composite_only pivot (
-                max(mclass_measure_standard_level) for mclass_period
-                in ('BOY', 'MOY', 'EOY')
-            ) as p
+            composite_only
+            pivot (max(measure_standard_level) for period in ('BOY', 'MOY', 'EOY')) as p
     ),
 
     probe_eligible_tag as (
         select
-            s.mclass_academic_year,
-            s.mclass_student_number,
+            s.academic_year,
+            s.student_number,
 
             c.boy,
             c.moy,
@@ -177,32 +171,32 @@ with
         from assessments_scores as s
         left join
             overall_composite_by_window as c
-            on s.mclass_academic_year = c.mclass_academic_year
-            and s.mclass_student_number = c.mclass_student_number
+            on s.academic_year = c.academic_year
+            and s.student_number = c.student_number
         where s.rn_distinct = 1 and s.assessment_type = 'Benchmark'
     )
 
 select
-    s.mclass_academic_year,
-    s.mclass_student_number,
+    s.academic_year,
+    s.student_number,
     s.assessment_type,
-    s.mclass_assessment_grade,
-    s.mclass_assessment_grade_int,
-    s.mclass_period,
-    s.mclass_client_date,
-    s.mclass_sync_date,
-    s.mclass_measure_name,
-    s.mclass_measure_name_code,
-    s.mclass_measure_standard,
-    s.mclass_measure_standard_score,
-    s.mclass_measure_standard_level,
-    s.mclass_measure_standard_level_int,
-    s.mclass_measure_percentile,
-    s.mclass_measure_semester_growth,
-    s.mclass_measure_year_growth,
-    s.mclass_probe_number,
-    s.mclass_total_number_of_probes,
-    s.mclass_score_change,
+    s.assessment_grade,
+    s.assessment_grade_int,
+    s.period,
+    s.client_date,
+    s.sync_date,
+    s.measure_name,
+    s.measure_name_code,
+    s.measure_standard,
+    s.measure_standard_score,
+    s.measure_standard_level,
+    s.measure_standard_level_int,
+    s.measure_percentile,
+    s.measure_semester_growth,
+    s.measure_year_growth,
+    s.probe_number,
+    s.total_number_of_probes,
+    s.score_change,
 
     p.boy_probe_eligible,
     p.moy_probe_eligible,
@@ -213,33 +207,33 @@ select
 from assessments_scores as s
 left join
     probe_eligible_tag as p
-    on s.mclass_academic_year = p.mclass_academic_year
-    and s.mclass_student_number = p.mclass_student_number
+    on s.academic_year = p.academic_year
+    and s.student_number = p.student_number
 where s.assessment_type = 'Benchmark' and s.rn_highest = 1
 
 union all
 
 select
-    s.mclass_academic_year,
-    s.mclass_student_number,
+    s.academic_year,
+    s.student_number,
     s.assessment_type,
-    s.mclass_assessment_grade,
-    s.mclass_assessment_grade_int,
-    s.mclass_period,
-    s.mclass_client_date,
-    s.mclass_sync_date,
-    s.mclass_measure_name,
-    s.mclass_measure_name_code,
-    s.mclass_measure_standard,
-    s.mclass_measure_standard_score,
-    s.mclass_measure_standard_level,
-    s.mclass_measure_standard_level_int,
-    s.mclass_measure_percentile,
-    s.mclass_measure_semester_growth,
-    s.mclass_measure_year_growth,
-    s.mclass_probe_number,
-    s.mclass_total_number_of_probes,
-    s.mclass_score_change,
+    s.assessment_grade,
+    s.assessment_grade_int,
+    s.period,
+    s.client_date,
+    s.sync_date,
+    s.measure_name,
+    s.measure_name_code,
+    s.measure_standard,
+    s.measure_standard_score,
+    s.measure_standard_level,
+    s.measure_standard_level_int,
+    s.measure_percentile,
+    s.measure_semester_growth,
+    s.measure_year_growth,
+    s.probe_number,
+    s.total_number_of_probes,
+    s.score_change,
 
     p.boy_probe_eligible,
     p.moy_probe_eligible,
@@ -250,6 +244,6 @@ select
 from assessments_scores as s
 left join
     probe_eligible_tag as p
-    on s.mclass_academic_year = p.mclass_academic_year
-    and s.mclass_student_number = p.mclass_student_number
+    on s.academic_year = p.academic_year
+    and s.student_number = p.student_number
 where s.assessment_type = 'PM' and s.rn_highest = 1
