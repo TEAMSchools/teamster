@@ -10,13 +10,13 @@ with
             s.first_name as student_first_name,
             s.last_name as student_last_name,
 
-            c.mclass_period,
-            c.mclass_measure_standard_level as composite_level,
-            c.mclass_measure_semester_growth,
-            c.mclass_measure_year_growth,
+            c.period,
+            c.measure_standard_level as composite_level,
+            c.measure_semester_growth,
+            c.measure_year_growth,
 
-            nc.mclass_measure_standard as literacy_key_concept,
-            nc.mclass_measure_standard_level as performance_level,
+            nc.measure_standard as literacy_key_concept,
+            nc.measure_standard_level as performance_level,
 
             m.description,
             m.description_translation as description_value_translated,
@@ -27,7 +27,7 @@ with
             if(s.grade_level = 0, 'K', cast(s.grade_level as string)) as grade_level,
 
             case
-                c.mclass_measure_standard_level
+                c.measure_standard_level
                 when 'Above Benchmark'
                 then 'Exceeded'
                 when 'At Benchmark'
@@ -40,22 +40,22 @@ with
         from {{ ref("base_powerschool__student_enrollments") }} as s
         inner join
             {{ ref("int_amplify__all_assessments") }} as c
-            on s.academic_year = c.mclass_academic_year
-            and s.student_number = c.mclass_student_number
-            and s.grade_level = c.mclass_assessment_grade_int
-            and c.mclass_measure_standard = 'Composite'
+            on s.academic_year = c.academic_year
+            and s.student_number = c.student_number
+            and s.grade_level = c.assessment_grade_int
+            and c.measure_standard = 'Composite'
         inner join
             {{ ref("int_amplify__all_assessments") }} as nc
-            on c.mclass_academic_year = nc.mclass_academic_year
-            and c.mclass_student_number = nc.mclass_student_number
-            and c.mclass_assessment_grade = nc.mclass_assessment_grade
-            and c.mclass_period = nc.mclass_period
+            on c.academic_year = nc.academic_year
+            and c.student_number = nc.student_number
+            and c.assessment_grade = nc.assessment_grade
+            and c.period = nc.period
             and nc.assessment_type = 'Benchmark'
-            and nc.mclass_measure_standard != 'Composite'
+            and nc.measure_standard != 'Composite'
         inner join
             {{ ref("stg_amplify__dibels_measures") }} as m
-            on nc.mclass_assessment_grade = m.grade_level
-            and nc.mclass_measure_standard = m.measure_standard
+            on nc.assessment_grade = m.grade_level
+            and nc.measure_standard = m.measure_standard
         where
             s.academic_year = {{ var("current_academic_year") }}
             and s.enroll_status = 0
@@ -65,7 +65,7 @@ with
 select
     academic_year,
     student_number,
-    mclass_period,
+    period,
     composite_level,
     composite_expectations,
     literacy_key_concept,
@@ -77,14 +77,14 @@ select
     'Not applicable' as growth_level,
     'Q1' as `quarter`,
 from dibels
-where mclass_period = 'BOY'
+where period = 'BOY'
 
 union all
 
 select
     academic_year,
     student_number,
-    mclass_period,
+    period,
     composite_level,
     composite_expectations,
     literacy_key_concept,
@@ -92,11 +92,11 @@ select
     performance_level,
     measure_standard_value_translated,
     description_value_translated,
-    mclass_measure_semester_growth as growth_level,
+    measure_semester_growth as growth_level,
 
     'Q2' as `quarter`,
 from dibels
-where mclass_period = 'MOY'
+where period = 'MOY'
 
 union all
 
@@ -104,7 +104,7 @@ select
 
     academic_year,
     student_number,
-    mclass_period,
+    period,
     composite_level,
     composite_expectations,
     literacy_key_concept,
@@ -112,18 +112,18 @@ select
     performance_level,
     measure_standard_value_translated,
     description_value_translated,
-    mclass_measure_semester_growth as growth_level,
+    measure_semester_growth as growth_level,
 
     'Q3' as `quarter`,
 from dibels
-where mclass_period = 'MOY'
+where period = 'MOY'
 
 union all
 
 select
     academic_year,
     student_number,
-    mclass_period,
+    period,
     composite_level,
     composite_expectations,
     literacy_key_concept,
@@ -131,8 +131,8 @@ select
     performance_level,
     measure_standard_value_translated,
     description_value_translated,
-    mclass_measure_year_growth as growth_level,
+    measure_year_growth as growth_level,
 
     'Q4' as `quarter`,
 from dibels
-where mclass_period = 'EOY'
+where period = 'EOY'
