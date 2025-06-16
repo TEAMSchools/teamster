@@ -106,3 +106,20 @@ sources:
               - amplify
               - dibels
               - goals_long
+      - name: src_amplify__dibels_expected_assessments
+        config:
+          enabled: false
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_expected_assessments
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - amplify
+              - dibels
+              - expected_assessments
