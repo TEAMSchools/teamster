@@ -9,8 +9,9 @@ select
 
     if(sr.assignment_status = 'Terminated', 'Disabled', 'Active') as `Status`,
 
-    sr.legal_given_name as `First name`,  /* legal name */
-    sr.legal_family_name as `Last name`,  /* legal name */
+    /* legal name */
+    regexp_replace(normalize(sr.legal_given_name, nfd), r'\pM', '') as `First name`,
+    regexp_replace(normalize(sr.legal_family_name, nfd), r'\pM', '') as `Last name`,
 
     if(tm.employee_number is not null, 'Travel Manager', 'Traveler') as `Role`,
 
@@ -46,7 +47,8 @@ left join
     {{ ref("stg_egencia__traveler_group_exceptions") }} as tgx
     on sr.employee_number = tgx.employee_number
 where
-    (sr.worker_type_code not in ('Intern', 'Part Time') or sr.worker_type_code is null)
+    sr.mail is not null
+    and coalesce(sr.worker_type_code, '') not in ('Intern', 'Part Time')
     and coalesce(
         sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
     )
