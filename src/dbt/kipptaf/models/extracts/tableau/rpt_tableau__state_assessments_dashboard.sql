@@ -452,8 +452,9 @@ inner join
     and a.state_id = e.state_studentnumber
     and a.academic_year >= {{ var("current_academic_year") - 7 }}
     and a.results_type = 'Actual'
-    and e.grade_level > 2
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+    and e.grade_level > 2
+    and e.region = 'Miami'
 left join
     state_comps as c
     on a.academic_year = c.academic_year
