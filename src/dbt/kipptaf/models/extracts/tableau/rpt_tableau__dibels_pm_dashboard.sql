@@ -293,7 +293,7 @@ select
     m.scheduled,
     m.hos,
 
-    a.student_number,
+    a.student_number as mclass_student_number,
     a.assessment_grade,
     a.period,
     a.client_date,
