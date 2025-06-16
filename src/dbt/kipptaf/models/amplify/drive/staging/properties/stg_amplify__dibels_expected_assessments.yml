@@ -10,3 +10,25 @@ models:
         data_type: integer
       - name: Region
         data_type: string
+      - name: Grade
+        data_type: integer
+      - name: Test_Type
+        data_type: string
+      - name: Discipline
+        data_type: string
+      - name: Subject_Area
+        data_type: string
+      - name: Measure_Standard
+        data_type: string
+      - name: Test_Code
+        data_type: string
+      - name: Admin_Season
+        data_type: string
+      - name: Month_Round
+        data_type: string
+      - name: Illuminate_Subject
+        data_type: string
+      - name: iReady_Subject
+        data_type: string
+      - name: PS_Credit_Type
+        data_type: string
