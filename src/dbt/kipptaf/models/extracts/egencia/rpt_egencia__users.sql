@@ -9,8 +9,9 @@ select
 
     if(sr.assignment_status = 'Terminated', 'Disabled', 'Active') as `Status`,
 
-    sr.legal_given_name as `First name`,  /* legal name */
-    sr.legal_family_name as `Last name`,  /* legal name */
+    /* legal name */
+    regexp_replace(normalize(sr.legal_given_name, nfd), r'\pM', '') as `First name`,
+    regexp_replace(normalize(sr.legal_family_name, nfd), r'\pM', '') as `Last name`,
 
     if(tm.employee_number is not null, 'Travel Manager', 'Traveler') as `Role`,
 
