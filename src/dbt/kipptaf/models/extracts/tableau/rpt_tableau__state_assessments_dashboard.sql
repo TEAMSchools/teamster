@@ -269,6 +269,7 @@ with
             and academic_year = {{ var("current_academic_year") }}
     )
 
+-- NJ scores
 select
     e.academic_year,
     e.academic_year_display,
@@ -287,6 +288,11 @@ select
     e.ms_attended,
     e.advisory,
     e.year_in_network,
+
+    a.race_ethnicity,
+    a.lep_status,
+    a.is_504,
+    a.iep_status,
 
     a.assessment_name,
     a.discipline,
@@ -327,11 +333,6 @@ select
     m.school_current,
     m.teachernumber_current,
     m.teacher_name_current,
-
-    if(e.region = 'Miami', e.race_ethnicity, a.race_ethnicity) as race_ethnicity,
-    if(e.region = 'Miami', e.lep_status, a.lep_status) as lep_status,
-    if(e.region = 'Miami', e.is_504, a.is_504) as is_504,
-    if(e.region = 'Miami', e.iep_status, a.iep_status) as iep_status,
 
     max(e.grade_level) over (partition by e.student_number) as most_recent_grade_level,
 
@@ -377,6 +378,7 @@ left join
 
 union all
 
+-- FL scores
 select
     e.academic_year,
     e.academic_year_display,
@@ -395,6 +397,11 @@ select
     e.ms_attended,
     e.advisory,
     e.year_in_network,
+
+    e.race_ethnicity,
+    e.lep_status,
+    e.is_504,
+    e.iep_status,
 
     a.assessment_name,
     a.discipline,
@@ -436,10 +443,114 @@ select
     m.teachernumber_current,
     m.teacher_name_current,
 
+    max(e.grade_level) over (partition by e.student_number) as most_recent_grade_level,
+
+from assessment_scores as a
+inner join
+    {{ ref("int_extracts__student_enrollments") }} as e
+    on a.academic_year = e.academic_year
+    and a.state_id = e.state_studentnumber
+    and a.academic_year >= {{ var("current_academic_year") - 7 }}
+    and a.results_type = 'Actual'
+    and e.grade_level > 2
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+left join
+    state_comps as c
+    on a.academic_year = c.academic_year
+    and a.assessment_name = c.test_name
+    and a.test_code = c.test_code
+    and a.season = c.season
+    and e.region = c.region
+left join
+    {{ ref("int_assessments__academic_goals") }} as g
+    on e.academic_year = g.academic_year
+    and e.schoolid = g.school_id
+    and a.test_code = g.state_assessment_code
+left join
+    schedules as m
+    on a.academic_year = m.cc_academic_year
+    and a.discipline = m.discipline
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="m") }}
+    and e.student_number = m.students_student_number
+left join
+    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
+    on a.academic_year = sf.academic_year
+    and a.discipline = sf.discipline
+    and a.state_id = sf.state_studentnumber
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf") }}
+left join
+    {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
+    on a.academic_year = sf2.academic_year - 1
+    and a.discipline = sf2.discipline
+    and a.state_id = sf2.state_studentnumber
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
+
+union all
+
+-- NJ prelim scores
+select
+    e.academic_year,
+    e.academic_year_display,
+    e.region,
+    e.schoolid,
+    e.school,
+    e.student_number,
+    e.state_studentnumber,
+    e.student_name,
+    e.grade_level,
+    e.cohort,
+    e.enroll_status,
+    e.gender,
+    e.lunch_status,
+    e.gifted_and_talented,
+    e.ms_attended,
+    e.advisory,
+    e.year_in_network,
+
     a.race_ethnicity,
     a.lep_status,
     a.is_504,
     a.iep_status,
+
+    a.assessment_name,
+    a.discipline,
+    a.subject,
+    a.test_code,
+    a.test_grade,
+    a.`admin`,
+    a.season,
+    a.score,
+    a.performance_band,
+    a.performance_band_level,
+    a.is_proficient,
+    a.results_type,
+
+    c.city_percent_proficient as proficiency_city,
+    c.state_percent_proficient as proficiency_state,
+    c.neighborhood_schools_percent_proficient as proficiency_neighborhood_schools,
+
+    c.city_total_students as total_students_city,
+    c.state_total_students as total_students_state,
+    c.neighborhood_schools_total_students as total_students_neighborhood_schools,
+
+    g.grade_level as assessment_grade_level,
+    g.grade_goal,
+    g.school_goal,
+    g.region_goal,
+    g.organization_goal,
+
+    sf.nj_student_tier,
+    sf.is_tutoring as tutoring_nj,
+
+    sf2.iready_proficiency_eoy,
+
+    m.teachernumber,
+    m.teacher_name,
+    m.course_number,
+    m.course_name,
+    m.school_current,
+    m.teachernumber_current,
+    m.teacher_name_current,
 
     max(e.grade_level) over (partition by e.student_number) as most_recent_grade_level,
 
