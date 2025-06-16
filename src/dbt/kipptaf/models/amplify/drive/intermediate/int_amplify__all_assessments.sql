@@ -2,7 +2,7 @@ with
     assessments_scores as (
         select
             bss.academic_year,
-            bss.student_primary_id,
+            bss.student_primary_id as student_number,
             bss.assessment_grade,
             bss.assessment_grade_int,
             bss.benchmark_period as period,

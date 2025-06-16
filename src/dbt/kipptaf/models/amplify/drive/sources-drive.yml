@@ -108,7 +108,7 @@ sources:
               - goals_long
       - name: src_amplify__dibels_expected_assessments
         config:
-          enabled: false
+          enabled: true
         external:
           options:
             format: GOOGLE_SHEETS
