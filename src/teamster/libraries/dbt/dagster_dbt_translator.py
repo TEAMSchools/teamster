@@ -60,12 +60,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     | AutomationCondition.newly_updated()
                 )
                 & ~AutomationCondition.any_deps_missing().ignore(
-                    AssetSelection.all(include_sources=True).sources()
-                    & ignore_selection
+                    AssetSelection.all().upstream_source_assets() | ignore_selection
                 )
                 & ~AutomationCondition.any_deps_in_progress().ignore(
-                    AssetSelection.all(include_sources=True).sources()
-                    & ignore_selection
+                    AssetSelection.all().upstream_source_assets() | ignore_selection
                 )
                 & ~AutomationCondition.in_progress()
             )
@@ -81,8 +79,7 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                 & (
                     AutomationCondition.newly_missing()
                     | AutomationCondition.any_deps_updated().ignore(
-                        AssetSelection.all(include_sources=True).sources()
-                        | ignore_selection
+                        AssetSelection.all().upstream_source_assets() | ignore_selection
                     )
                     | AutomationCondition.code_version_changed()
                 ).since(
@@ -90,12 +87,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     | AutomationCondition.newly_updated()
                 )
                 & ~AutomationCondition.any_deps_missing().ignore(
-                    AssetSelection.all(include_sources=True).sources()
-                    | ignore_selection
+                    AssetSelection.all().upstream_source_assets() | ignore_selection
                 )
                 & ~AutomationCondition.any_deps_in_progress().ignore(
-                    AssetSelection.all(include_sources=True).sources()
-                    | ignore_selection
+                    AssetSelection.all().upstream_source_assets() | ignore_selection
                 )
                 & ~AutomationCondition.in_progress()
             )
