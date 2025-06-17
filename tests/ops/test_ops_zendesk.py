@@ -13,16 +13,22 @@ def test_zendesk_user_sync_op():
             db_bigquery=BIGQUERY_RESOURCE,
             config=BigQueryOpConfig(
                 query="""
-                    select
-                        email,
-                        suspended,
-                        null as organization_id,
-                        struct(null as secondary_location, null as user_group) as user_fields,
+                    select email,
                     from kipptaf_extracts.rpt_zendesk__users
                     where suspended
                 """
             ),
         )
+
+        users = [
+            {
+                "email": u["email"],
+                "suspended": True,
+                "organization_id": None,
+                "user_fields": {"secondary_location": None, "user_group": None},
+            }
+            for u in users
+        ]
 
         output = zendesk_user_sync_op(
             context=context, zendesk=ZENDESK_RESOURCE, users=users

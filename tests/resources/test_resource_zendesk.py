@@ -35,7 +35,7 @@ def test_zendesk_create_user():
 def test_zendesk_delete_user():
     zendesk = build_zendesk_resource()
 
-    response = zendesk.delete(resource="users", id=32136419671831).json()
+    response = zendesk.delete(resource="users", id=...).json()
     print(response)
 
 
@@ -49,7 +49,7 @@ def test_zendesk_list_users():
 def test_zendesk_show_user():
     zendesk = build_zendesk_resource()
 
-    response = zendesk.get(resource="users", id=32149551391511).json()
+    response = zendesk.get(resource="users", id=...).json()
     print(response)
 
 
@@ -58,11 +58,12 @@ def test_zendesk_update_user():
 
     response = zendesk.put(
         resource="users",
-        id=187173662,
+        id=...,
         json={
             "user": {
+                "suspended": True,
                 "organization_id": None,
-                "user_fields": {"secondary_location": None},
+                "user_fields": {"secondary_location": None, "user_group": None},
             }
         },
     ).json()
