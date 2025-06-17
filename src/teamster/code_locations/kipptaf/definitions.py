@@ -145,3 +145,5 @@ defs = Definitions(
         "zendesk": ZENDESK_RESOURCE,
     },
 )
+
+AssetSelection.all(include_sources=True).upstream_source_assets()
