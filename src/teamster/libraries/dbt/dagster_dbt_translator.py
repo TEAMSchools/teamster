@@ -60,10 +60,12 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     | AutomationCondition.newly_updated()
                 )
                 & ~AutomationCondition.any_deps_missing().ignore(
-                    AssetSelection.all().upstream_source_assets() | ignore_selection
+                    AssetSelection.all(include_sources=True).upstream_source_assets()
+                    | ignore_selection
                 )
                 & ~AutomationCondition.any_deps_in_progress().ignore(
-                    AssetSelection.all().upstream_source_assets() | ignore_selection
+                    AssetSelection.all(include_sources=True).upstream_source_assets()
+                    | ignore_selection
                 )
                 & ~AutomationCondition.in_progress()
             )
@@ -79,7 +81,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                 & (
                     AutomationCondition.newly_missing()
                     | AutomationCondition.any_deps_updated().ignore(
-                        AssetSelection.all().upstream_source_assets() | ignore_selection
+                        AssetSelection.all(
+                            include_sources=True
+                        ).upstream_source_assets()
+                        | ignore_selection
                     )
                     | AutomationCondition.code_version_changed()
                 ).since(
@@ -87,10 +92,12 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     | AutomationCondition.newly_updated()
                 )
                 & ~AutomationCondition.any_deps_missing().ignore(
-                    AssetSelection.all().upstream_source_assets() | ignore_selection
+                    AssetSelection.all(include_sources=True).upstream_source_assets()
+                    | ignore_selection
                 )
                 & ~AutomationCondition.any_deps_in_progress().ignore(
-                    AssetSelection.all().upstream_source_assets() | ignore_selection
+                    AssetSelection.all(include_sources=True).upstream_source_assets()
+                    | ignore_selection
                 )
                 & ~AutomationCondition.in_progress()
             )
