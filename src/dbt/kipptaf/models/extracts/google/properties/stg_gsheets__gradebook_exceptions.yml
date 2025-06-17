@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: stg_gsheets__gradebook_exceptions
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Academic_Year
+        data_type: int64
+      - name: Region
+        data_type: string
+      - name: School_Level
+        data_type: string
+      - name: School_ID
+        data_type: int64
+      - name: Grade_Level
+        data_type: int64
+      - name: Quarter
+        data_type: string
+      - name: Course_Number
+        data_type: string
+      - name: Section_Number
+        data_type: string
+      - name: Credit_Type
+        data_type: string
+      - name: Gradebook_Category
+        data_type: string
+      - name: Audit_Flag_Name
+        data_type: string
+      - name: View_Name
+        data_type: string
+      - name: CTE
+        data_type: string
+      - name: Purpose
+        data_type: string
+      - name: Include
+        data_type: boolean
