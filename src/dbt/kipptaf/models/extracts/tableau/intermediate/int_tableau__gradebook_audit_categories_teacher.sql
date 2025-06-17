@@ -6,7 +6,7 @@ with
             count(a.assignmentid) over (
                 partition by
                     sec._dbt_source_relation,
-                    sec.terms_yearid,
+                    sec.yearid,
                     sec.sectionid,
                     sec.assignment_category_term
                 order by sec.week_number_quarter asc
@@ -15,7 +15,7 @@ with
             sum(a.totalpointvalue) over (
                 partition by
                     sec._dbt_source_relation,
-                    sec.terms_yearid,
+                    sec.yearid,
                     sec.quarter,
                     sec.sectionid,
                     sec.assignment_category_code
@@ -24,7 +24,7 @@ with
             sum(asg.n_expected) over (
                 partition by
                     sec._dbt_source_relation,
-                    sec.terms_yearid,
+                    sec.yearid,
                     sec.sectionid,
                     sec.quarter,
                     sec.week_number_quarter,
@@ -34,7 +34,7 @@ with
             sum(asg.n_expected_scored) over (
                 partition by
                     sec._dbt_source_relation,
-                    sec.terms_yearid,
+                    sec.yearid,
                     sec.sectionid,
                     sec.quarter,
                     sec.week_number_quarter,

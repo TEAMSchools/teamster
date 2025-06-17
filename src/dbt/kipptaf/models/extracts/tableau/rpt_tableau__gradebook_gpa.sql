@@ -322,7 +322,7 @@ with
             null as comment_value,
         from {{ ref("base_powerschool__final_grades") }}
         where
-            academic_year = {{ var("current_academic_year") - 1}}
+            academic_year = {{ var("current_academic_year") - 1 }}
             and termbin_is_current
             and not is_dropped_section
     ),

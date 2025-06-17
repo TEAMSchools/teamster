@@ -38,7 +38,7 @@ select
     count(a.assignmentid) over (
         partition by
             sec._dbt_source_relation,
-            sec.terms_yearid,
+            sec.yearid,
             sec.sectionid,
             sec.assignment_category_term
         order by sec.week_number_quarter asc
@@ -47,7 +47,7 @@ select
     sum(a.totalpointvalue) over (
         partition by
             sec._dbt_source_relation,
-            sec.terms_yearid,
+            sec.yearid,
             sec.quarter,
             sec.sectionid,
             sec.assignment_category_code
