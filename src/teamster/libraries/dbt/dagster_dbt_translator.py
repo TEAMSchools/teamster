@@ -59,14 +59,8 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     AutomationCondition.newly_requested()
                     | AutomationCondition.newly_updated()
                 )
-                & ~AutomationCondition.any_deps_missing().ignore(
-                    AssetSelection.all(include_sources=True).upstream_source_assets()
-                    | ignore_selection
-                )
-                & ~AutomationCondition.any_deps_in_progress().ignore(
-                    AssetSelection.all(include_sources=True).upstream_source_assets()
-                    | ignore_selection
-                )
+                & ~AutomationCondition.any_deps_missing().ignore(ignore_selection)
+                & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
                 & ~AutomationCondition.in_progress()
             )
         else:
@@ -80,25 +74,14 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                 AutomationCondition.in_latest_time_window()
                 & (
                     AutomationCondition.newly_missing()
-                    | AutomationCondition.any_deps_updated().ignore(
-                        AssetSelection.all(
-                            include_sources=True
-                        ).upstream_source_assets()
-                        | ignore_selection
-                    )
+                    | AutomationCondition.any_deps_updated().ignore(ignore_selection)
                     | AutomationCondition.code_version_changed()
                 ).since(
                     AutomationCondition.newly_requested()
                     | AutomationCondition.newly_updated()
                 )
-                & ~AutomationCondition.any_deps_missing().ignore(
-                    AssetSelection.all(include_sources=True).upstream_source_assets()
-                    | ignore_selection
-                )
-                & ~AutomationCondition.any_deps_in_progress().ignore(
-                    AssetSelection.all(include_sources=True).upstream_source_assets()
-                    | ignore_selection
-                )
+                & ~AutomationCondition.any_deps_missing().ignore(ignore_selection)
+                & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
                 & ~AutomationCondition.in_progress()
             )
 
