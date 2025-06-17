@@ -16,14 +16,7 @@ with
                 false
             ) as is_current_term,
 
-            case
-                when tb.storecode in ('Q1', 'Q2')
-                then 'S1'
-                when tb.storecode in ('Q3', 'Q4')
-                then 'S2'
-                when tb.storecode = 'Y1'
-                then 'S#'
-            end as semester,
+            if(tb.storecode in ('Q1', 'Q2'), 'S1', 'S2') as semester,
         from {{ ref("stg_powerschool__terms") }} as t
         inner join
             {{ ref("stg_powerschool__termbins") }} as tb
@@ -156,7 +149,7 @@ with
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
             and gty.is_current
         where
-            enr.academic_year = {{ var("current_academic_year") }}
+            enr.academic_year = {{ var("current_academic_year") - 1 }}
             and not enr.is_out_of_district
     ),
 
@@ -286,7 +279,7 @@ with
             comment_value,
         from {{ ref("base_powerschool__final_grades") }}
         where
-            academic_year = {{ var("current_academic_year") }}
+            academic_year = {{ var("current_academic_year") - 1 }}
             and not is_dropped_section
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
 
@@ -329,7 +322,7 @@ with
             null as comment_value,
         from {{ ref("base_powerschool__final_grades") }}
         where
-            academic_year = {{ var("current_academic_year") }}
+            academic_year = {{ var("current_academic_year") - 1}}
             and termbin_is_current
             and not is_dropped_section
     ),
@@ -366,7 +359,7 @@ with
             ) as category_quarter_average_all_courses,
         from {{ ref("int_powerschool__category_grades") }}
         where
-            yearid = {{ var("current_academic_year") - 1990 }}
+            yearid = {{ var("current_academic_year") - 1991 }}
             and not is_dropped_section
             and storecode_type not in ('Q', 'H')
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')

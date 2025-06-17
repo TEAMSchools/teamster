@@ -37,13 +37,17 @@ select
 
     count(a.assignmentid) over (
         partition by
-            sec._dbt_source_relation, sec.sectionid, sec.assignment_category_term
+            sec._dbt_source_relation,
+            sec.terms_yearid,
+            sec.sectionid,
+            sec.assignment_category_term
         order by sec.week_number_quarter asc
     ) as running_count_assignments_section_category_term,
 
     sum(a.totalpointvalue) over (
         partition by
             sec._dbt_source_relation,
+            sec.terms_yearid,
             sec.quarter,
             sec.sectionid,
             sec.assignment_category_code
