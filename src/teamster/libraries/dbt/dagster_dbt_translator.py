@@ -59,10 +59,16 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     AutomationCondition.newly_requested()
                     | AutomationCondition.newly_updated()
                 )
-                & ~AutomationCondition.any_deps_missing().ignore(ignore_selection)
-                & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
+                & ~AutomationCondition.any_deps_missing().ignore(
+                    AssetSelection.all(include_sources=True).sources()
+                    & ignore_selection
+                )
+                & ~AutomationCondition.any_deps_in_progress().ignore(
+                    AssetSelection.all(include_sources=True).sources()
+                    & ignore_selection
+                )
                 & ~AutomationCondition.in_progress()
-            ).ignore(AssetSelection.all(include_sources=True).sources())
+            )
         else:
             """forked from AutomationCondition.eager()
             - add code_version_changed()
@@ -74,16 +80,25 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                 AutomationCondition.in_latest_time_window()
                 & (
                     AutomationCondition.newly_missing()
-                    | AutomationCondition.any_deps_updated().ignore(ignore_selection)
+                    | AutomationCondition.any_deps_updated().ignore(
+                        AssetSelection.all(include_sources=True).sources()
+                        | ignore_selection
+                    )
                     | AutomationCondition.code_version_changed()
                 ).since(
                     AutomationCondition.newly_requested()
                     | AutomationCondition.newly_updated()
                 )
-                & ~AutomationCondition.any_deps_missing().ignore(ignore_selection)
-                & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
+                & ~AutomationCondition.any_deps_missing().ignore(
+                    AssetSelection.all(include_sources=True).sources()
+                    | ignore_selection
+                )
+                & ~AutomationCondition.any_deps_in_progress().ignore(
+                    AssetSelection.all(include_sources=True).sources()
+                    | ignore_selection
+                )
                 & ~AutomationCondition.in_progress()
-            ).ignore(AssetSelection.all(include_sources=True).sources())
+            )
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         group = super().get_group_name(dbt_resource_props)
