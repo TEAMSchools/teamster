@@ -4,13 +4,15 @@ with
             _dbt_source_relation,
             studentid,
             season,
+
             q1_ae_status,
             q2_ae_status,
             q3_ae_status,
             q4_ae_status,
         from
+            {# TODO: make view into CTE here? #}
             {{ ref("int_students__athletic_eligibility") }} pivot (
-                max(eligibility) for quarter in (
+                max(eligibility) for `quarter` in (
                     'Q1' as q1_ae_status,
                     'Q2' as q2_ae_status,
                     'Q3' as q3_ae_status,
@@ -74,7 +76,7 @@ select
     e.ktc_cohort,
     e.ms_attended,
     e.hos,
-    e.`ada`,
+    e.ada,
     e.ada_above_or_at_80,
     e.advisory,
 
