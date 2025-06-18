@@ -33,15 +33,15 @@ with
             g.grade_goal as admin_benchmark,
 
             regexp_extract(
-                a.assessment_subject_area, r'^[^_]*'
+                a.measure_standard, r'^[^_]*'
             ) as expected_mclass_measure_name_code,
 
             regexp_substr(
-                a.assessment_subject_area, r'_(.*?)_'
+                a.measure_standard, r'_(.*?)_'
             ) as expected_mclass_measure_name,
 
             regexp_substr(
-                a.assessment_subject_area, r'[^_]+$'
+                a.measure_standard, r'[^_]+$'
             ) as expected_mclass_measure_standard,
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
@@ -55,11 +55,10 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("stg_assessments__assessment_expectations") }} as a
+            {{ ref("stg_amplify__dibels_expected_assessments") }} as a
             on e.academic_year = a.academic_year
             and e.region = a.region
             and e.grade_level = a.grade
-            and a.scope = 'DIBELS'
         left join
             {{ ref("int_assessments__academic_goals") }} as g
             on a.academic_year = g.academic_year
@@ -159,19 +158,19 @@ select
     m.scheduled,
     m.hos,
 
-    a.mclass_student_number,
-    a.mclass_assessment_grade,
-    a.mclass_period,
-    a.mclass_client_date,
-    a.mclass_measure_name,
-    a.mclass_measure_name_code,
-    a.mclass_measure_standard,
-    a.mclass_measure_standard_score,
-    a.mclass_measure_standard_level,
-    a.mclass_measure_standard_level_int,
-    a.mclass_measure_percentile,
-    a.mclass_measure_semester_growth,
-    a.mclass_measure_year_growth,
+    a.student_number as mclass_student_number,
+    a.assessment_grade as mclass_assessment_grade,
+    a.period as mclass_period,
+    a.client_date as mclass_client_date,
+    a.measure_name as mclass_measure_name,
+    a.measure_name_code as mclass_measure_name_code,
+    a.measure_standard as mclass_measure_standard,
+    a.measure_standard_score as mclass_measure_standard_score,
+    a.measure_standard_level as mclass_measure_standard_level,
+    a.measure_standard_level_int as mclass_measure_standard_level_int,
+    a.measure_percentile as mclass_measure_percentile,
+    a.measure_semester_growth as mclass_measure_semester_growth,
+    a.measure_year_growth as mclass_measure_year_growth,
     a.boy_composite,
     a.moy_composite,
     a.eoy_composite,
@@ -202,10 +201,10 @@ left join
     and s.student_number = m.schedule_student_number
 left join
     {{ ref("int_amplify__all_assessments") }} as a
-    on s.academic_year = a.mclass_academic_year
-    and s.student_number = a.mclass_student_number
-    and s.expected_test = a.mclass_period
-    and s.expected_mclass_measure_standard = a.mclass_measure_standard
+    on s.academic_year = a.academic_year
+    and s.student_number = a.student_number
+    and s.expected_test = a.period
+    and s.expected_mclass_measure_standard = a.measure_standard
     and a.assessment_type = 'Benchmark'
 left join
     {{ ref("stg_reporting__terms") }} as t
@@ -250,9 +249,9 @@ select
     cohort,
     expected_test,
     month_round,
-    expected_mclass_measure_name_code,
-    expected_mclass_measure_name,
-    expected_mclass_measure_standard,
+    expected_measure_name_code,
+    expected_measure_name,
+    expected_measure_standard,
     goal,
     admin_benchmark,
     schedule_student_number,
@@ -264,19 +263,19 @@ select
     section_number,
     scheduled,
     hos,
-    mclass_student_number,
-    mclass_assessment_grade,
-    mclass_period,
-    mclass_client_date,
-    mclass_measure_name,
-    mclass_measure_name_code,
-    mclass_measure_standard,
-    mclass_measure_standard_score,
-    mclass_measure_standard_level,
-    mclass_measure_standard_level_int,
-    mclass_measure_percentile,
-    mclass_measure_semester_growth,
-    mclass_measure_year_growth,
+    student_number as mclass_student_number,
+    assessment_grade as mclass_assessment_grade,
+    period as mclass_period,
+    client_date as mclass_client_date,
+    measure_name as mclass_measure_name,
+    measure_name_code as mclass_measure_name_code,
+    measure_standard as mclass_measure_standard,
+    measure_standard_score as mclass_measure_standard_score,
+    measure_standard_level as mclass_measure_standard_level,
+    measure_standard_level_int as mclass_measure_standard_level_int,
+    measure_percentile as mclass_measure_percentile,
+    measure_semester_growth as mclass_measure_semester_growth,
+    measure_year_growth as mclass_measure_year_growth,
     boy_composite,
     moy_composite,
     eoy_composite,
