@@ -13,5 +13,8 @@ select
         then 'Summative Mastery'
     end as assignment_category_name,
 from
-    {{ source("google", "src_gsheets__gradebook_expectations_assignments") }}
-    unpivot (expectation for assignment_category_code in (`W`, `F`, `S`))
+    {{
+        source(
+            "google_sheets", "src_google_sheets__gradebook_expectations_assignments"
+        )
+    }} unpivot (expectation for assignment_category_code in (`W`, `F`, `S`))

@@ -1,18 +1,18 @@
 version: 2
 
 sources:
-  - name: google
+  - name: google_sheets
     schema: |
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ project_name }}_google
+      {{ project_name }}_google_sheets
     tables:
-      - name: src_gsheets__gradebook_expectations_assignments
+      - name: src_google_sheets__gradebook_expectations_assignments
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
-            sheet_range: src_gsheets__gradebook_expectations_assignments
+            sheet_range: src_google_sheets__gradebook_expectations_assignments
             skip_leading_rows: 1
         meta:
           dagster:
@@ -21,13 +21,13 @@ sources:
               - google
               - sheets
               - gradebook_expectations_assignments
-      - name: src_gsheets__gradebook_flags
+      - name: src_google_sheets__gradebook_flags
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
-            sheet_range: src_gsheets__gradebook_flags
+            sheet_range: src_google_sheets__gradebook_flags
             skip_leading_rows: 1
         meta:
           dagster:
@@ -36,13 +36,13 @@ sources:
               - google
               - sheets
               - gradebook_flags
-      - name: src_gsheets__gradebook_exceptions
+      - name: src_google_sheets__gradebook_exceptions
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
-            sheet_range: src_gsheets__gradebook_exceptions
+            sheet_range: src_google_sheets__gradebook_exceptions
             skip_leading_rows: 1
         meta:
           dagster:
