@@ -10,7 +10,10 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": false,
+      "env": {
+        "PATH": "${env:Path}:${workspaceFolder}/.venv/bin"
+      }
     },
     {
       "name": "Python: Debug Tests",
