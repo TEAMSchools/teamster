@@ -162,6 +162,13 @@ models:
         +meta:
           dagster:
             group: google_appsheet
+      sheets:
+        +schema: google_sheets
+        +meta:
+          dagster:
+            group: google_sheets
+        staging:
+          +materialized: table
     illuminate:
       +schema: illuminate
       dlt:
