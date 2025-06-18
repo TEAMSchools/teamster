@@ -26,32 +26,6 @@ with
         group by _dbt_source_relation, yearid, studentid
     ),
 
-    term as (
-        select
-            t._dbt_source_relation,
-            t.schoolid,
-            t.yearid,
-
-            tb.storecode as term,
-
-            t.yearid + 1990 as academic_year,
-
-            if(
-                current_date('America/New_York') between tb.date1 and tb.date2,
-                true,
-                false
-            ) as is_current_term,
-
-        from {{ ref("stg_powerschool__terms") }} as t
-        inner join
-            {{ ref("stg_powerschool__termbins") }} as tb
-            on t.id = tb.termid
-            and t.schoolid = tb.schoolid
-            and {{ union_dataset_join_clause(left_alias="t", right_alias="tb") }}
-            and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
-        where t.isyearrec = 1
-    ),
-
     base as (
         select
             e._dbt_source_relation,
