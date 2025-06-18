@@ -29,7 +29,6 @@ select
     _dbt_source_relation,
     studentid,
     academic_year,
-    semester,
     term,
     ada_term,
 
@@ -69,5 +68,5 @@ select
                 order by term asc
             )
         )
-    ) as running_ada_year_term,
+    ) as ada_year_running,
 from ada_by_term

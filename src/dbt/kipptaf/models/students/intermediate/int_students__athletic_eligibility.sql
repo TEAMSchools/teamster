@@ -6,7 +6,6 @@ with
             studentid,
 
             if(sum(earnedcrhrs) >= 30, true, false) as met_py_credits,
-
         from {{ ref("stg_powerschool__storedgrades") }}
         where
             storecode = 'Y1' and academic_year = {{ var("current_academic_year") - 1 }}
@@ -19,8 +18,9 @@ with
             yearid,
             studentid,
 
-            sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) as n_failing,
-
+            if(
+                sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) = 0, true, false
+            ) as met_cy_credits,
         from {{ ref("base_powerschool__final_grades") }}
         where storecode = 'Q2'
         group by _dbt_source_relation, yearid, studentid
@@ -38,25 +38,20 @@ with
             e.grade_level,
             e.grade_level_prev,
             e.dob,
-
-            a.ada_term as cy_q1_ada,
-            a.ada_semester as cy_s1_ada,
-
-            apy.ada_year as py_y1_ada,
-
-            gq1.gpa_term as cy_q1_gpa,
-
-            gs1.gpa_y1 as cy_s1_gpa,
-
-            gp.gpa_y1 as py_y1_gpa,
+            e.ada_term_q1 as cy_q1_ada,
+            e.ada_semester_s1 as cy_s1_ada,
+            e.ada_year_prev as py_y1_ada,
+            e.gpa_term_q1 as cy_q1_gpa,
+            e.gpa_semester_s1 as cy_s1_gpa,
+            e.gpa_year_prev as py_y1_gpa,
 
             pyc.met_py_credits,
 
-            if(cyc.n_failing = 0, true, false) as met_cy_credits,
+            cyc.met_cy_credits,
 
             if(
                 e.grade_level = 9
-                and (e.grade_level_prev <= 8 or e.grade_level_prev is null),
+                and (e.grade_level_prev < 9 or e.grade_level_prev is null),
                 true,
                 false
             ) as is_first_time_ninth,
@@ -67,38 +62,7 @@ with
                 false,
                 true
             ) as is_age_eligible,
-
         from {{ ref("int_extracts__student_enrollments") }} as e
-        left join
-            {{ ref("int_powerschool__ada_term") }} as a
-            on e.academic_year = a.academic_year
-            and e.studentid = a.studentid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
-            and a.term = 'Q1'
-        left join
-            {{ ref("int_powerschool__ada_term") }} as apy
-            on e.academic_year - 1 = apy.academic_year
-            and e.studentid = apy.studentid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="apy") }}
-            and apy.term = 'Q4'
-        left join
-            {{ ref("int_powerschool__gpa_term") }} as gq1
-            on e.studentid = gq1.studentid
-            and e.yearid = gq1.yearid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="gq1") }}
-            and gq1.term_name = 'Q1'
-        left join
-            {{ ref("int_powerschool__gpa_term") }} as gs1
-            on e.studentid = gs1.studentid
-            and e.yearid = gs1.yearid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="gs1") }}
-            and gs1.term_name = 'Q2'
-        left join
-            {{ ref("int_powerschool__gpa_term") }} as gp
-            on e.studentid = gp.studentid
-            and e.yearid - 1 = gp.yearid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="gp") }}
-            and gp.is_current
         left join
             py_credits as pyc
             on e.studentid = pyc.studentid
@@ -108,9 +72,9 @@ with
             on e.studentid = cyc.studentid
             and {{ union_dataset_join_clause(left_alias="e", right_alias="cyc") }}
         where
-            e.enroll_status = 0
+            e.academic_year = {{ var("current_academic_year") }}
+            and e.enroll_status = 0
             and e.grade_level >= 9
-            and e.academic_year = {{ var("current_academic_year") }}
     ),
 
     calcs as (
@@ -216,7 +180,6 @@ with
                     and met_cy_credits
                 then 'Probation - ADA and GPA'
             end as q4_eligibility,
-
         from base
     )
 
@@ -232,7 +195,6 @@ select
     u.dob,
     u.is_age_eligible,
     u.is_first_time_ninth,
-
     u.cy_q1_ada,
     u.cy_s1_ada,
     u.py_y1_ada,
@@ -244,16 +206,16 @@ select
 
     t.is_current_term,
 
-    quarter,
+    `quarter`,
     eligibility,
 
     case
-        when quarter = 'Q1' then 'Fall' when quarter = 'Q2' then 'Winter' else 'Spring'
+        `quarter` when 'Q1' then 'Fall' when 'Q2' then 'Winter' else 'Spring'
     end as season,
-
 from
+    {# TODO: why do this? data is not quarterly #}
     calcs unpivot (
-        eligibility for quarter in (
+        eligibility for `quarter` in (
             q1_eligibility as 'Q1',
             q2_eligibility as 'Q2',
             q3_eligibility as 'Q3',
