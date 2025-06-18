@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_students__graduation_path_combos
+  - name: stg_google_sheets__student_graduation_path_combos
     config:
       contract:
         enforced: true

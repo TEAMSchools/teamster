@@ -1,12 +1,12 @@
 version: 2
 
 sources:
-  - name: students
+  - name: google_sheets
     schema: |
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ project_name }}_students
+      {{ project_name }}_google_sheets
     tables:
-      - name: src_students__graduation_path_combos
+      - name: src_google_sheets__student_graduation_path_combos
         external:
           options:
             format: GOOGLE_SHEETS
@@ -18,9 +18,9 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - students
-              - graduation_path_combos
-      - name: src_students__graduation_path_cutoffs
+              - google_sheets
+              - student_graduation_path_combos
+      - name: src_google_sheets__student_graduation_path_cutoffs
         external:
           options:
             format: GOOGLE_SHEETS
@@ -32,5 +32,5 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - students
-              - graduation_path_cutoffs
+              - google_sheets
+              - student_graduation_path_cutoffs
