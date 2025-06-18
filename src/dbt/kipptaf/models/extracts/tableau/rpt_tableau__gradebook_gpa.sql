@@ -9,8 +9,7 @@ with
             term_end_date,
             is_current_term,
             semester,
-
-        from {{ ref("int_powerschool__term") }}
+        from {{ ref("int_powerschool__terms") }}
 
         union all
 
@@ -26,7 +25,6 @@ with
 
             false as is_current_term,
             'S#' as semester,
-
         from {{ ref("stg_powerschool__terms") }}
         where isyearrec = 1
     ),
