@@ -1,35 +1,4 @@
 with
-    term as (
-        select
-            t._dbt_source_relation,
-            t.schoolid,
-            t.yearid,
-
-            tb.storecode as term,
-            tb.date1 as term_start_date,
-            tb.date2 as term_end_date,
-
-            t.yearid + 1990 as academic_year,
-
-            if(
-                current_date('{{ var("local_timezone") }}')
-                between tb.date1 and tb.date2,
-                true,
-                false
-            ) as is_current_term,
-
-            if(tb.storecode in ('Q1', 'Q2'), 'S1', 'S2') as semester,
-
-        from {{ ref("stg_powerschool__terms") }} as t
-        inner join
-            {{ ref("stg_powerschool__termbins") }} as tb
-            on t.id = tb.termid
-            and t.schoolid = tb.schoolid
-            and {{ union_dataset_join_clause(left_alias="t", right_alias="tb") }}
-            and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
-        where t.isyearrec = 1
-    ),
-
     running_ada_by_term as (
         select
             a._dbt_source_relation,
@@ -44,15 +13,13 @@ with
 
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
         inner join
-            term as t
+            {{ ref("int_powerschool__term") }} as t
             on a.yearid = t.yearid
             and a.schoolid = t.schoolid
+            and a.membershipvalue = 1
+            and a.calendardate
+            between t.term_end_date and current_date('{{ var("local_timezone") }}')
             and {{ union_dataset_join_clause(left_alias="a", right_alias="t") }}
-        where
-            a.membershipvalue = 1
-            and a.calendardate <= t.term_end_date
-            and a.calendardate <= current_date('{{ var("local_timezone") }}')
-
         group by
             a._dbt_source_relation,
             a.studentid,
@@ -79,12 +46,13 @@ with
 
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
         inner join
-            term as t
+            {{ ref("int_powerschool__term") }} as t
             on a.yearid = t.yearid
             and a.schoolid = t.schoolid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="t") }}
-            and a.calendardate >= t.term_start_date
-            and a.calendardate <= t.term_end_date
+            and a.membershipvalue = 1
+            and a.calendardate between t.term_start_date and t.term_end_date
+            and a.calendardate <= current_date('{{ var("local_timezone") }}')
         inner join
             running_ada_by_term as r
             on a.yearid = r.yearid
@@ -92,9 +60,6 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="r") }}
             and t.term = r.term
             and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
-        where
-            a.membershipvalue = 1
-            and a.calendardate <= current_date('{{ var("local_timezone") }}')
     )
 
 select
