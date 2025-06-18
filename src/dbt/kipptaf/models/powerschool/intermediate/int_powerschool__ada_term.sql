@@ -9,25 +9,19 @@ with
             t.semester,
             t.term_end_date,
 
-            avg(a.attendancevalue) as running_ada_year_term,
-
+            avg(a.attendancevalue) over (
+                partition by a._dbt_source_relation, a.studentid, a.yearid, t.term
+                order by a.calendardate
+            ) as running_ada_year_term,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
         inner join
-            {{ ref("int_powerschool__term") }} as t
+            {{ ref("int_powerschool__terms") }} as t
             on a.yearid = t.yearid
             and a.schoolid = t.schoolid
-            and a.membershipvalue = 1
-            and a.calendardate
-            between t.term_end_date and current_date('{{ var("local_timezone") }}')
             and {{ union_dataset_join_clause(left_alias="a", right_alias="t") }}
-        group by
-            a._dbt_source_relation,
-            a.studentid,
-            a.yearid,
-            t.academic_year,
-            t.term,
-            t.semester,
-            t.term_end_date
+            and a.membershipvalue = 1
+            and a.calendardate between t.term_start_date and t.term_end_date
+            and a.calendardate <= current_date('{{ var("local_timezone") }}')
     ),
 
     membership_days as (
@@ -43,10 +37,9 @@ with
             t.term,
 
             r.running_ada_year_term,
-
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
         inner join
-            {{ ref("int_powerschool__term") }} as t
+            {{ ref("int_powerschool__terms") }} as t
             on a.yearid = t.yearid
             and a.schoolid = t.schoolid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="t") }}
