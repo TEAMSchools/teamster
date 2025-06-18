@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: int_powerschool__ada_term
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: studentid
+        data_type: integer
+      - name: academic_year
+        data_type: integer
+      - name: yearid
+        data_type: integer
+      - name: semester
+        data_type: string
+      - name: term
+        data_type: string
+      - name: running_ada_year_term
+        data_type: float
+      - name: ada_term
+        data_type: float
+      - name: ada_semester
+        data_type: float
+      - name: ada_year
+        data_type: float
+      - name: rn
+        data_type: integer
