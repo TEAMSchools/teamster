@@ -252,4 +252,4 @@ left join
     overgrad_fafsa as ovg
     on e.salesforce_contact_id = ovg.salesforce_contact_id
     and {{ union_dataset_join_clause(left_alias="e", right_alias="ovg") }}
-where e.rn_year = 1 and e.schoolid != 999999 and e.enroll_status != -1
+where e.rn_year = 1 and e.schoolid != 999999
