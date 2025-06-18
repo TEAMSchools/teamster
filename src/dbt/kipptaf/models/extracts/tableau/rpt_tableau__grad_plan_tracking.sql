@@ -102,10 +102,12 @@ select
     ae.q4_ae_status,
 
 from {{ ref("int_powerschool__gpprogress_grades") }} as g
-left join
+inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on g.studentsdcid = e.students_dcid
+    and g.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
     and {{ union_dataset_join_clause(left_alias="g", right_alias="e") }}
+    and e.enroll_status = 0
     and e.academic_year = {{ var("current_academic_year") }}
 left join
     {{ ref("int_powerschool__gpprogresssubject") }} as sp
@@ -129,6 +131,3 @@ left join
     ae_status as ae
     on e.studentid = ae.studentid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="ae") }}
-where
-    g.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
-    and e.enroll_status = 0
