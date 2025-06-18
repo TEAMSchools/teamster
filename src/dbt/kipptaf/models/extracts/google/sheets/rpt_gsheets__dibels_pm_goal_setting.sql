@@ -42,32 +42,32 @@ with
 
     avg_scores as (
         select
-            s.mclass_academic_year,
-            s.mclass_assessment_grade,
-            s.mclass_assessment_grade_int,
-            s.mclass_period,
-            s.mclass_measure_standard,
+            s.academic_year,
+            s.assessment_grade,
+            s.assessment_grade_int,
+            s.period,
+            s.measure_standard,
 
             e.region,
 
-            concat(s.mclass_period, s.mclass_measure_standard) as filter_tag,
+            concat(s.period, s.measure_standard) as filter_tag,
 
-            if(s.mclass_period = 'BOY', 'BOY->MOY', 'MOY->EOY') as pm_period,
+            if(s.period = 'BOY', 'BOY->MOY', 'MOY->EOY') as pm_period,
 
-            avg(s.mclass_measure_standard_score) as avg_score_raw,
+            avg(s.measure_standard_score) as avg_score_raw,
 
-            round(avg(s.mclass_measure_standard_score), 0) as avg_score,
+            round(avg(s.measure_standard_score), 0) as avg_score,
         from {{ ref("int_amplify__all_assessments") }} as s
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
-            on s.mclass_academic_year = e.academic_year
-            and s.mclass_student_number = e.student_number
+            on s.academic_year = e.academic_year
+            and s.student_number = e.student_number
         where
-            s.mclass_academic_year = {{ var("current_academic_year") }}
+            s.academic_year = {{ var("current_academic_year") }}
             and s.assessment_type = 'Benchmark'
-            and s.mclass_period != 'EOY'
-            and s.mclass_assessment_grade_int is not null
-            and s.mclass_measure_standard in (
+            and s.period != 'EOY'
+            and s.assessment_grade_int is not null
+            and s.measure_standard in (
                 'Phonemic Awareness (PSF)',
                 'Letter Sounds (NWF-CLS)',
                 'Decoding (NWF-WRC)',
@@ -76,20 +76,20 @@ with
             )
             and (
                 (
-                    s.mclass_period = 'BOY'
+                    s.period = 'BOY'
                     and s.boy_composite in ('Below Benchmark', 'Well Below Benchmark')
                 )
                 or (
-                    s.mclass_period = 'MOY'
+                    s.period = 'MOY'
                     and s.moy_composite in ('Below Benchmark', 'Well Below Benchmark')
                 )
             )
         group by
-            s.mclass_academic_year,
-            s.mclass_assessment_grade,
-            s.mclass_assessment_grade_int,
-            s.mclass_period,
-            s.mclass_measure_standard,
+            s.academic_year,
+            s.assessment_grade,
+            s.assessment_grade_int,
+            s.period,
+            s.measure_standard,
             e.region
     ),
 
@@ -110,12 +110,12 @@ with
     fly */
     days_and_goals as (
         select
-            s.mclass_academic_year,
+            s.academic_year,
             s.region,
             s.pm_period,
-            s.mclass_assessment_grade,
-            s.mclass_assessment_grade_int,
-            s.mclass_measure_standard,
+            s.assessment_grade,
+            s.assessment_grade_int,
+            s.measure_standard,
             s.avg_score as starting_words,
 
             c.round,
@@ -128,35 +128,27 @@ with
             ) as required_growth_words,
 
             min(c.round) over (
-                partition by
-                    s.mclass_academic_year,
-                    s.region,
-                    s.pm_period,
-                    s.mclass_assessment_grade
+                partition by s.academic_year, s.region, s.pm_period, s.assessment_grade
                 order by c.`round`
             ) as min_pm_round,
 
             max(c.`round`) over (
-                partition by
-                    s.mclass_academic_year,
-                    s.region,
-                    s.pm_period,
-                    s.mclass_assessment_grade
+                partition by s.academic_year, s.region, s.pm_period, s.assessment_grade
                 order by c.`round` desc
             ) as max_pm_round,
         from avg_scores as s
         inner join
             day_count as c
-            on s.mclass_academic_year = c.academic_year
+            on s.academic_year = c.academic_year
             and s.region = c.region
             and s.pm_period = c.name
         inner join
             pm_expectations as e
-            on s.mclass_academic_year = e.academic_year
+            on s.academic_year = e.academic_year
             and s.region = e.region
             and s.pm_period = e.period
-            and s.mclass_assessment_grade_int = e.grade_level
-            and s.mclass_measure_standard = e.measure_standard
+            and s.assessment_grade_int = e.grade_level
+            and s.measure_standard = e.measure_standard
         where
             s.filter_tag in (
                 'BOYPhonemic Awareness (PSF)',
@@ -177,21 +169,21 @@ with
 
             sum(n_days) over (
                 partition by
-                    mclass_academic_year,
+                    academic_year,
                     region,
                     pm_period,
-                    mclass_assessment_grade_int,
-                    mclass_measure_standard
+                    assessment_grade_int,
+                    measure_standard
             ) as pm_n_days,
 
             round(
                 required_growth_words / sum(n_days) over (
                     partition by
-                        mclass_academic_year,
+                        academic_year,
                         region,
                         pm_period,
-                        mclass_assessment_grade_int,
-                        mclass_measure_standard
+                        assessment_grade_int,
+                        measure_standard
                 ),
                 2
             ) as daily_growth_rate,
@@ -202,21 +194,21 @@ with
                     then
                         (n_days * required_growth_words) / sum(n_days) over (
                             partition by
-                                mclass_academic_year,
+                                academic_year,
                                 region,
                                 pm_period,
-                                mclass_assessment_grade_int,
-                                mclass_measure_standard
+                                assessment_grade_int,
+                                measure_standard
                         )
                         + starting_words
                     else
                         (n_days * required_growth_words) / sum(n_days) over (
                             partition by
-                                mclass_academic_year,
+                                academic_year,
                                 region,
                                 pm_period,
-                                mclass_assessment_grade_int,
-                                mclass_measure_standard
+                                assessment_grade_int,
+                                measure_standard
                         )
                 end,
                 0
@@ -233,18 +225,18 @@ select
         else
             sum(round_growth_words_goal) over (
                 partition by
-                    mclass_academic_year,
+                    academic_year,
                     region,
                     pm_period,
-                    mclass_assessment_grade_int,
-                    mclass_measure_standard
+                    assessment_grade_int,
+                    measure_standard
                 order by
-                    mclass_academic_year,
+                    academic_year,
                     region,
                     pm_period,
                     `round`,
-                    mclass_assessment_grade_int,
-                    mclass_measure_standard
+                    assessment_grade_int,
+                    measure_standard
                 rows between unbounded preceding and current row
             )
     end as cumulative_growth_words,
