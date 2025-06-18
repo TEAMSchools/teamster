@@ -2,15 +2,6 @@ with
     unpivoted as (
         select
             _dbt_source_relation,
-            plan_id,
-            plan_name,
-            discipline_id,
-            discipline_name,
-            subject_id,
-            subject_name,
-            plan_credit_capacity,
-            discipline_credit_capacity,
-            subject_credit_capacity,
 
             /* unpivot columns */
             id,
@@ -29,9 +20,12 @@ with
             )
     )
 
-select *,
-from
-    unpivoted pivot (
-        max(credit_capacity) as credit_capacity
-        for degree_plan_section in ('plan', 'discipline', 'subject')
-    )
+select
+    _dbt_source_relation,
+    id,
+    `name`,
+    degree_plan_section,
+
+    max(credit_capacity) as credit_capacity,
+from unpivoted
+group by _dbt_source_relation, id, `name`, degree_plan_section

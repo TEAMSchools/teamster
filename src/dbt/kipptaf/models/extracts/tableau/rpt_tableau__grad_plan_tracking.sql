@@ -100,34 +100,33 @@ select
     ae.q2_ae_status,
     ae.q3_ae_status,
     ae.q4_ae_status,
-
 from {{ ref("int_powerschool__gpprogress_grades") }} as g
 inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on g.studentsdcid = e.students_dcid
-    and g.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
     and {{ union_dataset_join_clause(left_alias="g", right_alias="e") }}
     and e.enroll_status = 0
     and e.academic_year = {{ var("current_academic_year") }}
 left join
-    {{ ref("int_powerschool__gpprogresssubject") }} as sp
+    {{ ref("int_powerschool__gpnode_unpivot") }} as sp
     on g.studentsdcid = sp.studentsdcid
     and g.plan_id = sp.id
     and {{ union_dataset_join_clause(left_alias="g", right_alias="sp") }}
-    and sp.degree_plan_section = 'Plan'
+    and sp.degree_plan_section = 'plan'
 left join
-    {{ ref("int_powerschool__gpprogresssubject") }} as sd
+    {{ ref("int_powerschool__gpnode_unpivot") }} as sd
     on g.studentsdcid = sd.studentsdcid
     and g.discipline_id = sd.id
     and {{ union_dataset_join_clause(left_alias="g", right_alias="sd") }}
-    and sd.degree_plan_section = 'Discipline'
+    and sd.degree_plan_section = 'discipline'
 left join
-    {{ ref("int_powerschool__gpprogresssubject") }} as ss
+    {{ ref("int_powerschool__gpnode_unpivot") }} as ss
     on g.studentsdcid = ss.studentsdcid
     and g.subject_id = ss.id
     and {{ union_dataset_join_clause(left_alias="g", right_alias="ss") }}
-    and ss.degree_plan_section = 'Subject'
+    and ss.degree_plan_section = 'subject'
 left join
     ae_status as ae
     on e.studentid = ae.studentid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="ae") }}
+where g.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
