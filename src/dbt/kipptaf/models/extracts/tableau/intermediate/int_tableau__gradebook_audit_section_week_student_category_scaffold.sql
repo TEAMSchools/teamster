@@ -2,6 +2,7 @@ with
     category_grades as (
         select
             _dbt_source_relation,
+            yearid,
             studentid,
             sectionid,
             storecode,
@@ -16,7 +17,7 @@ with
 
         from {{ ref("int_powerschool__category_grades") }}
         where
-            yearid = {{ var("current_academic_year") - 1990 }}
+            yearid = {{ var("current_academic_year") - 1991 }}
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
     )
 
@@ -85,6 +86,7 @@ inner join
 left join
     category_grades as cg
     on s.studentid = cg.studentid
+    and s.yearid = cg.yearid
     and s.sectionid = cg.sectionid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="cg") }}
     and ge.assignment_category_term = cg.storecode
