@@ -204,6 +204,8 @@ with
 
 select
     *,
-    if(is_present_flip, 0, is_present) as is_present_hs_alt,
-    if(is_present_flip, 1, is_absent) as is_absent_hs_alt,
+    -- if(is_present_flip, 0, is_present) as is_present_hs_alt,
+    -- if(is_present_flip, 1, is_absent) as is_absent_hs_alt,
+    if(att_code in ('T', 'T10'), 0.67, is_present) as is_present_hs_alt,
+    if(att_code in ('T', 'T10'), 0.33, is_absent) as is_absent_hs_alt,
 from calcs
