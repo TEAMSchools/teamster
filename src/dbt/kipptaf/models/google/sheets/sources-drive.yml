@@ -12,7 +12,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1CbSOG-gs0dIPtf7wneJNhSqudRFKWpfcNoefyAEi5AM
-            sheet_range: src_students__graduation_path_combos
+            sheet_range: src_google_sheets__student_graduation_path_combos
             skip_leading_rows: 1
         meta:
           dagster:
@@ -26,7 +26,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1CbSOG-gs0dIPtf7wneJNhSqudRFKWpfcNoefyAEi5AM
-            sheet_range: src_students__graduation_path_cutoffs
+            sheet_range: src_google_sheets__student_graduation_path_cutoffs
             skip_leading_rows: 1
         meta:
           dagster:
@@ -34,3 +34,94 @@ sources:
               - kipptaf
               - google_sheets
               - student_graduation_path_cutoffs
+      - name: src_google_sheets__state_test_comparison
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
+            sheet_range: src_google_sheets__state_test_comparison
+            skip_leading_rows: 1
+        columns:
+          - name: Academic_Year
+            data_type: int64
+          - name: Test_Name
+            data_type: string
+          - name: Test_Code
+            data_type: string
+          - name: Region
+            data_type: string
+          - name: Comparison_Entity
+            data_type: string
+          - name: Percent_Proficient
+            data_type: float64
+          - name: Total_Students
+            data_type: int64
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - state_test_comparison
+      - name: src_google_sheets__state_test_comparison_demographics
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
+            sheet_range: src_google_sheets__state_test_comparison_demographics
+            skip_leading_rows: 1
+        columns:
+          - name: Academic_Year
+            data_type: int64
+          - name: Test_Name
+            data_type: string
+          - name: Test_Code
+            data_type: string
+          - name: Region
+            data_type: string
+          - name: Comparison_Entity
+            data_type: string
+          - name: Comparison_Demographic_Group
+            data_type: string
+          - name: Comparison_Demographic_Subgroup
+            data_type: string
+          - name: Percent_Proficient
+            data_type: float64
+          - name: Total_Students
+            data_type: int64
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - state_test_comparison_demographics
+      - name: src_google_sheets__state_test_expected_assessments
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
+            sheet_range: src_google_sheets__state_test_expected_assessments
+            skip_leading_rows: 1
+        columns:
+          - name: Academic_Year
+            data_type: int64
+          - name: Test_Name
+            data_type: string
+          - name: Test_Code
+            data_type: string
+          - name: Region
+            data_type: string
+          - name: Comparison_Entity
+            data_type: string
+          - name: Percent_Proficient
+            data_type: float64
+          - name: Total_Students
+            data_type: int64
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - state_test_expected_assessments

@@ -1,0 +1,10 @@
+version: 2
+models:
+  - name: stg_google_sheets__state_test_comparison_demographics
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Academic_Year
+        data_type: int64
