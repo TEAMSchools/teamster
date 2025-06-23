@@ -268,7 +268,7 @@ left join
     and e.yearid = gpa.yearid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="gpa") }}
 left join
-    {{ ref("int_powerschool__gpa_term") }} as gpapy
+    {{ ref("int_powerschool__gpa_term_pivot") }} as gpapy
     on e.studentid = gpapy.studentid
     and e.yearid = (gpapy.yearid + 1)
     and {{ union_dataset_join_clause(left_alias="e", right_alias="gpapy") }}

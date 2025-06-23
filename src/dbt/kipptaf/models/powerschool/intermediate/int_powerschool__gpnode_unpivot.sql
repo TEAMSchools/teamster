@@ -2,6 +2,7 @@ with
     unpivoted as (
         select
             _dbt_source_relation,
+            studentsdcid,
 
             /* unpivot columns */
             id,
@@ -22,10 +23,11 @@ with
 
 select
     _dbt_source_relation,
+    studentsdcid,
     id,
     `name`,
     degree_plan_section,
 
     max(credit_capacity) as credit_capacity,
 from unpivoted
-group by _dbt_source_relation, id, `name`, degree_plan_section
+group by _dbt_source_relation, studentsdcid, id, `name`, degree_plan_section
