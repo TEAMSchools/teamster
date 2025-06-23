@@ -12,7 +12,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1CbSOG-gs0dIPtf7wneJNhSqudRFKWpfcNoefyAEi5AM
-            sheet_range: src_google_sheets__student_graduation_path_combos
+            sheet_range: src_students__graduation_path_combos
             skip_leading_rows: 1
         meta:
           dagster:
@@ -26,7 +26,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1CbSOG-gs0dIPtf7wneJNhSqudRFKWpfcNoefyAEi5AM
-            sheet_range: src_google_sheets__student_graduation_path_cutoffs
+            sheet_range: src_students__graduation_path_cutoffs
             skip_leading_rows: 1
         meta:
           dagster:
@@ -133,9 +133,9 @@ sources:
             data_type: string
           - name: PS_Credit_Type
             data_type: string
-            meta:
-              dagster:
-                asset_key:
-                  - kipptaf
-                  - google_sheets
-                  - state_test_expected_assessments
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - state_test_expected_assessments
