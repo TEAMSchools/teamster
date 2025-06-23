@@ -485,7 +485,7 @@ left join
     and a.discipline = sf2.discipline
     and a.state_id = sf2.state_studentnumber
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
-
+    /*
 union all
 
 -- NJ prelim scores
@@ -593,4 +593,5 @@ left join
     on a.academic_year = sf2.academic_year - 1
     and a.discipline = sf2.discipline
     and a.localstudentidentifier = sf2.student_number
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}*/
+    
