@@ -102,7 +102,7 @@ with
                 {% if not loop.last %},{% endif %}
             {% endfor %}
 
-        from {{ ref("stg_assessments__state_test_comparison") }}
+        from {{ ref("stg_google_sheets__state_test_comparison") }}
         group by academic_year, test_name, test_code, region
     ),
 
