@@ -204,9 +204,12 @@ select
     p.moy as moy_composite,
     p.eoy as eoy_composite,
 
-    if(
-        s.measure_standard_level_int >= 3, 'At/Above', 'Below/Well Below'
-    ) as aggregated_measure_standard_level,
+    case
+        when s.measure_standard_level_int >= 3
+        then 'At/Above'
+        when s.measure_standard_level_int <= 2
+        then 'Below/Well Below'
+    end as aggregated_measure_standard_level,
 
 from assessments_scores as s
 left join
@@ -245,9 +248,12 @@ select
     p.moy as moy_composite,
     p.eoy as eoy_composite,
 
-    if(
-        s.measure_standard_level_int >= 3, 'At/Above', 'Below/Well Below'
-    ) as aggregated_measure_standard_level,
+    case
+        when s.measure_standard_level_int >= 3
+        then 'At/Above'
+        when s.measure_standard_level_int <= 2
+        then 'Below/Well Below'
+    end as aggregated_measure_standard_level,
 
 from assessments_scores as s
 left join
