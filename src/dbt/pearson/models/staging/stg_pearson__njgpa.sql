@@ -73,7 +73,7 @@ select
 
     if(testperformancelevel = 2, true, false) as is_proficient,
 
-    null as is_bl_fb,
+    null as is_bl_fb,  -- noqa: ST06
 
     case
         testperformancelevel
