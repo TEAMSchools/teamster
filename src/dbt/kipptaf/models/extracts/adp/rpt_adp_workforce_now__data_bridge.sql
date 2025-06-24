@@ -27,6 +27,9 @@ with
                 'N'
             ) as supervisor_flag,
         from {{ ref("int_people__staff_roster") }} as sr
+        where
+            sr.assignment_status not in ('Terminated', 'Deceased')
+            and not sr.is_prestart
     ),
 
     surrogate_keys as (
@@ -64,23 +67,29 @@ with
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     position_id as `Position ID`,
+
+    /* required to be after ID */
+    format_date(
+        '%m/%d/%Y', current_date('{{ var("local_timezone") }}')
+    ) as `Change Effective On`,
+
+    /* communication */
     mail as `Work E-mail`,
+    'W' as `E-Mail to Use For Notification`,
+
+    /* custom fields */
+    'Employment Custom Fields' as `CDF Category`,
+    'Employee Number' as `CDF Label`,
     employee_number as `CDF Value`,
+
+    /* essential time */
     employee_number as `Badge`,
     reports_to_position_id as `Supervisorid`,
     supervisor_flag as `Supervisorflag`,
     pay_class as `Payclass`,
-
-    'Employment Custom Fields' as `CDF Category`,
-    'Employee Number' as `CDF Label`,
     'EST' as `TimeZone`,
-    'W' as `E-Mail to Use For Notification`,
     'Y' as `Position Uses Time`,
     'Y' as `Transfertopayroll`,
-
-    format_date(
-        '%m/%d/%Y', current_date('{{ var("local_timezone") }}')
-    ) as `Change Effective On`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from surrogate_keys
 where source_surrogate_key != destination_surrogate_key
