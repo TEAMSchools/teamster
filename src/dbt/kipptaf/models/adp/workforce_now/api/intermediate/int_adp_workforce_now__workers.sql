@@ -79,6 +79,7 @@ select
     ou.organizational_unit__home__department__name,
 
     rt.reports_to_worker_id__id_value,
+    rt.reports_to_position_id,
 
     w.person__family_name_1 || ', ' || w.person__given_name as person__formatted_name,
 
