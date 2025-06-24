@@ -62,6 +62,14 @@ with
             w.received_sign_on_bonus,
             w.remote_work_status,
             w.teacher_prep_program,
+            w.wf_mgr_accrual_profile,
+            w.wf_mgr_badge_number,
+            w.wf_mgr_ee_type,
+            w.wf_mgr_home_hyperfind,
+            w.wf_mgr_loa_return_date,
+            w.wf_mgr_loa,
+            w.wf_mgr_pay_rule,
+            w.wf_mgr_trigger,
             w.organizational_unit__assigned__business_unit__code_value
             as assigned_business_unit_code,
             w.organizational_unit__assigned__business_unit__name
@@ -80,6 +88,7 @@ with
             w.benefits_eligibility_class__group_code__name
             as benefits_eligibility_class,
             w.worker_hire_date_recent,
+            w.wf_mgr_trigger_new,
 
             en.employee_number,
 
@@ -186,6 +195,14 @@ with
             null as received_sign_on_bonus,
             null as remote_work_status,
             null as teacher_prep_program,
+            null as wf_mgr_accrual_profile,
+            null as wf_mgr_badge_number,
+            null as wf_mgr_ee_type,
+            null as wf_mgr_home_hyperfind,
+            null as wf_mgr_loa_return_date,
+            null as wf_mgr_loa,
+            null as wf_mgr_pay_rule,
+            null as wf_mgr_trigger,
             null as assigned_business_unit_code,
 
             legal_entity_name as assigned_business_unit_name,
@@ -203,6 +220,7 @@ with
             null as payroll_group_code,
             null as benefits_eligibility_class,
             null as worker_hire_date_recent,
+            null as wf_mgr_trigger_new,
 
             employee_number,
             race_ethnicity_reporting,
@@ -264,6 +282,12 @@ select
     w.work_cell,
     w.work_email,
     w.custom_field__employee_number,
+    w.wf_mgr_accrual_profile,
+    w.wf_mgr_badge_number,
+    w.wf_mgr_ee_type,
+    w.wf_mgr_pay_rule,
+    w.wf_mgr_trigger,
+    w.wf_mgr_trigger_new,
     w.assigned_business_unit_code,
     w.assigned_business_unit_name,
     w.assigned_department_name,
