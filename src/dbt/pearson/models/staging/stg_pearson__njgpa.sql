@@ -25,8 +25,6 @@ select
 
     'NJGPA' as assessment_name,
 
-    null as is_bl_fb,
-
     cast(left(assessmentyear, 4) as int) as academic_year,
 
     cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
@@ -74,6 +72,8 @@ select
     if(`period` = 'FallBlock', 'Fall', `period`) as season,
 
     if(testperformancelevel = 2, true, false) as is_proficient,
+
+    null as is_bl_fb,
 
     case
         testperformancelevel
