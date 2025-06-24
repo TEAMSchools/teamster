@@ -1,10 +1,4 @@
 with
-    supervisors as (
-        select reports_to_position_id,
-        from {{ ref("int_people__staff_roster") }}
-        where reports_to_position_id is not null
-    ),
-
     staff_roster as (
         select
             sr.position_id,
@@ -23,9 +17,16 @@ with
             null as adp__supervisor_flag,
             null as adp__pay_class,
 
-            if(s.reports_to_position_id is not null, 'Y', 'N') as supervisor_flag,
+            if(
+                sr.reports_to_position_id in (
+                    select rt.reports_to_position_id,
+                    from {{ ref("int_people__staff_roster") }} as rt
+                    where rt.reports_to_position_id is not null
+                ),
+                'Y',
+                'N'
+            ) as supervisor_flag,
         from {{ ref("int_people__staff_roster") }} as sr
-        left join supervisors as s on sr.position_id = s.reports_to_position_id
     ),
 
     surrogate_keys as (
