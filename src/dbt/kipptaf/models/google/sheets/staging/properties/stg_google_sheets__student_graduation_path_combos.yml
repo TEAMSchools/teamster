@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_reporting__graduation_paths_combos
+  - name: stg_google_sheets__student_graduation_path_combos
     config:
       contract:
         enforced: true
@@ -24,7 +24,3 @@ models:
         data_type: boolean
       - name: grad_eligibility
         data_type: string
-      # - name: met_dlm
-      #   data_type: boolean
-      # - name: met_portfolio
-      #   data_type: boolean
