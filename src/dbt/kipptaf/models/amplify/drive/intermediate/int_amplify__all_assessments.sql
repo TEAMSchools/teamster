@@ -204,6 +204,10 @@ select
     p.moy as moy_composite,
     p.eoy as eoy_composite,
 
+    if(
+        s.measure_standard_level_int >= 3, 'At/Above', 'Below/Well Below'
+    ) as aggregated_measure_standard_level,
+
 from assessments_scores as s
 left join
     probe_eligible_tag as p
@@ -240,6 +244,10 @@ select
     p.boy as boy_composite,
     p.moy as moy_composite,
     p.eoy as eoy_composite,
+
+    if(
+        s.measure_standard_level_int >= 3, 'At/Above', 'Below/Well Below'
+    ) as aggregated_measure_standard_level,
 
 from assessments_scores as s
 left join
