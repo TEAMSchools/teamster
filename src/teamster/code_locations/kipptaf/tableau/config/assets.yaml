@@ -12,7 +12,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__college_assessment_dashboard_historic]
     metadata:
       id: 286156c4-2f9e-4983-926b-63c9b11f44f4
-      cron_schedule: 0 6 * * *
+      # cron_schedule: 0 6 * * *
   - name: Data Quality Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__assessment_entry_audit]
@@ -41,7 +41,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__hs_early_warning_dashboard]
     metadata:
       id: 6333e047-e7a9-4d8f-a740-3df30f179d11
-      cron_schedule: 0 6 * * *
+      # cron_schedule: 0 6 * * *
   - name: KIPP Forward Data Suite
     deps:
       - [kipptaf, extracts, rpt_gsheets__kfwd_rem_roster]
@@ -130,7 +130,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__sight_words_dashboard]
     metadata:
       id: bef17623-af5e-4a18-9e05-7a8f4e6951bf
-      cron_schedule: 0 5 * * *
+      # cron_schedule: 0 5 * * *
   - name: Teacher Development Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__teacher_development]
@@ -146,7 +146,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
     metadata:
       id: 5046a976-ed0e-4c77-93fe-78b732cb5548
-      cron_schedule: 0 4 * * *
+      # cron_schedule: 0 4 * * *
   - name: Gradebook Audit - Teacher Report
     deps:
       - [kipptaf, tableau, rpt_tableau__assignment_checks]
@@ -156,7 +156,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
     metadata:
       id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
-      cron_schedule: 30 7 * * 2
+      # cron_schedule: 30 7 * * 2
   - name: DDI Suite
     deps:
       - [kipptaf, tableau, rpt_tableau__assessment_dashboard]

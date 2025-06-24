@@ -130,13 +130,13 @@ models:
         data_type: string
       - name: fafsa_status_mismatch_category
         data_type: string
-        # data_tests:
-        # - accepted_values:
-        # values:
-        # - No issues
-        # config:
-        # severity: warn
-        # store_failures: true
+        data_tests:
+          - accepted_values:
+              values:
+                - No issues
+              config:
+                severity: warn
+                store_failures: true
       - name: met_fafsa_requirement
         data_type: boolean
       - name: state_studentnumber
