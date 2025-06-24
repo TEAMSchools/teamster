@@ -104,6 +104,8 @@ select
 
     if(testperformancelevel >= 3, true, false) as is_proficient,
 
+    null as is_bl_fb,
+
     case
         testcode
         when 'SC05'
