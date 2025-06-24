@@ -1,6 +1,6 @@
 with
     supervisors as (
-        select distinct reports_to_position_id,
+        select reports_to_position_id,
         from {{ ref("int_people__staff_roster") }}
         where reports_to_position_id is not null
     ),
