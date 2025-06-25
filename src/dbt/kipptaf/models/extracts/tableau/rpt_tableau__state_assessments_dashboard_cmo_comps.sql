@@ -386,6 +386,14 @@ select
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__gender__female__total_students,
 
+    avg(if(iep_status = 'Has IEP', is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__subgroup__students_with_disabilities__percent_proficient,
+
+    count(if(iep_status = 'Has IEP', student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__subgroup__students_with_disabilities__total_students,
+
     row_number() over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as rn,
