@@ -10,6 +10,7 @@ with
             row_number() over (
                 partition by s.schoolcity, c.date_value
             ) as region_distinct,
+
         from {{ ref("stg_powerschool__schools") }} as s
         inner join
             {{ ref("stg_powerschool__calendar_day") }} as c
@@ -28,6 +29,7 @@ with
             cast(right(t.code, 1) as int) as `round`,
 
             count(distinct d.date_value) as n_days,
+
         from school_directory as d
         inner join
             {{ ref("stg_reporting__terms") }} as t
@@ -57,6 +59,7 @@ with
             avg(s.measure_standard_score) as avg_score_raw,
 
             round(avg(s.measure_standard_score), 0) as avg_score,
+            
         from {{ ref("int_amplify__all_assessments") }} as s
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
