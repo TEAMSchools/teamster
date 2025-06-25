@@ -7,19 +7,13 @@ with
             statestudentidentifier as state_id,
             assessment_name,
             discipline,
-            testscalescore as score,
-            testperformancelevel as performance_band_level,
             is_proficient,
-            testperformancelevel_text as performance_band,
             lep_status,
             is_504,
             iep_status,
             race_ethnicity,
-            test_grade,
 
             'Actual' as results_type,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
 
             if(`period` = 'FallBlock', 'Fall', `period`) as season,
 
@@ -54,17 +48,12 @@ with
             student_id as state_id,
             assessment_name,
             discipline,
-            scale_score as score,
-            performance_level as performance_band_level,
             is_proficient,
-            achievement_level as performance_band,
             null as lep_status,
             null as is_504,
             null as iep_status,
             null as race_ethnicity,
-            cast(assessment_grade as int) as test_grade,
             'Actual' as results_type,
-            administration_window as `admin`,
             season,
             assessment_subject as `subject`,
             test_code,
@@ -95,25 +84,6 @@ with
                 else 'ELA'
             end as discipline,
 
-            scale_score as score,
-
-            case
-                when performance_level = 'Did Not Yet Meet Expectations'
-                then 1
-                when performance_level = 'Partially Met Expectations'
-                then 2
-                when performance_level = 'Approached Expectations'
-                then 3
-                when performance_level = 'Met Expectations'
-                then 4
-                when performance_level = 'Exceeded Expectations'
-                then 5
-                when performance_level = 'Not Yet Graduation Ready'
-                then 1
-                when performance_level = 'Graduation Ready'
-                then 2
-            end as performance_band_level,
-
             if(
                 performance_level
                 in ('Met Expectations', 'Exceeded Expectations', 'Graduation Ready'),
@@ -121,15 +91,12 @@ with
                 false
             ) as is_proficient,
 
-            performance_level as performance_band,
             null as lep_status,
             null as is_504,
             null as iep_status,
             null as race_ethnicity,
-            null as test_grade,
 
             'Preliminary' as results_type,
-            'Spring' as `admin`,
             'Spring' as season,
 
             case
@@ -193,13 +160,7 @@ with
             a.discipline,
             a.subject,
             a.test_code,
-            a.test_grade,
-            a.`admin`,
             a.season,
-            a.score,
-            a.performance_band,
-            a.performance_band_level,
-            a.is_proficient,
             a.results_type,
 
             'KTAF' as district,
@@ -212,6 +173,8 @@ with
                 when e.grade_level >= 3
                 then '3-4'
             end as grade_range_band,
+
+            if(a.is_proficient, 1, 0) as is_proficient_int,
 
         from assessment_scores as a
         inner join
@@ -256,13 +219,7 @@ with
             a.discipline,
             a.subject,
             a.test_code,
-            a.test_grade,
-            a.`admin`,
             a.season,
-            a.score,
-            a.performance_band,
-            a.performance_band_level,
-            a.is_proficient,
             a.results_type,
 
             'KTAF' as district,
@@ -275,6 +232,8 @@ with
                 when e.grade_level >= 3
                 then '3-4'
             end as grade_range_band,
+
+            if(a.is_proficient, 1, 0) as is_proficient_int,
 
         from assessment_scores as a
         inner join
@@ -320,13 +279,7 @@ with
             a.discipline,
             a.subject,
             a.test_code,
-            a.test_grade,
-            a.`admin`,
             a.season,
-            a.score,
-            a.performance_band,
-            a.performance_band_level,
-            a.is_proficient,
             a.results_type,
 
             'KTAF' as district,
@@ -339,6 +292,8 @@ with
                 when e.grade_level >= 3
                 then '3-4'
             end as grade_range_band,
+
+            if(a.is_proficient, 1, 0) as is_proficient_int,
 
         from assessment_scores as a
         inner join
@@ -359,21 +314,77 @@ select
     region,
     results_type,
 
-    avg(if(is_proficient, 1, 0)) over (
+    avg(is_proficient_int) over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__total__all__students__percent_proficient,
 
-    count(distinct student_number) over (
+    count(student_number) over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__total__all__students__total_students,
 
-    avg(if(is_proficient and race_ethnicity = 'B', 1, 0)) over (
+    avg(if(race_ethnicity = 'B', is_proficient_int, null)) over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__aggregate_ethnicity__african_american__percent_proficient,
 
-    count(distinct if(race_ethnicity = 'B', student_number, null)) over (
+    count(if(race_ethnicity = 'B', student_number, null)) over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__aggregate_ethnicity__african_american__total_students,
+
+    avg(if(race_ethnicity = 'A', is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__asian__percent_proficient,
+
+    count(if(race_ethnicity = 'A', student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__asian__total_students,
+
+    avg(if(race_ethnicity = 'I', is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__american_indian__percent_proficient,
+
+    count(if(race_ethnicity = 'I', student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__american_indian__total_students,
+
+    avg(if(race_ethnicity = 'H', is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__hispanic__percent_proficient,
+
+    count(if(race_ethnicity = 'H', student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__hispanic__total_students,
+
+    avg(if(race_ethnicity = 'W', is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__white__percent_proficient,
+
+    avg(if(race_ethnicity = 'P', is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__native_hawaiian__percent_proficient,
+
+    count(if(race_ethnicity = 'P', student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__native_hawaiian__total_students,
+
+    count(if(race_ethnicity = 'W', student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__white__total_students,
+
+    avg(if(gender = 'M', is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__gender__male__percent_proficient,
+
+    count(if(gender = 'M', student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__gender__male__total_students,
+
+    avg(if(gender = 'F', is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__gender__female__percent_proficient,
+
+    count(if(gender = 'F', student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__gender__female__total_students,
 
     row_number() over (
         partition by academic_year, assessment_name, test_code, region, results_type
