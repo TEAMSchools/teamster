@@ -170,6 +170,7 @@ with
             e.region,
             e.schoolid,
             e.school,
+            e.school_level,
             e.student_number,
             e.state_studentnumber,
             e.student_name,
@@ -201,6 +202,17 @@ with
             a.is_proficient,
             a.results_type,
 
+            'KTAF' as district,
+
+            case
+                when e.grade_level >= 9
+                then 'HS'
+                when e.grade_level >= 5
+                then '5-8'
+                when e.grade_level >= 3
+                then '3-4'
+            end as grade_range_band,
+
         from assessment_scores as a
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
@@ -220,6 +232,7 @@ with
             e.region,
             e.schoolid,
             e.school,
+            e.school_level,
             e.student_number,
             e.state_studentnumber,
             e.student_name,
@@ -251,6 +264,17 @@ with
             a.is_proficient,
             a.results_type,
 
+            'KTAF' as district,
+
+            case
+                when e.grade_level >= 9
+                then 'HS'
+                when e.grade_level >= 5
+                then '5-8'
+                when e.grade_level >= 3
+                then '3-4'
+            end as grade_range_band,
+
         from assessment_scores as a
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
@@ -271,6 +295,7 @@ with
             e.region,
             e.schoolid,
             e.school,
+            e.school_level,
             e.student_number,
             e.state_studentnumber,
             e.student_name,
@@ -284,10 +309,10 @@ with
             e.advisory,
             e.year_in_network,
 
-            a.race_ethnicity,
-            a.lep_status,
-            a.is_504,
-            a.iep_status,
+            e.race_ethnicity,
+            e.lep_status,
+            e.is_504,
+            e.iep_status,
 
             a.assessment_name,
             a.discipline,
@@ -302,6 +327,17 @@ with
             a.is_proficient,
             a.results_type,
 
+            'KTAF' as district,
+
+            case
+                when e.grade_level >= 9
+                then 'HS'
+                when e.grade_level >= 5
+                then '5-8'
+                when e.grade_level >= 3
+                then '3-4'
+            end as grade_range_band,
+
         from assessment_scores as a
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
@@ -313,5 +349,33 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
     )
 
-select *
+select
+    academic_year,
+    assessment_name,
+    test_code,
+    region,
+    results_type,
+
+    avg(if(is_proficient, 1, 0)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__total__all__students__percent_proficient,
+
+    count(distinct student_number) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__total__all__students__total_students,
+
+    avg(if(is_proficient and race_ethnicity = 'B', 1, 0)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__african_american__percent_proficient,
+
+    count(distinct if(race_ethnicity = 'B', student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__african_american__total_students,
+
+    row_number() over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as rn
+
 from roster
+where season = 'Spring'
+qualify rn = 1
