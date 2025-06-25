@@ -220,6 +220,7 @@ with
             and a.localstudentidentifier = e.student_number
             and a.academic_year >= {{ var("current_academic_year") - 7 }}
             and a.results_type = 'Actual'
+            and a.season = 'Spring'
             and e.grade_level > 2
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
 
@@ -282,6 +283,7 @@ with
             and a.state_id = e.state_studentnumber
             and a.academic_year >= {{ var("current_academic_year") - 7 }}
             and a.results_type = 'Actual'
+            and a.season = 'Spring'
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
             and e.grade_level > 2
             and e.region = 'Miami'
@@ -345,6 +347,7 @@ with
             and a.state_id = e.state_studentnumber
             and a.academic_year = {{ var("current_academic_year") }}
             and a.results_type = 'Preliminary'
+            and a.season = 'Spring'
             and e.grade_level > 2
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
     )
@@ -374,8 +377,7 @@ select
 
     row_number() over (
         partition by academic_year, assessment_name, test_code, region, results_type
-    ) as rn
+    ) as rn,
 
 from roster
-where season = 'Spring'
 qualify rn = 1
