@@ -18,7 +18,7 @@ with
             null as adp__pay_class,
 
             if(
-                sr.reports_to_position_id in (
+                sr.position_id in (
                     select rt.reports_to_position_id,
                     from {{ ref("int_people__staff_roster") }} as rt
                     where rt.reports_to_position_id is not null
