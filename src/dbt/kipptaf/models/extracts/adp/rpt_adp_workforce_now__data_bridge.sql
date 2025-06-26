@@ -9,13 +9,12 @@ with
             sr.custom_field__employee_number as adp__custom_field__employee_number,
             sr.work_email as adp__work_email,
 
-            {# TODO: calculate using ??? #}
-            null as pay_class,
-            {# TODO: add from API when available #}
-            null as adp__badge,
-            null as adp__supervisor_id,
-            null as adp__supervisor_flag,
-            null as adp__pay_class,
+            tna.badge as adp__badge,
+            tna.supervisor_id as adp__supervisor_id,
+            tna.supervisor_flag as adp__supervisor_flag,
+            tna.pay_class,
+
+            '000' || sr.employee_number as badge,
 
             if(
                 sr.position_id in (
@@ -27,6 +26,9 @@ with
                 'N'
             ) as supervisor_flag,
         from {{ ref("int_people__staff_roster") }} as sr
+        inner join
+            {{ ref("stg_adp_workforce_now__time_and_attendance") }} as tna
+            on sr.position_id = tna.position_id
         where
             sr.assignment_status not in ('Terminated', 'Deceased')
             and not sr.is_prestart
@@ -41,10 +43,9 @@ with
                     [
                         "employee_number",
                         "mail",
-                        "employee_number",
+                        "badge",
                         "reports_to_position_id",
                         "supervisor_flag",
-                        "pay_class",
                     ]
                 )
             }} as source_surrogate_key,
@@ -57,7 +58,6 @@ with
                         "adp__badge",
                         "adp__supervisor_id",
                         "adp__supervisor_flag",
-                        "adp__pay_class",
                     ]
                 )
             }} as destination_surrogate_key,
@@ -83,7 +83,7 @@ select
     employee_number as `CDF Value`,
 
     /* essential time */
-    employee_number as `Badge`,
+    badge as `Badge`,
     reports_to_position_id as `Supervisorid`,
     supervisor_flag as `Supervisorflag`,
     pay_class as `Payclass`,

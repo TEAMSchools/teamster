@@ -9,7 +9,7 @@ plugins:
 lint:
   enabled:
     - bandit@1.8.5
-    - checkov@3.2.446
+    - checkov@3.2.447
     - terrascan@1.19.1
     - trivy@0.63.0
     - actionlint@1.7.7
