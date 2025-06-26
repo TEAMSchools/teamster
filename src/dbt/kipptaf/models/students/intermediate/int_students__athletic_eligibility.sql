@@ -6,6 +6,7 @@ with
             studentid,
 
             if(sum(earnedcrhrs) >= 30, true, false) as met_py_credits,
+
         from {{ ref("stg_powerschool__storedgrades") }}
         where
             storecode = 'Y1' and academic_year = {{ var("current_academic_year") - 1 }}
@@ -21,6 +22,7 @@ with
             if(
                 sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) = 0, true, false
             ) as met_cy_credits,
+
         from {{ ref("base_powerschool__final_grades") }}
         where storecode = 'Q2'
         group by _dbt_source_relation, yearid, studentid
@@ -64,6 +66,7 @@ with
                 false,
                 true
             ) as is_age_eligible,
+
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join
             {{ ref("int_powerschool__gpa_term_pivot") }} as gpa
@@ -173,4 +176,5 @@ select
         when met_cy_credits and cy_s1_ada < 0.9 and cy_s1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'
     end as q4_ae_status,
+
 from base

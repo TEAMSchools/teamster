@@ -27,6 +27,7 @@ with
             sg.is_transfer_grade,
 
             'Earned' as credit_status,
+
         from {{ ref("int_powerschool__gpnode") }} as gp
         inner join
             {{ ref("stg_powerschool__storedgrades") }} as sg
@@ -67,6 +68,7 @@ with
 
             false as is_transfer_grade,
             'Enrolled' as credit_status,
+
         from {{ ref("int_powerschool__gpnode") }} as gp
         inner join
             {{ ref("base_powerschool__final_grades") }} as fg
@@ -155,6 +157,7 @@ select
     ae.q2_ae_status,
     ae.q3_ae_status,
     ae.q4_ae_status,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     gpprogress_grades as g
