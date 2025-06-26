@@ -80,6 +80,7 @@ with
             as home_business_unit_code,
             w.organizational_unit__home__business_unit__name as home_business_unit_name,
             w.organizational_unit__home__department__name as home_department_name,
+            w.reports_to_position_id,
             w.reports_to_worker_id__id_value as reports_to_worker_id,
             w.reports_to_formatted_name,
             w.payroll_file_number,
@@ -212,6 +213,7 @@ with
             legal_entity_name as home_business_unit_name,
             department_name as home_department_name,
 
+            null as reports_to_position_id,
             null as reports_to_worker_id,
             null as reports_to_formatted_name,
             null as payroll_file_number,
@@ -292,6 +294,7 @@ select
     w.home_business_unit_code,
     w.home_business_unit_name,
     w.home_department_name,
+    w.reports_to_position_id,
     w.reports_to_worker_id,
     w.reports_to_formatted_name,
     w.payroll_file_number,
