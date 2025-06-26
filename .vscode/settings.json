@@ -58,6 +58,5 @@
     "UV_RESOLUTION": "highest"
   },
   "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
-  "dbt.prefixGenerateModel": "stg",
-  "dbt.perspectiveTheme": "Vintage"
+  "dbt.prefixGenerateModel": "stg"
 }
