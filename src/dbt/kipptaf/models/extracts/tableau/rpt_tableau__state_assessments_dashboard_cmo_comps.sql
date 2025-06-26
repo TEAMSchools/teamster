@@ -142,14 +142,8 @@ with
             e.state_studentnumber,
             e.student_name,
             e.grade_level,
-            e.cohort,
-            e.enroll_status,
             e.gender,
             e.lunch_status,
-            e.gifted_and_talented,
-            e.ms_attended,
-            e.advisory,
-            e.year_in_network,
 
             a.race_ethnicity,
             a.lep_status,
@@ -172,7 +166,9 @@ with
                 then '5-8'
                 when e.grade_level >= 3
                 then '3-4'
-            end as grade_range_band,
+            end as assessment_band,
+
+            if(e.grade_level >= 9, 'HS', '3-8') as grade_range_band,
 
             if(a.is_proficient, 1, 0) as is_proficient_int,
 
@@ -201,14 +197,8 @@ with
             e.state_studentnumber,
             e.student_name,
             e.grade_level,
-            e.cohort,
-            e.enroll_status,
             e.gender,
             e.lunch_status,
-            e.gifted_and_talented,
-            e.ms_attended,
-            e.advisory,
-            e.year_in_network,
 
             e.race_ethnicity,
             e.lep_status,
@@ -231,7 +221,9 @@ with
                 then '5-8'
                 when e.grade_level >= 3
                 then '3-4'
-            end as grade_range_band,
+            end as assessment_band,
+
+            if(e.grade_level >= 9, 'HS', '3-8') as grade_range_band,
 
             if(a.is_proficient, 1, 0) as is_proficient_int,
 
@@ -261,14 +253,8 @@ with
             e.state_studentnumber,
             e.student_name,
             e.grade_level,
-            e.cohort,
-            e.enroll_status,
             e.gender,
             e.lunch_status,
-            e.gifted_and_talented,
-            e.ms_attended,
-            e.advisory,
-            e.year_in_network,
 
             e.race_ethnicity,
             e.lep_status,
@@ -291,7 +277,9 @@ with
                 then '5-8'
                 when e.grade_level >= 3
                 then '3-4'
-            end as grade_range_band,
+            end as assessment_band,
+
+            if(e.grade_level >= 9, 'HS', '3-8') as grade_range_band,
 
             if(a.is_proficient, 1, 0) as is_proficient_int,
 
@@ -314,6 +302,7 @@ select
     region,
     results_type,
 
+    -- region all rollups
     avg(is_proficient_int) over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__total__all__students__percent_proficient,
@@ -322,6 +311,70 @@ select
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__total__all__students__total_students,
 
+    -- region school level / discipline rollups
+    avg(is_proficient_int) over (
+        partition by
+            academic_year,
+            assessment_name,
+            region,
+            results_type,
+            school_level,
+            discipline
+    ) as region__total__school_level_discipline__percent_proficient,
+
+    count(student_number) over (
+        partition by
+            academic_year,
+            assessment_name,
+            region,
+            results_type,
+            school_level,
+            discipline
+    ) as region__total__school_level_discipline__total_students,
+
+    -- region grade range band / discipline rollups
+    avg(is_proficient_int) over (
+        partition by
+            academic_year,
+            assessment_name,
+            region,
+            results_type,
+            grade_range_band,
+            discipline
+    ) as region__total__grade_range_band_discipline__percent_proficient,
+
+    count(student_number) over (
+        partition by
+            academic_year,
+            assessment_name,
+            region,
+            results_type,
+            grade_range_band,
+            discipline
+    ) as region__total__grade_range_band_discipline__total_students,
+
+    -- region assessment band / discipline rollups
+    avg(is_proficient_int) over (
+        partition by
+            academic_year,
+            assessment_name,
+            region,
+            results_type,
+            assessment_band,
+            discipline
+    ) as region__total__assessment_band_discipline__percent_proficient,
+
+    count(student_number) over (
+        partition by
+            academic_year,
+            assessment_name,
+            region,
+            results_type,
+            assessment_band,
+            discipline
+    ) as region__total__assessment_band_discipline__total_students,
+
+    -- region aggregate ethnicity
     avg(if(race_ethnicity = 'B', is_proficient_int, null)) over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__aggregate_ethnicity__african_american__percent_proficient,
@@ -354,10 +407,6 @@ select
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__aggregate_ethnicity__hispanic__total_students,
 
-    avg(if(race_ethnicity = 'W', is_proficient_int, null)) over (
-        partition by academic_year, assessment_name, test_code, region, results_type
-    ) as region__aggregate_ethnicity__white__percent_proficient,
-
     avg(if(race_ethnicity = 'P', is_proficient_int, null)) over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__aggregate_ethnicity__native_hawaiian__percent_proficient,
@@ -366,10 +415,15 @@ select
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__aggregate_ethnicity__native_hawaiian__total_students,
 
+    avg(if(race_ethnicity = 'W', is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__aggregate_ethnicity__white__percent_proficient,
+
     count(if(race_ethnicity = 'W', student_number, null)) over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__aggregate_ethnicity__white__total_students,
 
+    -- region gender
     avg(if(gender = 'M', is_proficient_int, null)) over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__gender__male__percent_proficient,
@@ -386,6 +440,7 @@ select
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__gender__female__total_students,
 
+    -- region iep
     avg(if(iep_status = 'Has IEP', is_proficient_int, null)) over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__subgroup__students_with_disabilities__percent_proficient,
@@ -393,6 +448,32 @@ select
     count(if(iep_status = 'Has IEP', student_number, null)) over (
         partition by academic_year, assessment_name, test_code, region, results_type
     ) as region__subgroup__students_with_disabilities__total_students,
+
+    -- region lunch status
+    avg(if(lunch_status in ('F', 'R'), is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__subgroup__economically_disadvantaged__percent_proficient,
+
+    count(if(lunch_status in ('F', 'R'), student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__subgroup__economically_disadvantaged__total_students,
+
+    avg(if(lunch_status = 'P', is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__subgroup__non_economically_disadvantaged__percent_proficient,
+
+    count(if(lunch_status = 'P', student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__subgroup__non_economically_disadvantaged__total_students,
+
+    -- region ml
+    avg(if(lep_status, is_proficient_int, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__subgroup__ml_percent_proficient,
+
+    count(if(lep_status, student_number, null)) over (
+        partition by academic_year, assessment_name, test_code, region, results_type
+    ) as region__subgroup__ml__total_students,
 
     row_number() over (
         partition by academic_year, assessment_name, test_code, region, results_type
