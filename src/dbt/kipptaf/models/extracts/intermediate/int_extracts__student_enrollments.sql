@@ -130,11 +130,6 @@ select
 
     adapy.ada_year_q4 as ada_year_prev,
 
-    gpa.gpa_term_q1,
-    gpa.gpa_y1_q2 as gpa_semester_s1,
-
-    gpapy.gpa_term_cur as gpa_year_prev,
-
     'KTAF' as district,
 
     concat(e.region, e.school_level) as region_school_level,
@@ -262,14 +257,4 @@ left join
     on e.studentid = adapy.studentid
     and e.academic_year = (adapy.academic_year + 1)
     and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
-left join
-    {{ ref("int_powerschool__gpa_term_pivot") }} as gpa
-    on e.studentid = gpa.studentid
-    and e.yearid = gpa.yearid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="gpa") }}
-left join
-    {{ ref("int_powerschool__gpa_term_pivot") }} as gpapy
-    on e.studentid = gpapy.studentid
-    and e.yearid = (gpapy.yearid + 1)
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="gpapy") }}
 where e.rn_year = 1 and e.schoolid != 999999
