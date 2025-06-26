@@ -110,10 +110,9 @@ with
             on e.studentid = cyc.studentid
             and {{ union_dataset_join_clause(left_alias="e", right_alias="cyc") }}
         where
-            e.academic_year = {{ var("current_academic_year") }}
-            and e.enroll_status = 0
+            e.enroll_status = 0
             and e.grade_level >= 9
-
+            and e.academic_year = {{ var("current_academic_year") }}
     ),
 
     calcs as (
