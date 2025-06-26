@@ -28,32 +28,6 @@ with
         group by _dbt_source_relation, yearid, studentid
     ),
 
-    term as (
-        select
-            t._dbt_source_relation,
-            t.schoolid,
-            t.yearid,
-
-            tb.storecode as term,
-
-            t.yearid + 1990 as academic_year,
-
-            if(
-                current_date('America/New_York') between tb.date1 and tb.date2,
-                true,
-                false
-            ) as is_current_term,
-
-        from {{ ref("stg_powerschool__terms") }} as t
-        inner join
-            {{ ref("stg_powerschool__termbins") }} as tb
-            on t.id = tb.termid
-            and t.schoolid = tb.schoolid
-            and {{ union_dataset_join_clause(left_alias="t", right_alias="tb") }}
-            and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
-        where t.isyearrec = 1
-    ),
-
     base as (
         select
             e._dbt_source_relation,
@@ -98,13 +72,13 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join
-            {{ ref("int_powerschool__ada_term") }} as a
+            {{ ref("int_powerschool__ada_terms") }} as a
             on e.academic_year = a.academic_year
             and e.studentid = a.studentid
             and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
             and a.term = 'Q1'
         left join
-            {{ ref("int_powerschool__ada_term") }} as apy
+            {{ ref("int_powerschool__ada_terms") }} as apy
             on e.academic_year - 1 = apy.academic_year
             and e.studentid = apy.studentid
             and {{ union_dataset_join_clause(left_alias="e", right_alias="apy") }}
@@ -288,8 +262,9 @@ from
             q4_eligibility as 'Q4'
         )
     ) as u
+    
 inner join
-    term as t
+    {{ ref("int_powerschool__terms") }} as t
     on u.yearid = t.yearid
     and u.schoolid = t.schoolid
     and u.quarter = t.term
