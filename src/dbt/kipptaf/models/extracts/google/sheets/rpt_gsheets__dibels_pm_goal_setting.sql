@@ -59,7 +59,7 @@ with
             avg(s.measure_standard_score) as avg_score_raw,
 
             round(avg(s.measure_standard_score), 0) as avg_score,
-            
+
         from {{ ref("int_amplify__all_assessments") }} as s
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
@@ -106,7 +106,7 @@ with
             measure_standard,
             moy_benchmark,
             eoy_benchmark,
-        from {{ ref("stg_amplify__dibels_pm_expectations") }}
+        from {{ ref("stg_google_sheets__dibels_pm_expectations") }}
     ),
 
     /* this will be simplified once we figure out how to calculate bm_benchmark on the

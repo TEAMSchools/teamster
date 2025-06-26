@@ -84,7 +84,7 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("stg_amplify__dibels_pm_expectations") }} as a
+            {{ ref("stg_google_sheets__dibels_pm_expectations") }} as a
             on e.academic_year = a.academic_year
             and e.region = a.region
             and e.grade_level = a.grade_level

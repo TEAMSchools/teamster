@@ -122,7 +122,7 @@ with
             ) as rn_distinct,
         from {{ ref("stg_amplify__pm_student_summary") }} as p
         inner join
-            {{ ref("stg_amplify__dibels_pm_expectations") }} as a
+            {{ ref("stg_google_sheets__dibels_pm_expectations") }} as a
             on p.academic_year = a.academic_year
             and p.region = a.region
             and p.assessment_grade_int = a.grade_level
