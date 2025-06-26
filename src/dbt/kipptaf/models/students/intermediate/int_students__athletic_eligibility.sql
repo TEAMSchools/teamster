@@ -262,7 +262,7 @@ from
             q4_eligibility as 'Q4'
         )
     ) as u
-    
+
 inner join
     {{ ref("int_powerschool__terms") }} as t
     on u.yearid = t.yearid
