@@ -28,11 +28,10 @@ select
     co.is_self_contained,
     co.is_out_of_district,
 
-    w.week_start_monday,
-    w.week_end_sunday,
-    w.week_number_academic_year,
-    w.quarter,
-
+    -- w.week_start_monday,
+    -- w.week_end_sunday,
+    -- w.week_number_academic_year,
+    -- w.quarter,
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
     if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
@@ -43,9 +42,13 @@ inner join
     on co.student_number = py.student_number
     and co.academic_year = py.academic_year
     and py.is_enrolled_oct01_prev
-left join
-    {{ ref("int_powerschool__calendar_week") }} as w
-    on co.academic_year = w.academic_year
-    and co.schoolid = w.schoolid
+cross join
+    unnest(
+        generate_date_array(
+            '{{ var("current_academic_year") - 3 }}-10-01',
+            current_date('{{ var("local_timezone") }}')
+        )
+    ) as date_day
+-- on date_day between co.entrydate and date(co.academic_year + 1, 6, 30)
 where
     co.academic_year >= {{ var("current_academic_year") - 2 }} and co.grade_level != 99
