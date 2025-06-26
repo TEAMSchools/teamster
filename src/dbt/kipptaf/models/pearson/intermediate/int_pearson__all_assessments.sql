@@ -22,6 +22,7 @@ with
                     "englishlearnerel",
                     "hispanicorlatinoethnicity",
                     "is_proficient",
+                    "is_bl_fb",
                     "nativehawaiianorotherpacificislander",
                     "period",
                     "statestudentidentifier",
@@ -55,6 +56,7 @@ select
     u.discipline,
     u.hispanicorlatinoethnicity,
     u.is_proficient,
+    u.is_bl_fb,
     u.nativehawaiianorotherpacificislander,
     u.period,
     u.firstname,
@@ -95,6 +97,7 @@ select
         when u.white = 'Y'
         then 'W'
     end as race_ethnicity,
+
 from union_relations as u
 left join
     {{ ref("stg_pearson__student_crosswalk") }} as x
