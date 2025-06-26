@@ -12,10 +12,9 @@ with
             is_504,
             iep_status,
             race_ethnicity,
+            season,
 
             'Actual' as results_type,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as season,
 
             if(
                 `subject` = 'English Language Arts/Literacy',
@@ -38,6 +37,7 @@ with
         where
             academic_year >= {{ var("current_academic_year") - 7 }}
             and testscalescore is not null
+            and season = 'Spring'
 
         union all
 
@@ -53,13 +53,13 @@ with
             null as is_504,
             null as iep_status,
             null as race_ethnicity,
-            'Actual' as results_type,
             season,
+            'Actual' as results_type,
             assessment_subject as `subject`,
             test_code,
 
         from {{ ref("int_fldoe__all_assessments") }}
-        where scale_score is not null
+        where scale_score is not null and season = 'Spring'
 
         union all
 
@@ -96,8 +96,8 @@ with
             null as iep_status,
             null as race_ethnicity,
 
-            'Preliminary' as results_type,
             'Spring' as season,
+            'Preliminary' as results_type,
 
             case
                 when test_name like '%Mathematics%'
@@ -179,7 +179,6 @@ with
             and a.localstudentidentifier = e.student_number
             and a.academic_year >= {{ var("current_academic_year") - 7 }}
             and a.results_type = 'Actual'
-            and a.season = 'Spring'
             and e.grade_level > 2
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
 
@@ -234,7 +233,6 @@ with
             and a.state_id = e.state_studentnumber
             and a.academic_year >= {{ var("current_academic_year") - 7 }}
             and a.results_type = 'Actual'
-            and a.season = 'Spring'
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
             and e.grade_level > 2
             and e.region = 'Miami'
@@ -290,7 +288,6 @@ with
             and a.state_id = e.state_studentnumber
             and a.academic_year = {{ var("current_academic_year") }}
             and a.results_type = 'Preliminary'
-            and a.season = 'Spring'
             and e.grade_level > 2
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
     )
