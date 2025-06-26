@@ -97,7 +97,7 @@ select
         when u.white = 'Y'
         then 'W'
     end as race_ethnicity,
-    
+
 from union_relations as u
 left join
     {{ ref("stg_pearson__student_crosswalk") }} as x
