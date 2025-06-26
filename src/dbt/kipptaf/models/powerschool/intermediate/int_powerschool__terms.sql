@@ -2,20 +2,19 @@ select
     t._dbt_source_relation,
     t.schoolid,
     t.yearid,
+    t.academic_year,
 
     tb.storecode as term,
     tb.date1 as term_start_date,
     tb.date2 as term_end_date,
 
-    t.yearid + 1990 as academic_year,
+    if(tb.storecode in ('Q1', 'Q2'), 'S1', 'S2') as semester,
 
     if(
         current_date('{{ var("local_timezone") }}') between tb.date1 and tb.date2,
         true,
         false
     ) as is_current_term,
-
-    if(tb.storecode in ('Q1', 'Q2'), 'S1', 'S2') as semester,
 
 from {{ ref("stg_powerschool__terms") }} as t
 inner join

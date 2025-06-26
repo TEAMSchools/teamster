@@ -13,7 +13,7 @@ with
 
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
         inner join
-            {{ ref("int_powerschool__term") }} as t
+            {{ ref("int_powerschool__terms") }} as t
             on a.yearid = t.yearid
             and a.schoolid = t.schoolid
             and a.membershipvalue = 1
@@ -46,7 +46,7 @@ with
 
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as a
         inner join
-            {{ ref("int_powerschool__term") }} as t
+            {{ ref("int_powerschool__terms") }} as t
             on a.yearid = t.yearid
             and a.schoolid = t.schoolid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="t") }}
