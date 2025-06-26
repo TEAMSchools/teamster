@@ -2,7 +2,6 @@ with
     gpnode as (
         select
             p._dbt_source_relation,
-            p.nodetype,
             p.id as plan_id,
             p.gpversionid as plan_gpversionid,
             p.parentid as plan_parentid,
@@ -46,7 +45,6 @@ from gpnode as gpn
 left join
     {{ ref("stg_powerschool__gpprogresssubject") }} as gpps
     on gpn.subject_id = gpps.gpnodeid
-    and gpn.nodetype = gpps.nodetype
     and {{ union_dataset_join_clause(left_alias="gpn", right_alias="gpps") }}
 left join
     {{ ref("stg_powerschool__gpprogresssubjectenrolled") }} as gppsen
