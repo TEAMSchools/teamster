@@ -19,7 +19,9 @@ with
             yearid,
             studentid,
 
-            sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) as n_failing,
+            if(
+                sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) = 0, true, false
+            ) as met_cy_credits,
 
         from {{ ref("base_powerschool__final_grades") }}
         where storecode = 'Q2'
@@ -78,7 +80,7 @@ with
 
             pyc.met_py_credits,
 
-            if(cyc.n_failing = 0, true, false) as met_cy_credits,
+            cyc.met_cy_credits,
 
             if(
                 e.grade_level = 9
