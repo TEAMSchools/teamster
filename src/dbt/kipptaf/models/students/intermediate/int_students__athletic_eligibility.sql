@@ -41,9 +41,11 @@ with
             e.ada_term_q1 as cy_q1_ada,
             e.ada_semester_s1 as cy_s1_ada,
             e.ada_year_prev as py_y1_ada,
-            e.gpa_term_q1 as cy_q1_gpa,
-            e.gpa_semester_s1 as cy_s1_gpa,
-            e.gpa_year_prev as py_y1_gpa,
+
+            gpa.gpa_term_q1 as cy_q1_gpa,
+            gpa.gpa_y1_q2 as cy_s1_gpa,
+
+            gpapy.gpa_term_cur as py_y1_gpa,
 
             pyc.met_py_credits,
 
@@ -63,6 +65,16 @@ with
                 true
             ) as is_age_eligible,
         from {{ ref("int_extracts__student_enrollments") }} as e
+        left join
+            {{ ref("int_powerschool__gpa_term_pivot") }} as gpa
+            on e.studentid = gpa.studentid
+            and e.yearid = gpa.yearid
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="gpa") }}
+        left join
+            {{ ref("int_powerschool__gpa_term_pivot") }} as gpapy
+            on e.studentid = gpapy.studentid
+            and e.yearid = (gpapy.yearid + 1)
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="gpapy") }}
         left join
             py_credits as pyc
             on e.studentid = pyc.studentid
@@ -89,28 +101,22 @@ select
         then 'Ineligble - Credits'
         when met_py_credits and py_y1_gpa < 2.2
         then 'Ineligible - GPA'
-        when py_y1_ada >= 0.9 and py_y1_gpa >= 2.5 and met_py_credits
+        when met_py_credits and py_y1_ada >= 0.9 and py_y1_gpa >= 2.5
         then 'Eligible'
-        when
-            py_y1_ada >= 0.9
-            and (py_y1_gpa >= 2.2 and py_y1_gpa <= 2.49)
-            and met_py_credits
+        when met_py_credits and py_y1_ada >= 0.9 and py_y1_gpa between 2.2 and 2.49
         then 'Probation - GPA'
-        when py_y1_ada < 0.9 and py_y1_gpa >= 2.5 and met_py_credits
+        when met_py_credits and py_y1_ada < 0.9 and py_y1_gpa >= 2.5
         then 'Probation - ADA'
-        when
-            py_y1_ada < 0.9
-            and (py_y1_gpa >= 2.2 and py_y1_gpa <= 2.49)
-            and met_py_credits
+        when met_py_credits and py_y1_ada < 0.9 and py_y1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'
-    end as q1_eligibility,
+    end as q1_ae_status,
 
     case
         when not is_age_eligible
         then 'Ineligible - Age'
         when not met_py_credits and not is_first_time_ninth
         then 'Ineligble - Credits'
-        when (met_py_credits or is_first_time_ninth) and cy_q1_gpa < 2.2
+        when cy_q1_gpa < 2.2 and (met_py_credits or is_first_time_ninth)
         then 'Ineligible - GPA'
         when
             cy_q1_ada >= 0.9
@@ -119,7 +125,7 @@ select
         then 'Eligible'
         when
             cy_q1_ada >= 0.9
-            and (cy_q1_gpa >= 2.2 and cy_q1_gpa <= 2.49)
+            and cy_q1_gpa between 2.2 and 2.49
             and (met_py_credits or is_first_time_ninth)
         then 'Probation - GPA'
         when
@@ -129,10 +135,10 @@ select
         then 'Probation - ADA'
         when
             cy_q1_ada < 0.9
-            and (cy_q1_gpa >= 2.2 and cy_q1_gpa <= 2.49)
+            and cy_q1_gpa between 2.2 and 2.49
             and (met_py_credits or is_first_time_ninth)
         then 'Probation - ADA and GPA'
-    end as q2_eligibility,
+    end as q2_ae_status,
 
     case
         when not is_age_eligible
@@ -141,21 +147,15 @@ select
         then 'Ineligble - Credits'
         when met_cy_credits and cy_s1_gpa < 2.2
         then 'Ineligible - GPA'
-        when cy_s1_ada >= 0.9 and cy_s1_gpa >= 2.5 and met_cy_credits
+        when met_cy_credits and cy_s1_ada >= 0.9 and cy_s1_gpa >= 2.5
         then 'Eligible'
-        when
-            cy_s1_ada >= 0.9
-            and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
-            and met_cy_credits
+        when met_cy_credits and cy_s1_ada >= 0.9 and cy_s1_gpa between 2.2 and 2.49
         then 'Probation - GPA'
-        when cy_s1_ada < 0.9 and cy_s1_gpa >= 2.5 and met_cy_credits
+        when met_cy_credits and cy_s1_ada < 0.9 and cy_s1_gpa >= 2.5
         then 'Probation - ADA'
-        when
-            cy_s1_ada < 0.9
-            and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
-            and met_cy_credits
+        when met_cy_credits and cy_s1_ada < 0.9 and cy_s1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'
-    end as q3_eligibility,
+    end as q3_ae_status,
 
     case
         when not is_age_eligible
@@ -164,19 +164,13 @@ select
         then 'Ineligble - Credits'
         when met_cy_credits and cy_s1_gpa < 2.2
         then 'Ineligible - GPA'
-        when cy_s1_ada >= 0.9 and cy_s1_gpa >= 2.5 and met_cy_credits
+        when met_cy_credits and cy_s1_ada >= 0.9 and cy_s1_gpa >= 2.5
         then 'Eligible'
-        when
-            cy_s1_ada >= 0.9
-            and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
-            and met_cy_credits
+        when met_cy_credits and cy_s1_ada >= 0.9 and cy_s1_gpa between 2.2 and 2.49
         then 'Probation - GPA'
-        when cy_s1_ada < 0.9 and cy_s1_gpa >= 2.5 and met_cy_credits
+        when met_cy_credits and cy_s1_ada < 0.9 and cy_s1_gpa >= 2.5
         then 'Probation - ADA'
-        when
-            cy_s1_ada < 0.9
-            and (cy_s1_gpa >= 2.2 and cy_s1_gpa <= 2.49)
-            and met_cy_credits
+        when met_cy_credits and cy_s1_ada < 0.9 and cy_s1_gpa between 2.2 and 2.49
         then 'Probation - ADA and GPA'
-    end as q4_eligibility,
+    end as q4_ae_status,
 from base
