@@ -10,7 +10,7 @@ with
             is_current_term,
             semester,
 
-        from {{ ref("int_powerschool__terms") }}
+        from {{ ref("int_powerschool__term") }}
 
         union all
 
