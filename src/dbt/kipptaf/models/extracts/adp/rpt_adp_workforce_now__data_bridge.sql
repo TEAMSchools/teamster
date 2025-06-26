@@ -43,7 +43,7 @@ with
                     [
                         "employee_number",
                         "mail",
-                        "employee_number",
+                        "badge",
                         "reports_to_position_id",
                         "supervisor_flag",
                     ]
