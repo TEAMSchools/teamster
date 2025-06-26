@@ -37,6 +37,7 @@ with
                 when 'Well Below Benchmark'
                 then 'Not Met'
             end as composite_expectations,
+
         from {{ ref("base_powerschool__student_enrollments") }} as s
         inner join
             {{ ref("int_amplify__all_assessments") }} as c
@@ -53,7 +54,7 @@ with
             and nc.assessment_type = 'Benchmark'
             and nc.measure_standard != 'Composite'
         inner join
-            {{ ref("stg_amplify__dibels_measures") }} as m
+            {{ ref("stg_google_sheets__dibels_measures") }} as m
             on nc.assessment_grade = m.grade_level
             and nc.measure_standard = m.measure_standard
         where
