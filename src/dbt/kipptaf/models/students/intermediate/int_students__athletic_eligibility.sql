@@ -288,7 +288,6 @@ from
             q4_eligibility as 'Q4'
         )
     ) as u
-    
 inner join
     term as t
     on u.yearid = t.yearid
