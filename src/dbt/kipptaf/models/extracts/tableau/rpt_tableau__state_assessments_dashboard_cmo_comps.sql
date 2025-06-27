@@ -320,7 +320,6 @@ with
     region_calcs as (
         select
             academic_year,
-            district,
             district_state,
             region,
             assessment_name,
@@ -332,8 +331,6 @@ with
             iep_status,
 
             concat(
-                district,
-                '_',
                 district_state,
                 '_',
                 region,
@@ -365,7 +362,6 @@ with
         group by
             cube (
                 academic_year,
-                district,
                 district_state,
                 region,
                 assessment_name,
