@@ -1,11 +1,13 @@
 version: 2
 models:
-  - name: stg_amplify__dibels_pm_expectations
+  - name: stg_google_sheets__dibels_pm_expectations
     config:
       contract:
         enforced: true
       tags: google_sheet
     columns:
+      - name: academic_year
+        data_type: int64
       - name: region
         data_type: string
       - name: grade_level
