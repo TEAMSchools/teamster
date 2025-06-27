@@ -597,7 +597,7 @@ with
                 then 'Grade - 09'
                 when test_code = 'ALG01' and grade_level = 10
                 then 'Grade - 10'
-                else 'School Level'
+                else school_level
             end as comparison_demographic_subgroup,
 
             sum(total_proficient_students) over (
