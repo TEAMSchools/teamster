@@ -376,6 +376,24 @@ with
                 lep_status,
                 iep_status
             )
+        where
+            array_length(
+                array(
+                    select x
+                    from
+                        unnest(
+                            [
+                                gender,
+                                lunch_status,
+                                race_ethnicity,
+                                lep_status,
+                                iep_status
+                            ]
+                        ) as x
+                    where x is not null
+                )
+            )
+            = 1
     )
 
 select *
