@@ -25,6 +25,13 @@ with
         group by all
     ),
 
+    dlm as (
+        select student_number, max(pathway_option) as dlm,
+        from {{ ref("int_students__graduation_path_codes") }}
+        where rn_discipline_distinct = 1 and final_grad_path_code = 'M'
+        group by student_number
+    ),
+
     roster as (
         select
             se.student_number,
