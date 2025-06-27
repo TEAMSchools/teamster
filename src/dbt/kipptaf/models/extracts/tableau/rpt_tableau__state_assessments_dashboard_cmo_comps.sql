@@ -5,6 +5,7 @@ with
             academic_year,
             localstudentidentifier,
             statestudentidentifier as state_id,
+            assessmentgrade,
             assessment_name,
             discipline,
             is_proficient,
@@ -67,6 +68,7 @@ with
             academic_year,
             null as localstudentidentifier,
             student_id as state_id,
+            assessment_grade,
             assessment_name,
             discipline,
             is_proficient,
@@ -90,6 +92,8 @@ with
             academic_year,
             null as localstudentidentifier,
             cast(state_student_identifier as string) as state_id,
+
+            null as assessmentgrade,
 
             if(
                 test_name
@@ -165,6 +169,7 @@ with
 
             a.district_state,
             a.assessment_name,
+            a.assessmentgrade,
             a.discipline,
             a.`subject`,
             a.test_code,
@@ -173,15 +178,22 @@ with
             'KTAF' as district,
 
             case
-                when e.grade_level >= 9
+                when
+                    a.assessmentgrade is null
+                    or a.assessmentgrade in ('Grade 9', 'Grade 10', 'Grade 11')
                 then 'HS'
-                when e.grade_level >= 5
+                when cast(right(a.assessmentgrade, 1) as int) >= 5
                 then '5-8'
-                when e.grade_level >= 3
+                when cast(right(a.assessmentgrade, 1) as int) >= 3
                 then '3-4'
             end as assessment_band,
 
-            if(e.grade_level >= 9, 'HS', '3-8') as grade_range_band,
+            if(
+                a.assessmentgrade is null
+                or a.assessmentgrade in ('Grade 9', 'Grade 10', 'Grade 11'),
+                'HS',
+                '3-8'
+            ) as grade_range_band,
 
             if(a.is_proficient, 1, 0) as is_proficient_int,
 
@@ -230,6 +242,7 @@ with
 
             a.district_state,
             a.assessment_name,
+            a.assessment_grade,
             a.discipline,
             a.`subject`,
             a.test_code,
@@ -238,11 +251,10 @@ with
             'KTAF' as district,
 
             case
-                when e.grade_level >= 9
-                then 'HS'
-                when e.grade_level >= 5
+                when
+                    a.assessment_grade >= 5
                 then '5-8'
-                when e.grade_level >= 3
+                when a.assessment_grade, >= 3
                 then '3-4'
             end as assessment_band,
 
@@ -319,6 +331,7 @@ with
 
             a.district_state,
             a.assessment_name,
+            a.assessmentgrade,
             a.discipline,
             a.`subject`,
             a.test_code,
@@ -497,6 +510,7 @@ with
             assessment_band,
             grade_range_band,
             grade_level,
+            assessmentgrade,
             assessment_name,
             discipline,
             `subject`,
@@ -526,6 +540,7 @@ with
                 assessment_band,
                 grade_range_band,
                 grade_level,
+                assessmentgrade,
                 assessment_name,
                 discipline,
                 `subject`,
@@ -575,7 +590,6 @@ with
         from region_calcs
         where
             academic_year is not null
-            and district_state is not null
             and test_code is not null
             and gender is null
             and lunch_status is null
@@ -645,7 +659,6 @@ with
         from region_calcs
         where
             academic_year is not null
-            and district_state is not null
             and test_code is not null
             and gender is null
             and lunch_status is null
@@ -715,7 +728,75 @@ with
         from region_calcs
         where
             academic_year is not null
-            and district_state is not null
+            and test_code is not null
+            and gender is null
+            and lunch_status is null
+            and race_ethnicity is null
+            and lep_status is null
+            and iep_status is null
+        qualify rn = 1
+
+        union all
+
+        -- Total Assessment Band by Test Code for district_state
+        select
+            academic_year,
+            assessment_name,
+            test_code,
+            region,
+            district_state as comparison_entity,
+            'Total' as comparison_demographic_group,
+            assessment_band as comparison_demographic_subgroup,
+
+            row_number() over (
+                partition by
+                    academic_year,
+                    assessment_name,
+                    assessment_band,
+                    test_code,
+                    district_state
+            ) as rn,
+
+            sum(total_proficient_students) over (
+                partition by
+                    academic_year,
+                    assessment_name,
+                    assessment_band,
+                    test_code,
+                    district_state
+            ) as total_proficient_students,
+
+            sum(total_students) over (
+                partition by
+                    academic_year,
+                    assessment_name,
+                    assessment_band,
+                    test_code,
+                    district_state
+            ) as total_students,
+
+            safe_divide(
+                sum(total_proficient_students) over (
+                    partition by
+                        academic_year,
+                        assessment_name,
+                        assessment_band,
+                        test_code,
+                        district_state
+                ),
+                sum(total_students) over (
+                    partition by
+                        academic_year,
+                        assessment_name,
+                        assessment_band,
+                        test_code,
+                        district_state
+                )
+            ) as percent_proficient,
+
+        from region_calcs
+        where
+            academic_year is not null
             and test_code is not null
             and gender is null
             and lunch_status is null
