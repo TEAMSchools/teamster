@@ -331,6 +331,28 @@ with
             lep_status,
             iep_status,
 
+            concat(
+                district,
+                '_',
+                district_state,
+                '_',
+                region,
+                '_',
+                assessment_name,
+                '_',
+                test_code,
+                '_',
+                gender,
+                '_',
+                lunch_status,
+                '_',
+                race_ethnicity,
+                '_',
+                lep_status,
+                '_',
+                iep_status
+            ) as `key`,
+
             round(
                 avg(is_proficient_int) * count(student_number), 0
             ) as total_proficient_students,
@@ -359,4 +381,7 @@ with
 select *
 from region_calcs
 where
-    academic_year is not null and test_code is not null and assessment_name is not null
+    academic_year is not null
+    and test_code is not null
+    and assessment_name is not null
+    and `key` is null
