@@ -12,7 +12,7 @@ with
             is_504,
             iep_status,
             race_ethnicity,
-            season,
+            period as season,
 
             'Actual' as results_type,
 
@@ -37,7 +37,7 @@ with
         where
             academic_year >= {{ var("current_academic_year") - 7 }}
             and testscalescore is not null
-            and season = 'Spring'
+            and period = 'Spring'
 
         union all
 
