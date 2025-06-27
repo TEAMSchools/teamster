@@ -13,7 +13,7 @@ def main() -> None:
 
     parser.add_argument("project")
     parser.add_argument("--select", "-s", nargs="*")
-    parser.add_argument("--dev", action="store_true")
+    parser.add_argument("--prod", action="store_true")
     parser.add_argument("--test", action="store_true")
 
     args = parser.parse_args()
@@ -38,7 +38,7 @@ def main() -> None:
         args=run_args,
         env={
             **os.environ,
-            "DBT_CLOUD_ENVIRONMENT_TYPE": "dev" if args.dev or args.test else "prod",
+            "DBT_CLOUD_ENVIRONMENT_TYPE": "prod" if args.prod else "dev",
             "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
         },
     )
