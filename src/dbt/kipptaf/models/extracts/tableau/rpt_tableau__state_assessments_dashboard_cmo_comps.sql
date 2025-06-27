@@ -15,6 +15,7 @@ with
             period as season,
 
             'Actual' as results_type,
+            'KTAF NJ' as district_state,
 
             if(
                 `subject` = 'English Language Arts/Literacy',
@@ -55,6 +56,7 @@ with
             null as race_ethnicity,
             season,
             'Actual' as results_type,
+            'KTAF FL' as district_state,
             assessment_subject as `subject`,
             test_code,
 
@@ -98,6 +100,7 @@ with
 
             'Spring' as season,
             'Preliminary' as results_type,
+            'KTAF NJ' as district_state,
 
             case
                 when test_name like '%Mathematics%'
@@ -147,6 +150,7 @@ with
             a.is_504,
             a.iep_status,
 
+            a.district_state,
             a.assessment_name,
             a.discipline,
             a.`subject`,
@@ -177,7 +181,7 @@ with
             and a.results_type = 'Actual'
             and e.grade_level > 2
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
-
+    /*
         union all
 
         -- FL scores
@@ -197,6 +201,7 @@ with
             e.is_504,
             e.iep_status,
 
+            a.district_state,
             a.assessment_name,
             a.discipline,
             a.`subject`,
@@ -228,7 +233,7 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
             and e.grade_level > 2
             and e.region = 'Miami'
-    /*
+    
         union all
 
         -- NJ prelim scores
@@ -248,6 +253,7 @@ with
             e.is_504,
             e.iep_status,
 
+            a.district_state,
             a.assessment_name,
             a.discipline,
             a.`subject`,
@@ -369,6 +375,8 @@ with
                 then '3-8'
             end as grade_range_band,
 
+            round(percent_proficient * total_students, 0) as total_proficient_students,
+
         from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
         where
             comparison_demographic_subgroup
@@ -378,288 +386,132 @@ with
     region_calcs as (
         select
             academic_year,
-            assessment_name,
-            discipline,
-            `subject`,
-            test_code,
+            district,
+            district_state,
             region,
             school_level,
             assessment_band,
             grade_range_band,
+            assessment_name,
+            discipline,
+            `subject`,
+            test_code,
+            gender,
+            lunch_status,
+            race_ethnicity,
+            lep_status,
+            iep_status,
 
-            'Region' as comparison_entity,
+            avg(is_proficient_int) as percent_proficient,
 
-            -- region all rollups
-            avg(is_proficient_int) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__total__all__students__percent_proficient,
+            count(student_number) as total_students,
 
-            count(student_number) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__total__all__students__total_students,
-
-            -- region school level / discipline rollups
-            avg(is_proficient_int) over (
-                partition by
-                    academic_year, region, assessment_name, school_level, discipline
-            ) as region__total__school_level_discipline__percent_proficient,
-
-            count(student_number) over (
-                partition by
-                    academic_year, region, assessment_name, school_level, discipline
-            ) as region__total__school_level_discipline__total_students,
-
-            -- region grade range band / discipline rollups
-            avg(is_proficient_int) over (
-                partition by
-                    academic_year, region, assessment_name, grade_range_band, discipline
-            ) as region__total__grade_range_band_discipline__percent_proficient,
-
-            count(student_number) over (
-                partition by
-                    academic_year, region, assessment_name, grade_range_band, discipline
-            ) as region__total__grade_range_band_discipline__total_students,
-
-            -- region assessment band / discipline rollups
-            avg(is_proficient_int) over (
-                partition by
-                    academic_year, region, assessment_name, assessment_band, discipline
-            ) as region__total__assessment_band_discipline__percent_proficient,
-
-            count(student_number) over (
-                partition by
-                    academic_year, region, assessment_name, assessment_band, discipline
-            ) as region__total__assessment_band_discipline__total_students,
-
-            -- region aggregate ethnicity
-            avg(if(race_ethnicity = 'B', is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__african_american__percent_proficient,
-
-            count(if(race_ethnicity = 'B', student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__african_american__total_students,
-
-            avg(if(race_ethnicity = 'A', is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__asian__percent_proficient,
-
-            count(if(race_ethnicity = 'A', student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__asian__total_students,
-
-            avg(if(race_ethnicity = 'I', is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__american_indian__percent_proficient,
-
-            count(if(race_ethnicity = 'I', student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__american_indian__total_students,
-
-            avg(if(race_ethnicity = 'H', is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__hispanic__percent_proficient,
-
-            count(if(race_ethnicity = 'H', student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__hispanic__total_students,
-
-            avg(if(race_ethnicity = 'P', is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__native_hawaiian__percent_proficient,
-
-            count(if(race_ethnicity = 'P', student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__native_hawaiian__total_students,
-
-            avg(if(race_ethnicity = 'W', is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__white__percent_proficient,
-
-            count(if(race_ethnicity = 'W', student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__white__total_students,
-
-            avg(if(race_ethnicity = 'T', is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__other__percent_proficient,
-
-            count(if(race_ethnicity = 'T', student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__aggregate_ethnicity__other__total_students,
-
-            -- region gender
-            avg(if(gender = 'M', is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__gender__male__percent_proficient,
-
-            count(if(gender = 'M', student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__gender__male__total_students,
-
-            avg(if(gender = 'F', is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__gender__female__percent_proficient,
-
-            count(if(gender = 'F', student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__gender__female__total_students,
-
-            -- region iep
-            avg(if(iep_status = 'Has IEP', is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__subgroup__students_with_disabilities__percent_proficient,
-
-            count(if(iep_status = 'Has IEP', student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__subgroup__students_with_disabilities__total_students,
-
-            -- region lunch status
-            avg(if(lunch_status in ('F', 'R'), is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__subgroup__economically_disadvantaged__percent_proficient,
-
-            count(if(lunch_status in ('F', 'R'), student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__subgroup__economically_disadvantaged__total_students,
-
-            avg(if(lunch_status = 'P', is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__subgroup__non_economically_disadvantaged__percent_proficient,
-
-            count(if(lunch_status = 'P', student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__subgroup__non_economically_disadvantaged__total_students,
-
-            -- region ml
-            avg(if(lep_status, is_proficient_int, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__subgroup__ml_percent_proficient,
-
-            count(if(lep_status, student_number, null)) over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as region__subgroup__ml__total_students,
-
-            row_number() over (
-                partition by academic_year, region, assessment_name, test_code
-            ) as rn,
+            round(
+                avg(is_proficient_int) * count(student_number), 0
+            ) as total_proficient_students,
 
         from roster
+        group by
+            rollup (
+                academic_year,
+                district,
+                district_state,
+                region,
+                school_level,
+                assessment_band,
+                grade_range_band,
+                assessment_name,
+                discipline,
+                `subject`,
+                test_code,
+                gender,
+                lunch_status,
+                race_ethnicity,
+                lep_status,
+                iep_status
+            )
+    ),
+
+    district_calcs as (
+        -- Total All Students by Test Code for KTAF <State>
+        select
+            academic_year,
+            assessment_name,
+            test_code,
+            region,
+            district_state as comparison_entity,
+            'Total' as comparison_demographic_group,
+            'All Students' as comparison_demographic_subgroup,
+
+            row_number() over (
+                partition by academic_year, assessment_name, test_code, district_state
+            ) as rn,
+
+            sum(total_proficient_students) over (
+                partition by academic_year, assessment_name, test_code, district_state
+            ) as total_proficient_students,
+
+            sum(total_students) over (
+                partition by academic_year, assessment_name, test_code, district_state
+            ) as total_students,
+
+            safe_divide(
+                sum(total_proficient_students) over (
+                    partition by
+                        academic_year, assessment_name, test_code, district_state
+                ),
+                sum(total_students) over (
+                    partition by
+                        academic_year, assessment_name, test_code, district_state
+                )
+            ) as percent_proficient,
+
+        from region_calcs
+        where
+            academic_year is not null
+            and district_state is not null
+            and test_code is not null
+            and gender is null
+            and lunch_status is null
+            and race_ethnicity is null
+            and lep_status is null
+            and iep_status is null
         qualify rn = 1
     )
 
 select
     academic_year,
     assessment_name,
-    discipline,
-    `subject`,
     test_code,
     region,
-    school_level,
-    assessment_band,
-    grade_range_band,
     comparison_entity,
+    comparison_demographic_group,
+    comparison_demographic_subgroup,
 
-    /* unpivot cols */
-    replace(
-        regexp_extract(attribute, r'^(.*?)__'), '_', ' '
-    ) as comparison_demographic_group,
-    replace(
-        regexp_extract(attribute, r'__(.*)$'), '_', ' '
-    ) as comparison_demographic_subgroup,
-    percent_proficient,
+    total_proficient_students,
     total_students,
 
-from
-    region_calcs unpivot (
-        (percent_proficient, total_students) for attribute in (
-            (
-                region__total__all__students__percent_proficient,
-                region__total__all__students__total_students
-            ) as 'Total__All_Students',
-            (
-                region__total__school_level_discipline__percent_proficient,
-                region__total__school_level_discipline__total_students
-            ) as 'Total__School_Level_Discipline',
-            (
-                region__total__grade_range_band_discipline__percent_proficient,
-                region__total__grade_range_band_discipline__total_students
-            ) as 'Total__Grade_Range_Band_Discipline',
-            (
-                region__total__assessment_band_discipline__percent_proficient,
-                region__total__assessment_band_discipline__total_students
-            ) as 'Total__Assessment_Band_Discipline',
-            (
-                region__aggregate_ethnicity__african_american__percent_proficient,
-                region__aggregate_ethnicity__african_american__total_students
-            ) as 'Total__Aggregate_Ethnicity__African_American',
-            (
-                region__aggregate_ethnicity__asian__percent_proficient,
-                region__aggregate_ethnicity__asian__total_students
-            ) as 'Aggregate_Ethnicity__Asian',
-            (
-                region__aggregate_ethnicity__american_indian__percent_proficient,
-                region__aggregate_ethnicity__american_indian__total_students
-            ) as 'Aggregate_Ethnicity__American_Indian',
-            (
-                region__aggregate_ethnicity__hispanic__percent_proficient,
-                region__aggregate_ethnicity__hispanic__total_students
-            ) as 'Aggregate_Ethnicity__Hispanic',
-            (
-                region__aggregate_ethnicity__native_hawaiian__percent_proficient,
-                region__aggregate_ethnicity__native_hawaiian__total_students
-            ) as 'Aggregate_Ethnicity__Native_Hawaiian',
-            (
-                region__aggregate_ethnicity__white__percent_proficient,
-                region__aggregate_ethnicity__white__total_students
-            ) as 'Aggregate_Ethnicity__White',
-            (
-                region__aggregate_ethnicity__other__percent_proficient,
-                region__aggregate_ethnicity__other__total_students
-            ) as 'Aggregate_Ethnicity__Other',
-            (
-                region__gender__male__percent_proficient,
-                region__gender__male__total_students
-            ) as 'Gender__Male',
-            (
-                region__gender__female__percent_proficient,
-                region__gender__female__total_students
-            ) as 'Gender__Female',
-            (
-                region__subgroup__students_with_disabilities__percent_proficient,
-                region__subgroup__students_with_disabilities__total_students
-            ) as 'Subgroup__Students_With_Disabilities',
-            (
-                region__subgroup__economically_disadvantaged__percent_proficient,
-                region__subgroup__economically_disadvantaged__total_students
-            ) as 'Subgroup__Economically_Disadvantaged',
-            (
-                region__subgroup__non_economically_disadvantaged__percent_proficient,
-                region__subgroup__non_economically_disadvantaged__total_students
-            ) as 'Subgroup__Non_Economically_Disadvantaged',
-            (
-                region__subgroup__ml_percent_proficient,
-                region__subgroup__ml__total_students
-            ) as 'Subgroup__ML'
-        )
-    )
+    percent_proficient,
 
+from
+    district_calcs
+    /*
 union all
 
 select
     academic_year,
     test_name as assessment_name,
-    discipline,
-    `subject`,
     test_code,
     region,
-    school_level,
-    assessment_band,
-    grade_range_band,
     comparison_entity,
     comparison_demographic_group,
     comparison_demographic_subgroup,
+
+    total_proficient_students,
+    total_students,    
+
     percent_proficient,
-    total_students
 
 from comps
+*/
+    
