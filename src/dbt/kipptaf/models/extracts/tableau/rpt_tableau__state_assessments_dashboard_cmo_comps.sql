@@ -649,6 +649,7 @@ with
             and race_ethnicity is null
             and lep_status is null
             and iep_status is null
+        qualify rn = 1
 
     )
 
