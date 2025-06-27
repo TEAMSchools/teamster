@@ -161,6 +161,7 @@ with
             e.school,
             e.school_level,
             e.student_number,
+            e.grade_level,
 
             a.district_state,
             a.assessment_name,
@@ -225,6 +226,7 @@ with
             e.school,
             e.school_level,
             e.student_number,
+            e.grade_level,
 
             a.district_state,
             a.assessment_name,
@@ -313,6 +315,7 @@ with
             e.school,
             e.school_level,
             e.student_number,
+            e.grade_level,
 
             a.district_state,
             a.assessment_name,
@@ -481,9 +484,7 @@ with
             round(percent_proficient * total_students, 0) as total_proficient_students,
 
         from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
-        where
-            comparison_demographic_subgroup
-            not in ('Grade - 08', 'Grade - 09', 'Grade - 10', 'SE Accommodation')
+        where comparison_demographic_subgroup != 'SE Accommodation'
     ),
 
     region_calcs as (
@@ -495,6 +496,7 @@ with
             school_level,
             assessment_band,
             grade_range_band,
+            grade_level,
             assessment_name,
             discipline,
             `subject`,
@@ -523,6 +525,7 @@ with
                 school_level,
                 assessment_band,
                 grade_range_band,
+                grade_level,
                 assessment_name,
                 discipline,
                 `subject`,
@@ -546,10 +549,6 @@ with
             'Total' as comparison_demographic_group,
             'All Students' as comparison_demographic_subgroup,
 
-            row_number() over (
-                partition by academic_year, assessment_name, test_code, district_state
-            ) as rn,
-
             sum(total_proficient_students) over (
                 partition by academic_year, assessment_name, test_code, district_state
             ) as total_proficient_students,
@@ -579,7 +578,6 @@ with
             and race_ethnicity is null
             and lep_status is null
             and iep_status is null
-        qualify rn = 1
 
         union all
 
@@ -591,16 +589,16 @@ with
             region,
             district_state as comparison_entity,
             'Total' as comparison_demographic_group,
-            'School Level' as comparison_demographic_subgroup,
 
-            row_number() over (
-                partition by
-                    academic_year,
-                    assessment_name,
-                    school_level,
-                    test_code,
-                    district_state
-            ) as rn,
+            case
+                when test_code = 'ALG01' and grade_level = 8
+                then 'Grade - 08'
+                when test_code = 'ALG01' and grade_level = 9
+                then 'Grade - 09'
+                when test_code = 'ALG01' and grade_level = 10
+                then 'Grade - 10'
+                else 'School Level'
+            end as comparison_demographic_subgroup,
 
             sum(total_proficient_students) over (
                 partition by
@@ -649,8 +647,6 @@ with
             and race_ethnicity is null
             and lep_status is null
             and iep_status is null
-        qualify rn = 1
-
     )
 
 select
