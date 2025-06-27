@@ -358,3 +358,4 @@ with
 
 select *
 from region_calcs
+where academic_year is not null
