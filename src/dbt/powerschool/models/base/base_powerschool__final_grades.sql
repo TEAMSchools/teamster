@@ -48,7 +48,7 @@ with
             and enr.cc_abs_termid = tb.termid
             and tb.storecode_type in ('Q', 'E')
         where
-            enr.cc_academic_year = {{ var("current_academic_year") }}
+            enr.cc_academic_year >= {{ var("current_academic_year") - 1 }}
             and not enr.is_dropped_section
     ),
 

@@ -107,7 +107,7 @@ with
             and tb.storecode = cw.quarter
             and {{ union_dataset_join_clause(left_alias="tb", right_alias="cw") }}
         where
-            t.yearid = {{ var("current_academic_year") - 1990 }}
+            t.yearid >= {{ var("current_academic_year") - 1991 }}
             and t.isyearrec = 1
             and t.schoolid not in (0, 999999)
     )
