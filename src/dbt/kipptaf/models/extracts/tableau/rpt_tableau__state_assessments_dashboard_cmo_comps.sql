@@ -385,7 +385,7 @@ where
     and test_code is not null
     and assessment_name is not null
     and `key` is null
-    array_length(
+    and array_length(
         array(
             select x
             from
