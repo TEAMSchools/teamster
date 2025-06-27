@@ -4,7 +4,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__staff_attrition_details]
     metadata:
       id: 5bf99669-00bb-4906-b2b4-79f2976ac3a4
-      cron_schedule: 0 7 * * *
+      # cron_schedule: 0 7 * * *
   - name: College Admission Readiness Assessments Tracker (CARAT)
     deps:
       - [kipptaf, tableau, rpt_tableau__ap_assessment_dashboard]
@@ -97,7 +97,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__staff_job_salary_audit]
     metadata:
       id: a571cf7d-9893-4f33-970d-46dd7a392c8e
-      cron_schedule: 0 2 * * *
+      # cron_schedule: 0 2 * * *
   - name: OKRTS Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__okrts_behavior]
@@ -123,7 +123,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__attendance_dashboard]
     metadata:
       id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-      cron_schedule: 0 15 * * *
+      # cron_schedule: 0 15 * * *
   - name: Early Literacy Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__dibels_dashboard]
