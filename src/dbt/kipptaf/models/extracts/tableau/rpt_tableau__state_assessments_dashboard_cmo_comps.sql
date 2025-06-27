@@ -362,20 +362,6 @@ with
             avg(is_proficient_int) as percent_proficient,
 
         from roster
-        group by
-            cube (
-                academic_year,
-                district,
-                district_state,
-                region,
-                assessment_name,
-                test_code,
-                gender,
-                lunch_status,
-                race_ethnicity,
-                lep_status,
-                iep_status
-            )
         where
             array_length(
                 array(
@@ -394,6 +380,20 @@ with
                 )
             )
             = 1
+        group by
+            cube (
+                academic_year,
+                district,
+                district_state,
+                region,
+                assessment_name,
+                test_code,
+                gender,
+                lunch_status,
+                race_ethnicity,
+                lep_status,
+                iep_status
+            )
     )
 
 select *
