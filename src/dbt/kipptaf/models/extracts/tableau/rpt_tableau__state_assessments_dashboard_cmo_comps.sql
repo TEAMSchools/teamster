@@ -549,6 +549,10 @@ with
             'Total' as comparison_demographic_group,
             'All Students' as comparison_demographic_subgroup,
 
+            row_number() over (
+                partition by academic_year, assessment_name, test_code, district_state
+            ) as rn,
+
             sum(total_proficient_students) over (
                 partition by academic_year, assessment_name, test_code, district_state
             ) as total_proficient_students,
@@ -578,6 +582,7 @@ with
             and race_ethnicity is null
             and lep_status is null
             and iep_status is null
+        qualify rn = 1
 
         union all
 
@@ -600,6 +605,10 @@ with
                 else school_level
             end as comparison_demographic_subgroup,
 
+            row_number() over (
+                partition by academic_year, assessment_name, test_code, district_state
+            ) as rn,
+
             sum(total_proficient_students) over (
                 partition by
                     academic_year,
@@ -647,6 +656,7 @@ with
             and race_ethnicity is null
             and lep_status is null
             and iep_status is null
+        qualify rn = 1
     )
 
 select
