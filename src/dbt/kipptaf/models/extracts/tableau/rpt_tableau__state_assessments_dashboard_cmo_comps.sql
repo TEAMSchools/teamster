@@ -8,10 +8,7 @@ with
             assessment_name,
             discipline,
             is_proficient,
-            lep_status,
-            is_504,
-            iep_status,
-            race_ethnicity,
+
             period as season,
 
             'Actual' as results_type,
@@ -34,11 +31,34 @@ with
                 else testcode
             end as test_code,
 
+            case
+                race_ethnicity
+                when 'B'
+                then 'African American'
+                when 'A'
+                then 'Asian'
+                when 'I'
+                then 'American Indian'
+                when 'H'
+                then 'Hispanic'
+                when 'P'
+                then 'Native Hawaiian'
+                when 'T'
+                then 'Other'
+                when 'W'
+                then 'White'
+            end as race_ethnicity,
+
+            if(lep_status, 'ML', 'Not ML') as lep_status,
+
+            if(
+                iep_status = 'Has IEP',
+                'Students With Disabilities',
+                'Students Without Disabilities'
+            ) as iep_status,
+
         from {{ ref("int_pearson__all_assessments") }}
-        where
-            academic_year >= {{ var("current_academic_year") - 7 }}
-            and testscalescore is not null
-            and period = 'Spring'
+        where academic_year >= 2018 and testscalescore is not null and period = 'Spring'
 
         union all
 
@@ -50,15 +70,15 @@ with
             assessment_name,
             discipline,
             is_proficient,
-            null as lep_status,
-            null as is_504,
-            null as iep_status,
-            null as race_ethnicity,
             season,
             'Actual' as results_type,
             'KTAF FL' as district_state,
             assessment_subject as `subject`,
             test_code,
+
+            null as race_ethnicity,
+            null as lep_status,
+            null as iep_status,
 
         from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null and season = 'Spring'
@@ -93,11 +113,6 @@ with
                 false
             ) as is_proficient,
 
-            null as lep_status,
-            null as is_504,
-            null as iep_status,
-            null as race_ethnicity,
-
             'Spring' as season,
             'Preliminary' as results_type,
             'KTAF NJ' as district_state,
@@ -125,6 +140,10 @@ with
                 then concat('ELA', regexp_extract(test_name, r'.{6}(.{2})'))
             end as test_code,
 
+            null as race_ethnicity,
+            null as lep_status,
+            null as iep_status,
+
         from {{ ref("stg_pearson__student_list_report") }}
         where
             state_student_identifier is not null
@@ -142,13 +161,6 @@ with
             e.school,
             e.school_level,
             e.student_number,
-            e.gender,
-            e.lunch_status,
-
-            a.race_ethnicity,
-            a.lep_status,
-            a.is_504,
-            a.iep_status,
 
             a.district_state,
             a.assessment_name,
@@ -171,6 +183,26 @@ with
             if(e.grade_level >= 9, 'HS', '3-8') as grade_range_band,
 
             if(a.is_proficient, 1, 0) as is_proficient_int,
+
+            if(
+                e.lunch_status in ('F', 'R'),
+                'Economically Disadvantaged',
+                'Non Economically Disadvantaged'
+            ) as lunch_status,
+
+            a.race_ethnicity,
+            a.lep_status,
+            a.iep_status,
+
+            case
+                e.gender
+                when 'F'
+                then 'Female'
+                when 'M'
+                then 'Male'
+                when 'X'
+                then 'Non-Binary'
+            end as gender,
 
         from assessment_scores as a
         inner join
@@ -193,13 +225,6 @@ with
             e.school,
             e.school_level,
             e.student_number,
-            e.gender,
-            e.lunch_status,
-
-            e.race_ethnicity,
-            e.lep_status,
-            e.is_504,
-            e.iep_status,
 
             a.district_state,
             a.assessment_name,
@@ -222,6 +247,49 @@ with
             if(e.grade_level >= 9, 'HS', '3-8') as grade_range_band,
 
             if(a.is_proficient, 1, 0) as is_proficient_int,
+
+            if(
+                e.lunch_status in ('F', 'R'),
+                'Economically Disadvantaged',
+                'Non Economically Disadvantaged'
+            ) as lunch_status,
+
+            case
+                e.race_ethnicity
+                when 'B'
+                then 'African American'
+                when 'A'
+                then 'Asian'
+                when 'I'
+                then 'American Indian'
+                when 'H'
+                then 'Hispanic'
+                when 'P'
+                then 'Native Hawaiian'
+                when 'T'
+                then 'Other'
+                when 'W'
+                then 'White'
+            end as race_ethnicity,
+
+
+            if(e.lep_status = 'ML', 'Not ML') as lep_status,
+
+            if(
+                e.iep_status = 'Has IEP',
+                'Students With Disabilities',
+                'Students Without Disabilities'
+            ) as iep_status,
+
+            case
+                e.gender
+                when 'F'
+                then 'Female'
+                when 'M'
+                then 'Male'
+                when 'X'
+                then 'Non-Binary'
+            end as gender,
 
         from assessment_scores as a
         inner join
@@ -245,13 +313,6 @@ with
             e.school,
             e.school_level,
             e.student_number,
-            e.gender,
-            e.lunch_status,
-
-            e.race_ethnicity,
-            e.lep_status,
-            e.is_504,
-            e.iep_status,
 
             a.district_state,
             a.assessment_name,
@@ -274,6 +335,48 @@ with
             if(e.grade_level >= 9, 'HS', '3-8') as grade_range_band,
 
             if(a.is_proficient, 1, 0) as is_proficient_int,
+
+            if(
+                e.lunch_status in ('F', 'R'),
+                'Economically Disadvantaged',
+                'Non Economically Disadvantaged'
+            ) as lunch_status,
+
+            case
+                e.race_ethnicity
+                when 'B'
+                then 'African American'
+                when 'A'
+                then 'Asian'
+                when 'I'
+                then 'American Indian'
+                when 'H'
+                then 'Hispanic'
+                when 'P'
+                then 'Native Hawaiian'
+                when 'T'
+                then 'Other'
+                when 'W'
+                then 'White'
+            end as race_ethnicity,
+
+            if(e.lep_status = 'ML', 'Not ML') as lep_status,
+
+            if(
+                e.iep_status = 'Has IEP',
+                'Students With Disabilities',
+                'Students Without Disabilities'
+            ) as iep_status,
+
+            case
+                e.gender
+                when 'F'
+                then 'Female'
+                when 'M'
+                then 'Male'
+                when 'X'
+                then 'Non-Binary'
+            end as gender,
 
         from assessment_scores as a
         inner join
