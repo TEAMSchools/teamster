@@ -594,7 +594,7 @@ with
             region,
             district_state as comparison_entity,
             'Total' as comparison_demographic_group,
-            school_level ascomparison_demographic_subgroup,
+            school_level as comparison_demographic_subgroup,
 
             row_number() over (
                 partition by
@@ -637,6 +637,76 @@ with
                         academic_year,
                         assessment_name,
                         school_level,
+                        test_code,
+                        district_state
+                )
+            ) as percent_proficient,
+
+        from region_calcs
+        where
+            academic_year is not null
+            and district_state is not null
+            and test_code is not null
+            and gender is null
+            and lunch_status is null
+            and race_ethnicity is null
+            and lep_status is null
+            and iep_status is null
+        qualify rn = 1
+
+        union all
+
+        -- Total Grade Range Band by Test Code for district_state
+        select
+            academic_year,
+            assessment_name,
+            test_code,
+            region,
+            district_state as comparison_entity,
+            'Total' as comparison_demographic_group,
+            grade_range_band as comparison_demographic_subgroup,
+
+            row_number() over (
+                partition by
+                    academic_year,
+                    assessment_name,
+                    grade_range_band,
+                    test_code,
+                    district_state
+            ) as rn,
+
+            sum(total_proficient_students) over (
+                partition by
+                    academic_year,
+                    assessment_name,
+                    grade_range_band,
+                    test_code,
+                    district_state
+            ) as total_proficient_students,
+
+            sum(total_students) over (
+                partition by
+                    academic_year,
+                    assessment_name,
+                    grade_range_band,
+                    test_code,
+                    district_state
+            ) as total_students,
+
+            safe_divide(
+                sum(total_proficient_students) over (
+                    partition by
+                        academic_year,
+                        assessment_name,
+                        grade_range_band,
+                        test_code,
+                        district_state
+                ),
+                sum(total_students) over (
+                    partition by
+                        academic_year,
+                        assessment_name,
+                        grade_range_band,
                         test_code,
                         district_state
                 )
