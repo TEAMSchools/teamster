@@ -5,21 +5,11 @@ with
             academic_year,
             localstudentidentifier,
             statestudentidentifier as state_id,
-            assessmentgrade,
             assessment_name,
-            discipline,
             is_proficient,
-
-            period as season,
 
             'Actual' as results_type,
             'KTAF NJ' as district_state,
-
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as `subject`,
 
             case
                 testcode
@@ -68,14 +58,10 @@ with
             academic_year,
             null as localstudentidentifier,
             student_id as state_id,
-            assessment_grade,
             assessment_name,
-            discipline,
             is_proficient,
-            season,
             'Actual' as results_type,
             'KTAF FL' as district_state,
-            assessment_subject as `subject`,
             test_code,
 
             null as race_ethnicity,
@@ -93,22 +79,12 @@ with
             null as localstudentidentifier,
             cast(state_student_identifier as string) as state_id,
 
-            null as assessmentgrade,
-
             if(
                 test_name
                 in ('ELA Graduation Proficiency', 'Mathematics Graduation Proficiency'),
                 'NJGPA',
                 'NJSLA'
             ) as assessment_name,
-
-            case
-                when test_name like '%Mathematics%'
-                then 'Math'
-                when test_name in ('Algebra I', 'Geometry')
-                then 'Math'
-                else 'ELA'
-            end as discipline,
 
             if(
                 performance_level
@@ -117,17 +93,8 @@ with
                 false
             ) as is_proficient,
 
-            'Spring' as season,
             'Preliminary' as results_type,
             'KTAF NJ' as district_state,
-
-            case
-                when test_name like '%Mathematics%'
-                then 'Mathematics'
-                when test_name in ('Algebra I', 'Geometry')
-                then 'Mathematics'
-                else 'English Language Arts'
-            end as `subject`,
 
             case
                 when test_name = 'ELA Graduation Proficiency'
@@ -161,39 +128,14 @@ with
             e.academic_year,
             e.academic_year_display,
             e.region,
-            e.schoolid,
-            e.school,
             e.school_level,
             e.student_number,
-            e.grade_level,
-
-            a.district_state,
-            a.assessment_name,
-            a.assessmentgrade,
-            a.discipline,
-            a.`subject`,
-            a.test_code,
-            a.season,
 
             'KTAF' as district,
 
-            case
-                when
-                    a.assessmentgrade is null
-                    or a.assessmentgrade in ('Grade 9', 'Grade 10', 'Grade 11')
-                then 'HS'
-                when cast(right(a.assessmentgrade, 1) as int) >= 5
-                then '5-8'
-                when cast(right(a.assessmentgrade, 1) as int) >= 3
-                then '3-4'
-            end as assessment_band,
-
-            if(
-                a.assessmentgrade is null
-                or a.assessmentgrade in ('Grade 9', 'Grade 10', 'Grade 11'),
-                'HS',
-                '3-8'
-            ) as grade_range_band,
+            a.district_state,
+            a.assessment_name,
+            a.test_code,
 
             if(a.is_proficient, 1, 0) as is_proficient_int,
 
@@ -226,7 +168,7 @@ with
             and a.results_type = 'Actual'
             and e.grade_level > 2
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
-    /*
+
         union all
 
         -- FL scores
@@ -234,31 +176,14 @@ with
             e.academic_year,
             e.academic_year_display,
             e.region,
-            e.schoolid,
-            e.school,
             e.school_level,
             e.student_number,
-            e.grade_level,
-
-            a.district_state,
-            a.assessment_name,
-            a.assessment_grade,
-            a.discipline,
-            a.`subject`,
-            a.test_code,
-            a.season,
 
             'KTAF' as district,
 
-            case
-                when
-                    a.assessment_grade >= 5
-                then '5-8'
-                when a.assessment_grade, >= 3
-                then '3-4'
-            end as assessment_band,
-
-            if(e.grade_level >= 9, 'HS', '3-8') as grade_range_band,
+            a.district_state,
+            a.assessment_name,
+            a.test_code,
 
             if(a.is_proficient, 1, 0) as is_proficient_int,
 
@@ -286,8 +211,7 @@ with
                 then 'White'
             end as race_ethnicity,
 
-
-            if(e.lep_status = 'ML', 'Not ML') as lep_status,
+            if(e.lep_status, 'ML', 'Not ML') as lep_status,
 
             if(
                 e.iep_status = 'Has IEP',
@@ -315,40 +239,22 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
             and e.grade_level > 2
             and e.region = 'Miami'
-    
+    /*
         union all
 
-        -- NJ prelim scores
+         -- NJ prelim scores
         select
             e.academic_year,
             e.academic_year_display,
             e.region,
-            e.schoolid,
-            e.school,
             e.school_level,
             e.student_number,
-            e.grade_level,
-
-            a.district_state,
-            a.assessment_name,
-            a.assessmentgrade,
-            a.discipline,
-            a.`subject`,
-            a.test_code,
-            a.season,
 
             'KTAF' as district,
 
-            case
-                when e.grade_level >= 9
-                then 'HS'
-                when e.grade_level >= 5
-                then '5-8'
-                when e.grade_level >= 3
-                then '3-4'
-            end as assessment_band,
-
-            if(e.grade_level >= 9, 'HS', '3-8') as grade_range_band,
+            a.district_state,
+            a.assessment_name,
+            a.test_code,
 
             if(a.is_proficient, 1, 0) as is_proficient_int,
 
@@ -409,91 +315,6 @@ with
         select
             *,
 
-            case
-                left(test_code, 3)
-                when 'SCI'
-                then 'Science'
-                when 'ELA'
-                then 'ELA'
-                when 'SOC'
-                then 'Civics'
-                else 'Math'
-            end as discipline,
-
-            case
-                when left(test_code, 3) = 'SCI'
-                then 'Science'
-                when left(test_code, 3) = 'English Language Arts'
-                then 'ELA'
-                when left(test_code, 3) = 'SOC'
-                then 'Civics'
-                when test_code = 'GEO01'
-                then 'Geometry'
-                when test_code = 'ALG01'
-                then 'Algebra I'
-                when test_code = 'ALG02'
-                then 'Algebra II'
-                else 'Mathematics'
-            end as `subject`,
-
-            case
-                when
-                    test_code in (
-                        'ELAGP',
-                        'MATGP',
-                        'GEO01',
-                        'ALG02',
-                        'ALG01',
-                        'ELA09',
-                        'ELA10',
-                        'ELA11',
-                        'SCI11'
-                    )
-                then 'HS'
-                when cast(right(test_code, 2) as numeric) >= 5
-                then 'MS'
-                when cast(right(test_code, 2) as numeric) >= 3
-                then 'ES'
-            end as school_level,
-
-            case
-                when
-                    test_code in (
-                        'ELAGP',
-                        'MATGP',
-                        'GEO01',
-                        'ALG02',
-                        'ALG01',
-                        'ELA09',
-                        'ELA10',
-                        'ELA11',
-                        'SCI11'
-                    )
-                then 'HS'
-                when cast(right(test_code, 2) as numeric) >= 5
-                then '5-8'
-                when cast(right(test_code, 2) as numeric) >= 3
-                then '3-4'
-            end as assessment_band,
-
-            case
-                when
-                    test_code in (
-                        'ELAGP',
-                        'MATGP',
-                        'GEO01',
-                        'ALG02',
-                        'ALG01',
-                        'ELA09',
-                        'ELA10',
-                        'ELA11',
-                        'SCI11'
-                    )
-                then 'HS'
-                when cast(right(test_code, 2) as numeric) >= 3
-                then '3-8'
-            end as grade_range_band,
-
             round(percent_proficient * total_students, 0) as total_proficient_students,
 
         from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
@@ -506,14 +327,7 @@ with
             district,
             district_state,
             region,
-            school_level,
-            assessment_band,
-            grade_range_band,
-            grade_level,
-            assessmentgrade,
             assessment_name,
-            discipline,
-            `subject`,
             test_code,
             gender,
             lunch_status,
@@ -521,29 +335,22 @@ with
             lep_status,
             iep_status,
 
-            avg(is_proficient_int) as percent_proficient,
-
-            count(student_number) as total_students,
-
             round(
                 avg(is_proficient_int) * count(student_number), 0
             ) as total_proficient_students,
 
+            count(student_number) as total_students,
+
+            avg(is_proficient_int) as percent_proficient,
+
         from roster
         group by
-            rollup (
+            cube (
                 academic_year,
                 district,
                 district_state,
                 region,
-                school_level,
-                assessment_band,
-                grade_range_band,
-                grade_level,
-                assessmentgrade,
                 assessment_name,
-                discipline,
-                `subject`,
                 test_code,
                 gender,
                 lunch_status,
@@ -551,294 +358,7 @@ with
                 lep_status,
                 iep_status
             )
-    ),
-
-    district_calcs as (
-        -- Total All Students by Test Code for district_state
-        select
-            academic_year,
-            assessment_name,
-            test_code,
-            region,
-            district_state as comparison_entity,
-            'Total' as comparison_demographic_group,
-            'All Students' as comparison_demographic_subgroup,
-
-            row_number() over (
-                partition by academic_year, assessment_name, test_code, district_state
-            ) as rn,
-
-            sum(total_proficient_students) over (
-                partition by academic_year, assessment_name, test_code, district_state
-            ) as total_proficient_students,
-
-            sum(total_students) over (
-                partition by academic_year, assessment_name, test_code, district_state
-            ) as total_students,
-
-            safe_divide(
-                sum(total_proficient_students) over (
-                    partition by
-                        academic_year, assessment_name, test_code, district_state
-                ),
-                sum(total_students) over (
-                    partition by
-                        academic_year, assessment_name, test_code, district_state
-                )
-            ) as percent_proficient,
-
-        from region_calcs
-        where
-            academic_year is not null
-            and test_code is not null
-            and gender is null
-            and lunch_status is null
-            and race_ethnicity is null
-            and lep_status is null
-            and iep_status is null
-        qualify rn = 1
-
-        union all
-
-        -- Total School Level by Test Code for district_state
-        select
-            academic_year,
-            assessment_name,
-            test_code,
-            region,
-            district_state as comparison_entity,
-            'Total' as comparison_demographic_group,
-            school_level as comparison_demographic_subgroup,
-
-            row_number() over (
-                partition by
-                    academic_year,
-                    assessment_name,
-                    school_level,
-                    test_code,
-                    district_state
-            ) as rn,
-
-            sum(total_proficient_students) over (
-                partition by
-                    academic_year,
-                    assessment_name,
-                    school_level,
-                    test_code,
-                    district_state
-            ) as total_proficient_students,
-
-            sum(total_students) over (
-                partition by
-                    academic_year,
-                    assessment_name,
-                    school_level,
-                    test_code,
-                    district_state
-            ) as total_students,
-
-            safe_divide(
-                sum(total_proficient_students) over (
-                    partition by
-                        academic_year,
-                        assessment_name,
-                        school_level,
-                        test_code,
-                        district_state
-                ),
-                sum(total_students) over (
-                    partition by
-                        academic_year,
-                        assessment_name,
-                        school_level,
-                        test_code,
-                        district_state
-                )
-            ) as percent_proficient,
-
-        from region_calcs
-        where
-            academic_year is not null
-            and test_code is not null
-            and gender is null
-            and lunch_status is null
-            and race_ethnicity is null
-            and lep_status is null
-            and iep_status is null
-        qualify rn = 1
-
-        union all
-
-        -- Total Grade Range Band by Test Code for district_state
-        select
-            academic_year,
-            assessment_name,
-            test_code,
-            region,
-            district_state as comparison_entity,
-            'Total' as comparison_demographic_group,
-            grade_range_band as comparison_demographic_subgroup,
-
-            row_number() over (
-                partition by
-                    academic_year,
-                    assessment_name,
-                    grade_range_band,
-                    test_code,
-                    district_state
-            ) as rn,
-
-            sum(total_proficient_students) over (
-                partition by
-                    academic_year,
-                    assessment_name,
-                    grade_range_band,
-                    test_code,
-                    district_state
-            ) as total_proficient_students,
-
-            sum(total_students) over (
-                partition by
-                    academic_year,
-                    assessment_name,
-                    grade_range_band,
-                    test_code,
-                    district_state
-            ) as total_students,
-
-            safe_divide(
-                sum(total_proficient_students) over (
-                    partition by
-                        academic_year,
-                        assessment_name,
-                        grade_range_band,
-                        test_code,
-                        district_state
-                ),
-                sum(total_students) over (
-                    partition by
-                        academic_year,
-                        assessment_name,
-                        grade_range_band,
-                        test_code,
-                        district_state
-                )
-            ) as percent_proficient,
-
-        from region_calcs
-        where
-            academic_year is not null
-            and test_code is not null
-            and gender is null
-            and lunch_status is null
-            and race_ethnicity is null
-            and lep_status is null
-            and iep_status is null
-        qualify rn = 1
-
-        union all
-
-        -- Total Assessment Band by Test Code for district_state
-        select
-            academic_year,
-            assessment_name,
-            test_code,
-            region,
-            district_state as comparison_entity,
-            'Total' as comparison_demographic_group,
-            assessment_band as comparison_demographic_subgroup,
-
-            row_number() over (
-                partition by
-                    academic_year,
-                    assessment_name,
-                    assessment_band,
-                    test_code,
-                    district_state
-            ) as rn,
-
-            sum(total_proficient_students) over (
-                partition by
-                    academic_year,
-                    assessment_name,
-                    assessment_band,
-                    test_code,
-                    district_state
-            ) as total_proficient_students,
-
-            sum(total_students) over (
-                partition by
-                    academic_year,
-                    assessment_name,
-                    assessment_band,
-                    test_code,
-                    district_state
-            ) as total_students,
-
-            safe_divide(
-                sum(total_proficient_students) over (
-                    partition by
-                        academic_year,
-                        assessment_name,
-                        assessment_band,
-                        test_code,
-                        district_state
-                ),
-                sum(total_students) over (
-                    partition by
-                        academic_year,
-                        assessment_name,
-                        assessment_band,
-                        test_code,
-                        district_state
-                )
-            ) as percent_proficient,
-
-        from region_calcs
-        where
-            academic_year is not null
-            and test_code is not null
-            and gender is null
-            and lunch_status is null
-            and race_ethnicity is null
-            and lep_status is null
-            and iep_status is null
-        qualify rn = 1
     )
 
-select
-    academic_year,
-    assessment_name,
-    test_code,
-    region,
-    comparison_entity,
-    comparison_demographic_group,
-    comparison_demographic_subgroup,
-
-    total_proficient_students,
-    total_students,
-
-    percent_proficient,
-
-from
-    district_calcs
-    /*
-union all
-
-select
-    academic_year,
-    test_name as assessment_name,
-    test_code,
-    region,
-    comparison_entity,
-    comparison_demographic_group,
-    comparison_demographic_subgroup,
-
-    total_proficient_students,
-    total_students,    
-
-    percent_proficient,
-
-from comps
-*/
-    
+select *
+from region_calcs
