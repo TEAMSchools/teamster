@@ -362,24 +362,6 @@ with
             avg(is_proficient_int) as percent_proficient,
 
         from roster
-        where
-            array_length(
-                array(
-                    select x
-                    from
-                        unnest(
-                            [
-                                gender,
-                                lunch_status,
-                                race_ethnicity,
-                                lep_status,
-                                iep_status
-                            ]
-                        ) as x
-                    where x is not null
-                )
-            )
-            = 1
         group by
             cube (
                 academic_year,
@@ -403,3 +385,14 @@ where
     and test_code is not null
     and assessment_name is not null
     and `key` is null
+    array_length(
+        array(
+            select x
+            from
+                unnest(
+                    [gender, lunch_status, race_ethnicity, lep_status, iep_status]
+                ) as x
+            where x is not null
+        )
+    )
+    = 1
