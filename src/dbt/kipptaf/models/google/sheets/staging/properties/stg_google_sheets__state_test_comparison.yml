@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_assessments__state_test_comparison
+  - name: stg_google_sheets__state_test_comparison
     config:
       contract:
         enforced: true
