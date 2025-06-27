@@ -17,12 +17,9 @@ def test_zendesk_user_sync_op():
                         email,
                         name,
                         suspended,
-                        organization_id,
-                        struct(
-                            secondary_location as secondary_location,
-                            user_group as user_group
-                        ) as user_fields,
+                        external_id,
                     from kipptaf_extracts.rpt_zendesk__users
+                    where email = 'srobinson@kippnj.org'
                 """
             ),
         )
