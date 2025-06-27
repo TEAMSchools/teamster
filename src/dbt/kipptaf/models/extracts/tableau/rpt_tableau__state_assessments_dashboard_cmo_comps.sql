@@ -79,12 +79,7 @@ with
             null as localstudentidentifier,
             cast(state_student_identifier as string) as state_id,
 
-            if(
-                test_name
-                in ('ELA Graduation Proficiency', 'Mathematics Graduation Proficiency'),
-                'NJGPA',
-                'NJSLA'
-            ) as assessment_name,
+            test_type as assessment_name,
 
             if(
                 performance_level
@@ -119,6 +114,7 @@ with
         where
             state_student_identifier is not null
             and administration = 'Spring'
+            and test_type = 'NJSLA'
             and academic_year = {{ var("current_academic_year") }}
     ),
 
@@ -239,10 +235,10 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
             and e.grade_level > 2
             and e.region = 'Miami'
-    /*
+
         union all
 
-         -- NJ prelim scores
+        -- NJ prelim scores
         select
             e.academic_year,
             e.academic_year_display,
@@ -308,7 +304,7 @@ with
             and a.academic_year = {{ var("current_academic_year") }}
             and a.results_type = 'Preliminary'
             and e.grade_level > 2
-            and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}*/
+            and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
     ),
 
     comps as (
