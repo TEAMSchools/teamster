@@ -594,16 +594,7 @@ with
             region,
             district_state as comparison_entity,
             'Total' as comparison_demographic_group,
-
-            case
-                when test_code = 'ALG01' and grade_level = 8
-                then 'Grade - 08'
-                when test_code = 'ALG01' and grade_level = 9
-                then 'Grade - 09'
-                when test_code = 'ALG01' and grade_level = 10
-                then 'Grade - 10'
-                else school_level
-            end as comparison_demographic_subgroup,
+            school_level ascomparison_demographic_subgroup,
 
             row_number() over (
                 partition by academic_year, assessment_name, test_code, district_state
