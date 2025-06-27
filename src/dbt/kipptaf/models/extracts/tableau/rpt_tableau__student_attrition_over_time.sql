@@ -35,20 +35,23 @@ select
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
     if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
-    if(w.week_start_monday between co.entrydate and co.exitdate, 0, 1) as is_attrition,
-from {{ ref("base_powerschool__student_enrollments") }} as co
-inner join
-    prev_year as py
-    on co.student_number = py.student_number
-    and co.academic_year = py.academic_year
-    and py.is_enrolled_oct01_prev
-cross join
+    -- if(w.week_start_monday between co.entrydate and co.exitdate, 0, 1) as is_attrition,
+from
     unnest(
         generate_date_array(
             '{{ var("current_academic_year") - 3 }}-10-01',
             current_date('{{ var("local_timezone") }}')
         )
     ) as date_day
+inner join
+ {{ ref("base_powerschool__student_enrollments") }} as co
+ on date_day between 
+
 -- on date_day between co.entrydate and date(co.academic_year + 1, 6, 30)
+inner join
+    prev_year as py
+    on co.student_number = py.student_number
+    and co.academic_year = py.academic_year
+    and py.is_enrolled_oct01_prev
 where
-    co.academic_year >= {{ var("current_academic_year") - 2 }} and co.grade_level != 99
+    co.academic_year >= {{ var("current_academic_year") - 3 }} and co.grade_level != 99
