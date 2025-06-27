@@ -278,7 +278,7 @@ with
                 then 'White'
             end as race_ethnicity,
 
-            if(e.lep_status = 'ML', 'Not ML') as lep_status,
+            if(e.lep_status, 'ML', 'Not ML') as lep_status,
 
             if(
                 e.iep_status = 'Has IEP',
