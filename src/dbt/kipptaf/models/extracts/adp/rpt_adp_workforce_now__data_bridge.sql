@@ -8,9 +8,9 @@ with
 
             sr.custom_field__employee_number as adp__custom_field__employee_number,
             sr.work_email as adp__work_email,
+            sr.badge_id as adp__badge,
+            sr.time_service_supervisor_position_id as adp__supervisor_id,
 
-            tna.badge as adp__badge,
-            tna.supervisor_id as adp__supervisor_id,
             tna.supervisor_flag as adp__supervisor_flag,
             tna.pay_class,
 
