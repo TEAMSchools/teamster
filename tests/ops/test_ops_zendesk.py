@@ -19,7 +19,6 @@ def test_zendesk_user_sync_op():
                         suspended,
                         external_id,
                     from kipptaf_extracts.rpt_zendesk__users
-                    where email = 'srobinson@kippnj.org'
                 """
             ),
         )
