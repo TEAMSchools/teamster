@@ -536,7 +536,7 @@ with
     ),
 
     district_calcs as (
-        -- Total All Students by Test Code for KTAF <State>
+        -- Total All Students by Test Code for district_state
         select
             academic_year,
             assessment_name,
@@ -575,6 +575,67 @@ with
             and race_ethnicity is null
             and lep_status is null
             and iep_status is null
+
+        union all
+
+        -- Total School Level by Test Code for district_state
+        select
+            academic_year,
+            assessment_name,
+            test_code,
+            region,
+            district_state as comparison_entity,
+            'Total' as comparison_demographic_group,
+            'School Level' as comparison_demographic_subgroup,
+
+            sum(total_proficient_students) over (
+                partition by
+                    academic_year,
+                    assessment_name,
+                    school_level,
+                    test_code,
+                    district_state
+            ) as total_proficient_students,
+
+            sum(total_students) over (
+                partition by
+                    academic_year,
+                    assessment_name,
+                    school_level,
+                    test_code,
+                    district_state
+            ) as total_students,
+
+            safe_divide(
+                sum(total_proficient_students) over (
+                    partition by
+                        academic_year,
+                        assessment_name,
+                        school_level,
+                        test_code,
+                        district_state
+                ),
+                sum(total_students) over (
+                    partition by
+                        academic_year,
+                        assessment_name,
+                        school_level,
+                        test_code,
+                        district_state
+                )
+            ) as percent_proficient,
+
+        from region_calcs
+        where
+            academic_year is not null
+            and district_state is not null
+            and test_code is not null
+            and gender is null
+            and lunch_status is null
+            and race_ethnicity is null
+            and lep_status is null
+            and iep_status is null
+
     )
 
 select
