@@ -358,4 +358,4 @@ with
 
 select *
 from region_calcs
-where academic_year is not null
+where academic_year is not null and test_code is not null
