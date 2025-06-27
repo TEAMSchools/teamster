@@ -597,7 +597,12 @@ with
             school_level ascomparison_demographic_subgroup,
 
             row_number() over (
-                partition by academic_year, assessment_name, test_code, district_state
+                partition by
+                    academic_year,
+                    assessment_name,
+                    school_level,
+                    test_code,
+                    district_state
             ) as rn,
 
             sum(total_proficient_students) over (
