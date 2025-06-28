@@ -333,31 +333,30 @@ with
             assessment_name,
             test_code,
             gender,
-            lunch_status,
             race_ethnicity,
+            lunch_status,
             lep_status,
             iep_status,
-
-            concat(
-                district_state,
-                '_',
-                region,
-                '_',
-                assessment_name,
-                '_',
-                test_code,
-                '_',
-                gender,
-                '_',
-                lunch_status,
-                '_',
-                race_ethnicity,
-                '_',
-                lep_status,
-                '_',
-                iep_status
-            ) as `key`,
-
+            --
+            -- concat(
+            -- district_state,
+            -- '_',
+            -- region,
+            -- '_',
+            -- assessment_name,
+            -- '_',
+            -- test_code,
+            -- '_',
+            -- gender,
+            -- '_',
+            -- lunch_status,
+            -- '_',
+            -- race_ethnicity,
+            -- '_',
+            -- lep_status,
+            -- '_',
+            -- iep_status
+            -- ) as `key`,
             round(
                 avg(is_proficient_int) * count(student_number), 0
             ) as total_proficient_students,
@@ -367,6 +366,28 @@ with
             avg(is_proficient_int) as percent_proficient,
 
         from roster
+        where
+            array_length(
+                array(
+                    select x
+                    from
+                        unnest(
+                            [
+                                district_state,
+                                region,
+                                assessment_name,
+                                test_code,
+                                gender,
+                                lunch_status,
+                                race_ethnicity,
+                                lep_status,
+                                iep_status
+                            ]
+                        ) as x
+                    where x is not null
+                )
+            )
+            = 1
         group by
             cube (
                 academic_year,
@@ -390,23 +411,23 @@ with
             and test_code is not null
             and assessment_name is not null
             and `key` is null
-            and array_length(
-                array(
-                    select x
-                    from
-                        unnest(
-                            [
-                                gender,
-                                lunch_status,
-                                race_ethnicity,
-                                lep_status,
-                                iep_status
-                            ]
-                        ) as x
-                    where x is not null
-                )
-            )
-            = 1
+    -- and array_length(
+    -- array(
+    -- select x
+    -- from
+    -- unnest(
+    -- [
+    -- gender,
+    -- lunch_status,
+    -- race_ethnicity,
+    -- lep_status,
+    -- iep_status
+    -- ]
+    -- ) as x
+    -- where x is not null
+    -- )
+    -- )
+    -- = 1
     )
 
 {% for col in demographic_columns %}
