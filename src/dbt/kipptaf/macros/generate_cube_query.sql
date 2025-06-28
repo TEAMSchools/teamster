@@ -28,6 +28,24 @@
             {% endfor %}
         ) as grouping_level,
 
+        -- focus_level label for active focus dimension
+        case
+            {% for dim in focus_dims %}
+                when
+                    grouping({{ dim }}) = 0
+                    and {% for other in focus_dims if other != dim %}
+                        grouping({{ other }}) = 1{% if not loop.last %} and {% endif %}
+                    {% endfor %}
+                then '{{ dim }}'
+            {% endfor %}
+            when
+                {% for dim in focus_dims %}
+                    grouping({{ dim }}) = 1{% if not loop.last %} and {% endif %}
+                {% endfor %}
+            then 'all_null'
+            else 'multi'
+        end as focus_level,
+
         -- total_type: hierarchical label with grouping_level
         case
             when

@@ -38,6 +38,8 @@ with
                 then 'Other'
                 when 'W'
                 then 'White'
+                when null
+                then 'Blank'
             end as race_ethnicity,
 
             if(lep_status, 'ML', 'Not ML') as lep_status,
@@ -200,6 +202,8 @@ select
         then 'Other'
         when 'W'
         then 'White'
+        when null
+        then 'Blank'
     end as race_ethnicity,
 
     if(e.lep_status, 'ML', 'Not ML') as lep_status,
@@ -211,7 +215,15 @@ select
     ) as iep_status,
 
     case
-        e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
+        e.gender
+        when 'F'
+        then 'Female'
+        when 'M'
+        then 'Male'
+        when 'X'
+        then 'Non-Binary'
+        when null
+        then 'Blank'
     end as gender,
 
 from assessment_scores as a
@@ -265,6 +277,8 @@ select
         then 'Other'
         when 'W'
         then 'White'
+        when null
+        then 'Blank'
     end as race_ethnicity,
 
     if(e.lep_status, 'ML', 'Not ML') as lep_status,
@@ -276,7 +290,15 @@ select
     ) as iep_status,
 
     case
-        e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
+        e.gender
+        when 'F'
+        then 'Female'
+        when 'M'
+        then 'Male'
+        when 'X'
+        then 'Non-Binary'
+        when null
+        then 'Blank'
     end as gender,
 
 from assessment_scores as a
