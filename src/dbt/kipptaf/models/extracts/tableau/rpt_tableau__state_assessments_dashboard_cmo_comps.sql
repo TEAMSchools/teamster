@@ -366,28 +366,7 @@ with
             avg(is_proficient_int) as percent_proficient,
 
         from roster
-        where
-            array_length(
-                array(
-                    select x
-                    from
-                        unnest(
-                            [
-                                district_state,
-                                region,
-                                assessment_name,
-                                test_code,
-                                gender,
-                                lunch_status,
-                                race_ethnicity,
-                                lep_status,
-                                iep_status
-                            ]
-                        ) as x
-                    where x is not null
-                )
-            )
-            = 1
+
         group by
             cube (
                 academic_year,
@@ -404,12 +383,10 @@ with
     ),
 
     filter_rows as (
-        select *
-        from region_calcs
-        where
-            academic_year is not null
-            and test_code is not null
-            and assessment_name is not null
+        select * from region_calcs where
+    -- academic_year is not null
+    -- and test_code is not null
+    -- and assessment_name is not null
     -- and array_length(
     -- array(
     -- select x
@@ -429,20 +406,5 @@ with
     -- = 1
     )
 
-{% for col in demographic_columns %}
-    select
-        academic_year,
-        district_state,
-        region,
-        assessment_name,
-        test_code,
-        '{{ col }}' as demographic_type,
-        {{ col }} as demographic_value,
-        total_proficient_students,
-        total_students,
-        percent_proficient
-    from filter_rows
-    {% if not loop.last %}
-        union all
-    {% endif %}
-{% endfor %}
+select *,
+from filter_rows
