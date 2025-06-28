@@ -410,7 +410,6 @@ with
             academic_year is not null
             and test_code is not null
             and assessment_name is not null
-            and `key` is null
     -- and array_length(
     -- array(
     -- select x
