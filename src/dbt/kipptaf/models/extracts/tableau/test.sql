@@ -19,6 +19,14 @@
 
 {{
     generate_cube_query(
-        dims, aggs, ref("rpt_tableau__state_assessments_dashboard_cmo_comps")
+        dims,
+        aggs,
+        (
+            "("
+            ~ "SELECT * FROM "
+            ~ ref("rpt_tableau__state_assessments_dashboard_cmo_comps")
+            ~ " WHERE test_code IS NOT NULL AND assessment_name IS NOT NULL"
+            ~ ")"
+        ),
     )
 }}
