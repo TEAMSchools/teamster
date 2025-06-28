@@ -15,11 +15,10 @@ def test_zendesk_user_sync_op():
                 query="""
                     select
                         email,
+                        name,
                         suspended,
-                        null as organization_id,
-                        struct(null as secondary_location, null as user_group) as user_fields,
+                        external_id,
                     from kipptaf_extracts.rpt_zendesk__users
-                    where suspended
                 """
             ),
         )
