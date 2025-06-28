@@ -81,12 +81,19 @@
     {% if focus_group and focus_dims %}
         having
             (
-                {% for dim in focus_dims %}
-                    cast(grouping({{ dim }}) = 0 as int64)
-                    {% if not loop.last %} + {% endif %}
-                {% endfor %}
+                (
+                    {% for dim in focus_dims %}
+                        cast(grouping({{ dim }}) = 0 as int64)
+                        {% if not loop.last %} + {% endif %}
+                    {% endfor %}
+                )
+                = 1
+                or (
+                    {% for dim in focus_dims %}
+                        grouping({{ dim }}) = 1{% if not loop.last %} and {% endif %}
+                    {% endfor %}
+                )
             )
-            = 1
     {% endif %}
 
     order by grouping_level
