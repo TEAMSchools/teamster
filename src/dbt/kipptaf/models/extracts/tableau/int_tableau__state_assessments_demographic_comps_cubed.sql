@@ -1,3 +1,5 @@
+{{ config(materialized="table") }}
+
 {% set dims = [
     "academic_year",
     "district_state",
@@ -21,8 +23,7 @@
     generate_cube_query(
         dims,
         aggs,
-        ref("rpt_tableau__state_assessments_dashboard_cmo_comps"),
-        where_clause="TRUE AND test_code IS NOT NULL AND assessment_name IS NOT NULL",
+        ref("int_tableau__state_assessments_demographic_comps"),
         focus_group=True,
         focus_dims=[
             "gender",
