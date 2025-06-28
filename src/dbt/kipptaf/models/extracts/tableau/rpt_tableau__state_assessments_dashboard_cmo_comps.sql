@@ -315,89 +315,20 @@ with
 
         from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
         where comparison_demographic_subgroup != 'SE Accommodation'
-    ),
-
-    region_calcs as (
-        select
-            academic_year,
-            district_state,
-            region,
-            assessment_name,
-            test_code,
-            gender,
-            race_ethnicity,
-            lunch_status,
-            lep_status,
-            iep_status,
-            --
-            -- concat(
-            -- district_state,
-            -- '_',
-            -- region,
-            -- '_',
-            -- assessment_name,
-            -- '_',
-            -- test_code,
-            -- '_',
-            -- gender,
-            -- '_',
-            -- lunch_status,
-            -- '_',
-            -- race_ethnicity,
-            -- '_',
-            -- lep_status,
-            -- '_',
-            -- iep_status
-            -- ) as `key`,
-            round(
-                avg(is_proficient_int) * count(student_number), 0
-            ) as total_proficient_students,
-
-            count(student_number) as total_students,
-
-            avg(is_proficient_int) as percent_proficient,
-
-        from roster
-
-        group by
-            cube (
-                academic_year,
-                district_state,
-                region,
-                assessment_name,
-                test_code,
-                gender,
-                lunch_status,
-                race_ethnicity,
-                lep_status,
-                iep_status
-            )
-    ),
-
-    filter_rows as (
-        select * from region_calcs
-    -- where
-    -- academic_year is not null
-    -- and test_code is not null
-    -- and assessment_name is not null
-    -- and array_length(
-    -- array(
-    -- select x
-    -- from
-    -- unnest(
-    -- [
-    -- gender,
-    -- lunch_status,
-    -- race_ethnicity,
-    -- lep_status,
-    -- iep_status
-    -- ]
-    -- ) as x
-    -- where x is not null
-    -- )
-    -- )
-    -- = 1
     )
 
-select *,
-from filter_rows
+select
+    academic_year,
+    district_state,
+    region,
+    student_number,
+    is_proficient_int,
+    assessment_name,
+    test_code,
+    gender,
+    race_ethnicity,
+    lunch_status,
+    lep_status,
+    iep_status,
+
+from roster

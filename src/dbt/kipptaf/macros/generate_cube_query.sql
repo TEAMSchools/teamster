@@ -1,0 +1,76 @@
+{% macro generate_cube_query(dimensions, metrics, source_relation) %}
+
+    select
+
+        -- Dynamic dimensions
+        {% for dim in dimensions %} {{ dim }},{% endfor %}
+
+        -- Dynamic metrics
+        {% for metric in metrics %} {{ metric }},{% endfor %}
+
+        -- GROUPING() flags
+        {% for dim in dimensions %}
+            grouping({{ dim }}) as is_{{ dim }}_total,
+        {% endfor %}
+
+        -- grouping_level using POW + GROUPING()
+        (
+            {% for dim in dimensions %}
+                grouping({{ dim }}) * pow(2, {{ loop.index0 }})
+                {% if not loop.last %} + {% endif %}
+            {% endfor %}
+        ) as grouping_level,
+
+        -- total_type: hierarchical label with grouping_level
+        case
+            when
+                (
+                    {% for dim in dimensions %}
+                        grouping({{ dim }}) * pow(2, {{ loop.index0 }})
+                        {% if not loop.last %} + {% endif %}
+                    {% endfor %}
+                )
+                = 0
+            then 'Level 0: Detail'
+
+            when
+                (
+                    {% for dim in dimensions %}
+                        grouping({{ dim }}) * pow(2, {{ loop.index0 }})
+                        {% if not loop.last %} + {% endif %}
+                    {% endfor %}
+                )
+                = {{ 2 ** (dimensions | length) - 1 }}
+            then 'Level {{ 2 ** (dimensions | length) - 1 }}: Grand Total'
+
+            else
+                concat(
+                    'Level ',
+                    cast(
+                        (
+                            {% for dim in dimensions %}
+                                grouping({{ dim }}) * pow(2, {{ loop.index0 }})
+                                {% if not loop.last %} + {% endif %}
+                            {% endfor %}
+                        ) as string
+                    ),
+                    ': Subtotal – ',
+                    array_to_string(
+                        [
+                            {% for dim in dimensions %}
+                                if(grouping({{ dim }}) = 1, '{{ dim }}', null)
+                                {% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        ],
+                        ', '
+                    )
+                )
+        end as total_type
+
+    from {{ source_relation }}
+
+    group by cube ({{ dimensions | join(", ") }})
+
+    order by grouping_level
+
+{% endmacro %}
