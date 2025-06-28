@@ -38,8 +38,6 @@ with
                 then 'Other'
                 when 'W'
                 then 'White'
-                when null
-                then 'Blank'
             end as race_ethnicity,
 
             if(lep_status, 'ML', 'Not ML') as lep_status,
@@ -157,6 +155,8 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.localstudentidentifier = e.student_number
+    and a.race_ethnicity is not null
+    or a.gender is not null
     and a.academic_year >= {{ var("current_academic_year") - 7 }}
     and a.results_type = 'Actual'
     and e.grade_level > 2
@@ -202,8 +202,6 @@ select
         then 'Other'
         when 'W'
         then 'White'
-        when null
-        then 'Blank'
     end as race_ethnicity,
 
     if(e.lep_status, 'ML', 'Not ML') as lep_status,
@@ -215,15 +213,7 @@ select
     ) as iep_status,
 
     case
-        e.gender
-        when 'F'
-        then 'Female'
-        when 'M'
-        then 'Male'
-        when 'X'
-        then 'Non-Binary'
-        when null
-        then 'Blank'
+        e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
     end as gender,
 
 from assessment_scores as a
@@ -231,6 +221,8 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
+    and e.race_ethnicity is not null
+    or e.gender is not null
     and a.academic_year >= {{ var("current_academic_year") - 7 }}
     and a.results_type = 'Actual'
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
@@ -277,8 +269,6 @@ select
         then 'Other'
         when 'W'
         then 'White'
-        when null
-        then 'Blank'
     end as race_ethnicity,
 
     if(e.lep_status, 'ML', 'Not ML') as lep_status,
@@ -290,15 +280,7 @@ select
     ) as iep_status,
 
     case
-        e.gender
-        when 'F'
-        then 'Female'
-        when 'M'
-        then 'Male'
-        when 'X'
-        then 'Non-Binary'
-        when null
-        then 'Blank'
+        e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
     end as gender,
 
 from assessment_scores as a
@@ -306,6 +288,8 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
+    and e.race_ethnicity is not null
+    or e.gender is not null
     and a.academic_year = {{ var("current_academic_year") }}
     and a.results_type = 'Preliminary'
     and e.grade_level > 2
