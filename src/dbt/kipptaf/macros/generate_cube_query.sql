@@ -4,8 +4,7 @@
     source_relation,
     include_row_number=False,
     focus_group=False,
-    focus_dims=[],
-    where_clause=None
+    focus_dims=[]
 ) %}
 
     select
@@ -76,8 +75,6 @@
         end as total_type
 
     from {{ source_relation }}
-
-    {% if where_clause %} where {{ where_clause }} {% endif %}
 
     group by cube ({{ dimensions | join(", ") }})
 
