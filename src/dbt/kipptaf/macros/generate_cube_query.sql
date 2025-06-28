@@ -1,4 +1,12 @@
-{% macro generate_cube_query(dimensions, metrics, source_relation) %}
+{% macro generate_cube_query(
+    dimensions,
+    metrics,
+    source_relation,
+    include_row_number=False,
+    focus_group=False,
+    focus_dims=[],
+    where_clause=None
+) %}
 
     select
 
@@ -69,7 +77,20 @@
 
     from {{ source_relation }}
 
+    {% if where_clause %} where {{ where_clause }} {% endif %}
+
     group by cube ({{ dimensions | join(", ") }})
+
+    {% if focus_group and focus_dims %}
+        having
+            (
+                {% for dim in focus_dims %}
+                    cast(grouping({{ dim }}) = 0 as int64)
+                    {% if not loop.last %} + {% endif %}
+                {% endfor %}
+            )
+            = 1
+    {% endif %}
 
     order by grouping_level
 
