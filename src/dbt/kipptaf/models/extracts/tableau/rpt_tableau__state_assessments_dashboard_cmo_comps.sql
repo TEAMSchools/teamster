@@ -1,11 +1,3 @@
-{% set demographic_columns = [
-    "gender",
-    "lunch_status",
-    "race_ethnicity",
-    "lep_status",
-    "iep_status",
-] %}
-
 with
     assessment_scores as (
         select
@@ -383,7 +375,8 @@ with
     ),
 
     filter_rows as (
-        select * from region_calcs where
+        select * from region_calcs
+    -- where
     -- academic_year is not null
     -- and test_code is not null
     -- and assessment_name is not null
