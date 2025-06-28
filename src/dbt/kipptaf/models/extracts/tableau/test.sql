@@ -22,7 +22,7 @@
         dims,
         aggs,
         ref("rpt_tableau__state_assessments_dashboard_cmo_comps"),
-        where_clause="test_code IS NOT NULL AND assessment_name IS NOT NULL",
+        where_clause="test_code IS NOT NULL AND assessment_name IS NOT NULL and academic_year IS NOT NULL",
         focus_group=True,
         focus_dims=[
             "gender",
