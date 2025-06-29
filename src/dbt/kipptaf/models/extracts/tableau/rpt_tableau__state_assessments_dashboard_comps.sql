@@ -239,6 +239,7 @@ with
             ) as rn,
 
         from appended
+        where comparison_demographic_subgroup != 'Blank'
         qualify rn = 1
     ),
 
