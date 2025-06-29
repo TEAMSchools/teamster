@@ -4,6 +4,7 @@
     "academic_year",
     "district_state",
     "region",
+    "school_level",
     "assessment_name",
     "test_code",
     "gender",

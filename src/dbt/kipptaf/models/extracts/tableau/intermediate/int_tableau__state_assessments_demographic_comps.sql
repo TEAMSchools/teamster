@@ -124,12 +124,9 @@ with
 -- NJ scores
 select
     e.academic_year,
-    e.academic_year_display,
     e.region,
     e.school_level,
     e.student_number,
-
-    'KTAF' as district,
 
     a.district_state,
     a.assessment_name,
@@ -166,12 +163,9 @@ union all
 -- FL scores
 select
     e.academic_year,
-    e.academic_year_display,
     e.region,
     e.school_level,
     e.student_number,
-
-    'KTAF' as district,
 
     a.district_state,
     a.assessment_name,
@@ -232,12 +226,9 @@ union all
 -- NJ prelim scores
 select
     e.academic_year,
-    e.academic_year_display,
     e.region,
     e.school_level,
     e.student_number,
-
-    'KTAF' as district,
 
     a.district_state,
     a.assessment_name,
