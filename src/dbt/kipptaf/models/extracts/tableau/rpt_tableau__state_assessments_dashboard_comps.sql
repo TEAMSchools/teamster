@@ -409,6 +409,5 @@ group by
     region,
     comparison_entity,
     comparison_demographic_group,
-    comparison_demographic_subgroup
-*/
+    comparison_demographic_subgroup*/
     
