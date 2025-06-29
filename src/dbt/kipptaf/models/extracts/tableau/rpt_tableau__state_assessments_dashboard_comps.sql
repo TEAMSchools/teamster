@@ -333,8 +333,8 @@ select
     comparison_demographic_group,
     comparison_demographic_subgroup,
 
-    sum(total_proficient_students),
-    sum(total_students),
+    sum(total_proficient_students) as total_proficient_students,
+    sum(total_students) as total_students,
 
     sum(total_proficient_students) / sum(total_students) as percent_proficient,
 
@@ -363,8 +363,8 @@ select
     comparison_demographic_group,
     comparison_demographic_subgroup,
 
-    sum(total_proficient_students),
-    sum(total_students),
+    sum(total_proficient_students) as total_proficient_students,
+    sum(total_students) as total_students,
 
     sum(total_proficient_students) / sum(total_students) as percent_proficient,
 
@@ -393,8 +393,8 @@ select
     comparison_demographic_group,
     comparison_demographic_subgroup,
 
-    sum(total_proficient_students),
-    sum(total_students),
+    sum(total_proficient_students) as total_proficient_students,
+    sum(total_students) as total_students,
 
     sum(total_proficient_students) / sum(total_students) as percent_proficient,
 
