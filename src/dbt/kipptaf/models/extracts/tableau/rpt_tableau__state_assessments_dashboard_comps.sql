@@ -82,7 +82,7 @@ with
             and district_state = 'KTAF FL'
     ),
 
-    final as (
+    appended as (
         select
             academic_year,
             assessment_name,
@@ -204,6 +204,100 @@ with
 
         from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
         where comparison_demographic_subgroup != 'SE Accommodation'
+    ),
+
+    dedup as (
+        select
+            academic_year,
+            school_level,
+            grade_range_band,
+            assessment_name,
+            discipline,
+            test_code,
+            region,
+            comparison_entity,
+            comparison_demographic_group,
+            comparison_demographic_subgroup,
+            total_proficient_students,
+            total_students,
+            percent_proficient,
+            focus_level,
+
+            row_number() over (
+                partition by
+                    academic_year,
+                    school_level,
+                    grade_range_band,
+                    assessment_name,
+                    discipline,
+                    test_code,
+                    region,
+                    comparison_entity,
+                    comparison_demographic_group,
+                    comparison_demographic_subgroup,
+                    focus_level
+            ) as rn,
+
+        from appended
+        qualify rn = 1
+    ),
+
+    aligned as (
+        select
+            academic_year,
+            school_level,
+            grade_range_band,
+            assessment_name,
+            discipline,
+            test_code,
+            region,
+            comparison_entity,
+
+            if(
+                comparison_demographic_group = 'Grade - 08',
+                'Total',
+                comparison_demographic_group
+            ) as comparison_demographic_group,
+
+            if(
+                comparison_demographic_subgroup = 'Grade - 08',
+                'All Students',
+                comparison_demographic_subgroup
+            ) as comparison_demographic_subgroup,
+
+            total_proficient_students,
+
+            total_students,
+
+            percent_proficient,
+
+        from dedup
+        where comparison_demographic_subgroup not in ('Grade - 09', 'Grade - 10')
+
+        union all
+
+        select
+            academic_year,
+            school_level,
+            grade_range_band,
+            assessment_name,
+            discipline,
+            test_code,
+            region,
+            comparison_entity,
+
+            'Total' as comparison_demographic_group,
+
+            'All Students' as comparison_demographic_subgroup,
+
+            total_proficient_students,
+
+            total_students,
+
+            percent_proficient,
+
+        from dedup
+        where comparison_demographic_subgroup in ('Grade - 09', 'Grade - 10')
     )
 
 select
@@ -217,25 +311,100 @@ select
     comparison_entity,
     comparison_demographic_group,
     comparison_demographic_subgroup,
+
     total_proficient_students,
     total_students,
+
     percent_proficient,
-    focus_level,
 
-    row_number() over (
-        partition by
-            academic_year,
-            school_level,
-            grade_range_band,
-            assessment_name,
-            discipline,
-            test_code,
-            region,
-            comparison_entity,
-            comparison_demographic_group,
-            comparison_demographic_subgroup,
-            focus_level
-    ) as rn,
+from aligned
 
-from final
-qualify rn = 1
+union all
+
+select
+    academic_year,
+    school_level,
+    null as grade_range_band,
+    assessment_name,
+    discipline,
+    null as test_code,
+    region,
+    comparison_entity,
+    comparison_demographic_group,
+    comparison_demographic_subgroup,
+
+    sum(total_proficient_students),
+    sum(total_students),
+
+    sum(total_proficient_students) / sum(total_students) as percent_proficient,
+
+from aligned
+group by
+    academic_year,
+    school_level,
+    assessment_name,
+    discipline,
+    region,
+    comparison_entity,
+    comparison_demographic_group,
+    comparison_demographic_subgroup
+
+union all
+
+select
+    academic_year,
+    school_level,
+    null as grade_range_band,
+    assessment_name,
+    discipline,
+    null as test_code,
+    region,
+    comparison_entity,
+    comparison_demographic_group,
+    comparison_demographic_subgroup,
+
+    sum(total_proficient_students),
+    sum(total_students),
+
+    sum(total_proficient_students) / sum(total_students) as percent_proficient,
+
+from aligned
+group by
+    academic_year,
+    school_level,
+    assessment_name,
+    discipline,
+    region,
+    comparison_entity,
+    comparison_demographic_group,
+    comparison_demographic_subgroup
+
+union all
+
+select
+    academic_year,
+    null as school_level,
+    grade_range_band,
+    assessment_name,
+    discipline,
+    null as test_code,
+    region,
+    comparison_entity,
+    comparison_demographic_group,
+    comparison_demographic_subgroup,
+
+    sum(total_proficient_students),
+    sum(total_students),
+
+    sum(total_proficient_students) / sum(total_students) as percent_proficient,
+
+from aligned
+group by
+    academic_year,
+    grade_range_band,
+    assessment_name,
+    discipline,
+    region,
+    comparison_entity,
+    comparison_demographic_group,
+    comparison_demographic_subgroup
