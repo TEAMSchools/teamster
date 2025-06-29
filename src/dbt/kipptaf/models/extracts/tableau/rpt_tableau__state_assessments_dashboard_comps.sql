@@ -37,7 +37,7 @@ where
     b.academic_year is not null
     and b.assessment_name is not null
     and b.test_code is not null
-    and b.district_state = 'KATF NJ'
+    and b.district_state = 'KTAF NJ'
 
 union all
 
@@ -72,4 +72,4 @@ where
     academic_year is not null
     and assessment_name is not null
     and test_code is not null
-    and district_state = 'KATF FL'
+    and district_state = 'KTAF FL'
