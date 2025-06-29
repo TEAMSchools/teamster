@@ -56,7 +56,7 @@ with
             case
                 when region is null
                 then 'Total'
-                when focus_level in ('ml_status', 'iep_status', 'lunch_status,')
+                when focus_level in ('ml_status', 'iep_status', 'lunch_status')
                 then 'Subgroup'
                 else initcap(regexp_replace(focus_level, r'_', ' '))
             end as comparison_demographic_group,
