@@ -160,6 +160,7 @@ inner join
     and a.academic_year >= {{ var("current_academic_year") - 7 }}
     and a.results_type = 'Actual'
     and e.grade_level > 2
+    and e.school_level != 'OD'
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
 
 union all
@@ -293,4 +294,5 @@ inner join
     and a.academic_year = {{ var("current_academic_year") }}
     and a.results_type = 'Preliminary'
     and e.grade_level > 2
+    and e.school_level != 'OD'
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
