@@ -12,7 +12,7 @@ with
             if(b.region is null, regions, b.region) as region,
 
             case
-                when b.region is null and b.focus_level = 'all_null'
+                when b.focus_level = 'all_null'
                 then 'Total'
                 when b.focus_level in ('ml_status', 'iep_status', 'lunch_status')
                 then 'Subgroup'
@@ -20,7 +20,7 @@ with
             end as comparison_demographic_group,
 
             case
-                when b.region is null and b.focus_level = 'all_null'
+                when b.focus_level = 'all_null'
                 then 'All Students'
                 else
                     coalesce(
@@ -56,7 +56,7 @@ with
             coalesce(region, 'Miami') as region,
 
             case
-                when region is null and focus_level = 'all_null'
+                when focus_level = 'all_null'
                 then 'Total'
                 when focus_level in ('ml_status', 'iep_status', 'lunch_status')
                 then 'Subgroup'
@@ -64,7 +64,7 @@ with
             end as comparison_demographic_group,
 
             case
-                when region is null and focus_level = 'all_null'
+                when focus_level = 'all_null'
                 then 'All Students'
                 else
                     coalesce(
@@ -88,13 +88,13 @@ with
             assessment_name,
             region,
             comparison_entity,
-            comparison_demographic_subgroup,
             focus_level,
 
             total_students,
             percent_proficient,
 
             comparison_demographic_group,
+            comparison_demographic_subgroup,
 
             total_proficient_students,
 
@@ -161,13 +161,22 @@ with
             test_name as assessment_name,
             region,
             comparison_entity,
-            comparison_demographic_subgroup,
             null as focus_level,
 
             total_students,
             percent_proficient,
 
-            comparison_demographic_group,
+            if(
+                comparison_demographic_group in ('Grade 09', 'Grade 10', 'Grade 11'),
+                'Total',
+                comparison_demographic_group
+            ) as comparison_demographic_group,
+
+            if(
+                comparison_demographic_subgroup = 'Grade',
+                'All Students',
+                comparison_demographic_subgroup
+            ) as comparison_demographic_subgroup,
 
             round(percent_proficient * total_students, 0) as total_proficient_students,
 
@@ -221,7 +230,7 @@ with
         where comparison_demographic_subgroup != 'SE Accommodation'
     ),
 
-    dedup as (
+    grouped_comps as (
         select
             academic_year,
             school_level,
@@ -233,33 +242,17 @@ with
             comparison_entity,
             comparison_demographic_group,
             comparison_demographic_subgroup,
-            total_proficient_students,
-            total_students,
-            percent_proficient,
             focus_level,
 
-            row_number() over (
-                partition by
-                    academic_year,
-                    school_level,
-                    grade_range_band,
-                    assessment_name,
-                    discipline,
-                    test_code,
-                    region,
-                    comparison_entity,
-                    comparison_demographic_group,
-                    comparison_demographic_subgroup,
-                    focus_level
-            ) as rn,
+            sum(total_proficient_students) as total_proficient_students,
+            sum(total_students) as total_students,
+            safe_divide(
+                sum(total_proficient_students), sum(total_students)
+            ) as percent_proficient,
 
         from appended
         where comparison_demographic_subgroup != 'Blank'
-        qualify rn = 1
-    ),
-
-    aligned as (
-        select
+        group by
             academic_year,
             school_level,
             grade_range_band,
@@ -268,52 +261,9 @@ with
             test_code,
             region,
             comparison_entity,
-
-            if(
-                comparison_demographic_subgroup = 'Grade - 08',
-                'Total',
-                comparison_demographic_group
-            ) as comparison_demographic_group,
-
-            if(
-                comparison_demographic_subgroup = 'Grade - 08',
-                'All Students',
-                comparison_demographic_subgroup
-            ) as comparison_demographic_subgroup,
-
-            total_proficient_students,
-
-            total_students,
-
-            percent_proficient,
-
-        from dedup
-        where comparison_demographic_subgroup not in ('Grade - 09', 'Grade - 10')
-
-        union all
-
-        select
-            academic_year,
-            school_level,
-            grade_range_band,
-            assessment_name,
-            discipline,
-            test_code,
-            region,
-            comparison_entity,
-
-            'Total' as comparison_demographic_group,
-
-            'All Students' as comparison_demographic_subgroup,
-
-            total_proficient_students,
-
-            total_students,
-
-            percent_proficient,
-
-        from dedup
-        where comparison_demographic_subgroup in ('Grade - 09', 'Grade - 10')
+            comparison_demographic_group,
+            comparison_demographic_subgroup,
+            focus_level
     )
 
 select
@@ -333,4 +283,4 @@ select
 
     percent_proficient,
 
-from aligned
+from grouped_comps
