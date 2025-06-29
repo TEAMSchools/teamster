@@ -78,122 +78,158 @@ with
             and assessment_name is not null
             and test_code is not null
             and district_state = 'KTAF FL'
+    ),
+
+    final as (
+        select
+            academic_year,
+            assessment_name,
+            region,
+            comparison_entity,
+            comparison_demographic_subgroup,
+
+            total_students,
+            percent_proficient,
+
+            comparison_demographic_group,
+
+            total_proficient_students,
+
+            if(test_code like 'ALG01%', 'ALG01', test_code) as test_code,
+
+            case
+                when
+                    test_code in (
+                        'ELA09',
+                        'ELA10',
+                        'ELA11',
+                        'ELAGP',
+                        'ALG01_HS',
+                        'GEO01',
+                        'ALG02',
+                        'MATGP',
+                        'SCI11'
+                    )
+                then 'HS'
+                when safe_cast(right(test_code, 2) as numeric) between 5 and 8
+                then 'MS'
+                else 'ES'
+            end as school_level,
+
+            case
+                when
+                    test_code in (
+                        'ELA09',
+                        'ELA10',
+                        'ELA11',
+                        'ELAGP',
+                        'ALG01_HS',
+                        'GEO01',
+                        'ALG02',
+                        'MATGP',
+                        'SCI11'
+                    )
+                then 'HS'
+                else '3-8'
+            end as grade_range_band,
+
+            case
+                when left(test_code, 3) in ('MAT', 'ALG', 'GEO')
+                then 'Math'
+                when left(test_code, 3) = 'ELA'
+                then 'ELA'
+                when left(test_code, 3) = 'SCI'
+                then 'Science'
+                when left(test_code, 3) = 'SOC'
+                then 'Social Studies'
+            end as discipline,
+
+        from ktaf
+        where
+            comparison_demographic_subgroup
+            not in ('Not ML', 'Students Without Disabilities', 'Non-Binary')
+
+        union all
+
+        select
+            academic_year,
+            test_name as assessment_name,
+            region,
+            comparison_entity,
+            comparison_demographic_subgroup,
+
+            total_students,
+            percent_proficient,
+
+            comparison_demographic_group,
+
+            round(percent_proficient * total_students, 0) as total_proficient_students,
+
+            test_code,
+
+            case
+                when comparison_demographic_subgroup = 'Grade - 08'
+                then 'MS'
+                when comparison_demographic_subgroup in ('Grade - 09', 'Grade - 10')
+                then 'HS'
+                when test_code in ('ELA09', 'ELA10', 'ELA11', 'ELAGP', 'MATGP', 'SCI11')
+                then 'HS'
+                when safe_cast(right(test_code, 2) as numeric) between 5 and 8
+                then 'MS'
+                else 'ES'
+            end as school_level,
+
+            case
+                when comparison_demographic_subgroup in ('Grade - 09', 'Grade - 10')
+                then 'HS'
+                when test_code in ('ELA09', 'ELA10', 'ELA11', 'ELAGP', 'MATGP', 'SCI11')
+                then 'HS'
+                else '3-8'
+            end as grade_range_band,
+
+            case
+                when left(test_code, 3) in ('MAT', 'ALG', 'GEO')
+                then 'Math'
+                when left(test_code, 3) = 'ELA'
+                then 'ELA'
+                when left(test_code, 3) = 'SCI'
+                then 'Science'
+                when left(test_code, 3) = 'SOC'
+                then 'Social Studies'
+            end as discipline,
+
+        from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
+        where comparison_demographic_subgroup != 'SE Accommodation'
     )
 
 select
     academic_year,
+    school_level,
+    grade_range_band,
     assessment_name,
-    region,
-    comparison_entity,
-    comparison_demographic_subgroup,
-
-    total_students,
-    percent_proficient,
-
-    comparison_demographic_group,
-
-    total_proficient_students,
-
-    if(test_code like 'ALG01%', 'ALG01', test_code) as test_code,
-
-    case
-        when
-            test_code in (
-                'ELA09',
-                'ELA10',
-                'ELA11',
-                'ELAGP',
-                'ALG01_HS',
-                'GEO01',
-                'ALG02',
-                'MATGP',
-                'SCI11'
-            )
-        then 'HS'
-        when safe_cast(left(test_code, 2) as numeric) between 5 and 8
-        then 'MS'
-        else 'ES'
-    end as school_level,
-
-    case
-        when
-            test_code in (
-                'ELA09',
-                'ELA10',
-                'ELA11',
-                'ELAGP',
-                'ALG01_HS',
-                'GEO01',
-                'ALG02',
-                'MATGP',
-                'SCI11'
-            )
-        then 'HS'
-        else '3-8'
-    end as grade_range_band,
-
-    case
-        when left(test_code, 3) in ('MAT', 'ALG', 'GEO')
-        then 'Math'
-        when left(test_code, 3) = 'ELA'
-        then 'ELA'
-        when left(test_code, 3) = 'SCI'
-        then 'Science'
-        when left(test_code, 3) = 'SOC'
-        then 'Social Studies'
-    end as discipline,
-
-from ktaf
-where comparison_demographic_subgroup not in ('Not ML', 'Students Without Disabilities')
-
-union all
-
-select
-    academic_year,
-    test_name as assessment_name,
-    region,
-    comparison_entity,
-    comparison_demographic_subgroup,
-
-    total_students,
-    percent_proficient,
-
-    comparison_demographic_group,
-
-    round(percent_proficient * total_students, 0) as total_proficient_students,
-
+    discipline,
     test_code,
+    region,
+    comparison_entity,
+    comparison_demographic_group,
+    comparison_demographic_subgroup,
+    total_proficient_students,
+    total_students,
+    percent_proficient,
 
-    case
-        when comparison_demographic_subgroup = 'Grade - 08'
-        then 'MS'
-        when comparison_demographic_subgroup in ('Grade - 09', 'Grade - 10')
-        then 'HS'
-        when test_code in ('ELA09', 'ELA10', 'ELA11', 'ELAGP', 'MATGP', 'SCI11')
-        then 'HS'
-        when safe_cast(left(test_code, 2) as numeric) between 5 and 8
-        then 'MS'
-        else 'ES'
-    end as school_level,
+    row_number() over (
+        partition by
+            academic_year,
+            school_level,
+            grade_range_band,
+            assessment_name,
+            discipline,
+            test_code,
+            region,
+            comparison_entity,
+            comparison_demographic_group,
+            comparison_demographic_subgroup
+    ) as rn,
 
-    case
-        when comparison_demographic_subgroup in ('Grade - 09', 'Grade - 10')
-        then 'HS'
-        when test_code in ('ELA09', 'ELA10', 'ELA11', 'ELAGP', 'MATGP', 'SCI11')
-        then 'HS'
-        else '3-8'
-    end as grade_range_band,
-
-    case
-        when left(test_code, 3) in ('MAT', 'ALG', 'GEO')
-        then 'Math'
-        when left(test_code, 3) = 'ELA'
-        then 'ELA'
-        when left(test_code, 3) = 'SCI'
-        then 'Science'
-        when left(test_code, 3) = 'SOC'
-        then 'Social Studies'
-    end as discipline,
-
-from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
-where comparison_demographic_subgroup != 'SE Accommodation'
+from final
+qualify rn = 1
