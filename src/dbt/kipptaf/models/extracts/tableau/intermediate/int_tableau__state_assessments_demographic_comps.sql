@@ -23,24 +23,25 @@ with
             end as test_code,
 
             case
-                race_ethnicity
-                when 'B'
+                when race_ethnicity = 'B'
                 then 'African American'
-                when 'A'
+                when race_ethnicity = 'A'
                 then 'Asian'
-                when 'I'
+                when race_ethnicity = 'I'
                 then 'American Indian'
-                when 'H'
+                when race_ethnicity = 'H'
                 then 'Hispanic'
-                when 'P'
+                when race_ethnicity = 'P'
                 then 'Native Hawaiian'
-                when 'T'
+                when race_ethnicity = 'T'
                 then 'Other'
-                when 'W'
+                when race_ethnicity = 'W'
                 then 'White'
-            end as race_ethnicity,
+                when race_ethnicity is null
+                then 'Blank'
+            end as aggregate_ethnicity,
 
-            if(lep_status, 'ML', 'Not ML') as lep_status,
+            if(lep_status, 'ML', 'Not ML') as ml_status,
 
             if(
                 iep_status = 'Has IEP',
@@ -66,8 +67,8 @@ with
 
             test_code,
 
-            null as race_ethnicity,
-            null as lep_status,
+            null as aggregate_ethnicity,
+            null as ml_status,
             null as iep_status,
 
         from {{ ref("int_fldoe__all_assessments") }}
@@ -108,8 +109,8 @@ with
                 then concat('ELA', regexp_extract(test_name, r'.{6}(.{2})'))
             end as test_code,
 
-            null as race_ethnicity,
-            null as lep_status,
+            null as aggregate_ethnicity,
+            null as ml_status,
             null as iep_status,
 
         from {{ ref("stg_pearson__student_list_report") }}
@@ -142,8 +143,8 @@ select
         'Non Economically Disadvantaged'
     ) as lunch_status,
 
-    a.race_ethnicity,
-    a.lep_status,
+    a.aggregate_ethnicity,
+    a.ml_status,
     a.iep_status,
 
     case
@@ -155,8 +156,6 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.localstudentidentifier = e.student_number
-    and a.race_ethnicity is not null
-    or a.gender is not null
     and a.academic_year >= {{ var("current_academic_year") - 7 }}
     and a.results_type = 'Actual'
     and e.grade_level > 2
@@ -187,24 +186,25 @@ select
     ) as lunch_status,
 
     case
-        e.race_ethnicity
-        when 'B'
+        when e.race_ethnicity = 'B'
         then 'African American'
-        when 'A'
+        when e.race_ethnicity = 'A'
         then 'Asian'
-        when 'I'
+        when e.race_ethnicity = 'I'
         then 'American Indian'
-        when 'H'
+        when e.race_ethnicity = 'H'
         then 'Hispanic'
-        when 'P'
+        when e.race_ethnicity = 'P'
         then 'Native Hawaiian'
-        when 'T'
+        when e.race_ethnicity = 'T'
         then 'Other'
-        when 'W'
+        when e.race_ethnicity = 'W'
         then 'White'
-    end as race_ethnicity,
+        when e.race_ethnicity is null
+        then 'Blank'
+    end as aggregate_ethnicity,
 
-    if(e.lep_status, 'ML', 'Not ML') as lep_status,
+    if(e.lep_status, 'ML', 'Not ML') as ml_status,
 
     if(
         e.iep_status = 'Has IEP',
@@ -221,8 +221,6 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
-    and e.race_ethnicity is not null
-    or e.gender is not null
     and a.academic_year >= {{ var("current_academic_year") - 7 }}
     and a.results_type = 'Actual'
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
@@ -254,24 +252,25 @@ select
     ) as lunch_status,
 
     case
-        e.race_ethnicity
-        when 'B'
+        when e.race_ethnicity = 'B'
         then 'African American'
-        when 'A'
+        when e.race_ethnicity = 'A'
         then 'Asian'
-        when 'I'
+        when e.race_ethnicity = 'I'
         then 'American Indian'
-        when 'H'
+        when e.race_ethnicity = 'H'
         then 'Hispanic'
-        when 'P'
+        when e.race_ethnicity = 'P'
         then 'Native Hawaiian'
-        when 'T'
+        when e.race_ethnicity = 'T'
         then 'Other'
-        when 'W'
+        when e.race_ethnicity = 'W'
         then 'White'
-    end as race_ethnicity,
+        when e.race_ethnicity is null
+        then 'Blank'
+    end as aggregate_ethnicity,
 
-    if(e.lep_status, 'ML', 'Not ML') as lep_status,
+    if(e.lep_status, 'ML', 'Not ML') as ml_status,
 
     if(
         e.iep_status = 'Has IEP',
@@ -288,8 +287,6 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
-    and e.race_ethnicity is not null
-    or e.gender is not null
     and a.academic_year = {{ var("current_academic_year") }}
     and a.results_type = 'Preliminary'
     and e.grade_level > 2
