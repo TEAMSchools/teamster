@@ -114,6 +114,8 @@ with
                         'SCI11'
                     )
                 then 'HS'
+                when test_code = 'ALG01_MS'
+                then 'MS'
                 when safe_cast(right(test_code, 2) as numeric) between 5 and 8
                 then 'MS'
                 else 'ES'
