@@ -8,9 +8,9 @@ select
     b.percent_proficient,
 
     case
-        when b.region is null and district_state = 'KTAF NJ'
+        when b.region is null and b.district_state = 'KTAF NJ'
         then regions
-        when b.region is null and district_state = 'KTAF FL'
+        when b.region is null and b.district_state = 'KTAF FL'
         then 'Miami'
         else b.region
     end as region,
@@ -24,7 +24,7 @@ select
     end as comparison_demographic_group,
 
     case
-        when b.region is null and school_level is null
+        when b.region is null and b.school_level is null
         then 'All Students'
         else
             coalesce(
