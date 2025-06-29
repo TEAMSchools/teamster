@@ -12,9 +12,9 @@ with
             if(b.region is null, regions, b.region) as region,
 
             case
-                when region is null and focus_level = 'all_null'
+                when b.region is null and b.focus_level = 'all_null'
                 then 'Total'
-                when focus_level in ('ml_status', 'iep_status', 'lunch_status')
+                when b.focus_level in ('ml_status', 'iep_status', 'lunch_status')
                 then 'Subgroup'
                 else initcap(regexp_replace(b.focus_level, r'_', ' '))
             end as comparison_demographic_group,
