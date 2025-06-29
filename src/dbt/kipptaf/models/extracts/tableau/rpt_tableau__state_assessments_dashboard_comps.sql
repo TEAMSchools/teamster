@@ -167,7 +167,8 @@ with
             percent_proficient,
 
             if(
-                comparison_demographic_group in ('Grade 09', 'Grade 10', 'Grade 11'),
+                comparison_demographic_group
+                in ('Grade - 08', 'Grade - 09', 'Grade - 10'),
                 'Total',
                 comparison_demographic_group
             ) as comparison_demographic_group,
