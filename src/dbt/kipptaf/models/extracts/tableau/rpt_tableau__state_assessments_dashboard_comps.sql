@@ -7,6 +7,7 @@ with
             b.total_proficient_students,
             b.total_students,
             b.percent_proficient,
+            b.focus_level,
 
             if(b.region is null, regions, b.region) as region,
 
@@ -50,6 +51,7 @@ with
             total_proficient_students,
             total_students,
             percent_proficient,
+            focus_level,
 
             coalesce(region, 'Miami') as region,
 
@@ -87,6 +89,7 @@ with
             region,
             comparison_entity,
             comparison_demographic_subgroup,
+            focus_level,
 
             total_students,
             percent_proficient,
@@ -157,6 +160,7 @@ with
             region,
             comparison_entity,
             comparison_demographic_subgroup,
+            null as focus_level,
 
             total_students,
             percent_proficient,
@@ -216,6 +220,7 @@ select
     total_proficient_students,
     total_students,
     percent_proficient,
+    focus_level,
 
     row_number() over (
         partition by
@@ -228,7 +233,8 @@ select
             region,
             comparison_entity,
             comparison_demographic_group,
-            comparison_demographic_subgroup
+            comparison_demographic_subgroup,
+            focus_level
     ) as rn,
 
 from final
