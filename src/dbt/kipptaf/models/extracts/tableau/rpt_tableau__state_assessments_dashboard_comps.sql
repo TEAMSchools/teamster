@@ -254,7 +254,7 @@ with
             comparison_entity,
 
             if(
-                comparison_demographic_group = 'Grade - 08',
+                comparison_demographic_subgroup = 'Grade - 08',
                 'Total',
                 comparison_demographic_group
             ) as comparison_demographic_group,
