@@ -7,9 +7,9 @@
     "assessment_name",
     "test_code",
     "gender",
-    "race_ethnicity",
+    "aggregate_ethnicity",
     "lunch_status",
-    "lep_status",
+    "ml_status",
     "iep_status",
 ] %}
 
@@ -27,9 +27,9 @@
         focus_group=True,
         focus_dims=[
             "gender",
-            "race_ethnicity",
+            "aggregate_ethnicity",
             "lunch_status",
-            "lep_status",
+            "ml_status",
             "iep_status",
         ],
     )
