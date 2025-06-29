@@ -318,8 +318,9 @@ select
 
     percent_proficient,
 
-from aligned
-
+from
+    aligned
+    /*
 union all
 
 select
@@ -409,3 +410,5 @@ group by
     comparison_entity,
     comparison_demographic_group,
     comparison_demographic_subgroup
+*/
+    
