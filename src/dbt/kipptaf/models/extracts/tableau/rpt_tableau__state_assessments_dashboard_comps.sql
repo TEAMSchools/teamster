@@ -2,7 +2,6 @@ select
     b.academic_year,
     b.assessment_name,
     b.test_code,
-    b.school_level,
     b.total_proficient_students,
     b.total_students,
     b.percent_proficient,
@@ -16,17 +15,15 @@ select
     end as region,
 
     case
-        when b.region is null and b.school_level is null
+        when b.region is null
         then 'Total'
-        when b.region is null and b.school_level is not null
-        then 'School Level'
         when b.focus_level in ('ml_status', 'iep_status', 'lunch_status,')
         then 'Subgroup'
         else initcap(regexp_replace(b.focus_level, r'_', ' '))
     end as comparison_demographic_group,
 
     case
-        when b.region is null and b.school_level is null
+        when b.region is null
         then 'All Students'
         else
             coalesce(
@@ -38,9 +35,7 @@ select
             )
     end as comparison_demographic_subgroup,
 
-    if(
-        b.region is null and b.school_level is null, b.district_state, 'Region'
-    ) as comparison_entity,
+    if(b.region is null, b.district_state, 'Region') as comparison_entity,
 
 from {{ ref("int_tableau__state_assessments_demographic_comps_cubed") }} as b
 cross join unnest(['Camden', 'Newark']) as regions

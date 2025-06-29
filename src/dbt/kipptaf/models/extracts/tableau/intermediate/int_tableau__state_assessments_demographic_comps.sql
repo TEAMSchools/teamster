@@ -125,12 +125,16 @@ with
 select
     e.academic_year,
     e.region,
-    e.school_level,
     e.student_number,
 
     a.district_state,
     a.assessment_name,
-    a.test_code,
+
+    case
+        when a.test_code = 'ALG01'
+        then concat(a.test_code, '_', e.school_level)
+        else a.test_code
+    end as test_code,
 
     if(a.is_proficient, 1, 0) as is_proficient_int,
 
@@ -164,12 +168,16 @@ union all
 select
     e.academic_year,
     e.region,
-    e.school_level,
     e.student_number,
 
     a.district_state,
     a.assessment_name,
-    a.test_code,
+
+    case
+        when a.test_code = 'ALG01'
+        then concat(a.test_code, '_', e.school_level)
+        else a.test_code
+    end as test_code,
 
     if(a.is_proficient, 1, 0) as is_proficient_int,
 
@@ -227,12 +235,16 @@ union all
 select
     e.academic_year,
     e.region,
-    e.school_level,
     e.student_number,
 
     a.district_state,
     a.assessment_name,
-    a.test_code,
+
+    case
+        when a.test_code = 'ALG01'
+        then concat(a.test_code, '_', e.school_level)
+        else a.test_code
+    end as test_code,
 
     if(a.is_proficient, 1, 0) as is_proficient_int,
 
