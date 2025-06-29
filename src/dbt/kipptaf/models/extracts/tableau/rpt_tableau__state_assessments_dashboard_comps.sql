@@ -54,10 +54,10 @@ with
             coalesce(region, 'Miami') as region,
 
             case
-                when region is null and focus_level = 'all_null'
-                then 'Total'
                 when focus_level in ('ml_status', 'iep_status', 'lunch_status')
                 then 'Subgroup'
+                when region is null and focus_level = 'all_null'
+                then 'Total'
                 else initcap(regexp_replace(focus_level, r'_', ' '))
             end as comparison_demographic_group,
 
