@@ -23,7 +23,7 @@ select
     end as comparison_demographic_group,
 
     case
-        when b.region is null
+        when b.region is null and focus_level = 'all_null'
         then 'All Students'
         else
             coalesce(
