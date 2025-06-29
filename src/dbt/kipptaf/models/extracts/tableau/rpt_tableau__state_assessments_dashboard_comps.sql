@@ -90,6 +90,7 @@ with
             comparison_entity,
             comparison_demographic_subgroup,
             focus_level,
+            test_code as aligned_test_code,
 
             total_students,
             percent_proficient,
@@ -163,6 +164,7 @@ with
             comparison_entity,
             comparison_demographic_subgroup,
             null as focus_level,
+            test_code as aligned_test_code,
 
             total_students,
             percent_proficient,
@@ -229,6 +231,7 @@ with
             assessment_name,
             discipline,
             test_code,
+            aligned_test_code,
             region,
             comparison_entity,
             comparison_demographic_group,
@@ -266,6 +269,7 @@ with
             assessment_name,
             discipline,
             test_code,
+            aligned_test_code,
             region,
             comparison_entity,
 
@@ -299,6 +303,7 @@ with
             assessment_name,
             discipline,
             test_code,
+            aligned_test_code,
             region,
             comparison_entity,
 
