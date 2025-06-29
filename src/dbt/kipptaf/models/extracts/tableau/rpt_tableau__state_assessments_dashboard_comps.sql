@@ -6,13 +6,7 @@ select
     b.total_students,
     b.percent_proficient,
 
-    case
-        when b.region is null and b.district_state = 'KTAF NJ'
-        then regions
-        when b.region is null and b.district_state = 'KTAF FL'
-        then 'Miami'
-        else b.region
-    end as region,
+    if(b.region is null, regions, b.region) as region,
 
     case
         when b.region is null
@@ -43,4 +37,39 @@ where
     b.academic_year is not null
     and b.assessment_name is not null
     and b.test_code is not null
-    and b.district_state is not null
+    and b.district_state = 'KATF NJ'
+
+union all
+
+select
+    academic_year,
+    assessment_name,
+    test_code,
+    total_proficient_students,
+    total_students,
+    percent_proficient,
+
+    coalesce(region, 'Miami') as region,
+
+    case
+        when region is null
+        then 'Total'
+        when focus_level in ('ml_status', 'iep_status', 'lunch_status,')
+        then 'Subgroup'
+        else initcap(regexp_replace(focus_level, r'_', ' '))
+    end as comparison_demographic_group,
+
+    case
+        when region is null and focus_level = 'all_null'
+        then 'All Students'
+        else coalesce(gender, aggregate_ethnicity, lunch_status, ml_status, iep_status)
+    end as comparison_demographic_subgroup,
+
+    if(region is null, district_state, 'Region') as comparison_entity,
+
+from {{ ref("int_tableau__state_assessments_demographic_comps_cubed") }}
+where
+    academic_year is not null
+    and assessment_name is not null
+    and test_code is not null
+    and district_state = 'KATF FL'
