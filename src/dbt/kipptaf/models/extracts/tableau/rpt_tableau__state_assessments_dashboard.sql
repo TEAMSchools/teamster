@@ -187,12 +187,7 @@ with
             null as localstudentidentifier,
             cast(state_student_identifier as string) as state_id,
 
-            if(
-                test_name
-                in ('ELA Graduation Proficiency', 'Mathematics Graduation Proficiency'),
-                'NJGPA',
-                'NJSLA'
-            ) as assessment_name,
+            test_type as assessment_name,
 
             case
                 when test_name like '%Mathematics%'
@@ -236,8 +231,8 @@ with
             null as test_grade,
 
             'Preliminary' as results_type,
-            'Spring' as `admin`,
-            'Spring' as season,
+            administration as `admin`,
+            administration as season,
 
             case
                 when test_name like '%Mathematics%'
@@ -266,6 +261,7 @@ with
         where
             state_student_identifier is not null
             and administration = 'Spring'
+            and test_type = 'NJSLA'
             and academic_year = {{ var("current_academic_year") }}
     )
 
