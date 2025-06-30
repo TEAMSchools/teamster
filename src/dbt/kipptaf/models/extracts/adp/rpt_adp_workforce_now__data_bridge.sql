@@ -3,9 +3,9 @@ with
         select
             sr.position_id,
             sr.employee_number,
+            sr.worker_original_hire_date,
             sr.mail,
             sr.reports_to_position_id,
-
             sr.custom_field__employee_number as adp__custom_field__employee_number,
             sr.work_email as adp__work_email,
             sr.badge_id as adp__badge,
@@ -38,40 +38,20 @@ with
         select
             *,
 
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "employee_number",
-                        "mail",
-                        "badge",
-                        "reports_to_position_id",
-                        "supervisor_flag",
-                    ]
-                )
-            }} as source_surrogate_key,
+            {{ dbt_utils.generate_surrogate_key(["badge"]) }} as source_surrogate_key,
 
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "adp__custom_field__employee_number",
-                        "adp__work_email",
-                        "adp__badge",
-                        "adp__supervisor_id",
-                        "adp__supervisor_flag",
-                    ]
-                )
-            }} as destination_surrogate_key,
+            {{ dbt_utils.generate_surrogate_key(["adp__badge"]) }}
+            as destination_surrogate_key,
         from staff_roster
     )
 
+-- trunk-ignore(sqlfluff/ST06)
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     position_id as `Position ID`,
 
     /* required to be after ID */
-    format_date(
-        '%m/%d/%Y', current_date('{{ var("local_timezone") }}')
-    ) as `Change Effective On`,
+    format_date('%m/%d/%Y', worker_original_hire_date) as `Change Effective On`,
 
     /* communication */
     mail as `Work E-mail`,
@@ -90,6 +70,9 @@ select
     'EST' as `TimeZone`,
     'Y' as `Position Uses Time`,
     'Y' as `Transfertopayroll`,
+
+    /* comparison */
+    adp__badge,
 -- trunk-ignore-end(sqlfluff/RF05)
 from surrogate_keys
 where source_surrogate_key != destination_surrogate_key
