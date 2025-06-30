@@ -211,7 +211,17 @@ with
             case
                 when comparison_demographic_subgroup in ('Grade - 09', 'Grade - 10')
                 then 'HS'
-                when test_code in ('ELA09', 'ELA10', 'ELA11', 'ELAGP', 'MATGP', 'SCI11')
+                when
+                    test_code in (
+                        'ELA09',
+                        'ELA10',
+                        'ELA11',
+                        'ELAGP',
+                        'ALG02',
+                        'GEO01',
+                        'MATGP',
+                        'SCI11'
+                    )
                 then 'HS'
                 else '3-8'
             end as grade_range_band,
