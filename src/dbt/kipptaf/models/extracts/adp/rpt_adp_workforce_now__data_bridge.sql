@@ -43,7 +43,7 @@ with
         inner join
             {{ ref("stg_adp_workforce_now__time_and_attendance") }} as tna
             on sr.position_id = tna.position_id
-            tna.pay_class != 'NON-TIME'
+            and tna.pay_class != 'NON-TIME'
     )
 
 -- trunk-ignore(sqlfluff/ST06)
