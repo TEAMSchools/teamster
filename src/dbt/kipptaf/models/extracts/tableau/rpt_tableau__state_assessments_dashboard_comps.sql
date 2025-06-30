@@ -256,7 +256,9 @@ with
             focus_level,
 
             sum(total_proficient_students) as total_proficient_students,
+
             sum(total_students) as total_students,
+
             safe_divide(
                 sum(total_proficient_students), sum(total_students)
             ) as percent_proficient,
@@ -288,10 +290,8 @@ select
     comparison_entity,
     comparison_demographic_group,
     comparison_demographic_subgroup,
-
     total_proficient_students,
     total_students,
-
     percent_proficient,
 
 from grouped_comps
