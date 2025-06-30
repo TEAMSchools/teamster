@@ -18,9 +18,10 @@ with
             and c.insession = 1
             and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
         where s.state_excludefromreporting = 0
+        qualify region_distinct = 1
     ),
 
-    day_count as (
+    custom_pm_reporting as (
         select
             t.academic_year,
             t.region,
@@ -28,18 +29,24 @@ with
 
             cast(right(t.code, 1) as int) as `round`,
 
-            count(distinct d.date_value) as n_days,
+            d.date_value,
 
         from school_directory as d
         inner join
             {{ ref("stg_reporting__terms") }} as t
             on d.region = t.region
             and d.date_value between t.start_date and t.end_date
-            and d.region_distinct = 1
             and t.type = 'LIT'
             and t.name != 'EOY'
             and t.academic_year = {{ var("current_academic_year") }}
-        group by t.academic_year, t.region, t.name, t.code
+    ),
+
+    day_count as (
+        select
+            academic_year, region, name, `round`, count(distinct date_value) as n_days,
+
+        from custom_pm_reporting
+        group by academic_year, region, name, `round`
     ),
 
     avg_scores as (
