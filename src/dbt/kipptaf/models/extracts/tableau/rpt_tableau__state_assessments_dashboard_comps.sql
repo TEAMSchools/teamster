@@ -82,6 +82,37 @@ with
             and district_state = 'KTAF FL'
     ),
 
+    -- deduping here because of how group by cube generates rows
+    dedup_ktaf as (
+        select
+            academic_year,
+            region,
+            comparison_entity,
+            comparison_demographic_group,
+            comparison_demographic_subgroup,
+            focus_level,
+            assessment_name,
+            test_code,
+            total_proficient_students,
+            total_students,
+            percent_proficient,
+
+            row_number() over (
+                partition by
+                    academic_year,
+                    region,
+                    comparison_entity,
+                    comparison_demographic_group,
+                    comparison_demographic_subgroup,
+                    focus_level,
+                    assessment_name,
+                    test_code
+            ) as rn,
+
+        from ktaf
+        qualify rn = 1
+    ),
+
     appended as (
         select
             academic_year,
@@ -149,7 +180,7 @@ with
                 then 'Social Studies'
             end as discipline,
 
-        from ktaf
+        from dedup_ktaf
         where
             comparison_demographic_subgroup
             not in ('Not ML', 'Students Without Disabilities', 'Non-Binary')
