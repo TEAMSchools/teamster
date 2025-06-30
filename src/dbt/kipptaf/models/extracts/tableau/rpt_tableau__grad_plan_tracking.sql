@@ -35,8 +35,8 @@ with
             ps.requestedcredits,
             ps.earnedcredits,
             ps.waivedcredits,
-            ps.ccdcid,
-            ps.storedgradesdcid,
+            ps.grade_dcid,
+            ps.credit_status,
 
             coalesce(ps.requiredcredits, u.node_credit_capacity) as requiredcredits,
 
@@ -98,6 +98,7 @@ with
         select
             gp._dbt_source_relation,
             gp.node_id,
+            gp.credit_status,
 
             sg.academic_year,
             sg.schoolname,
@@ -113,20 +114,20 @@ with
             sg.earnedcrhrs as earned_credits,
             sg.is_transfer_grade,
 
-            'Earned' as credit_status,
-
         from gpn_gps as gp
         inner join
             {{ ref("stg_powerschool__storedgrades") }} as sg
-            on gp.storedgradesdcid = sg.dcid
+            on gp.grade_dcid = sg.dcid
             and {{ union_dataset_join_clause(left_alias="gp", right_alias="sg") }}
             and sg.storecode = 'Y1'
+        where gp.credit_status = 'Earned'
 
         union all
 
         select
             gp._dbt_source_relation,
             gp.node_id,
+            gp.credit_status,
 
             fg.academic_year,
             fg.school_name as schoolname,
@@ -146,14 +147,14 @@ with
             ) as earned_credits,
 
             false as is_transfer_grade,
-            'Enrolled' as credit_status,
 
         from gpn_gps as gp
         inner join
             {{ ref("base_powerschool__final_grades") }} as fg
-            on gp.ccdcid = fg.cc_dcid
+            on gp.grade_dcid = fg.cc_dcid
             and {{ union_dataset_join_clause(left_alias="gp", right_alias="fg") }}
             and fg.termbin_is_current
+        where gp.credit_status = 'Enrolled'
     )
 
 select
