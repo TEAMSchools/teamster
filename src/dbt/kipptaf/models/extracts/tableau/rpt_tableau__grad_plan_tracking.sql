@@ -27,6 +27,7 @@ with
         select
             u._dbt_source_relation,
             u.root_node_id,
+            u.node_id,
             u.degree_plan_section,
 
             ps.studentsdcid,
@@ -46,7 +47,7 @@ with
             and {{ union_dataset_join_clause(left_alias="u", right_alias="ps") }}
     ),
 
-    pre_pivot as (
+    gpn_gps_prepivot as (
         select
             _dbt_source_relation,
             root_node_id,
@@ -83,7 +84,7 @@ with
             waived_credits_plan,
             waived_credits_subject,
         from
-            pre_pivot pivot (
+            gpn_gps_prepivot pivot (
                 max(enrolledcredits) as enrolled_credits,
                 max(requestedcredits) as requested_credits,
                 max(earnedcredits) as earned_credits,
@@ -96,7 +97,7 @@ with
     gps_grades as (
         select
             gp._dbt_source_relation,
-            gp.root_node_id,
+            gp.node_id,
 
             sg.academic_year,
             sg.schoolname,
@@ -125,7 +126,7 @@ with
 
         select
             gp._dbt_source_relation,
-            gp.root_node_id,
+            gp.node_id,
 
             fg.academic_year,
             fg.school_name as schoolname,
@@ -196,28 +197,12 @@ select
     e.ada_above_or_at_80,
     e.advisory,
 
-    ae.q1_ae_status,
-    ae.q2_ae_status,
-    ae.q3_ae_status,
-    ae.q4_ae_status,
-
     gw.plan_id,
     gw.plan_name,
     gw.discipline_id,
     gw.discipline_name,
     gw.subject_id,
     gw.subject_name,
-
-    gg.teacher_name,
-    gg.course_number,
-    gg.course_name,
-    gg.sectionid,
-    gg.credit_type,
-    gg.letter_grade,
-    gg.is_transfer_grade,
-    gg.credit_status,
-    gg.earned_credits,
-    gg.potential_credits,
 
     ggp.required_credits_plan as plan_required_credits,
     ggp.enrolled_credits_plan as plan_enrolled_credits,
@@ -235,21 +220,39 @@ select
     ggp.earned_credits_subject as subject_earned_credits,
     ggp.waived_credits_subject as subject_waived_credits,
 
+    gg.teacher_name,
+    gg.course_number,
+    gg.course_name,
+    gg.sectionid,
+    gg.credit_type,
+    gg.letter_grade,
+    gg.is_transfer_grade,
+    gg.credit_status,
+    gg.earned_credits,
+    gg.potential_credits,
+
+    ae.q1_ae_status,
+    ae.q2_ae_status,
+    ae.q3_ae_status,
+    ae.q4_ae_status,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     {{ ref("int_powerschool__gpnode_wide") }} as gw
     on {{ union_dataset_join_clause(left_alias="e", right_alias="gw") }}
     and gw.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
 inner join
-    gps_grades as gg
-    on gw.plan_id = gg.root_node_id
-    and {{ union_dataset_join_clause(left_alias="gw", right_alias="gg") }}
-left join
     gpn_gps_pivot as ggp
     on gw.root_node_id = ggp.root_node_id
     and {{ union_dataset_join_clause(left_alias="gw", right_alias="ggp") }}
     and e.students_dcid = ggp.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="ggp") }}
+left join
+    gps_grades as gg
+    on e.studentid = gg.studentid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="gg") }}
+    and gw.subject_id = gg.node_id
+    and {{ union_dataset_join_clause(left_alias="gw", right_alias="gg") }}
 left join
     {{ ref("int_students__athletic_eligibility") }} as ae
     on e.studentid = ae.studentid
