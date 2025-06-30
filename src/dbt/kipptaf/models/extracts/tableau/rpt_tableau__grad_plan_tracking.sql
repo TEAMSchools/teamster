@@ -28,17 +28,16 @@ with
             u._dbt_source_relation,
             u.root_node_id,
             u.degree_plan_section,
-            u.node_id,
-            u.node_name,
-            u.node_credit_capacity,
 
-            ps.requiredcredits,
+            ps.studentsdcid,
             ps.enrolledcredits,
             ps.requestedcredits,
             ps.earnedcredits,
             ps.waivedcredits,
             ps.ccdcid,
             ps.storedgradesdcid,
+
+            coalesce(ps.requiredcredits, u.node_credit_capacity) as requiredcredits,
 
         from gpn_unpivot as u
         left join
@@ -47,19 +46,57 @@ with
             and {{ union_dataset_join_clause(left_alias="u", right_alias="ps") }}
     ),
 
+    pre_pivot as (
+        select
+            _dbt_source_relation,
+            root_node_id,
+            studentsdcid,
+            degree_plan_section,
+            enrolledcredits,
+            requestedcredits,
+            earnedcredits,
+            waivedcredits,
+            requiredcredits,
+        from gpn_gps
+    ),
+
+    gpn_gps_pivot as (
+        select
+            _dbt_source_relation,
+            root_node_id,
+            studentsdcid,
+
+            /* pivot cols */
+            earned_credits_discipline,
+            earned_credits_plan,
+            earned_credits_subject,
+            enrolled_credits_discipline,
+            enrolled_credits_plan,
+            enrolled_credits_subject,
+            requested_credits_discipline,
+            requested_credits_plan,
+            requested_credits_subject,
+            required_credits_discipline,
+            required_credits_plan,
+            required_credits_subject,
+            waived_credits_discipline,
+            waived_credits_plan,
+            waived_credits_subject,
+        from
+            pre_pivot pivot (
+                max(enrolledcredits) as enrolled_credits,
+                max(requestedcredits) as requested_credits,
+                max(earnedcredits) as earned_credits,
+                max(waivedcredits) as waived_credits,
+                max(requiredcredits) as required_credits
+                for degree_plan_section in ('plan', 'discipline', 'subject')
+            )
+    ),
+
     gps_grades as (
         select
             gp._dbt_source_relation,
             gp.root_node_id,
-            gp.degree_plan_section,
-            gp.node_id,
-            gp.node_name,
-            gp.node_credit_capacity,
-            gp.requiredcredits,
-            gp.enrolledcredits,
-            gp.requestedcredits,
-            gp.earnedcredits,
-            gp.waivedcredits,
 
             sg.academic_year,
             sg.schoolname,
@@ -89,15 +126,6 @@ with
         select
             gp._dbt_source_relation,
             gp.root_node_id,
-            gp.degree_plan_section,
-            gp.node_id,
-            gp.node_name,
-            gp.node_credit_capacity,
-            gp.requiredcredits,
-            gp.enrolledcredits,
-            gp.requestedcredits,
-            gp.earnedcredits,
-            gp.waivedcredits,
 
             fg.academic_year,
             fg.school_name as schoolname,
@@ -191,39 +219,41 @@ select
     gg.earned_credits,
     gg.potential_credits,
 
-    up.requiredcredits as plan_required_credits,
-    up.enrolledcredits as plan_enrolled_credits,
-    up.requestedcredits as plan_requested_credits,
-    up.earnedcredits as plan_earned_credits,
-    up.waivedcredits as plan_waived_credits,
-
-    ud.requiredcredits as discipline_required_credits,
-    ud.enrolledcredits as discipline_enrolled_credits,
-    ud.requestedcredits as discipline_requested_credits,
-    ud.earnedcredits as discipline_earned_credits,
-    ud.waivedcredits as discipline_waived_credits,
-
-    us.requiredcredits as subject_required_credits,
-    us.enrolledcredits as subject_enrolled_credits,
-    us.requestedcredits as subject_requested_credits,
-    us.earnedcredits as subject_earned_credits,
-    us.waivedcredits as subject_waived_credits,
+    ggp.required_credits_plan as plan_required_credits,
+    ggp.enrolled_credits_plan as plan_enrolled_credits,
+    ggp.requested_credits_plan as plan_requested_credits,
+    ggp.earned_credits_plan as plan_earned_credits,
+    ggp.waived_credits_plan as plan_waived_credits,
+    ggp.required_credits_discipline as discipline_required_credits,
+    ggp.enrolled_credits_discipline as discipline_enrolled_credits,
+    ggp.requested_credits_discipline as discipline_requested_credits,
+    ggp.earned_credits_discipline as discipline_earned_credits,
+    ggp.waived_credits_discipline as discipline_waived_credits,
+    ggp.required_credits_subject as subject_required_credits,
+    ggp.enrolled_credits_subject as subject_enrolled_credits,
+    ggp.requested_credits_subject as subject_requested_credits,
+    ggp.earned_credits_subject as subject_earned_credits,
+    ggp.waived_credits_subject as subject_waived_credits,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
+inner join
+    {{ ref("int_powerschool__gpnode_wide") }} as gw
+    on {{ union_dataset_join_clause(left_alias="e", right_alias="gw") }}
+    and gw.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
+inner join
+    gps_grades as gg
+    on gw.plan_id = gg.root_node_id
+    and {{ union_dataset_join_clause(left_alias="gw", right_alias="gg") }}
+left join
+    gpn_gps_pivot as ggp
+    on gw.root_node_id = ggp.root_node_id
+    and {{ union_dataset_join_clause(left_alias="gw", right_alias="ggp") }}
+    and e.students_dcid = ggp.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="ggp") }}
 left join
     {{ ref("int_students__athletic_eligibility") }} as ae
     on e.studentid = ae.studentid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="ae") }}
-inner join
-    {{ ref("int_powerschool__gpnode_wide") }} as gw
-    on e._dbt_source_relation = gw._dbt_source_relation
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="gw") }}
-    and gw.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
-inner join
-    gps_grades as gg
-    on gw._dbt_source_relation = gg._dbt_source_relation
-    and gw.plan_id = gg.root_node_id
-    and {{ union_dataset_join_clause(left_alias="gw", right_alias="gg") }}
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.enroll_status = 0
