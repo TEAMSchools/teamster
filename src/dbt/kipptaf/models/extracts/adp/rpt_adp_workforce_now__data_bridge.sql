@@ -12,11 +12,10 @@ with
             '000' || employee_number as badge,
         from {{ ref("int_people__staff_roster_history") }}
         where
-            position_id is not null
-            and assignment_status not in ('Terminated', 'Deceased')
-            and not is_prestart
+            primary_indicator
             and worker_original_hire_date
             between effective_date_start and effective_date_end
+            and worker_original_hire_date >= '2025-07-01'  /* beginning of T&A usage */
     ),
 
     with_tna as (
@@ -44,6 +43,7 @@ with
         inner join
             {{ ref("stg_adp_workforce_now__time_and_attendance") }} as tna
             on sr.position_id = tna.position_id
+            tna.pay_class != 'NON-TIME'
     )
 
 -- trunk-ignore(sqlfluff/ST06)
