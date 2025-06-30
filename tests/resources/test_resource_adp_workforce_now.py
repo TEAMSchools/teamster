@@ -29,32 +29,32 @@ def _test_get_worker(aoid: str | None = None, as_of_date: str | None = None):
 
     params = {
         "asOfDate": as_of_date,
-        # "$select": ",".join(
-        #     [
-        #         "workers/associateOID",
-        #         "workers/businessCommunication",
-        #         "workers/customFieldGroup",
-        #         "workers/languageCode",
-        #         "workers/person/birthDate",
-        #         "workers/person/communication",
-        #         "workers/person/customFieldGroup",
-        #         "workers/person/disabledIndicator",
-        #         "workers/person/ethnicityCode",
-        #         "workers/person/genderCode",
-        #         "workers/person/genderSelfIdentityCode",
-        #         "workers/person/highestEducationLevelCode",
-        #         "workers/person/legalAddress",
-        #         "workers/person/legalName",
-        #         "workers/person/militaryClassificationCodes",
-        #         "workers/person/militaryStatusCode",
-        #         "workers/person/preferredName",
-        #         "workers/person/raceCode",
-        #         "workers/workAssignments",
-        #         "workers/workerDates",
-        #         "workers/workerID",
-        #         "workers/workerStatus",
-        #     ]
-        # ),
+        "$select": ",".join(
+            [
+                "workers/associateOID",
+                "workers/businessCommunication",
+                "workers/customFieldGroup",
+                "workers/languageCode",
+                "workers/person/birthDate",
+                "workers/person/communication",
+                "workers/person/customFieldGroup",
+                "workers/person/disabledIndicator",
+                "workers/person/ethnicityCode",
+                "workers/person/genderCode",
+                "workers/person/genderSelfIdentityCode",
+                "workers/person/highestEducationLevelCode",
+                "workers/person/legalAddress",
+                "workers/person/legalName",
+                "workers/person/militaryClassificationCodes",
+                "workers/person/militaryStatusCode",
+                "workers/person/preferredName",
+                "workers/person/raceCode",
+                "workers/workAssignments",
+                "workers/workerDates",
+                "workers/workerID",
+                "workers/workerStatus",
+            ]
+        ),
     }
 
     if aoid is not None:
