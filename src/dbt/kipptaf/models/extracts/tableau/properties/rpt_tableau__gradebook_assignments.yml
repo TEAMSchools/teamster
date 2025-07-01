@@ -55,7 +55,7 @@ models:
       - name: assign_name
         data_type: string
       - name: pointspossible
-        data_type: float64
+        data_type: numeric
       - name: weight
         data_type: numeric
       - name: extracreditpoints
@@ -63,7 +63,7 @@ models:
       - name: isfinalscorecalculated
         data_type: int64
       - name: scorepoints
-        data_type: float64
+        data_type: numeric
       - name: islate
         data_type: int64
       - name: isexempt
