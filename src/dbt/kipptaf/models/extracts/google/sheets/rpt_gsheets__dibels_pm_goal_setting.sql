@@ -226,5 +226,5 @@ select
                 rows between unbounded preceding and current row
             )
     end as cumulative_growth_words,
-    
+
 from calcs

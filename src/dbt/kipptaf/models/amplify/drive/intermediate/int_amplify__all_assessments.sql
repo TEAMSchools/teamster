@@ -121,7 +121,7 @@ with
                 partition by p.academic_year, p.student_primary_id
                 order by p.client_date
             ) as rn_distinct,
-            
+
         from {{ ref("stg_amplify__pm_student_summary") }} as p
         inner join
             {{ ref("stg_google_sheets__dibels_pm_expectations") }} as a
