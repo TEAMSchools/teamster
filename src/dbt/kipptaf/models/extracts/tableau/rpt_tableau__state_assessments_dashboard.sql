@@ -184,7 +184,7 @@ with
         select
             _dbt_source_relation,
             academic_year,
-            null as localstudentidentifier,
+            local_student_identifier as localstudentidentifier,
             cast(state_student_identifier as string) as state_id,
 
             test_type as assessment_name,
