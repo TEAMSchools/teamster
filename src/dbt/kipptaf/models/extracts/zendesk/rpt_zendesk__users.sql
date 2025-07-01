@@ -58,7 +58,6 @@ with
                         "suspended",
                         "organization_id",
                         "secondary_location",
-                        "external_id",
                     ]
                 )
             }} as adp_surrogate_key,
@@ -70,7 +69,6 @@ with
                         "zendesk__suspended",
                         "zendesk__organization_id",
                         "zendesk__secondary_location",
-                        "zendesk__external_id",
                     ]
                 )
             }} as zendesk_surrogate_key,
