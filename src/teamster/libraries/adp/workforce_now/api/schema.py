@@ -130,6 +130,28 @@ class WageLawCoverage(BaseModel):
     wageLawNameCode: Code
 
 
+class WorkerID(BaseModel):
+    idValue: str
+
+    schemeCode: Code | None = None
+
+
+class TimeServiceSupervisor(BaseModel):
+    associateOID: str | None = None
+    positionID: str | None = None
+
+    workerID: WorkerID | None = None
+    reportsToWorkerName: Name | None = None
+
+
+class WorkerTimeProfile(BaseModel):
+    badgeID: str | None = None
+    timeAndAttendanceIndicator: bool | None = None
+    timeZoneCode: str | None = None
+
+    timeServiceSupervisor: TimeServiceSupervisor | None = None
+
+
 class OrganizationalUnit(BaseModel):
     nameCode: Code
     typeCode: Code
@@ -197,12 +219,6 @@ class Communication(BaseModel):
 
 class WorkerStatus(BaseModel):
     statusCode: Code
-
-
-class WorkerID(BaseModel):
-    idValue: str
-
-    schemeCode: Code | None = None
 
 
 class ReportsToItem(BaseModel):
@@ -282,6 +298,7 @@ class WorkAssignment(BaseModel):
     standardHours: StandardHours | None = None
     standardPayPeriodHours: StandardPayPeriodHours | None = None
     wageLawCoverage: WageLawCoverage | None = None
+    workerTimeProfile: WorkerTimeProfile | None = None
     workerTypeCode: Code | None = None
 
     additionalRemunerations: list[AdditionalRemuneration] | None = None

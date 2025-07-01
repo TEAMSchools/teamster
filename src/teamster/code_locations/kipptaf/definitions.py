@@ -15,7 +15,6 @@ from teamster.code_locations.kipptaf import (
     _google,
     adp,
     airbyte,
-    amplify,
     asset_checks,
     collegeboard,
     couchdrop,
@@ -61,7 +60,6 @@ defs = Definitions(
                 _dlt,
                 _google,
                 adp,
-                amplify,
                 collegeboard,
                 coupa,
                 deanslist,
@@ -83,7 +81,6 @@ defs = Definitions(
         *_google.schedules,
         *adp.schedules,
         *airbyte.schedules,
-        *amplify.schedules,
         *coupa.schedules,
         *extracts.schedules,
         *knowbe4.schedules,
@@ -108,13 +105,11 @@ defs = Definitions(
         ),
     ],
     resources={
-        "adp_wfm": resources.ADP_WORKFORCE_MANAGER_RESOURCE,
         "adp_wfn": resources.ADP_WORKFORCE_NOW_RESOURCE,
         "airbyte": resources.AIRBYTE_CLOUD_RESOURCE,
         "coupa": resources.COUPA_RESOURCE,
         "db_bigquery": BIGQUERY_RESOURCE,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
-        "dds": resources.DIBELS_DATA_SYSTEM_RESOURCE,
         "dlt": DLT_RESOURCE,
         "email": resources.OUTLOOK_RESOURCE,
         "gcs": GCS_RESOURCE,
@@ -127,7 +122,6 @@ defs = Definitions(
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "knowbe4": resources.KNOWBE4_RESOURCE,
         "ldap": resources.LDAP_RESOURCE,
-        "mclass": resources.MCLASS_RESOURCE,
         "overgrad": OVERGRAD_RESOURCE,
         "ps_enrollment": resources.POWERSCHOOL_ENROLLMENT_RESOURCE,
         "schoolmint_grow": resources.SCHOOLMINT_GROW_RESOURCE,
@@ -145,5 +139,3 @@ defs = Definitions(
         "zendesk": ZENDESK_RESOURCE,
     },
 )
-
-AssetSelection.all(include_sources=True).upstream_source_assets()
