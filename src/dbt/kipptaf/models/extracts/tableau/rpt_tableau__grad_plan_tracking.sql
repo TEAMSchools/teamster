@@ -202,8 +202,6 @@ select
     gw.plan_name,
     gw.discipline_id,
     gw.discipline_name,
-    gw.subject_id,
-    gw.subject_name,
 
     ggp.required_credits_plan as plan_required_credits,
     ggp.enrolled_credits_plan as plan_enrolled_credits,
@@ -221,21 +219,19 @@ select
     ggp.earned_credits_subject as subject_earned_credits,
     ggp.waived_credits_subject as subject_waived_credits,
 
-    gg.teacher_name,
-    gg.course_number,
-    gg.course_name,
-    gg.sectionid,
-    gg.credit_type,
-    gg.letter_grade,
-    gg.is_transfer_grade,
-    gg.credit_status,
-    gg.earned_credits,
-    gg.potential_credits,
+    coalesce(gw.subject_id, gw.discipline_id) as subject_id,
+    coalesce(gw.subject_name, gw.discipline_name) as subject_name,
 
-    ae.q1_ae_status,
-    ae.q2_ae_status,
-    ae.q3_ae_status,
-    ae.q4_ae_status,
+    coalesce(ggs.teacher_name, ggd.teacher_name) as teacher_name,
+    coalesce(ggs.course_number, ggd.course_number) as course_number,
+    coalesce(ggs.course_name, ggd.course_name) as course_name,
+    coalesce(ggs.sectionid, ggd.sectionid) as sectionid,
+    coalesce(ggs.credit_type, ggd.credit_type) as credit_type,
+    coalesce(ggs.letter_grade, ggd.letter_grade) as letter_grade,
+    coalesce(ggs.is_transfer_grade, ggd.is_transfer_grade) as is_transfer_grade,
+    coalesce(ggs.credit_status, ggd.credit_status) as credit_status,
+    coalesce(ggs.earned_credits, ggd.earned_credits) as earned_credits,
+    coalesce(ggs.potential_credits, ggd.potential_credits) as potential_credits,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
@@ -249,15 +245,17 @@ inner join
     and e.students_dcid = ggp.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="ggp") }}
 left join
-    gps_grades as gg
-    on e.studentid = gg.studentid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="gg") }}
-    and gw.subject_id = gg.node_id
-    and {{ union_dataset_join_clause(left_alias="gw", right_alias="gg") }}
+    gps_grades as ggd
+    on e.studentid = ggd.studentid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="ggd") }}
+    and gw.discipline_id = ggd.node_id
+    and {{ union_dataset_join_clause(left_alias="gw", right_alias="ggd") }}
 left join
-    {{ ref("int_students__athletic_eligibility") }} as ae
-    on e.studentid = ae.studentid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="ae") }}
+    gps_grades as ggs
+    on e.studentid = ggs.studentid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="ggs") }}
+    and gw.subject_id = ggs.node_id
+    and {{ union_dataset_join_clause(left_alias="gw", right_alias="ggs") }}
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.enroll_status = 0
