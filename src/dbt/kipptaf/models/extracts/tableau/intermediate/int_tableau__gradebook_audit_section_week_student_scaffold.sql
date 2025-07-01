@@ -181,16 +181,18 @@ inner join
 left join
     {{ ref("int_tableau__gradebook_audit_section_week_scaffold") }} as sec
     on ce.cc_sectionid = sec.sectionid
+    and ce.terms_yearid = sec.yearid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
 left join
     {{ ref("base_powerschool__final_grades") }} as qg
     on ce.cc_studentid = qg.studentid
+    and ce.terms_yearid = qg.yearid
     and ce.cc_sectionid = qg.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
     and sec.quarter = qg.storecode
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="qg") }}
     and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
 where
-    s.academic_year = {{ var("current_academic_year") }}
+    s.academic_year = {{ var("current_academic_year") - 1 }}
     and s.enroll_status = 0
     and not s.is_out_of_district
