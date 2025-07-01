@@ -1,61 +1,41 @@
-with
-    gpnode as (
-        select
-            _dbt_source_relation,
+select
+    ps._dbt_source_relation,
+    ps.id,
+    ps.gpnodeid,
+    ps.studentsdcid,
+    ps.requiredcredits,
+    ps.enrolledcredits,
+    ps.requestedcredits,
+    ps.earnedcredits,
+    ps.waivedcredits,
 
-            /* unpivot columns */
-            degree_plan_section,
-            id,
-            name,
-            max(credit_capacity) as credit_capacity,
+    psen.ccdcid as grade_dcid,
 
-        from
-            {{ ref("int_powerschool__gpnode") }} unpivot (
-                (id, name, credit_capacity) for degree_plan_section in (
-                    (plan_id, plan_name, plan_credit_capacity) as 'Plan',
-                    (
-                        discipline_id, discipline_name, discipline_credit_capacity
-                    ) as 'Discipline',
-                    (subject_id, subject_name, subject_credit_capacity) as 'Subject'
-                )
-            )
-        group by _dbt_source_relation, degree_plan_section, id, name
-    ),
+    'Enrolled' as credit_status,
+from {{ ref("stg_powerschool__gpprogresssubject") }} as ps
+left join
+    {{ ref("stg_powerschool__gpprogresssubjectenrolled") }} as psen
+    on ps.id = psen.gpprogresssubjectid
+    and {{ union_dataset_join_clause(left_alias="ps", right_alias="psen") }}
 
-    subjects as (
-        select
-            gp._dbt_source_relation,
-            gp.id,
-            gp.degree_plan_section,
-            gp.name,
-
-            sub.studentsdcid,
-            sub.enrolledcredits,
-            sub.requestedcredits,
-            sub.earnedcredits,
-            sub.waivedcredits,
-            sub.appliedwaivedcredits,
-
-            coalesce(sub.requiredcredits, gp.credit_capacity) as requiredcredits,
-
-        from gpnode as gp
-        inner join
-            {{ ref("stg_powerschool__gpprogresssubject") }} as sub
-            on gp.id = sub.gpnodeid
-            and {{ union_dataset_join_clause(left_alias="gp", right_alias="sub") }}
-    )
+union all
 
 select
-    _dbt_source_relation,
-    id,
-    degree_plan_section,
-    name,
-    studentsdcid,
-    requiredcredits,
-    enrolledcredits,
-    requestedcredits,
-    earnedcredits,
-    waivedcredits,
-    appliedwaivedcredits,
+    ps._dbt_source_relation,
+    ps.id,
+    ps.gpnodeid,
+    ps.studentsdcid,
+    ps.requiredcredits,
+    ps.enrolledcredits,
+    ps.requestedcredits,
+    ps.earnedcredits,
+    ps.waivedcredits,
 
-from subjects
+    psea.storedgradesdcid as grade_dcid,
+
+    'Earned' as credit_status,
+from {{ ref("stg_powerschool__gpprogresssubject") }} as ps
+left join
+    {{ ref("stg_powerschool__gpprogresssubjectearned") }} as psea
+    on ps.id = psea.gpprogresssubjectid
+    and {{ union_dataset_join_clause(left_alias="ps", right_alias="psea") }}
