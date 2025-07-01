@@ -1,88 +1,60 @@
 with
     staff_roster as (
         select
+            position_id,
+            effective_date_start,
+            employee_number,
+            worker_original_hire_date,
+            reports_to_position_id,
+            time_service_supervisor_position_id as adp__supervisor_id,
+
+            coalesce(badge_id, '') as adp__badge,
+            '000' || employee_number as badge,
+        from {{ ref("int_people__staff_roster_history") }}
+        where
+            primary_indicator
+            and worker_original_hire_date
+            between effective_date_start and effective_date_end
+            and worker_original_hire_date >= '2025-07-01'  /* beginning of T&A usage */
+    ),
+
+    with_tna as (
+        select
             sr.position_id,
-            sr.employee_number,
-            sr.mail,
+            sr.worker_original_hire_date,
             sr.reports_to_position_id,
+            sr.badge,
+            sr.adp__badge,
+            sr.adp__supervisor_id,
 
-            sr.custom_field__employee_number as adp__custom_field__employee_number,
-            sr.work_email as adp__work_email,
-
-            tna.badge as adp__badge,
-            tna.supervisor_id as adp__supervisor_id,
             tna.supervisor_flag as adp__supervisor_flag,
             tna.pay_class,
-
-            '000' || sr.employee_number as badge,
 
             if(
                 sr.position_id in (
                     select rt.reports_to_position_id,
-                    from {{ ref("int_people__staff_roster") }} as rt
+                    from staff_roster as rt
                     where rt.reports_to_position_id is not null
                 ),
                 'Y',
                 'N'
             ) as supervisor_flag,
-        from {{ ref("int_people__staff_roster") }} as sr
+        from staff_roster as sr
         inner join
             {{ ref("stg_adp_workforce_now__time_and_attendance") }} as tna
             on sr.position_id = tna.position_id
-        where
-            sr.assignment_status not in ('Terminated', 'Deceased')
-            and not sr.is_prestart
-    ),
-
-    surrogate_keys as (
-        select
-            *,
-
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "employee_number",
-                        "mail",
-                        "badge",
-                        "reports_to_position_id",
-                        "supervisor_flag",
-                    ]
-                )
-            }} as source_surrogate_key,
-
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "adp__custom_field__employee_number",
-                        "adp__work_email",
-                        "adp__badge",
-                        "adp__supervisor_id",
-                        "adp__supervisor_flag",
-                    ]
-                )
-            }} as destination_surrogate_key,
-        from staff_roster
+            and tna.pay_class != 'NON-TIME'
     )
 
+-- trunk-ignore(sqlfluff/ST06)
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     position_id as `Position ID`,
 
     /* required to be after ID */
-    format_date(
-        '%m/%d/%Y', current_date('{{ var("local_timezone") }}')
-    ) as `Change Effective On`,
+    format_date('%m/%d/%Y', worker_original_hire_date) as `Change Effective On`,
 
-    /* communication */
-    mail as `Work E-mail`,
-    'W' as `E-Mail to Use For Notification`,
-
-    /* custom fields */
-    'Employment Custom Fields' as `CDF Category`,
-    'Employee Number' as `CDF Label`,
-    employee_number as `CDF Value`,
-
-    /* essential time */
+    /* time & attendance */
     badge as `Badge`,
     reports_to_position_id as `Supervisorid`,
     supervisor_flag as `Supervisorflag`,
@@ -90,6 +62,9 @@ select
     'EST' as `TimeZone`,
     'Y' as `Position Uses Time`,
     'Y' as `Transfertopayroll`,
+
+    /* comparison */
+    adp__badge,
 -- trunk-ignore-end(sqlfluff/RF05)
-from surrogate_keys
-where source_surrogate_key != destination_surrogate_key
+from with_tna
+where badge != adp__badge

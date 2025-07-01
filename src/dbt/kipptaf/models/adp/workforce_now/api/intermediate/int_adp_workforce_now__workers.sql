@@ -47,6 +47,8 @@ select
     wa.worker_type_code__name,
     wa.additional_remunerations__rate__amount_value__sum,
     wa.benefits_eligibility_class__group_code__name,
+    wa.worker_time_profile__badge_id,
+    wa.worker_time_profile__time_service_supervisor__position_id,
 
     com.communication__personal_cell__formatted_number,
     com.communication__personal_email__email_uri,
@@ -62,6 +64,7 @@ select
     cf.received_sign_on_bonus,
     cf.remote_work_status,
     cf.teacher_prep_program,
+    {# TODO: drop WFM cols #}
     cf.wf_mgr_accrual_profile,
     cf.wf_mgr_badge_number,
     cf.wf_mgr_ee_type,
@@ -87,6 +90,7 @@ select
     || ', '
     || rtw.person__given_name as reports_to_formatted_name,
 
+    {# TODO: drop WFM cols #}
     {{
         dbt_utils.generate_surrogate_key(
             field_list=[
