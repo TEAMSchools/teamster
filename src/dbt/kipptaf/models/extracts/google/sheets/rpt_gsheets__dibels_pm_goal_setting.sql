@@ -95,21 +95,6 @@ with
             e.region
     ),
 
-    pm_expectations as (
-        /* TODO: lookup table needs to be refactored */
-        select distinct
-            academic_year,
-            region,
-            `period`,
-            grade_level,
-            measure_standard,
-            moy_benchmark,
-            eoy_benchmark,
-        from {{ ref("stg_google_sheets__dibels_pm_expectations") }}
-    ),
-
-    /* this will be simplified once we figure out how to calculate bm_benchmark on the
-    fly */
     days_and_goals as (
         select
             s.academic_year,
@@ -123,11 +108,9 @@ with
             c.round,
             c.n_days,
 
-            (coalesce(e.moy_benchmark, e.eoy_benchmark) + 3) as bm_benchmark,
+            e.bm_goal + 3 as bm_benchmark,
 
-            round(
-                (coalesce(e.moy_benchmark, e.eoy_benchmark) + 3) - s.avg_score, 0
-            ) as required_growth_words,
+            round((e.bm_goal + 3) - s.avg_score, 0) as required_growth_words,
 
             min(c.round) over (
                 partition by s.academic_year, s.region, s.pm_period, s.assessment_grade
@@ -138,6 +121,7 @@ with
                 partition by s.academic_year, s.region, s.pm_period, s.assessment_grade
                 order by c.`round` desc
             ) as max_pm_round,
+
         from avg_scores as s
         inner join
             day_count as c
@@ -145,7 +129,7 @@ with
             and s.region = c.region
             and s.pm_period = c.name
         inner join
-            pm_expectations as e
+            {{ ref("stg_google_sheets__dibels_pm_expectations") }} as e
             on s.academic_year = e.academic_year
             and s.region = e.region
             and s.pm_period = e.period
@@ -242,4 +226,5 @@ select
                 rows between unbounded preceding and current row
             )
     end as cumulative_growth_words,
+    
 from calcs

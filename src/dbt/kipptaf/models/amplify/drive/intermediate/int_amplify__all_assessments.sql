@@ -43,6 +43,7 @@ with
 
         union all
 
+        -- 7/8 SY24 only
         select
             academic_year as academic_year,
             student_id as student_number,
