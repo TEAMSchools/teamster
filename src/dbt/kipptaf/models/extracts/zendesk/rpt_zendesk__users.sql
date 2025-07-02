@@ -16,7 +16,7 @@ with
 
             cast(sr.employee_number as string) as external_id,
 
-            sr.given_name || ' ' || sr.family_name_1 as `name`,
+            trim(sr.given_name) || ' ' || trim(sr.family_name_1) as `name`,
 
             if(sr.user_principal_name != sr.mail, sr.mail, null) as mail_alias,
             if(sr.worker_status_code = 'Terminated', true, false) as suspended,
@@ -99,6 +99,7 @@ select
     personal_email,
 
     'end-user' as `role`,
+    true as verified,
 
     struct(secondary_location as secondary_location) as user_fields,
 from comparison
