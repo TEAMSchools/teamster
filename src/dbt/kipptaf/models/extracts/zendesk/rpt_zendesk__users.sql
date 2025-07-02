@@ -22,7 +22,9 @@ with
             if(sr.worker_status_code = 'Terminated', true, false) as suspended,
         from {{ ref("int_people__staff_roster") }} as sr
         left join
-            {{ ref("stg_zendesk__users") }} as u on sr.user_principal_name = u.email
+            {{ ref("stg_zendesk__user_identities") }} as ui
+            on sr.user_principal_name = ui.value
+        left join {{ ref("stg_zendesk__users") }} as u on ui.value = u.email
         where
             sr.user_principal_name is not null
             and (u.role is null or u.role = 'end-user')
