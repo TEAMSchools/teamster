@@ -99,6 +99,7 @@ select
     personal_email,
 
     'end-user' as `role`,
+    true as verified,
 
     struct(secondary_location as secondary_location) as user_fields,
 from comparison
