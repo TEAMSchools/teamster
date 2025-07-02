@@ -246,22 +246,6 @@ sources:
               - kipptaf
               - google_sheets
               - dibels_expected_assessments
-      - name: src_google_sheets__dibels_foundation_goals
-        config:
-          enabled: true
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_google_sheets__dibels_foundation_goals
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google_sheets
-              - dibels_foundation_goals
         columns:
           - name: Academic_Year
             data_type: integer
@@ -293,6 +277,22 @@ sources:
             data_type: boolean
           - name: PM_Goal_Include
             data_type: boolean
+      - name: src_google_sheets__dibels_foundation_goals
+        config:
+          enabled: true
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_google_sheets__dibels_foundation_goals
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - dibels_foundation_goals
       - name: src_google_sheets__dibels_goals_wide
         external:
           options:
