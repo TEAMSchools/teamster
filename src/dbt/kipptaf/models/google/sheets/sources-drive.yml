@@ -261,8 +261,6 @@ sources:
               - google_sheets
               - dibels_foundation_goals
       - name: src_google_sheets__dibels_goals_wide
-        config:
-          enabled: true
         external:
           options:
             format: GOOGLE_SHEETS
