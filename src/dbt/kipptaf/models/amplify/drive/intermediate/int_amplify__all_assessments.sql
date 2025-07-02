@@ -1,5 +1,6 @@
 with
     assessments_scores as (
+        -- benchmark scores
         select
             bss.academic_year,
             bss.student_primary_id as student_number,
@@ -43,7 +44,7 @@ with
 
         union all
 
-        -- 7/8 SY24 only
+        -- 7/8 benchmark scores SY24 only
         select
             academic_year as academic_year,
             student_id as student_number,
@@ -78,6 +79,7 @@ with
             row_number() over (
                 partition by academic_year, student_id order by `date`
             ) as rn_distinct,
+
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }}
 
         where
@@ -86,6 +88,7 @@ with
 
         union all
 
+        -- pm scores
         select
             p.academic_year as academic_year,
             p.student_primary_id as student_number,
