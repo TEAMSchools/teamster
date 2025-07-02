@@ -56,14 +56,13 @@ with
             a.measure_level_code as expected_measure_name_code,
             a.measure_standard as expected_measure_standard,
             a.goal,
+            a.bm_goal as admin_benchmark,
 
             concat(e.grade_level, a.period, a.pm_round) as goal_filter,
 
             format_datetime('%B', a.start_date) as month_round,
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
-
-            bm_goal as admin_benchmark,
 
             case
                 a.measure_level_code
