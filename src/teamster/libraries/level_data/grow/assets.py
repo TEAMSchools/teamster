@@ -14,22 +14,22 @@ from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.libraries.level_data.grow.resources import GrowResource
 
 
-def build_schoolmint_grow_asset(
+def build_grow_asset(
     asset_key, endpoint, partitions_def, schema, op_tags=None
 ) -> AssetsDefinition:
     @asset(
         key=asset_key,
         io_manager_key="io_manager_gcs_avro",
         partitions_def=partitions_def,
-        group_name="schoolmint",
+        group_name="level_data",
         kinds={"python"},
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
         op_tags=op_tags,
     )
-    def _asset(context: AssetExecutionContext, schoolmint_grow: SchoolMintGrowResource):
+    def _asset(context: AssetExecutionContext, grow: GrowResource):
         if isinstance(context.assets_def.partitions_def, MultiPartitionsDefinition):
             partition_key = check.inst(context.partition_key, MultiPartitionKey)
 
@@ -62,7 +62,7 @@ def build_schoolmint_grow_asset(
             archived_key = context.partition_key
             last_modified_key = None
 
-        endpoint_content = schoolmint_grow.get(
+        endpoint_content = grow.get(
             endpoint=endpoint,
             archived=(archived_key == "t"),
             lastModified=last_modified_key,

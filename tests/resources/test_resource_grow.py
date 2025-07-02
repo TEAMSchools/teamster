@@ -1,21 +1,18 @@
 from dagster import build_resources
 
-from teamster.code_locations.kipptaf.resources import SCHOOLMINT_GROW_RESOURCE
-from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.libraries.level_data.grow.resources import GrowResource
 
 
 def _test_resource(method: str, *args, **kwargs):
-    with build_resources(
-        resources={"schoolmint_grow": SCHOOLMINT_GROW_RESOURCE}
-    ) as resources:
-        schoolmint_grow: SchoolMintGrowResource = resources.schoolmint_grow
+    from teamster.code_locations.kipptaf.resources import GROW_RESOURCE
+
+    with build_resources(resources={"grow": GROW_RESOURCE}) as resources:
+        grow: GrowResource = resources.grow
 
     if method == "GET":
-        response = schoolmint_grow.get(*args, **kwargs)
+        response = grow.get(*args, **kwargs)
     elif method == "PUT":
-        response = schoolmint_grow.put(
-            *args, params={"district": schoolmint_grow.district_id}
-        )
+        response = grow.put(*args, params={"district": grow.district_id})
     else:
         raise Exception
 

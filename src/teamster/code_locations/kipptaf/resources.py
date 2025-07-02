@@ -13,10 +13,10 @@ from teamster.libraries.email.resources import EmailResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.ldap.resources import LdapResource
+from teamster.libraries.level_data.grow.resources import GrowResource
 from teamster.libraries.powerschool.enrollment.resources import (
     PowerSchoolEnrollmentResource,
 )
-from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
@@ -89,7 +89,7 @@ POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(
     api_key=EnvVar("PS_ENROLLMENT_API_KEY"), page_size=1000
 )
 
-SCHOOLMINT_GROW_RESOURCE = SchoolMintGrowResource(
+GROW_RESOURCE = GrowResource(
     client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
     client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
     district_id=EnvVar("SCHOOLMINT_GROW_DISTRICT_ID"),
