@@ -58,7 +58,7 @@ def test_zendesk_update_user():
 
     response = zendesk.put(
         resource="users",
-        id=231152020,
+        id=1513444625022,
         json={"user": {"external_id": None}},
     ).json()
     print(response)
