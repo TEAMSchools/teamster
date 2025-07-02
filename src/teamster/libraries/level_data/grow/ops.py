@@ -2,14 +2,12 @@ from typing import Any
 
 from dagster import ExpectationResult, OpExecutionContext, Output, op
 
-from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
+from teamster.libraries.level_data.grow.resources import GrowResource
 
 
 @op
-def schoolmint_grow_user_update_op(
-    context: OpExecutionContext,
-    schoolmint_grow: SchoolMintGrowResource,
-    users: list[dict[str, Any]],
+def grow_user_update_op(
+    context: OpExecutionContext, grow: GrowResource, users: list[dict[str, Any]]
 ):
     exceptions = []
 
@@ -31,9 +29,7 @@ def schoolmint_grow_user_update_op(
                 method = "PUT"
                 request_args.extend([user_id, "restore"])
 
-                schoolmint_grow.put(
-                    *request_args, params={"district": schoolmint_grow.district_id}
-                )
+                grow.put(*request_args, params={"district": grow.district_id})
 
                 # reset vars for update
                 request_args = ["users"]
@@ -52,7 +48,7 @@ def schoolmint_grow_user_update_op(
 
         # build user payload
         payload = {
-            "district": schoolmint_grow.district_id,
+            "district": grow.district_id,
             "name": u["user_name"],
             "email": user_email,
             "internalId": u["user_internal_id"],
@@ -72,7 +68,7 @@ def schoolmint_grow_user_update_op(
                 context.log.info(f"CREATING\t{user_email}")
                 method = "POST"
 
-                create_response = schoolmint_grow.post(*request_args, json=payload)
+                create_response = grow.post(*request_args, json=payload)
 
                 u["user_id"] = create_response["_id"]
             # update
@@ -81,14 +77,14 @@ def schoolmint_grow_user_update_op(
                 method = "PUT"
                 request_args.append(user_id)
 
-                schoolmint_grow.put(*request_args, json=payload)
+                grow.put(*request_args, json=payload)
             # archive
             elif inactive == 1 and user_id is not None and u["archived_at"] is None:
                 context.log.info(f"ARCHIVING\t{user_email}")
                 method = "DELETE"
                 request_args.append(user_id)
 
-                schoolmint_grow.delete(*request_args)
+                grow.delete(*request_args)
         except Exception as e:
             exception_details = {
                 "user_email": user_email,
@@ -110,17 +106,15 @@ def schoolmint_grow_user_update_op(
 
 
 @op
-def schoolmint_grow_school_update_op(
-    context: OpExecutionContext, schoolmint_grow: SchoolMintGrowResource, users
-):
-    schools = schoolmint_grow.get("schools")["data"]
+def grow_school_update_op(context: OpExecutionContext, grow: GrowResource, users):
+    schools = grow.get("schools")["data"]
 
     for school in schools:
         school_id = school["_id"]
 
         context.log.info(f"UPDATING\t{school['name']}")
 
-        payload: dict = {"district": schoolmint_grow.district_id}
+        payload: dict = {"district": grow.district_id}
 
         school_users = [
             u
@@ -167,4 +161,4 @@ def schoolmint_grow_school_update_op(
                 if role_name == u["role_name"]
             ]
 
-        schoolmint_grow.put("schools", school_id, json=payload)
+        grow.put("schools", school_id, json=payload)
