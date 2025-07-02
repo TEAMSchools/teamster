@@ -11,20 +11,20 @@ from dagster import (
 from dagster_shared import check
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.schoolmint.grow.assets import assignments
-from teamster.code_locations.kipptaf.schoolmint.grow.jobs import (
-    schoolmint_grow_observations_asset_job,
-    schoolmint_grow_static_partition_asset_job,
-    schoolmint_grow_user_update_job,
+from teamster.code_locations.kipptaf.level_data.grow.assets import assignments
+from teamster.code_locations.kipptaf.level_data.grow.jobs import (
+    grow_observations_asset_job,
+    grow_static_partition_asset_job,
+    grow_user_update_job,
 )
 
-schoolmint_grow_user_update_job_schedule = ScheduleDefinition(
+grow_user_update_job_schedule = ScheduleDefinition(
     cron_schedule="0 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
-    job=schoolmint_grow_user_update_job,
+    job=grow_user_update_job,
 )
 
-schoolmint_grow_assignments_job_schedule = build_schedule_from_partitioned_job(
+grow_assignments_job_schedule = build_schedule_from_partitioned_job(
     job=define_asset_job(
         name=f"{assignments.key.to_python_identifier()}_job", selection=[assignments]
     ),
@@ -34,14 +34,12 @@ schoolmint_grow_assignments_job_schedule = build_schedule_from_partitioned_job(
 
 
 @schedule(
-    name=f"{schoolmint_grow_static_partition_asset_job.name}_schedule",
+    name=f"{grow_static_partition_asset_job.name}_schedule",
     cron_schedule="0 2 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
-    job=schoolmint_grow_static_partition_asset_job,
+    job=grow_static_partition_asset_job,
 )
-def schoolmint_grow_static_partition_asset_job_schedule(
-    context: ScheduleEvaluationContext,
-):
+def grow_static_partition_asset_job_schedule(context: ScheduleEvaluationContext):
     for partition_key in ["t", "f"]:
         yield RunRequest(
             run_key=f"{context._schedule_name}_{partition_key}",
@@ -50,17 +48,14 @@ def schoolmint_grow_static_partition_asset_job_schedule(
 
 
 @schedule(
-    name=f"{schoolmint_grow_observations_asset_job.name}_schedule",
+    name=f"{grow_observations_asset_job.name}_schedule",
     cron_schedule=["15 11 * * *", "15 13 * * *", "15 15 * * *"],
     execution_timezone=str(LOCAL_TIMEZONE),
-    job=schoolmint_grow_observations_asset_job,
+    job=grow_observations_asset_job,
 )
-def schoolmint_grow_observations_asset_job_schedule(
-    context: ScheduleEvaluationContext,
-):
+def grow_observations_asset_job_schedule(context: ScheduleEvaluationContext):
     multi_partitions_def = check.inst(
-        obj=schoolmint_grow_observations_asset_job.partitions_def,
-        ttype=MultiPartitionsDefinition,
+        obj=grow_observations_asset_job.partitions_def, ttype=MultiPartitionsDefinition
     )
 
     archived_partitions_def = multi_partitions_def.get_partitions_def_for_dimension(
@@ -89,8 +84,8 @@ def schoolmint_grow_observations_asset_job_schedule(
 
 
 schedules = [
-    schoolmint_grow_assignments_job_schedule,
-    schoolmint_grow_observations_asset_job_schedule,
-    schoolmint_grow_static_partition_asset_job_schedule,
-    schoolmint_grow_user_update_job_schedule,
+    grow_assignments_job_schedule,
+    grow_observations_asset_job_schedule,
+    grow_static_partition_asset_job_schedule,
+    grow_user_update_job_schedule,
 ]

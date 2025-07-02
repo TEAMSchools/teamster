@@ -9,14 +9,14 @@ from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth2Session
 
 
-class SchoolMintGrowResource(ConfigurableResource):
+class GrowResource(ConfigurableResource):
     client_id: str
     client_secret: str
     district_id: str
     api_response_limit: int = 100
 
     _session: Session = PrivateAttr(default_factory=Session)
-    _base_url: str = PrivateAttr(default="https://grow-api.schoolmint.com")
+    _base_url: str = PrivateAttr(default="https://grow-api.leveldata.com")
     _default_params: dict = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
 
