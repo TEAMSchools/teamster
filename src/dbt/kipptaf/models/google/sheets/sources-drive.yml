@@ -262,19 +262,20 @@ sources:
               - dibels_foundation_goals
       - name: src_google_sheets__dibels_goals_wide
         config:
-          enabled: true
+          enabled: false
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_amplify__dibels_goals_wide
+            sheet_range: src_google_sheets__dibels_goals_wide
             skip_leading_rows: 1
         meta:
           dagster:
             asset_key:
               - kipptaf
               - google_sheets
+              - disabled
               - dibels_goals_wide
       - name: src_google_sheets__dibels_goals_long
         config:
@@ -284,7 +285,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_amplify__dibels_goals_long
+            sheet_range: src_google_sheets__dibels_goals_long
             skip_leading_rows: 1
         meta:
           dagster:
