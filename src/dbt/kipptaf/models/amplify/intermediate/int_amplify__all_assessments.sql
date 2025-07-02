@@ -34,6 +34,7 @@ with
                 partition by bss.academic_year, bss.student_primary_id
                 order by bss.client_date
             ) as rn_distinct,
+
         from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
         inner join
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
