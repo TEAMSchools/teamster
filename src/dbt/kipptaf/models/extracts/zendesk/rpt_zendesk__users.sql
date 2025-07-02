@@ -24,7 +24,7 @@ with
         left join
             {{ ref("stg_zendesk__user_identities") }} as ui
             on sr.user_principal_name = ui.value
-        left join {{ ref("stg_zendesk__users") }} as u on ui.value = u.email
+        left join {{ ref("stg_zendesk__users") }} as u on ui.user_id = u.id
         where
             sr.user_principal_name is not null
             and (u.role is null or u.role = 'end-user')
