@@ -32,13 +32,15 @@ models:
         data_type: string
       - name: PS_Credit_Type
         data_type: string
+      - name: Include
+        data_type: boolean
       - name: matching_pm_season
         data_type: string
-      - name: expected_mclass_measure_name_code
+      - name: expected_measure_name_code
         data_type: string
-      - name: expected_mclass_measure_name
+      - name: expected_measure_name
         data_type: string
-      - name: expected_mclass_measure_standard
+      - name: expected_measure_standard
         data_type: string
       - name: grade_level_text
         data_type: string
