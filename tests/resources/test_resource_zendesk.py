@@ -58,13 +58,8 @@ def test_zendesk_update_user():
 
     response = zendesk.put(
         resource="users",
-        id=187173662,
-        json={
-            "user": {
-                "organization_id": None,
-                "user_fields": {"secondary_location": None},
-            }
-        },
+        id=231152020,
+        json={"user": {"external_id": None}},
     ).json()
     print(response)
 
