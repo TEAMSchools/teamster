@@ -63,9 +63,7 @@ with
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
 
-            if(
-                a.period = 'BOY->MOY', a.moy_benchmark, a.eoy_benchmark
-            ) as admin_benchmark,
+            bm_goal as admin_benchmark,
 
             case
                 a.measure_level_code
