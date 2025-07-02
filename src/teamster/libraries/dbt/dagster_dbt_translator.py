@@ -61,7 +61,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                 )
                 & ~AutomationCondition.any_deps_missing().ignore(
                     ignore_selection
-                    | AssetSelection.all(include_sources=True).upstream_source_assets()
+                    | (
+                        AssetSelection.all(include_sources=True)
+                        - AssetSelection.all(include_sources=False)
+                    )
                 )
                 & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
                 & ~AutomationCondition.in_progress()
@@ -85,7 +88,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                 )
                 & ~AutomationCondition.any_deps_missing().ignore(
                     ignore_selection
-                    | AssetSelection.all(include_sources=True).upstream_source_assets()
+                    | (
+                        AssetSelection.all(include_sources=True)
+                        - AssetSelection.all(include_sources=False)
+                    )
                 )
                 & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
                 & ~AutomationCondition.in_progress()
