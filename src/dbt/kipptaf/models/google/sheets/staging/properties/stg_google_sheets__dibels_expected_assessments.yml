@@ -32,7 +32,9 @@ models:
         data_type: string
       - name: PS_Credit_Type
         data_type: string
-      - name: Include
+      - name: Assessment_Include
+        data_type: boolean
+      - name: PM_Goal_Include
         data_type: boolean
       - name: matching_pm_season
         data_type: string

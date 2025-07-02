@@ -156,7 +156,9 @@ sources:
             data_type: string
           - name: PS_Credit_Type
             data_type: string
-          - name: Include
+          - name: Assessment_Include
+            data_type: boolean
+          - name: PM_Goal_Include
             data_type: boolean
         meta:
           dagster:
@@ -260,13 +262,44 @@ sources:
               - kipptaf
               - google_sheets
               - dibels_foundation_goals
+        columns:
+          - name: Academic_Year
+            data_type: integer
+          - name: Region
+            data_type: string
+          - name: Grade
+            data_type: integer
+          - name: Test_Type
+            data_type: string
+          - name: Discipline
+            data_type: string
+          - name: Subject_Area
+            data_type: string
+          - name: Measure_Standard
+            data_type: string
+          - name: Test_Code
+            data_type: string
+          - name: Admin_Season
+            data_type: string
+          - name: Month_Round
+            data_type: string
+          - name: Illuminate_Subject
+            data_type: string
+          - name: iReady_Subject
+            data_type: string
+          - name: PS_Credit_Type
+            data_type: string
+          - name: Assessment_Include
+            data_type: boolean
+          - name: PM_Goal_Include
+            data_type: boolean
       - name: src_google_sheets__dibels_goals_wide
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_google_sheets__dibels_goals_wide
+            sheet_range: src_amplify__dibels_goals_wide
             skip_leading_rows: 1
         meta:
           dagster:
@@ -283,7 +316,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_google_sheets__dibels_goals_long
+            sheet_range: src_amplify__dibels_goals_long
             skip_leading_rows: 1
         meta:
           dagster:
