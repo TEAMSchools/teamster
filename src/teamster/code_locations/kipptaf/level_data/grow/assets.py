@@ -8,12 +8,12 @@ from dagster import (
 )
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.schoolmint.grow.schema import (
+from teamster.code_locations.kipptaf.level_data.grow.schema import (
     ASSET_SCHEMA,
     ASSIGNMENT_SCHEMA,
     OBSERVATION_SCHEMA,
 )
-from teamster.libraries.schoolmint.grow.assets import build_schoolmint_grow_asset
+from teamster.libraries.level_data.grow.assets import build_grow_asset
 
 STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["t", "f"])
 MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
@@ -28,8 +28,8 @@ MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
 key_prefix = [CODE_LOCATION, "schoolmint", "grow"]
 config_dir = pathlib.Path(__file__).parent / "config"
 
-schoolmint_grow_static_partition_assets = [
-    build_schoolmint_grow_asset(
+grow_static_partition_assets = [
+    build_grow_asset(
         asset_key=[*key_prefix, e["asset_name"].replace("-", "_").replace("/", "_")],
         endpoint=e["asset_name"],
         partitions_def=STATIC_PARTITONS_DEF,
@@ -41,26 +41,26 @@ schoolmint_grow_static_partition_assets = [
     ]
 ]
 
-assignments = build_schoolmint_grow_asset(
+assignments = build_grow_asset(
     asset_key=[*key_prefix, "assignments"],
     endpoint="assignments",
     partitions_def=MULTI_PARTITIONS_DEF,
     schema=ASSIGNMENT_SCHEMA,
 )
 
-observations = build_schoolmint_grow_asset(
+observations = build_grow_asset(
     asset_key=[*key_prefix, "observations"],
     endpoint="observations",
     partitions_def=MULTI_PARTITIONS_DEF,
     schema=OBSERVATION_SCHEMA,
 )
 
-schoolmint_grow_multi_partitions_assets = [
+grow_multi_partitions_assets = [
     assignments,
     observations,
 ]
 
 assets = [
-    *schoolmint_grow_multi_partitions_assets,
-    *schoolmint_grow_static_partition_assets,
+    *grow_multi_partitions_assets,
+    *grow_static_partition_assets,
 ]
