@@ -32,9 +32,12 @@ class ZendeskResource(ConfigurableResource):
 
     def _request(self, method: str, *args, **kwargs) -> Response:
         url = self._get_url(*args)
+        params = kwargs.pop("params", {})
 
-        self._log.debug(msg=f"{method} {url}\n{kwargs}")
-        response = self._session.request(method=method, url=url, **kwargs)
+        self._log.debug(msg=f"{method}\t{url}\n{kwargs}")
+        response = self._session.request(
+            method=method, url=url, params=params, **kwargs
+        )
 
         try:
             response.raise_for_status()
