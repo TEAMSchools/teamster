@@ -10,5 +10,7 @@ def test_schedule():
 
     output = adp_workforce_now_api_workers_asset_schedule(context=context)
 
+    # trunk-ignore(pyright/reportGeneralTypeIssues)
+    # trunk-ignore(pyright/reportOptionalIterable)
     for o in output:
         context.log.info(o)
