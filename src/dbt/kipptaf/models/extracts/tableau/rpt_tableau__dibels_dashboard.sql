@@ -29,20 +29,11 @@ with
             a.test_code,
             a.month_round,
             a.grade as expected_grade_level,
+            a.expected_measure_name_code,
+            a.expected_measure_name,
+            a.expected_measure_standard,
 
             g.grade_goal as admin_benchmark,
-
-            regexp_extract(
-                a.measure_standard, r'^[^_]*'
-            ) as expected_mclass_measure_name_code,
-
-            regexp_substr(
-                a.measure_standard, r'_(.*?)_'
-            ) as expected_mclass_measure_name,
-
-            regexp_substr(
-                a.measure_standard, r'[^_]+$'
-            ) as expected_mclass_measure_standard,
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
 
@@ -142,9 +133,9 @@ select
     s.cohort,
     s.expected_test,
     s.month_round,
-    s.expected_mclass_measure_name_code,
-    s.expected_mclass_measure_name,
-    s.expected_mclass_measure_standard,
+    s.expected_measure_name_code,
+    s.expected_measure_name,
+    s.expected_measure_standard,
     null as goal,
     s.admin_benchmark,
 
@@ -204,7 +195,7 @@ left join
     on s.academic_year = a.academic_year
     and s.student_number = a.student_number
     and s.expected_test = a.period
-    and s.expected_mclass_measure_standard = a.measure_standard
+    and s.expected_measure_standard = a.measure_standard
     and a.assessment_type = 'Benchmark'
 left join
     {{ ref("stg_reporting__terms") }} as t
