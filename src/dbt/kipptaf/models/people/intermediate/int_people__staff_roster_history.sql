@@ -62,6 +62,7 @@ with
             w.received_sign_on_bonus,
             w.remote_work_status,
             w.teacher_prep_program,
+            {# TODO: drop WFM cols #}
             w.wf_mgr_accrual_profile,
             w.wf_mgr_badge_number,
             w.wf_mgr_ee_type,
@@ -80,12 +81,16 @@ with
             as home_business_unit_code,
             w.organizational_unit__home__business_unit__name as home_business_unit_name,
             w.organizational_unit__home__department__name as home_department_name,
+            w.reports_to_position_id,
             w.reports_to_worker_id__id_value as reports_to_worker_id,
             w.reports_to_formatted_name,
             w.payroll_file_number,
             w.payroll_group_code,
             w.benefits_eligibility_class__group_code__name
             as benefits_eligibility_class,
+            w.worker_time_profile__badge_id as badge_id,
+            w.worker_time_profile__time_service_supervisor__position_id
+            as time_service_supervisor_position_id,
             w.worker_hire_date_recent,
             w.wf_mgr_trigger_new,
 
@@ -194,6 +199,7 @@ with
             null as received_sign_on_bonus,
             null as remote_work_status,
             null as teacher_prep_program,
+            {# TODO: drop WFM cols #}
             null as wf_mgr_accrual_profile,
             null as wf_mgr_badge_number,
             null as wf_mgr_ee_type,
@@ -212,11 +218,14 @@ with
             legal_entity_name as home_business_unit_name,
             department_name as home_department_name,
 
+            null as reports_to_position_id,
             null as reports_to_worker_id,
             null as reports_to_formatted_name,
             null as payroll_file_number,
             null as payroll_group_code,
             null as benefits_eligibility_class,
+            null as badge_id,
+            null as time_service_supervisor_position_id,
             null as worker_hire_date_recent,
             null as wf_mgr_trigger_new,
 
@@ -280,6 +289,7 @@ select
     w.work_cell,
     w.work_email,
     w.custom_field__employee_number,
+    {# TODO: drop WFM cols #}
     w.wf_mgr_accrual_profile,
     w.wf_mgr_badge_number,
     w.wf_mgr_ee_type,
@@ -292,11 +302,14 @@ select
     w.home_business_unit_code,
     w.home_business_unit_name,
     w.home_department_name,
+    w.reports_to_position_id,
     w.reports_to_worker_id,
     w.reports_to_formatted_name,
     w.payroll_file_number,
     w.payroll_group_code,
     w.benefits_eligibility_class,
+    w.badge_id,
+    w.time_service_supervisor_position_id,
     w.worker_hire_date_recent,
 
     lc.location_region as home_work_location_region,

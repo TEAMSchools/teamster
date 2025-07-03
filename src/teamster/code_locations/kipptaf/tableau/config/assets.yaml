@@ -12,7 +12,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__college_assessment_dashboard_historic]
     metadata:
       id: 286156c4-2f9e-4983-926b-63c9b11f44f4
-      cron_schedule: 0 6 * * *
+      # cron_schedule: 0 6 * * *
   - name: Data Quality Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__assessment_entry_audit]
@@ -41,7 +41,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__hs_early_warning_dashboard]
     metadata:
       id: 6333e047-e7a9-4d8f-a740-3df30f179d11
-      cron_schedule: 0 6 * * *
+      # cron_schedule: 0 6 * * *
   - name: KIPP Forward Data Suite
     deps:
       - [kipptaf, extracts, rpt_gsheets__kfwd_rem_roster]
@@ -85,7 +85,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__staff_attendance]
     metadata:
       id: acedcb63-36e0-4232-953c-64cbd11b5149
-      cron_schedule: 0 12 * * *
+      # cron_schedule: 0 12 * * *
   - name: Zendesk Reporting
     deps:
       - [kipptaf, tableau, rpt_tableau__zendesk_tickets]
@@ -112,10 +112,10 @@ assets:
       - [kipptaf, tableau, rpt_tableau__schoolmint_grow_goals]
     metadata:
       id: b529ca04-3560-4cff-8898-fd0a65f3e994
-      cron_schedule:
-        - 0 6 * * *
-        - 30 14 * * *
-        - 15 16 * * *
+      # cron_schedule:
+      #   - 0 6 * * *
+      #   - 30 14 * * *
+      #   - 15 16 * * *
   - name: Attendance Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__attendance_chronic_absenteeism_log]
@@ -123,30 +123,30 @@ assets:
       - [kipptaf, tableau, rpt_tableau__attendance_dashboard]
     metadata:
       id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-      cron_schedule: 0 15 * * *
+      # cron_schedule: 0 15 * * *
   - name: Early Literacy Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__dibels_dashboard]
       - [kipptaf, tableau, rpt_tableau__sight_words_dashboard]
     metadata:
       id: bef17623-af5e-4a18-9e05-7a8f4e6951bf
-      cron_schedule: 0 5 * * *
+      # cron_schedule: 0 5 * * *
   - name: Teacher Development Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__teacher_development]
     metadata:
       id: 8977a813-36c8-48df-8a61-479f374ae78a
-      cron_schedule:
-        - 0 12 * * *
-        - 0 14 * * *
-        - 0 16 * * *
+      # cron_schedule:
+      #   - 0 12 * * *
+      #   - 0 14 * * *
+      #   - 0 16 * * *
   - name: Gradebook and GPA Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__gradebook_audit]
       - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
     metadata:
       id: 5046a976-ed0e-4c77-93fe-78b732cb5548
-      cron_schedule: 0 4 * * *
+      # cron_schedule: 0 4 * * *
   - name: Gradebook Audit - Teacher Report
     deps:
       - [kipptaf, tableau, rpt_tableau__assignment_checks]
@@ -173,7 +173,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__iready_apm]
     metadata:
       id: eb91563d-760b-4f2d-b9f8-65437fe22242
-      cron_schedule: 0 6 * * *
+      # cron_schedule: 0 6 * * *
   - name: Newark Home Instruction Tracker
     deps:
       - [kipptaf, tableau, rpt_tableau__approved_home_instruction]
@@ -209,7 +209,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__teacher_development]
     metadata:
       id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1
-      cron_schedule: 0 6 * * *
+      # cron_schedule: 0 6 * * *
   - name: Leadership Development
     deps:
       - [kipptaf, tableau, rpt_tableau__leadership_development]
@@ -229,10 +229,10 @@ assets:
       - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
     metadata:
       id: db88d328-0d54-4dac-8003-6197841e1432
-      cron_schedule:
-        - 0 6 * * *
-        - 30 14 * * *
-        - 15 16 * * *
+      # cron_schedule:
+      #   - 0 6 * * *
+      #   - 30 14 * * *
+      #   - 15 16 * * *
   - name: Recruitment Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__smartrecruiters]

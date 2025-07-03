@@ -6,48 +6,198 @@ sources:
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ project_name }}_google_sheets
     tables:
+<<<<<<< HEAD
       - name: src_google_sheets__gradebook_expectations_assignments
+=======
+      - name: src_google_sheets__zendesk_org_lookup
+>>>>>>> 04080cd600f259e5b6f87c97e84a760bb2462ef7
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
+<<<<<<< HEAD
               - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
             sheet_range: src_google_sheets__gradebook_expectations_assignments
+=======
+              - https://docs.google.com/spreadsheets/d/1RTGV4MGqyBcWKgyrtpnhq4aPUmWA1qJu9sbQVgxuVHs
+            sheet_range: src_google_sheets__zendesk_org_lookup
+>>>>>>> 04080cd600f259e5b6f87c97e84a760bb2462ef7
             skip_leading_rows: 1
         meta:
           dagster:
             asset_key:
               - kipptaf
+<<<<<<< HEAD
               - google
               - sheets
               - gradebook_expectations_assignments
       - name: src_google_sheets__gradebook_flags
+=======
+              - google_sheets
+              - zendesk_org_lookup
+        columns:
+          - name: ADP_Business_Unit
+            data_type: string
+          - name: ADP_Location
+            data_type: string
+          - name: Zendesk_Organization
+            data_type: string
+          - name: Zendesk_Secondary_Location
+            data_type: string
+      - name: src_google_sheets__student_graduation_path_combos
+>>>>>>> 04080cd600f259e5b6f87c97e84a760bb2462ef7
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
+<<<<<<< HEAD
               - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
             sheet_range: src_google_sheets__gradebook_flags
+=======
+              - https://docs.google.com/spreadsheets/d/1CbSOG-gs0dIPtf7wneJNhSqudRFKWpfcNoefyAEi5AM
+            sheet_range: src_students__graduation_path_combos
+>>>>>>> 04080cd600f259e5b6f87c97e84a760bb2462ef7
             skip_leading_rows: 1
         meta:
           dagster:
             asset_key:
               - kipptaf
+<<<<<<< HEAD
               - google
               - sheets
               - gradebook_flags
       - name: src_google_sheets__gradebook_exceptions
+=======
+              - google_sheets
+              - student_graduation_path_combos
+      - name: src_google_sheets__student_graduation_path_cutoffs
+>>>>>>> 04080cd600f259e5b6f87c97e84a760bb2462ef7
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
+<<<<<<< HEAD
               - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
             sheet_range: src_google_sheets__gradebook_exceptions
+=======
+              - https://docs.google.com/spreadsheets/d/1CbSOG-gs0dIPtf7wneJNhSqudRFKWpfcNoefyAEi5AM
+            sheet_range: src_students__graduation_path_cutoffs
+>>>>>>> 04080cd600f259e5b6f87c97e84a760bb2462ef7
             skip_leading_rows: 1
         meta:
           dagster:
             asset_key:
               - kipptaf
+<<<<<<< HEAD
               - google
               - sheets
               - gradebook_exceptions
+=======
+              - google_sheets
+              - student_graduation_path_cutoffs
+      - name: src_google_sheets__state_test_comparison
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
+            sheet_range: src_google_sheets__state_test_comparison
+            skip_leading_rows: 1
+        columns:
+          - name: Academic_Year
+            data_type: int64
+          - name: Test_Name
+            data_type: string
+          - name: Test_Code
+            data_type: string
+          - name: Region
+            data_type: string
+          - name: Comparison_Entity
+            data_type: string
+          - name: Percent_Proficient
+            data_type: float64
+          - name: Total_Students
+            data_type: int64
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - state_test_comparison
+      - name: src_google_sheets__state_test_comparison_demographics
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
+            sheet_range: src_google_sheets__state_test_comparison_demographics
+            skip_leading_rows: 1
+        columns:
+          - name: Academic_Year
+            data_type: int64
+          - name: Test_Name
+            data_type: string
+          - name: Test_Code
+            data_type: string
+          - name: Region
+            data_type: string
+          - name: Comparison_Entity
+            data_type: string
+          - name: Comparison_Demographic_Group
+            data_type: string
+          - name: Comparison_Demographic_Subgroup
+            data_type: string
+          - name: Percent_Proficient
+            data_type: float64
+          - name: Total_Students
+            data_type: int64
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - state_test_comparison_demographics
+      - name: src_google_sheets__state_test_expected_assessments
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
+            sheet_range: src_google_sheets__state_test_expected_assessments
+            skip_leading_rows: 1
+        columns:
+          - name: Academic_Year
+            data_type: int64
+          - name: Region
+            data_type: string
+          - name: Grade
+            data_type: int64
+          - name: Test_Type
+            data_type: string
+          - name: Assessment_Name
+            data_type: string
+          - name: Discipline
+            data_type: string
+          - name: Assessment_Subject_Area
+            data_type: string
+          - name: Subject_Area
+            data_type: string
+          - name: Test_Code
+            data_type: string
+          - name: Admin_Season
+            data_type: string
+          - name: Month_Round
+            data_type: string
+          - name: Illuminate_Subject
+            data_type: string
+          - name: iReady_Subject
+            data_type: string
+          - name: PS_Credit_Type
+            data_type: string
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - state_test_expected_assessments
+>>>>>>> 04080cd600f259e5b6f87c97e84a760bb2462ef7

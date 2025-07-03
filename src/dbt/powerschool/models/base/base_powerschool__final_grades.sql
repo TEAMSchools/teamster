@@ -24,6 +24,7 @@ with
             tb.storecode,
             tb.date1 as termbin_start_date,
             tb.date2 as termbin_end_date,
+
             if(
                 current_date('{{ var("local_timezone") }}')
                 between tb.date1 and tb.date2,
@@ -306,6 +307,9 @@ select
     if(
         y1.y1_percent_grade < 0.500, 'F*', y1gs.letter_grade
     ) as y1_letter_grade_adjusted,
+    if(
+        y1gs.letter_grade like 'F%', 0.0, y1.potential_credit_hours
+    ) as projected_earned_credit_hours,
 
     /*
         need-to-get calc:
