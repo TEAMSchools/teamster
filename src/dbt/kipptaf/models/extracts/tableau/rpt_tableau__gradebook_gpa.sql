@@ -74,7 +74,9 @@ with
             term.is_current_term,
             term.semester,
 
-            hos.head_of_school_preferred_name_lastfirst,
+            leader.head_of_school_preferred_name_lastfirst,
+            leader.school_leader_preferred_name_lastfirst,
+            leader.school_leader_sam_account_name,
 
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_unweighted,
@@ -101,8 +103,8 @@ with
             and enr.yearid = term.yearid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="term") }}
         left join
-            {{ ref("int_people__leadership_crosswalk") }} as hos
-            on enr.schoolid = hos.home_work_location_powerschool_school_id
+            {{ ref("int_people__leadership_crosswalk") }} as leader
+            on enr.schoolid = leader.home_work_location_powerschool_school_id
         left join
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on enr.studentid = gc.studentid
@@ -362,6 +364,8 @@ select
     s.ethnicity,
     s.advisory,
     s.head_of_school_preferred_name_lastfirst as hos,
+    s.school_leader_preferred_name_lastfirst as school_leader,
+    s.school_leader_sam_account_name as school_leader_tableau_account,
     s.year_in_school,
     s.year_in_network,
     s.rn_undergrad,
@@ -515,6 +519,8 @@ select
     e1.ethnicity,
     e1.advisory,
     e1.head_of_school_preferred_name_lastfirst as hos,
+    e1.school_leader_preferred_name_lastfirst as school_leader,
+    e1.school_leader_sam_account_name as school_leader_tableau_account,
     e1.year_in_school,
     e1.year_in_network,
     e1.rn_undergrad,
