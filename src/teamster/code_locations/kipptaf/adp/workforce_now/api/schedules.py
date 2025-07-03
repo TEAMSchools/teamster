@@ -10,7 +10,9 @@ from dagster import (
 from dagster_shared import check
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.adp.workforce_now.api.assets import workers
+from teamster.code_locations.kipptaf.adp.workforce_now.api.assets import (
+    adp_workforce_now_workers,
+)
 from teamster.code_locations.kipptaf.adp.workforce_now.api.jobs import (
     adp_wfn_update_workers_job,
 )
@@ -23,8 +25,8 @@ adp_wfn_worker_fields_update_schedule = ScheduleDefinition(
 
 job = define_asset_job(
     name=f"{CODE_LOCATION}_adp_workforce_now_api_workers_asset_job",
-    selection=[workers],
-    partitions_def=workers.partitions_def,
+    selection=[adp_workforce_now_workers],
+    partitions_def=adp_workforce_now_workers.partitions_def,
 )
 
 

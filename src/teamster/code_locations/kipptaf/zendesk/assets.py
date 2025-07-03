@@ -3,17 +3,26 @@ import time
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
+    AssetCheckSpec,
     AssetExecutionContext,
     Output,
     asset,
 )
 from dagster_gcp import BigQueryResource
 
+from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.core.utils.functions import chunk
 from teamster.libraries.zendesk.resources import ZendeskResource
 
+asset_key = [CODE_LOCATION, "zendesk", "user_sync"]
 
-@asset
+
+@asset(
+    key=asset_key,
+    check_specs=[AssetCheckSpec(name="zero_api_errors", asset=asset_key)],
+    group_name="zendesk",
+    kinds={"python"},
+)
 def zendesk_user_sync(
     context: AssetExecutionContext,
     db_bigquery: BigQueryResource,
@@ -21,7 +30,7 @@ def zendesk_user_sync(
 ):
     query = "select * from kipptaf_extracts.rpt_zendesk__users"
     running_jobs = []
-    failures = []
+    errors = []
     jobs_queue = {}
 
     context.log.info(msg=query)
@@ -93,13 +102,11 @@ def zendesk_user_sync(
                 )
                 jobs_queue[js["id"]] = js["status"]
 
-                # capture failures
+                # capture errors
                 if js["status"] == "completed":
-                    failures.extend(
-                        [r for r in js["results"] if r["status"] == "Failed"]
-                    )
+                    errors.extend([r for r in js["results"] if r["status"] == "Failed"])
                 elif js["status"] == "failed":
-                    failures.append(js)
+                    errors.append(js)
 
         # terminate loop when queue is empty
         if len(running_jobs) == 0:
@@ -107,14 +114,19 @@ def zendesk_user_sync(
         else:
             time.sleep(1)
 
-    if failures:
-        context.log.error(failures)
+    if errors:
+        context.log.error(errors)
 
     yield Output(value=None)
     yield AssetCheckResult(
-        passed=(len(failures) == 0),
+        passed=(len(errors) == 0),
         asset_key=context.asset_key,
-        check_name="failure_free",
-        metadata={"failures": str(failures)},
+        check_name="zero_api_errors",
+        metadata={"errors": str(errors)},
         severity=AssetCheckSeverity.WARN,
     )
+
+
+assets = [
+    zendesk_user_sync,
+]
