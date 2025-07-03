@@ -13,7 +13,9 @@ def _test(partition_key: str | None = None):
 
     if partition_key is None:
         partitions_def = check.inst(
-            obj=adp_workforce_now_workers.partitions_def, ttype=PartitionsDefinition
+            # trunk-ignore(pyright/reportFunctionMemberAccess)
+            obj=adp_workforce_now_workers.partitions_def,
+            ttype=PartitionsDefinition,
         )
 
         partition_keys = partitions_def.get_partition_keys()
@@ -21,6 +23,7 @@ def _test(partition_key: str | None = None):
         partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
 
     result = materialize(
+        # trunk-ignore(pyright/reportArgumentType)
         assets=[adp_workforce_now_workers],
         resources={
             "io_manager_gcs_avro": get_io_manager_gcs_avro(
