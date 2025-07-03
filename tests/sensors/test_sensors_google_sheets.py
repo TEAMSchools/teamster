@@ -2,13 +2,14 @@ import json
 
 from dagster import SensorResult, build_sensor_context
 
-from teamster.code_locations.kipptaf._google.sheets.sensors import (
-    google_sheets_asset_sensor,
-)
 from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 
 
 def test_google_sheets_asset_sensor():
+    from teamster.code_locations.kipptaf._google.sheets.sensors import (
+        google_sheets_asset_sensor,
+    )
+
     cursor = {
         # "1jMnltTr0cqJ5c1tlfyzySZ87eNaU6frCOD7E8f7FUc8": 1727377153.342,
         # "1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE": 1728348682.704,
