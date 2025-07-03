@@ -1,4 +1,13 @@
-from dagster import AssetExecutionContext, Output, StaticPartitionsDefinition, asset
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetCheckSpec,
+    AssetExecutionContext,
+    Output,
+    StaticPartitionsDefinition,
+    asset,
+)
+from dagster_gcp import BigQueryResource
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf._google.directory.schema import (
@@ -128,6 +137,47 @@ def members(context: AssetExecutionContext, google_directory: GoogleDirectoryRes
 
     yield check_avro_schema_valid(
         asset_key=context.asset_key, records=data, schema=MEMBERS_SCHEMA
+    )
+
+
+@asset(
+    key=[*key_prefix, "role_assignments_sync"],
+    check_specs=[
+        AssetCheckSpec(
+            name="zero_api_errors", asset=[*key_prefix, "role_assignments_sync"]
+        )
+    ],
+    group_name="google_directory",
+    kinds={"python"},
+)
+def google_directory_role_assignments_sync(
+    context: AssetExecutionContext,
+    db_bigquery: BigQueryResource,
+    google_directory: GoogleDirectoryResource,
+):
+    query = "select * from kipptaf_extracts.rpt_google_directory__admin_import"
+    errors = []
+
+    context.log.info(msg=query)
+    with db_bigquery.get_client() as bq:
+        query_job = bq.query(query=query, project=db_bigquery.project)
+
+    arrow = query_job.to_arrow()
+
+    context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
+    role_assignments_data = arrow.to_pylist()
+
+    errors = google_directory.batch_insert_role_assignments(
+        role_assignments=role_assignments_data
+    )
+
+    yield Output(value=None)
+    yield AssetCheckResult(
+        passed=(len(errors) == 0),
+        asset_key=context.asset_key,
+        check_name="zero_api_errors",
+        metadata={"errors": str(errors)},
+        severity=AssetCheckSeverity.WARN,
     )
 
 
