@@ -11,17 +11,19 @@ from dagster import (
 from dagster_shared import check
 
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.level_data.grow.assets import assignments
+from teamster.code_locations.kipptaf.level_data.grow.assets import (
+    assignments,
+    grow_user_sync,
+)
 from teamster.code_locations.kipptaf.level_data.grow.jobs import (
     grow_observations_asset_job,
     grow_static_partition_asset_job,
-    grow_user_update_job,
 )
 
 grow_user_update_job_schedule = ScheduleDefinition(
+    target=grow_user_sync,
     cron_schedule="0 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
-    job=grow_user_update_job,
 )
 
 grow_assignments_job_schedule = build_schedule_from_partitioned_job(
@@ -35,9 +37,9 @@ grow_assignments_job_schedule = build_schedule_from_partitioned_job(
 
 @schedule(
     name=f"{grow_static_partition_asset_job.name}_schedule",
+    target=grow_static_partition_asset_job,
     cron_schedule="0 2 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
-    job=grow_static_partition_asset_job,
 )
 def grow_static_partition_asset_job_schedule(context: ScheduleEvaluationContext):
     for partition_key in ["t", "f"]:
@@ -49,9 +51,9 @@ def grow_static_partition_asset_job_schedule(context: ScheduleEvaluationContext)
 
 @schedule(
     name=f"{grow_observations_asset_job.name}_schedule",
+    target=grow_observations_asset_job,
     cron_schedule=["15 11 * * *", "15 13 * * *", "15 15 * * *"],
     execution_timezone=str(LOCAL_TIMEZONE),
-    job=grow_observations_asset_job,
 )
 def grow_observations_asset_job_schedule(context: ScheduleEvaluationContext):
     multi_partitions_def = check.inst(

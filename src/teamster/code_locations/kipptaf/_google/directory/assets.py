@@ -141,22 +141,21 @@ def members(context: AssetExecutionContext, google_directory: GoogleDirectoryRes
 
 
 @asset(
-    key=[*key_prefix, "role_assignments_sync"],
+    key=[*key_prefix, "role_assignments_create"],
     check_specs=[
         AssetCheckSpec(
-            name="zero_api_errors", asset=[*key_prefix, "role_assignments_sync"]
+            name="zero_api_errors", asset=[*key_prefix, "role_assignments_create"]
         )
     ],
     group_name="google_directory",
     kinds={"python"},
 )
-def google_directory_role_assignments_sync(
+def google_directory_role_assignments_create(
     context: AssetExecutionContext,
     db_bigquery: BigQueryResource,
     google_directory: GoogleDirectoryResource,
 ):
     query = "select * from kipptaf_extracts.rpt_google_directory__admin_import"
-    errors = []
 
     context.log.info(msg=query)
     with db_bigquery.get_client() as bq:
@@ -170,6 +169,105 @@ def google_directory_role_assignments_sync(
     errors = google_directory.batch_insert_role_assignments(
         role_assignments=role_assignments_data
     )
+    context.log.error(msg="\n".join(errors))
+
+    yield Output(value=None)
+    yield AssetCheckResult(
+        passed=(len(errors) == 0),
+        asset_key=context.asset_key,
+        check_name="zero_api_errors",
+        metadata={"errors": str(errors)},
+        severity=AssetCheckSeverity.WARN,
+    )
+
+
+@asset(
+    key=[*key_prefix, "user_create"],
+    check_specs=[
+        AssetCheckSpec(
+            name="zero_api_errors", asset=[*key_prefix, "role_assignments_sync"]
+        )
+    ],
+    group_name="google_directory",
+    kinds={"python"},
+)
+def google_directory_user_create(
+    context: AssetExecutionContext,
+    db_bigquery: BigQueryResource,
+    google_directory: GoogleDirectoryResource,
+):
+    query = """
+        select * from kipptaf_extracts.rpt_google_directory__users_import
+        where is_create
+    """
+
+    context.log.info(msg=query)
+    with db_bigquery.get_client() as bq:
+        query_job = bq.query(query=query, project=db_bigquery.project)
+
+    arrow = query_job.to_arrow()
+
+    context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
+    create_users = arrow.to_pylist()
+
+    create_errors = google_directory.batch_insert_users(create_users)
+    context.log.error(msg="\n".join(create_errors))
+
+    members_data = [
+        {
+            "groupKey": u["groupKey"],
+            "email": u["primaryEmail"],
+            "delivery_settings": "DISABLED",
+        }
+        for u in create_users
+    ]
+
+    members_errors = google_directory.batch_insert_members(members_data)
+    context.log.error(msg="\n".join(members_errors))
+
+    errors = create_errors + members_errors
+
+    yield Output(value=None)
+    yield AssetCheckResult(
+        passed=(len(errors) == 0),
+        asset_key=context.asset_key,
+        check_name="zero_api_errors",
+        metadata={"errors": str(errors)},
+        severity=AssetCheckSeverity.WARN,
+    )
+
+
+@asset(
+    key=[*key_prefix, "user_update"],
+    check_specs=[
+        AssetCheckSpec(
+            name="zero_api_errors", asset=[*key_prefix, "role_assignments_sync"]
+        )
+    ],
+    group_name="google_directory",
+    kinds={"python"},
+)
+def google_directory_user_update(
+    context: AssetExecutionContext,
+    db_bigquery: BigQueryResource,
+    google_directory: GoogleDirectoryResource,
+):
+    query = """
+        select * from kipptaf_extracts.rpt_google_directory__users_import
+        where is_update
+    """
+
+    context.log.info(msg=query)
+    with db_bigquery.get_client() as bq:
+        query_job = bq.query(query=query, project=db_bigquery.project)
+
+    arrow = query_job.to_arrow()
+
+    context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
+    update_users = arrow.to_pylist()
+
+    errors = google_directory.batch_update_users(update_users)
+    context.log.error(msg="\n".join(errors))
 
     yield Output(value=None)
     yield AssetCheckResult(
@@ -196,4 +294,7 @@ google_directory_partitioned_assets = [
 assets = [
     *google_directory_nonpartitioned_assets,
     *google_directory_partitioned_assets,
+    google_directory_role_assignments_create,
+    google_directory_user_create,
+    google_directory_user_update,
 ]

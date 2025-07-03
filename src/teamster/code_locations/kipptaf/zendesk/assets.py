@@ -104,8 +104,12 @@ def zendesk_user_sync(
 
                 # capture errors
                 if js["status"] == "completed":
-                    errors.extend([r for r in js["results"] if r["status"] == "Failed"])
+                    for r in js["results"]:
+                        if r["status"] == "Failed":
+                            context.log.error(msg=r)
+                            errors.append(r)
                 elif js["status"] == "failed":
+                    context.log.error(msg=js)
                     errors.append(js)
 
         # terminate loop when queue is empty
@@ -113,9 +117,6 @@ def zendesk_user_sync(
             break
         else:
             time.sleep(1)
-
-    if errors:
-        context.log.error(errors)
 
     yield Output(value=None)
     yield AssetCheckResult(
