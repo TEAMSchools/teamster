@@ -1,10 +1,5 @@
 from dagster import DagsterInstance, build_schedule_context
 
-from teamster.code_locations.kipptaf.level_data.grow.schedules import (
-    grow_observations_asset_job_schedule,
-    grow_static_partition_asset_job_schedule,
-)
-
 
 def _test(schedule):
     context = build_schedule_context(instance=DagsterInstance.get())
@@ -16,8 +11,16 @@ def _test(schedule):
 
 
 def test_grow_observations_asset_job_schedule():
+    from teamster.code_locations.kipptaf.level_data.grow.schedules import (
+        grow_observations_asset_job_schedule,
+    )
+
     _test(grow_observations_asset_job_schedule)
 
 
 def test_grow_static_partition_asset_job_schedule():
+    from teamster.code_locations.kipptaf.level_data.grow.schedules import (
+        grow_static_partition_asset_job_schedule,
+    )
+
     _test(grow_static_partition_asset_job_schedule)

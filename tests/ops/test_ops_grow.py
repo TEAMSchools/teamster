@@ -1,6 +1,5 @@
 from dagster import build_op_context
 
-from teamster.code_locations.kipptaf.resources import GROW_RESOURCE
 from teamster.core.resources import BIGQUERY_RESOURCE
 from teamster.libraries.google.bigquery.ops import BigQueryOpConfig, bigquery_query_op
 from teamster.libraries.level_data.grow.ops import (
@@ -10,6 +9,8 @@ from teamster.libraries.level_data.grow.ops import (
 
 
 def test_grow_user_update_op():
+    from teamster.code_locations.kipptaf.resources import GROW_RESOURCE
+
     context = build_op_context()
 
     users = bigquery_query_op(
@@ -24,6 +25,8 @@ def test_grow_user_update_op():
 
 
 def test_grow_school_update_op():
+    from teamster.code_locations.kipptaf.resources import GROW_RESOURCE
+
     context = build_op_context()
 
     users = bigquery_query_op(

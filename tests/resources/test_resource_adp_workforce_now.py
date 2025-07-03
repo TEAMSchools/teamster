@@ -3,11 +3,12 @@ import pathlib
 
 from dagster import build_resources
 
-from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 
 
 def get_adp_wfn_resource() -> AdpWorkforceNowResource:
+    from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
+
     with build_resources(
         resources={"adp_wfn": ADP_WORKFORCE_NOW_RESOURCE}
     ) as resources:

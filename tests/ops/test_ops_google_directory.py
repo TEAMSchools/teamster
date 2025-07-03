@@ -1,6 +1,5 @@
 from dagster import build_op_context
 
-from teamster.code_locations.kipptaf.resources import GOOGLE_DIRECTORY_RESOURCE
 from teamster.core.resources import BIGQUERY_RESOURCE
 from teamster.libraries.google.bigquery.ops import BigQueryOpConfig, bigquery_query_op
 from teamster.libraries.google.directory.ops import (
@@ -15,6 +14,8 @@ BIGQUERY_GET_TABLE_OP_CONFIG = BigQueryOpConfig(
 
 
 def test_google_directory_user_update_op():
+    from teamster.code_locations.kipptaf.resources import GOOGLE_DIRECTORY_RESOURCE
+
     context = build_op_context()
 
     users = bigquery_query_op(
@@ -29,6 +30,8 @@ def test_google_directory_user_update_op():
 
 
 def test_google_directory_user_create_op():
+    from teamster.code_locations.kipptaf.resources import GOOGLE_DIRECTORY_RESOURCE
+
     context = build_op_context()
 
     users = bigquery_query_op(
@@ -43,6 +46,8 @@ def test_google_directory_user_create_op():
 
 
 def test_google_directory_role_assignment_create_op():
+    from teamster.code_locations.kipptaf.resources import GOOGLE_DIRECTORY_RESOURCE
+
     context = build_op_context()
 
     role_assignments = bigquery_query_op(
