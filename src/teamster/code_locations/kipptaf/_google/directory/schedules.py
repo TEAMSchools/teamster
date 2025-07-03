@@ -30,16 +30,9 @@ google_directory_role_assignments_create_schedule = ScheduleDefinition(
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
-google_directory_user_create_schedule = ScheduleDefinition(
-    name=f"{google_directory_user_create.key.to_python_identifier()}_schedule",
-    target=google_directory_user_create,
-    cron_schedule="0 1 * * *",
-    execution_timezone=str(LOCAL_TIMEZONE),
-)
-
-google_directory_user_update_schedule = ScheduleDefinition(
-    name=f"{google_directory_user_update.key.to_python_identifier()}_schedule",
-    target=google_directory_user_update,
+google_directory_user_sync_schedule = ScheduleDefinition(
+    name=f"{CODE_LOCATION}__google__directory__user_sync_schedule",
+    target=[google_directory_user_create, google_directory_user_update],
     cron_schedule="0 1 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
@@ -47,6 +40,5 @@ google_directory_user_update_schedule = ScheduleDefinition(
 schedules = [
     google_directory_nonpartitioned_asset_schedule,
     google_directory_role_assignments_create_schedule,
-    google_directory_user_create_schedule,
-    google_directory_user_update_schedule,
+    google_directory_user_sync_schedule,
 ]
