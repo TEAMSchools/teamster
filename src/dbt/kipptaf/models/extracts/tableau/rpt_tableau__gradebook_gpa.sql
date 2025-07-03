@@ -9,6 +9,7 @@ with
             term_end_date,
             is_current_term,
             semester,
+
         from {{ ref("int_powerschool__terms") }}
 
         union all
@@ -25,6 +26,7 @@ with
 
             false as is_current_term,
             'S#' as semester,
+
         from {{ ref("stg_powerschool__terms") }}
         where isyearrec = 1
     ),
@@ -64,6 +66,7 @@ with
             enr.ktc_cohort,
             enr.is_counseling_services,
             enr.is_student_athlete,
+            enr.ada_above_or_at_80,
 
             term.term,
             term.term_start_date,
@@ -71,7 +74,7 @@ with
             term.is_current_term,
             term.semester,
 
-            hos.head_of_school_preferred_name_lastfirst as head_of_school,
+            hos.head_of_school_preferred_name_lastfirst,
 
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_unweighted,
@@ -85,19 +88,11 @@ with
             gtq.total_credit_hours_y1,
             gtq.n_failing_y1,
 
-            concat(enr.region, enr.school_level) as region_school_level,
-
-            round(ada.ada, 3) as ada,
+            round(enr.ada, 3) as ada,
 
             if(term.term = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_term,
-            if(term.term = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
-            if(
-                current_date('{{ var("local_timezone") }}')
-                between (term.term_end_date - 10) and (term.term_start_date + 14),
-                true,
-                false
-            ) as is_quarter_end_date_range,
+            if(term.term = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
         from {{ ref("int_extracts__student_enrollments") }} as enr
         inner join
@@ -108,11 +103,6 @@ with
         left join
             {{ ref("int_people__leadership_crosswalk") }} as hos
             on enr.schoolid = hos.home_work_location_powerschool_school_id
-        left join
-            {{ ref("int_powerschool__ada") }} as ada
-            on enr.studentid = ada.studentid
-            and enr.yearid = ada.yearid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="ada") }}
         left join
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on enr.studentid = gc.studentid
@@ -133,9 +123,7 @@ with
             and enr.schoolid = gty.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
             and gty.is_current
-        where
-            enr.academic_year = {{ var("current_academic_year") }}
-            and not enr.is_out_of_district
+        where not enr.is_out_of_district
     ),
 
     course_enrollments as (
@@ -159,7 +147,6 @@ with
             f.is_tutoring as tutoring_nj,
             f.nj_student_tier,
 
-            if(m.ap_course_subject is not null, true, false) as is_ap_course,
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
             {{ ref("int_extracts__student_enrollments_subjects") }} as f
@@ -207,6 +194,7 @@ with
             tr.is_transfer_grade,
 
             if(tr.is_transfer_grade, 'Transfer', tr.credit_type) as credit_type,
+
             if(
                 tr.is_transfer_grade,
                 concat(
@@ -218,6 +206,7 @@ with
             ) as course_number,
 
             if(co.student_number is not null, true, false) as is_enrollment_matched,
+
         from {{ ref("stg_powerschool__storedgrades") }} as tr
         left join
             student_roster as co
@@ -262,6 +251,7 @@ with
             need_90,
             citizenship,
             comment_value,
+
         from {{ ref("base_powerschool__final_grades") }}
         where
             academic_year = {{ var("current_academic_year") }}
@@ -305,6 +295,7 @@ with
 
             null as citizenship,
             null as comment_value,
+
         from {{ ref("base_powerschool__final_grades") }}
         where
             academic_year = {{ var("current_academic_year") }}
@@ -342,6 +333,7 @@ with
                 ),
                 2
             ) as category_quarter_average_all_courses,
+
         from {{ ref("int_powerschool__category_grades") }}
         where
             yearid = {{ var("current_academic_year") - 1990 }}
@@ -369,8 +361,7 @@ select
     s.gender,
     s.ethnicity,
     s.advisory,
-    s.head_of_school as hos,
-    s.region_school_level,
+    s.head_of_school_preferred_name_lastfirst as hos,
     s.year_in_school,
     s.year_in_network,
     s.rn_undergrad,
@@ -386,13 +377,13 @@ select
     s.is_counseling_services,
     s.is_student_athlete,
     s.ada,
+    s.ada_above_or_at_80,
     s.term as `quarter`,
     s.semester,
     s.term_start_date as quarter_start_date,
     s.term_end_date as quarter_end_date,
     s.term_end_date as cal_quarter_end_date,
     s.is_current_term as is_current_quarter,
-    s.is_quarter_end_date_range,
     s.gpa_term as gpa_for_quarter,
     s.gpa_semester,
     s.gpa_y1,
@@ -420,7 +411,6 @@ select
     ce.teacher_lastfirst as teacher_name,
     ce.tutoring_nj,
     ce.nj_student_tier,
-    ce.is_ap_course,
 
     r.sam_account_name as tableau_username,
 
@@ -464,11 +454,10 @@ select
 
     'Local' as roster_type,
 
-    if(s.ada >= 0.80, true, false) as ada_above_or_at_80,
-
     if(
         s.grade_level < 9, ce.section_number, ce.external_expression
     ) as section_or_period,
+
 from student_roster as s
 left join
     course_enrollments as ce
@@ -525,8 +514,7 @@ select
     e1.gender,
     e1.ethnicity,
     e1.advisory,
-    e1.head_of_school as hos,
-    e1.region_school_level,
+    e1.head_of_school_preferred_name_lastfirst as hos,
     e1.year_in_school,
     e1.year_in_network,
     e1.rn_undergrad,
@@ -542,13 +530,13 @@ select
     e1.is_counseling_services,
     e1.is_student_athlete,
     e1.ada,
+    e1.ada_above_or_at_80,
     e1.term as `quarter`,
     e1.semester,
     e1.term_start_date as quarter_start_date,
     e1.term_end_date as quarter_end_date,
     e1.term_end_date as cal_quarter_end_date,
     e1.is_current_term as is_current_quarter,
-    e1.is_quarter_end_date_range,
     e1.gpa_term as gpa_for_quarter,
     e1.gpa_semester,
     e1.gpa_y1,
@@ -580,7 +568,6 @@ select
 
     null as tutoring_nj,
     null as nj_student_tier,
-    null as is_ap_course,
     null as tableau_username,
 
     y1h.percent as y1_course_final_percent_grade_adjusted,
@@ -619,8 +606,8 @@ select
     null as category_y1_percent_grade_current,
     null as category_quarter_average_all_courses,
     'Transfer' as roster_type,
-    null as ada_above_or_at_80,
     null as section_or_period,
+
 from y1_historical as y1h
 inner join
     student_roster as e1
