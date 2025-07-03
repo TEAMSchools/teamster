@@ -324,3 +324,51 @@ sources:
               - kipptaf
               - google_sheets
               - dibels_goals_long
+      - name: src_google_sheets__gradebook_expectations_assignments
+        config:
+          enabled: true
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
+            sheet_range: src_google_sheets__gradebook_expectations_assignments
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - gradebook_expectations_assignments
+      - name: src_google_sheets__gradebook_flags
+        config:
+          enabled: true
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
+            sheet_range: src_google_sheets__gradebook_flags
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - gradebook_flags
+      - name: src_google_sheets__gradebook_exceptions
+        config:
+          enabled: true
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
+            sheet_range: src_google_sheets__gradebook_exceptions
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - gradebook_exceptions

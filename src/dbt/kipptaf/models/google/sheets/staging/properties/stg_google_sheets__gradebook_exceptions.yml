@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_gsheets__gradebook_exceptions
+  - name: stg_google_sheets__gradebook_exceptions
     config:
       contract:
         enforced: true

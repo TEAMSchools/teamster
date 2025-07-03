@@ -1,28 +1,26 @@
 version: 2
 models:
-  - name: stg_gsheets__gradebook_expectations_assignments
+  - name: stg_google_sheets__gradebook_flags
     config:
       contract:
         enforced: true
       tags: google_sheet
     columns:
-      - name: Academic_Year
-        data_type: int64
       - name: Region
         data_type: string
       - name: School_Level
         data_type: string
-      - name: Quarter
+      - name: Audit_Category
         data_type: string
-      - name: Week_Number
+      - name: Audit_Flag_Name
+        data_type: string
+      - name: Grade_Level
         data_type: int64
-      - name: Notes
+      - name: Code
         data_type: string
-      - name: assignment_category_code
+      - name: CTE_Grouping
         data_type: string
-      - name: assignment_category_name
+      - name: Code_Type
         data_type: string
-      - name: assignment_category_term
-        data_type: string
-      - name: expectation
+      - name: Academic_Year
         data_type: int64
