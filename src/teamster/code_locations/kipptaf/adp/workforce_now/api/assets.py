@@ -26,13 +26,10 @@ asset_kwargs = {
 }
 
 
-workers_asset_key = [*key_prefix, "workers"]
-
-
 @asset(
-    key=workers_asset_key,
+    key=[*key_prefix, "workers"],
     io_manager_key="io_manager_gcs_avro",
-    check_specs=[build_check_spec_avro_schema_valid(workers_asset_key)],
+    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "workers"])],
     partitions_def=DailyPartitionsDefinition(
         start_date="01/01/2021",
         fmt="%m/%d/%Y",
@@ -80,21 +77,19 @@ def adp_workforce_now_workers(
     yield Output(
         value=(records, WORKER_SCHEMA), metadata={"record_count": len(records)}
     )
-
     yield check_avro_schema_valid(
         asset_key=context.asset_key, records=records, schema=WORKER_SCHEMA
     )
 
 
-sync_asset_key = [*key_prefix, "workers_sync"]
-
-
 @asset(
-    key=sync_asset_key,
-    check_specs=[AssetCheckSpec(name="zero_api_errors", asset=sync_asset_key)],
+    key=[*key_prefix, "workers_sync"],
+    check_specs=[
+        AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "workers_sync"])
+    ],
     **asset_kwargs,
 )
-def adp_workforce_now_workers_sync(
+def adp_workforce_now_workers_update(
     context: AssetExecutionContext,
     db_bigquery: BigQueryResource,
     adp_wfn: AdpWorkforceNowResource,
@@ -137,6 +132,7 @@ def adp_workforce_now_workers_sync(
                     },
                 )
             except Exception as e:
+                context.log.error(msg=str(e))
                 errors.append(str(e))
                 pass
 
@@ -165,6 +161,7 @@ def adp_workforce_now_workers_sync(
                     },
                 )
             except Exception as e:
+                context.log.error(msg=str(e))
                 errors.append(str(e))
                 pass
 
@@ -180,5 +177,5 @@ def adp_workforce_now_workers_sync(
 
 assets = [
     adp_workforce_now_workers,
-    adp_workforce_now_workers_sync,
+    adp_workforce_now_workers_update,
 ]
