@@ -55,4 +55,4 @@ left join
     on enr.studentid = gc.studentid
     and enr.schoolid = gc.schoolid
     and {{ union_dataset_join_clause(left_alias="enr", right_alias="gc") }}
-where not enr.is_out_of_district
+where not enr.is_out_of_district and enr.school_level in ('MS', 'HS')
