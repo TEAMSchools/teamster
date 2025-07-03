@@ -184,9 +184,7 @@ def google_directory_role_assignments_create(
 @asset(
     key=[*key_prefix, "user_create"],
     check_specs=[
-        AssetCheckSpec(
-            name="zero_api_errors", asset=[*key_prefix, "role_assignments_sync"]
-        )
+        AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "user_create"])
     ],
     group_name="google_directory",
     kinds={"python"},
@@ -240,9 +238,7 @@ def google_directory_user_create(
 @asset(
     key=[*key_prefix, "user_update"],
     check_specs=[
-        AssetCheckSpec(
-            name="zero_api_errors", asset=[*key_prefix, "role_assignments_sync"]
-        )
+        AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "user_update"])
     ],
     group_name="google_directory",
     kinds={"python"},
