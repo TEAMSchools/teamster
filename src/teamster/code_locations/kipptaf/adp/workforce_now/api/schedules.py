@@ -1,5 +1,3 @@
-from typing import Generator
-
 from dagster import (
     RunRequest,
     ScheduleDefinition,
@@ -34,9 +32,7 @@ asset_job = define_asset_job(
     cron_schedule="30 0 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
-def adp_workforce_now_api_workers_asset_schedule(
-    context: ScheduleEvaluationContext,
-) -> Generator:
+def adp_workforce_now_api_workers_asset_schedule(context: ScheduleEvaluationContext):
     partitions_def = check.not_none(asset_job.partitions_def)
 
     partition_keys = partitions_def.get_partition_keys()
