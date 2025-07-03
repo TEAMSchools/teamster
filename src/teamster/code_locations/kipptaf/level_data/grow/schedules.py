@@ -21,6 +21,7 @@ from teamster.code_locations.kipptaf.level_data.grow.jobs import (
 )
 
 grow_user_update_job_schedule = ScheduleDefinition(
+    name=f"{grow_user_sync.key.to_python_identifier()}_schedule",
     target=grow_user_sync,
     cron_schedule="0 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),

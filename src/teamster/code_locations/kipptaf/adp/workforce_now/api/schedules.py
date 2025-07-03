@@ -14,6 +14,9 @@ from teamster.code_locations.kipptaf.adp.workforce_now.api.assets import (
 )
 
 adp_workforce_now_workers_sync_schedule = ScheduleDefinition(
+    # trunk-ignore(pyright/reportFunctionMemberAccess)
+    name=f"{adp_workforce_now_workers_update.key.to_python_identifier()}_schedule",
+    # trunk-ignore(pyright/reportArgumentType)
     target=adp_workforce_now_workers_update,
     cron_schedule="0 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
@@ -21,7 +24,9 @@ adp_workforce_now_workers_sync_schedule = ScheduleDefinition(
 
 asset_job = define_asset_job(
     name=f"{CODE_LOCATION}_adp_workforce_now_api_workers_asset_job",
+    # trunk-ignore(pyright/reportArgumentType)
     selection=[adp_workforce_now_workers],
+    # trunk-ignore(pyright/reportFunctionMemberAccess)
     partitions_def=adp_workforce_now_workers.partitions_def,
 )
 
