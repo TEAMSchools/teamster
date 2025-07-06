@@ -28,6 +28,7 @@ with
                 round(safe_divide(s.scorepoints, a.totalpointvalue) * 100, 2),
                 safe_cast(s.actualscoreentered as numeric)
             ) as assign_final_score_percent,
+
         from
             {{
                 ref(
@@ -50,9 +51,14 @@ with
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="s") }}
             and a.assignmentsectionid = s.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
-        where
-            concat(ce.region_school_level, ce.course_number)
-            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+            on ce.academic_year = e.academic_year
+            and ce.region = e.region
+            and ce.school_level = e.school_level
+            and ce.course_number = e.course_number
+            and e.view_name = 'int_tableau__gradebook_audit_assignments_student'
+        where e.`include` is null
     )
 
 select

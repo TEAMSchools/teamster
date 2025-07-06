@@ -26,6 +26,8 @@ models:
         data_type: string
       - name: school_level
         data_type: string
+      - name: region_school_level
+        data_type: string
       - name: week_start_date
         data_type: date
       - name: week_end_date
@@ -40,10 +42,6 @@ models:
         data_type: int64
       - name: week_number_quarter
         data_type: int64
-      - name: region_school_level
-        data_type: string
-      - name: region_school_level_credit_type
-        data_type: sting
       - name: academic_year_display
         data_type: string
       - name: quarter_end_date_insession
@@ -70,9 +68,13 @@ models:
         data_type: string
       - name: teacher_name
         data_type: string
-      - name: tableau_username
+      - name: teacher_tableau_username
         data_type: string
       - name: hos
+        data_type: string
+      - name: school_leader
+        data_type: string
+      - name: school_leader_tableau_username
         data_type: string
       - name: is_quarter_end_date_range
         data_type: boolean

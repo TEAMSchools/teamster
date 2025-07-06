@@ -104,6 +104,8 @@ models:
         data_type: boolean
       - name: teacher_tableau_username
         data_type: string
+      - name: region_school_level
+        data_type: string
       - name: quarter
         data_type: string
       - name: semester
