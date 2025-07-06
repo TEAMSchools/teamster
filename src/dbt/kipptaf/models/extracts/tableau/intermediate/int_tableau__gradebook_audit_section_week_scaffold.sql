@@ -23,12 +23,14 @@ with
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
             on s.terms_academic_year = e1.academic_year
             and s.sections_course_number = e1.course_number
+            and e1.view_name = 'gradebook_audit_section_week_scaffold'
             and e1.school_id is null
         left join
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
             on s.terms_academic_year = e2.academic_year
             and s.sections_schoolid = e2.school_id
             and s.sections_course_number = e2.course_number
+            and e2.view_name = 'gradebook_audit_section_week_scaffold'
             and e2.school_id is not null
         where
             s.terms_academic_year = {{ var("current_academic_year") }}
