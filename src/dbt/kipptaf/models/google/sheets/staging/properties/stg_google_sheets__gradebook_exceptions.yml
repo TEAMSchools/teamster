@@ -6,33 +6,33 @@ models:
         enforced: true
       tags: google_sheet
     columns:
-      - name: Academic_Year
+      - name: academic_year
         data_type: int64
-      - name: Region
+      - name: region
         data_type: string
-      - name: School_Level
+      - name: school_level
         data_type: string
-      - name: School_ID
+      - name: school_id
         data_type: int64
-      - name: Grade_Level
-        data_type: int64
-      - name: Quarter
+      - name: quarter
         data_type: string
-      - name: Course_Number
+      - name: course_number
         data_type: string
-      - name: Section_Number
+      - name: section_number
         data_type: string
-      - name: Credit_Type
+      - name: credit_type
         data_type: string
-      - name: Gradebook_Category
+      - name: gradebook_category
         data_type: string
-      - name: Audit_Flag_Name
+      - name: audit_flag_name
         data_type: string
-      - name: View_Name
+      - name: view_name
         data_type: string
-      - name: CTE
+      - name: cte
         data_type: string
-      - name: Purpose
+      - name: purpose
         data_type: string
-      - name: Include
+      - name: include
         data_type: boolean
+      - name: grade_level
+        data_type: int64
