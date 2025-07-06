@@ -56,7 +56,7 @@ with
     ),
 
     school_course_exceptions as (
-        select s._dbt_source_relation, s.sections_dcid, e.`include`
+        select s._dbt_source_relation, s.sections_dcid, e.`include`,
         from {{ ref("base_powerschool__sections") }} as s
         inner join
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
@@ -69,7 +69,7 @@ with
 
         union all
 
-        select s._dbt_source_relation, s.sections_dcid, e.`include`
+        select s._dbt_source_relation, s.sections_dcid, e.`include`,
         from {{ ref("base_powerschool__sections") }} as s
         inner join
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
