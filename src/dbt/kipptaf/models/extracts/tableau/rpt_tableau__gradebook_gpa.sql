@@ -365,7 +365,7 @@ select
     s.advisory,
     s.head_of_school_preferred_name_lastfirst as hos,
     s.school_leader_preferred_name_lastfirst as school_leader,
-    s.school_leader_sam_account_name as school_leader_tableau_account,
+    s.school_leader_sam_account_name as school_leader_tableau_username,
     s.year_in_school,
     s.year_in_network,
     s.rn_undergrad,
@@ -416,7 +416,7 @@ select
     ce.tutoring_nj,
     ce.nj_student_tier,
 
-    r.sam_account_name as tableau_username,
+    r.sam_account_name as teacher_tableau_username,
 
     y1h.percent as y1_course_final_percent_grade_adjusted,
     y1h.grade as y1_course_final_letter_grade_adjusted,
@@ -574,7 +574,7 @@ select
 
     null as tutoring_nj,
     null as nj_student_tier,
-    null as tableau_username,
+    null as teacher_tableau_username,
 
     y1h.percent as y1_course_final_percent_grade_adjusted,
     y1h.grade as y1_course_final_letter_grade_adjusted,
