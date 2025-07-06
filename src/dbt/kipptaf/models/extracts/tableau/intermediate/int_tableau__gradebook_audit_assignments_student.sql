@@ -58,6 +58,7 @@ with
             and ce.school_level = e.school_level
             and ce.course_number = e.course_number
             and e.view_name = 'int_tableau__gradebook_audit_assignments_student'
+            and e.course_number is not null
         where e.`include` is null
     )
 
