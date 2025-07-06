@@ -74,6 +74,8 @@ models:
         data_type: string
       - name: school_leader_tableau_username
         data_type: string
+      - name: region_school_level
+        data_type: string
       - name: is_quarter_end_date_range
         data_type: boolean
       - name: section_or_period

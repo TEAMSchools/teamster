@@ -50,9 +50,23 @@ with
             {{ ref("int_powerschool__assignment_score_rollup") }} as asg
             on a.assignmentsectionid = asg.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
-        where
-            concat(sec.region_school_level, sec.course_number)
-            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            on sec.academic_year = e1.academic_year
+            and sec.region = e1.region
+            and sec.school_level = e1.school_level
+            and sec.course_number = e1.course_number
+            and e1.view_name = 'int_tableau__gradebook_audit_categories_teacher'
+            and e1.credit_type is null
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            on sec.academic_year = e2.academic_year
+            and sec.region = e2.region
+            and sec.school_level = e2.school_level
+            and sec.credit_type = e2.credit_type
+            and e2.view_name = 'int_tableau__gradebook_audit_categories_teacher'
+            and e2.credit_type is not null
+        where e1.`include` is null and e2.`include` is null
     ),
 
     percent_graded as (
@@ -65,9 +79,6 @@ with
             ) as percent_graded_for_quarter_week_class,
 
         from assignments
-        where
-            region_school_level_credit_type
-            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI', 'MiamiESSOC')
     ),
 
     final as (
@@ -84,6 +95,7 @@ with
             school,
             region,
             school_level,
+            region_school_level,
             week_start_date,
             week_end_date,
             week_start_monday,
@@ -91,8 +103,6 @@ with
             school_week_start_date_lead,
             week_number_academic_year,
             week_number_quarter,
-            region_school_level,
-            region_school_level_credit_type,
             academic_year_display,
             quarter_end_date_insession,
             sections_dcid,
@@ -106,8 +116,10 @@ with
             is_ap_course,
             teacher_number,
             teacher_name,
-            tableau_username,
+            teacher_tableau_username,
             hos,
+            school_leader,
+            school_leader_tableau_username,
             is_quarter_end_date_range,
             section_or_period,
             assignment_category_code,

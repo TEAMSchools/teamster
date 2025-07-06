@@ -108,6 +108,8 @@ select
     leader.school_leader_preferred_name_lastfirst as school_leader,
     leader.school_leader_sam_account_name as school_leader_tableau_username,
 
+    concat(tw.region, tw.school_level) as region_school_level,
+
     case
         -- when
         -- tw.region_school_level = 'MiamiES'
