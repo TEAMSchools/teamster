@@ -52,6 +52,8 @@ select
     ce.is_ap_course,
 
     sec.teacher_tableau_username,
+    sec.school_leader,
+    sec.school_leader_tableau_username,
     sec.region_school_level,
     sec.quarter,
     sec.semester,
