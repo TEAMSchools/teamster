@@ -6,6 +6,7 @@ select
     ge.assignment_category_term,
     ge.expectation,
     ge.notes,
+
 from {{ ref("int_tableau__gradebook_audit_section_week_scaffold") }} as s
 inner join
     {{ ref("stg_google_sheets__gradebook_expectations_assignments") }} as ge
