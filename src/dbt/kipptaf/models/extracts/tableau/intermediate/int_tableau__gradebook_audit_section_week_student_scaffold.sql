@@ -69,8 +69,8 @@ select
     sec.week_number_academic_year,
     sec.week_number_quarter,
 
-    qg.term_percent_grade_adjusted as quarter_course_percent_grade_that_matters,
-    qg.term_grade_points as quarter_course_grade_points_that_matters,
+    qg.term_percent_grade_adjusted as quarter_course_percent_grade,
+    qg.term_grade_points as quarter_course_grade_points,
     qg.citizenship as quarter_citizenship,
     qg.comment_value as quarter_comment_value,
 
