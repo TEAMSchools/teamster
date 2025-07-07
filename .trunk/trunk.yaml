@@ -79,7 +79,7 @@ runtimes:
     - node@22.16.0
     - python@3.10.8
 actions:
-  disabled:
+  enabled:
     - trunk-announce
     - trunk-check-pre-push
     - trunk-fmt-pre-commit

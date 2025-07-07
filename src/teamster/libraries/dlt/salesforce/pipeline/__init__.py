@@ -54,7 +54,6 @@
 
 #     @dlt.resource(write_disposition="merge")
 #     def opportunity(
-#         # trunk-ignore(ruff/B008)
 #         last_timestamp: incremental[str] = dlt.sources.incremental(
 #             "SystemModstamp", initial_value=None
 #         ),
@@ -65,7 +64,6 @@
 
 #     @dlt.resource(write_disposition="merge")
 #     def opportunity_line_item(
-#         # trunk-ignore(ruff/B008)
 #         last_timestamp: incremental[str] = dlt.sources.incremental(
 #             "SystemModstamp", initial_value=None
 #         ),
@@ -76,7 +74,6 @@
 
 #     @dlt.resource(write_disposition="merge")
 #     def opportunity_contact_role(
-#         # trunk-ignore(ruff/B008)
 #         last_timestamp: incremental[str] = dlt.sources.incremental(
 #             "SystemModstamp", initial_value=None
 #         ),
@@ -90,7 +87,6 @@
 
 #     @dlt.resource(write_disposition="merge")
 #     def account(
-#         # trunk-ignore(ruff/B008)
 #         last_timestamp: incremental[str] = dlt.sources.incremental(
 #             "LastModifiedDate", initial_value=None
 #         ),
@@ -113,7 +109,6 @@
 
 #     @dlt.resource(write_disposition="merge")
 #     def campaign_member(
-#         # trunk-ignore(ruff/B008)
 #         last_timestamp: incremental[str] = dlt.sources.incremental(
 #             "SystemModstamp", initial_value=None
 #         ),
@@ -136,7 +131,6 @@
 
 #     @dlt.resource(write_disposition="merge")
 #     def task(
-#         # trunk-ignore(ruff/B008)
 #         last_timestamp: incremental[str] = dlt.sources.incremental(
 #             "SystemModstamp", initial_value=None
 #         ),
@@ -145,7 +139,6 @@
 
 #     @dlt.resource(write_disposition="merge")
 #     def event(
-#         # trunk-ignore(ruff/B008)
 #         last_timestamp: incremental[str] = dlt.sources.incremental(
 #             "SystemModstamp", initial_value=None
 #         ),
