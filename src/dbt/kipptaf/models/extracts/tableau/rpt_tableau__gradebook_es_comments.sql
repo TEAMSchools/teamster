@@ -64,6 +64,7 @@ with
             audit_flag_name,
 
             max(audit_flag_value) as audit_flag_value,
+
         from {{ ref("int_tableau__gradebook_audit_flags") }}
         where audit_category = 'Comments'
         group by all
@@ -124,6 +125,7 @@ with
             code_type,
             audit_flag_name,
             audit_flag_value as flag_value,
+
         from {{ ref("int_tableau__gradebook_audit_flags") }}
         where audit_category = 'Comments'
     )
@@ -173,6 +175,7 @@ select
     e.category_quarter_percent_grade as effort_grade,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 inner join
     valid_flags as v
