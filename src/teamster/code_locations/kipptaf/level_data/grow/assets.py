@@ -245,7 +245,7 @@ def grow_user_sync(
         passed=(len(errors) == 0),
         asset_key=context.asset_key,
         check_name="zero_api_errors",
-        metadata={"errors": str(errors)},
+        metadata={"errors": errors},
         severity=AssetCheckSeverity.WARN,
     )
 
