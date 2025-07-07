@@ -1,6 +1,12 @@
 import random
 
-from dagster import AssetsDefinition, EnvVar, TextMetadataValue, materialize
+from dagster import (
+    AssetsDefinition,
+    EnvVar,
+    JsonMetadataValue,
+    TextMetadataValue,
+    materialize,
+)
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
@@ -9,6 +15,8 @@ from teamster.libraries.google.directory.resources import GoogleDirectoryResourc
 
 
 def _test_asset(asset: AssetsDefinition):
+    from teamster.core.resources import BIGQUERY_RESOURCE
+
     if asset.partitions_def is not None:
         partition_keys = asset.partitions_def.get_partition_keys()
 
@@ -26,10 +34,9 @@ def _test_asset(asset: AssetsDefinition):
             "google_directory": GoogleDirectoryResource(
                 customer_id=EnvVar("GOOGLE_WORKSPACE_CUSTOMER_ID"),
                 delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
-                # service_account_file_path=(
-                #     "/etc/secret-volume/gcloud_dagster_service_account.json"
-                # ),
+                service_account_file_path="/workspaces/teamster/env/teamster-332318-48bf4ca46803.json",
             ),
+            "db_bigquery": BIGQUERY_RESOURCE,
         },
     )
 
@@ -38,15 +45,22 @@ def _test_asset(asset: AssetsDefinition):
     event_specific_data = check.inst(
         asset_materialization_event.event_specific_data, StepMaterializationData
     )
-    records = check.inst(
-        event_specific_data.materialization.metadata["record_count"].value, int
-    )
-    assert records > 0
-    extras = check.inst(
-        obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
-        ttype=TextMetadataValue,
-    )
-    assert extras.text == ""
+
+    record_count = event_specific_data.materialization.metadata.get("record_count")
+    check_metadata = result.get_asset_check_evaluations()[0].metadata
+
+    if record_count is not None:
+        records = check.inst(record_count.value, int)
+        assert records > 0
+
+    if check_metadata.get("extras"):
+        extras = check.inst(obj=check_metadata.get("extras"), ttype=TextMetadataValue)
+        assert extras.text == ""
+
+    if check_metadata.get("errors"):
+        errors = check.inst(obj=check_metadata.get("errors"), ttype=JsonMetadataValue)
+        assert isinstance(errors.value, list)
+        assert len(errors.value) == 0
 
 
 def test_asset_google_directory_groups():
@@ -85,3 +99,11 @@ def test_asset_google_directory_users():
     from teamster.code_locations.kipptaf._google.directory.assets import users
 
     _test_asset(users)
+
+
+def test_asset_google_directory_role_assignments_create():
+    from teamster.code_locations.kipptaf._google.directory.assets import (
+        google_directory_role_assignments_create,
+    )
+
+    _test_asset(google_directory_role_assignments_create)

@@ -180,6 +180,8 @@ class GoogleDirectoryResource(ConfigurableResource):
         return self._resource.users().update(userKey=user_key, body=body).execute()
 
     def callback(self, id: str, response: dict, exception: Exception):
+        self._exceptions = []
+
         if exception is not None:
             self._log.exception(msg=(id, exception))
             self._exceptions.append((int(id) - 1, exception))
