@@ -111,14 +111,6 @@ select
     concat(tw.region, tw.school_level) as region_school_level,
 
     case
-        -- when
-        -- tw.region_school_level = 'MiamiES'
-        -- and current_date(
-        -- '{{ var("local_timezone") }}'
-        -- ) between (tw.quarter_end_date_insession - interval 40 day) and (
-        -- tw.quarter_end_date_insession + interval 14 day
-        -- )
-        -- then true
         when
             current_date(
                 '{{ var("local_timezone") }}'
