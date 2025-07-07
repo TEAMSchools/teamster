@@ -132,8 +132,8 @@ def adp_workforce_now_workers_update(
                     },
                 )
             except Exception as e:
-                context.log.error(msg=str(e))
-                errors.append(str(e))
+                context.log.error(msg=e)
+                errors.append(e)
                 pass
 
         # update employee number if missing
@@ -161,8 +161,8 @@ def adp_workforce_now_workers_update(
                     },
                 )
             except Exception as e:
-                context.log.error(msg=str(e))
-                errors.append(str(e))
+                context.log.error(msg=e)
+                errors.append(e)
                 pass
 
     yield Output(value=None)
@@ -170,7 +170,7 @@ def adp_workforce_now_workers_update(
         passed=(len(errors) == 0),
         asset_key=context.asset_key,
         check_name="zero_api_errors",
-        metadata={"errors": str(errors)},
+        metadata={"errors": errors},
         severity=AssetCheckSeverity.WARN,
     )
 

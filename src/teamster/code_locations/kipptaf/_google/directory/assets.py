@@ -156,6 +156,7 @@ def google_directory_role_assignments_create(
     google_directory: GoogleDirectoryResource,
 ):
     query = "select * from kipptaf_extracts.rpt_google_directory__admin_import"
+    errors = []
 
     context.log.info(msg=query)
     with db_bigquery.get_client() as bq:
@@ -164,19 +165,23 @@ def google_directory_role_assignments_create(
     arrow = query_job.to_arrow()
 
     context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
-    role_assignments_data = arrow.to_pylist()
 
-    errors = google_directory.batch_insert_role_assignments(
-        role_assignments=role_assignments_data
-    )
-    context.log.error(msg="\n".join(errors))
+    if arrow.num_rows > 0:
+        role_assignments_data = arrow.to_pylist()
+
+        errors = google_directory.batch_insert_role_assignments(
+            role_assignments=role_assignments_data
+        )
+
+        for e in errors:
+            context.log.error(msg=e)
 
     yield Output(value=None)
     yield AssetCheckResult(
         passed=(len(errors) == 0),
         asset_key=context.asset_key,
         check_name="zero_api_errors",
-        metadata={"errors": str(errors)},
+        metadata={"errors": errors},
         severity=AssetCheckSeverity.WARN,
     )
 
@@ -198,6 +203,7 @@ def google_directory_user_create(
         select * from kipptaf_extracts.rpt_google_directory__users_import
         where is_create
     """
+    errors = []
 
     context.log.info(msg=query)
     with db_bigquery.get_client() as bq:
@@ -206,31 +212,37 @@ def google_directory_user_create(
     arrow = query_job.to_arrow()
 
     context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
-    create_users = arrow.to_pylist()
 
-    create_errors = google_directory.batch_insert_users(create_users)
-    context.log.error(msg="\n".join(create_errors))
+    if arrow.num_rows > 0:
+        create_users = arrow.to_pylist()
 
-    members_data = [
-        {
-            "groupKey": u["groupKey"],
-            "email": u["primaryEmail"],
-            "delivery_settings": "DISABLED",
-        }
-        for u in create_users
-    ]
+        create_errors = google_directory.batch_insert_users(create_users)
 
-    members_errors = google_directory.batch_insert_members(members_data)
-    context.log.error(msg="\n".join(members_errors))
+        for ce in create_errors:
+            context.log.error(msg=ce)
+            errors.append(ce)
 
-    errors = create_errors + members_errors
+        members_data = [
+            {
+                "groupKey": u["groupKey"],
+                "email": u["primaryEmail"],
+                "delivery_settings": "DISABLED",
+            }
+            for u in create_users
+        ]
+
+        members_errors = google_directory.batch_insert_members(members_data)
+
+        for me in members_errors:
+            context.log.error(msg=me)
+            errors.append(me)
 
     yield Output(value=None)
     yield AssetCheckResult(
         passed=(len(errors) == 0),
         asset_key=context.asset_key,
         check_name="zero_api_errors",
-        metadata={"errors": str(errors)},
+        metadata={"errors": errors},
         severity=AssetCheckSeverity.WARN,
     )
 
@@ -252,6 +264,7 @@ def google_directory_user_update(
         select * from kipptaf_extracts.rpt_google_directory__users_import
         where is_update
     """
+    errors = []
 
     context.log.info(msg=query)
     with db_bigquery.get_client() as bq:
@@ -260,17 +273,21 @@ def google_directory_user_update(
     arrow = query_job.to_arrow()
 
     context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
-    update_users = arrow.to_pylist()
 
-    errors = google_directory.batch_update_users(update_users)
-    context.log.error(msg="\n".join(errors))
+    if arrow.num_rows > 0:
+        update_users = arrow.to_pylist()
+
+        errors = google_directory.batch_update_users(update_users)
+
+        for e in errors:
+            context.log.error(msg=e)
 
     yield Output(value=None)
     yield AssetCheckResult(
         passed=(len(errors) == 0),
         asset_key=context.asset_key,
         check_name="zero_api_errors",
-        metadata={"errors": str(errors)},
+        metadata={"errors": errors},
         severity=AssetCheckSeverity.WARN,
     )
 
