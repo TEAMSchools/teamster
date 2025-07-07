@@ -1,8 +1,7 @@
 {
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
   "features": {
-    "ghcr.io/itsmechlark/features/1password:1": {},
-    "ghcr.io/trunk-io/devcontainer-feature/trunk:1": {}
+    "ghcr.io/itsmechlark/features/1password:1": {}
   },
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
