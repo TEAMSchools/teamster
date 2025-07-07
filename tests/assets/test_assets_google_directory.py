@@ -59,6 +59,7 @@ def _test_asset(asset: AssetsDefinition):
 
     if check_metadata.get("errors"):
         errors = check.inst(obj=check_metadata.get("errors"), ttype=JsonMetadataValue)
+        assert isinstance(errors.value, list)
         assert len(errors.value) == 0
 
 
