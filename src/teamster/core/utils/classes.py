@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from dagster import TimeWindowPartitionsDefinition
-from dagster._core.definitions.partition import DEFAULT_DATE_FORMAT
+from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 from dateutil.relativedelta import relativedelta
 
 
