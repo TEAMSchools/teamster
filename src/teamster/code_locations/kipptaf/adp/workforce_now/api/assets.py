@@ -170,7 +170,7 @@ def adp_workforce_now_workers_update(
         passed=(len(errors) == 0),
         asset_key=context.asset_key,
         check_name="zero_api_errors",
-        metadata={"errors": str(errors)},
+        metadata={"errors": errors},
         severity=AssetCheckSeverity.WARN,
     )
 
