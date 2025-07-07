@@ -61,7 +61,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh || true
 # install dependencies
 uv tool install datamodel-code-generator
 uv tool install dagster-dg
-uv sync --frozen
+uv sync
 
 # prepare dbt projects
 uv run dagster-dbt project prepare-and-package \
