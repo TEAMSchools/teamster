@@ -1,19 +1,9 @@
 import random
 
 from dagster import AssetsDefinition, EnvVar, TextMetadataValue, materialize
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf._google.directory.assets import (
-    groups,
-    members,
-    orgunits,
-    role_assignments,
-    roles,
-    users,
-)
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 
@@ -60,24 +50,38 @@ def _test_asset(asset: AssetsDefinition):
 
 
 def test_asset_google_directory_groups():
+    from teamster.code_locations.kipptaf._google.directory.assets import groups
+
     _test_asset(groups)
 
 
 def test_asset_google_directory_members():
+    from teamster.code_locations.kipptaf._google.directory.assets import members
+
     _test_asset(members)
 
 
 def test_asset_google_directory_orgunits():
+    from teamster.code_locations.kipptaf._google.directory.assets import orgunits
+
     _test_asset(orgunits)
 
 
 def test_asset_google_directory_role_assignments():
+    from teamster.code_locations.kipptaf._google.directory.assets import (
+        role_assignments,
+    )
+
     _test_asset(role_assignments)
 
 
 def test_asset_google_directory_roles():
+    from teamster.code_locations.kipptaf._google.directory.assets import roles
+
     _test_asset(roles)
 
 
 def test_asset_google_directory_users():
+    from teamster.code_locations.kipptaf._google.directory.assets import users
+
     _test_asset(users)

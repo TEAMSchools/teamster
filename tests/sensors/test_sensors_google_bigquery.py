@@ -1,13 +1,14 @@
 from dagster import SensorResult, build_sensor_context
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf._google.bigquery.sensors import (
-    bigquery_table_modified_sensor,
-)
 from teamster.core.resources import BIGQUERY_RESOURCE
 
 
 def test_bigquery_table_sensor():
+    from teamster.code_locations.kipptaf._google.bigquery.sensors import (
+        bigquery_table_modified_sensor,
+    )
+
     context = build_sensor_context()
 
     sensor_result = bigquery_table_modified_sensor(

@@ -10,15 +10,12 @@ from dagster import (
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf.adp.workforce_manager.assets import (
-    accrual_reporting_period_summary,
-    time_details,
-)
-from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_MANAGER_RESOURCE
 from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(asset: AssetsDefinition):
+    from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_MANAGER_RESOURCE
+
     partitions_def = check.inst(
         obj=asset.partitions_def, ttype=MultiPartitionsDefinition
     )
@@ -74,8 +71,16 @@ def _test_asset(asset: AssetsDefinition):
 
 
 def test_asset_adp_workforce_manager_accrual_reporting_period_summary():
+    from teamster.code_locations.kipptaf.adp.workforce_manager.assets import (
+        accrual_reporting_period_summary,
+    )
+
     _test_asset(accrual_reporting_period_summary)
 
 
 def test_asset_adp_workforce_manager_time_details():
+    from teamster.code_locations.kipptaf.adp.workforce_manager.assets import (
+        time_details,
+    )
+
     _test_asset(time_details)

@@ -3,7 +3,6 @@ from datetime import datetime
 
 from dagster import AssetsDefinition, DagsterInstance, MultiPartitionKey, materialize
 
-from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
 from teamster.core.resources import BIGQUERY_RESOURCE, GCS_RESOURCE, SSH_COUCHDROP
 from teamster.libraries.extracts.assets import format_file_name
 
@@ -96,6 +95,8 @@ def test_format_file_name_default():
 
 
 def test_format_file_name_multi_partition():
+    from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
+
     group_code = "3LE"
     date = "20230815"
 

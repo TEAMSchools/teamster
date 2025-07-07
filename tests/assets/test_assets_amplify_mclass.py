@@ -4,10 +4,6 @@ from dagster import TextMetadataValue, materialize
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf.amplify.mclass.assets import (
-    benchmark_student_summary,
-    pm_student_summary,
-)
 from teamster.code_locations.kipptaf.resources import MCLASS_RESOURCE
 from teamster.core.resources import get_io_manager_gcs_avro
 
@@ -43,8 +39,14 @@ def _test_asset(asset):
 
 
 def test_mclass_asset_benchmark_student_summary():
+    from teamster.code_locations.kipptaf.amplify.mclass.assets import (
+        benchmark_student_summary,
+    )
+
     _test_asset(benchmark_student_summary)
 
 
 def test_mclass_asset_pm_student_summary():
+    from teamster.code_locations.kipptaf.amplify.mclass.assets import pm_student_summary
+
     _test_asset(pm_student_summary)
