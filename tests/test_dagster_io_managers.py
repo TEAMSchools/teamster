@@ -12,8 +12,6 @@ from dagster import (
     asset,
     materialize,
 )
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._core.events import HandledOutputData
 from dagster_shared import check
 from pydantic import BaseModel
