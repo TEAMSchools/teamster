@@ -36,13 +36,12 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
-    gc.cumulative_y1_gpa as gpa_cumulative_y1_gpa,
-    gc.cumulative_y1_gpa_unweighted as gpa_cumulative_y1_gpa_unweighted,
-    gc.cumulative_y1_gpa_projected as gpa_cumulative_y1_gpa_projected,
-    gc.cumulative_y1_gpa_projected_s1 as gpa_cumulative_y1_gpa_projected_s1,
-    gc.cumulative_y1_gpa_projected_s1_unweighted
-    as gpa_cumulative_y1_gpa_projected_s1_unweighted,
-    gc.core_cumulative_y1_gpa as gpa_core_cumulative_y1_gpa,
+    gc.cumulative_y1_gpa,
+    gc.cumulative_y1_gpa_unweighted,
+    gc.cumulative_y1_gpa_projected,
+    gc.cumulative_y1_gpa_projected_s1,
+    gc.cumulative_y1_gpa_projected_s1_unweighted,
+    gc.core_cumulative_y1_gpa,
 
     round(enr.ada, 3) as ada,
 
