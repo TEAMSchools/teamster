@@ -132,8 +132,8 @@ def adp_workforce_now_workers_update(
                     },
                 )
             except Exception as e:
-                context.log.error(msg=str(e))
-                errors.append(str(e))
+                context.log.error(msg=e)
+                errors.append(e)
                 pass
 
         # update employee number if missing
@@ -161,8 +161,8 @@ def adp_workforce_now_workers_update(
                     },
                 )
             except Exception as e:
-                context.log.error(msg=str(e))
-                errors.append(str(e))
+                context.log.error(msg=e)
+                errors.append(e)
                 pass
 
     yield Output(value=None)
