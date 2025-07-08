@@ -164,13 +164,41 @@ with
             date(sync_date) as sync_date,
 
             case
-                regexp_extract(cast(student_primary_id as string), r'^\d')
-                when '1'
+                school_name
+                when 'KIPP BOLD Academy'
                 then 'Newark'
-                when '2'
-                then 'Camden'
-                when '3'
+                when 'KIPP Courage Academy'
                 then 'Miami'
+                when 'KIPP Hatch (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP Justice Academy'
+                then 'Newark'
+                when 'KIPP Lanning Square Middle'
+                then 'Camden'
+                when 'KIPP Lanning Square Primary (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP Life Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Purpose Academy'
+                then 'Newark'
+                when 'KIPP Rise Academy'
+                then 'Newark'
+                when 'KIPP Royalty Academy (Mia)'
+                then 'Miami'
+                when 'KIPP SPARK (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Seek Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Sumner Elementary (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP TEAM Academy'
+                then 'Newark'
+                when 'KIPP THRIVE (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Truth Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Upper Roseville Academy (Newark, NJ)'
+                then 'Newark'
             end as region,
 
             coalesce(
