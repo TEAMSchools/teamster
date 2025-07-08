@@ -301,6 +301,8 @@ with
 select
     df.*,
 
+    x.region,
+
     x.grade_level as assessment_grade_int,
 
     cast(x.grade_level as string) as assessment_grade,

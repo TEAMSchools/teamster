@@ -31,6 +31,7 @@ with
         -- benchmark scores
         select
             bss.academic_year,
+            bss.region,
             bss.student_primary_id as student_number,
             bss.assessment_grade,
             bss.assessment_grade_int,
@@ -63,44 +64,6 @@ with
                 then 3
             end as `round`,
 
-            case
-                bss.school_name
-                when 'KIPP BOLD Academy'
-                then 'Newark'
-                when 'KIPP Courage Academy'
-                then 'Miami'
-                when 'KIPP Hatch (Camden, NJ)'
-                then 'Camden'
-                when 'KIPP Justice Academy'
-                then 'Newark'
-                when 'KIPP Lanning Square Middle'
-                then 'Camden'
-                when 'KIPP Lanning Square Primary (Camden, NJ)'
-                then 'Camden'
-                when 'KIPP Life Academy (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Purpose Academy'
-                then 'Newark'
-                when 'KIPP Rise Academy'
-                then 'Newark'
-                when 'KIPP Royalty Academy (Mia)'
-                then 'Miami'
-                when 'KIPP SPARK (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Seek Academy (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Sumner Elementary (Camden, NJ)'
-                then 'Camden'
-                when 'KIPP TEAM Academy'
-                then 'Newark'
-                when 'KIPP THRIVE (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Truth Academy (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Upper Roseville Academy (Newark, NJ)'
-                then 'Newark'
-            end as region,
-
             row_number() over (
                 partition by u.surrogate_key, u.measure_standard
                 order by u.measure_standard_level_int desc
@@ -115,6 +78,14 @@ with
         inner join
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
+        inner join
+            valid_scores as v
+            on bss.academic_year = v.academic_year
+            and bss.region = v.region
+            and bss.assessment_grade_int = v.grade
+            and bss.benchmark_period = v.admin_season
+            and u.measure_standard = v.expected_measure_standard
+
         where
             bss.academic_year >= 2023
             and bss.enrollment_grade = bss.assessment_grade
@@ -125,6 +96,7 @@ with
         -- 7/8 benchmark scores SY24 only
         select
             df.academic_year,
+            df.region,
             df.student_id as student_number,
             df.assessment_grade,
             df.assessment_grade_int,
@@ -149,7 +121,6 @@ with
             null as score_change,
 
             v.`round`,
-            x.region,
 
             row_number() over (
                 partition by df.surrogate_key, df.measure_standard
@@ -162,22 +133,19 @@ with
 
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as df
         inner join
-            {{ ref("stg_google_sheets__dibels_df_student_xwalk") }} as x
-            on df.student_id = x.student_number
-            and df.period = x.admin_season
-        inner join
             valid_scores as v
             on df.academic_year = v.academic_year
+            and df.region = v.region
             and df.assessment_grade_int = v.grade
             and df.period = v.admin_season
             and df.measure_standard = v.expected_measure_standard
-            and x.region = v.region
 
         union all
 
         -- pm scores
         select
             p.academic_year,
+            p.region,
             p.student_primary_id as student_number,
             p.assessment_grade,
             p.assessment_grade_int,
@@ -203,44 +171,6 @@ with
             p.measure_standard_score_change,
 
             v.`round`,
-
-            case
-                p.school_name
-                when 'KIPP BOLD Academy'
-                then 'Newark'
-                when 'KIPP Courage Academy'
-                then 'Miami'
-                when 'KIPP Hatch (Camden, NJ)'
-                then 'Camden'
-                when 'KIPP Justice Academy'
-                then 'Newark'
-                when 'KIPP Lanning Square Middle'
-                then 'Camden'
-                when 'KIPP Lanning Square Primary (Camden, NJ)'
-                then 'Camden'
-                when 'KIPP Life Academy (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Purpose Academy'
-                then 'Newark'
-                when 'KIPP Rise Academy'
-                then 'Newark'
-                when 'KIPP Royalty Academy (Mia)'
-                then 'Miami'
-                when 'KIPP SPARK (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Seek Academy (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Sumner Elementary (Camden, NJ)'
-                then 'Camden'
-                when 'KIPP TEAM Academy'
-                then 'Newark'
-                when 'KIPP THRIVE (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Truth Academy (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Upper Roseville Academy (Newark, NJ)'
-                then 'Newark'
-            end as region,
 
             row_number() over (
                 partition by p.surrogate_key, p.measure, v.`round`

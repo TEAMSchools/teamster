@@ -54,6 +54,16 @@ with
                 word_reading_wrf_year_growth
             ),
 
+            case
+                regexp_extract(cast(student_primary_id as string), r'^\d')
+                when '1'
+                then 'Newark'
+                when '2'
+                then 'Camden'
+                when '3'
+                then 'Miami'
+            end as region,
+
             cast(left(school_year, 4) as int) as academic_year,
 
             /* score */
@@ -211,6 +221,7 @@ with
                     as string
                 )
             ) as phonemic_awareness_psf_national_norm_percentile,
+
         from {{ source("amplify", "src_amplify__benchmark_student_summary") }}
     )
 
@@ -414,4 +425,5 @@ select
             ]
         )
     }} as surrogate_key,
+
 from benchmark_student_summary
