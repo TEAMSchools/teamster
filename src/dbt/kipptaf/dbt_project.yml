@@ -82,9 +82,6 @@ models:
     amplify:
       +schema: amplify
       +materialized: table
-      drive:
-        disabled:
-          +enabled: false
     assessments:
       +schema: assessments
       staging:
@@ -169,6 +166,8 @@ models:
             group: google_sheets
         staging:
           +materialized: table
+        disabled:
+          +enabled: false
     illuminate:
       +schema: illuminate
       dlt:

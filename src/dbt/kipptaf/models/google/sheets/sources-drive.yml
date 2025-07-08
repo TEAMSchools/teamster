@@ -65,21 +65,6 @@ sources:
               - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
             sheet_range: src_google_sheets__state_test_comparison
             skip_leading_rows: 1
-        columns:
-          - name: Academic_Year
-            data_type: int64
-          - name: Test_Name
-            data_type: string
-          - name: Test_Code
-            data_type: string
-          - name: Region
-            data_type: string
-          - name: Comparison_Entity
-            data_type: string
-          - name: Percent_Proficient
-            data_type: float64
-          - name: Total_Students
-            data_type: int64
         meta:
           dagster:
             asset_key:
@@ -94,25 +79,6 @@ sources:
               - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
             sheet_range: src_google_sheets__state_test_comparison_demographics
             skip_leading_rows: 1
-        columns:
-          - name: Academic_Year
-            data_type: int64
-          - name: Test_Name
-            data_type: string
-          - name: Test_Code
-            data_type: string
-          - name: Region
-            data_type: string
-          - name: Comparison_Entity
-            data_type: string
-          - name: Comparison_Demographic_Group
-            data_type: string
-          - name: Comparison_Demographic_Subgroup
-            data_type: string
-          - name: Percent_Proficient
-            data_type: float64
-          - name: Total_Students
-            data_type: int64
         meta:
           dagster:
             asset_key:
@@ -127,38 +93,114 @@ sources:
               - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
             sheet_range: src_google_sheets__state_test_expected_assessments
             skip_leading_rows: 1
-        columns:
-          - name: Academic_Year
-            data_type: int64
-          - name: Region
-            data_type: string
-          - name: Grade
-            data_type: int64
-          - name: Test_Type
-            data_type: string
-          - name: Assessment_Name
-            data_type: string
-          - name: Discipline
-            data_type: string
-          - name: Assessment_Subject_Area
-            data_type: string
-          - name: Subject_Area
-            data_type: string
-          - name: Test_Code
-            data_type: string
-          - name: Admin_Season
-            data_type: string
-          - name: Month_Round
-            data_type: string
-          - name: Illuminate_Subject
-            data_type: string
-          - name: iReady_Subject
-            data_type: string
-          - name: PS_Credit_Type
-            data_type: string
         meta:
           dagster:
             asset_key:
               - kipptaf
               - google_sheets
               - state_test_expected_assessments
+      - name: src_google_sheets__dibels_pm_expectations
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_pm_expectations
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - pm_expectations
+      - name: src_google_sheets__dibels_measures
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_measures
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - dibels_measures
+      - name: src_google_sheets__dibels_df_student_xwalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_google_sheets__dibels_df_student_xwalk
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - dibels_df_student_xwalk
+      - name: src_google_sheets__dibels_expected_assessments
+        config:
+          enabled: true
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_expected_assessments
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - dibels_expected_assessments
+      - name: src_google_sheets__dibels_foundation_goals
+        config:
+          enabled: true
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_google_sheets__dibels_foundation_goals
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - dibels_foundation_goals
+      - name: src_google_sheets__dibels_goals_wide
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_goals_wide
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - disabled
+              - dibels_goals_wide
+      - name: src_google_sheets__dibels_goals_long
+        config:
+          enabled: true
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_amplify__dibels_goals_long
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - dibels_goals_long
