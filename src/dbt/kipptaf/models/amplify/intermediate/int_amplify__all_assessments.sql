@@ -25,6 +25,44 @@ with
             null as total_number_of_probes,
             null as score_change,
 
+            case
+                bss.school_name
+                when 'KIPP BOLD Academy'
+                then 'Newark'
+                when 'KIPP Courage Academy'
+                then 'Miami'
+                when 'KIPP Hatch (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP Justice Academy'
+                then 'Newark'
+                when 'KIPP Lanning Square Middle'
+                then 'Camden'
+                when 'KIPP Lanning Square Primary (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP Life Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Purpose Academy'
+                then 'Newark'
+                when 'KIPP Rise Academy'
+                then 'Newark'
+                when 'KIPP Royalty Academy (Mia)'
+                then 'Miami'
+                when 'KIPP SPARK (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Seek Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Sumner Elementary (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP TEAM Academy'
+                then 'Newark'
+                when 'KIPP THRIVE (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Truth Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Upper Roseville Academy (Newark, NJ)'
+                then 'Newark'
+            end as region,
+
             row_number() over (
                 partition by u.surrogate_key, u.measure_standard
                 order by u.measure_standard_level_int desc
@@ -47,23 +85,23 @@ with
 
         -- 7/8 benchmark scores SY24 only
         select
-            academic_year as academic_year,
-            student_id as student_number,
+            df.academic_year as academic_year,
+            df.student_id as student_number,
 
             cast(null as string) as assessment_grade,
             null as assessment_grade_int,
 
-            period,
-            `date` as client_date,
-            `date` as sync_date,
+            df.period,
+            df.`date` as client_date,
+            df.`date` as sync_date,
 
-            measure_name,
-            measure_name_code,
-            measure_standard,
-            measure_standard_score,
-            measure_standard_level,
-            measure_standard_level_int,
-            measure_percentile,
+            df.measure_name,
+            df.measure_name_code,
+            df.measure_standard,
+            df.measure_standard_score,
+            df.measure_standard_level,
+            df.measure_standard_level_int,
+            df.measure_percentile,
 
             cast(null as string) as measure_semester_growth,
             cast(null as string) as measure_year_growth,
@@ -72,19 +110,24 @@ with
             null as total_number_of_probes,
             null as score_change,
 
+            x.region,
+
             row_number() over (
-                partition by surrogate_key, measure_standard
-                order by measure_standard_level_int desc
+                partition by df.surrogate_key, df.measure_standard
+                order by df.measure_standard_level_int desc
             ) as rn_highest,
 
             row_number() over (
-                partition by academic_year, student_id order by `date`
+                partition by df.academic_year, df.student_id order by `date`
             ) as rn_distinct,
 
-        from {{ ref("int_amplify__dibels_data_farming_unpivot") }}
-
+        from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as df
+        left join
+            {{ ref("stg_google_sheets__dibels_df_student_xwalk") }} as x
+            on df.student_id = x.student_number
+            and df.period = x.admin_season
         where
-            measure_standard
+            df.measure_standard
             in ('Reading Fluency (ORF)', 'Reading Comprehension (Maze)', 'Composite')
 
         union all
@@ -115,6 +158,44 @@ with
             p.probe_number as probe_number,
             p.total_number_of_probes as total_number_of_probes,
             p.measure_standard_score_change,
+
+            case
+                p.school_name
+                when 'KIPP BOLD Academy'
+                then 'Newark'
+                when 'KIPP Courage Academy'
+                then 'Miami'
+                when 'KIPP Hatch (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP Justice Academy'
+                then 'Newark'
+                when 'KIPP Lanning Square Middle'
+                then 'Camden'
+                when 'KIPP Lanning Square Primary (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP Life Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Purpose Academy'
+                then 'Newark'
+                when 'KIPP Rise Academy'
+                then 'Newark'
+                when 'KIPP Royalty Academy (Mia)'
+                then 'Miami'
+                when 'KIPP SPARK (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Seek Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Sumner Elementary (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP TEAM Academy'
+                then 'Newark'
+                when 'KIPP THRIVE (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Truth Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Upper Roseville Academy (Newark, NJ)'
+                then 'Newark'
+            end as region,
 
             row_number() over (
                 partition by p.surrogate_key, p.measure, a.pm_round
@@ -185,6 +266,7 @@ with
 
 select
     s.academic_year,
+    s.region,
     s.student_number,
     s.assessment_type,
     s.assessment_grade,
@@ -229,6 +311,7 @@ union all
 
 select
     s.academic_year,
+    s.region,
     s.student_number,
     s.assessment_type,
     s.assessment_grade,
