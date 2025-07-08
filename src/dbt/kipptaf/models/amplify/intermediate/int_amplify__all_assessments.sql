@@ -118,7 +118,7 @@ with
             ) as rn_highest,
 
             row_number() over (
-                partition by df.academic_year, df.student_id order by `date`
+                partition by df.academic_year, df.student_id order by df.`date`
             ) as rn_distinct,
 
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as df
@@ -134,13 +134,13 @@ with
 
         -- pm scores
         select
-            p.academic_year as academic_year,
+            p.academic_year,
             p.student_primary_id as student_number,
-            p.assessment_grade as assessment_grade,
-            p.assessment_grade_int as assessment_grade_int,
+            p.assessment_grade,
+            p.assessment_grade_int,
             p.pm_period as period,
-            p.client_date as client_date,
-            p.sync_date as sync_date,
+            p.client_date,
+            p.sync_date,
             p.measure_name,
             p.measure_name_code,
             p.measure as measure_standard,
@@ -155,8 +155,8 @@ with
             'NA' as measure_year_growth,
             'PM' as assessment_type,
 
-            p.probe_number as probe_number,
-            p.total_number_of_probes as total_number_of_probes,
+            p.probe_number,
+            p.total_number_of_probes,
             p.measure_standard_score_change,
 
             case
