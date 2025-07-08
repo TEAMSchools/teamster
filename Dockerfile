@@ -1,5 +1,7 @@
+# trunk-ignore-all(checkov/CKV_DOCKER_2)
+# trunk-ignore-all(trivy/DS026)
 # https://hub.docker.com/_/python
-FROM python:3.12-slim
+FROM python:3.13-slim
 ARG CODE_LOCATION
 
 # set container envs

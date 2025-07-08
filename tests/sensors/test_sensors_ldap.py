@@ -1,6 +1,3 @@
-from teamster.code_locations.kipptaf.resources import LDAP_RESOURCE
-
-SEARCH_BASE = "dc=teamschools,dc=kipp,dc=org"
 TESTS = [
     {
         "search_filter": "(&(objectClass=user)(objectCategory=person))",
@@ -10,12 +7,14 @@ TESTS = [
 
 
 def _test():
+    from teamster.code_locations.kipptaf.resources import LDAP_RESOURCE
+
     for test in TESTS:
         when_changed = test["whenChanged"]
         search_filter = test["search_filter"]
 
         LDAP_RESOURCE._connection.search(
-            search_base=SEARCH_BASE,
+            search_base="dc=teamschools,dc=kipp,dc=org",
             search_filter=(
                 f"(&(idautoChallengeSetTimestamp>={when_changed}){search_filter})"
             ),
