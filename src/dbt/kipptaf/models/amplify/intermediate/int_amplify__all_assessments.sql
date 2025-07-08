@@ -189,6 +189,7 @@ with
             and p.region = v.region
             and p.assessment_grade_int = v.grade
             and p.measure = v.expected_measure_standard
+            and p.pm_period = v.admin_season
             and p.client_date between v.start_date and v.end_date
         where
             p.academic_year >= 2024
