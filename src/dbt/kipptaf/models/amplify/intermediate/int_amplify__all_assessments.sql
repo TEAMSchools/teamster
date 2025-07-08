@@ -78,7 +78,7 @@ with
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
         where
-            bss.academic_year >= {{ var("current_academic_year") - 1 }}
+            bss.academic_year >= 2023
             and bss.enrollment_grade = bss.assessment_grade
             and bss.assessment_grade is not null
 
@@ -88,9 +88,8 @@ with
         select
             df.academic_year as academic_year,
             df.student_id as student_number,
-
-            cast(null as string) as assessment_grade,
-            null as assessment_grade_int,
+            df.assessment_grade,
+            df.assessment_grade_int,
 
             df.period,
             df.`date` as client_date,
@@ -217,7 +216,7 @@ with
             and p.measure = a.measure_standard
             and p.client_date between a.start_date and a.end_date
         where
-            p.academic_year >= {{ var("current_academic_year") - 1 }}
+            p.academic_year >= 2023
             and p.enrollment_grade = p.assessment_grade
             and p.assessment_grade is not null
     ),

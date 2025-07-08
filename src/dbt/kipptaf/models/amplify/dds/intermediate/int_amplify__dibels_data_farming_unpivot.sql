@@ -299,9 +299,14 @@ with
     )
 
 select
-    *,
+    df.*,
+
+    x.grade_level as assessment_grade_int,
+
+    cast(x.grade_level as string) as assessment_grade,
+
     case
-        measure_name_code
+        df.measure_name_code
         when 'LNF'
         then 'Letter Names'
         when 'PSF'
@@ -312,6 +317,11 @@ select
         then 'Word Reading Fluency'
         when 'ORF'
         then 'Oral Reading Fluency'
-        else measure_name_code
+        else df.measure_name_code
     end as measure_name,
-from df_data
+
+from df_data as df
+inner join
+    {{ ref("stg_google_sheets__dibels_df_student_xwalk") }} as x
+    on df.student_id = x.student_number
+    and df.period = x.admin_season
