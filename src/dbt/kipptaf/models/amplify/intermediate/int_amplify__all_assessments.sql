@@ -1,4 +1,32 @@
 with
+    valid_scores as (
+        select
+            e.academic_year,
+            e.region,
+            e.grade,
+            e.admin_season,
+            e.`round`,
+            e.expected_measure_standard,
+
+            t.start_date,
+            t.end_date,
+
+            count(*) over (
+                partition by
+                    e.academic_year, e.region, e.grade, e.admin_season, e.`round`
+            ) as expected_row_count,
+
+        from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
+        inner join
+            {{ ref("stg_reporting__terms") }} as t
+            on e.academic_year = t.academic_year
+            and e.region = t.region
+            and e.admin_season = t.name
+            and e.test_code = t.code
+            and t.type = 'LIT'
+        where e.assessment_include is null
+    ),
+
     assessments_scores as (
         -- benchmark scores
         select
@@ -24,6 +52,16 @@ with
             null as probe_number,
             null as total_number_of_probes,
             null as score_change,
+
+            case
+                bss.benchmark_period
+                when 'BOY'
+                then 1
+                when 'MOY'
+                then 2
+                when 'EOY'
+                then 3
+            end as `round`,
 
             case
                 bss.school_name
@@ -110,6 +148,7 @@ with
             null as total_number_of_probes,
             null as score_change,
 
+            v.`round`,
             x.region,
 
             row_number() over (
@@ -126,9 +165,13 @@ with
             {{ ref("stg_google_sheets__dibels_df_student_xwalk") }} as x
             on df.student_id = x.student_number
             and df.period = x.admin_season
-        where
-            df.measure_standard
-            in ('Reading Fluency (ORF)', 'Reading Comprehension (Maze)', 'Composite')
+        inner join
+            valid_scores as v
+            on df.academic_year = v.academic_year
+            and df.assessment_grade_int = v.grade
+            and df.period = v.admin_season
+            and df.measure_standard = v.expected_measure_standard
+            and x.region = v.region
 
         union all
 
@@ -158,6 +201,8 @@ with
             p.probe_number,
             p.total_number_of_probes,
             p.measure_standard_score_change,
+
+            v.`round`,
 
             case
                 p.school_name
@@ -198,7 +243,7 @@ with
             end as region,
 
             row_number() over (
-                partition by p.surrogate_key, p.measure, a.pm_round
+                partition by p.surrogate_key, p.measure, v.`round`
                 order by p.measure_standard_score desc
             ) as rn_highest,
 
@@ -209,14 +254,14 @@ with
 
         from {{ ref("stg_amplify__pm_student_summary") }} as p
         inner join
-            {{ ref("stg_google_sheets__dibels_pm_expectations") }} as a
-            on p.academic_year = a.academic_year
-            and p.region = a.region
-            and p.assessment_grade_int = a.grade_level
-            and p.measure = a.measure_standard
-            and p.client_date between a.start_date and a.end_date
+            valid_scores as v
+            on p.academic_year = v.academic_year
+            and p.region = v.region
+            and p.assessment_grade_int = v.grade
+            and p.measure = v.expected_measure_standard
+            and p.client_date between v.start_date and v.end_date
         where
-            p.academic_year >= 2023
+            p.academic_year >= 2024
             and p.enrollment_grade = p.assessment_grade
             and p.assessment_grade is not null
     ),
@@ -263,92 +308,119 @@ with
             on s.academic_year = c.academic_year
             and s.student_number = c.student_number
         where s.rn_distinct = 1 and s.assessment_type = 'Benchmark'
+    ),
+
+    appended_scores as (
+        select
+            s.academic_year,
+            s.region,
+            s.student_number,
+            s.assessment_type,
+            s.assessment_grade,
+            s.assessment_grade_int,
+            s.period,
+            s.`round`,
+            s.client_date,
+            s.sync_date,
+            s.measure_name,
+            s.measure_name_code,
+            s.measure_standard,
+            s.measure_standard_score,
+            s.measure_standard_level,
+            s.measure_standard_level_int,
+            s.measure_percentile,
+            s.measure_semester_growth,
+            s.measure_year_growth,
+            s.probe_number,
+            s.total_number_of_probes,
+            s.score_change,
+
+            p.boy_probe_eligible,
+            p.moy_probe_eligible,
+            p.boy as boy_composite,
+            p.moy as moy_composite,
+            p.eoy as eoy_composite,
+
+            case
+                when s.measure_standard_level_int >= 3
+                then 'At/Above'
+                when s.measure_standard_level_int <= 2
+                then 'Below/Well Below'
+            end as aggregated_measure_standard_level,
+
+            count(*) over (
+                partition by
+                    s.academic_year,
+                    s.region,
+                    s.assessment_grade,
+                    s.period,
+                    s.`round`,
+                    s.student_number
+            ) as actual_row_count,
+
+        from assessments_scores as s
+        left join
+            probe_eligible_tag as p
+            on s.academic_year = p.academic_year
+            and s.student_number = p.student_number
+        where s.assessment_type = 'Benchmark' and s.rn_highest = 1
+
+        union all
+
+        select
+            s.academic_year,
+            s.region,
+            s.student_number,
+            s.assessment_type,
+            s.assessment_grade,
+            s.assessment_grade_int,
+            s.period,
+            s.`round`,
+            s.client_date,
+            s.sync_date,
+            s.measure_name,
+            s.measure_name_code,
+            s.measure_standard,
+            s.measure_standard_score,
+            s.measure_standard_level,
+            s.measure_standard_level_int,
+            s.measure_percentile,
+            s.measure_semester_growth,
+            s.measure_year_growth,
+            s.probe_number,
+            s.total_number_of_probes,
+            s.score_change,
+
+            p.boy_probe_eligible,
+            p.moy_probe_eligible,
+            p.boy as boy_composite,
+            p.moy as moy_composite,
+            p.eoy as eoy_composite,
+
+            case
+                when s.measure_standard_level_int >= 3
+                then 'At/Above'
+                when s.measure_standard_level_int <= 2
+                then 'Below/Well Below'
+            end as aggregated_measure_standard_level,
+
+            count(*) over (
+                partition by
+                    s.academic_year,
+                    s.region,
+                    s.assessment_grade,
+                    s.period,
+                    s.`round`,
+                    s.student_number
+            ) as actual_row_count,
+
+        from assessments_scores as s
+        left join
+            probe_eligible_tag as p
+            on s.academic_year = p.academic_year
+            and s.student_number = p.student_number
+        where s.assessment_type = 'PM' and s.rn_highest = 1
     )
 
-select
-    s.academic_year,
-    s.region,
-    s.student_number,
-    s.assessment_type,
-    s.assessment_grade,
-    s.assessment_grade_int,
-    s.period,
-    s.client_date,
-    s.sync_date,
-    s.measure_name,
-    s.measure_name_code,
-    s.measure_standard,
-    s.measure_standard_score,
-    s.measure_standard_level,
-    s.measure_standard_level_int,
-    s.measure_percentile,
-    s.measure_semester_growth,
-    s.measure_year_growth,
-    s.probe_number,
-    s.total_number_of_probes,
-    s.score_change,
-
-    p.boy_probe_eligible,
-    p.moy_probe_eligible,
-    p.boy as boy_composite,
-    p.moy as moy_composite,
-    p.eoy as eoy_composite,
-
-    case
-        when s.measure_standard_level_int >= 3
-        then 'At/Above'
-        when s.measure_standard_level_int <= 2
-        then 'Below/Well Below'
-    end as aggregated_measure_standard_level,
-
-from assessments_scores as s
-left join
-    probe_eligible_tag as p
-    on s.academic_year = p.academic_year
-    and s.student_number = p.student_number
-where s.assessment_type = 'Benchmark' and s.rn_highest = 1
-
-union all
-
-select
-    s.academic_year,
-    s.region,
-    s.student_number,
-    s.assessment_type,
-    s.assessment_grade,
-    s.assessment_grade_int,
-    s.period,
-    s.client_date,
-    s.sync_date,
-    s.measure_name,
-    s.measure_name_code,
-    s.measure_standard,
-    s.measure_standard_score,
-    s.measure_standard_level,
-    s.measure_standard_level_int,
-    s.measure_percentile,
-    s.measure_semester_growth,
-    s.measure_year_growth,
-    s.probe_number,
-    s.total_number_of_probes,
-    s.score_change,
-
-    p.boy_probe_eligible,
-    p.moy_probe_eligible,
-    p.boy as boy_composite,
-    p.moy as moy_composite,
-    p.eoy as eoy_composite,
-
-    case
-        when s.measure_standard_level_int >= 3
-        then 'At/Above'
-        when s.measure_standard_level_int <= 2
-        then 'Below/Well Below'
-    end as aggregated_measure_standard_level,
-
-from assessments_scores as s
-left join
-    probe_eligible_tag as p
-    on s.academic_year = p.academic_year
-    and s.student_number = p.student_number
-where s.assessment_type = 'PM' and s.rn_highest = 1
+select *
+from appended_scores
