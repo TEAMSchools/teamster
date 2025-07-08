@@ -80,6 +80,7 @@ with
         where
             bss.academic_year >= {{ var("current_academic_year") - 1 }}
             and bss.enrollment_grade = bss.assessment_grade
+            and bss.assessment_grade is not null
 
         union all
 
@@ -218,6 +219,7 @@ with
         where
             p.academic_year >= {{ var("current_academic_year") - 1 }}
             and p.enrollment_grade = p.assessment_grade
+            and p.assessment_grade is not null
     ),
 
     composite_only as (
