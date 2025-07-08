@@ -1,6 +1,11 @@
 import random
 
-from dagster import PartitionsDefinition, TextMetadataValue, materialize
+from dagster import (
+    JsonMetadataValue,
+    PartitionsDefinition,
+    TextMetadataValue,
+    materialize,
+)
 from dagster_shared import check
 
 
@@ -52,3 +57,30 @@ def _test(partition_key: str | None = None):
 
 def test_workers():
     _test(partition_key="07/01/2025")
+
+
+def test_adp_workforce_now_workers_update():
+    from teamster.code_locations.kipptaf.adp.workforce_now.api.assets import (
+        adp_workforce_now_workers_update,
+    )
+    from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
+    from teamster.core.resources import BIGQUERY_RESOURCE
+
+    result = materialize(
+        # trunk-ignore(pyright/reportArgumentType)
+        assets=[adp_workforce_now_workers_update],
+        resources={
+            "db_bigquery": BIGQUERY_RESOURCE,
+            "adp_wfn": ADP_WORKFORCE_NOW_RESOURCE,
+        },
+    )
+
+    assert result.success
+
+    errors = check.inst(
+        obj=result.get_asset_check_evaluations()[0].metadata.get("errors"),
+        ttype=JsonMetadataValue,
+    )
+
+    assert isinstance(errors.value, list)
+    assert len(errors.value) == 0

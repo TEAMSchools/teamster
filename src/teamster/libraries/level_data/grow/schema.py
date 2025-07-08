@@ -483,6 +483,7 @@ class MeetingTypeTag(GenericTag):
 
 class AssignmentPresetTag(GenericTag):
     type: str | None = None
+    goalType: str | None = None
 
 
 class TagTag(GenericTag):
