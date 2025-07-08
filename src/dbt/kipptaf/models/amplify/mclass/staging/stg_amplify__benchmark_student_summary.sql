@@ -54,16 +54,6 @@ with
                 word_reading_wrf_year_growth
             ),
 
-            case
-                regexp_extract(cast(student_primary_id as string), r'^\d')
-                when '1'
-                then 'Newark'
-                when '2'
-                then 'Camden'
-                when '3'
-                then 'Miami'
-            end as region,
-
             cast(left(school_year, 4) as int) as academic_year,
 
             /* score */
@@ -172,6 +162,16 @@ with
 
             date(client_date) as client_date,
             date(sync_date) as sync_date,
+
+            case
+                regexp_extract(cast(student_primary_id as string), r'^\d')
+                when '1'
+                then 'Newark'
+                when '2'
+                then 'Camden'
+                when '3'
+                then 'Miami'
+            end as region,
 
             coalesce(
                 assessment_grade.string_value,
