@@ -17,6 +17,6 @@ models:
       - name: Period
         data_type: string
       - name: Grade_Goal
-        data_type: numeric
+        data_type: float64
       - name: Grade_Range_Goal
-        data_type: numeric
+        data_type: float64
