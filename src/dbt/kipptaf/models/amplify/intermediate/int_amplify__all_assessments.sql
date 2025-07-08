@@ -86,7 +86,7 @@ with
 
         -- 7/8 benchmark scores SY24 only
         select
-            df.academic_year as academic_year,
+            df.academic_year,
             df.student_id as student_number,
             df.assessment_grade,
             df.assessment_grade_int,
