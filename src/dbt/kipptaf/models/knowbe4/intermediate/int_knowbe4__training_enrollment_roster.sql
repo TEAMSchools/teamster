@@ -10,7 +10,7 @@ with
             row_number() over (
                 partition by user_employee_number, module_name
                 order by enrollment_date desc
-            ) as rn_enrollment
+            ) as rn_enrollment,
         from {{ ref("stg_knowbe4__training_enrollments") }}
     )
 
