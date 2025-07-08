@@ -2,12 +2,11 @@ from dagster import (
     RunRequest,
     ScheduleDefinition,
     ScheduleEvaluationContext,
-    define_asset_job,
     schedule,
 )
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_now.api.assets import (
     adp_workforce_now_workers,
     adp_workforce_now_workers_update,
@@ -22,23 +21,18 @@ adp_workforce_now_workers_sync_schedule = ScheduleDefinition(
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
-asset_job = define_asset_job(
-    name=f"{CODE_LOCATION}_adp_workforce_now_api_workers_asset_job",
-    # trunk-ignore(pyright/reportArgumentType)
-    selection=[adp_workforce_now_workers],
-    # trunk-ignore(pyright/reportFunctionMemberAccess)
-    partitions_def=adp_workforce_now_workers.partitions_def,
-)
-
 
 @schedule(
-    name=f"{asset_job.name}_schedule",
-    target=asset_job,
+    # trunk-ignore(pyright/reportFunctionMemberAccess)
+    name=f"{adp_workforce_now_workers.key.to_python_identifier()}_schedule",
+    # trunk-ignore(pyright/reportArgumentType)
+    target=adp_workforce_now_workers,
     cron_schedule="30 0 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 def adp_workforce_now_api_workers_asset_schedule(context: ScheduleEvaluationContext):
-    partitions_def = check.not_none(asset_job.partitions_def)
+    # trunk-ignore(pyright/reportFunctionMemberAccess)
+    partitions_def = check.not_none(adp_workforce_now_workers.partitions_def)
 
     partition_keys = partitions_def.get_partition_keys()
 
