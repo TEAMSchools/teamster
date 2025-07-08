@@ -422,5 +422,5 @@ with
         where s.assessment_type = 'PM' and s.rn_highest = 1
     )
 
-select *
+select *,
 from appended_scores
