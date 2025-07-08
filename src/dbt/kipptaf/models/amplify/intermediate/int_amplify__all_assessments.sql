@@ -122,7 +122,7 @@ with
             ) as rn_distinct,
 
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as df
-        left join
+        inner join
             {{ ref("stg_google_sheets__dibels_df_student_xwalk") }} as x
             on df.student_id = x.student_number
             and df.period = x.admin_season
