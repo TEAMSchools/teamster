@@ -7,8 +7,8 @@ with
             bss.assessment_grade,
             bss.assessment_grade_int,
             bss.benchmark_period as period,
-            bss.client_date as client_date,
-            bss.sync_date as sync_date,
+            bss.client_date,
+            bss.sync_date,
 
             u.measure_name,
             u.measure_name_code,
