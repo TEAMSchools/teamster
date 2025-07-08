@@ -98,7 +98,7 @@ def grow_user_sync(
             continue
 
         method = None
-        request_args = ["users"]
+        # request_args = ["users"]
 
         user_id = u["user_id"]
         inactive = u["inactive"]
@@ -106,25 +106,19 @@ def grow_user_sync(
 
         # restore
         if inactive == 0 and u["archived_at"] is not None:
+            request_args = ["users", user_id, "restore"]
+
             try:
                 context.log.info(f"RESTORING\t{user_email}")
-                method = "PUT"
-                request_args.extend([user_id, "restore"])
-
                 grow.put(*request_args, params={"district": grow.district_id})
-
-                # reset vars for update
-                request_args = ["users"]
             except Exception as e:
-                exception_details = {
-                    "user_email": user_email,
-                    "request_args": request_args,
-                    "method": method,
-                    "exception": e,
-                }
-
-                context.log.error(exception_details)
-                errors.append(exception_details)
+                errors.append(
+                    {
+                        "method": "PUT",
+                        "request_args": request_args,
+                        "exception": e.args[0],
+                    }
+                )
 
                 continue
 
@@ -143,6 +137,9 @@ def grow_user_sync(
             "coach": u["coach_id"],
             "roles": [u["role_id"]],
         }
+
+        # reset request_args
+        request_args = ["users"]
 
         try:
             # create
@@ -168,22 +165,25 @@ def grow_user_sync(
 
                 grow.delete(*request_args)
         except Exception as e:
-            exception_details = {
-                "user_email": user_email,
-                "request_args": request_args,
-                "method": method,
-                "payload": payload,
-                "exception": e,
-            }
-
-            context.log.error(exception_details)
-            errors.append(exception_details)
+            errors.append(
+                {
+                    "method": method,
+                    "request_args": request_args,
+                    "payload": payload,
+                    "exception": e.args[0],
+                }
+            )
 
             continue
 
     """
     update school observation groups
     """
+    admin_roles = {
+        "admins": "School Admin",
+        "assistantAdmins": "School Assistant Admin",
+    }
+
     schools = grow.get("schools")["data"]
 
     for school in schools:
@@ -225,12 +225,6 @@ def grow_user_sync(
             }
         ]
 
-        # school admins
-        admin_roles = {
-            "admins": "School Admin",
-            "assistantAdmins": "School Assistant Admin",
-        }
-
         for key, role_name in admin_roles.items():
             payload[key] = [
                 {"_id": u["user_id"], "name": u["user_name"]}
@@ -238,7 +232,19 @@ def grow_user_sync(
                 if role_name == u["role_name"]
             ]
 
-        grow.put("schools", school_id, json=payload)
+        try:
+            grow.put("schools", school_id, json=payload)
+        except Exception as e:
+            errors.append(
+                {
+                    "method": "PUT",
+                    "request_args": ["schools", school_id],
+                    "payload": payload,
+                    "exception": e.args[0],
+                }
+            )
+
+            continue
 
     yield Output(value=None)
     yield AssetCheckResult(

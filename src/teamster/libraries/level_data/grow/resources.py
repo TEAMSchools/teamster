@@ -59,7 +59,7 @@ class GrowResource(ConfigurableResource):
             return response
         except HTTPError as e:
             self._log.error(msg=response.text)
-            raise HTTPError(response.text) from e
+            raise Exception(response.text) from e
 
     def get(self, endpoint, *args, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
