@@ -82,6 +82,9 @@ models:
     amplify:
       +schema: amplify
       +materialized: table
+      drive:
+        disabled:
+          +enabled: false
     assessments:
       +schema: assessments
       staging:
