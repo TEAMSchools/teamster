@@ -1,8 +1,8 @@
 with
     students as (
-        select academic_year, region, student_number, grade_level,
+        select academic_year, region, student_number, grade_level, enroll_status,
         from {{ ref("int_extracts__student_enrollments") }}
-        where enroll_status != -1
+        where enroll_status != -1 and grade_level <= 8
     ),
 
     expected_tests as (
@@ -35,6 +35,7 @@ with
             s.region,
             s.student_number,
             s.grade_level,
+            s.enroll_status,
 
             e.admin_season,
             e.`round`,
@@ -57,9 +58,7 @@ with
                     s.student_number,
                     s.grade_level,
                     e.admin_season,
-                    e.`round`,
-                    e.expected_row_count,
-                    a.actual_row_count
+                    e.`round`
             ) as rn,
 
         from students as s
@@ -72,6 +71,7 @@ with
             {{ ref("int_amplify__all_assessments") }} as a
             on s.academic_year = a.academic_year
             and s.region = a.region
+            and s.student_number = a.student_number
             and s.grade_level = a.assessment_grade_int
             and e.admin_season = a.period
             and e.`round` = a.`round`
