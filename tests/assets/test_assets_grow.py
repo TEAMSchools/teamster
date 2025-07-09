@@ -1,17 +1,23 @@
 import random
 
-from dagster import TextMetadataValue, materialize
+from dagster import AssetsDefinition, JsonMetadataValue, TextMetadataValue, materialize
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
 from teamster.core.resources import get_io_manager_gcs_avro
 
 
-def _test_asset(asset, partition_key=None):
+def _test_asset(
+    assets: list[AssetsDefinition], asset_name: str, partition_key: str | None = None
+):
     from teamster.code_locations.kipptaf.resources import GROW_RESOURCE
 
+    asset = [a for a in assets if a.key.path[-1] == asset_name][0]
+
     if partition_key is None:
-        partition_keys = asset.partitions_def.get_partition_keys()
+        partitions_def = check.not_none(value=asset.partitions_def)
+
+        partition_keys = partitions_def.get_partition_keys()
 
         partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
 
@@ -48,11 +54,8 @@ def test_asset_grow_generic_tags_assignmentpresets():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_assignmentpresets"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_assignmentpresets",
         partition_key="f",
     )
 
@@ -63,11 +66,8 @@ def test_asset_grow_generic_tags_courses():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_courses"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_courses",
         partition_key="f",
     )
 
@@ -78,11 +78,8 @@ def test_asset_grow_generic_tags_eventtag1():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_eventtag1"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_eventtag1",
         partition_key="t",
     )
 
@@ -93,11 +90,8 @@ def test_asset_grow_generic_tags_goaltypes():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_goaltypes"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_goaltypes",
         partition_key="f",
     )
 
@@ -108,11 +102,8 @@ def test_asset_grow_generic_tags_grades():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_grades"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_grades",
         partition_key="f",
     )
 
@@ -123,11 +114,8 @@ def test_asset_grow_generic_tags_measurementgroups():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_measurementgroups"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_measurementgroups",
         partition_key="f",
     )
 
@@ -138,11 +126,8 @@ def test_asset_grow_generic_tags_meetingtypes():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_meetingtypes"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_meetingtypes",
         partition_key="f",
     )
 
@@ -153,11 +138,8 @@ def test_asset_grow_generic_tags_observationtypes():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_observationtypes"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_observationtypes",
         partition_key="f",
     )
 
@@ -168,11 +150,8 @@ def test_asset_grow_generic_tags_rubrictag1():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_rubrictag1"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_rubrictag1",
         partition_key="f",
     )
 
@@ -183,11 +162,8 @@ def test_asset_grow_generic_tags_schooltag1():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_schooltag1"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_schooltag1",
         partition_key="f",
     )
 
@@ -198,11 +174,8 @@ def test_asset_grow_generic_tags_tags():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_tags"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_tags",
         partition_key="t",
     )
 
@@ -213,11 +186,8 @@ def test_asset_grow_generic_tags_usertag1():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_usertag1"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_usertag1",
         partition_key="t",
     )
 
@@ -228,11 +198,8 @@ def test_asset_grow_generic_tags_usertypes():
     )
 
     _test_asset(
-        asset=[
-            a
-            for a in grow_static_partition_assets
-            if a.key.path[-1] == "generic_tags_usertypes"
-        ][0],
+        assets=grow_static_partition_assets,
+        asset_name="generic_tags_usertypes",
         partition_key="f",
     )
 
@@ -242,11 +209,7 @@ def test_asset_grow_informals():
         grow_static_partition_assets,
     )
 
-    _test_asset(
-        asset=[
-            a for a in grow_static_partition_assets if a.key.path[-1] == "informals"
-        ][0],
-    )
+    _test_asset(assets=grow_static_partition_assets, asset_name="informals")
 
 
 def test_asset_grow_measurements():
@@ -254,11 +217,7 @@ def test_asset_grow_measurements():
         grow_static_partition_assets,
     )
 
-    _test_asset(
-        asset=[
-            a for a in grow_static_partition_assets if a.key.path[-1] == "measurements"
-        ][0],
-    )
+    _test_asset(assets=grow_static_partition_assets, asset_name="measurements")
 
 
 def test_asset_grow_meetings():
@@ -266,11 +225,7 @@ def test_asset_grow_meetings():
         grow_static_partition_assets,
     )
 
-    _test_asset(
-        asset=[a for a in grow_static_partition_assets if a.key.path[-1] == "meetings"][
-            0
-        ],
-    )
+    _test_asset(assets=grow_static_partition_assets, asset_name="meetings")
 
 
 def test_asset_grow_roles():
@@ -278,9 +233,7 @@ def test_asset_grow_roles():
         grow_static_partition_assets,
     )
 
-    _test_asset(
-        asset=[a for a in grow_static_partition_assets if a.key.path[-1] == "roles"][0],
-    )
+    _test_asset(assets=grow_static_partition_assets, asset_name="roles")
 
 
 def test_asset_grow_rubrics():
@@ -288,11 +241,7 @@ def test_asset_grow_rubrics():
         grow_static_partition_assets,
     )
 
-    _test_asset(
-        asset=[a for a in grow_static_partition_assets if a.key.path[-1] == "rubrics"][
-            0
-        ],
-    )
+    _test_asset(assets=grow_static_partition_assets, asset_name="rubrics")
 
 
 def test_asset_grow_schools():
@@ -300,11 +249,7 @@ def test_asset_grow_schools():
         grow_static_partition_assets,
     )
 
-    _test_asset(
-        asset=[a for a in grow_static_partition_assets if a.key.path[-1] == "schools"][
-            0
-        ],
-    )
+    _test_asset(assets=grow_static_partition_assets, asset_name="schools")
 
 
 def test_asset_grow_users():
@@ -313,8 +258,7 @@ def test_asset_grow_users():
     )
 
     _test_asset(
-        asset=[a for a in grow_static_partition_assets if a.key.path[-1] == "users"][0],
-        partition_key="f",
+        assets=grow_static_partition_assets, asset_name="users", partition_key="f"
     )
 
 
@@ -323,20 +267,41 @@ def test_asset_grow_videos():
         grow_static_partition_assets,
     )
 
-    _test_asset(
-        asset=[a for a in grow_static_partition_assets if a.key.path[-1] == "videos"][
-            0
-        ],
-    )
+    _test_asset(assets=grow_static_partition_assets, asset_name="videos")
 
 
 def test_asset_grow_observations():
     from teamster.code_locations.kipptaf.level_data.grow.assets import observations
 
-    _test_asset(asset=observations)
+    _test_asset(assets=[observations], asset_name="observations")
 
 
 def test_asset_grow_assignments():
     from teamster.code_locations.kipptaf.level_data.grow.assets import assignments
 
-    _test_asset(asset=assignments, partition_key="f|2024-09-16")
+    _test_asset(
+        assets=[assignments], asset_name="assignments", partition_key="f|2025-07-09"
+    )
+
+
+def test_grow_user_sync():
+    from teamster.code_locations.kipptaf.level_data.grow.assets import (
+        grow_user_sync,
+    )
+    from teamster.code_locations.kipptaf.resources import GROW_RESOURCE
+    from teamster.core.resources import BIGQUERY_RESOURCE
+
+    result = materialize(
+        assets=[grow_user_sync],
+        resources={"db_bigquery": BIGQUERY_RESOURCE, "grow": GROW_RESOURCE},
+    )
+
+    assert result.success
+
+    errors = check.inst(
+        obj=result.get_asset_check_evaluations()[0].metadata.get("errors"),
+        ttype=JsonMetadataValue,
+    )
+
+    assert isinstance(errors.value, list)
+    assert len(errors.value) == 0

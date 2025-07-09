@@ -15,8 +15,6 @@ from teamster.libraries.google.directory.resources import GoogleDirectoryResourc
 
 
 def _test_asset(asset: AssetsDefinition):
-    from teamster.core.resources import BIGQUERY_RESOURCE
-
     if asset.partitions_def is not None:
         partition_keys = asset.partitions_def.get_partition_keys()
 
@@ -34,9 +32,10 @@ def _test_asset(asset: AssetsDefinition):
             "google_directory": GoogleDirectoryResource(
                 customer_id=EnvVar("GOOGLE_WORKSPACE_CUSTOMER_ID"),
                 delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
-                service_account_file_path="/workspaces/teamster/env/teamster-332318-48bf4ca46803.json",
+                service_account_file_path=(
+                    "/workspaces/teamster/env/teamster-332318-48bf4ca46803.json"
+                ),
             ),
-            "db_bigquery": BIGQUERY_RESOURCE,
         },
     )
 
@@ -46,21 +45,18 @@ def _test_asset(asset: AssetsDefinition):
         asset_materialization_event.event_specific_data, StepMaterializationData
     )
 
-    record_count = event_specific_data.materialization.metadata.get("record_count")
-    check_metadata = result.get_asset_check_evaluations()[0].metadata
+    record_count = event_specific_data.materialization.metadata["record_count"]
 
-    if record_count is not None:
-        records = check.inst(record_count.value, int)
-        assert records > 0
+    records = check.inst(record_count.value, int)
 
-    if check_metadata.get("extras"):
-        extras = check.inst(obj=check_metadata.get("extras"), ttype=TextMetadataValue)
-        assert extras.text == ""
+    assert records > 0
 
-    if check_metadata.get("errors"):
-        errors = check.inst(obj=check_metadata.get("errors"), ttype=JsonMetadataValue)
-        assert isinstance(errors.value, list)
-        assert len(errors.value) == 0
+    extras = check.inst(
+        obj=result.get_asset_check_evaluations()[0].metadata["extras"],
+        ttype=TextMetadataValue,
+    )
+
+    assert extras.text == ""
 
 
 def test_asset_google_directory_groups():
@@ -105,5 +101,28 @@ def test_asset_google_directory_role_assignments_create():
     from teamster.code_locations.kipptaf._google.directory.assets import (
         google_directory_role_assignments_create,
     )
+    from teamster.core.resources import BIGQUERY_RESOURCE
 
-    _test_asset(google_directory_role_assignments_create)
+    result = materialize(
+        assets=[google_directory_role_assignments_create],
+        resources={
+            "google_directory": GoogleDirectoryResource(
+                customer_id=EnvVar("GOOGLE_WORKSPACE_CUSTOMER_ID"),
+                delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
+                service_account_file_path=(
+                    "/workspaces/teamster/env/teamster-332318-48bf4ca46803.json"
+                ),
+            ),
+            "db_bigquery": BIGQUERY_RESOURCE,
+        },
+    )
+
+    assert result.success
+
+    errors = check.inst(
+        obj=result.get_asset_check_evaluations()[0].metadata["errors"],
+        ttype=JsonMetadataValue,
+    )
+
+    assert isinstance(errors.value, list)
+    assert len(errors.value) == 0
