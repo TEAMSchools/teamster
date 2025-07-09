@@ -1,37 +1,15 @@
 with
     term as (
         select
-            t._dbt_source_relation,
-            t.schoolid,
-            t.yearid,
-
-            tb.storecode,
-            tb.date1 as term_start_date,
-            tb.date2 as term_end_date,
-
-            if(
-                current_date('{{ var("local_timezone") }}')
-                between tb.date1 and tb.date2,
-                true,
-                false
-            ) as is_current_term,
-
-            case
-                when tb.storecode in ('Q1', 'Q2')
-                then 'S1'
-                when tb.storecode in ('Q3', 'Q4')
-                then 'S2'
-                when tb.storecode = 'Y1'
-                then 'S#'
-            end as semester,
-        from {{ ref("stg_powerschool__terms") }} as t
-        inner join
-            {{ ref("stg_powerschool__termbins") }} as tb
-            on t.id = tb.termid
-            and t.schoolid = tb.schoolid
-            and {{ union_dataset_join_clause(left_alias="t", right_alias="tb") }}
-            and tb.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
-        where t.isyearrec = 1
+            _dbt_source_relation,
+            schoolid,
+            yearid,
+            term,
+            term_start_date,
+            term_end_date,
+            is_current_term,
+            semester,
+        from {{ ref("int_powerschool__terms") }}
 
         union all
 
@@ -87,7 +65,7 @@ with
             enr.is_counseling_services,
             enr.is_student_athlete,
 
-            term.storecode as term,
+            term.term,
             term.term_start_date,
             term.term_end_date,
             term.is_current_term,
@@ -111,8 +89,8 @@ with
 
             round(ada.ada, 3) as ada,
 
-            if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_term,
-            if(term.storecode = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
+            if(term.term = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_term,
+            if(term.term = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
             if(
                 current_date('{{ var("local_timezone") }}')
@@ -146,7 +124,7 @@ with
             and enr.yearid = gtq.yearid
             and enr.schoolid = gtq.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gtq") }}
-            and term.storecode = gtq.term_name
+            and term.term = gtq.term_name
             and {{ union_dataset_join_clause(left_alias="term", right_alias="gtq") }}
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty

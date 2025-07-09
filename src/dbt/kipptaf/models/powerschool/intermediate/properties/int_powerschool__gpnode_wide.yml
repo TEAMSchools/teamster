@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: int_powerschool__gpnode_wide
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: plan_id
+        data_type: int64
+      - name: plan_name
+        data_type: string
+      - name: plan_credit_capacity
+        data_type: numeric
+      - name: discipline_id
+        data_type: int64
+      - name: discipline_name
+        data_type: string
+      - name: discipline_credit_capacity
+        data_type: numeric
+      - name: subject_id
+        data_type: int64
+      - name: subject_name
+        data_type: string
+      - name: subject_credit_capacity
+        data_type: numeric

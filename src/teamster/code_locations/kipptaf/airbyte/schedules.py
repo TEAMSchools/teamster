@@ -5,7 +5,7 @@ zendesk_start_sync_schedule = build_airbyte_start_sync_schedule(
     code_location=CODE_LOCATION,
     connection_id="ee23720c-c82f-45be-ab40-f72dcf8ac3cd",
     connection_name="zendesk",
-    cron_schedule="0 5 * * *",
+    cron_schedule=["0 5 * * *", "30 2 * * *"],
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 

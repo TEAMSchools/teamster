@@ -1,6 +1,6 @@
 select
     coursenumber,
-    -- whencreated,
+
     /* records */
     id.int_value as id,
     gpprogresssubjectid.int_value as gpprogresssubjectid,

@@ -3,10 +3,10 @@ from dagster._core.events import StepMaterializationData
 from dagster_dlt import DagsterDltResource
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf._dlt import assets
 
+def _test_dlt_assets(selection):
+    from teamster.code_locations.kipptaf._dlt import assets
 
-def _test_dlt_assets(assets, selection):
     result = materialize(
         assets=assets, selection=selection, resources={"dlt": DagsterDltResource()}
     )
@@ -31,6 +31,4 @@ def _test_dlt_assets(assets, selection):
 
 
 def test_dlt_illuminate_codes():
-    _test_dlt_assets(
-        assets=assets, selection=["kipptaf/dlt/illuminate/codes/dna_scopes"]
-    )
+    _test_dlt_assets(selection=["kipptaf/dlt/illuminate/codes/dna_scopes"])
