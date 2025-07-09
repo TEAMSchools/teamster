@@ -346,8 +346,8 @@ sources:
             "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/assignments/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: MANUAL
-            max_staleness: INTERVAL 7 DAY
+            # metadata_cache_mode: MANUAL
+            # max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/schoolmint/grow/assignments/"
             format: AVRO
