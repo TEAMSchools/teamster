@@ -13,6 +13,10 @@ with
             e.admin_season,
             e.`round`,
 
+            if(
+                admin_season in ('BOY', 'MOY', 'EOY'), 'Benchmark', 'PM'
+            ) as assessment_type,
+
             count(*) over (
                 partition by
                     e.academic_year, e.region, e.grade, e.admin_season, e.`round`
@@ -37,6 +41,7 @@ with
             s.grade_level,
             s.enroll_status,
 
+            e.assessment_type,
             e.admin_season,
             e.`round`,
             e.expected_row_count,
@@ -82,6 +87,7 @@ select
     region,
     student_number,
     grade_level,
+    assessment_type,
     admin_season,
     `round`,
     expected_row_count,
