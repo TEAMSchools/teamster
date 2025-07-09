@@ -280,7 +280,7 @@ def test_asset_grow_assignments():
     from teamster.code_locations.kipptaf.level_data.grow.assets import assignments
 
     _test_asset(
-        assets=[assignments], asset_name="assignments", partition_key="f|2024-09-16"
+        assets=[assignments], asset_name="assignments", partition_key="f|2025-07-09"
     )
 
 

@@ -424,7 +424,7 @@ class Assignment(Ref, Timestamp):
     private: bool | None = None
     observation: str | None = None
     type: str | None = None
-    goalType: str | None = None
+    goalType: str | Ref | None = None
 
     creator: UserRef | None = None
     parent: Ref | None = None
