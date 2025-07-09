@@ -7,14 +7,12 @@ select
     enr.cohort,
     enr.gender,
     enr.ethnicity,
-    enr.academic_year,
-    enr.academic_year_display,
     enr.yearid,
     enr.region,
     enr.school_level,
     enr.schoolid,
     enr.school,
-    enr.grade_level,
+    enr.grade_level as most_recent_grade_level,
     enr.advisory,
     enr.year_in_school,
     enr.year_in_network,
@@ -42,7 +40,7 @@ select
     gc.cumulative_y1_gpa_projected_s1_unweighted,
     gc.core_cumulative_y1_gpa,
 
-    round(enr.ada, 3) as ada,
+    round(enr.ada, 3) as most_recent_ada,
 
 from {{ ref("int_extracts__student_enrollments") }} as enr
 left join
@@ -54,3 +52,4 @@ where
     not enr.is_out_of_district
     and enr.school_level in ('MS', 'HS')
     and enr.enroll_status != -1
+    and enr.rn_undergrad = 1
