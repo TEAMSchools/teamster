@@ -41,7 +41,7 @@ with
             e.`round`,
             e.expected_row_count,
 
-            a.actual_row_count,
+            coalesce(a.actual_row_count, 0) as actual_row_count,
 
             if(
                 e.expected_row_count = a.actual_row_count, true, false
