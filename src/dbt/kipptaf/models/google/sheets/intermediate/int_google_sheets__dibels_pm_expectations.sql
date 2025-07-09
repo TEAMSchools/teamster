@@ -8,6 +8,8 @@ select
     e.expected_measure_standard,
 
     t.code,
+    t.start_date,
+    t.end_date,
 
     g.admin_season as benchmark_season,
     g.matching_pm_season,
@@ -19,7 +21,6 @@ inner join
     on e.academic_year = t.academic_year
     and e.region = t.region
     and e.admin_season = t.name
-    and e.assessment_type = 'PM'
     and t.type = 'LIT'
 left join
     {{ ref("stg_google_sheets__dibels_goals_long") }} as g
