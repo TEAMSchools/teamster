@@ -1,4 +1,10 @@
 with
+    students as (
+        select academic_year, region, student_number, grade_level,
+        from {{ ref("int_extracts__student_enrollments") }}
+        where enroll_status != -1
+    ),
+
     expected_tests as (
         select
             e.academic_year,
@@ -21,28 +27,67 @@ with
             and e.test_code = t.code
             and t.type = 'LIT'
         where e.assessment_include is null
+    ),
+
+    roster as (
+        select
+            s.academic_year,
+            s.region,
+            s.student_number,
+            s.grade_level,
+
+            e.admin_season,
+            e.`round`,
+            e.expected_row_count,
+
+            a.actual_row_count,
+
+            if(
+                e.expected_row_count = a.actual_row_count, true, false
+            ) as completed_test_round,
+
+            if(
+                e.expected_row_count = a.actual_row_count, 1, 0
+            ) as completed_test_round_int,
+
+            row_number() over (
+                partition by
+                    s.academic_year,
+                    s.region,
+                    s.student_number,
+                    s.grade_level,
+                    e.admin_season,
+                    e.`round`,
+                    e.expected_row_count,
+                    a.actual_row_count
+            ) as rn,
+
+        from students as s
+        inner join
+            expected_tests as e
+            on s.academic_year = e.academic_year
+            and s.region = e.region
+            and s.grade_level = e.grade
+        left join
+            {{ ref("int_amplify__all_assessments") }} as a
+            on s.academic_year = a.academic_year
+            and s.region = a.region
+            and s.grade_level = a.assessment_grade_int
+            and e.admin_season = a.period
+            and e.`round` = a.`round`
     )
 
 select
-    e.academic_year,
-    e.region,
-    e.grade,
-    e.admin_season,
-    e.`round`,
-    e.expected_row_count,
+    academic_year,
+    region,
+    student_number,
+    grade_level,
+    admin_season,
+    `round`,
+    expected_row_count,
+    actual_row_count,
+    completed_test_round,
+    completed_test_round_int,
 
-    a.student_number,
-    a.actual_row_count,
-
-    if(e.expected_row_count = a.actual_row_count, true, false) as completed_test_round,
-
-    if(e.expected_row_count = a.actual_row_count, 1, 0) as completed_test_round_int,
-
-from expected_tests as e
-left join
-    {{ ref("int_amplify__all_assessments") }} as a
-    on e.academic_year = a.academic_year
-    and e.region = a.region
-    and e.grade = a.assessment_grade_int
-    and e.admin_season = a.period
-    and e.`round` = a.`round`
+from roster
+where rn = 1
