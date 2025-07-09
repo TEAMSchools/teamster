@@ -20,6 +20,8 @@ models:
         data_type: string
       - name: expected_measure_standard
         data_type: string
+      - name: pm_goal_include
+        data_type: boolean
       - name: code
         data_type: string
       - name: start_date
@@ -27,8 +29,6 @@ models:
       - name: end_date
         data_type: date
       - name: benchmark_season
-        data_type: string
-      - name: matching_pm_season
         data_type: string
       - name: benchmark_goal
         data_type: float64
