@@ -3,6 +3,10 @@ with
         select
             *,
 
+            if(
+                admin_season in ('BOY', 'MOY', 'EOY'), 'Benchmark', 'PM'
+            ) as assessment_type,
+
             case
                 admin_season when 'BOY' then 'BOY->MOY' when 'MOY' then 'MOY->EOY'
             end as matching_pm_season,

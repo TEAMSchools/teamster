@@ -4,6 +4,7 @@ with
             e.academic_year,
             e.region,
             e.grade,
+            e.assessment_type,
             e.admin_season,
             e.`round`,
             e.expected_measure_standard,
@@ -44,10 +45,11 @@ with
             u.measure_semester_growth,
             u.measure_year_growth,
 
-            'Benchmark' as assessment_type,
             null as probe_number,
             null as total_number_of_probes,
             null as score_change,
+
+            e.assessment_type,
 
             case
                 bss.benchmark_period
@@ -110,11 +112,11 @@ with
 
             cast(null as string) as measure_semester_growth,
             cast(null as string) as measure_year_growth,
-            'Benchmark' as assessment_type,
             null as probe_number,
             null as total_number_of_probes,
             null as score_change,
 
+            e.assessment_type,
             e.`round`,
 
             row_number() over (
@@ -159,12 +161,12 @@ with
 
             'NA' as measure_semester_growth,
             'NA' as measure_year_growth,
-            'PM' as assessment_type,
 
             p.probe_number,
             p.total_number_of_probes,
             p.measure_standard_score_change,
 
+            e.assessment_type,
             e.`round`,
 
             row_number() over (

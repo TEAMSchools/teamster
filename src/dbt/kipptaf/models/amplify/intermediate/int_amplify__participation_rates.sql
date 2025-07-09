@@ -10,12 +10,9 @@ with
             e.academic_year,
             e.region,
             e.grade,
+            e.assessment_type,
             e.admin_season,
             e.`round`,
-
-            if(
-                admin_season in ('BOY', 'MOY', 'EOY'), 'Benchmark', 'PM'
-            ) as assessment_type,
 
             count(*) over (
                 partition by
