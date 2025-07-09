@@ -30,8 +30,13 @@ select
     e.admin_season,
     e.`round`,
     e.expected_row_count,
+
     a.student_number,
     a.actual_row_count,
+
+    if(e.expected_row_count = a.actual_row_count, true, false) as completed_test_round,
+
+    if(e.expected_row_count = a.actual_row_count, 1, 0) as completed_test_round_int,
 
 from expected_tests as e
 left join
