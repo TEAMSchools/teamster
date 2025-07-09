@@ -1,5 +1,5 @@
 with
-    valid_scores as (
+    expected_tests as (
         select
             e.academic_year,
             e.region,
@@ -10,11 +10,6 @@ with
 
             t.start_date,
             t.end_date,
-
-            count(*) over (
-                partition by
-                    e.academic_year, e.region, e.grade, e.admin_season, e.`round`
-            ) as expected_row_count,
 
         from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
         inner join
@@ -79,12 +74,12 @@ with
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
         inner join
-            valid_scores as v
-            on bss.academic_year = v.academic_year
-            and bss.region = v.region
-            and bss.assessment_grade_int = v.grade
-            and bss.benchmark_period = v.admin_season
-            and u.measure_standard = v.expected_measure_standard
+            expected_tests as e
+            on bss.academic_year = e.academic_year
+            and bss.region = e.region
+            and bss.assessment_grade_int = e.grade
+            and bss.benchmark_period = e.admin_season
+            and u.measure_standard = e.expected_measure_standard
 
         where
             bss.academic_year >= 2023
@@ -120,7 +115,7 @@ with
             null as total_number_of_probes,
             null as score_change,
 
-            v.`round`,
+            e.`round`,
 
             row_number() over (
                 partition by df.surrogate_key, df.measure_standard
@@ -133,12 +128,12 @@ with
 
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as df
         inner join
-            valid_scores as v
-            on df.academic_year = v.academic_year
-            and df.region = v.region
-            and df.assessment_grade_int = v.grade
-            and df.period = v.admin_season
-            and df.measure_standard = v.expected_measure_standard
+            expected_tests as e
+            on df.academic_year = e.academic_year
+            and df.region = e.region
+            and df.assessment_grade_int = e.grade
+            and df.period = e.admin_season
+            and df.measure_standard = e.expected_measure_standard
 
         union all
 
@@ -170,10 +165,10 @@ with
             p.total_number_of_probes,
             p.measure_standard_score_change,
 
-            v.`round`,
+            e.`round`,
 
             row_number() over (
-                partition by p.surrogate_key, p.measure, v.`round`
+                partition by p.surrogate_key, p.measure, e.`round`
                 order by p.measure_standard_score desc
             ) as rn_highest,
 
@@ -184,13 +179,13 @@ with
 
         from {{ ref("stg_amplify__pm_student_summary") }} as p
         inner join
-            valid_scores as v
-            on p.academic_year = v.academic_year
-            and p.region = v.region
-            and p.assessment_grade_int = v.grade
-            and p.measure = v.expected_measure_standard
-            and p.pm_period = v.admin_season
-            and p.client_date between v.start_date and v.end_date
+            expected_tests as e
+            on p.academic_year = e.academic_year
+            and p.region = e.region
+            and p.assessment_grade_int = e.grade
+            and p.measure = e.expected_measure_standard
+            and p.pm_period = e.admin_season
+            and p.client_date between e.start_date and e.end_date
         where
             p.academic_year >= 2024
             and p.enrollment_grade = p.assessment_grade
