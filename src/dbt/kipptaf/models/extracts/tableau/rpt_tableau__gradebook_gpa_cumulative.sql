@@ -33,8 +33,7 @@ select
     enr.is_counseling_services,
     enr.is_student_athlete,
     enr.ada_above_or_at_80,
-
-    hos.head_of_school_preferred_name_lastfirst as hos,
+    enr.hos,
 
     gc.cumulative_y1_gpa,
     gc.cumulative_y1_gpa_unweighted,
@@ -46,9 +45,6 @@ select
     round(enr.ada, 3) as ada,
 
 from {{ ref("int_extracts__student_enrollments") }} as enr
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as hos
-    on enr.schoolid = hos.home_work_location_powerschool_school_id
 left join
     {{ ref("int_powerschool__gpa_cumulative") }} as gc
     on enr.studentid = gc.studentid
