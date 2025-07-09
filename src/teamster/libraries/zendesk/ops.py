@@ -38,6 +38,7 @@ def zendesk_user_sync_op(
                             "organization_id",
                             "role",
                             "user_fields",
+                            "verified",
                         ]
                     }
                     for u in users_chunk

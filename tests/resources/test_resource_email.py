@@ -12,6 +12,6 @@ def test_outlook_email():
     email.send_message(
         subject="TEST",
         from_email=email.user,
-        bcc_emails=...,
+        # bcc_emails=...,
         content_args=("Hello World",),
     )

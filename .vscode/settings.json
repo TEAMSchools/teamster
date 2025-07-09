@@ -1,7 +1,6 @@
 {
   "diffEditor.experimental.showMoves": true,
   "diffEditor.ignoreTrimWhitespace": false,
-  "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
   "editor.renderControlCharacters": true,
