@@ -341,78 +341,82 @@ class FAST(FLDOECore, FLDOECategories):
     grade_8_fast_mathematics_scale_score: str | int | None = None
 
     field_1_ela_reading: str | None = Field(
-        default=None, alias="1_reading_prose_and_poetry_performance"
+        default=None, validation_alias="1_reading_prose_and_poetry_performance"
     )
     field_2_ela_reading: str | None = Field(
-        default=None, alias="2_reading_informational_text_performance"
+        default=None, validation_alias="2_reading_informational_text_performance"
     )
     field_3_ela_reading: str | None = Field(
-        default=None, alias="3_reading_across_genres_vocabulary_performance"
+        default=None, validation_alias="3_reading_across_genres_vocabulary_performance"
     )
 
     field_1_mathematics_1: str | None = Field(
-        default=None, alias="1_number_sense_and_additive_reasoning_performance"
+        default=None,
+        validation_alias="1_number_sense_and_additive_reasoning_performance",
     )
     field_1_mathematics_2: str | None = Field(
         default=None,
-        alias="1_number_sense_and_operations_with_whole_numbers_performance",
+        validation_alias="1_number_sense_and_operations_with_whole_numbers_performance",
     )
     field_1_mathematics_3: str | None = Field(
-        default=None, alias="1_number_sense_and_operations_performance"
+        default=None, validation_alias="1_number_sense_and_operations_performance"
     )
     field_1_mathematics_4: str | None = Field(
         default=None,
-        alias="1_number_sense_and_operations_and_algebraic_reasoning_performance",
+        validation_alias="1_number_sense_and_operations_and_algebraic_reasoning_performance",
     )
     field_1_mathematics_5: str | None = Field(
-        default=None, alias="1_number_sense_and_operations_and_probability_performance"
+        default=None,
+        validation_alias="1_number_sense_and_operations_and_probability_performance",
     )
 
     field_2_mathematics_1: str | None = Field(
-        default=None, alias="2_number_sense_and_multiplicative_reasoning_performance"
+        default=None,
+        validation_alias="2_number_sense_and_multiplicative_reasoning_performance",
     )
     field_2_mathematics_2: str | None = Field(
         default=None,
-        alias="2_number_sense_and_operations_with_fractions_and_decimals_performance",
+        validation_alias="2_number_sense_and_operations_with_fractions_and_decimals_performance",
     )
     field_2_mathematics_3: str | None = Field(
-        default=None, alias="2_algebraic_reasoning_performance"
+        default=None, validation_alias="2_algebraic_reasoning_performance"
     )
     field_2_mathematics_4: str | None = Field(
-        default=None, alias="2_proportional_reasoning_and_relationships_performance"
+        default=None,
+        validation_alias="2_proportional_reasoning_and_relationships_performance",
     )
 
     field_3_mathematics_1: str | None = Field(
-        default=None, alias="3_fractional_reasoning_performance"
+        default=None, validation_alias="3_fractional_reasoning_performance"
     )
     field_3_mathematics_2: str | None = Field(
         default=None,
-        alias="3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
+        validation_alias="3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
     )
     field_3_mathematics_3: str | None = Field(
-        default=None, alias="3_algebraic_reasoning_performance"
+        default=None, validation_alias="3_algebraic_reasoning_performance"
     )
     field_3_mathematics_4: str | None = Field(
         default=None,
-        alias="3_geometric_reasoning_data_analysis_and_probability_performance",
+        validation_alias="3_geometric_reasoning_data_analysis_and_probability_performance",
     )
     field_3_mathematics_5: str | None = Field(
-        default=None, alias="3_geometric_reasoning_performance"
+        default=None, validation_alias="3_geometric_reasoning_performance"
     )
     field_3_mathematics_6: str | None = Field(
         default=None,
-        alias="3_linear_relationships_data_analysis_and_functions_performance",
+        validation_alias="3_linear_relationships_data_analysis_and_functions_performance",
     )
 
     field_4_mathematics_1: str | None = Field(
-        default=None, alias="4_data_analysis_and_probability_performance"
+        default=None, validation_alias="4_data_analysis_and_probability_performance"
     )
     field_4_mathematics_2: str | None = Field(
-        default=None, alias="4_geometric_reasoning_performance"
+        default=None, validation_alias="4_geometric_reasoning_performance"
     )
     field_4_mathematics_3: str | None = Field(
         default=None,
-        alias="4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
+        validation_alias="4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
     )
 
 
@@ -424,27 +428,31 @@ class EOC(FLDOECore, FLDOECategories):
     civics_eoc_scale_score: str | int | None = None
 
     field_1_civics: str | None = Field(
-        default=None, alias="1_origins_and_purposes_of_law_and_government_performance"
+        default=None,
+        validation_alias="1_origins_and_purposes_of_law_and_government_performance",
     )
     field_2_civics: str | None = Field(
         default=None,
-        alias="2_roles_rights_and_responsibilities_of_citizens_performance",
+        validation_alias="2_roles_rights_and_responsibilities_of_citizens_performance",
     )
     field_3_civics: str | None = Field(
-        default=None, alias="3_government_policies_and_political_processes_performance"
+        default=None,
+        validation_alias="3_government_policies_and_political_processes_performance",
     )
     field_4_civics: str | None = Field(
-        default=None, alias="4_organization_and_function_of_government_performance"
+        default=None,
+        validation_alias="4_organization_and_function_of_government_performance",
     )
 
     field_1_algebra_i: str | None = Field(
-        None, alias="1_expressions_functions_and_data_analysis_performance"
+        default=None,
+        validation_alias="1_expressions_functions_and_data_analysis_performance",
     )
     field_2_algebra_i: str | None = Field(
-        None, alias="2_linear_relationships_performance"
+        default=None, validation_alias="2_linear_relationships_performance"
     )
     field_3_algebra_i: str | None = Field(
-        None, alias="3_non_linear_relationships_performance"
+        default=None, validation_alias="3_non_linear_relationships_performance"
     )
 
 
@@ -454,12 +462,18 @@ class Science(FLDOECore, FLDOECategories):
     grade_8_science_achievement_level: str | None = None
     grade_8_science_scale_score: int | None = None
 
-    field_1_science: str | None = Field(None, alias="1_nature_of_science_performance")
-    field_2_science: str | None = Field(
-        None, alias="2_earth_and_space_science_performance"
+    field_1_science: str | None = Field(
+        None, validation_alias="1_nature_of_science_performance"
     )
-    field_3_science: str | None = Field(None, alias="3_physical_science_performance")
-    field_4_science: str | None = Field(None, alias="4_life_science_performance")
+    field_2_science: str | None = Field(
+        None, validation_alias="2_earth_and_space_science_performance"
+    )
+    field_3_science: str | None = Field(
+        None, validation_alias="3_physical_science_performance"
+    )
+    field_4_science: str | None = Field(
+        None, validation_alias="4_life_science_performance"
+    )
 
 
 class FSA(BaseModel):
