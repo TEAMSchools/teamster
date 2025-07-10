@@ -7,8 +7,6 @@ with
 
             e.students_dcid,
 
-            concat(e.cc_schoolid, e.courses_credittype) as schoolid_credit_type,
-
             coalesce(s.islate, 0) as islate,
             coalesce(s.isexempt, 0) as isexempt,
             coalesce(s.ismissing, 0) as ismissing,
@@ -58,28 +56,29 @@ with
     ),
 
     school_course_exceptions as (
-        select _dbt_source_relation, dcid,
-        from {{ ref("stg_powerschool__sections") }}
-        where
-            concat(schoolid, course_number) not in (
-                '133570965LOG300',
-                '133570965SEM72250G1',
-                '133570965SEM72250G2',
-                '133570965SEM72250G3',
-                '133570965SEM72250G4',
-                '732513LOG300',
-                '732514GYM08035G1',
-                '732514GYM08036G2',
-                '732514GYM08037G3',
-                '732514GYM08038G4',
-                '732514LOG300',
-                '73252LOG300',
-                '73252SEM72250G1',
-                '73252SEM72250G2',
-                '73252SEM72250G3',
-                '73252SEM72250G4',
-                '73258LOG300'
-            )
+        select s._dbt_source_relation, s.sections_dcid, e.`include`,
+        from {{ ref("base_powerschool__sections") }} as s
+        inner join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+            on s.terms_academic_year = e.academic_year
+            and s.sections_schoolid = e.school_id
+            and s.sections_course_number = e.course_number
+            and e.view_name = 'int_powerschool__assignment_score_rollup'
+            and e.cte = 'school_course_exceptions'
+            and e.course_number is not null
+
+        union all
+
+        select s._dbt_source_relation, s.sections_dcid, e.`include`,
+        from {{ ref("base_powerschool__sections") }} as s
+        inner join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+            on s.terms_academic_year = e.academic_year
+            and s.sections_schoolid = e.school_id
+            and s.courses_credittype = e.credit_type
+            and e.view_name = 'int_powerschool__assignment_score_rollup'
+            and e.cte = 'school_course_exceptions'
+            and e.credit_type is not null
     )
 
 select
@@ -102,11 +101,8 @@ select
 
 from scores as s
 left join
-    school_course_exceptions as e
-    on s.sectionsdcid = e.dcid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="e") }}
-where
-    e.dcid is not null
-    and s.schoolid_credit_type
-    not in ('30200804COCUR', '30200804RHET', '30200804SCI', '30200804SOC')
+    school_course_exceptions as e1
+    on s.sectionsdcid = e1.sections_dcid
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="e1") }}
+where e1.`include` is null
 group by s._dbt_source_relation, s.assignmentsectionid
