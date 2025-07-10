@@ -1,10 +1,9 @@
 with
     ada_week_values as (
         select
-            mem._dbt_source_relation,
-            mem.studentid,
-            mem.yearid,
-            mem.schoolid,
+            co.student_number,
+            co.academic_year,
+            co.schoolid,
 
             w.week_start_monday,
 
@@ -42,43 +41,76 @@ with
             on mem.schoolid = w.schoolid
             and mem.yearid = w.yearid
             and mem.calendardate between w.week_start_monday and w.week_end_sunday
+        inner join
+            {{ ref("base_powerschool__student_enrollments") }} as co
+            on mem.studentid = co.schoolid
+            and mem.yearid = co.yearid
+            and mem.schoolid = co.schoolid
+            and mem.calendardate between co.entrydate and co.exitdate
+            and {{ union_dataset_join_clause(left_alias="mem", right_alias="co") }}
         where
             membershipvalue = 1
             and calendardate <= current_date('{{ var("local_timezone") }}')
-        group by all
+        group by co.student_number, co.academic_year, co.schoolid, w.week_start_monday
     )
 
 select
-    _dbt_source_relation,
-    studentid,
-    yearid,
-    schoolid,
-    week_start_monday,
-    ada_week,
-    ada_week_weighted,
+    aw.student_number,
+    aw.academic_year,
+    aw.schoolid,
+    aw.week_start_monday,
+    aw.ada_week,
+    aw.ada_week_weighted,
 
-    (
-        sum(sum_attendance_value_week) over (
-            partition by
-                _dbt_source_relation, studentid, yearid, schoolid, week_start_monday
-            order by week_start_monday asc
-        ) / sum(count_attendance_value_week) over (
-            partition by
-                _dbt_source_relation, studentid, yearid, schoolid, week_start_monday
-            order by week_start_monday asc
-        )
+    round(
+        (
+            sum(aw.sum_attendance_value_week) over (
+                partition by aw.student_number, aw.academic_year, aw.schoolid
+                order by aw.week_start_monday asc
+            ) / sum(aw.count_attendance_value_week) over (
+                partition by aw.student_number, aw.academic_year, aw.schoolid
+                order by week_start_monday asc
+            )
+        ),
+        3
     ) as ada_week_running,
 
     round(
         (
             sum(sum_attendance_value_week_weighted) over (
-                partition by _dbt_source_relation, studentid, yearid, schoolid
+                partition by student_number, academic_year, schoolid
                 order by week_start_monday asc
             ) / sum(count_attendance_value_week) over (
-                partition by _dbt_source_relation, studentid, yearid, schoolid
+                partition by student_number, academic_year, schoolid
                 order by week_start_monday asc
             )
         ),
         3
     ) as ada_week_running_weighted,
-from ada_week_values
+
+    round(
+        (
+            sum(aw.sum_attendance_value_week) over (
+                partition by aw.student_number, aw.academic_year
+                order by aw.week_start_monday asc
+            ) / sum(aw.count_attendance_value_week) over (
+                partition by aw.student_number, aw.academic_year
+                order by week_start_monday asc
+            )
+        ),
+        3
+    ) as ada_week_running_all_enrollments,
+
+    round(
+        (
+            sum(sum_attendance_value_week_weighted) over (
+                partition by student_number, academic_year
+                order by week_start_monday asc
+            ) / sum(count_attendance_value_week) over (
+                partition by student_number, academic_year
+                order by week_start_monday asc
+            )
+        ),
+        3
+    ) as ada_week_running_weighted_all_enrollments,
+from ada_week_values as aw
