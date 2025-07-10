@@ -1,3 +1,5 @@
+import argparse
+from copy import deepcopy
 from io import BytesIO
 
 import dagster as dg
@@ -13,12 +15,14 @@ def rewrite_blob(
     blob: storage.Blob, asset_name: str, bucket: storage.Bucket, schema: Schema
 ):
     # split blob name
-    blob_name_split_new = blob_name_split_archive = check.inst(
-        obj=blob.name, ttype=str
-    ).split("/")
+    blob_name_split = check.inst(obj=blob.name, ttype=str).split("/")
 
     # find index of blob name that matches asset name
-    asset_name_index = blob_name_split_archive.index(asset_name)
+    asset_name_index = blob_name_split.index(asset_name)
+
+    # create copies
+    blob_name_split_new = deepcopy(blob_name_split)
+    blob_name_split_archive = deepcopy(blob_name_split)
 
     # rename index value
     blob_name_split_new[asset_name_index] = f"{asset_name}_new"
@@ -151,3 +155,16 @@ def rewrite_kippmiami_renlearn_fast_star():
         asset_key=["kippmiami", "renlearn", "fast_star"],
         schema=parse_schema(FAST_STAR_SCHEMA),
     )
+
+
+def main(fn):
+    globals()[fn]()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(add_help=False)
+
+    parser.add_argument("fn")
+    args = parser.parse_args()
+
+    main(args.fn)
