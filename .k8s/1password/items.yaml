@@ -1,4 +1,3 @@
-# trunk-ignore-all(trivy/KSV039,trivy/KSV040)
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem

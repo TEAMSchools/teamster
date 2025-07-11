@@ -20,7 +20,6 @@ select
     s.ethnicity,
     s.advisory,
     s.hos,
-    s.region_school_level,
     s.year_in_school,
     s.year_in_network,
     s.rn_undergrad,
@@ -35,7 +34,7 @@ select
     s.is_504,
     s.is_counseling_services,
     s.is_student_athlete,
-    s.ada,
+    s.`ada`,
     s.ada_above_or_at_80,
 
     ce.cc_sectionid as sectionid,
@@ -52,7 +51,10 @@ select
     ce.teacher_lastfirst as teacher_name,
     ce.is_ap_course,
 
-    sec.tableau_username,
+    sec.teacher_tableau_username,
+    sec.school_leader,
+    sec.school_leader_tableau_username,
+    sec.region_school_level,
     sec.quarter,
     sec.semester,
     sec.quarter_start_date,
@@ -67,14 +69,10 @@ select
     sec.week_number_academic_year,
     sec.week_number_quarter,
 
-    qg.term_percent_grade_adjusted as quarter_course_percent_grade_that_matters,
-    qg.term_grade_points as quarter_course_grade_points_that_matters,
+    qg.term_percent_grade_adjusted as quarter_course_percent_grade,
+    qg.term_grade_points as quarter_course_grade_points,
     qg.citizenship as quarter_citizenship,
     qg.comment_value as quarter_comment_value,
-
-    concat(
-        s.region_school_level, ce.courses_credittype
-    ) as region_school_level_credit_type,
 
     if(
         s.grade_level <= 8, ce.sections_section_number, ce.sections_external_expression

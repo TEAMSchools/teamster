@@ -1,0 +1,12 @@
+version: 2
+models:
+  - name: stg_google_sheets__zendesk_org_lookup
+    columns:
+      - name: ADP_Business_Unit
+        data_type: string
+      - name: ADP_Location
+        data_type: string
+      - name: Zendesk_Organization
+        data_type: string
+      - name: Zendesk_Secondary_Location
+        data_type: string

@@ -60,6 +60,11 @@ left join
     {{ ref("int_powerschool__assignment_score_rollup") }} as asg
     on a.assignmentsectionid = asg.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
-where
-    concat(sec.region_school_level, sec.course_number)
-    not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
+left join
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+    on sec.academic_year = e.academic_year
+    and sec.region = e.region
+    and sec.school_level = e.school_level
+    and sec.course_number = e.course_number
+    and e.view_name = 'int_tableau__gradebook_audit_assignments_teacher'
+where e.include is null

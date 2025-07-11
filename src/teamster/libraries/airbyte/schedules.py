@@ -6,7 +6,7 @@ from dagster_airbyte.translator import AirbyteJob
 def build_airbyte_start_sync_schedule(
     code_location, connection_id, connection_name, cron_schedule, execution_timezone
 ):
-    @job(name=f"{code_location}_airbyte_sync_{connection_name}_job")
+    @job(name=f"{code_location}__airbyte__sync_{connection_name}")
     def _job():
         """Placehoder job"""
 
@@ -17,14 +17,11 @@ def build_airbyte_start_sync_schedule(
         job=_job,
     )
     def _schedule(context: ScheduleEvaluationContext, airbyte: AirbyteCloudWorkspace):
-        airbyte_client = airbyte.get_client()
+        start_job_details = airbyte.get_client().start_sync_job(connection_id)
 
-        start_job_details = airbyte_client.start_sync_job(connection_id)
+        airbyte_job = AirbyteJob.from_job_details(job_details=start_job_details)
 
-        job = AirbyteJob.from_job_details(job_details=start_job_details)
-
-        context.log.info(f"{job.id=} initialized for {connection_id=}.")
-
+        context.log.info(f"{airbyte_job.id=} initialized for {connection_id=}.")
         return SkipReason("This schedule doesn't actually return any runs.")
 
     return _schedule

@@ -132,6 +132,8 @@ select
 
     if(testperformancelevel >= 4, true, false) as is_proficient,
 
+    if(testperformancelevel <= 2, true, false) as is_bl_fb,
+
     case
         testperformancelevel
         when 5

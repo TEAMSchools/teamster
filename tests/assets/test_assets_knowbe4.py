@@ -2,12 +2,13 @@ from dagster import TextMetadataValue, materialize
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf.knowbe4.assets import assets as KNOWBE4_ASSETS
-from teamster.code_locations.kipptaf.resources import KNOWBE4_RESOURCE
 from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(selection):
+    from teamster.code_locations.kipptaf.knowbe4.assets import assets as KNOWBE4_ASSETS
+    from teamster.code_locations.kipptaf.resources import KNOWBE4_RESOURCE
+
     result = materialize(
         assets=KNOWBE4_ASSETS,
         selection=selection,

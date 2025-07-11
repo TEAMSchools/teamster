@@ -29,6 +29,8 @@ with
             annual_stretch_growth_measure,
             overall_placement,
 
+            if(`subject` = 'Reading', 'ELA', 'Math') as discipline,
+
             if(
                 percent_progress_to_annual_typical_growth_percent >= 100, true, false
             ) as is_met_typical,
@@ -94,6 +96,7 @@ select
     dr.academic_year,
     dr.academic_year_int,
     dr.student_grade,
+    dr.discipline,
     dr.subject,
     dr.start_date,
     dr.completion_date,

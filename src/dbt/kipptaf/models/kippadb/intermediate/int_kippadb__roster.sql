@@ -25,6 +25,13 @@ with
         group by all
     ),
 
+    dlm as (
+        select student_number, max(pathway_option) as dlm,
+        from {{ ref("int_students__graduation_path_codes") }}
+        where rn_discipline_distinct = 1 and final_grad_path_code = 'M'
+        group by student_number
+    ),
+
     roster as (
         select
             se.student_number,
@@ -133,6 +140,8 @@ with
                 when c.contact_kipp_ms_graduate and not c.contact_kipp_hs_graduate
                 then 'TAF'
             end as ktc_status,
+
+            if(d.dlm is not null, true, false) as is_dlm,
         from {{ ref("base_powerschool__student_enrollments") }} as se
         left join
             {{ ref_contact }} as c on se.student_number = c.contact_school_specific_id
@@ -144,6 +153,7 @@ with
             on os.id = cf.id
             and cf._dbt_source_model = 'stg_overgrad__students'
         left join es_grad as e on e.student_number = se.student_number
+        left join dlm as d on e.student_number = d.student_number
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

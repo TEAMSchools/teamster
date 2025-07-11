@@ -35,7 +35,9 @@ with
             is_ap_course,
             teacher_number,
             teacher_name,
-            tableau_username,
+            teacher_tableau_username,
+            school_leader,
+            school_leader_tableau_username,
             assignmentid as teacher_assign_id,
             assignment_name as teacher_assign_name,
             duedate as teacher_assign_due_date,
@@ -62,6 +64,7 @@ with
             audit_flag_name,
 
             max(audit_flag_value) as audit_flag_value,
+
         from {{ ref("int_tableau__gradebook_audit_flags") }}
         where audit_category = 'Comments'
         group by all
@@ -107,8 +110,8 @@ with
             date_enrolled,
             category_quarter_percent_grade,
             category_quarter_average_all_courses,
-            quarter_course_percent_grade_that_matters,
-            quarter_course_grade_points_that_matters,
+            quarter_course_percent_grade,
+            quarter_course_grade_points,
             quarter_citizenship,
             quarter_comment_value,
             scorepoints as raw_score,
@@ -122,6 +125,7 @@ with
             code_type,
             audit_flag_name,
             audit_flag_value as flag_value,
+
         from {{ ref("int_tableau__gradebook_audit_flags") }}
         where audit_category = 'Comments'
     )
@@ -157,8 +161,8 @@ select
     v.ada_above_or_at_80,
     v.date_enrolled,
     v.category_quarter_average_all_courses,
-    v.quarter_course_percent_grade_that_matters,
-    v.quarter_course_grade_points_that_matters,
+    v.quarter_course_percent_grade,
+    v.quarter_course_grade_points,
     v.quarter_citizenship,
     v.quarter_comment_value,
     v.raw_score,
@@ -171,6 +175,7 @@ select
     e.category_quarter_percent_grade as effort_grade,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 inner join
     valid_flags as v
