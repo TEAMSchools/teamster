@@ -3,7 +3,9 @@ with
         {{
             dbt_utils.deduplicate(
                 relation=source("fldoe", "src_fldoe__fast"),
-                partition_by="student_id, _dagster_partition_grade_level_subject, test_reason",
+                partition_by=(
+                    "student_id, _dagster_partition_grade_level_subject, test_reason"
+                ),
                 order_by="coalesce(enrolled_grade.long_value, enrolled_grade.double_value) desc",
             )
         }}
@@ -15,31 +17,33 @@ with
             student_id,
             local_id,
 
-            `1_reading_prose_and_poetry_performance` as reading_prose_and_poetry,
-            `2_reading_informational_text_performance` as reading_informational_text,
-            `3_reading_across_genres_vocabulary_performance`
+            field_1_reading_prose_and_poetry_performance as reading_prose_and_poetry,
+            field_2_reading_informational_text_performance
+            as reading_informational_text,
+            field_3_reading_across_genres_vocabulary_performance
             as reading_across_genres_vocabulary,
-            `1_number_sense_and_additive_reasoning_performance`
+            field_1_number_sense_and_additive_reasoning_performance
             as number_sense_and_additive_reasoning,
-            `1_number_sense_and_operations_and_algebraic_reasoning_performance`
+            field_1_number_sense_and_operations_and_algebraic_reasoning_performance
             as number_sense_and_operations_and_algebraic_reasoning,
-            `1_number_sense_and_operations_and_probability_performance`
+            field_1_number_sense_and_operations_and_probability_performance
             as number_sense_and_operations_and_probability,
-            `1_number_sense_and_operations_performance` as number_sense_and_operations,
-            `1_number_sense_and_operations_with_whole_numbers_performance`
+            field_1_number_sense_and_operations_performance
+            as number_sense_and_operations,
+            field_1_number_sense_and_operations_with_whole_numbers_performance
             as number_sense_and_operations_with_whole_numbers,
-            `2_number_sense_and_multiplicative_reasoning_performance`
+            field_2_number_sense_and_multiplicative_reasoning_performance
             as number_sense_and_multiplicative_reasoning,
-            `2_number_sense_and_operations_with_fractions_and_decimals_performance`
+            field_2_number_sense_and_operations_with_fractions_and_decimals_performance
             as number_sense_and_operations_with_fractions_and_decimals,
-            `2_proportional_reasoning_and_relationships_performance`
+            field_2_proportional_reasoning_and_relationships_performance
             as proportional_reasoning_and_relationships,
-            `3_fractional_reasoning_performance` as fractional_reasoning,
-            `3_geometric_reasoning_data_analysis_and_probability_performance`
+            field_3_fractional_reasoning_performance as fractional_reasoning,
+            field_3_geometric_reasoning_data_analysis_and_probability_performance
             as geometric_reasoning_data_analysis_and_probability,
-            `3_linear_relationships_data_analysis_and_functions_performance`
+            field_3_linear_relationships_data_analysis_and_functions_performance
             as linear_relationships_data_analysis_and_functions,
-            `4_data_analysis_and_probability_performance`
+            field_4_data_analysis_and_probability_performance
             as data_analysis_and_probability,
 
             parse_date('%m/%d/%Y', date_taken) as date_taken,
@@ -73,18 +77,20 @@ with
             ) as achievement_level,
 
             coalesce(
-                `2_algebraic_reasoning_performance`, `3_algebraic_reasoning_performance`
+                field_2_algebraic_reasoning_performance,
+                field_3_algebraic_reasoning_performance
             ) as algebraic_reasoning,
 
             coalesce(
-                `3_geometric_reasoning_performance`, `4_geometric_reasoning_performance`
+                field_3_geometric_reasoning_performance,
+                field_4_geometric_reasoning_performance
             ) as geometric_reasoning,
 
             coalesce(
                 -- trunk-ignore(sqlfluff/LT05)
-                `3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`,
+                field_3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance,
                 -- trunk-ignore(sqlfluff/LT05)
-                `4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance`
+                field_4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance
             ) as geometric_reasoning_measurement_and_data_analysis_and_probability,
 
             coalesce(
