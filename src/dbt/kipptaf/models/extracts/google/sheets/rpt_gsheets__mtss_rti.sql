@@ -128,6 +128,7 @@ with
             {{ ref("int_deanslist__referral_suspension_rollup") }} as sr
             on co.student_number = sr.student_school_id
             and co.academic_year = sr.create_ts_academic_year
+            and sr.term = 'Y1'
     )
 
 select *,
