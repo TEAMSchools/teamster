@@ -612,22 +612,23 @@ wheels = [
 
 [[package]]
 name = "dbt-bigquery"
-version = "1.9.2"
+version = "1.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dbt-adapters" },
     { name = "dbt-common" },
     { name = "dbt-core" },
     { name = "google-api-core" },
+    { name = "google-auth" },
     { name = "google-cloud-aiplatform" },
     { name = "google-cloud-bigquery", extra = ["pandas"] },
     { name = "google-cloud-dataproc" },
     { name = "google-cloud-storage" },
     { name = "nbformat" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/da/20/6a202cc39375e711e5b2b7f576964f9d13c5b4160440330afc788b92d555/dbt_bigquery-1.9.2.tar.gz", hash = "sha256:3dc27fd43bf198fac58445c73b500513eaf24b523b344b67a935d0fa211c0133", size = 137513, upload-time = "2025-05-22T04:55:16.058Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/66/18/f7d90bb756e82f6dc4a5612a22f21f1177890993e2695c7918c851b0ae97/dbt_bigquery-1.10.0.tar.gz", hash = "sha256:a13f788884100943e578676d9dce63e7fd3934a6b4f2ea69698d8496cb5adbe6", size = 144719, upload-time = "2025-07-10T19:51:02.141Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c7/c6/831d5090745f8b5ecbd3dcca5829172a48de545bb0d71902fa6d35ae854e/dbt_bigquery-1.9.2-py3-none-any.whl", hash = "sha256:08b2635019308c1b8f43289cb187c38019d20e8003e9f15f3554f990cfb47349", size = 87942, upload-time = "2025-05-22T04:55:14.055Z" },
+    { url = "https://files.pythonhosted.org/packages/af/c0/b9249a968d673488ff5cd831bc1f27fb8077367c2907492d8b60c505913c/dbt_bigquery-1.10.0-py3-none-any.whl", hash = "sha256:72558d0cada22ae26edfadcb832c1cb3a6329b394b1c657095c9427c411c7ad2", size = 92071, upload-time = "2025-07-10T19:51:00.572Z" },
 ]
 
 [[package]]
@@ -3078,7 +3079,7 @@ requires-dist = [
     { name = "dagster-gcp" },
     { name = "dagster-k8s" },
     { name = "dagster-ssh" },
-    { name = "dbt-bigquery", specifier = ">=1.9,<1.10" },
+    { name = "dbt-bigquery", specifier = ">=1.10,<1.11" },
     { name = "dbt-core" },
     { name = "dlt", specifier = ">=1.10.0" },
     { name = "fastavro", specifier = ">=1.9.0" },
