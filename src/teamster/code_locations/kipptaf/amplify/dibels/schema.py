@@ -1,4 +1,4 @@
-import json
+"""import json
 
 import py_avro_schema
 
@@ -13,3 +13,4 @@ DATA_FARMING_SCHEMA = json.loads(
 PROGRESS_EXPORT_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=ProgressExport, options=pas_options)
 )
+"""

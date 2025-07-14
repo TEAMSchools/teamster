@@ -2,11 +2,7 @@ from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudWorkspace
 from dagster_shared import check
 
-from teamster.libraries.adp.workforce_manager.resources import (
-    AdpWorkforceManagerResource,
-)
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
-from teamster.libraries.amplify.dibels.resources import DibelsDataSystemResource
 from teamster.libraries.amplify.mclass.resources import MClassResource
 from teamster.libraries.coupa.resources import CoupaResource
 from teamster.libraries.email.resources import EmailResource
@@ -20,15 +16,6 @@ from teamster.libraries.powerschool.enrollment.resources import (
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
-
-ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
-    subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
-    app_key=EnvVar("ADP_WFM_APP_KEY"),
-    client_id=EnvVar("ADP_WFM_CLIENT_ID"),
-    client_secret=EnvVar("ADP_WFM_CLIENT_SECRET"),
-    username=EnvVar("ADP_WFM_USERNAME"),
-    password=EnvVar("ADP_WFM_PASSWORD"),
-)
 
 ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
     client_id=EnvVar("ADP_WFN_CLIENT_ID"),
@@ -49,10 +36,6 @@ COUPA_RESOURCE = CoupaResource(
     client_id=EnvVar("COUPA_API_CLIENT_ID"),
     client_secret=EnvVar("COUPA_API_CLIENT_SECRET"),
     scope=["core.common.read", "core.user.read"],
-)
-
-DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
-    username=EnvVar("AMPLIFY_DDS_USERNAME"), password=EnvVar("AMPLIFY_DDS_PASSWORD")
 )
 
 OUTLOOK_RESOURCE = EmailResource(
