@@ -10,9 +10,16 @@ locations:
       k8s:
         volume_mounts:
           - name: secret-volume
-            readOnly: true
             mountPath: /etc/secret-volume
+            readOnly: true
+          - name: gcs-fuse-csi-static
+            mountPath: /gcs
+            readOnly: true
         volumes:
+          - name: gcs-fuse-csi-static
+            persistentVolumeClaim:
+              claimName: gcs-fuse-csi-static-pvc
+              readOnly: true
           - name: secret-volume
             projected:
               sources:
@@ -32,6 +39,15 @@ locations:
                       - key: id_rsa_egencia
                         path: id_rsa_egencia
         server_k8s_config:
+          pod_template_spec_metadata: # Metadata for the code server pod
+            annotations:
+              gke-gcsfuse/volumes: "true"
+          deployment_metadata: # Metadata for the code server deployment
+            annotations:
+              gke-gcsfuse/volumes: "true"
+          service_metadata: # Metadata for the code server service
+            annotations:
+              gke-gcsfuse/volumes: "true"
           container_config:
             env:
               - name: ADP_SFTP_PASSWORD
@@ -425,6 +441,12 @@ locations:
                     name: op-knowbe4
                     key: credential
         run_k8s_config:
+          pod_template_spec_metadata: # Metadata for the run pod
+            annotations:
+              gke-gcsfuse/volumes: "true"
+          job_metadata: # Metadata for the Kubernetes job for the run
+            annotations:
+              gke-gcsfuse/volumes: "true"
           container_config:
             env:
               - name: ADP_SFTP_PASSWORD

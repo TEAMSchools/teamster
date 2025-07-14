@@ -52,13 +52,21 @@ uv sync
 
 # prepare dbt projects
 uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kippcamden/__init__.py
+  --file src/teamster/code_locations/kippcamden/__init__.py &&
+  sudo mkdir -p /gcs/kippcamden &&
+  sudo cp src/dbt/kippcamden/target/manifest.json /gcs/kippcamden/manifest.json
 uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kippmiami/__init__.py
+  --file src/teamster/code_locations/kippmiami/__init__.py &&
+  sudo mkdir -p /gcs/kippmiami &&
+  sudo cp src/dbt/kippmiami/target/manifest.json /gcs/kippmiami/manifest.json
 uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kippnewark/__init__.py
+  --file src/teamster/code_locations/kippnewark/__init__.py &&
+  sudo mkdir -p /gcs/kippnewark &&
+  sudo cp src/dbt/kippnewark/target/manifest.json /gcs/kippnewark/manifest.json
 uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kipptaf/__init__.py
+  --file src/teamster/code_locations/kipptaf/__init__.py &&
+  sudo mkdir -p /gcs/kipptaf &&
+  sudo cp src/dbt/kipptaf/target/manifest.json /gcs/kipptaf/manifest.json
 
 # install dbt deps for packages
 uv run dbt deps --project-dir=src/dbt/deanslist
