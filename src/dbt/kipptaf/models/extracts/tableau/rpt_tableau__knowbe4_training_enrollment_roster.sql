@@ -18,4 +18,4 @@ select
 from {{ ref("int_people__staff_roster") }} as sr
 left join
     {{ ref("stg_knowbe4__training_enrollments") }} as kb4
-    on sr.employee_number = safe_cast(kb4.user_employee_number as int)
+    on sr.employee_number = kb4.user_employee_number
