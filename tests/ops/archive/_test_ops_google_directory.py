@@ -1,4 +1,4 @@
-from dagster import build_op_context
+"""from dagster import build_op_context
 
 from teamster.core.resources import BIGQUERY_RESOURCE
 from teamster.libraries.google.bigquery.ops import BigQueryOpConfig, bigquery_query_op
@@ -63,3 +63,4 @@ def test_google_directory_role_assignment_create_op():
         google_directory=GOOGLE_DIRECTORY_RESOURCE,
         role_assignments=role_assignments,
     )
+"""
