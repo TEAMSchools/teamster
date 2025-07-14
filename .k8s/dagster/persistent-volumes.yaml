@@ -4,10 +4,11 @@ kind: PersistentVolume
 metadata:
   name: gcs-fuse-csi-pv
 spec:
-  accessModes:
-    - ReadOnlyMany
-  capacity:
-    storage: 5Gi
+  # accessModes:
+  #   - ReadOnlyMany
+  # capacity:
+  #   storage: 5Gi
+  # storageClassName: example-storage-class
   mountOptions:
     - implicit-dirs
   csi:
@@ -22,9 +23,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: gcs-fuse-csi-static-pvc
   namespace: dagster-cloud
-spec:
-  accessModes:
-    - ReadOnlyMany
-  resources:
-    requests:
-      storage: 5Gi
+# spec:
+#   accessModes:
+#     - ReadWriteMany
+#   resources:
+#     requests:
+#       storage: 5Gi
+#   storageClassName: example-storage-class
