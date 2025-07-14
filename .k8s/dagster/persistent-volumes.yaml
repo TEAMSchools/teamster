@@ -12,7 +12,7 @@ spec:
     - implicit-dirs
   csi:
     driver: gcsfuse.csi.storage.gke.io
-    volumeHandle: _
+    volumeHandle: teamster-dbt
   claimRef:
     name: gcs-fuse-csi-static-pvc
     namespace: dagster-cloud
