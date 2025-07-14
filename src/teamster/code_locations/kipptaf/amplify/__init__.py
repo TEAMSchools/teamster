@@ -1,16 +1,14 @@
-# from teamster.code_locations.kipptaf.amplify import dibels, mclass
+from teamster.code_locations.kipptaf.amplify import mclass
 
-# assets = [
-#     *dibels.assets,
-#     *mclass.assets,
-# ]
+assets = [
+    *mclass.assets,
+]
 
-# schedules = [
-#     *dibels.schedules,
-#     *mclass.schedules,
-# ]
+schedules = [
+    *mclass.schedules,
+]
 
-# __all__ = [
-#     "assets",
-#     "schedules",
-# ]
+__all__ = [
+    "assets",
+    "schedules",
+]
