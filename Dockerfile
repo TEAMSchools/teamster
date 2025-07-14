@@ -36,9 +36,7 @@ COPY src/ /app/src/
 
 # Sync the project & install dbt project
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-editable \
-    && dagster-dbt project prepare-and-package \
-        --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
+    uv sync --frozen --no-dev --no-editable
 
 # update non-root user permissions
 RUN chown -R 1234:1234 /app

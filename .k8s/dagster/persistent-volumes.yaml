@@ -1,0 +1,32 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: gcs-fuse-csi-pv
+spec:
+  # accessModes:
+  #   - ReadOnlyMany
+  # capacity:
+  #   storage: 5Gi
+  # storageClassName: example-storage-class
+  mountOptions:
+    - implicit-dirs
+  csi:
+    driver: gcsfuse.csi.storage.gke.io
+    volumeHandle: _
+  claimRef:
+    name: gcs-fuse-csi-static-pvc
+    namespace: dagster-cloud
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gcs-fuse-csi-static-pvc
+  namespace: dagster-cloud
+# spec:
+#   accessModes:
+#     - ReadWriteMany
+#   resources:
+#     requests:
+#       storage: 5Gi
+#   storageClassName: example-storage-class
