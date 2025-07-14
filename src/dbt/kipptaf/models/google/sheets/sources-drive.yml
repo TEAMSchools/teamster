@@ -156,10 +156,6 @@ sources:
             data_type: string
           - name: PS_Credit_Type
             data_type: string
-          - name: Assessment_Include
-            data_type: boolean
-          - name: PM_Goal_Include
-            data_type: boolean
         meta:
           dagster:
             asset_key:

@@ -28,14 +28,24 @@ with
         incorrectly omitting flags for effort grade, conduct code, grade > 100, and
         summative or formative grades missing for COCUR, RHET, SCI, and SOC */
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-            on u.academic_year = e.academic_year
-            and u.region = e.region
-            and u.school_level = e.school_level
-            and u.credit_type = e.credit_type
-            and e.view_name = 'int_tableau__gradebook_audit_flags'
-            and e.cte = 'student_unpivot'
-        where e.`include` is null
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            on u.academic_year = e1.academic_year
+            and u.region = e1.region
+            and u.school_level = e1.school_level
+            and u.credit_type = e1.credit_type
+            and e1.view_name = 'int_tableau__gradebook_audit_flags'
+            and e1.cte = 'student_unpivot'
+            and e1.is_quarter_end_date_range is null
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            on u.academic_year = e2.academic_year
+            and u.region = e2.region
+            and u.course_number = e2.course_number
+            and u.is_quarter_end_date_range = e2.is_quarter_end_date_range
+            and e2.view_name = 'int_tableau__gradebook_audit_flags'
+            and e2.cte = 'student_unpivot'
+            and e2.is_quarter_end_date_range is not null
+        where e1.`include` is null and e2.`include` is null
     ),
 
     teacher_unpivot_cca as (
