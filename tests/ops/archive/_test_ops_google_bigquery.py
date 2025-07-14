@@ -1,4 +1,4 @@
-from dagster import build_op_context
+"""from dagster import build_op_context
 from dagster_gcp import BigQueryResource
 
 from teamster import GCS_PROJECT_NAME
@@ -37,3 +37,4 @@ def test_bigquery_query_op():
     )
 
     context.log.info(data)
+"""
