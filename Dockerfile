@@ -1,3 +1,4 @@
+# trunk-ignore-all(trivy/DS026)
 # trunk-ignore-all(checkov/CKV_DOCKER_2)
 # https://hub.docker.com/_/python
 FROM python:3.13-slim
@@ -32,14 +33,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project --no-editable
 
 # Copy the project into the image
-COPY src/ /app/src/
+COPY --chown=1234:1234 src/ /app/src/
 
 # Sync the project & install dbt project
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
-
-# update non-root user permissions
-RUN chown -R 1234:1234 /app
 
 # Switch to the non-root user
 USER 1234:1234
