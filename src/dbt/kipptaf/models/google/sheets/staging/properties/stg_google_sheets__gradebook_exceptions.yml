@@ -26,6 +26,8 @@ models:
         data_type: string
       - name: audit_flag_name
         data_type: string
+      - name: is_quarter_end_date_range
+        data_type: boolean
       - name: view_name
         data_type: string
       - name: cte

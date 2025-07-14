@@ -69,10 +69,19 @@ left join
     on a.assignmentsectionid = asg.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
 left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-    on sec.academic_year = e.academic_year
-    and sec.region = e.region
-    and sec.school_level = e.school_level
-    and sec.course_number = e.course_number
-    and e.view_name = 'int_tableau__gradebook_audit_assignments_teacher'
-where e.include is null
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+    on sec.academic_year = e1.academic_year
+    and sec.region = e1.region
+    and sec.school_level = e1.school_level
+    and sec.course_number = e1.course_number
+    and e1.view_name = 'int_tableau__gradebook_audit_assignments_teacher'
+    and e1.is_quarter_end_date_range is null
+left join
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+    on sec.academic_year = e2.academic_year
+    and sec.region = e2.region
+    and sec.course_number = e2.course_number
+    and sec.is_quarter_end_date_range = e2.is_quarter_end_date_range
+    and e2.view_name = 'int_tableau__gradebook_audit_assignments_teacher'
+    and e2.is_quarter_end_date_range is not null
+where e1.`include` is null and e2.`include` is null

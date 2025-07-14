@@ -66,6 +66,7 @@ with
             and e.view_name = 'int_powerschool__assignment_score_rollup'
             and e.cte = 'school_course_exceptions'
             and e.course_number is not null
+            and e.is_quarter_end_date_range is null
 
         union all
 
@@ -79,6 +80,20 @@ with
             and e.view_name = 'int_powerschool__assignment_score_rollup'
             and e.cte = 'school_course_exceptions'
             and e.credit_type is not null
+            and e.is_quarter_end_date_range is null
+
+        union all
+
+        select s._dbt_source_relation, s.sections_dcid, e.`include`,
+        from {{ ref("base_powerschool__sections") }} as s
+        inner join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+            on s.terms_academic_year = e.academic_year
+            and s.sections_course_number = e.course_number
+            and e.view_name = 'int_powerschool__assignment_score_rollup'
+            and e.cte = 'school_course_exceptions'
+            and e.course_number is not null
+            and e.is_quarter_end_date_range is not null
     )
 
 select
