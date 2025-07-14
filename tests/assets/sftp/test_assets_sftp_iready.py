@@ -96,10 +96,26 @@ def test_iready_diagnostic_and_instruction_kippnj():
 def test_iready_instruction_by_lesson_kippnj():
     from teamster.code_locations.kippnewark.iready.assets import instruction_by_lesson
 
-    _test_asset(asset=instruction_by_lesson)
+    _test_asset(asset=instruction_by_lesson, partition_key="2025|ela")
 
 
 def test_iready_instruction_by_lesson_kippmiami():
     from teamster.code_locations.kippmiami.iready.assets import instruction_by_lesson
 
-    _test_asset(asset=instruction_by_lesson, partition_key="2023|ela")
+    _test_asset(asset=instruction_by_lesson, partition_key="2025|ela")
+
+
+def test_iready_instruction_by_lesson_pro_kippnewark():
+    from teamster.code_locations.kippnewark.iready.assets import (
+        instruction_by_lesson_pro,
+    )
+
+    _test_asset(asset=instruction_by_lesson_pro, partition_key="2025|ela")
+
+
+def test_iready_instruction_by_lesson_pro_kippmiami():
+    from teamster.code_locations.kippmiami.iready.assets import (
+        instruction_by_lesson_pro,
+    )
+
+    _test_asset(asset=instruction_by_lesson_pro, partition_key="2025|ela")
