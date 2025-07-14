@@ -10,6 +10,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PATH="/app/.venv/bin:${PATH}"
 ENV UV_LINK_MODE=copy
 ENV UV_COMPILE_BYTECODE=1
+ENV DBT_PACKAGES_DIR="/gcs/${CODE_LOCATION}/dbt_packages"
 
 # install system deps & create non-root user
 # trunk-ignore(hadolint/DL3008)
@@ -32,7 +33,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project --no-editable
 
 # Copy the project into the image
-COPY src/ /app/src/
+COPY src/teamster /app/src/teamster/
 
 # Sync the project & install dbt project
 RUN --mount=type=cache,target=/root/.cache/uv \
