@@ -1,4 +1,4 @@
-from dagster import DailyPartitionsDefinition, DynamicPartitionsDefinition
+"""from dagster import DailyPartitionsDefinition, DynamicPartitionsDefinition
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_manager.schema import (
@@ -48,3 +48,4 @@ assets = [
     *adp_wfm_assets_daily,
     *adp_wfm_assets_dynamic,
 ]
+"""
