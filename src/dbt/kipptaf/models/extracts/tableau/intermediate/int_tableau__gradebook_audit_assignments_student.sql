@@ -17,6 +17,8 @@ with
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
 
+            if(s.scorepoints = 0, 1, 0) as is_zero,
+
             if(
                 a.scoretype = 'POINTS',
                 s.scorepoints,
