@@ -1,5 +1,4 @@
 # trunk-ignore-all(checkov/CKV_DOCKER_2)
-# trunk-ignore-all(trivy/DS026)
 # https://hub.docker.com/_/python
 FROM python:3.13-slim
 ARG CODE_LOCATION
@@ -33,7 +32,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project --no-editable
 
 # Copy the project into the image
-COPY src/teamster /app/src/teamster/
+COPY src/ /app/src/
 
 # Sync the project & install dbt project
 RUN --mount=type=cache,target=/root/.cache/uv \
