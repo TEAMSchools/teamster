@@ -1,4 +1,4 @@
-import pathlib
+"""import pathlib
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.libraries.fivetran.assets import build_fivetran_asset_specs
@@ -21,3 +21,4 @@ asset_specs = [
     *illuminate_xmin_assets,
     *illuminate_assets,
 ]
+"""

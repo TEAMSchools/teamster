@@ -1,4 +1,4 @@
-r"""from dagster import EnvVar
+"""from dagster import EnvVar
 from dagster_slack import SlackResource
 
 
