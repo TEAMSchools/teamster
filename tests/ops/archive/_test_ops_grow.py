@@ -1,4 +1,4 @@
-from dagster import build_op_context
+"""from dagster import build_op_context
 
 from teamster.core.resources import BIGQUERY_RESOURCE
 from teamster.libraries.google.bigquery.ops import BigQueryOpConfig, bigquery_query_op
@@ -38,3 +38,4 @@ def test_grow_school_update_op():
     )
 
     grow_school_update_op(context=context, grow=GROW_RESOURCE, users=users)
+"""
