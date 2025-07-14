@@ -59,8 +59,10 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
             return response
         except HTTPError as e:
-            self._log.error(msg=response.text)
-            raise e
+            response_json = response.json()
+
+            self._log.error(msg=response_json)
+            raise Exception(response_json) from e
 
     def post(self, endpoint, subresource, verb, payload):
         return self._request(

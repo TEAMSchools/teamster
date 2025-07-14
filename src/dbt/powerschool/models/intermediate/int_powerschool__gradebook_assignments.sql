@@ -21,6 +21,7 @@ with
             coalesce(tc.districtteachercategoryid, tc.teachercategoryid) as category_id,
 
             coalesce(dtc.name, tc.name) as category_name,
+
         from {{ ref("stg_powerschool__assignmentsection") }} as asec
         left join
             {{ ref("stg_powerschool__assignmentcategoryassoc") }} as aca
