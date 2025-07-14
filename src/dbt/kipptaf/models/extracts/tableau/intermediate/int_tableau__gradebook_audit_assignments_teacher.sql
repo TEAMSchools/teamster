@@ -28,6 +28,14 @@ select
     ) as f_assign_max_score_not_10,
 
     if(
+        sec.assignment_category_code = 'H'
+        and sec.school_level != 'ES'
+        and a.totalpointvalue != 10,
+        true,
+        false
+    ) as h_assign_max_score_not_10,
+
+    if(
         sec.region = 'Miami'
         and sec.assignment_category_code = 'S'
         and a.totalpointvalue > 100,

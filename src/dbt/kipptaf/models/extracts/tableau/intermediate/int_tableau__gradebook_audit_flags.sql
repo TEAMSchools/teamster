@@ -14,6 +14,10 @@ with
                     assign_f_score_less_5,
                     assign_w_missing_score_not_5,
                     assign_f_missing_score_not_5,
+                    assign_h_missing_score_not_5,
+                    assign_w_missing_score_not_0,
+                    assign_f_missing_score_not_0,
+                    assign_h_missing_score_not_0,
                     assign_s_score_less_50p,
                     assign_s_ms_score_not_conversion_chart_options,
                     assign_s_hs_score_not_conversion_chart_options
@@ -41,6 +45,7 @@ with
             {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     w_assign_max_score_not_10,
+                    h_assign_max_score_not_10,
                     f_assign_max_score_not_10,
                     s_max_score_greater_100
                 )
@@ -78,9 +83,11 @@ with
                     qt_teacher_s_total_greater_100,
                     qt_teacher_s_total_less_100,
                     w_expected_assign_count_not_met,
+                    h_expected_assign_count_not_met,
                     f_expected_assign_count_not_met,
                     s_expected_assign_count_not_met,
                     w_percent_graded_min_not_met,
+                    h_percent_graded_min_not_met,
                     f_percent_graded_min_not_met,
                     s_percent_graded_min_not_met
                 )
