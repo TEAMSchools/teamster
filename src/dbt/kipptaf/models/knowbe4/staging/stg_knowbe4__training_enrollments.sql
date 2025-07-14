@@ -12,7 +12,7 @@ select
     user.first_name as user_first_name,
     user.last_name as user_last_name,
     user.email as user_email,
-    user.employee_number as user_employee_number,
+    safe_cast(user.employee_number as int) as user_employee_number,
 
     timestamp(enrollment_date) as enrollment_date,
     timestamp(`start_date`) as `start_date`,
