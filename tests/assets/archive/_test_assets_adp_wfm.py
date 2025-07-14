@@ -1,4 +1,4 @@
-import random
+"""import random
 
 from dagster import (
     AssetsDefinition,
@@ -84,3 +84,4 @@ def test_asset_adp_workforce_manager_time_details():
     )
 
     _test_asset(time_details)
+"""
