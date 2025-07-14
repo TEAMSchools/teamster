@@ -28,10 +28,14 @@ def build_mclass_asset(asset_key, dyd_payload, partitions_def, schema):
             data={
                 "data": {
                     **dyd_payload,
+                    "result": "download_your_data",
                     "years": str(int(context.partition_key[2:4]) - 1),
                 }
             },
         )
+
+        if "NO_DATA" in response.text:
+            raise Exception(response.json())
 
         df = read_csv(filepath_or_buffer=StringIO(response.text), low_memory=False)
 

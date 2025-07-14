@@ -1,4 +1,4 @@
-from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
+"""from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.amplify.dibels.assets import (
     data_farming,
     progress_export,
@@ -20,3 +20,4 @@ amplify_dibels_progress_export_asset_job_schedule = build_amplify_dibels_schedul
 schedules = [
     amplify_dibels_data_farming_asset_job_schedule,
 ]
+"""
