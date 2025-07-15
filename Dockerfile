@@ -10,7 +10,8 @@ ENV PYTHONUNBUFFERED=1
 ENV PATH="/app/.venv/bin:${PATH}"
 ENV UV_LINK_MODE=copy
 ENV UV_COMPILE_BYTECODE=1
-ENV DBT_PACKAGES_DIR="/gcs/${CODE_LOCATION}/dbt_packages"
+ENV DBT_PROJECT_DIR="/gcs/${CODE_LOCATION}"
+ENV DBT_PROFILES_DIR="/gcs/${CODE_LOCATION}"
 
 # install system deps & create non-root user
 # trunk-ignore(hadolint/DL3008)
@@ -25,17 +26,16 @@ RUN apt-get update \
 # set workdir
 WORKDIR /app
 
+# install uv and dependencies
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
 COPY uv.lock pyproject.toml /app/
-
-# Install dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project --no-editable
 
-# Copy the project into the image
-COPY --chown=1234:1234 src/ /app/src/
+# copy project into image
+COPY --chown=1234:1234 src/teamster/ /app/src/teamster/
 
-# Sync the project & install dbt project
+# install project
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 

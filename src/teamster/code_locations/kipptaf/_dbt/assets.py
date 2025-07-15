@@ -1,14 +1,13 @@
 import json
-from pathlib import Path
 
-from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf import CODE_LOCATION, DBT_PROJECT
 from teamster.code_locations.kipptaf.adp.payroll.assets import (
     GENERAL_LEDGER_FILE_PARTITIONS_DEF,
 )
 from teamster.libraries.dbt.assets import build_dbt_assets
 from teamster.libraries.dbt.dagster_dbt_translator import CustomDagsterDbtTranslator
 
-manifest = json.loads(s=Path(f"/gcs/{CODE_LOCATION}/manifest.json").read_text())
+manifest = json.loads(s=DBT_PROJECT.manifest_path.read_text())
 
 dagster_dbt_translator = CustomDagsterDbtTranslator(code_location=CODE_LOCATION)
 

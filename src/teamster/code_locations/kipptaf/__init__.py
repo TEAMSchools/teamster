@@ -9,4 +9,4 @@ CODE_LOCATION = "kipptaf"
 LOCAL_TIMEZONE = ZoneInfo("America/New_York")
 
 CURRENT_FISCAL_YEAR = FiscalYear(datetime=datetime.now(LOCAL_TIMEZONE), start_month=7)
-DBT_PROJECT = DbtProject(project_dir=f"src/dbt/{CODE_LOCATION}")
+DBT_PROJECT = DbtProject(project_dir=f"/gcs/{CODE_LOCATION}")
