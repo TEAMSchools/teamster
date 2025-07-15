@@ -38,7 +38,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
 # copy & install dbt project
-COPY --chown=1234:1234 "src/dbt/${CODE_LOCATION}/" "/app/src/dbt/${CODE_LOCATION}/"
+COPY --chown=1234:1234 src/dbt/ /app/src/dbt/
 RUN --mount=type=cache,target=/root/.cache/uv \
     dagster-dbt project prepare-and-package \
         --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
