@@ -1,3 +1,32 @@
+with
+    pm_round_days as (
+        select
+            s.schoolcity as region,
+
+            t.academic_year,
+            t.name,
+
+            safe_cast(right(t.code, 1) as int64) as `round`,
+
+            count(distinct c.date_value) over (
+                partition by t.academic_year, s.schoolcity, t.name, right(t.code, 1)
+            ) as pm_round_days,
+
+        from {{ ref("stg_powerschool__schools") }} as s
+        inner join
+            {{ ref("stg_powerschool__calendar_day") }} as c
+            on s.school_number = c.schoolid
+            and c.insession = 1
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
+        inner join
+            {{ ref("stg_reporting__terms") }} as t
+            on s.schoolcity = t.region
+            and c.date_value between t.start_date and t.end_date
+            and t.type = 'LIT'
+            and t.name in ('BOY->MOY', 'MOY->EOY')
+        where s.state_excludefromreporting = 0
+    )
+
 select
     e.academic_year,
     e.region,
@@ -12,6 +41,8 @@ select
     t.start_date,
     t.end_date,
 
+    d.pm_round_days,
+
     g.admin_season as benchmark_season,
     g.grade_level_standard as benchmark_goal,
 
@@ -25,8 +56,26 @@ inner join
     and e.assessment_type = 'PM'
     and t.type = 'LIT'
 left join
+    pm_round_days as d
+    on t.academic_year = d.academic_year
+    and t.region = d.region
+    and t.name = d.name
+    and e.`round` = d.`round`
+left join
     {{ ref("stg_google_sheets__dibels_goals_long") }} as g
     on e.expected_measure_standard = g.measure_standard
     and e.grade = g.grade_level
     and e.admin_season = g.matching_pm_season
 where e.academic_year >= 2024
+qualify
+    row_number() over (
+        partition by
+            e.academic_year,
+            e.region,
+            e.grade,
+            e.admin_season,
+            e.round,
+            e.expected_measure_standard,
+            d.pm_round_days
+    )
+    = 1
