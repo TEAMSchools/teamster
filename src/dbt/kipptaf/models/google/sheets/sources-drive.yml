@@ -99,20 +99,6 @@ sources:
               - kipptaf
               - google_sheets
               - state_test_expected_assessments
-      - name: src_google_sheets__dibels_pm_expectations
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_amplify__dibels_pm_expectations
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google_sheets
-              - pm_expectations
       - name: src_google_sheets__dibels_measures
         external:
           options:
@@ -188,7 +174,6 @@ sources:
             data_type: boolean
           - name: PM_Goal_Include
             data_type: boolean
-<<<<<<< HEAD
       - name: src_google_sheets__dibels_foundation_goals
         config:
           enabled: true
@@ -199,16 +184,12 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_google_sheets__dibels_foundation_goals
             skip_leading_rows: 1
-=======
->>>>>>> 57adb1f940651595ae3d5d30000c1bce3f69b2ee
         meta:
           dagster:
             asset_key:
               - kipptaf
               - google_sheets
-<<<<<<< HEAD
-=======
-              - state_test_expected_assessments
+              - dibels_foundation_goals
       - name: src_google_sheets__dibels_pm_expectations
         external:
           options:
@@ -222,7 +203,7 @@ sources:
             asset_key:
               - kipptaf
               - google_sheets
-              - pm_expectations
+              - dibels_pm_expectations
         columns:
           - name: region
             data_type: string
@@ -273,70 +254,6 @@ sources:
             data_type: string
           - name: description_translation
             data_type: string
-      - name: src_google_sheets__dibels_expected_assessments
-        config:
-          enabled: true
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_amplify__dibels_expected_assessments
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google_sheets
-              - dibels_expected_assessments
-        columns:
-          - name: Academic_Year
-            data_type: integer
-          - name: Region
-            data_type: string
-          - name: Grade
-            data_type: integer
-          - name: Test_Type
-            data_type: string
-          - name: Discipline
-            data_type: string
-          - name: Subject_Area
-            data_type: string
-          - name: Measure_Standard
-            data_type: string
-          - name: Test_Code
-            data_type: string
-          - name: Admin_Season
-            data_type: string
-          - name: Month_Round
-            data_type: string
-          - name: Illuminate_Subject
-            data_type: string
-          - name: iReady_Subject
-            data_type: string
-          - name: PS_Credit_Type
-            data_type: string
-          - name: Assessment_Include
-            data_type: boolean
-          - name: PM_Goal_Include
-            data_type: boolean
-      - name: src_google_sheets__dibels_foundation_goals
-        config:
-          enabled: true
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_google_sheets__dibels_foundation_goals
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google_sheets
->>>>>>> 57adb1f940651595ae3d5d30000c1bce3f69b2ee
-              - dibels_foundation_goals
       - name: src_google_sheets__dibels_goals_wide
         external:
           options:
@@ -368,8 +285,6 @@ sources:
               - kipptaf
               - google_sheets
               - dibels_goals_long
-<<<<<<< HEAD
-=======
       - name: src_google_sheets__gradebook_expectations_assignments
         config:
           enabled: true
@@ -418,4 +333,3 @@ sources:
               - kipptaf
               - google_sheets
               - gradebook_exceptions
->>>>>>> 57adb1f940651595ae3d5d30000c1bce3f69b2ee
