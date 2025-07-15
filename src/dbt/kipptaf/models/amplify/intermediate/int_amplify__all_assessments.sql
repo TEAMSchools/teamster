@@ -6,9 +6,10 @@ with
             e.grade,
             e.assessment_type,
             e.admin_season,
-            e.matching_pm_season,
             e.`round`,
             e.expected_measure_standard,
+
+            e.matching_pm_season as matching_season,
 
             t.start_date,
             t.end_date,
@@ -53,7 +54,7 @@ with
 
             e.assessment_type,
             e.`round`,
-            e.matching_pm_season,
+            e.matching_season,
 
             row_number() over (
                 partition by u.surrogate_key, u.measure_standard
@@ -112,7 +113,7 @@ with
 
             e.assessment_type,
             e.`round`,
-            e.matching_pm_season,
+            e.matching_season,
 
             row_number() over (
                 partition by df.surrogate_key, df.measure_standard
@@ -163,7 +164,8 @@ with
 
             e.assessment_type,
             e.`round`,
-            e.matching_pm_season,
+
+            if(p.pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
 
             row_number() over (
                 partition by p.surrogate_key, p.measure, e.`round`
@@ -243,7 +245,7 @@ select
     s.assessment_grade_int,
     s.period,
     s.`round`,
-    s.matching_pm_season,
+    s.matching_season,
     s.client_date,
     s.sync_date,
     s.measure_name,
@@ -271,6 +273,14 @@ select
         when s.measure_standard_level_int <= 2
         then 'Below/Well Below'
     end as aggregated_measure_standard_level,
+
+    case
+        s.period
+        when 'BOY'
+        then p.boy_probe_eligible
+        when 'MOY'
+        then p.moy_probe_eligible
+    end as overall_probe_eligible,
 
     count(*) over (
         partition by
@@ -300,7 +310,7 @@ select
     s.assessment_grade_int,
     s.period,
     s.`round`,
-    s.matching_pm_season,
+    s.matching_season,
     s.client_date,
     s.sync_date,
     s.measure_name,
@@ -328,6 +338,14 @@ select
         when s.measure_standard_level_int <= 2
         then 'Below/Well Below'
     end as aggregated_measure_standard_level,
+
+    case
+        s.period
+        when 'BOY->MOY'
+        then p.boy_probe_eligible
+        when 'MOY->EOY'
+        then p.moy_probe_eligible
+    end as overall_probe_eligible,
 
     count(*) over (
         partition by
