@@ -84,7 +84,7 @@ with
             on s.academic_year = e.academic_year
             and s.region = e.region
             and s.grade_level = e.grade
-            and s.entrydate between e.start_date and e.end_date
+            and e.start_date between s.entrydate and s.exitdate
         left join
             {{ ref("int_amplify__all_assessments") }} as a
             on s.academic_year = a.academic_year
