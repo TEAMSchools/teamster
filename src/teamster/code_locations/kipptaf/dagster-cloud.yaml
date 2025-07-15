@@ -12,14 +12,15 @@ locations:
           - name: secret-volume
             mountPath: /etc/secret-volume
             readOnly: true
-          - name: gcs-fuse-csi-static
+          - name: gcs-fuse-csi-ephemeral
             mountPath: /gcs
-            readOnly: true
         volumes:
-          - name: gcs-fuse-csi-static
-            persistentVolumeClaim:
-              claimName: gcs-fuse-csi-static-pvc
-              readOnly: true
+          - name: gcs-fuse-csi-ephemeral
+            csi:
+              driver: gcsfuse.csi.storage.gke.io
+              volumeAttributes:
+                bucketName: teamster-dbt
+                mountOptions: implicit-dirs
           - name: secret-volume
             projected:
               sources:
