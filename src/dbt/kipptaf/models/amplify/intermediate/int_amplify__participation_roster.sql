@@ -7,7 +7,8 @@ with
             grade_level,
             enroll_status,
             entrydate,
-            exitdate
+            exitdate,
+
         from {{ ref("int_extracts__student_enrollments") }}
         where enroll_status != -1 and grade_level <= 8 and academic_year >= 2023
     ),
@@ -55,9 +56,9 @@ with
             e.`round`,
             e.expected_row_count,
 
-            coalesce(a.actual_row_count, 0) as actual_row_count,
-
             true as enrollment_dates_account,
+
+            coalesce(a.actual_row_count, 0) as actual_row_count,
 
             if(
                 e.expected_row_count = a.actual_row_count, true, false
@@ -109,9 +110,9 @@ with
             e.`round`,
             e.expected_row_count,
 
-            coalesce(a.actual_row_count, 0) as actual_row_count,
-
             false as enrollment_dates_account,
+
+            coalesce(a.actual_row_count, 0) as actual_row_count,
 
             if(
                 e.expected_row_count = a.actual_row_count, true, false
