@@ -53,6 +53,7 @@ with
             se.state as powerschool_state,
             se.zip as powerschool_zip,
             se.is_504 as powerschool_is_504,
+            se.lep_status,
 
             os.id as overgrad_students_id,
             os.graduation_year as overgrad_students_graduation_year,
