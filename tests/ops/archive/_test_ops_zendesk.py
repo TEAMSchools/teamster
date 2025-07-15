@@ -1,4 +1,4 @@
-from dagster import build_op_context
+"""from dagster import build_op_context
 
 from teamster.libraries.google.bigquery.ops import BigQueryOpConfig, bigquery_query_op
 from teamster.libraries.zendesk.ops import zendesk_user_sync_op
@@ -12,14 +12,7 @@ def test_zendesk_user_sync_op():
             context=context,
             db_bigquery=BIGQUERY_RESOURCE,
             config=BigQueryOpConfig(
-                query="""
-                    select
-                        email,
-                        name,
-                        suspended,
-                        external_id,
-                    from kipptaf_extracts.rpt_zendesk__users
-                """
+                query="select email, name, suspended, external_id, from kipptaf_extracts.rpt_zendesk__users"
             ),
         )
 
@@ -29,3 +22,4 @@ def test_zendesk_user_sync_op():
 
         for o in output:
             context.log.info(o)
+"""

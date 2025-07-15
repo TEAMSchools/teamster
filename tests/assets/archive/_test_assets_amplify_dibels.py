@@ -1,4 +1,4 @@
-import random
+"""import random
 
 from dagster import AssetsDefinition, TextMetadataValue, materialize
 from dagster._core.events import StepMaterializationData
@@ -59,3 +59,4 @@ def test_progress_export():
     from teamster.code_locations.kipptaf.amplify.dibels.assets import progress_export
 
     _test_asset(progress_export)
+"""
