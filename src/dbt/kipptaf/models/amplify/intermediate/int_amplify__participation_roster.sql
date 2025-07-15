@@ -4,6 +4,7 @@ with
             academic_year,
             region,
             student_number,
+            enroll_status,
             grade_level,
             entrydate,
             exitdate,
@@ -61,6 +62,7 @@ with
             s.academic_year,
             s.region,
             s.student_number,
+            s.enroll_status,
             s.grade_level,
 
             e.assessment_type,
@@ -113,6 +115,7 @@ with
             s.academic_year,
             s.region,
             s.student_number,
+            s.enroll_status,
             s.grade_level,
 
             e.assessment_type,
@@ -167,6 +170,7 @@ with
             s.academic_year,
             s.region,
             s.student_number,
+            s.enroll_status,
             s.grade_level,
 
             e.assessment_type,
@@ -221,6 +225,7 @@ with
             s.academic_year,
             s.region,
             s.student_number,
+            s.enroll_status,
             s.grade_level,
 
             e.assessment_type,
@@ -272,6 +277,7 @@ with
             s.academic_year,
             s.region,
             s.student_number,
+            s.enroll_status,
             s.grade_level,
 
             e.assessment_type,
@@ -325,6 +331,7 @@ with
             s.academic_year,
             s.region,
             s.student_number,
+            s.enroll_status,
             s.grade_level,
 
             e.assessment_type,
@@ -378,6 +385,7 @@ select
     region,
     student_number,
     grade_level,
+    enroll_status,
     enrollment_dates_account,
     assessment_type,
     admin_season,
@@ -397,6 +405,7 @@ select
     region,
     student_number,
     grade_level,
+    enroll_status,
     enrollment_dates_account,
     assessment_type,
     admin_season,
