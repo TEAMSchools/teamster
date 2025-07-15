@@ -99,20 +99,6 @@ sources:
               - kipptaf
               - google_sheets
               - state_test_expected_assessments
-      - name: src_google_sheets__dibels_measures
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_amplify__dibels_measures
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google_sheets
-              - dibels_measures
       - name: src_google_sheets__dibels_df_student_xwalk
         external:
           options:
