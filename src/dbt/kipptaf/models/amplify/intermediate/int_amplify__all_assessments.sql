@@ -20,6 +20,7 @@ with
             and e.admin_season = t.name
             and e.test_code = t.code
             and t.type = 'LIT'
+        -- removes rows for assessment strategies that were deprecated midyear
         where e.assessment_include is null
     ),
 
@@ -50,16 +51,7 @@ with
             null as score_change,
 
             e.assessment_type,
-
-            case
-                bss.benchmark_period
-                when 'BOY'
-                then 1
-                when 'MOY'
-                then 2
-                when 'EOY'
-                then 3
-            end as `round`,
+            e.`round`,
 
             row_number() over (
                 partition by u.surrogate_key, u.measure_standard
