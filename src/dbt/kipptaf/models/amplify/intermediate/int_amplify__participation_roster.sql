@@ -53,7 +53,7 @@ with
             and e.admin_season = t.name
             and e.test_code = t.code
             and t.type = 'LIT'
-        where e.assessment_include is null
+        where e.assessment_include is null and e.pm_goal_include is null
     ),
 
     roster_enrollment_dates as (
