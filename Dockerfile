@@ -21,6 +21,9 @@ RUN apt-get update \
     && groupadd -g 1234 teamster \
     && useradd -m -u 1234 -g teamster teamster
 
+# switch to the non-root user
+USER 1234:1234
+
 # set workdir
 WORKDIR /app
 
@@ -42,6 +45,3 @@ COPY --chown=1234:1234 src/dbt/ /app/src/dbt/
 RUN --mount=type=cache,target=/root/.cache/uv \
     dagster-dbt project prepare-and-package \
         --file "src/teamster/code_locations/${CODE_LOCATION}/__init__.py"
-
-# Switch to the non-root user
-USER 1234:1234
