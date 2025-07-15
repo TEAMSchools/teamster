@@ -6,6 +6,7 @@ with
             e.grade,
             e.assessment_type,
             e.admin_season,
+            e.matching_pm_season,
             e.`round`,
             e.expected_measure_standard,
 
@@ -52,6 +53,7 @@ with
 
             e.assessment_type,
             e.`round`,
+            e.matching_pm_season,
 
             row_number() over (
                 partition by u.surrogate_key, u.measure_standard
@@ -110,6 +112,7 @@ with
 
             e.assessment_type,
             e.`round`,
+            e.matching_pm_season,
 
             row_number() over (
                 partition by df.surrogate_key, df.measure_standard
@@ -160,6 +163,7 @@ with
 
             e.assessment_type,
             e.`round`,
+            e.matching_pm_season,
 
             row_number() over (
                 partition by p.surrogate_key, p.measure, e.`round`
@@ -239,6 +243,7 @@ select
     s.assessment_grade_int,
     s.period,
     s.`round`,
+    s.matching_pm_season,
     s.client_date,
     s.sync_date,
     s.measure_name,
@@ -295,6 +300,7 @@ select
     s.assessment_grade_int,
     s.period,
     s.`round`,
+    s.matching_pm_season,
     s.client_date,
     s.sync_date,
     s.measure_name,
