@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # copy & install dagster project
 COPY --chown=1234:1234 src/teamster/ /app/src/teamster/
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-editableß
+    uv sync --frozen --no-dev --no-editable
 
 # copy & install dbt project
 COPY --chown=1234:1234 "src/dbt/${CODE_LOCATION}/" "/app/src/dbt/${CODE_LOCATION}/"
