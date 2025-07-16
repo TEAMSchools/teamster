@@ -18,7 +18,6 @@ DYD_PAYLOAD = {
     "tracking_id": None,
 }
 
-
 benchmark_student_summary = build_mclass_asset(
     asset_key=[CODE_LOCATION, "amplify", "benchmark_student_summary"],
     dyd_payload={**DYD_PAYLOAD, "dyd_results": "BM"},

@@ -15,6 +15,7 @@ with
 select
     associate_oid,
 
+    {# TODO: drop WFM cols #}
     date_value_wfmgrloareturndate as wf_mgr_loa_return_date,
 
     indicator_value_receivedsignonbonus as received_sign_on_bonus,
@@ -55,6 +56,7 @@ from
             'ReceivedSignOnBonus',
             'RemoteWorkStatus',
             'TeacherPrepProgram',
+            {# TODO: drop WFM cols #}
             'WFMgrAccrualProfile',
             'WFMgrBadgeNumber',
             'WFMgrEEType',

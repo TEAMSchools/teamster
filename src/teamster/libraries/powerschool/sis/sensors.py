@@ -217,7 +217,7 @@ def build_powerschool_asset_sensor(
                         )
 
                         # request run if partition never materialized
-                        if not event_records:
+                        if not event_records.records:
                             context.log.info(
                                 msg=f"{asset_key_identifier} never materialized"
                             )

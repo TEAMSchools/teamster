@@ -1,14 +1,9 @@
 import random
 
 from dagster import AssetsDefinition, EnvVar, TextMetadataValue, materialize
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf.powerschool.enrollment.assets import (
-    submission_records,
-)
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.libraries.powerschool.enrollment.resources import (
     PowerSchoolEnrollmentResource,
@@ -51,4 +46,8 @@ def _test_asset(asset: AssetsDefinition, partition_key=None):
 
 
 def test_submission_records():
+    from teamster.code_locations.kipptaf.powerschool.enrollment.assets import (
+        submission_records,
+    )
+
     _test_asset(asset=submission_records)

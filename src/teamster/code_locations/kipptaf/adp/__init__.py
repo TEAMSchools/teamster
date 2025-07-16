@@ -1,17 +1,11 @@
-from teamster.code_locations.kipptaf.adp import (
-    payroll,
-    workforce_manager,
-    workforce_now,
-)
+from teamster.code_locations.kipptaf.adp import payroll, workforce_now
 
 assets = [
     *payroll.assets,
-    *workforce_manager.assets,
     *workforce_now.assets,
 ]
 
 schedules = [
-    *workforce_manager.schedules,
     *workforce_now.schedules,
 ]
 

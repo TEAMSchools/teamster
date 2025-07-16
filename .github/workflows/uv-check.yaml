@@ -24,7 +24,7 @@ jobs:
       - name: Python setup uv
         uses: astral-sh/setup-uv@v3
 
-      - run: uv python install 3.12
+      - run: uv python install 3.13
 
       - run: uv lock
 

@@ -1,4 +1,4 @@
-from dagster import MultiPartitionsDefinition, StaticPartitionsDefinition
+"""from dagster import MultiPartitionsDefinition, StaticPartitionsDefinition
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.amplify.dibels.schema import (
@@ -85,3 +85,4 @@ assets = [
     data_farming,
     progress_export,
 ]
+"""

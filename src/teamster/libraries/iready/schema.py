@@ -308,14 +308,24 @@ class PersonalizedInstruction(IReadyBaseModel):
 
 class InstructionByLesson(IReadyBaseModel):
     completion_date: str | None = None
+    foundational_skills_completed: int | None = None
+    foundational_skills_successful: int | None = None
+    language_comprehension_items_completed: int | None = None
+    language_comprehension_items_correct: int | None = None
     lesson_language: str | None = None
+    lesson_level: str | None = None
     lesson_result: str | None = None
     lesson_status: str | None = None
     lesson_time_on_task_min: int | None = None
+    lesson_title: str | None = None
+    lesson_topic: str | None = None
     lesson: str | None = None
     level: str | None = None
+    percent_foundational_skills_successful: int | None = None
+    percent_language_comprehension_items_correct: int | None = None
     skills_completed: int | None = None
     skills_successful: int | None = None
+    teacher_assigned_lesson: str | None = None
     topic: str | None = None
 
     percent_skills_successful: int | float | None = None

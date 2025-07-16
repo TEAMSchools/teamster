@@ -26,3 +26,5 @@ models:
         data_type: float64
       - name: Grade_Band_Goal
         data_type: float64
+      - name: Assessment_Band_Goal
+        data_type: float64

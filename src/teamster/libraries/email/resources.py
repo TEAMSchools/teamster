@@ -33,8 +33,8 @@ class EmailResource(ConfigurableResource):
         self,
         subject: str,
         from_email: str,
-        bcc_emails: str,
         content_args: tuple,
+        bcc_emails: str | None = None,
         to_emails: str | None = None,
         alternative_args: tuple | None = None,
     ):
@@ -46,8 +46,10 @@ class EmailResource(ConfigurableResource):
         msg["Subject"] = subject
         msg["From"] = from_email
         msg["To"] = to_emails
-        msg["Bcc"] = bcc_emails
         msg.set_content(*content_args)
+
+        if bcc_emails is not None:
+            msg["Bcc"] = bcc_emails
 
         if alternative_args is not None:
             msg.add_alternative(*alternative_args)

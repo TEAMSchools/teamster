@@ -375,10 +375,10 @@ def build_sftp_archive_asset(
         else:
             records, (n_rows, _) = convert_file_to_dict(
                 local_filepath=local_filepath,
-                sep=file_sep,
-                encoding=file_encoding,
                 slugify_cols=slugify_cols,
                 slugify_replacements=slugify_replacements,
+                sep=file_sep,
+                encoding=file_encoding,
             )
 
             if n_rows == 0:
@@ -404,6 +404,7 @@ def build_sftp_folder_asset(
     slugify_cols: bool = True,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
+    file_dtype: type | None = None,
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
@@ -485,10 +486,11 @@ def build_sftp_folder_asset(
 
             records, (n_rows, _) = convert_file_to_dict(
                 local_filepath=local_filepath,
-                sep=file_sep,
-                encoding=file_encoding,
                 slugify_cols=slugify_cols,
                 slugify_replacements=slugify_replacements,
+                sep=file_sep,
+                encoding=file_encoding,
+                dtype=file_dtype,
             )
 
             if n_rows == 0:

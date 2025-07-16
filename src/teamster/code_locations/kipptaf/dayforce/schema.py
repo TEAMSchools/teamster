@@ -1,4 +1,4 @@
-import json
+"""import json
 
 import py_avro_schema
 
@@ -25,3 +25,4 @@ ASSET_SCHEMA = {
         )
     ),
 }
+"""
