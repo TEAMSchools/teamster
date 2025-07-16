@@ -1,0 +1,7 @@
+version: 2
+models:
+  - name: stg_google_sheets__dibels_pm_goals
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
