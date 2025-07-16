@@ -33,6 +33,8 @@ select
     e.grade,
     e.admin_season,
     e.`round`,
+    e.min_pm_round,
+    e.max_pm_round,
     e.expected_measure_name_code,
     e.expected_measure_standard,
     e.pm_goal_include,
