@@ -1,6 +1,7 @@
 with
     student_id_union as (
         select
+            _dbt_source_relation,
             studentid,
 
             'Attendance' as metric_category,
@@ -23,6 +24,7 @@ with
 
     student_number_union as (
         select
+            academic_year_int as academic_year,
             student_id as student_number,
 
             'Assessment' as metric_category,
@@ -31,8 +33,6 @@ with
             test_round as metric_period,
             'Is Proficient (ORP 4+)' as metric_name,
             '' as metric_value_string,
-
-            academic_year_int as academic_year,
 
             if(overall_relative_placement_int >= 4, 1, 0) as metric_value_float,
 
