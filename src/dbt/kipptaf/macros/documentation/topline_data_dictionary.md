@@ -1,5 +1,5 @@
-{% docs metric_name %}
+{% doc metric_name %}
 
 The name of the overall metric being evaluated.
 
-{% enddocs %}
+{% enddoc %}
