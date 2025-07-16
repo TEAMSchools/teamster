@@ -7,8 +7,12 @@ from teamster.code_locations.kippnewark.pearson.schema import (
     NJSLA_SCIENCE_SCHEMA,
     PARCC_SCHEMA,
     STUDENT_LIST_REPORT_SCHEMA,
+    STUDENT_TEST_UPDATE_SCHEMA,
 )
-from teamster.libraries.sftp.assets import build_sftp_file_asset
+from teamster.libraries.sftp.assets import (
+    build_sftp_file_asset,
+    build_sftp_folder_asset,
+)
 
 ssh_resource_key = "ssh_couchdrop"
 remote_dir_regex_prefix = f"/data-team/{CODE_LOCATION}/pearson"
@@ -91,10 +95,22 @@ parcc = build_sftp_file_asset(
     partitions_def=StaticPartitionsDefinition(["16", "17", "18"]),
 )
 
+student_test_update = build_sftp_folder_asset(
+    asset_key=[*key_prefix, "student_test_update"],
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/student_test_update",
+    remote_file_regex=(
+        r"Student\sTest\sUpdate\sExport\s\d+-\d+-\d+T\d+_\d+_\d+\.\d+\+\d+"
+    ),
+    avro_schema=STUDENT_TEST_UPDATE_SCHEMA,
+    file_dtype=str,
+    ssh_resource_key=ssh_resource_key,
+)
+
 assets = [
     njgpa,
     njsla_science,
     njsla,
     parcc,
     student_list_report,
+    student_test_update,
 ]

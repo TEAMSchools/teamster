@@ -2,7 +2,13 @@ import json
 
 import py_avro_schema
 
-from teamster.libraries.pearson.schema import NJGPA, NJSLA, PARCC, StudentListReport
+from teamster.libraries.pearson.schema import (
+    NJGPA,
+    NJSLA,
+    PARCC,
+    StudentListReport,
+    StudentTestUpdate,
+)
 
 
 class parcc_record(PARCC):
@@ -41,4 +47,8 @@ NJGPA_SCHEMA = json.loads(
 
 STUDENT_LIST_REPORT_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=StudentListReport, options=pas_options)
+)
+
+STUDENT_TEST_UPDATE_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=StudentTestUpdate, options=pas_options)
 )
