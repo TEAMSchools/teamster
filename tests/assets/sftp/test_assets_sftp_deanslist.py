@@ -2,10 +2,6 @@ import random
 
 from dagster import materialize
 
-from teamster.code_locations.kipptaf.deanslist.assets import (
-    reconcile_attendance,
-    reconcile_suspensions,
-)
 from teamster.core.resources import get_io_manager_gcs_avro
 
 
@@ -46,8 +42,12 @@ def _test_asset(asset, partition_key=None, instance=None):
 
 
 def test_deanslist_reconcile_attendance_kipptaf():
+    from teamster.code_locations.kipptaf.deanslist.assets import reconcile_attendance
+
     _test_asset(asset=reconcile_attendance)
 
 
 def test_deanslist_reconcile_suspensions_kipptaf():
+    from teamster.code_locations.kipptaf.deanslist.assets import reconcile_suspensions
+
     _test_asset(asset=reconcile_suspensions)
