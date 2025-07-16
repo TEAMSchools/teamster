@@ -223,7 +223,6 @@ select
                     `round`,
                     assessment_grade_int,
                     measure_standard
-                rows between unbounded preceding and current row
             )
     end as cumulative_growth_words,
 
