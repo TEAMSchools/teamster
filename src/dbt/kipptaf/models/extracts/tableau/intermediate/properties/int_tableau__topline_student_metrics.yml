@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: int_tableau__gradebook_audit_assignments_student
+  - name: int_tableau__topline_student_metrics
     columns:
       - name: schoolid
         data_type: int64
