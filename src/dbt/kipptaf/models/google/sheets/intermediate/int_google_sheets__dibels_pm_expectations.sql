@@ -12,6 +12,10 @@ with
                 partition by t.academic_year, s.schoolcity, t.name, right(t.code, 1)
             ) as pm_round_days,
 
+            count(distinct c.date_value) over (
+                partition by t.academic_year, s.schoolcity, t.name
+            ) as pm_days,
+
         from {{ ref("stg_powerschool__schools") }} as s
         inner join
             {{ ref("stg_powerschool__calendar_day") }} as c
@@ -44,6 +48,7 @@ select
     t.end_date,
 
     d.pm_round_days,
+    d.pm_days,
 
     g.admin_season as benchmark_season,
     g.grade_level_standard as benchmark_goal,
