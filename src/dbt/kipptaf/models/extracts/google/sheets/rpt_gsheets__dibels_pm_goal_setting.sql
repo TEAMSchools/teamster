@@ -101,7 +101,20 @@ with
     )
 
 select
-    *,
+    academic_year,
+    region,
+    matching_season as admin_season,
+    assessment_grade,
+    assessment_grade_int,
+    measure_standard,
+    starting_words,
+    `round`,
+    pm_round_days,
+    benchmark_goal,
+    required_growth_words,
+    pm_days,
+    daily_growth_rate,
+    round_growth_words_goal,
 
     case
         when is_max_round
