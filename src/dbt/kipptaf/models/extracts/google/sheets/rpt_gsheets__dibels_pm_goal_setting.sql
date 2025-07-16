@@ -109,6 +109,7 @@ select
     measure_standard,
     starting_words,
     `round`,
+    pm_goal_include,
     pm_round_days,
     benchmark_goal,
     required_growth_words,
