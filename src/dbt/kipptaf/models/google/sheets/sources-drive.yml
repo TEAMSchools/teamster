@@ -271,6 +271,22 @@ sources:
               - kipptaf
               - google_sheets
               - dibels_goals_long
+      - name: src_google_sheets__dibels_pm_goals
+        config:
+          enabled: true
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_google_sheets__dibels_pm_goals
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - dibels_pm_goals
       - name: src_google_sheets__gradebook_expectations_assignments
         config:
           enabled: true
