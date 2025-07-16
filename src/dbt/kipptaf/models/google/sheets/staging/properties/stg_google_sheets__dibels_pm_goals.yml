@@ -6,35 +6,35 @@ models:
         enforced: true
       tags: google_sheet
     columns:
-      - name: academic_year
+      - name: Academic_Year
         data_type: int64
-      - name: region
+      - name: Region
         data_type: string
-      - name: admin_season
+      - name: Admin_Season
         data_type: string
-      - name: assessment_grade
+      - name: Assessment_Grade
         data_type: string
-      - name: assessment_grade_int
+      - name: Assessment_Grade_Int
         data_type: int64
-      - name: measure_standard
+      - name: Measure_Standard
         data_type: string
-      - name: starting_words
-        data_type: float64
-      - name: round
+      - name: Starting_Words
         data_type: int64
-      - name: pm_goal_include
+      - name: Round
+        data_type: int64
+      - name: PM_Goal_Include
         data_type: boolean
-      - name: pm_round_days
+      - name: PM_Round_Days
         data_type: int64
-      - name: benchmark_goal
-        data_type: float64
-      - name: required_growth_words
-        data_type: float64
-      - name: pm_days
+      - name: Benchmark_Goal
         data_type: int64
-      - name: daily_growth_rate
+      - name: Required_Growth_Words
+        data_type: int64
+      - name: PM_Days
+        data_type: int64
+      - name: Daily_Growth_Rate
         data_type: float64
-      - name: round_growth_words_goal
-        data_type: float64
-      - name: cumulative_growth_words
-        data_type: float64
+      - name: Round_Growth_Words_Goal
+        data_type: int64
+      - name: Cumulative_Growth_Words
+        data_type: int64
