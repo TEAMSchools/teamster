@@ -28,6 +28,7 @@ models:
         data_type: string
       - name: metric_name
         data_type: string
+        description: "{{ doc('metric_name') }}"
       - name: metric_value_float
         data_type: float64
       - name: metric_value_string
