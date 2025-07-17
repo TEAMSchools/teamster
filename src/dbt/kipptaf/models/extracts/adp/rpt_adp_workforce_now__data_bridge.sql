@@ -1,6 +1,7 @@
 with
     staff_roster as (
         select
+            worker_id,
             position_id,
             worker_original_hire_date,
             employee_number,
@@ -16,6 +17,7 @@ with
             and employee_number is not null
             and mail is not null
             and worker_status_code = 'Active'
+            and time_and_attendance_indicator
     ),
 
     with_key as (
@@ -33,6 +35,7 @@ with
 -- trunk-ignore(sqlfluff/ST06)
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
+    worker_id as `Employee ID`,
     position_id as `Position ID`,
 
     /* required to be after ID */
