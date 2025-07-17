@@ -35,7 +35,7 @@ with
         where g.pm_goal_include is null
     ),
 
-    met_measure_name_code_goal as (
+    met_measure_code_goal as (
         select
             *,
 
@@ -72,4 +72,4 @@ select
             )
     end met_pm_round_criteria,
 
-from met_measure_name_code_goal
+from met_measure_code_goal
