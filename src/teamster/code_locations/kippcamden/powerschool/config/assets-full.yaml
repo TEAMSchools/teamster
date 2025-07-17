@@ -14,8 +14,6 @@ assets:
   - asset_name: terms
     partition_column: transaction_date
   # whenmodified
-  - asset_name: codeset
-    partition_column: whenmodified
   - asset_name: emailaddress
     partition_column: whenmodified
   - asset_name: gpstudentwaiver

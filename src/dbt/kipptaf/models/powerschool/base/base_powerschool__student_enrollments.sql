@@ -1,3 +1,5 @@
+{% set invalid_lunch_status = ["", "NoD", "1", "2"] %}
+
 with
     union_relations as (
         {{
@@ -31,7 +33,7 @@ with
     )
 
 select
-    ar.* except (lep_status, lunch_status, spedlep),
+    ar.* except (lep_status, lunchstatus, spedlep),
 
     sr.mail as advisor_email,
     sr.work_cell as advisor_phone,
@@ -116,19 +118,21 @@ select
     end as lep_status,
 
     case
+        when ar.lunchstatus in unnest({{ invalid_lunch_status }})
+        then null
         when ar.academic_year < {{ var("current_academic_year") }}
-        then ar.lunch_status
+        then ar.lunchstatus
         when ar.region = 'Miami'
-        then ar.lunch_status
+        then ar.lunchstatus
         when ar.rn_year = 1
         then coalesce(if(tpd.is_directly_certified, 'F', null), tpd.eligibility_name)
     end as lunch_status,
 
     case
         when ar.academic_year < {{ var("current_academic_year") }}
-        then ar.lunch_status
+        then ar.lunchstatus
         when ar.region = 'Miami'
-        then ar.lunch_status
+        then ar.lunchstatus
         when ar.rn_year = 1
         then
             case
