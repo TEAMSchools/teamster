@@ -1,0 +1,4 @@
+version: 2
+models:
+  - name: rpt_gsheets__community_service_upload
+    columns:

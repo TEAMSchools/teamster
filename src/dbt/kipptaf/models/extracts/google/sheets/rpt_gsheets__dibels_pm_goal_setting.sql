@@ -44,6 +44,7 @@ with
             e.pm_round_days,
             e.pm_days,
             e.pm_goal_include,
+            e.pm_goal_criteria,
 
             e.benchmark_goal + 3 as benchmark_goal,
 
@@ -80,6 +81,7 @@ with
             pm_round_days,
             pm_days,
             pm_goal_include,
+            pm_goal_criteria,
             benchmark_goal,
             required_growth_words,
             is_max_round,
@@ -110,6 +112,7 @@ select
     starting_words,
     `round`,
     pm_goal_include,
+    pm_goal_criteria,
     pm_round_days,
     benchmark_goal,
     required_growth_words,
