@@ -9,6 +9,7 @@ select
     g.benchmark_goal,
     g.round_growth_words_goal,
     g.cumulative_growth_words,
+    g.pm_goal_criteria,
 
     a.student_number,
     a.measure_name_code,
