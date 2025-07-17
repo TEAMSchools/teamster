@@ -1,5 +1,3 @@
-{%- set invalid_lunch_status = ["", "NoD", "1", "2"] -%}
-
 with
     union_relations as (
         /* terminal (pre, current, transfers) */
@@ -191,10 +189,6 @@ with
             *,
 
             (academic_year + 13) + (-1 * grade_level) as cohort_primary,
-
-            if(
-                lunchstatus in unnest({{ invalid_lunch_status }}), null, lunchstatus
-            ) as lunch_status,
 
             lag(yearid, 1) over (
                 partition by studentid order by yearid asc

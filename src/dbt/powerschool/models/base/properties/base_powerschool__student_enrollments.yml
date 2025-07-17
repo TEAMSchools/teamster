@@ -1,6 +1,15 @@
 version: 2
 models:
   - name: base_powerschool__student_enrollments
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - student_number
+            - academic_year
+            - entrydate
+          config:
+            severity: warn
+            store_failures: true
     columns:
       - name: studentid
         data_type: int64
@@ -76,7 +85,7 @@ models:
         data_type: string
       - name: cohort_primary
         data_type: int64
-      - name: lunch_status
+      - name: lunchstatus
         data_type: string
       - name: rn_all
         data_type: int64
