@@ -17,12 +17,14 @@ with
             a.measure_name_code,
             a.measure_standard_score,
 
+            p.completed_test_round,
+
             if(
                 a.measure_standard_score >= g.cumulative_growth_words, 1, 0
             ) as met_measure_standard_goal,
 
         from {{ ref("stg_google_sheets__dibels_pm_goals") }} as g
-        left join
+        inner join
             {{ ref("int_amplify__all_assessments") }} as a
             on g.academic_year = a.academic_year
             and g.region = a.region
@@ -32,6 +34,15 @@ with
             and g.measure_standard = a.measure_standard
             and a.assessment_type = 'PM'
             and a.overall_probe_eligible = 'Yes'
+        inner join
+            {{ ref("int_students__dibels_participation_roster") }} as p
+            on a.academic_year = p.academic_year
+            and a.region = p.region
+            and a.student_number = p.student_number
+            and a.assessment_grade_int = p.grade_level
+            and a.period = p.admin_season
+            and a.`round` = p.`round`
+            and p.enrollment_dates_account
         where g.pm_goal_include is null
     ),
 
@@ -48,7 +59,8 @@ with
                         measure_name_code,
                         student_number
                 )
-                = 1,
+                = 1
+                and completed_test_round,
                 1,
                 0
             ) as met_measure_name_code_goal,
