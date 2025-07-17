@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: rpt_gsheets__community_service_upload
+  - name: rpt_gsheets__dibels_pm_goal_setting
     columns:
       - name: academic_year
         data_type: int64
