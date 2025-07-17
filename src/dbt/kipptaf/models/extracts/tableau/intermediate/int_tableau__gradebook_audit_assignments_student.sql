@@ -17,6 +17,8 @@ with
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
 
+            if(s.scorepoints = 0, 1, 0) as is_zero,
+
             if(
                 a.scoretype = 'POINTS',
                 s.scorepoints,
@@ -100,16 +102,62 @@ select
     ) as assign_f_score_less_5,
 
     if(
-        assignment_category_code = 'W' and is_missing = 1 and scorepoints != 5,
+        assignment_category_code = 'H' and scorepoints < 5, true, false
+    ) as assign_h_score_less_5,
+
+    if(
+        assignment_category_code = 'W'
+        and school_level = 'HS'
+        and is_missing = 1
+        and scorepoints != 0,
+        true,
+        false
+    ) as assign_w_missing_score_not_0,
+
+    if(
+        assignment_category_code = 'F'
+        and school_level = 'HS'
+        and is_missing = 1
+        and scorepoints != 0,
+        true,
+        false
+    ) as assign_f_missing_score_not_0,
+
+    if(
+        assignment_category_code = 'H'
+        and school_level = 'HS'
+        and is_missing = 1
+        and scorepoints != 0,
+        true,
+        false
+    ) as assign_h_missing_score_not_0,
+
+    if(
+        assignment_category_code = 'W'
+        and school_level != 'HS'
+        and is_missing = 1
+        and scorepoints != 5,
         true,
         false
     ) as assign_w_missing_score_not_5,
 
     if(
-        assignment_category_code = 'F' and is_missing = 1 and scorepoints != 5,
+        assignment_category_code = 'F'
+        and school_level != 'HS'
+        and is_missing = 1
+        and scorepoints != 5,
         true,
         false
     ) as assign_f_missing_score_not_5,
+
+    if(
+        assignment_category_code = 'H'
+        and school_level != 'HS'
+        and is_missing = 1
+        and scorepoints != 5,
+        true,
+        false
+    ) as assign_h_missing_score_not_5,
 
     if(
         assignment_category_code = 'S' and scorepoints < (totalpointvalue / 2),

@@ -163,6 +163,12 @@ select
     ) as w_percent_graded_min_not_met,
 
     if(
+        assignment_category_code = 'H' and percent_graded_for_quarter_week_class < .7,
+        true,
+        false
+    ) as h_percent_graded_min_not_met,
+
+    if(
         assignment_category_code = 'F' and percent_graded_for_quarter_week_class < .7,
         true,
         false
@@ -180,6 +186,13 @@ select
         true,
         false
     ) as w_expected_assign_count_not_met,
+
+    if(
+        assignment_category_code = 'H'
+        and running_count_assignments_section_category_term < expectation,
+        true,
+        false
+    ) as h_expected_assign_count_not_met,
 
     if(
         assignment_category_code = 'F'

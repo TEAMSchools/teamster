@@ -9,6 +9,7 @@ select
     credit_type,
     gradebook_category,
     audit_flag_name,
+    is_quarter_end_date_range,
     view_name,
     cte,
     purpose,

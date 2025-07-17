@@ -14,6 +14,10 @@ with
                     assign_f_score_less_5,
                     assign_w_missing_score_not_5,
                     assign_f_missing_score_not_5,
+                    assign_h_missing_score_not_5,
+                    assign_w_missing_score_not_0,
+                    assign_f_missing_score_not_0,
+                    assign_h_missing_score_not_0,
                     assign_s_score_less_50p,
                     assign_s_ms_score_not_conversion_chart_options,
                     assign_s_hs_score_not_conversion_chart_options
@@ -24,14 +28,24 @@ with
         incorrectly omitting flags for effort grade, conduct code, grade > 100, and
         summative or formative grades missing for COCUR, RHET, SCI, and SOC */
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-            on u.academic_year = e.academic_year
-            and u.region = e.region
-            and u.school_level = e.school_level
-            and u.credit_type = e.credit_type
-            and e.view_name = 'int_tableau__gradebook_audit_flags'
-            and e.cte = 'student_unpivot'
-        where e.`include` is null
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            on u.academic_year = e1.academic_year
+            and u.region = e1.region
+            and u.school_level = e1.school_level
+            and u.credit_type = e1.credit_type
+            and e1.view_name = 'int_tableau__gradebook_audit_flags'
+            and e1.cte = 'student_unpivot'
+            and e1.is_quarter_end_date_range is null
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            on u.academic_year = e2.academic_year
+            and u.region = e2.region
+            and u.course_number = e2.course_number
+            and u.is_quarter_end_date_range = e2.is_quarter_end_date_range
+            and e2.view_name = 'int_tableau__gradebook_audit_flags'
+            and e2.cte = 'student_unpivot'
+            and e2.is_quarter_end_date_range is not null
+        where e1.`include` is null and e2.`include` is null
     ),
 
     teacher_unpivot_cca as (
@@ -41,6 +55,7 @@ with
             {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     w_assign_max_score_not_10,
+                    h_assign_max_score_not_10,
                     f_assign_max_score_not_10,
                     s_max_score_greater_100
                 )
@@ -78,9 +93,11 @@ with
                     qt_teacher_s_total_greater_100,
                     qt_teacher_s_total_less_100,
                     w_expected_assign_count_not_met,
+                    h_expected_assign_count_not_met,
                     f_expected_assign_count_not_met,
                     s_expected_assign_count_not_met,
                     w_percent_graded_min_not_met,
+                    h_percent_graded_min_not_met,
                     f_percent_graded_min_not_met,
                     s_percent_graded_min_not_met
                 )
@@ -439,6 +456,7 @@ select
     r.is_late,
     r.is_exempt,
     r.is_missing,
+    r.is_zero,
     r.score_entered,
     r.assign_final_score_percent,
     r.assign_expected_to_be_scored,
@@ -591,6 +609,7 @@ select
     null as is_late,
     null as is_exempt,
     null as is_missing,
+    null as is_zero,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
@@ -724,6 +743,7 @@ select
     null as is_late,
     null as is_exempt,
     null as is_missing,
+    null as is_zero,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
@@ -859,6 +879,7 @@ select
     null as is_late,
     null as is_exempt,
     null as is_missing,
+    null as is_zero,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
@@ -1005,6 +1026,7 @@ select
     null as is_late,
     null as is_exempt,
     null as is_missing,
+    null as is_zero,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
@@ -1149,6 +1171,7 @@ select
     null as is_late,
     null as is_exempt,
     null as is_missing,
+    null as is_zero,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
