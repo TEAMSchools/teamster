@@ -26,6 +26,8 @@ models:
         data_type: string
       - name: pm_goal_include
         data_type: boolean
+      - name: pm_goal_criteria
+        data_type: string
       - name: code
         data_type: string
       - name: start_date

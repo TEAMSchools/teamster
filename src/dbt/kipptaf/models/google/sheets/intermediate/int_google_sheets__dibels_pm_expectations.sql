@@ -42,6 +42,7 @@ select
     e.expected_measure_name_code,
     e.expected_measure_standard,
     e.pm_goal_include,
+    e.pm_goal_criteria,
 
     t.code,
     t.start_date,
