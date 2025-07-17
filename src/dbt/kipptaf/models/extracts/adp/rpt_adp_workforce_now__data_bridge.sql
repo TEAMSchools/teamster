@@ -2,48 +2,32 @@ with
     staff_roster as (
         select
             position_id,
-            effective_date_start,
-            employee_number,
             worker_original_hire_date,
-            reports_to_position_id,
-            time_service_supervisor_position_id as adp__supervisor_id,
+            employee_number,
+            mail as work_email,
+            badge_id as adp__badge,
+            work_email as adp__work_email,
+            custom_field__employee_number as adp__employee_number,
 
-            coalesce(badge_id, '') as adp__badge,
             '000' || employee_number as badge,
-        from {{ ref("int_people__staff_roster_history") }}
+        from {{ ref("int_people__staff_roster") }}
         where
             primary_indicator
-            and worker_original_hire_date
-            between effective_date_start and effective_date_end
-            and worker_original_hire_date >= '2025-07-01'  /* beginning of T&A usage */
+            and employee_number is not null
+            and mail is not null
+            and worker_status_code = 'Active'
     ),
 
-    with_tna as (
+    with_key as (
         select
-            sr.position_id,
-            sr.worker_original_hire_date,
-            sr.reports_to_position_id,
-            sr.badge,
-            sr.adp__badge,
-            sr.adp__supervisor_id,
+            *,
 
-            tna.supervisor_flag as adp__supervisor_flag,
-            tna.pay_class,
+            {{ dbt_utils.generate_surrogate_key(["work_email", "badge"]) }}
+            as source_surrogate_key,
 
-            if(
-                sr.position_id in (
-                    select rt.reports_to_position_id,
-                    from staff_roster as rt
-                    where rt.reports_to_position_id is not null
-                ),
-                'Y',
-                'N'
-            ) as supervisor_flag,
-        from staff_roster as sr
-        inner join
-            {{ ref("stg_adp_workforce_now__time_and_attendance") }} as tna
-            on sr.position_id = tna.position_id
-            and tna.pay_class != 'NON-TIME'
+            {{ dbt_utils.generate_surrogate_key(["adp__work_email", "adp__badge"]) }}
+            as destination_surrogate_key,
+        from staff_roster
     )
 
 -- trunk-ignore(sqlfluff/ST06)
@@ -54,17 +38,22 @@ select
     /* required to be after ID */
     format_date('%m/%d/%Y', worker_original_hire_date) as `Change Effective On`,
 
+    /* personal information */
+    work_email as `Work E-Mail`,
+    'W' as `E-Mail to Use For Notification`,
+
+    /* custom fields */
+    'Employment Custom Fields' as `CDF Category`,
+    'Employee Number' as `CDF Label`,
+    employee_number as `CDF Value`,
+
     /* time & attendance */
     badge as `Badge`,
-    reports_to_position_id as `Supervisorid`,
-    supervisor_flag as `Supervisorflag`,
-    pay_class as `Payclass`,
-    'EST' as `TimeZone`,
-    'Y' as `Position Uses Time`,
-    'Y' as `Transfertopayroll`,
 
     /* comparison */
     adp__badge,
+    adp__work_email,
+    adp__employee_number,
 -- trunk-ignore-end(sqlfluff/RF05)
-from with_tna
-where badge != adp__badge
+from with_key
+where source_surrogate_key != destination_surrogate_key or adp__employee_number is null
