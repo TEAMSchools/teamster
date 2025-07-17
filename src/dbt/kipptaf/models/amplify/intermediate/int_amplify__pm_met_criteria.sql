@@ -26,7 +26,7 @@ with
             {{ ref("int_amplify__all_assessments") }} as a
             on g.academic_year = a.academic_year
             and g.region = a.region
-            and g.assessment_grade_int = g.assessment_grade_int
+            and g.assessment_grade_int = a.assessment_grade_int
             and g.admin_season = a.period
             and g.`round` = a.`round`
             and g.measure_standard = a.measure_standard
