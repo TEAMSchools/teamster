@@ -2,13 +2,13 @@ with
     roster as (select * from {{ ref("rpt_appsheet__leadership_development_roster") }}),
 
     metrics as (
-        select *
+        select *,
         from {{ ref("stg_performance_management__leadership_development_metrics") }}
         where academic_year = 2025 and not disabled
     ),
 
     existing_assignments as (
-        select assignment_id from {{ ref("stg_leadership_development__output") }}
+        select assignment_id, from {{ ref("stg_leadership_development__output") }}
     ),
 
     -- logic to create list of assignments
@@ -58,7 +58,7 @@ with
 
     -- only include assignments not already on output
     final as (
-        select assignments.*
+        select assignments.*,
         from assignments
         left join
             existing_assignments
@@ -66,6 +66,6 @@ with
         where existing_assignments.assignment_id is null
     )
 
-select *
+select *,
 from final
 order by assignment_id
