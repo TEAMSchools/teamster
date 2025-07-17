@@ -70,6 +70,6 @@ select
             max(met_measure_name_code_goal) over (
                 partition by academic_year, admin_season, `round`, student_number
             )
-    end met_pm_round_criteria,
+    end as met_pm_round_criteria,
 
 from met_measure_code_goal
