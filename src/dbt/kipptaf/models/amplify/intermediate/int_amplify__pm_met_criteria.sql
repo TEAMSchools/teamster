@@ -59,29 +59,48 @@ with
                         measure_name_code,
                         student_number
                 )
-                = 1
-                and completed_test_round,
+                = 1,
                 1,
                 0
             ) as met_measure_name_code_goal,
 
         from met_standard_goal
+    ),
+
+    met_round_criteria as (
+        select
+            *,
+
+            case
+                pm_goal_criteria
+                when 'AND'
+                then
+                    min(met_measure_name_code_goal) over (
+                        partition by
+                            academic_year, admin_season, `round`, student_number
+                    )
+                else
+                    max(met_measure_name_code_goal) over (
+                        partition by
+                            academic_year, admin_season, `round`, student_number
+                    )
+            end as met_pm_round_criteria,
+
+        from met_measure_code_goal
     )
 
 select
     *,
 
     case
-        pm_goal_criteria
-        when 'AND'
-        then
-            min(met_measure_name_code_goal) over (
-                partition by academic_year, admin_season, `round`, student_number
-            )
-        else
-            max(met_measure_name_code_goal) over (
-                partition by academic_year, admin_season, `round`, student_number
-            )
-    end as met_pm_round_criteria,
+        when
+            pm_goal_criteria = 'AND'
+            and met_pm_round_criteria = 1
+            and completed_test_round
+        then 1
+        when pm_goal_criteria is null and met_pm_round_criteria = 1
+        then 1
+        else 0
+    end as met_pm_round_overall_criteria,
 
-from met_measure_code_goal
+from met_round_criteria
