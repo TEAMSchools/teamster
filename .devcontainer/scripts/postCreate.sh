@@ -10,7 +10,7 @@ echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.clou
 # update/install apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install bash-completion google-cloud-cli &&
+  sudo apt-get -y --no-install-recommends install bash-completion google-cloud-cli sshpass &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
