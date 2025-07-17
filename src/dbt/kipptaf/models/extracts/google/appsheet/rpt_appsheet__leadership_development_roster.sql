@@ -21,7 +21,8 @@ with
     final as (
         select
             roster.*,
-            -- logic to determine if title is active in leader performance management by default, editable in app
+            -- logic to determine if title is active in leader performance management
+            -- by default, editable in app
             case
                 when
                     contains_substr(roster.job_title, 'Chief')
@@ -35,9 +36,7 @@ with
             end as active,
             -- logic for permissions levels in app
             case
-                when
-                    department
-                    in ('Data', 'Human Resources', 'Leadership Development')
+                when department in ('Data', 'Human Resources', 'Leadership Development')
                 then 6
                 when contains_substr(job_title, 'Chief')
                 then 6
@@ -63,8 +62,7 @@ with
                 when contains_substr(job_title, 'Assistant School Leader')
                 then 3
                 when
-                    contains_substr(job_title, 'Director')
-                    and department = 'Operations'
+                    contains_substr(job_title, 'Director') and department = 'Operations'
                 then 3
                 else 1
             end as permission_level,

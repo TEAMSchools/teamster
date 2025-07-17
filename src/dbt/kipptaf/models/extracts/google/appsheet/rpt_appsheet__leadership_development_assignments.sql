@@ -1,8 +1,5 @@
 with
-    roster as (
-        select *
-        from {{ ref("rpt_appsheet__leadership_development_roster") }}
-    ),
+    roster as (select * from {{ ref("rpt_appsheet__leadership_development_roster") }}),
 
     metrics as (
         select *
@@ -11,8 +8,7 @@ with
     ),
 
     existing_assignments as (
-        select assignment_id
-        from {{ ref("stg_leadership_development__output") }}
+        select assignment_id from {{ ref("stg_leadership_development__output") }}
     ),
 
     -- logic to create list of assignments
