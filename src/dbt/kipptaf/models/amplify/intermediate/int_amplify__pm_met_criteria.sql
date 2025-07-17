@@ -1,5 +1,5 @@
 with
-    base as (
+    met_standard_goal as (
         select
             g.academic_year,
             g.region,
@@ -33,7 +33,43 @@ with
             and a.assessment_type = 'PM'
             and a.overall_probe_eligible = 'Yes'
         where g.pm_goal_include is null
+    ),
+
+    met_measure_name_code_goal as (
+        select
+            *,
+
+            if(
+                avg(met_measure_standard_goal) over (
+                    partition by
+                        academic_year,
+                        admin_season,
+                        `round`,
+                        measure_name_code,
+                        student_number
+                )
+                = 1,
+                1,
+                0
+            ) as met_measure_name_code_goal,
+
+        from met_standard_goal
     )
 
-select *,
-from base
+select
+    *,
+
+    case
+        pm_goal_criteria
+        when 'AND'
+        then
+            min(met_measure_name_code_goal) over (
+                partition by academic_year, admin_season, `round`, student_number
+            )
+        else
+            max(met_measure_name_code_goal) over (
+                partition by academic_year, admin_season, `round`, student_number
+            )
+    end met_pm_round_criteria,
+
+from met_measure_name_code_goal
