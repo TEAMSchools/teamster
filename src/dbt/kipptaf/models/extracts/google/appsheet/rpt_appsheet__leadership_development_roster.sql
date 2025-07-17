@@ -23,17 +23,16 @@ with
             roster.*,
             -- logic to determine if title is active in leader performance management
             -- by default, editable in app
-            case
-                when
-                    contains_substr(roster.job_title, 'Chief')
-                    or contains_substr(roster.job_title, 'Director')
-                    or contains_substr(roster.job_title, 'Head')
-                    or contains_substr(roster.job_title, 'Leader')
-                    or contains_substr(roster.job_title, 'President')
-                    or job_title = 'Controller'
-                then true
-                else false
-            end as active,
+            coalesce(
+                contains_substr(roster.job_title, 'Chief')
+                or contains_substr(roster.job_title, 'Director')
+                or contains_substr(roster.job_title, 'Head')
+                or contains_substr(roster.job_title, 'Leader')
+                or contains_substr(roster.job_title, 'President')
+                or job_title = 'Controller',
+                false
+            ) as active,
+
             -- logic for permissions levels in app
             case
                 when department in ('Data', 'Human Resources', 'Leadership Development')
