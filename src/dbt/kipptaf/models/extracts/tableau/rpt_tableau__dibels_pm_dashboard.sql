@@ -48,24 +48,25 @@ with
             e.advisory,
             e.cohort,
 
-            a.period as expected_test,
-            cast(a.pm_round as string) as expected_round,
+            a.admin_season as expected_test,
+            cast(a.`round` as string) as expected_round,
             a.start_date,
             a.end_date,
-            a.grade_level as expected_grade_level,
-            a.measure_level_code as expected_measure_name_code,
-            a.measure_standard as expected_measure_standard,
-            a.goal,
-            a.bm_goal as admin_benchmark,
+            a.grade as expected_grade_level,
+            a.expected_measure_name_code,
+            a.expected_measure_standard,
+            a.benchmark_goal as admin_benchmark,
 
-            concat(e.grade_level, a.period, a.pm_round) as goal_filter,
+            g.cumulative_growth_words as goal,
+
+            concat(e.grade_level, a.admin_season, a.`round`) as goal_filter,
 
             format_datetime('%B', a.start_date) as month_round,
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
 
             case
-                a.measure_level_code
+                a.expected_measure_name_code
                 when 'LNF'
                 then 'Letter Names'
                 when 'PSF'
@@ -76,20 +77,30 @@ with
                 then 'Word Reading Fluency'
                 when 'ORF'
                 then 'Oral Reading Fluency'
-                else a.measure_level_code
+                else a.expected_measure_name_code
             end as expected_measure_name,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("stg_google_sheets__dibels_pm_expectations") }} as a
+            {{ ref("int_google_sheets__dibels_pm_expectations") }} as a
             on e.academic_year = a.academic_year
             and e.region = a.region
-            and e.grade_level = a.grade_level
+            and e.grade_level = a.grade
+            and a.pm_goal_include is null
+        inner join
+            {{ ref("stg_google_sheets__dibels_pm_goals") }} as g
+            on a.academic_year = g.academic_year
+            and a.region = g.region
+            and a.admin_season = g.admin_season
+            and a.`round` = g.`round`
+            and a.grade = g.assessment_grade_int
+            and a.expected_measure_standard = g.measure_standard
+            and a.pm_goal_include is null
         inner join
             eligible_students as s
             on e.student_number = s.student_number
             and e.grade_level = s.assessment_grade_int
-            and a.period = s.pm_season
+            and a.admin_season = s.pm_season
             and s.pm_eligible = 'Yes'
         where
             not e.is_self_contained

@@ -23,7 +23,7 @@ with
             and e.test_code = t.code
             and t.type = 'LIT'
         -- removes rows for assessment strategies that were deprecated midyear
-        where e.assessment_include is null
+        where e.assessment_include is null and e.pm_goal_include is null
     ),
 
     assessments_scores as (
