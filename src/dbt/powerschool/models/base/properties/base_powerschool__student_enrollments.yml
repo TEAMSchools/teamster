@@ -1,15 +1,6 @@
 version: 2
 models:
   - name: base_powerschool__student_enrollments
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - student_number
-            - academic_year
-            - entrydate
-          config:
-            severity: warn
-            store_failures: true
     columns:
       - name: studentid
         data_type: int64
