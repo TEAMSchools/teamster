@@ -68,5 +68,5 @@ with
         from roster
     )
 
-select *
+select *,
 from final
