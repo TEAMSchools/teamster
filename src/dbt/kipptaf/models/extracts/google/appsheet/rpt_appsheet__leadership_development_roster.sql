@@ -65,11 +65,7 @@ with
                     )
                 then 5
                 -- Own location, below own permission level
-                when
-                    job_title in (
-                        'School Leader',
-                        'School Leader in Residence'
-                    )
+                when job_title in ('School Leader', 'School Leader in Residence')
                 then 4
                 -- Own location, below own permission level
                 when
