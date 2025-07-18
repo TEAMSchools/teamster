@@ -69,8 +69,6 @@ with
                     job_title in (
                         'School Leader',
                         'School Leader in Residence'
-                        'Director School Operations',
-                        'Director Campus Operations'
                     )
                 then 4
                 -- Own location, below own permission level
