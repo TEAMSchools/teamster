@@ -117,9 +117,47 @@ with
             and a.period != 'EOY'
     ),
 
+    group_rows as (
+        select
+            academic_year,
+            region,
+            assessment_grade,
+            assessment_grade_int,
+            period,
+            benchmark_goal_season,
+            school,
+
+            max(grade_goal) as grade_goal,
+
+            max(grade_range_goal) as grade_range_goal,
+
+            avg(n_admin_season_school_gl_all) as n_admin_season_school_gl_all,
+
+            sum(n_admin_season_school_gl_at_above) as n_admin_season_school_gl_at_above,
+
+            sum(n_admin_season_school_gl_bl_wb) as n_admin_season_school_gl_bl_wb,
+
+            avg(n_admin_season_region_gl_all) as n_admin_season_region_gl_all,
+
+            sum(n_admin_season_region_gl_at_above) as n_admin_season_region_gl_at_above,
+
+            sum(n_admin_season_region_gl_bl_wb) as n_admin_season_region_gl_bl_wb,
+
+        from roster
+        where rn = 1
+        group by
+            academic_year,
+            region,
+            assessment_grade,
+            assessment_grade_int,
+            period,
+            benchmark_goal_season,
+            school
+    ),
+
     needed_count_calcs as (
         select
-            * except (rn),
+            *,
 
             ceiling(n_admin_season_school_gl_all * grade_goal)
             + 5 as n_admin_season_school_gl_at_above_expected,
@@ -127,8 +165,7 @@ with
             ceiling(n_admin_season_region_gl_all * grade_goal)
             + 5 as n_admin_season_region_gl_at_above_expected,
 
-        from roster
-        where rn = 1 and grade_goal is not null
+        from group_rows
     )
 
 select
