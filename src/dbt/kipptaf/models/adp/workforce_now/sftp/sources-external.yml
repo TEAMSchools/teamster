@@ -43,6 +43,8 @@ sources:
               - workforce_now
               - pension_and_benefits_enrollments
       - name: src_adp_workforce_now__time_and_attendance
+        config:
+          enabled: false
         external:
           location:
             "{{ var('cloud_storage_uri_base')
