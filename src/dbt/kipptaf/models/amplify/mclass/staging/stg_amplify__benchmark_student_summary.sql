@@ -163,6 +163,44 @@ with
             date(client_date) as client_date,
             date(sync_date) as sync_date,
 
+            case
+                school_name
+                when 'KIPP BOLD Academy'
+                then 'Newark'
+                when 'KIPP Courage Academy'
+                then 'Miami'
+                when 'KIPP Hatch (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP Justice Academy'
+                then 'Newark'
+                when 'KIPP Lanning Square Middle'
+                then 'Camden'
+                when 'KIPP Lanning Square Primary (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP Life Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Purpose Academy'
+                then 'Newark'
+                when 'KIPP Rise Academy'
+                then 'Newark'
+                when 'KIPP Royalty Academy (Mia)'
+                then 'Miami'
+                when 'KIPP SPARK (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Seek Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Sumner Elementary (Camden, NJ)'
+                then 'Camden'
+                when 'KIPP TEAM Academy'
+                then 'Newark'
+                when 'KIPP THRIVE (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Truth Academy (Newark, NJ)'
+                then 'Newark'
+                when 'KIPP Upper Roseville Academy (Newark, NJ)'
+                then 'Newark'
+            end as region,
+
             coalesce(
                 assessment_grade.string_value,
                 cast(assessment_grade.long_value as string)
@@ -211,6 +249,7 @@ with
                     as string
                 )
             ) as phonemic_awareness_psf_national_norm_percentile,
+
         from {{ source("amplify", "src_amplify__benchmark_student_summary") }}
     )
 
@@ -414,4 +453,5 @@ select
             ]
         )
     }} as surrogate_key,
+
 from benchmark_student_summary

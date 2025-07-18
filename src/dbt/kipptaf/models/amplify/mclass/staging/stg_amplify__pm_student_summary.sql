@@ -57,12 +57,12 @@ with
 
             coalesce(
                 cast(score.double_value as numeric), cast(score.long_value as numeric)
-            ) as mclass_measure_standard_score,
+            ) as measure_standard_score,
 
             coalesce(
                 cast(score_change.double_value as numeric),
                 cast(score_change.string_value as numeric)
-            ) as mclass_measure_standard_score_change,
+            ) as measure_standard_score_change,
 
             cast(left(school_year, 4) as int) as academic_year,
 
@@ -73,7 +73,7 @@ with
                 when 'Reading Comprehension (Maze)'
                 then 'Comprehension'
                 else substr(measure, strpos(measure, '(') + 1, 3)
-            end as mclass_measure_name_code,
+            end as measure_name_code,
 
         from {{ src_pss }}
     )
@@ -82,17 +82,45 @@ select
     *,
 
     case
-        regexp_extract(cast(student_primary_id as string), r'^\d')
-        when '1'
+        school_name
+        when 'KIPP BOLD Academy'
         then 'Newark'
-        when '2'
-        then 'Camden'
-        when '3'
+        when 'KIPP Courage Academy'
         then 'Miami'
+        when 'KIPP Hatch (Camden, NJ)'
+        then 'Camden'
+        when 'KIPP Justice Academy'
+        then 'Newark'
+        when 'KIPP Lanning Square Middle'
+        then 'Camden'
+        when 'KIPP Lanning Square Primary (Camden, NJ)'
+        then 'Camden'
+        when 'KIPP Life Academy (Newark, NJ)'
+        then 'Newark'
+        when 'KIPP Purpose Academy'
+        then 'Newark'
+        when 'KIPP Rise Academy'
+        then 'Newark'
+        when 'KIPP Royalty Academy (Mia)'
+        then 'Miami'
+        when 'KIPP SPARK (Newark, NJ)'
+        then 'Newark'
+        when 'KIPP Seek Academy (Newark, NJ)'
+        then 'Newark'
+        when 'KIPP Sumner Elementary (Camden, NJ)'
+        then 'Camden'
+        when 'KIPP TEAM Academy'
+        then 'Newark'
+        when 'KIPP THRIVE (Newark, NJ)'
+        then 'Newark'
+        when 'KIPP Truth Academy (Newark, NJ)'
+        then 'Newark'
+        when 'KIPP Upper Roseville Academy (Newark, NJ)'
+        then 'Newark'
     end as region,
 
     case
-        mclass_measure_name_code
+        measure_name_code
         when 'LNF'
         then 'Letter Names'
         when 'PSF'
@@ -103,8 +131,8 @@ select
         then 'Word Reading Fluency'
         when 'ORF'
         then 'Oral Reading Fluency'
-        else mclass_measure_name_code
-    end as mclass_measure_name,
+        else measure_name_code
+    end as measure_name,
 
     if(
         assessment_grade = 'K', 0, safe_cast(assessment_grade as int)
@@ -113,4 +141,5 @@ select
     if(
         enrollment_grade = 'K', 0, safe_cast(enrollment_grade as int)
     ) as enrollment_grade_int,
+
 from pm_data

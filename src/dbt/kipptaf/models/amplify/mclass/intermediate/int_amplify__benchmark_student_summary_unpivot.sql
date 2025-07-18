@@ -4,12 +4,12 @@ with
             surrogate_key,
 
             /* unpivot cols */
-            measure as mclass_measure_standard,
-            score as mclass_measure_standard_score,
-            `level` as mclass_measure_standard_level,
-            national_norm_percentile as mclass_measure_percentile,
-            semester_growth as mclass_measure_semester_growth,
-            year_growth as mclass_measure_year_growth,
+            measure as measure_standard,
+            score as measure_standard_score,
+            `level` as measure_standard_level,
+            national_norm_percentile as measure_percentile,
+            semester_growth as measure_semester_growth,
+            year_growth as measure_year_growth,
 
             case
                 measure
@@ -18,7 +18,7 @@ with
                 when 'Reading Comprehension (Maze)'
                 then 'Comprehension'
                 else regexp_extract(measure, r'\((.{3})')
-            end as mclass_measure_name_code,
+            end as measure_name_code,
 
             case
                 `level`
@@ -30,7 +30,7 @@ with
                 then 2
                 when 'Well Below Benchmark'
                 then 1
-            end as mclass_measure_standard_level_int,
+            end as measure_standard_level_int,
         from
             {{ ref("stg_amplify__benchmark_student_summary") }} unpivot (
                 (
@@ -110,7 +110,7 @@ with
 select
     *,
     case
-        mclass_measure_name_code
+        measure_name_code
         when 'LNF'
         then 'Letter Names'
         when 'PSF'
@@ -121,6 +121,6 @@ select
         then 'Word Reading Fluency'
         when 'ORF'
         then 'Oral Reading Fluency'
-        else mclass_measure_name_code
-    end as mclass_measure_name,
+        else measure_name_code
+    end as measure_name,
 from bm_unpivot
