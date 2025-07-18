@@ -21,6 +21,8 @@ with
         where assignment_status in ('Active', 'Leave')
     ),
 
+    managers as (select distinct reports_to_employee_number from roster),
+
     final as (
         select
             roster.*,
@@ -38,12 +40,21 @@ with
 
             -- logic for permissions levels in app
             case
-                when department in ('Data', 'Human Resources', 'Leadership Development')
-                then 6
+                -- 7: All access
+                when department in ('Data', 'Leadership Development')
+                then 7
+                when job_title = 'Chief Executive Officer'
+                then 7
+                when contains_substr(job_title, 'President')
+                then 7
+                -- 6: All entities, below own permission level
                 when contains_substr(job_title, 'Chief')
                 then 6
-                when contains_substr(job_title, 'President')
-                then 6
+                -- 5: Own entity, below own permission level
+                when
+                    contains_substr(job_title, 'Managing Director')
+                    and department = 'School Support'
+                then 5
                 when
                     job_title in (
                         'Managing Director Operations',
@@ -53,6 +64,7 @@ with
                         'Head of Schools in Residence'
                     )
                 then 5
+                -- Own location, below own permission level
                 when
                     job_title in (
                         'School Leader',
@@ -61,14 +73,20 @@ with
                         'Director Campus Operations'
                     )
                 then 4
-                when contains_substr(job_title, 'Assistant School Leader')
-                then 3
+                -- Own location, below own permission level
                 when
-                    contains_substr(job_title, 'Director') and department = 'Operations'
+                    contains_substr(job_title, 'Managing Director')
+                    and entity = 'KIPP TEAM and Family Schools Inc'
                 then 3
+                -- Only their own direct reports
+                when managers.reports_to_employee_number is not null
+                then 2
+                -- Only their own data
                 else 1
             end as permission_level,
         from roster
+        left join
+            managers on roster.employee_number = managers.reports_to_employee_number
     )
 
 select *,
