@@ -9,18 +9,14 @@ from dagster import (
 )
 from dagster_shared import check
 
-from teamster.core.resources import SSH_COUCHDROP, get_io_manager_gcs_avro
-
 
 def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
-    if partition_key is not None:
-        pass
-    elif asset.partitions_def is not None:
+    from teamster.core.resources import SSH_COUCHDROP, get_io_manager_gcs_avro
+
+    if partition_key is None and asset.partitions_def is not None:
         partition_keys = asset.partitions_def.get_partition_keys()
 
         partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
-    else:
-        partition_key = None
 
     result = materialize(
         assets=[asset],
@@ -73,64 +69,61 @@ def test_adp_payroll_general_ledger_file_kipptaf():
 def test_fldoe_fast_kippmiami():
     from teamster.code_locations.kippmiami.fldoe.assets import fast
 
-    _test_asset(asset=fast, partition_key="Grade8FASTMathematics|SY25/PM3")
+    _test_asset(asset=fast)
 
 
 def test_fldoe_eoc_kippmiami():
     from teamster.code_locations.kippmiami.fldoe.assets import eoc
 
-    _test_asset(asset=eoc, partition_key="B.E.S.T.Algebra1|2024")
+    _test_asset(asset=eoc)
 
 
 def test_fldoe_science_kippmiami():
     from teamster.code_locations.kippmiami.fldoe.assets import science
 
-    _test_asset(asset=science, partition_key="8|2024")
+    _test_asset(asset=science)
 
 
 def test_fldoe_fte_kippmiami():
     from teamster.code_locations.kippmiami.fldoe.assets import fte
 
-    _test_asset(
-        asset=fte,
-        # partition_key="25|2",
-    )
+    _test_asset(asset=fte)
 
 
 def test_pearson_njgpa_kippcamden():
     from teamster.code_locations.kippcamden.pearson.assets import njgpa
 
-    _test_asset(asset=njgpa, partition_key="fbk|24")
+    _test_asset(asset=njgpa)
 
 
 def test_pearson_njgpa_kippnewark():
     from teamster.code_locations.kippnewark.pearson.assets import njgpa
 
-    _test_asset(asset=njgpa, partition_key="fbk|24")
+    _test_asset(asset=njgpa)
 
 
 def test_pearson_njsla_kippnewark():
     from teamster.code_locations.kippnewark.pearson.assets import njsla
 
-    _test_asset(asset=njsla, partition_key="24")
+    _test_asset(asset=njsla)
 
 
 def test_pearson_njsla_kippcamden():
     from teamster.code_locations.kippcamden.pearson.assets import njsla
 
-    _test_asset(asset=njsla, partition_key="24")
+    _test_asset(asset=njsla)
 
 
 def test_pearson_njsla_science_kippnewark():
     from teamster.code_locations.kippnewark.pearson.assets import njsla_science
 
-    _test_asset(asset=njsla_science, partition_key="24")
+    _test_asset(asset=njsla_science)
 
 
 def test_pearson_njsla_science_kippcamden():
     from teamster.code_locations.kippcamden.pearson.assets import njsla_science
 
-    _test_asset(asset=njsla_science, partition_key="24")
+    _test_asset(asset=njsla_science)
 
 
 def test_pearson_parcc_kippnewark():
@@ -178,16 +171,16 @@ def test_tableau_traffic_to_views_kipptaf():
 def test_collegeboard_psat_kipptaf_psatnm():
     from teamster.code_locations.kipptaf.collegeboard.assets import psat
 
-    _test_asset(asset=psat, partition_key="PSATNM")
+    _test_asset(asset=psat)
 
 
 def test_collegeboard_psat_kipptaf_psat10():
     from teamster.code_locations.kipptaf.collegeboard.assets import psat
 
-    _test_asset(asset=psat, partition_key="PSAT10")
+    _test_asset(asset=psat)
 
 
 def test_collegeboard_ap_kipptaf():
     from teamster.code_locations.kipptaf.collegeboard.assets import ap
 
-    _test_asset(asset=ap, partition_key="NCA|2023")
+    _test_asset(asset=ap)
