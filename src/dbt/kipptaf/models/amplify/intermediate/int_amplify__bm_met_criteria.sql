@@ -128,7 +128,7 @@ with
             + 5 as n_admin_season_region_gl_at_above_expected,
 
         from roster
-        where rn = 1
+        where rn = 1 and grade_goal is not null
     )
 
 select
