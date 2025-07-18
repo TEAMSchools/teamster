@@ -1,5 +1,9 @@
 with
-    roster as (select *, from {{ ref("rpt_appsheet__leadership_development_roster") }}),
+    roster as (
+        select *,
+        from {{ ref("rpt_appsheet__leadership_development_roster") }}
+        where active
+    ),
 
     metrics as (
         select *,
@@ -18,17 +22,17 @@ with
             metrics.academic_year,
             metrics.metric_id,
             concat(roster.employee_number, metrics.metric_id) as assignment_id,
-            null as notes_boy,
-            null as rating_moy,
-            null as rating_eoy,
-            null as notes_moy,
-            null as notes_eoy,
-            null as manager_rating_moy,
-            null as manager_rating_eoy,
-            null as manager_notes_moy,
-            null as manager_notes_eoy,
-            null as edited_at,
-            null as edited_by,
+            cast(null as string) as notes_boy,
+            cast(null as string) as rating_moy,
+            cast(null as string) as rating_eoy,
+            cast(null as string) as notes_moy,
+            cast(null as string) as notes_eoy,
+            cast(null as string) as manager_rating_moy,
+            cast(null as string) as manager_rating_eoy,
+            cast(null as string) as manager_notes_moy,
+            cast(null as string) as manager_notes_eoy,
+            cast(null as string) as edited_at,
+            cast(null as string) as edited_by,
             true as active_assignment,
         from roster
         inner join metrics on metrics.role = 'All'
@@ -40,17 +44,17 @@ with
             metrics.academic_year,
             metrics.metric_id,
             concat(roster.employee_number, metrics.metric_id) as assignment_id,
-            null as notes_boy,
-            null as rating_moy,
-            null as rating_eoy,
-            null as notes_moy,
-            null as notes_eoy,
-            null as manager_rating_moy,
-            null as manager_rating_eoy,
-            null as manager_notes_moy,
-            null as manager_notes_eoy,
-            null as edited_at,
-            null as edited_by,
+            cast(null as string) as notes_boy,
+            cast(null as string) as rating_moy,
+            cast(null as string) as rating_eoy,
+            cast(null as string) as notes_moy,
+            cast(null as string) as notes_eoy,
+            cast(null as string) as manager_rating_moy,
+            cast(null as string) as manager_rating_eoy,
+            cast(null as string) as manager_notes_moy,
+            cast(null as string) as manager_notes_eoy,
+            cast(null as string) as edited_at,
+            cast(null as string) as edited_by,
             true as active_assignment,
         from roster
         inner join metrics on roster.job_title = metrics.role
