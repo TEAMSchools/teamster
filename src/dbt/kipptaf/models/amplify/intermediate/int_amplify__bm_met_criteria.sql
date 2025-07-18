@@ -38,4 +38,3 @@ where
     and a.assessment_type = 'Benchmark'
     and a.measure_standard = 'Composite'
     and a.period != 'EOY'
-    and f.grade_goal is not null
