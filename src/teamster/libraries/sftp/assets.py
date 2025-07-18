@@ -371,6 +371,7 @@ def build_sftp_folder_asset(
     slugify_cols: bool = True,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
+    file_dtype: type | None = None,
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
