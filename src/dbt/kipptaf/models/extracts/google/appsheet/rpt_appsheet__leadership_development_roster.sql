@@ -21,7 +21,7 @@ with
         where assignment_status in ('Active', 'Leave')
     ),
 
-    managers as (select distinct reports_to_employee_number from roster),
+    managers as (select distinct reports_to_employee_number, from roster),
 
     final as (
         select
@@ -41,22 +41,22 @@ with
             -- logic for permissions levels in app
             case
                 -- 7: All access
-                when department in ('Data', 'Leadership Development')
+                when roster.department in ('Data', 'Leadership Development')
                 then 7
-                when job_title = 'Chief Executive Officer'
+                when roster.job_title = 'Chief Executive Officer'
                 then 7
-                when contains_substr(job_title, 'President')
+                when contains_substr(roster.job_title, 'President')
                 then 7
                 -- 6: All entities, below own permission level
-                when contains_substr(job_title, 'Chief')
+                when contains_substr(roster.job_title, 'Chief')
                 then 6
                 -- 5: Own entity, below own permission level
                 when
-                    contains_substr(job_title, 'Managing Director')
-                    and department = 'School Support'
+                    contains_substr(roster.job_title, 'Managing Director')
+                    and roster.department = 'School Support'
                 then 5
                 when
-                    job_title in (
+                    roster.job_title in (
                         'Managing Director Operations',
                         'Managing Director of Operations',
                         'Managing Director School Operations',
@@ -65,12 +65,12 @@ with
                     )
                 then 5
                 -- Own location, below own permission level
-                when job_title in ('School Leader', 'School Leader in Residence')
+                when roster.job_title in ('School Leader', 'School Leader in Residence')
                 then 4
                 -- Own location, below own permission level
                 when
-                    contains_substr(job_title, 'Managing Director')
-                    and entity = 'KIPP TEAM and Family Schools Inc'
+                    contains_substr(roster.job_title, 'Managing Director')
+                    and roster.entity = 'KIPP TEAM and Family Schools Inc'
                 then 3
                 -- Only their own direct reports
                 when managers.reports_to_employee_number is not null
