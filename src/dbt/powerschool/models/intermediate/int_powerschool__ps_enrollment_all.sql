@@ -11,6 +11,7 @@ with
             fteid,
             membershipshare,
             track,
+
             -1 as programid,
         from {{ ref("stg_powerschool__students") }}
 
@@ -27,6 +28,7 @@ with
             fteid,
             membershipshare,
             track,
+
             -1 as programid,
         from {{ ref("stg_powerschool__reenrollments") }}
     )
@@ -49,23 +51,23 @@ select
     coalesce(f.dflt_att_mode_code, '-1') as dflt_att_mode_code,
     coalesce(f.dflt_conversion_mode_code, '-1') as dflt_conversion_mode_code,
 
-    if(p.value like 'P', 'Present', 'Absent') as att_calccntpresentabsent,
-
     safe_cast(p2.value as string) as att_intervalduration,
+
+    if(p.value like 'P', 'Present', 'Absent') as att_calccntpresentabsent,
 from union_relations as sr
 left join {{ ref("stg_powerschool__fte") }} as f on sr.fteid = f.id
 left join
     {{ ref("stg_powerschool__terms") }} as t
-    on t.schoolid = sr.schoolid
+    on sr.schoolid = t.schoolid
     and t.isyearrec = 1
     and sr.entrydate between t.firstday and t.lastday
 left join
     {{ ref("stg_powerschool__prefs") }} as p
-    on p.schoolid = sr.schoolid
+    on sr.schoolid = p.schoolid
     and p.name = 'ATT_CalcCntPresentsAbsences'
     and t.yearid = p.yearid
 left join
     {{ ref("stg_powerschool__prefs") }} as p2
-    on p2.schoolid = sr.schoolid
+    on sr.schoolid = p2.schoolid
     and t.yearid = p2.yearid
     and p2.name = 'ATT_IntervalDuration'

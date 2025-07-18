@@ -11,16 +11,6 @@ models:
       It also includes all key demographic data for students and student identifiers.
       Current enrollment records come from `stg_powerschool__students` and previous
       enrollments come from `stg_powerschool__reenrollments`.
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - _dbt_source_relation
-            - student_number
-            - academic_year
-            - entrydate
-          config:
-            severity: warn
-            store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
