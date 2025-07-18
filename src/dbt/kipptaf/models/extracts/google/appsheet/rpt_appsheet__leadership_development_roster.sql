@@ -1,3 +1,6 @@
+{{ config(materialized="table") }}
+
+
 with
 
     roster as (
