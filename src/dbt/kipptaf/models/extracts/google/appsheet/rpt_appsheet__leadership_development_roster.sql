@@ -34,7 +34,7 @@ with
                 or contains_substr(roster.job_title, 'Head')
                 or contains_substr(roster.job_title, 'Leader')
                 or contains_substr(roster.job_title, 'President')
-                or job_title = 'Controller',
+                or roster.job_title = 'Controller',
                 false
             ) as active,
 
