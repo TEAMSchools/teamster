@@ -134,12 +134,10 @@ def file_to_records(
     slugify_replacements: list[list[str]] | None = None,
 ) -> list[dict[str, str]]:
     with open(file=file, encoding=encoding, mode="r") as f:
-        dict_reader = csv.DictReader(f=f, delimiter=delimiter)
-
-    records = dict_reader_to_records(
-        dict_reader=dict_reader,
-        slugify_cols=slugify_cols,
-        slugify_replacements=slugify_replacements,
-    )
+        records = dict_reader_to_records(
+            dict_reader=csv.DictReader(f=f, delimiter=delimiter),
+            slugify_cols=slugify_cols,
+            slugify_replacements=slugify_replacements,
+        )
 
     return records
