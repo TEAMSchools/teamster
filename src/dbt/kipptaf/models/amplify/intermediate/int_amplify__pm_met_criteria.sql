@@ -23,6 +23,10 @@ with
                 a.measure_standard_score >= g.cumulative_growth_words, 1, 0
             ) as met_measure_standard_goal,
 
+            if(
+                a.measure_standard_score >= g.benchmark_goal, 1, 0
+            ) as met_admin_benchmark_goal,
+
         from {{ ref("stg_google_sheets__dibels_pm_goals") }} as g
         inner join
             {{ ref("int_amplify__all_assessments") }} as a
