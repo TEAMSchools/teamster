@@ -9,7 +9,15 @@ select
     a.measure_standard_level,
     a.aggregated_measure_standard_level,
 
+    e.school,
+
 from {{ ref("int_amplify__all_assessments") }} as a
+inner join
+    {{ ref("int_extracts__student_enrollments") }} as e
+    on a.academic_year = e.academic_year
+    and a.region = e.region
+    and a.student_number = e.student_number
+    and a.assessment_grade_int = e.grade_level
 where
     a.assessment_type = 'Benchmark'
     and a.measure_standard = 'Composite'
