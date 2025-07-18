@@ -74,6 +74,6 @@ with
             and a.period != 'EOY'
     )
 
-select *,
+select * except (rn),
 from roster
 where rn = 1
