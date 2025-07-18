@@ -8,8 +8,11 @@ select
     a.measure_standard,
     a.measure_standard_level,
     a.aggregated_measure_standard_level,
+    a.client_date,
 
     e.school,
+    e.entrydate,
+    e.exitdate,
 
 from {{ ref("int_amplify__all_assessments") }} as a
 inner join
