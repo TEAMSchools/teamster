@@ -221,6 +221,10 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
     )
 
 
+assets = [
+    outlier_detection,
+]
+
 # observation_details = build_sftp_file_asset(
 #     asset_key=[CODE_LOCATION, "performance_management", "observation_details"],
 #     remote_dir_regex=(
@@ -239,7 +243,3 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
 #         }
 #     ),
 # )
-
-assets = [
-    outlier_detection,
-]

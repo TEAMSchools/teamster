@@ -1,11 +1,185 @@
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, Field
+
+FILLER_FIELD = Field(
+    default=None,
+    validation_alias=AliasChoices(
+        "filler_1",
+        "filler_10",
+        "filler_11",
+        "filler_12",
+        "filler_13",
+        "filler_14",
+        "filler_15",
+        "filler_16",
+        "filler_17",
+        "filler_18",
+        "filler_19",
+        "filler_2",
+        "filler_20",
+        "filler_21",
+        "filler_22",
+        "filler_23",
+        "filler_24",
+        "filler_25",
+        "filler_26",
+        "filler_27",
+        "filler_28",
+        "filler_29",
+        "filler_3",
+        "filler_30",
+        "filler_31",
+        "filler_32",
+        "filler_33",
+        "filler_34",
+        "filler_35",
+        "filler_36",
+        "filler_37",
+        "filler_38",
+        "filler_39",
+        "filler_4",
+        "filler_40",
+        "filler_41",
+        "filler_42",
+        "filler_43",
+        "filler_44",
+        "filler_45",
+        "filler_46",
+        "filler_47",
+        "filler_48",
+        "filler_49",
+        "filler_5",
+        "filler_50",
+        "filler_51",
+        "filler_52",
+        "filler_53",
+        "filler_54",
+        "filler_55",
+        "filler_56",
+        "filler_57",
+        "filler_58",
+        "filler_59",
+        "filler_6",
+        "filler_60",
+        "filler_61",
+        "filler_62",
+        "filler_63",
+        "filler_64",
+        "filler_65",
+        "filler_66",
+        "filler_67",
+        "filler_68",
+        "filler_69",
+        "filler_7",
+        "filler_70",
+        "filler_71",
+        "filler_72",
+        "filler_73",
+        "filler_74",
+        "filler_75",
+        "filler_76",
+        "filler_77",
+        "filler_78",
+        "filler_79",
+        "filler_8",
+        "filler_80",
+        "filler_81",
+        "filler_82",
+        "filler_83",
+        "filler_84",
+        "filler_85",
+        "filler_86",
+        "filler_87",
+        "filler_88",
+        "filler_89",
+        "filler_9",
+        "filler_90",
+        "filler_91",
+        "filler_92",
+        "filler_93",
+        "filler",
+        "filler1",
+        "filler10",
+        "filler11",
+        "filler12",
+        "filler13",
+        "filler14",
+        "filler15",
+        "filler16",
+        "filler17",
+        "filler18",
+        "filler19",
+        "filler2",
+        "filler20",
+        "filler21",
+        "filler22",
+        "filler23",
+        "filler24",
+        "filler25",
+        "filler26",
+        "filler27",
+        "filler28",
+        "filler29",
+        "filler3",
+        "filler30",
+        "filler31",
+        "filler32",
+        "filler33",
+        "filler34",
+        "filler35",
+        "filler36",
+        "filler37",
+        "filler38",
+        "filler39",
+        "filler4",
+        "filler5",
+        "filler6",
+        "filler7",
+        "filler8",
+        "fillerfield_1",
+        "fillerfield_10",
+        "fillerfield_11",
+        "fillerfield_12",
+        "fillerfield_13",
+        "fillerfield_14",
+        "fillerfield_15",
+        "fillerfield_16",
+        "fillerfield_17",
+        "fillerfield_18",
+        "fillerfield_19",
+        "fillerfield_2",
+        "fillerfield_20",
+        "fillerfield_21",
+        "fillerfield_22",
+        "fillerfield_23",
+        "fillerfield_24",
+        "fillerfield_25",
+        "fillerfield_26",
+        "fillerfield_27",
+        "fillerfield_28",
+        "fillerfield_29",
+        "fillerfield_3",
+        "fillerfield_30",
+        "fillerfield_4",
+        "fillerfield_5",
+        "fillerfield_6",
+        "fillerfield_7",
+        "fillerfield_8",
+        "fillerfield_9",
+        "fillerfield",
+        "fillerfield1",
+        "fillerfield2",
+        "fillerfield4",
+        "fillerfield5",
+        "fillerfield7",
+    ),
+)
 
 
 class PARCC(BaseModel):
-    accountabledistrictcode: int | None = None
+    accountabledistrictcode: str | None = None
     accountabledistrictname: str | None = None
-    accountableorganizationaltype: int | None = None
-    accountableschoolcode: int | None = None
+    accountableorganizationaltype: str | None = None
+    accountableschoolcode: str | None = None
     accountableschoolname: str | None = None
     administrationdirectionsclarifiedinstudentsnativelanguage: str | None = None
     administrationdirectionsreadaloudinstudentsnativelanguage: str | None = None
@@ -30,128 +204,42 @@ class PARCC(BaseModel):
     classname: str | None = None
     closedcaptioningforela: str | None = None
     closedcaptioningforelal: str | None = None
-    colorcontrast: float | None = None
+    colorcontrast: str | None = None
     datefirstenrolledinusschool: str | None = None
     economicdisadvantagestatus: str | None = None
     elaccommodation: str | None = None
-    elaconstructedresponse: float | None = None
-    elalconstructedresponse: float | None = None
-    elalselectedresponseortechnologyenhanceditems: float | None = None
-    elaselectedresponseortechnologyenhanceditems: float | None = None
+    elaconstructedresponse: str | None = None
+    elalconstructedresponse: str | None = None
+    elalselectedresponseortechnologyenhanceditems: str | None = None
+    elaselectedresponseortechnologyenhanceditems: str | None = None
     electronicbrailleresponse: str | None = None
     elexemptfromtakingela: str | None = None
     elexemptfromtakingelal: str | None = None
-    emergencyaccommodation: float | None = None
-    englishlearneraccommodatedresponses: float | None = None
+    emergencyaccommodation: str | None = None
+    englishlearneraccommodatedresponses: str | None = None
     englishlearnerel: str | None = None
     extendedtime: str | None = None
-    federalraceethnicity: int | None = None
-    filler_1: str | None = None
-    filler_10: str | None = None
-    filler_11: str | None = None
-    filler_2: str | None = None
-    filler_3: str | None = None
-    filler_4: str | None = None
-    filler_5: str | None = None
-    filler_6: str | None = None
-    filler_7: str | None = None
-    filler_8: str | None = None
-    filler_9: str | None = None
-    filler: str | None = None
-    filler1: str | None = None
-    filler10: str | None = None
-    filler11: str | None = None
-    filler12: str | None = None
-    filler13: str | None = None
-    filler14: str | None = None
-    filler15: str | None = None
-    filler16: str | None = None
-    filler17: str | None = None
-    filler18: str | None = None
-    filler19: str | None = None
-    filler2: str | None = None
-    filler20: str | None = None
-    filler21: str | None = None
-    filler22: str | None = None
-    filler23: str | None = None
-    filler24: str | None = None
-    filler25: str | None = None
-    filler26: str | None = None
-    filler27: str | None = None
-    filler28: str | None = None
-    filler29: str | None = None
-    filler3: str | None = None
-    filler30: str | None = None
-    filler31: str | None = None
-    filler32: str | None = None
-    filler33: str | None = None
-    filler34: str | None = None
-    filler35: str | None = None
-    filler36: str | None = None
-    filler37: str | None = None
-    filler38: str | None = None
-    filler39: str | None = None
-    filler4: str | None = None
-    filler5: str | None = None
-    filler6: str | None = None
-    filler7: str | None = None
-    filler8: str | None = None
-    fillerfield_1: str | None = None
-    fillerfield_10: str | None = None
-    fillerfield_11: str | None = None
-    fillerfield_12: str | None = None
-    fillerfield_13: str | None = None
-    fillerfield_14: str | None = None
-    fillerfield_15: str | None = None
-    fillerfield_16: str | None = None
-    fillerfield_17: str | None = None
-    fillerfield_18: str | None = None
-    fillerfield_19: str | None = None
-    fillerfield_2: str | None = None
-    fillerfield_20: str | None = None
-    fillerfield_21: str | None = None
-    fillerfield_22: str | None = None
-    fillerfield_23: str | None = None
-    fillerfield_24: str | None = None
-    fillerfield_25: str | None = None
-    fillerfield_26: str | None = None
-    fillerfield_27: str | None = None
-    fillerfield_28: str | None = None
-    fillerfield_29: str | None = None
-    fillerfield_3: str | None = None
-    fillerfield_30: str | None = None
-    fillerfield_4: str | None = None
-    fillerfield_5: str | None = None
-    fillerfield_6: str | None = None
-    fillerfield_7: str | None = None
-    fillerfield_8: str | None = None
-    fillerfield_9: str | None = None
-    fillerfield: str | None = None
-    fillerfield1: str | None = None
-    fillerfield2: str | None = None
-    fillerfield4: str | None = None
-    fillerfield5: str | None = None
-    fillerfield7: str | None = None
+    federalraceethnicity: str | None = None
     firsthighschoolmathassessment: str | None = None
     firstname: str | None = None
     formeriep: str | None = None
     frequentbreaks: str | None = None
     gender: str | None = None
     giftedandtalented: str | None = None
-    gradelevelwhenassessed: int | None = None
+    gradelevelwhenassessed: str | None = None
     hispanicorlatinoethnicity: str | None = None
     home_language: str | None = None
     homeless: str | None = None
-    humanreaderorhumansigner: float | None = None
+    humanreaderorhumansigner: str | None = None
     humansignerfortestdirections: str | None = None
     iepexemptfrompassing: str | None = None
     languagecode: str | None = None
     largeprint: str | None = None
     lastorsurname: str | None = None
-    localstudentidentifier: float | None = None
-    mathematicsresponse: float | None = None
-    mathematicsresponseel: float | None = None
-    mathematicsscienceaccommodatedresponse: float | None = None
+    localstudentidentifier: str | None = None
+    mathematicsresponse: str | None = None
+    mathematicsresponseel: str | None = None
+    mathematicsscienceaccommodatedresponse: str | None = None
     middlename: str | None = None
     migrantstatus: str | None = None
     monitortestresponse: str | None = None
@@ -160,22 +248,22 @@ class PARCC(BaseModel):
     njelstatus: str | None = None
     njnotattemptflag: str | None = None
     nottestedcode: str | None = None
-    nottestedreason: float | None = None
+    nottestedreason: str | None = None
     onlineformid: str | None = None
     onlinepcr1: str | None = None
     onlinepcr2: str | None = None
     paperattemptcreatedate: str | None = None
     paperformid: str | None = None
-    paperpcr1: float | None = None
-    paperpcr2: float | None = None
-    papersection1numberofattempteditems: float | None = None
-    papersection1totaltestitems: float | None = None
-    papersection2numberofattempteditems: float | None = None
-    papersection2totaltestitems: float | None = None
-    papersection3numberofattempteditems: float | None = None
-    papersection3totaltestitems: float | None = None
-    papersection4numberofattempteditems: float | None = None
-    papersection4totaltestitems: float | None = None
+    paperpcr1: str | None = None
+    paperpcr2: str | None = None
+    papersection1numberofattempteditems: str | None = None
+    papersection1totaltestitems: str | None = None
+    papersection2numberofattempteditems: str | None = None
+    papersection2totaltestitems: str | None = None
+    papersection3numberofattempteditems: str | None = None
+    papersection3totaltestitems: str | None = None
+    papersection4numberofattempteditems: str | None = None
+    papersection4totaltestitems: str | None = None
     paperunit1totaltestitems: str | None = None
     parccstudentidentifier: str | None = None
     percentofitemsattempted: str | None = None
@@ -185,26 +273,29 @@ class PARCC(BaseModel):
     refreshablebrailledisplayforelal: str | None = None
     reportsuppressionaction: str | None = None
     reportsuppressioncode: str | None = None
-    responsibleaccountabledistrictcode: int | None = None
-    responsibleaccountableschoolcode: int | None = None
-    responsibledistrictcode: int | None = None
+    responsibleaccountabledistrictcode: str | None = None
+    responsibleaccountableschoolcode: str | None = None
+    responsibledistrictcode: str | None = None
     responsibledistrictname: str | None = None
-    responsibleorganizationaltype: int | None = None
-    responsibleorganizationcodetype: int | None = None
-    responsibleschoolcode: int | None = None
+    responsibleorganizationaltype: str | None = None
+    responsibleorganizationcodetype: str | None = None
+    responsibleschoolcode: str | None = None
     responsibleschoolname: str | None = None
     retest: str | None = None
     rosterflag: str | None = None
     separatealternatelocation: str | None = None
     sex: str | None = None
+    shipreportdistrictcode: str | None = None
+    shipreportschoolcode: str | None = None
     smallgrouptesting: str | None = None
     smalltestinggroup: str | None = None
     spanishtransadaptation: str | None = None
     spanishtransadaptationofthemathematicsassessment: str | None = None
-    specialeducationplacement: float | None = None
+    specialeducationplacement: str | None = None
     specializedequipmentorfurniture: str | None = None
     specifiedareaorsetting: str | None = None
     speechtotextandwordprediction: str | None = None
+    staffmemberidentifier: str | None = None
     stateabbreviation: str | None = None
     statefield1: str | None = None
     statefield10: str | None = None
@@ -217,9 +308,11 @@ class PARCC(BaseModel):
     statefield3: str | None = None
     statefield4: str | None = None
     statefield5: str | None = None
-    statefield7: float | None = None
-    statefield8: float | None = None
-    statestudentidentifier: int | None = None
+    statefield6: str | None = None
+    statefield7: str | None = None
+    statefield8: str | None = None
+    statefield9: str | None = None
+    statestudentidentifier: str | None = None
     studentassessmentidentifier: str | None = None
     studentreadsassessmentaloudtoself: str | None = None
     studentreadsassessmentaloudtothemselves: str | None = None
@@ -230,91 +323,87 @@ class PARCC(BaseModel):
     studentunit4testuuid: str | None = None
     studentuuid: str | None = None
     studentwithdisabilities: str | None = None
-    subclaim1category: float | None = None
+    subclaim1category: str | None = None
     subclaim1categoryifnotattempted: str | None = None
-    subclaim2category: float | None = None
+    subclaim2category: str | None = None
     subclaim2categoryifnotattempted: str | None = None
-    subclaim3category: float | None = None
+    subclaim3category: str | None = None
     subclaim3categoryifnotattempted: str | None = None
-    subclaim4category: float | None = None
+    subclaim4category: str | None = None
     subclaim4categoryifnotattempted: str | None = None
-    subclaim5category: float | None = None
+    subclaim5category: str | None = None
     subclaim5categoryifnotattempted: str | None = None
     subclaim6category: str | None = None
     subject: str | None = None
     summativeflag: str | None = None
     testadministration: str | None = None
+    testadministrator: str | None = None
     testattemptednessflag: str | None = None
     testcode: str | None = None
-    testcsemprobablerange: float | None = None
+    testcsemprobablerange: str | None = None
     testcsemprobablerangeifnotattempted: str | None = None
-    testingdistrictcode: int | None = None
+    testingdistrictcode: str | None = None
     testingdistrictname: str | None = None
-    testingorganizationaltype: int | None = None
-    testingschoolcode: int | None = None
+    testingorganizationaltype: str | None = None
+    testingschoolcode: str | None = None
     testingschoolname: str | None = None
-    testperformancelevel: float | None = None
+    testperformancelevel: str | None = None
     testperformancelevelifnotattempted: str | None = None
-    testreadingcsem: float | None = None
+    testreadingcsem: str | None = None
     testreadingcsemifnotattempted: str | None = None
-    testreadingscalescore: float | None = None
+    testreadingscalescore: str | None = None
     testreadingscalescoreifnotattempted: str | None = None
-    testscalescore: float | None = None
+    testscalescore: str | None = None
     testscalescoreifnotattempted: str | None = None
-    testscorecomplete: float | None = None
+    testscorecomplete: str | None = None
     teststatus: str | None = None
-    testwritingcsem: float | None = None
+    testwritingcsem: str | None = None
     testwritingcsemifnotattempted: str | None = None
-    testwritingscalescore: float | None = None
+    testwritingscalescore: str | None = None
     testwritingscalescoreifnotattempted: str | None = None
-    texttospeech: float | None = None
+    texttospeech: str | None = None
     timeofday: str | None = None
     titleiiilimitedenglishproficientparticipationstatus: str | None = None
-    totaltestitems: float | None = None
-    totaltestitemsattempted: float | None = None
+    totaltestitems: str | None = None
+    totaltestitemsattempted: str | None = None
     translationofthemathematicsassessment: str | None = None
     twoormoreraces: str | None = None
     uniqueaccommodation: str | None = None
     unit1formid: str | None = None
-    unit1numberofattempteditems: float | None = None
+    unit1numberofattempteditems: str | None = None
     unit1onlinetestenddatetime: str | None = None
     unit1onlineteststartdatetime: str | None = None
-    unit1totaltestitems: float | None = None
+    unit1totaltestitems: str | None = None
     unit2formid: str | None = None
-    unit2numberofattempteditems: float | None = None
+    unit2numberofattempteditems: str | None = None
     unit2onlinetestenddatetime: str | None = None
     unit2onlineteststartdatetime: str | None = None
-    unit2totaltestitems: float | None = None
+    unit2totaltestitems: str | None = None
     unit3formid: str | None = None
-    unit3numberofattempteditems: float | None = None
+    unit3numberofattempteditems: str | None = None
     unit3onlinetestenddatetime: str | None = None
     unit3onlineteststartdatetime: str | None = None
-    unit3totaltestitems: float | None = None
+    unit3totaltestitems: str | None = None
     unit4formid: str | None = None
-    unit4numberofattempteditems: float | None = None
+    unit4numberofattempteditems: str | None = None
     unit4onlinetestenddatetime: str | None = None
     unit4onlineteststartdatetime: str | None = None
-    unit4totaltestitems: float | None = None
+    unit4totaltestitems: str | None = None
     voidscorecode: str | None = None
-    voidscorereason: float | None = None
+    voidscorereason: str | None = None
     white: str | None = None
     wordprediction: str | None = None
     wordpredictionforelal: str | None = None
     wordtoworddictionaryenglishnativelanguage: str | None = None
 
-    shipreportdistrictcode: int | float | None = None
-    shipreportschoolcode: int | float | None = None
-    staffmemberidentifier: float | str | None = None
-    testadministrator: float | str | None = None
-    statefield6: float | str | None = None
-    statefield9: float | str | None = None
+    filler: str | None = FILLER_FIELD
 
 
 class NJSLA(BaseModel):
-    accountabledistrictcode: int | None = None
+    accountabledistrictcode: str | None = None
     accountabledistrictname: str | None = None
-    accountableorganizationaltype: int | None = None
-    accountableschoolcode: int | None = None
+    accountableorganizationaltype: str | None = None
+    accountableschoolcode: str | None = None
     accountableschoolname: str | None = None
     administrationdirectionsclarifiedinstudentsnativelanguage: str | None = None
     administrationdirectionsreadaloudinstudentsnativelanguage: str | None = None
@@ -338,24 +427,24 @@ class NJSLA(BaseModel):
     classname: str | None = None
     closedcaptioningforela: str | None = None
     closedcaptioningforelal: str | None = None
-    colorcontrast: float | None = None
+    colorcontrast: str | None = None
     critiquingpracticesperformancelevel: str | None = None
     datefirstenrolledinusschool: str | None = None
     earthandspacescienceperformancelevel: str | None = None
     economicdisadvantagestatus: str | None = None
     elaccommodation: str | None = None
-    elaconstructedresponse: float | None = None
-    elalconstructedresponse: float | None = None
-    elalselectedresponseortechnologyenhanceditems: float | None = None
-    elaselectedresponseortechnologyenhanceditems: float | None = None
+    elaconstructedresponse: str | None = None
+    elalconstructedresponse: str | None = None
+    elalselectedresponseortechnologyenhanceditems: str | None = None
+    elaselectedresponseortechnologyenhanceditems: str | None = None
     electronicbrailleresponse: str | None = None
     elexemptfromtakingela: str | None = None
     elexemptfromtakingelal: str | None = None
-    emergencyaccommodation: float | None = None
-    englishlearneraccommodatedresponses: float | None = None
+    emergencyaccommodation: str | None = None
+    englishlearneraccommodatedresponses: str | None = None
     englishlearnerel: str | None = None
     extendedtime: str | None = None
-    federalraceethnicity: int | None = None
+    federalraceethnicity: str | None = None
     first_high_school_math_assessment: str | None = None
     firsthighschoolmathassessment: str | None = None
     firstname: str | None = None
@@ -363,13 +452,13 @@ class NJSLA(BaseModel):
     formid: str | None = None
     frequentbreaks: str | None = None
     gender: str | None = None
-    gradelevelwhenassessed: int | None = None
+    gradelevelwhenassessed: str | None = None
     hispanicorlatinoethnicity: str | None = None
     home_language: str | None = None
     homelanguage: str | None = None
     homeless: str | None = None
-    homelessprimarynighttimeresidence: float | None = None
-    humanreaderorhumansigner: float | None = None
+    homelessprimarynighttimeresidence: str | None = None
+    humanreaderorhumansigner: str | None = None
     humansignerfortestdirections: str | None = None
     iepexemptfrompassing: str | None = None
     investigatingpracticesperformancelevel: str | None = None
@@ -377,15 +466,15 @@ class NJSLA(BaseModel):
     largeprint: str | None = None
     lastorsurname: str | None = None
     lifescienceperformancelevel: str | None = None
-    localstudentidentifier: float | None = None
-    mathematics_scienceaccommodatedresponse: float | None = None
-    mathematicsscienceaccommodatedresponse: float | None = None
+    localstudentidentifier: str | None = None
+    mathematics_scienceaccommodatedresponse: str | None = None
+    mathematicsscienceaccommodatedresponse: str | None = None
     middlename: str | None = None
     migrantstatus: str | None = None
     mlaccommodation: str | None = None
     mlexemptfromtakingela: str | None = None
     monitortestresponse: str | None = None
-    multilinguallearneraccommodatedresponses: float | None = None
+    multilinguallearneraccommodatedresponses: str | None = None
     multilinguallearnerml: str | None = None
     multipletestregistration: str | None = None
     nativehawaiianorotherpacificislander: str | None = None
@@ -393,21 +482,22 @@ class NJSLA(BaseModel):
     njmlstatus: str | None = None
     njnotattemptflag: str | None = None
     nottestedcode: str | None = None
-    nottestedreason: float | None = None
+    nottestedreason: str | None = None
     onlinepcr1: str | None = None
     onlinepcr2: str | None = None
     paperattemptcreatedate: str | None = None
     paperformid: str | None = None
-    paperpcr1: float | None = None
-    paperpcr2: float | None = None
-    papersection1numberofattempteditems: float | None = None
-    papersection1totaltestitems: float | None = None
-    papersection2numberofattempteditems: float | None = None
-    papersection2totaltestitems: float | None = None
-    papersection3numberofattempteditems: float | None = None
-    papersection3totaltestitems: float | None = None
-    papersection4numberofattempteditems: float | None = None
-    papersection4totaltestitems: float | None = None
+    paperpcr1: str | None = None
+    paperpcr2: str | None = None
+    papersection1numberofattempteditems: str | None = None
+    papersection1totaltestitems: str | None = None
+    papersection2numberofattempteditems: str | None = None
+    papersection2totaltestitems: str | None = None
+    papersection3numberofattempteditems: str | None = None
+    papersection3totaltestitems: str | None = None
+    papersection4numberofattempteditems: str | None = None
+    papersection4totaltestitems: str | None = None
+    percentofitemsattempted: str | None = None
     period: str | None = None
     physicalscienceperformancelevel: str | None = None
     primarydisabilitytype: str | None = None
@@ -419,16 +509,16 @@ class NJSLA(BaseModel):
     sensemakingpracticesperformancelevel: str | None = None
     separatealternatelocation: str | None = None
     sex: str | None = None
-    shipreportdistrictcode: int | None = None
-    shipreportschoolcode: int | None = None
+    shipreportdistrictcode: str | None = None
+    shipreportschoolcode: str | None = None
     smallgrouptesting: str | None = None
     spanishtransadaptation: str | None = None
-    specialeducationplacement: float | None = None
+    specialeducationplacement: str | None = None
     specializedequipmentorfurniture: str | None = None
     specifiedareaorsetting: str | None = None
     speechtotextandwordprediction: str | None = None
-    staffmemberidentifier: float | None = None
-    statestudentidentifier: int | None = None
+    staffmemberidentifier: str | None = None
+    statestudentidentifier: str | None = None
     studentassessmentidentifier: str | None = None
     studentreadsassessmentaloudtoself: str | None = None
     studenttestuuid: str | None = None
@@ -437,223 +527,81 @@ class NJSLA(BaseModel):
     studentunit3testuuid: str | None = None
     studentuuid: str | None = None
     studentwithdisabilities: str | None = None
-    subclaim1category: float | None = None
+    subclaim1category: str | None = None
     subclaim1categoryifnotattempted: str | None = None
-    subclaim2category: float | None = None
+    subclaim2category: str | None = None
     subclaim2categoryifnotattempted: str | None = None
-    subclaim3category: float | None = None
+    subclaim3category: str | None = None
     subclaim3categoryifnotattempted: str | None = None
-    subclaim4category: float | None = None
+    subclaim4category: str | None = None
     subclaim4categoryifnotattempted: str | None = None
-    subclaim5category: float | None = None
+    subclaim5category: str | None = None
     subclaim5categoryifnotattempted: str | None = None
     subject: str | None = None
     summativeflag: str | None = None
     testadministration: str | None = None
-    testadministrator: float | None = None
+    testadministrator: str | None = None
     testattemptednessflag: str | None = None
     testcode: str | None = None
-    testcsemprobablerange: float | None = None
+    testcsemprobablerange: str | None = None
     testcsemprobablerangeifnotattempted: str | None = None
     testformat: str | None = None
-    testingdistrictcode: int | None = None
+    testingdistrictcode: str | None = None
     testingdistrictname: str | None = None
-    testingorganizationaltype: int | None = None
-    testingschoolcode: int | None = None
+    testingorganizationaltype: str | None = None
+    testingschoolcode: str | None = None
     testingschoolname: str | None = None
-    testperformancelevel: float | None = None
+    testperformancelevel: str | None = None
     testperformancelevelifnotattempted: str | None = None
-    testreadingcsem: float | None = None
+    testreadingcsem: str | None = None
     testreadingcsemifnotattempted: str | None = None
-    testreadingscalescore: float | None = None
+    testreadingscalescore: str | None = None
     testreadingscalescoreifnotattempted: str | None = None
-    testscalescore: float | None = None
+    testscalescore: str | None = None
     testscalescoreifnotattempted: str | None = None
-    testscorecomplete: float | None = None
+    testscorecomplete: str | None = None
     teststatus: str | None = None
-    testwritingcsem: float | None = None
+    testwritingcsem: str | None = None
     testwritingcsemifnotattempted: str | None = None
-    testwritingscalescore: float | None = None
+    testwritingscalescore: str | None = None
     testwritingscalescoreifnotattempted: str | None = None
-    texttospeech: float | None = None
+    texttospeech: str | None = None
     timeofday: str | None = None
-    totaltestitems: float | None = None
-    totaltestitemsattempted: float | None = None
+    totaltestitems: str | None = None
+    totaltestitemsattempted: str | None = None
     twoormoreraces: str | None = None
     uniqueaccommodation: str | None = None
     unit1formid: str | None = None
-    unit1numberofattempteditems: float | None = None
+    unit1numberofattempteditems: str | None = None
     unit1onlinetestenddatetime: str | None = None
     unit1onlineteststartdatetime: str | None = None
-    unit1totaltestitems: float | None = None
+    unit1totaltestitems: str | None = None
     unit2formid: str | None = None
-    unit2numberofattempteditems: float | None = None
+    unit2numberofattempteditems: str | None = None
     unit2onlinetestenddatetime: str | None = None
     unit2onlineteststartdatetime: str | None = None
-    unit2totaltestitems: float | None = None
+    unit2totaltestitems: str | None = None
     unit3formid: str | None = None
-    unit3numberofattempteditems: float | None = None
+    unit3numberofattempteditems: str | None = None
     unit3onlinetestenddatetime: str | None = None
     unit3onlineteststartdatetime: str | None = None
-    unit3totaltestitems: float | None = None
+    unit3totaltestitems: str | None = None
     unit4onlinetestenddatetime: str | None = None
     unit4onlineteststartdatetime: str | None = None
     voidscorecode: str | None = None
-    voidscorereason: float | None = None
+    voidscorereason: str | None = None
     white: str | None = None
     wordprediction: str | None = None
     wordtoworddictionaryenglishnativelanguage: str | None = None
 
-    percentofitemsattempted: int | float | None = None
-
-    filler_1: str | None = None
-    filler_10: str | None = None
-    filler_11: str | None = None
-    filler_12: str | None = None
-    filler_13: str | None = None
-    filler_14: str | None = None
-    filler_15: str | None = None
-    filler_16: str | None = None
-    filler_17: str | None = None
-    filler_18: str | None = None
-    filler_19: str | None = None
-    filler_2: str | None = None
-    filler_20: str | None = None
-    filler_21: str | None = None
-    filler_22: str | None = None
-    filler_23: str | None = None
-    filler_24: str | None = None
-    filler_25: str | None = None
-    filler_26: str | None = None
-    filler_27: str | None = None
-    filler_28: str | None = None
-    filler_29: str | None = None
-    filler_3: str | None = None
-    filler_30: str | None = None
-    filler_31: str | None = None
-    filler_32: str | None = None
-    filler_33: str | None = None
-    filler_34: str | None = None
-    filler_35: str | None = None
-    filler_36: str | None = None
-    filler_37: str | None = None
-    filler_38: str | None = None
-    filler_39: str | None = None
-    filler_4: str | None = None
-    filler_40: str | None = None
-    filler_41: str | None = None
-    filler_42: str | None = None
-    filler_43: str | None = None
-    filler_44: str | None = None
-    filler_45: str | None = None
-    filler_46: str | None = None
-    filler_47: str | None = None
-    filler_48: str | None = None
-    filler_49: str | None = None
-    filler_5: str | None = None
-    filler_50: str | None = None
-    filler_51: str | None = None
-    filler_52: str | None = None
-    filler_53: str | None = None
-    filler_54: str | None = None
-    filler_55: str | None = None
-    filler_56: str | None = None
-    filler_57: str | None = None
-    filler_58: str | None = None
-    filler_59: str | None = None
-    filler_6: str | None = None
-    filler_60: str | None = None
-    filler_61: str | None = None
-    filler_62: str | None = None
-    filler_63: str | None = None
-    filler_64: str | None = None
-    filler_65: str | None = None
-    filler_66: str | None = None
-    filler_67: str | None = None
-    filler_68: str | None = None
-    filler_69: str | None = None
-    filler_7: str | None = None
-    filler_70: str | None = None
-    filler_71: str | None = None
-    filler_72: str | None = None
-    filler_73: str | None = None
-    filler_74: str | None = None
-    filler_75: str | None = None
-    filler_76: str | None = None
-    filler_77: str | None = None
-    filler_78: str | None = None
-    filler_79: str | None = None
-    filler_8: str | None = None
-    filler_80: str | None = None
-    filler_81: str | None = None
-    filler_82: str | None = None
-    filler_83: str | None = None
-    filler_84: str | None = None
-    filler_85: str | None = None
-    filler_86: str | None = None
-    filler_9: str | None = None
-    filler: str | None = None
-    filler1: str | None = None
-    filler10: str | None = None
-    filler11: str | None = None
-    filler12: str | None = None
-    filler13: str | None = None
-    filler14: str | None = None
-    filler15: str | None = None
-    filler16: str | None = None
-    filler17: str | None = None
-    filler18: str | None = None
-    filler19: str | None = None
-    filler2: str | None = None
-    filler20: str | None = None
-    filler21: str | None = None
-    filler22: str | None = None
-    filler23: str | None = None
-    filler24: str | None = None
-    filler25: str | None = None
-    filler26: str | None = None
-    filler27: str | None = None
-    filler28: str | None = None
-    filler29: str | None = None
-    filler3: str | None = None
-    filler30: str | None = None
-    filler31: str | None = None
-    filler32: str | None = None
-    filler33: str | None = None
-    filler34: str | None = None
-    filler35: str | None = None
-    filler36: str | None = None
-    filler37: str | None = None
-    filler38: str | None = None
-    filler39: str | None = None
-    filler4: str | None = None
-    filler5: str | None = None
-    filler6: str | None = None
-    filler7: str | None = None
-    filler8: str | None = None
-    fillerfield_1: str | None = None
-    fillerfield_10: str | None = None
-    fillerfield_11: str | None = None
-    fillerfield_12: str | None = None
-    fillerfield_13: str | None = None
-    fillerfield_14: str | None = None
-    fillerfield_15: str | None = None
-    fillerfield_2: str | None = None
-    fillerfield_3: str | None = None
-    fillerfield_4: str | None = None
-    fillerfield_5: str | None = None
-    fillerfield_6: str | None = None
-    fillerfield_7: str | None = None
-    fillerfield_8: str | None = None
-    fillerfield_9: str | None = None
-    fillerfield: str | None = None
+    filler: str | None = FILLER_FIELD
 
 
 class NJGPA(BaseModel):
-    accountabledistrictcode: int | None = None
+    accountabledistrictcode: str | None = None
     accountabledistrictname: str | None = None
-    accountableorganizationaltype: int | None = None
-    accountableschoolcode: int | None = None
+    accountableorganizationaltype: str | None = None
+    accountableschoolcode: str | None = None
     accountableschoolname: str | None = None
     administrationdirectionsclarifiedinstudentsnativelanguage: str | None = None
     administrationdirectionsreadaloudinstudentsnativelanguage: str | None = None
@@ -678,138 +626,33 @@ class NJGPA(BaseModel):
     datefirstenrolledinusschool: str | None = None
     economicdisadvantagestatus: str | None = None
     elaccommodation: str | None = None
-    elaconstructedresponse: float | None = None
-    elaselectedresponseortechnologyenhanceditems: float | None = None
+    elaconstructedresponse: str | None = None
+    elaselectedresponseortechnologyenhanceditems: str | None = None
     electronicbrailleresponse: str | None = None
     elexemptfromtakingela: str | None = None
     emergencyaccommodation: str | None = None
     englishlearneraccommodatedresponses: str | None = None
     englishlearnerel: str | None = None
     extendedtime: str | None = None
-    federalraceethnicity: int | None = None
-    filler_1: str | None = None
-    filler_10: str | None = None
-    filler_11: str | None = None
-    filler_12: str | None = None
-    filler_13: str | None = None
-    filler_14: str | None = None
-    filler_15: str | None = None
-    filler_16: str | None = None
-    filler_17: str | None = None
-    filler_18: str | None = None
-    filler_19: str | None = None
-    filler_2: str | None = None
-    filler_20: str | None = None
-    filler_21: str | None = None
-    filler_22: str | None = None
-    filler_23: str | None = None
-    filler_24: str | None = None
-    filler_25: str | None = None
-    filler_26: str | None = None
-    filler_27: str | None = None
-    filler_28: str | None = None
-    filler_29: str | None = None
-    filler_3: str | None = None
-    filler_30: str | None = None
-    filler_31: str | None = None
-    filler_32: str | None = None
-    filler_33: str | None = None
-    filler_34: str | None = None
-    filler_35: str | None = None
-    filler_36: str | None = None
-    filler_37: str | None = None
-    filler_38: str | None = None
-    filler_39: str | None = None
-    filler_4: str | None = None
-    filler_40: str | None = None
-    filler_41: str | None = None
-    filler_42: str | None = None
-    filler_43: str | None = None
-    filler_44: str | None = None
-    filler_45: str | None = None
-    filler_46: str | None = None
-    filler_47: str | None = None
-    filler_48: str | None = None
-    filler_49: str | None = None
-    filler_5: str | None = None
-    filler_50: str | None = None
-    filler_51: str | None = None
-    filler_6: str | None = None
-    filler_7: str | None = None
-    filler_8: str | None = None
-    filler_9: str | None = None
-    filler: str | None = None
-    filler10: str | None = None
-    filler11: str | None = None
-    filler12: str | None = None
-    filler13: str | None = None
-    filler14: str | None = None
-    filler15: str | None = None
-    filler16: str | None = None
-    filler17: str | None = None
-    filler18: str | None = None
-    filler19: str | None = None
-    filler2: str | None = None
-    filler20: str | None = None
-    filler21: str | None = None
-    filler22: str | None = None
-    filler23: str | None = None
-    filler24: str | None = None
-    filler25: str | None = None
-    filler26: str | None = None
-    filler27: str | None = None
-    filler28: str | None = None
-    filler29: str | None = None
-    filler3: str | None = None
-    filler30: str | None = None
-    filler31: str | None = None
-    filler32: str | None = None
-    filler33: str | None = None
-    filler34: str | None = None
-    filler35: str | None = None
-    filler36: str | None = None
-    filler37: str | None = None
-    filler38: str | None = None
-    filler39: str | None = None
-    filler4: str | None = None
-    filler5: str | None = None
-    filler6: str | None = None
-    filler7: str | None = None
-    filler8: str | None = None
-    fillerfield_1: str | None = None
-    fillerfield_10: str | None = None
-    fillerfield_11: str | None = None
-    fillerfield_12: str | None = None
-    fillerfield_13: str | None = None
-    fillerfield_14: str | None = None
-    fillerfield_15: str | None = None
-    fillerfield_2: str | None = None
-    fillerfield_3: str | None = None
-    fillerfield_4: str | None = None
-    fillerfield_5: str | None = None
-    fillerfield_6: str | None = None
-    fillerfield_7: str | None = None
-    fillerfield_8: str | None = None
-    fillerfield_9: str | None = None
-    fillerfield: str | None = None
+    federalraceethnicity: str | None = None
     firsthighschoolmathassessment: str | None = None
     firstname: str | None = None
     formeriep: str | None = None
     frequentbreaks: str | None = None
     gender: str | None = None
-    gradelevelwhenassessed: int | None = None
+    gradelevelwhenassessed: str | None = None
     hispanicorlatinoethnicity: str | None = None
     home_language: str | None = None
-    homeless_primary_nighttime_residence: float | None = None
+    homeless_primary_nighttime_residence: str | None = None
     homeless: str | None = None
-    homelessprimarynighttimeresidence: float | None = None
-    humanreaderorhumansigner: float | None = None
+    homelessprimarynighttimeresidence: str | None = None
+    humanreaderorhumansigner: str | None = None
     humansignerfortestdirections: str | None = None
     iepexemptfrompassing: str | None = None
     largeprint: str | None = None
     lastorsurname: str | None = None
-    localstudentidentifier: int | None = None
-    mathematicsscienceaccommodatedresponse: float | None = None
+    localstudentidentifier: str | None = None
+    mathematicsscienceaccommodatedresponse: str | None = None
     middlename: str | None = None
     migrantstatus: str | None = None
     mlaccommodation: str | None = None
@@ -823,7 +666,7 @@ class NJGPA(BaseModel):
     njmlstatus: str | None = None
     njnotattemptflag: str | None = None
     nottestedcode: str | None = None
-    nottestedreason: float | None = None
+    nottestedreason: str | None = None
     onlinepcr1: str | None = None
     onlinepcr2: str | None = None
     paperattemptcreatedate: str | None = None
@@ -846,15 +689,16 @@ class NJGPA(BaseModel):
     retest: str | None = None
     rosterflag: str | None = None
     separatealternatelocation: str | None = None
-    shipreportdistrictcode: int | None = None
-    shipreportschoolcode: int | None = None
+    shipreportdistrictcode: str | None = None
+    shipreportschoolcode: str | None = None
     smallgrouptesting: str | None = None
     spanishtransadaptation: str | None = None
-    specialeducationplacement: float | None = None
+    specialeducationplacement: str | None = None
     specializedequipmentorfurniture: str | None = None
     specifiedareaorsetting: str | None = None
     speechtotextandwordprediction: str | None = None
-    statestudentidentifier: int | None = None
+    staffmemberidentifier: str | None = None
+    statestudentidentifier: str | None = None
     studentassessmentidentifier: str | None = None
     studentreadsassessmentaloudtoself: str | None = None
     studenttestuuid: str | None = None
@@ -863,84 +707,84 @@ class NJGPA(BaseModel):
     studentunit3testuuid: str | None = None
     studentuuid: str | None = None
     studentwithdisabilities: str | None = None
-    subclaim1category: float | None = None
+    subclaim1category: str | None = None
     subclaim1categoryifnotattempted: str | None = None
-    subclaim2category: float | None = None
+    subclaim2category: str | None = None
     subclaim2categoryifnotattempted: str | None = None
-    subclaim3category: float | None = None
+    subclaim3category: str | None = None
     subclaim3categoryifnotattempted: str | None = None
-    subclaim4category: float | None = None
+    subclaim4category: str | None = None
     subclaim4categoryifnotattempted: str | None = None
-    subclaim5category: float | None = None
+    subclaim5category: str | None = None
     subclaim5categoryifnotattempted: str | None = None
     subject: str | None = None
     summativeflag: str | None = None
     testadministration: str | None = None
+    testadministrator: str | None = None
     testattemptednessflag: str | None = None
     testcode: str | None = None
+    testcsemprobablerange: str | None = None
     testcsemprobablerangeifnotattempted: str | None = None
-    testingdistrictcode: int | None = None
+    testingdistrictcode: str | None = None
     testingdistrictname: str | None = None
-    testingorganizationaltype: int | None = None
-    testingschoolcode: int | None = None
+    testingorganizationaltype: str | None = None
+    testingschoolcode: str | None = None
     testingschoolname: str | None = None
-    testperformancelevel: float | None = None
+    testperformancelevel: str | None = None
     testperformancelevelifnotattempted: str | None = None
+    testreadingcsem: str | None = None
     testreadingcsemifnotattempted: str | None = None
+    testreadingscalescore: str | None = None
     testreadingscalescoreifnotattempted: str | None = None
-    testscalescore: float | None = None
+    testscalescore: str | None = None
     testscalescoreifnotattempted: str | None = None
-    testscorecomplete: float | None = None
+    testscorecomplete: str | None = None
     teststatus: str | None = None
+    testwritingcsem: str | None = None
     testwritingcsemifnotattempted: str | None = None
+    testwritingscalescore: str | None = None
     testwritingscalescoreifnotattempted: str | None = None
-    texttospeech: float | None = None
+    texttospeech: str | None = None
     timeofday: str | None = None
-    totaltestitems: float | None = None
-    totaltestitemsattempted: float | None = None
+    totaltestitems: str | None = None
+    totaltestitemsattempted: str | None = None
     twoormoreraces: str | None = None
     uniqueaccommodation: str | None = None
     unit1formid: str | None = None
-    unit1numberofattempteditems: float | None = None
+    unit1numberofattempteditems: str | None = None
     unit1onlinetestenddatetime: str | None = None
     unit1onlineteststartdatetime: str | None = None
-    unit1totaltestitems: float | None = None
+    unit1totaltestitems: str | None = None
     unit2formid: str | None = None
-    unit2numberofattempteditems: float | None = None
+    unit2numberofattempteditems: str | None = None
     unit2onlinetestenddatetime: str | None = None
     unit2onlineteststartdatetime: str | None = None
-    unit2totaltestitems: float | None = None
+    unit2totaltestitems: str | None = None
     unit3formid: str | None = None
-    unit3numberofattempteditems: float | None = None
+    unit3numberofattempteditems: str | None = None
     unit3onlinetestenddatetime: str | None = None
     unit3onlineteststartdatetime: str | None = None
-    unit3totaltestitems: float | None = None
+    unit3totaltestitems: str | None = None
     voidscorecode: str | None = None
-    voidscorereason: float | None = None
+    voidscorereason: str | None = None
     white: str | None = None
     wordprediction: str | None = None
     wordtoworddictionaryenglishnativelanguage: str | None = None
 
-    staffmemberidentifier: int | float | None = None
-    testadministrator: int | float | None = None
-    testcsemprobablerange: float | str | None = None
-    testreadingcsem: float | str | None = None
-    testreadingscalescore: float | str | None = None
-    testwritingcsem: float | str | None = None
-    testwritingscalescore: float | str | None = None
+    filler: str | None = FILLER_FIELD
 
 
 class StudentListReport(BaseModel):
-    state_student_identifier: int | None = None
-    last_or_surname: str | None = None
-    first_name: str | None = None
+    accountable_school: str | None = None
     date_of_birth: str | None = None
-    scale_score: int | None = None
+    first_name: str | None = None
+    last_or_surname: str | None = None
+    local_student_identifier: str | None = None
     performance_level: str | None = None
+    scale_score: str | None = None
+    state_student_identifier: str | None = None
     test_name: str | None = None
     testing_school: str | None = None
-    accountable_school: str | None = None
-    local_student_identifier: int | None = None
 
 
 class StudentTestUpdate(BaseModel):
@@ -971,100 +815,6 @@ class StudentTestUpdate(BaseModel):
     emergency_accommodation: str | None = None
     extended_time: str | None = None
     federal_race_ethnicity: str | None = None
-    filler_1: str | None = None
-    filler_10: str | None = None
-    filler_11: str | None = None
-    filler_12: str | None = None
-    filler_13: str | None = None
-    filler_14: str | None = None
-    filler_15: str | None = None
-    filler_16: str | None = None
-    filler_17: str | None = None
-    filler_18: str | None = None
-    filler_19: str | None = None
-    filler_2: str | None = None
-    filler_20: str | None = None
-    filler_21: str | None = None
-    filler_22: str | None = None
-    filler_23: str | None = None
-    filler_24: str | None = None
-    filler_25: str | None = None
-    filler_26: str | None = None
-    filler_27: str | None = None
-    filler_28: str | None = None
-    filler_29: str | None = None
-    filler_3: str | None = None
-    filler_30: str | None = None
-    filler_31: str | None = None
-    filler_32: str | None = None
-    filler_33: str | None = None
-    filler_34: str | None = None
-    filler_35: str | None = None
-    filler_36: str | None = None
-    filler_37: str | None = None
-    filler_38: str | None = None
-    filler_39: str | None = None
-    filler_4: str | None = None
-    filler_40: str | None = None
-    filler_41: str | None = None
-    filler_42: str | None = None
-    filler_43: str | None = None
-    filler_44: str | None = None
-    filler_45: str | None = None
-    filler_46: str | None = None
-    filler_47: str | None = None
-    filler_48: str | None = None
-    filler_49: str | None = None
-    filler_5: str | None = None
-    filler_50: str | None = None
-    filler_51: str | None = None
-    filler_52: str | None = None
-    filler_53: str | None = None
-    filler_54: str | None = None
-    filler_55: str | None = None
-    filler_56: str | None = None
-    filler_57: str | None = None
-    filler_58: str | None = None
-    filler_59: str | None = None
-    filler_6: str | None = None
-    filler_60: str | None = None
-    filler_61: str | None = None
-    filler_62: str | None = None
-    filler_63: str | None = None
-    filler_64: str | None = None
-    filler_65: str | None = None
-    filler_66: str | None = None
-    filler_67: str | None = None
-    filler_68: str | None = None
-    filler_69: str | None = None
-    filler_7: str | None = None
-    filler_70: str | None = None
-    filler_71: str | None = None
-    filler_72: str | None = None
-    filler_73: str | None = None
-    filler_74: str | None = None
-    filler_75: str | None = None
-    filler_76: str | None = None
-    filler_77: str | None = None
-    filler_78: str | None = None
-    filler_79: str | None = None
-    filler_8: str | None = None
-    filler_80: str | None = None
-    filler_81: str | None = None
-    filler_82: str | None = None
-    filler_83: str | None = None
-    filler_84: str | None = None
-    filler_85: str | None = None
-    filler_86: str | None = None
-    filler_87: str | None = None
-    filler_88: str | None = None
-    filler_89: str | None = None
-    filler_9: str | None = None
-    filler_90: str | None = None
-    filler_91: str | None = None
-    filler_92: str | None = None
-    filler_93: str | None = None
-    filler: str | None = None
     first_high_school_math_assessment: str | None = None
     first_name: str | None = None
     former_iep: str | None = None
@@ -1135,3 +885,5 @@ class StudentTestUpdate(BaseModel):
     white: str | None = None
     word_prediction: str | None = None
     word_to_word_dictionary_english_native_language: str | None = None
+
+    filler: str | None = FILLER_FIELD

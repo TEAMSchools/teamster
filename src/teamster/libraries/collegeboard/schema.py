@@ -1,16 +1,92 @@
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, Field
+
+FILLER_FIELD = Field(
+    default=None,
+    validation_alias=AliasChoices(
+        "filler_1",
+        "filler_10",
+        "filler_11",
+        "filler_12",
+        "filler_13",
+        "filler_14",
+        "filler_15",
+        "filler_16",
+        "filler_17",
+        "filler_18",
+        "filler_19",
+        "filler_2",
+        "filler_20",
+        "filler_21",
+        "filler_22",
+        "filler_23",
+        "filler_24",
+        "filler_25",
+        "filler_26",
+        "filler_27",
+        "filler_28",
+        "filler_29",
+        "filler_3",
+        "filler_30",
+        "filler_31",
+        "filler_32",
+        "filler_33",
+        "filler_34",
+        "filler_35",
+        "filler_36",
+        "filler_37",
+        "filler_38",
+        "filler_39",
+        "filler_4",
+        "filler_40",
+        "filler_41",
+        "filler_42",
+        "filler_43",
+        "filler_44",
+        "filler_45",
+        "filler_46",
+        "filler_47",
+        "filler_48",
+        "filler_49",
+        "filler_5",
+        "filler_50",
+        "filler_51",
+        "filler_52",
+        "filler_53",
+        "filler_54",
+        "filler_55",
+        "filler_56",
+        "filler_57",
+        "filler_58",
+        "filler_59",
+        "filler_6",
+        "filler_60",
+        "filler_61",
+        "filler_62",
+        "filler_63",
+        "filler_64",
+        "filler_65",
+        "filler_66",
+        "filler_67",
+        "filler_68",
+        "filler_69",
+        "filler_7",
+        "filler_8",
+        "filler_9",
+        "filler",
+    ),
+)
 
 
 class PSAT(BaseModel):
     address_city: str | None = None
     address_country: str | None = None
-    address_county: float | None = None
+    address_county: str | None = None
     address_line1: str | None = None
     address_line2: str | None = None
     address_province: str | None = None
     address_state: str | None = None
-    address_zip: float | None = None
-    ai_code: int | None = None
+    address_zip: str | None = None
+    ai_code: str | None = None
     ai_name: str | None = None
     ap_arthis: str | None = None
     ap_bio: str | None = None
@@ -37,26 +113,30 @@ class PSAT(BaseModel):
     ap_ushist: str | None = None
     ap_wrldhist: str | None = None
     birth_date: str | None = None
-    cb_id: int | None = None
-    cohort_year: int | None = None
-    derived_aggregate_race_eth: int | None = None
+    cb_id: str | None = None
+    cohort_year: str | None = None
+    derived_aggregate_race_eth: str | None = None
     district_name: str | None = None
+    district_student_id: str | None = None
     ebrw_ccr_benchmark: str | None = None
     email: str | None = None
+    foreign_address: str | None = None
     form_code: str | None = None
     gender: str | None = None
     gpo: str | None = None
     grad_date: str | None = None
+    homeschool: str | None = None
     hs_student: str | None = None
     latest_access_cd: str | None = None
-    latest_psat_adv_math: int | None = None
-    latest_psat_comm_evidence: int | None = None
+    latest_psat_adv_math: str | None = None
+    latest_psat_comm_evidence: str | None = None
     latest_psat_date: str | None = None
-    latest_psat_ebrw: int | None = None
-    latest_psat_eng_convent: int | None = None
-    latest_psat_expr_ideas: int | None = None
-    latest_psat_heart_algebra: int | None = None
-    latest_psat_hist_socst_cross: int | None = None
+    latest_psat_ebrw: str | None = None
+    latest_psat_eng_convent: str | None = None
+    latest_psat_expr_ideas: str | None = None
+    latest_psat_grade: str | None = None
+    latest_psat_heart_algebra: str | None = None
+    latest_psat_hist_socst_cross: str | None = None
     latest_psat_ks_math_advanced: str | None = None
     latest_psat_ks_math_algebra: str | None = None
     latest_psat_ks_math_geometry: str | None = None
@@ -67,87 +147,70 @@ class PSAT(BaseModel):
     latest_psat_ks_reading_information: str | None = None
     latest_psat_ks_reading_section: str | None = None
     latest_psat_ks_reading_standard: str | None = None
-    latest_psat_math_section: int | None = None
-    latest_psat_math_test: float | None = None
-    latest_psat_probslv_data: int | None = None
-    latest_psat_reading: int | None = None
-    latest_psat_sci_cross: int | None = None
-    latest_psat_total: int | None = None
-    latest_psat_words_context: int | None = None
-    latest_psat_writ_lang: int | None = None
+    latest_psat_math_section: str | None = None
+    latest_psat_math_test: str | None = None
+    latest_psat_probslv_data: str | None = None
+    latest_psat_reading: str | None = None
+    latest_psat_sci_cross: str | None = None
+    latest_psat_total: str | None = None
+    latest_psat_words_context: str | None = None
+    latest_psat_writ_lang: str | None = None
     latest_record_locator: str | None = None
     latest_reg_num: str | None = None
-    major_first: float | None = None
-    math_c_ques_correct: int | None = None
-    math_c_ques_incorrect: int | None = None
-    math_c_ques_omit: int | None = None
+    major_first: str | None = None
+    math_c_ques_correct: str | None = None
+    math_c_ques_incorrect: str | None = None
+    math_c_ques_omit: str | None = None
     math_ccr_benchmark: str | None = None
-    math_nc_ques_correct: int | None = None
-    math_nc_ques_incorrect: int | None = None
-    math_nc_ques_omit: int | None = None
+    math_nc_ques_correct: str | None = None
+    math_nc_ques_incorrect: str | None = None
+    math_nc_ques_omit: str | None = None
     name_first: str | None = None
     name_last: str | None = None
     name_mi: str | None = None
     national_merit: str | None = None
-    num_math_cmc_ques: int | None = None
-    num_math_cpr_ques: int | None = None
-    num_math_ncmc_ques: int | None = None
-    num_math_ncpr_ques: int | None = None
-    num_reading_ques: int | None = None
-    num_writlang_ques: int | None = None
-    percentile_country_math: int | None = None
-    percentile_country_rw: int | None = None
-    percentile_country_total: int | None = None
-    percentile_natrep_psat_adv_math: int | None = None
-    percentile_natrep_psat_comm_evidence: int | None = None
-    percentile_natrep_psat_ebrw: int | None = None
-    percentile_natrep_psat_eng_convent: int | None = None
-    percentile_natrep_psat_expr_ideas: int | None = None
-    percentile_natrep_psat_heart_algebra: int | None = None
-    percentile_natrep_psat_hist_socst_cross: int | None = None
-    percentile_natrep_psat_math_section: int | None = None
-    percentile_natrep_psat_math_test: int | None = None
-    percentile_natrep_psat_probslv_data: int | None = None
-    percentile_natrep_psat_reading: int | None = None
-    percentile_natrep_psat_sci_cross: int | None = None
-    percentile_natrep_psat_total: int | None = None
-    percentile_natrep_psat_words_context: int | None = None
-    percentile_natrep_psat_writ_lang: int | None = None
-    percentile_natuser_psat_adv_math: int | None = None
-    percentile_natuser_psat_comm_evidence: int | None = None
-    percentile_natuser_psat_ebrw: int | None = None
-    percentile_natuser_psat_eng_convent: int | None = None
-    percentile_natuser_psat_expr_ideas: int | None = None
-    percentile_natuser_psat_heart_algebra: int | None = None
-    percentile_natuser_psat_hist_socst_cross: int | None = None
-    percentile_natuser_psat_math_section: int | None = None
-    percentile_natuser_psat_math_test: int | None = None
-    percentile_natuser_psat_probslv_data: int | None = None
-    percentile_natuser_psat_reading: int | None = None
-    percentile_natuser_psat_sci_cross: int | None = None
-    percentile_natuser_psat_total: int | None = None
-    percentile_natuser_psat_words_context: int | None = None
-    percentile_natuser_psat_writ_lang: int | None = None
-    percentile_state_math: int | None = None
-    percentile_state_rw: int | None = None
-    percentile_state_total: int | None = None
-    reading_ques_correct: int | None = None
-    reading_ques_incorrect: int | None = None
-    reading_ques_omit: int | None = None
-    report_date: str | None = None
-    sdq_date: str | None = None
-    sdq_gpa: float | None = None
-    selection_index: int | None = None
-    state_student_id: float | None = None
-    student_search_service: str | None = None
-    writlang_ques_correct: int | None = None
-    writlang_ques_incorrect: int | None = None
-    writlang_ques_omit: int | None = None
-    yrs_9to12: str | None = None
-
-    # best guess
-    foreign_address: str | None = None
-    homeschool: str | None = None
+    num_math_cmc_ques: str | None = None
+    num_math_cpr_ques: str | None = None
+    num_math_ncmc_ques: str | None = None
+    num_math_ncpr_ques: str | None = None
+    num_reading_ques: str | None = None
+    num_writlang_ques: str | None = None
+    percentile_country_math: str | None = None
+    percentile_country_rw: str | None = None
+    percentile_country_total: str | None = None
+    percentile_natrep_psat_adv_math: str | None = None
+    percentile_natrep_psat_comm_evidence: str | None = None
+    percentile_natrep_psat_ebrw: str | None = None
+    percentile_natrep_psat_eng_convent: str | None = None
+    percentile_natrep_psat_expr_ideas: str | None = None
+    percentile_natrep_psat_heart_algebra: str | None = None
+    percentile_natrep_psat_hist_socst_cross: str | None = None
+    percentile_natrep_psat_math_section: str | None = None
+    percentile_natrep_psat_math_test: str | None = None
+    percentile_natrep_psat_probslv_data: str | None = None
+    percentile_natrep_psat_reading: str | None = None
+    percentile_natrep_psat_sci_cross: str | None = None
+    percentile_natrep_psat_total: str | None = None
+    percentile_natrep_psat_words_context: str | None = None
+    percentile_natrep_psat_writ_lang: str | None = None
+    percentile_natuser_psat_adv_math: str | None = None
+    percentile_natuser_psat_comm_evidence: str | None = None
+    percentile_natuser_psat_ebrw: str | None = None
+    percentile_natuser_psat_eng_convent: str | None = None
+    percentile_natuser_psat_expr_ideas: str | None = None
+    percentile_natuser_psat_heart_algebra: str | None = None
+    percentile_natuser_psat_hist_socst_cross: str | None = None
+    percentile_natuser_psat_math_section: str | None = None
+    percentile_natuser_psat_math_test: str | None = None
+    percentile_natuser_psat_probslv_data: str | None = None
+    percentile_natuser_psat_reading: str | None = None
+    percentile_natuser_psat_sci_cross: str | None = None
+    percentile_natuser_psat_total: str | None = None
+    percentile_natuser_psat_words_context: str | None = None
+    percentile_natuser_psat_writ_lang: str | None = None
+    percentile_state_math: str | None = None
+    percentile_state_rw: str | None = None
+    percentile_state_total: str | None = None
     race_eth_africanamerican: str | None = None
     race_eth_asian: str | None = None
     race_eth_cuban: str | None = None
@@ -159,7 +222,21 @@ class PSAT(BaseModel):
     race_eth_other: str | None = None
     race_eth_puertorican: str | None = None
     race_eth_white: str | None = None
+    reading_ques_correct: str | None = None
+    reading_ques_incorrect: str | None = None
+    reading_ques_omit: str | None = None
+    report_date: str | None = None
     saa: str | None = None
+    sdq_date: str | None = None
+    sdq_gpa: str | None = None
+    secondary_id: str | None = None
+    selection_index: str | None = None
+    state_student_id: str | None = None
+    student_search_service: str | None = None
+    writlang_ques_correct: str | None = None
+    writlang_ques_incorrect: str | None = None
+    writlang_ques_omit: str | None = None
+    yrs_9to12: str | None = None
 
     math_cmc_ques_ans1: str | None = None
     math_cmc_ques_ans10: str | None = None
@@ -301,80 +378,7 @@ class PSAT(BaseModel):
     writlang_ques_ans8: str | None = None
     writlang_ques_ans9: str | None = None
 
-    # filler
-    filler_1: str | None = None
-    filler_10: str | None = None
-    filler_11: str | None = None
-    filler_12: str | None = None
-    filler_13: str | None = None
-    filler_14: str | None = None
-    filler_15: str | None = None
-    filler_16: str | None = None
-    filler_17: str | None = None
-    filler_18: str | None = None
-    filler_19: str | None = None
-    filler_2: str | None = None
-    filler_20: str | None = None
-    filler_21: str | None = None
-    filler_22: str | None = None
-    filler_23: str | None = None
-    filler_24: str | None = None
-    filler_25: str | None = None
-    filler_26: str | None = None
-    filler_27: str | None = None
-    filler_28: str | None = None
-    filler_29: str | None = None
-    filler_3: str | None = None
-    filler_30: str | None = None
-    filler_31: str | None = None
-    filler_32: str | None = None
-    filler_33: str | None = None
-    filler_34: str | None = None
-    filler_35: str | None = None
-    filler_36: str | None = None
-    filler_37: str | None = None
-    filler_38: str | None = None
-    filler_39: str | None = None
-    filler_4: str | None = None
-    filler_40: str | None = None
-    filler_41: str | None = None
-    filler_42: str | None = None
-    filler_43: str | None = None
-    filler_44: str | None = None
-    filler_45: str | None = None
-    filler_46: str | None = None
-    filler_47: str | None = None
-    filler_48: str | None = None
-    filler_49: str | None = None
-    filler_5: str | None = None
-    filler_50: str | None = None
-    filler_51: str | None = None
-    filler_52: str | None = None
-    filler_53: str | None = None
-    filler_54: str | None = None
-    filler_55: str | None = None
-    filler_56: str | None = None
-    filler_57: str | None = None
-    filler_58: str | None = None
-    filler_59: str | None = None
-    filler_6: str | None = None
-    filler_60: str | None = None
-    filler_61: str | None = None
-    filler_62: str | None = None
-    filler_63: str | None = None
-    filler_64: str | None = None
-    filler_65: str | None = None
-    filler_66: str | None = None
-    filler_67: str | None = None
-    filler_68: str | None = None
-    filler_69: str | None = None
-    filler_7: str | None = None
-    filler_8: str | None = None
-    filler_9: str | None = None
-
-    district_student_id: int | float | None = None
-    latest_psat_grade: int | float | None = None
-    secondary_id: int | float | None = None
+    filler: str | None = FILLER_FIELD
 
 
 class AP(BaseModel):
@@ -624,7 +628,4 @@ class AP(BaseModel):
     irregularity_code_2_29: str | None = None
     irregularity_code_2_30: str | None = None
 
-    # filler
-    filler_1: str | None = None
-    filler_2: str | None = None
-    filler: str | None = None
+    filler: str | None = FILLER_FIELD

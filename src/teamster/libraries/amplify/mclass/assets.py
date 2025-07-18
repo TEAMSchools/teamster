@@ -1,14 +1,10 @@
-from io import StringIO
-
 from dagster import AssetExecutionContext, Output, asset
-from numpy import nan
-from pandas import read_csv
-from slugify import slugify
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
+from teamster.core.utils.functions import csv_string_to_records
 from teamster.libraries.amplify.mclass.resources import MClassResource
 
 
@@ -37,15 +33,9 @@ def build_mclass_asset(asset_key, dyd_payload, partitions_def, schema):
         if "NO_DATA" in response.text:
             raise Exception(response.json())
 
-        df = read_csv(filepath_or_buffer=StringIO(response.text), low_memory=False)
+        records = csv_string_to_records(response.text)
 
-        df.replace({nan: None}, inplace=True)
-        df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
-
-        records = df.to_dict(orient="records")
-
-        yield Output(value=(records, schema), metadata={"records": df.shape[0]})
-
+        yield Output(value=(records, schema), metadata={"records": len(records)})
         yield check_avro_schema_valid(
             asset_key=context.asset_key, records=records, schema=schema
         )
