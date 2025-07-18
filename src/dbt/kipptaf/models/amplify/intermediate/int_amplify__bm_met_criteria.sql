@@ -15,11 +15,12 @@ with
             f.grade_goal,
             f.grade_range_goal,
 
-            count(distinct a.student_number) over (
+            -- school/gl calcs
+            count(a.student_number) over (
                 partition by a.academic_year, e.school, a.period, a.assessment_grade
             ) as n_admin_season_school_gl_all,
 
-            count(distinct a.student_number) over (
+            count(a.student_number) over (
                 partition by
                     a.academic_year,
                     e.school,
@@ -28,11 +29,42 @@ with
                     a.aggregated_measure_standard_level
             ) as n_admin_season_school_gl_agg_measure_standard_level,
 
-            count(distinct a.student_number) over (
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'At/Above',
+                    a.student_number,
+                    null
+                )
+            ) over (
+                partition by
+                    a.academic_year,
+                    e.school,
+                    a.period,
+                    a.assessment_grade,
+                    a.aggregated_measure_standard_level
+            ) as n_admin_season_school_gl_at_above,
+
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'Below/Well Below',
+                    a.student_number,
+                    null
+                )
+            ) over (
+                partition by
+                    a.academic_year,
+                    e.school,
+                    a.period,
+                    a.assessment_grade,
+                    a.aggregated_measure_standard_level
+            ) as n_admin_season_school_gl_bl_wb,
+
+            -- region/gl calcs
+            count(a.student_number) over (
                 partition by a.academic_year, e.region, a.period, a.assessment_grade
             ) as n_admin_season_region_gl_all,
 
-            count(distinct a.student_number) over (
+            count(a.student_number) over (
                 partition by
                     a.academic_year,
                     e.region,
@@ -41,6 +73,37 @@ with
                     a.aggregated_measure_standard_level
             ) as n_admin_season_region_gl_agg_measure_standard_level,
 
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'At/Above',
+                    a.student_number,
+                    null
+                )
+            ) over (
+                partition by
+                    a.academic_year,
+                    e.region,
+                    a.period,
+                    a.assessment_grade,
+                    a.aggregated_measure_standard_level
+            ) as n_admin_season_region_gl_at_above,
+
+            count(
+                if(
+                    a.aggregated_measure_standard_level = 'Below/Well Below',
+                    a.student_number,
+                    null
+                )
+            ) over (
+                partition by
+                    a.academic_year,
+                    e.region,
+                    a.period,
+                    a.assessment_grade,
+                    a.aggregated_measure_standard_level
+            ) as n_admin_season_region_gl_bl_wb,
+
+            -- distinct
             row_number() over (
                 partition by
                     a.academic_year,
@@ -72,8 +135,29 @@ with
             and a.assessment_type = 'Benchmark'
             and a.measure_standard = 'Composite'
             and a.period != 'EOY'
+    ),
+
+    needed_count_calcs as (
+        select
+            * except (rn),
+
+            ceiling(n_admin_season_school_gl_all * grade_goal)
+            + 5 as n_admin_season_school_gl_at_above_expected,
+
+            ceiling(n_admin_season_region_gl_all * grade_goal)
+            + 5 as n_admin_season_region_gl_at_above_expected,
+
+        from roster
+        where rn = 1
     )
 
-select * except (rn),
-from roster
-where rn = 1
+select
+    *,
+
+    (n_admin_season_school_gl_at_above_expected - n_admin_season_school_gl_at_above)
+    * 1.5 as n_admin_season_school_gl_at_above_gap,
+
+    (n_admin_season_region_gl_at_above_expected - n_admin_season_region_gl_at_above)
+    * 1.5 as n_admin_season_region_gl_at_above_gap,
+
+from needed_count_calcs
