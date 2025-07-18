@@ -18,6 +18,7 @@ inner join
     and a.region = e.region
     and a.student_number = e.student_number
     and a.assessment_grade_int = e.grade_level
+    and a.client_date between e.entrydate and e.exitdate
 where
     a.assessment_type = 'Benchmark'
     and a.measure_standard = 'Composite'
