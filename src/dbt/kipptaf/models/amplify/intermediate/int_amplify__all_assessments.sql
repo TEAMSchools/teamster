@@ -268,11 +268,24 @@ select
     p.eoy as eoy_composite,
 
     case
+        s.period when 'BOY' then 'MOY' when 'MOY' then 'EOY'
+    end as benchmark_goal_season,
+
+    case
         when s.measure_standard_level_int >= 3
         then 'At/Above'
         when s.measure_standard_level_int <= 2
         then 'Below/Well Below'
     end as aggregated_measure_standard_level,
+
+    case
+        when s.measure_standard_level_int >= 3
+        then 'At/Above'
+        when s.measure_standard_level_int = 2
+        then 'Below'
+        when s.measure_standard_level_int = 1
+        then 'Well Below'
+    end as foundation_measure_standard_level,
 
     case
         s.period
@@ -332,12 +345,23 @@ select
     p.moy as moy_composite,
     p.eoy as eoy_composite,
 
+    'NA' as benchmark_goal_season,
+
     case
         when s.measure_standard_level_int >= 3
         then 'At/Above'
         when s.measure_standard_level_int <= 2
         then 'Below/Well Below'
     end as aggregated_measure_standard_level,
+
+    case
+        when s.measure_standard_level_int >= 3
+        then 'At/Above'
+        when s.measure_standard_level_int = 2
+        then 'Below'
+        when s.measure_standard_level_int = 1
+        then 'Well Below'
+    end as foundation_measure_standard_level,
 
     case
         s.period
