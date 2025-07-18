@@ -10,4 +10,7 @@ select
     a.aggregated_measure_standard_level,
 
 from {{ ref("int_amplify__all_assessments") }} as a
-where a.assessment_type = 'Benchmark' and a.measure_standard = 'Composite'
+where
+    a.assessment_type = 'Benchmark'
+    and a.measure_standard = 'Composite'
+    and a.period != 'EOY'
