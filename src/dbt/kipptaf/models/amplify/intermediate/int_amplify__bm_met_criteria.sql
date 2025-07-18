@@ -7,8 +7,6 @@ with
             a.assessment_grade_int,
             a.period,
             a.benchmark_goal_season,
-            a.aggregated_measure_standard_level,
-            a.foundation_measure_standard_level,
 
             e.school,
 
@@ -19,15 +17,6 @@ with
             count(a.student_number) over (
                 partition by a.academic_year, e.school, a.period, a.assessment_grade
             ) as n_admin_season_school_gl_all,
-
-            count(a.student_number) over (
-                partition by
-                    a.academic_year,
-                    e.school,
-                    a.period,
-                    a.assessment_grade,
-                    a.aggregated_measure_standard_level
-            ) as n_admin_season_school_gl_agg_measure_standard_level,
 
             count(
                 if(
@@ -63,15 +52,6 @@ with
             count(a.student_number) over (
                 partition by a.academic_year, e.region, a.period, a.assessment_grade
             ) as n_admin_season_region_gl_all,
-
-            count(a.student_number) over (
-                partition by
-                    a.academic_year,
-                    e.region,
-                    a.period,
-                    a.assessment_grade,
-                    a.aggregated_measure_standard_level
-            ) as n_admin_season_region_gl_agg_measure_standard_level,
 
             count(
                 if(
