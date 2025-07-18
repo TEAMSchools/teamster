@@ -15,8 +15,8 @@ select
     e.entrydate,
     e.exitdate,
 
-    g.grade_goal,
-    g.grade_range_goal,
+    f.grade_goal,
+    f.grade_range_goal,
 
 from {{ ref("int_amplify__all_assessments") }} as a
 inner join
@@ -32,7 +32,7 @@ left join
     and a.region = f.region
     and a.assessment_grade_int = f.grade_level
     and a.benchmark_goal_season = f.period
-    and a.foundation_measure_standard_level = e.grade_goal_type
+    and a.foundation_measure_standard_level = f.grade_goal_type
 where
     a.assessment_type = 'Benchmark'
     and a.measure_standard = 'Composite'
