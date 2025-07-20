@@ -31,7 +31,7 @@ with
             cast(null as string) as manager_rating_eoy,
             cast(null as string) as manager_notes_moy,
             cast(null as string) as manager_notes_eoy,
-            cast(null as string) as edited_at,
+            cast(null as date) as edited_at,
             cast(null as string) as edited_by,
             true as active_assignment,
         from roster
@@ -53,7 +53,7 @@ with
             cast(null as string) as manager_rating_eoy,
             cast(null as string) as manager_notes_moy,
             cast(null as string) as manager_notes_eoy,
-            cast(null as string) as edited_at,
+            cast(null as date) as edited_at,
             cast(null as string) as edited_by,
             true as active_assignment,
         from roster
