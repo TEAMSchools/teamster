@@ -1,8 +1,8 @@
 with
-    roster as (
-        select *,
-        from {{ ref("rpt_appsheet__leadership_development_roster") }}
-        where active
+    roster as (select *, from {{ ref("rpt_appsheet__leadership_development_roster") }}),
+
+    active_users as (
+        select * from {{ ref("stg_leadership_development__active_users") }}
     ),
 
     metrics as (
@@ -13,6 +13,14 @@ with
 
     existing_assignments as (
         select assignment_id, from {{ ref("stg_leadership_development__output") }}
+    ),
+
+    leader_pm_participants as (
+        select
+            roster.employee_number,
+            coalesce(active_users.app_selection_active, roster.active) as active,
+        from roster
+        left join active_users on roster.employee_number = active_users.employee_number
     ),
 
     -- logic to create list of assignments
@@ -36,6 +44,10 @@ with
             true as active_assignment,
         from roster
         inner join metrics on metrics.role = 'All'
+        left join
+            leader_pm_participants
+            on roster.employee_number = leader_pm_participants.employee_number
+        where leader_pm_participants.active
 
         union all
 
@@ -58,6 +70,10 @@ with
             true as active_assignment,
         from roster
         inner join metrics on roster.job_title = metrics.role
+        left join
+            leader_pm_participants
+            on roster.employee_number = leader_pm_participants.employee_number
+        where leader_pm_participants.active
     ),
 
     -- only include assignments not already on output
