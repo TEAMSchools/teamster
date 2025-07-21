@@ -3,7 +3,6 @@ from teamster.code_locations.kipptaf.adp.workforce_now.sftp.schema import (
     ADDITIONAL_EARNINGS_REPORT_SCHEMA,
     COMPREHENSIVE_BENEFITS_REPORT_SCHEMA,
     PENSION_AND_BENEFITS_ENROLLMENTS_SCHEMA,
-    TIME_AND_ATTENDANCE_SCHEMA,
 )
 from teamster.libraries.sftp.assets import build_sftp_file_asset
 
@@ -36,16 +35,8 @@ additional_earnings_report = build_sftp_file_asset(
     **asset_kwargs,
 )
 
-time_and_attendance = build_sftp_file_asset(
-    asset_key=[*key_prefix, "time_and_attendance"],
-    remote_file_regex=r"adp__wfn__employment_profile__time_and_attendance\.csv",
-    avro_schema=TIME_AND_ATTENDANCE_SCHEMA,
-    **asset_kwargs,
-)
-
 assets = [
     additional_earnings_report,
     comprehensive_benefits_report,
     pension_and_benefits_enrollments,
-    time_and_attendance,
 ]
