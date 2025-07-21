@@ -1,204 +1,14 @@
-{%- set invalid_lunch_status = ["", "NoD", "1", "2"] -%}
-
 with
-    union_relations as (
-        /* terminal (pre, current, transfers) */
-        select
-            s.id as studentid,
-            s.dcid as students_dcid,
-            s.student_number,
-
-            null as reenrollments_dcid,
-
-            s.grade_level,
-            s.schoolid,
-            s.entrydate,
-            s.exitdate,
-            s.entrycode,
-            s.exitcode,
-            s.exitcomment,
-            s.lunchstatus,
-            s.fteid,
-
-            s.state_studentnumber,
-            s.first_name,
-            s.middle_name,
-            s.last_name,
-            s.lastfirst,
-            s.enroll_status,
-            s.dob,
-            s.street,
-            s.city,
-            s.state,
-            s.zip,
-            s.home_phone,
-            s.fedethnicity,
-            s.next_school,
-            s.sched_nextyeargrade,
-            s.grade_level as highest_grade_level_achieved,
-            s.gender_code as gender,
-            s.ethnicity_code as ethnicity,
-
-            terms.yearid,
-            terms.academic_year,
-
-            x1.exit_code as exit_code_kf,
-            x2.exit_code as exit_code_ts,
-
-            coalesce(s.track, 'A') as track,
-        from {{ ref("stg_powerschool__students") }} as s
-        inner join
-            {{ ref("stg_powerschool__terms") }} as terms
-            on s.schoolid = terms.schoolid
-            and s.entrydate between terms.firstday and terms.lastday
-            and terms.isyearrec = 1
-        left join
-            {{ ref("stg_powerschool__u_clg_et_stu") }} as x1
-            on s.dcid = x1.studentsdcid
-            and s.exitdate = x1.exit_date
-        left join
-            {{ ref("stg_powerschool__u_clg_et_stu_alt") }} as x2
-            on s.dcid = x2.studentsdcid
-            and s.exitdate = x2.exit_date
-        where s.enroll_status in (-1, 0, 2) and s.exitdate > s.entrydate
-
-        union all
-
-        /* re-enrollments */
-        select
-            re.studentid,
-
-            s.dcid as students_dcid,
-            s.student_number,
-
-            re.dcid as reenrollments_dcid,
-            re.grade_level,
-            re.schoolid,
-            re.entrydate,
-            re.exitdate,
-            re.entrycode,
-            re.exitcode,
-            re.exitcomment,
-            re.lunchstatus,
-            re.fteid,
-
-            s.state_studentnumber,
-            s.first_name,
-            s.middle_name,
-            s.last_name,
-            s.lastfirst,
-            s.enroll_status,
-            s.dob,
-            s.street,
-            s.city,
-            s.state,
-            s.zip,
-            s.home_phone,
-            s.fedethnicity,
-
-            null as next_school,
-            null as sched_nextyeargrade,
-
-            s.grade_level as highest_grade_level_achieved,
-            s.gender_code as gender,
-            s.ethnicity_code as ethnicity,
-
-            terms.yearid,
-            terms.academic_year,
-
-            x1.exit_code as exit_code_kf,
-            x2.exit_code as exit_code_ts,
-
-            coalesce(re.track, 'A') as track,
-        from {{ ref("stg_powerschool__reenrollments") }} as re
-        inner join {{ ref("stg_powerschool__students") }} as s on re.studentid = s.id
-        inner join
-            {{ ref("stg_powerschool__terms") }} as terms
-            on re.schoolid = terms.schoolid
-            and re.entrydate between terms.firstday and terms.lastday
-            and terms.isyearrec = 1
-        left join
-            {{ ref("stg_powerschool__u_clg_et_stu") }} as x1
-            on s.dcid = x1.studentsdcid
-            and re.exitdate = x1.exit_date
-        left join
-            {{ ref("stg_powerschool__u_clg_et_stu_alt") }} as x2
-            on s.dcid = x2.studentsdcid
-            and re.exitdate = x2.exit_date
-        where
-            re.schoolid != 12345  /* filter out summer school */
-            and re.exitdate > re.entrydate
-
-        union all
-
-        /* terminal (grads) */
-        select
-            s.id as studentid,
-            s.dcid as students_dcid,
-            s.student_number,
-
-            null as reenrollments_dcid,
-
-            s.grade_level,
-            s.schoolid,
-
-            null as entrydate,
-            null as exitdate,
-            null as entrycode,
-            null as exitcode,
-            null as exitcomment,
-            null as lunchstatus,
-            null as fteid,
-
-            s.state_studentnumber,
-            s.first_name,
-            s.middle_name,
-            s.last_name,
-            s.lastfirst,
-            s.enroll_status,
-            s.dob,
-            s.street,
-            s.city,
-            s.state,
-            s.zip,
-            s.home_phone,
-            s.fedethnicity,
-
-            null as next_school,
-            null as sched_nextyeargrade,
-
-            s.grade_level as highest_grade_level_achieved,
-            s.gender_code as gender,
-            s.ethnicity_code as ethnicity,
-
-            terms.yearid,
-            terms.academic_year,
-
-            null as exit_code_kf,
-            null as exit_code_ts,
-            'A' as track,
-        from {{ ref("stg_powerschool__students") }} as s
-        inner join
-            {{ ref("stg_powerschool__terms") }} as terms
-            on s.schoolid = terms.schoolid
-            and s.entrydate <= terms.firstday
-            and terms.isyearrec = 1
-        where s.enroll_status = 3
-    ),
-
     enr_order as (
         select
             *,
 
             (academic_year + 13) + (-1 * grade_level) as cohort_primary,
 
-            if(
-                lunchstatus in unnest({{ invalid_lunch_status }}), null, lunchstatus
-            ) as lunch_status,
-
             lag(yearid, 1) over (
                 partition by studentid order by yearid asc
             ) as yearid_prev,
+
             lag(grade_level, 1) over (
                 partition by studentid order by yearid asc
             ) as grade_level_prev,
@@ -206,9 +16,11 @@ with
             row_number() over (
                 partition by studentid order by yearid desc, exitdate desc
             ) as rn_all,
+
             row_number() over (
                 partition by studentid, yearid order by yearid desc, exitdate desc
             ) as rn_year,
+
             row_number() over (
                 partition by studentid, schoolid order by yearid desc, exitdate desc
             ) as rn_school,
@@ -217,7 +29,7 @@ with
                 partition by studentid, if(grade_level = 99, true, false)
                 order by yearid desc, exitdate desc
             ) as rn_undergrad,
-        from union_relations
+        from {{ ref("int_powerschool__student_enrollment_union") }}
     ),
 
     enr_window as (
@@ -227,12 +39,14 @@ with
             min(grade_level_prev) over (
                 partition by studentid, yearid
             ) as grade_level_prev,
+
             min(yearid_prev) over (partition by studentid, yearid) as yearid_prev,
 
             row_number() over (
                 partition by studentid, schoolid, rn_year
                 order by yearid asc, exitdate asc
             ) as year_in_school,
+
             row_number() over (
                 partition by studentid, rn_year order by yearid asc, exitdate asc
             ) as year_in_network,
@@ -246,7 +60,6 @@ with
             if(enr.grade_level != 99, enr.rn_undergrad, null) as rn_undergrad,
             if(enr.rn_year = 1, enr.year_in_school, null) as year_in_school,
             if(enr.rn_year = 1, enr.year_in_network, null) as year_in_network,
-
             if(enr.exitcode = 'G1', enr.cohort_primary, null) as cohort_graduated,
             if(enr.exitdate is not null, true, false) as is_enrolled_y1,
             if(
@@ -299,24 +112,31 @@ with
             ),
 
             max(year_in_school) over (partition by studentid, yearid) as year_in_school,
+
             max(year_in_network) over (
                 partition by studentid, yearid
             ) as year_in_network,
+
             max(is_enrolled_y1) over (partition by studentid, yearid) as is_enrolled_y1,
+
             max(is_enrolled_oct01) over (
                 partition by studentid, yearid
             ) as is_enrolled_oct01,
+
             max(is_enrolled_oct15) over (
                 partition by studentid, yearid
             ) as is_enrolled_oct15,
+
             max(is_enrolled_recent) over (
                 partition by studentid, yearid
             ) as is_enrolled_recent,
+
             max(is_retained_year) over (
                 partition by studentid, yearid
             ) as is_retained_year,
 
             max(cohort_graduated) over (partition by studentid) as cohort_graduated,
+
             max(is_retained_year) over (partition by studentid) as is_retained_ever,
         from enr_bools
     ),
@@ -353,7 +173,9 @@ with
             max(cohort_secondary) over (
                 partition by studentid, schoolid
             ) as cohort_secondary,
+
             max(entry_schoolid) over (partition by studentid) as entry_schoolid,
+
             max(entry_grade_level) over (partition by studentid) as entry_grade_level,
         from with_boy_status
     )

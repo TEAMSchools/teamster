@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime
 from itertools import groupby
 from operator import itemgetter
 from zoneinfo import ZoneInfo
@@ -63,8 +63,6 @@ def build_powerschool_asset_sensor(
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
     ) -> SensorResult | SkipReason:
-        now_timestamp = datetime.now(timezone.utc).timestamp()
-
         run_requests = []
         run_request_kwargs = []
 
@@ -348,7 +346,7 @@ def build_powerschool_asset_sensor(
         ):
             run_requests.append(
                 RunRequest(
-                    run_key=f"{job_name}_{partition_key}_{now_timestamp}",
+                    run_key=f"{job_name}_{partition_key}_{datetime.now().timestamp()}",
                     job_name=job_name,
                     partition_key=partition_key,
                     asset_selection=[g["asset_key"] for g in group],
