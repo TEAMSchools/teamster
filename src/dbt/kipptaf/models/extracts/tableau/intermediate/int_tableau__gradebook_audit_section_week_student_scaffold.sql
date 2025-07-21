@@ -76,6 +76,12 @@ select
     qg.comment_value as quarter_comment_value,
 
     if(
+        s.school_level != 'ES' and s.ada_above_or_at_80 and qg.term_grade_points < 2.0,
+        true,
+        false
+    ) as qt_student_is_ada_80_plus_gpa_less_2,
+
+    if(
         qg.term_percent_grade_adjusted > 100, true, false
     ) as qt_percent_grade_greater_100,
 
@@ -109,8 +115,7 @@ select
     ) as qt_g1_g8_conduct_code_incorrect,
 
     if(
-        s.region = 'Miami'
-        and s.school_level = 'ES'
+        sec.region_school_level = 'MiamiES'
         and s.grade_level = 0
         and sec.is_quarter_end_date_range
         and ce.courses_course_name = 'HR'
@@ -120,8 +125,7 @@ select
     ) as qt_kg_conduct_code_missing,
 
     if(
-        s.region = 'Miami'
-        and s.school_level = 'ES'
+        sec.region_school_level = 'MiamiES'
         and s.grade_level = 0
         and sec.is_quarter_end_date_range
         and ce.courses_course_name != 'HR'
@@ -131,8 +135,7 @@ select
     ) as qt_kg_conduct_code_not_hr,
 
     if(
-        s.region = 'Miami'
-        and s.school_level = 'ES'
+        sec.region_school_level = 'MiamiES'
         and s.grade_level = 0
         and sec.is_quarter_end_date_range
         and ce.courses_course_name = 'HR'
@@ -142,8 +145,7 @@ select
     ) as qt_kg_conduct_code_incorrect,
 
     if(
-        s.region = 'Miami'
-        and s.school_level = 'ES'
+        sec.region_school_level = 'MiamiES'
         and sec.is_quarter_end_date_range
         and qg.comment_value is null,
         true,
@@ -159,12 +161,6 @@ select
         true,
         false
     ) as qt_es_comment_missing,
-
-    if(
-        s.school_level != 'ES' and s.ada_above_or_at_80 and qg.term_grade_points < 2.0,
-        true,
-        false
-    ) as qt_student_is_ada_80_plus_gpa_less_2,
 
 from {{ ref("int_extracts__student_enrollments") }} as s
 inner join
