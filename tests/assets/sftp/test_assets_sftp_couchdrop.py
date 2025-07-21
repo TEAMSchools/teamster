@@ -10,7 +10,9 @@ from dagster import (
 from dagster_shared import check
 
 
-def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
+def _test_asset(
+    asset: AssetsDefinition, partition_key: str | None = None, instance=None
+):
     from teamster.core.resources import SSH_COUCHDROP, get_io_manager_gcs_avro
 
     if partition_key is None and asset.partitions_def is not None:
@@ -20,6 +22,7 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
 
     result = materialize(
         assets=[asset],
+        instance=instance,
         partition_key=partition_key,
         resources={
             "ssh_couchdrop": SSH_COUCHDROP,
@@ -54,15 +57,17 @@ def test_adp_payroll_general_ledger_file_kipptaf():
         ttype=DynamicPartitionsDefinition,
     )
 
-    partitions_def_name = check.not_none(value=date_partitions_def.name)
+    date_partitions_def = check.not_none(value=date_partitions_def.name)
 
     with instance_for_test() as instance:
         instance.add_dynamic_partitions(
-            partitions_def_name=partitions_def_name, partition_keys=[date_key]
+            partitions_def_name=date_partitions_def, partition_keys=[date_key]
         )
 
         _test_asset(
-            asset=general_ledger_file, partition_key=f"{date_key}|{group_code_key}"
+            asset=general_ledger_file,
+            partition_key=f"{date_key}|{group_code_key}",
+            instance=instance,
         )
 
 
