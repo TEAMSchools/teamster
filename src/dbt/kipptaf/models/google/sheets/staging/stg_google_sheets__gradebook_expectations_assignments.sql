@@ -7,6 +7,8 @@ select
         assignment_category_code
         when 'W'
         then 'Work Habits'
+        when 'H'
+        then 'Homework'
         when 'F'
         then 'Formative Mastery'
         when 'S'
@@ -17,4 +19,4 @@ from
         source(
             "google_sheets", "src_google_sheets__gradebook_expectations_assignments"
         )
-    }} unpivot (expectation for assignment_category_code in (`W`, `F`, `S`))
+    }} unpivot (expectation for assignment_category_code in (`W`, `H`, `F`, `S`))
