@@ -68,15 +68,12 @@ select
     sec.school_week_start_date_lead,
     sec.week_number_academic_year,
     sec.week_number_quarter,
+    sec.section_or_period,
 
     qg.term_percent_grade_adjusted as quarter_course_percent_grade,
     qg.term_grade_points as quarter_course_grade_points,
     qg.citizenship as quarter_citizenship,
     qg.comment_value as quarter_comment_value,
-
-    if(
-        s.grade_level <= 8, ce.sections_section_number, ce.sections_external_expression
-    ) as section_or_period,
 
     if(
         qg.term_percent_grade_adjusted > 100, true, false
@@ -176,7 +173,7 @@ inner join
     and s.yearid = ce.terms_yearid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
     and not ce.is_dropped_section
-left join
+inner join
     {{ ref("int_tableau__gradebook_audit_section_week_scaffold") }} as sec
     on ce.cc_sectionid = sec.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
