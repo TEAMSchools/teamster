@@ -95,6 +95,23 @@ select
     ) as qt_grade_70_comment_missing,
 
     if(
+        sec.region_school_level = 'MiamiES'
+        and sec.is_quarter_end_date_range
+        and qg.comment_value is null,
+        true,
+        false
+    ) as qt_comment_missing,
+
+    if(
+        sec.region_school_level = 'MiamiES'
+        and sec.is_quarter_end_date_range
+        and ce.courses_credittype in ('HR', 'MATH', 'ENG', 'RHET')
+        and qg.comment_value is null,
+        true,
+        false
+    ) as qt_es_comment_missing,
+
+    if(
         s.region = 'Miami'
         and s.grade_level != 0
         and sec.is_quarter_end_date_range
@@ -128,16 +145,6 @@ select
         sec.region_school_level = 'MiamiES'
         and s.grade_level = 0
         and sec.is_quarter_end_date_range
-        and ce.courses_course_name != 'HR'
-        and qg.citizenship is not null,
-        true,
-        false
-    ) as qt_kg_conduct_code_not_hr,
-
-    if(
-        sec.region_school_level = 'MiamiES'
-        and s.grade_level = 0
-        and sec.is_quarter_end_date_range
         and ce.courses_course_name = 'HR'
         and qg.citizenship not in ('E', 'G', 'S', 'M'),
         true,
@@ -146,21 +153,13 @@ select
 
     if(
         sec.region_school_level = 'MiamiES'
+        and s.grade_level = 0
         and sec.is_quarter_end_date_range
-        and qg.comment_value is null,
+        and ce.courses_course_name != 'HR'
+        and qg.citizenship is not null,
         true,
         false
-    ) as qt_comment_missing,
-
-    if(
-        s.region != 'Miami'
-        and sec.is_quarter_end_date_range
-        and s.grade_level < 5
-        and ce.courses_credittype in ('HR', 'MATH', 'ENG', 'RHET')
-        and qg.comment_value is null,
-        true,
-        false
-    ) as qt_es_comment_missing,
+    ) as qt_kg_conduct_code_not_hr,
 
 from {{ ref("int_extracts__student_enrollments") }} as s
 inner join
