@@ -5,6 +5,7 @@ select
     a.assignment_name,
     a.duedate,
     a.scoretype,
+    a.scorepoints,
     a.totalpointvalue,
     a.is_exempt,
     a.is_expected_late,
