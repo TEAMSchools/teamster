@@ -67,8 +67,7 @@ with
 select
     *,
 
-    if(scorepoints > totalpointvalue, true, false) as assign_score_above_max,
-
+    -- scoring checks
     if(
         assignmentid is not null and is_exempt = 0, true, false
     ) as assign_expected_to_be_scored,
@@ -80,10 +79,6 @@ select
     ) as assign_scored,
 
     if(
-        assignmentid is not null and scorepoints is null and is_exempt = 0, true, false
-    ) as assign_null_score,
-
-    if(
         assignmentid is not null
         and is_exempt = 0
         and ((is_missing = 0 and scorepoints is not null) or scorepoints is not null),
@@ -91,47 +86,35 @@ select
         false
     ) as assign_expected_with_score,
 
+    -- exempt, nulls and max
     if(is_exempt = 1 and scorepoints > 0, true, false) as assign_exempt_with_score,
 
     if(
-        assignment_category_code = 'W' and scorepoints < 5, true, false
+        assignmentid is not null and scorepoints is null and is_exempt = 0, true, false
+    ) as assign_null_score,
+
+    if(scorepoints > totalpointvalue, true, false) as assign_score_above_max,
+
+    -- less than 5 score checks
+    if(
+        assignment_category_code = 'W' and is_missing = 0 and scorepoints < 5,
+        true,
+        false
     ) as assign_w_score_less_5,
 
     if(
-        assignment_category_code = 'H' and scorepoints < 5, true, false
+        assignment_category_code = 'H' and is_missing = 0 and scorepoints < 5,
+        true,
+        false
     ) as assign_h_score_less_5,
 
     if(
-        assignment_category_code = 'F' and scorepoints < 5, true, false
+        assignment_category_code = 'F' and is_missing = 0 and scorepoints < 5,
+        true,
+        false
     ) as assign_f_score_less_5,
 
-    if(
-        assignment_category_code = 'W'
-        and school_level = 'HS'
-        and is_missing = 1
-        and scorepoints != 0,
-        true,
-        false
-    ) as assign_w_missing_score_not_0,
-
-    if(
-        assignment_category_code = 'F'
-        and school_level = 'HS'
-        and is_missing = 1
-        and scorepoints != 0,
-        true,
-        false
-    ) as assign_f_missing_score_not_0,
-
-    if(
-        assignment_category_code = 'H'
-        and school_level = 'HS'
-        and is_missing = 1
-        and scorepoints != 0,
-        true,
-        false
-    ) as assign_h_missing_score_not_0,
-
+    -- miss assign not score 5 for non-hs
     if(
         assignment_category_code = 'W'
         and school_level != 'HS'
@@ -140,15 +123,6 @@ select
         true,
         false
     ) as assign_w_missing_score_not_5,
-
-    if(
-        assignment_category_code = 'F'
-        and school_level != 'HS'
-        and is_missing = 1
-        and scorepoints != 5,
-        true,
-        false
-    ) as assign_f_missing_score_not_5,
 
     if(
         assignment_category_code = 'H'
@@ -160,11 +134,50 @@ select
     ) as assign_h_missing_score_not_5,
 
     if(
+        assignment_category_code = 'F'
+        and school_level != 'HS'
+        and is_missing = 1
+        and scorepoints != 5,
+        true,
+        false
+    ) as assign_f_missing_score_not_5,
+
+    -- miss assign not score 0 for hs
+    if(
+        assignment_category_code = 'W'
+        and school_level = 'HS'
+        and is_missing = 1
+        and scorepoints != 0,
+        true,
+        false
+    ) as assign_w_missing_score_not_0,
+
+    if(
+        assignment_category_code = 'H'
+        and school_level = 'HS'
+        and is_missing = 1
+        and scorepoints != 0,
+        true,
+        false
+    ) as assign_h_missing_score_not_0,
+
+    if(
+        assignment_category_code = 'F'
+        and school_level = 'HS'
+        and is_missing = 1
+        and scorepoints != 0,
+        true,
+        false
+    ) as assign_f_missing_score_not_0,
+
+    -- 50% s assign min
+    if(
         assignment_category_code = 'S' and scorepoints < (totalpointvalue / 2),
         true,
         false
     ) as assign_s_score_less_50p,
 
+    -- conversion chart
     if(
         is_exempt = 0
         and school_level = 'MS'
