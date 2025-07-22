@@ -142,6 +142,7 @@ from
 left join
     {{ ref("int_powerschool__gradebook_assignments_scores") }} as a
     on ce.sections_dcid = a.sectionsdcid
+    and ce.students_dcid = a.students_dcid
     and ce.assignment_category_code = a.category_code
     and a.duedate between ce.week_start_date and ce.week_end_date
     and ce.date_enrolled <= a.duedate
