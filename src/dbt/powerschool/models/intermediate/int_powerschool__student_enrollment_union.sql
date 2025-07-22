@@ -32,10 +32,9 @@ with
             grade_level as highest_grade_level_achieved,
             gender_code as gender,
             ethnicity_code as ethnicity,
+            track,
 
             null as reenrollments_dcid,
-
-            coalesce(track, 'A') as track,
         from {{ ref("stg_powerschool__students") }}
         where enroll_status in (-1, 0, 2) and exitdate > entrydate
 
@@ -80,8 +79,7 @@ with
             s.ethnicity_code as ethnicity,
 
             re.dcid as reenrollments_dcid,
-
-            coalesce(re.track, 'A') as track,
+            re.track,
         from {{ ref("stg_powerschool__reenrollments") }} as re
         inner join {{ ref("stg_powerschool__students") }} as s on re.studentid = s.id
         where
@@ -90,28 +88,13 @@ with
     ),
 
     with_terms_ext as (
-        select
-            sr.*,
-
-            terms.yearid,
-            terms.academic_year,
-
-            x1.exit_code as exit_code_kf,
-            x2.exit_code as exit_code_ts,
+        select sr.*, terms.yearid, terms.academic_year,
         from stu_reenr as sr
         inner join
             {{ ref("stg_powerschool__terms") }} as terms
             on sr.schoolid = terms.schoolid
             and sr.entrydate between terms.firstday and terms.lastday
             and terms.isyearrec = 1
-        left join
-            {{ ref("stg_powerschool__u_clg_et_stu") }} as x1
-            on sr.students_dcid = x1.studentsdcid
-            and sr.exitdate = x1.exit_date
-        left join
-            {{ ref("stg_powerschool__u_clg_et_stu_alt") }} as x2
-            on sr.students_dcid = x2.studentsdcid
-            and sr.exitdate = x2.exit_date
     )
 
 select
@@ -148,9 +131,8 @@ select
     ethnicity,
     yearid,
     academic_year,
-    exit_code_kf,
-    exit_code_ts,
-    track,
+
+    coalesce(track, 'A') as track,
 from with_terms_ext
 
 union all
@@ -198,9 +180,7 @@ select
     terms.yearid,
     terms.academic_year,
 
-    null as exit_code_kf,
-    null as exit_code_ts,
-    'A' as track,
+    null as track,
 from {{ ref("stg_powerschool__students") }} as s
 inner join
     {{ ref("stg_powerschool__terms") }} as terms
