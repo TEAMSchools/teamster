@@ -5,7 +5,7 @@ with
             studentid,
             sectionid,
             storecode,
-            percent_grade,
+            percent_grade as category_quarter_percent_grade,
 
             round(
                 avg(percent_grade) over (
@@ -29,7 +29,7 @@ select
     ge.expectation,
     ge.notes,
 
-    cg.percent_grade as category_quarter_percent_grade,
+    cg.category_quarter_percent_grade,
     cg.category_quarter_average_all_courses,
 
     if(
@@ -37,7 +37,7 @@ select
         and s.school_level != 'ES'
         and abs(
             round(cg.category_quarter_average_all_courses, 2)
-            - round(cg.percent_grade, 2)
+            - round(cg.category_quarter_percent_grade, 2)
         )
         >= 30,
         true,
@@ -47,28 +47,26 @@ select
     if(
         s.region = 'Miami'
         and ge.assignment_category_code = 'W'
-        and cg.percent_grade is null
+        and cg.category_quarter_percent_grade is null
         and s.is_quarter_end_date_range,
         true,
         false
     ) as qt_effort_grade_missing,
 
     if(
-        s.region = 'Miami'
-        and s.school_level = 'ES'
+        s.region_school_level = 'MiamiES'
         and ge.assignment_category_code = 'F'
-        and cg.percent_grade is null
+        and cg.category_quarter_percent_grade is null
         and s.is_quarter_end_date_range,
         true,
         false
     ) as qt_formative_grade_missing,
 
     if(
-        s.region = 'Miami'
-        and s.school_level = 'ES'
+        s.region_school_level = 'MiamiES'
         and s.credit_type not in ('ENG', 'MATH')
         and ge.assignment_category_code = 'S'
-        and cg.percent_grade is null
+        and cg.category_quarter_percent_grade is null
         and s.is_quarter_end_date_range,
         true,
         false
