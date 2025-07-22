@@ -93,6 +93,7 @@ with
             as time_service_supervisor_position_id,
             w.worker_time_profile__time_and_attendance_indicator
             as time_and_attendance_indicator,
+            w.worker_time_profile__time_zone_code,
             w.worker_hire_date_recent,
             w.wf_mgr_trigger_new,
 
@@ -229,6 +230,7 @@ with
             null as badge_id,
             null as time_service_supervisor_position_id,
             null as time_and_attendance_indicator,
+            null as worker_time_profile__time_zone_code,
             null as worker_hire_date_recent,
             null as wf_mgr_trigger_new,
 
@@ -314,6 +316,7 @@ select
     w.badge_id,
     w.time_service_supervisor_position_id,
     w.time_and_attendance_indicator,
+    w.worker_time_profile__time_zone_code,
     w.worker_hire_date_recent,
 
     lc.location_region as home_work_location_region,
