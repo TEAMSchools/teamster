@@ -17,8 +17,6 @@ with
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
 
-            if(s.scorepoints = 0, 1, 0) as is_zero,
-
             if(
                 a.scoretype = 'POINTS',
                 s.scorepoints,
@@ -68,6 +66,10 @@ select
     *,
 
     -- scoring checks
+    if(
+        score_entered = 0 and assignmentid is not null and is_exempt = 0, 1, 0
+    ) as is_zero,
+
     if(
         assignmentid is not null and is_exempt = 0, true, false
     ) as assign_expected_to_be_scored,
