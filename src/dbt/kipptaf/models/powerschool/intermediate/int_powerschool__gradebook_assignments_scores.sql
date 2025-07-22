@@ -2,6 +2,7 @@ with
     scores as (
         select
             a._dbt_source_relation,
+            a.assignmentsectionid,
             a.sectionsdcid,
             a.assignmentid,
             a.name as assignment_name,
@@ -14,6 +15,8 @@ with
 
             s.scorepoints,
             s.actualscoreentered,
+
+            e.students_dcid,
 
             coalesce(s.islate, 0) as is_late,
             coalesce(s.isexempt, 0) as is_exempt,
@@ -77,6 +80,6 @@ select
 
     if(is_expected and is_missing = 1, 1, 0) as is_expected_missing,
 
-    if(is_expected and score_entered is not null, 1, 0) as is_expected_scored,
+    if(is_expected and score_entered is not null, true, false) as is_expected_scored,
 
 from scores
