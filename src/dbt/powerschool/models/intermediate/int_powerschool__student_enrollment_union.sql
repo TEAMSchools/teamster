@@ -78,8 +78,8 @@ with
             s.gender_code as gender,
             s.ethnicity_code as ethnicity,
 
-            re.dcid as reenrollments_dcid,
             re.track,
+            re.dcid as reenrollments_dcid,
         from {{ ref("stg_powerschool__reenrollments") }} as re
         inner join {{ ref("stg_powerschool__students") }} as s on re.studentid = s.id
         where
