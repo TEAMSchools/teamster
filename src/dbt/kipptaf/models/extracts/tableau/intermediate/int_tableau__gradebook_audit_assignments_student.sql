@@ -98,12 +98,12 @@ select
     ) as assign_w_score_less_5,
 
     if(
-        assignment_category_code = 'F' and scorepoints < 5, true, false
-    ) as assign_f_score_less_5,
-
-    if(
         assignment_category_code = 'H' and scorepoints < 5, true, false
     ) as assign_h_score_less_5,
+
+    if(
+        assignment_category_code = 'F' and scorepoints < 5, true, false
+    ) as assign_f_score_less_5,
 
     if(
         assignment_category_code = 'W'

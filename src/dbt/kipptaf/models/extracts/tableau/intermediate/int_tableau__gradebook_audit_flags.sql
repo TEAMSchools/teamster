@@ -11,6 +11,7 @@ with
                     assign_score_above_max,
                     assign_exempt_with_score,
                     assign_w_score_less_5,
+                    assign_h_score_less_5,
                     assign_f_score_less_5,
                     assign_w_missing_score_not_5,
                     assign_f_missing_score_not_5,
