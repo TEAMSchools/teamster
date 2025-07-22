@@ -6,8 +6,8 @@ snapshots:
       strategy: check
       unique_key:
         - employee_number
-        - adp_associate_id
-        - adp_associate_id_legacy
+        - coalesce(adp_associate_id, '')
+        - coalesce(adp_associate_id_legacy, '')
         - is_active
       check_cols: all
       meta:
