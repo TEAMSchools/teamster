@@ -1,12 +1,15 @@
 with
     scores as (
         select
+            a.sectionsdcid,
             a.assignmentid,
             a.name as assignment_name,
             a.duedate,
             a.scoretype,
             a.totalpointvalue,
             a.category_name,
+            a.category_code,
+            a.iscountedinfinalgrade,
 
             s.scorepoints,
             s.actualscoreentered,
@@ -14,6 +17,10 @@ with
             coalesce(s.islate, 0) as is_late,
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
+
+            if(
+                coalesce(s.isexempt, 0) = 0 or a.iscountedinfinalgrade = 1, true, false
+            ) as is_expected,
 
             if(
                 a.scoretype = 'POINTS',
@@ -49,20 +56,10 @@ with
 select
     *,
 
-    case
-        when is_exempt = 1
-        then false
-        when is_missing = 1 and score_entered is not null
-        then true
-        when score_entered is not null
-        then true
-        else false
-    end as is_expected_scored,
+    if(is_expected and score_entered is not null, true, false) as is_expected_scored,
 
-    if(score_entered = 0 and is_exempt = 0, 1, 0) as is_zero,
+    if(score_entered = 0 and is_expected, 1, 0) as is_zero,
 
-    if(score_entered is null, 1, 0) as is_null,
-
-    if(is_exempt = 0, true, false) as is_expected,
+    if(score_entered is null and is_expected, 1, 0) as is_null,
 
 from scores

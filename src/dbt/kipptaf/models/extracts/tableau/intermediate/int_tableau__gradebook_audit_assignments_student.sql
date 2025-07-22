@@ -9,7 +9,6 @@ with
             a.scoretype,
             a.totalpointvalue,
             a.category_name,
-
             s.scorepoints,
             s.actualscoreentered,
 
@@ -37,7 +36,7 @@ with
             }}
             as ce
         left join
-            {{ ref("int_powerschool__gradebook_assignments") }} as a
+            {{ ref('int_powerschool__gradebook_assignments_scores') }} as a
             on ce.sections_dcid = a.sectionsdcid
             and ce.assignment_category_code = a.category_code
             and a.duedate between ce.week_start_date and ce.week_end_date
@@ -45,12 +44,6 @@ with
             and {{ union_dataset_join_clause(left_alias="ce", right_alias="a") }}
             and a.iscountedinfinalgrade = 1
             and a.scoretype in ('POINTS', 'PERCENT')
-        left join
-            {{ ref("stg_powerschool__assignmentscore") }} as s
-            on ce.students_dcid = s.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="ce", right_alias="s") }}
-            and a.assignmentsectionid = s.assignmentsectionid
-            and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
         left join
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
             on ce.academic_year = e.academic_year
