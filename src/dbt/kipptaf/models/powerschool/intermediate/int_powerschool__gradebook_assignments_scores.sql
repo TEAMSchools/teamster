@@ -1,6 +1,7 @@
 with
     scores as (
         select
+            a._dbt_source_relation,
             a.sectionsdcid,
             a.assignmentid,
             a.name as assignment_name,
@@ -38,6 +39,8 @@ with
                 safe_cast(s.actualscoreentered as numeric)
             ) as assign_final_score_percent,
 
+            (a.totalpointvalue / 2) as half_total_point_value,
+
         from {{ ref("int_powerschool__gradebook_assignments") }} as a
         /* PS automatically assigns ALL assignments to a student when they enroll into
         a section, including those from before their enrollment date. This join ensures
@@ -60,10 +63,20 @@ with
 select
     *,
 
-    if(is_expected and score_entered is not null, true, false) as is_expected_scored,
+    if(score_entered = 0, 1, 0) as is_zero,
 
-    if(is_expected and score_entered = 0, 1, 0) as is_zero,
+    if(score_entered is null, 1, 0) as is_null,
 
-    if(is_expected and score_entered is null, 1, 0) as is_null,
+    if(score_entered is not null, 1, 0) as is_scored,
+
+    if(is_expected and score_entered = 0, 1, 0) as is_expected_zero,
+
+    if(is_expected and score_entered is null, 1, 0) as is_expected_null,
+
+    if(is_expected and is_late = 1, 1, 0) as is_expected_late,
+
+    if(is_expected and is_missing = 1, 1, 0) as is_expected_missing,
+
+    if(is_expected and score_entered is not null, 1, 0) as is_expected_scored,
 
 from scores
