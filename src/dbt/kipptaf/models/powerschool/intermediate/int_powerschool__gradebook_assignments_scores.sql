@@ -49,8 +49,20 @@ with
 select
     *,
 
-    if(
-        score_entered = 0 and assignmentid is not null and is_exempt = 0, 1, 0
-    ) as is_zero,
+    case
+        when is_exempt = 1
+        then false
+        when is_missing = 1 and score_entered is not null
+        then true
+        when score_entered is not null
+        then true
+        else false
+    end as is_expected_scored,
+
+    if(score_entered = 0 and is_exempt = 0, 1, 0) as is_zero,
+
+    if(score_entered is null, 1, 0) as is_null,
+
+    if(is_exempt = 0, true, false) as is_expected,
 
 from scores
