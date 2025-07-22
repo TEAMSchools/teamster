@@ -18,7 +18,7 @@ select
     a.is_expected_scored as assign_expected_with_score,
 
     -- exempt, nulls and max
-    if(is_exempt = 1 and is_null = 0, true, false) as assign_exempt_with_score,
+    if(a.is_exempt = 1 and a.is_null = 0, true, false) as assign_exempt_with_score,
 
     if(a.is_expected_null = 1, true, false) as assign_null_score,
 
@@ -43,7 +43,7 @@ select
 
     if(
         ce.assignment_category_code = 'F'
-        and is_expected_missing = 0
+        and a.is_expected_missing = 0
         and a.score_entered < 5,
         true,
         false
@@ -53,7 +53,7 @@ select
     if(
         ce.assignment_category_code = 'W'
         and ce.school_level != 'HS'
-        and is_expected_missing = 1
+        and a.is_expected_missing = 1
         and a.score_entered != 5,
         true,
         false
@@ -62,7 +62,7 @@ select
     if(
         ce.assignment_category_code = 'H'
         and ce.school_level != 'HS'
-        and is_expected_missing = 1
+        and a.is_expected_missing = 1
         and a.score_entered != 5,
         true,
         false
@@ -71,7 +71,7 @@ select
     if(
         ce.assignment_category_code = 'F'
         and ce.school_level != 'HS'
-        and is_expected_missing = 1
+        and a.is_expected_missing = 1
         and a.score_entered != 5,
         true,
         false
@@ -81,7 +81,7 @@ select
     if(
         ce.assignment_category_code = 'W'
         and ce.school_level = 'HS'
-        and is_expected_missing = 1
+        and a.is_expected_missing = 1
         and a.score_entered != 0,
         true,
         false
@@ -90,7 +90,7 @@ select
     if(
         ce.assignment_category_code = 'H'
         and ce.school_level = 'HS'
-        and is_expected_missing = 1
+        and a.is_expected_missing = 1
         and a.score_entered != 0,
         true,
         false
@@ -99,7 +99,7 @@ select
     if(
         ce.assignment_category_code = 'F'
         and ce.school_level = 'HS'
-        and is_expected_missing = 1
+        and a.is_expected_missing = 1
         and a.score_entered != 0,
         true,
         false
@@ -107,7 +107,8 @@ select
 
     -- 50% s assign min
     if(
-        ce.assignment_category_code = 'S' and a.score_entered < half_total_point_value,
+        ce.assignment_category_code = 'S'
+        and a.score_entered < a.half_total_point_value,
         true,
         false
     ) as assign_s_score_less_50p,
@@ -130,7 +131,7 @@ select
         and ce.assignment_category_code = 'S'
         and not ce.is_ap_course
         and a.is_expected_null = 0
-        and assign_final_score_percent
+        and a.assign_final_score_percent
         not in (50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100),
         true,
         false
