@@ -118,8 +118,8 @@ with
             score_entered,
             assign_final_score_percent,
             is_exempt,
-            is_late,
-            is_missing,
+            is_expected_late,
+            is_expected_missing,
             audit_category,
             cte_grouping,
             code_type,
@@ -170,8 +170,8 @@ select
     v.score_entered,
     v.assign_final_score_percent,
     v.is_exempt,
-    v.is_late,
-    v.is_missing,
+    v.is_expected_late,
+    v.is_expected_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
 
@@ -238,8 +238,8 @@ select
     v.score_entered,
     v.assign_final_score_percent,
     v.is_exempt,
-    v.is_late,
-    v.is_missing,
+    v.is_expected_late,
+    v.is_expected_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
 
@@ -304,8 +304,8 @@ select
     v.score_entered,
     v.assign_final_score_percent,
     v.is_exempt,
-    v.is_late,
-    v.is_missing,
+    v.is_expected_late,
+    v.is_expected_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
 
@@ -370,8 +370,8 @@ select
     v.score_entered,
     v.assign_final_score_percent,
     v.is_exempt,
-    v.is_late,
-    v.is_missing,
+    v.is_expected_late,
+    v.is_expected_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
 
@@ -438,8 +438,8 @@ select
     v.score_entered,
     v.assign_final_score_percent,
     v.is_exempt,
-    v.is_late,
-    v.is_missing,
+    v.is_expected_late,
+    v.is_expected_missing,
 
     coalesce(v.flag_value, 0) as flag_value,
 

@@ -118,8 +118,8 @@ with
             score_entered,
             assign_final_score_percent,
             is_exempt,
-            is_late,
-            is_missing,
+            is_expected_late,
+            is_expected_missing,
             audit_category,
             cte_grouping,
             code_type,
@@ -169,8 +169,8 @@ select
     v.score_entered,
     v.assign_final_score_percent,
     v.is_exempt,
-    v.is_late,
-    v.is_missing,
+    v.is_expected_late,
+    v.is_expected_missing,
 
     e.category_quarter_percent_grade as effort_grade,
 
