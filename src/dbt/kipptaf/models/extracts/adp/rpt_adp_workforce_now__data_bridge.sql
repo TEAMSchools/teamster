@@ -68,7 +68,9 @@ select
         wk.adp__worker_time_profile__time_zone_code,
         null
     ) as `TimeZone`,
-    if(wk.adp__time_and_attendance_indicator, null, null) as `Transfertopayroll`,
+    if(
+        wk.adp__time_and_attendance_indicator, tna.transfer_to_payroll, null
+    ) as `Transfertopayroll`,
     if(wk.adp__time_and_attendance_indicator, tna.pay_class, null) as `Payclass`,
     if(
         wk.adp__time_and_attendance_indicator, tna.supervisor_flag, null
