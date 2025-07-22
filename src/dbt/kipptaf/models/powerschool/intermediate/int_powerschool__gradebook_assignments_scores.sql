@@ -18,9 +18,13 @@ with
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
 
-            if(
-                coalesce(s.isexempt, 0) = 0 or a.iscountedinfinalgrade = 1, true, false
-            ) as is_expected,
+            case
+                when coalesce(s.isexempt, 0) = 1
+                then false
+                when a.iscountedinfinalgrade = 0
+                then false
+                else true
+            end as is_expected,
 
             if(
                 a.scoretype = 'POINTS',
@@ -58,8 +62,8 @@ select
 
     if(is_expected and score_entered is not null, true, false) as is_expected_scored,
 
-    if(score_entered = 0 and is_expected, 1, 0) as is_zero,
+    if(is_expected and score_entered = 0, 1, 0) as is_zero,
 
-    if(score_entered is null and is_expected, 1, 0) as is_null,
+    if(is_expected and score_entered is null, 1, 0) as is_null,
 
 from scores
