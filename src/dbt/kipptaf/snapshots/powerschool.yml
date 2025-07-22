@@ -1,0 +1,25 @@
+snapshots:
+  - name: snapshot_powerschool__gpa_cumulative
+    config:
+      schema: powerschool
+      strategy: check
+      unique_key: unique_key
+      check_cols: all
+      meta:
+        dagster:
+          asset_key:
+            - kipptaf
+            - powerschool
+            - snapshot_powerschool__gpa_cumulative
+  - name: snapshot_powerschool__gpa_term
+    config:
+      schema: powerschool
+      strategy: check
+      unique_key: unique_key
+      check_cols: all
+      meta:
+        dagster:
+          asset_key:
+            - kipptaf
+            - powerschool
+            - snapshot_powerschool__gpa_term

@@ -30,7 +30,18 @@ select
     coalesce(srd.string_value, srd.option_value, srd.rank_value) as response_value,
 
     if(
-        sq.shortname in unnest({{ var("alchemer_survey_identifier_short_names") }}),
+        sq.shortname in (
+            'respondent_employee_number',
+            'respondent_df_employee_number',
+            'respondent_userprincipalname',
+            'respondent_adp_associate_id',
+            'subject_df_employee_number',
+            'employee_number',
+            'email',
+            'employee_preferred_name',
+            'salesforce_id',
+            'is_manager'
+        ),
         true,
         false
     ) as is_identifier_question,
