@@ -9,6 +9,7 @@ snapshots:
         - last_week_lessons_completed
         - last_week_lessons_passed
         - last_week_time_on_task_min
+      dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
           asset_key:
