@@ -1,5 +1,5 @@
 select
-    b.*,
+    b.* except (assignment_category_code, assignment_category_name),
 
     a.category_code as assignment_category_code,
     a.category_name as assignment_category_name,
