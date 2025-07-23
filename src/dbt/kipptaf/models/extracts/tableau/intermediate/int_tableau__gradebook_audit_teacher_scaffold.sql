@@ -2,9 +2,13 @@ with
     sections as (
         select
             s._dbt_source_relation,
+            s.terms_yearid,
+            s.terms_firstday,
+            s.terms_lastday,
+            s.terms_academic_year as academic_year,
             s.sections_dcid,
             s.sections_id as sectionid,
-            s.sections_schoolid,
+            s.sections_schoolid as schoolid,
             s.sections_course_number as course_number,
             s.sections_section_number as section_number,
             s.sections_external_expression as external_expression,
@@ -14,9 +18,6 @@ with
             s.is_ap_course,
             s.teachernumber as teacher_number,
             s.teacher_lastfirst as teacher_name,
-            s.terms_yearid,
-            s.terms_firstday,
-            s.terms_lastday,
 
             r.sam_account_name as teacher_tableau_username,
 
@@ -127,10 +128,27 @@ select
 from term_weeks as tw
 inner join
     sections as sec
-    on tw.schoolid = sec.sections_schoolid
+    on tw.schoolid = sec.schoolid
     and tw.yearid = sec.terms_yearid
     and tw.week_end_date between sec.terms_firstday and sec.terms_lastday
     and {{ union_dataset_join_clause(left_alias="tw", right_alias="sec") }}
+left join
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+    on sec.academic_year = e1.academic_year
+    and sec.course_number = e1.course_number
+    and e1.view_name = 'gradebook_audit_section_week_scaffold'
+    and e1.school_id is null
+left join
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+    on sec.academic_year = e2.academic_year
+    and sec.schoolid = e2.school_id
+    and sec.course_number = e2.course_number
+    and e2.view_name = 'gradebook_audit_section_week_scaffold'
+    and e2.school_id is not null
+where
+    sec.academic_year = {{ var("current_academic_year") }}
+    and e1.`include` is null
+    and e2.`include` is null
 
 union all
 
@@ -176,7 +194,7 @@ select
 from term_weeks as tw
 inner join
     sections as sec
-    on tw.schoolid = sec.sections_schoolid
+    on tw.schoolid = sec.schoolid
     and tw.yearid = sec.terms_yearid
     and tw.week_end_date between sec.terms_firstday and sec.terms_lastday
     and {{ union_dataset_join_clause(left_alias="tw", right_alias="sec") }}
@@ -187,3 +205,10 @@ inner join
     and tw.academic_year = ge.academic_year
     and tw.quarter = ge.quarter
     and tw.week_number_quarter = ge.week_number
+left join
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+    on sec.academic_year = e1.academic_year
+    and sec.course_number = e1.course_number
+    and ge.assignment_category_code = e1.gradebook_category
+    and e1.view_name = 'gradebook_audit_section_week_category_scaffold'
+where e1.include is null
