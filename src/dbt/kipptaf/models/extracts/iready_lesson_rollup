@@ -1,0 +1,197 @@
+with
+    school_id_crosswalk as (
+        select powerschool_school_id, max(deanslist_school_id) as deanslist_school_id,
+        from {{ ref("stg_people__location_crosswalk") }}
+        where not is_campus and not is_pathways
+        group by powerschool_school_id
+    ),
+
+    deanslist_weeks_clean as (
+        select
+            school_id,
+            term_name,
+            academic_year_id,
+            term_id,
+
+            extract(date from start_date_date) as start_date,
+            extract(date from end_date_date) as end_date,
+            left(academic_year_name, 4) as academic_year,
+        from {{ ref("stg_deanslist__terms") }}
+        where term_type = 'Weeks'
+    ),
+
+    scaffold as (
+        select
+            'PowerSchool Weeks' as week_type,
+            co.academic_year,
+            co.student_number,
+
+            subj as `subject`,
+
+            w.week_start_monday,
+            w.quarter,
+
+            -- dw.term_name as deanslist_week,
+            -- dw.term_id as deanslist_term_id,
+            -- dw.academic_year_id as deanslist_academic_year_id,
+
+            lu.lesson_source,
+            lu.lesson_id,
+            lu.passed_or_not_passed_numeric,
+        from {{ ref("base_powerschool__student_enrollments") }} as co
+        cross join unnest(['Reading', 'Math']) as subj
+        inner join
+            {{ ref("int_powerschool__calendar_week") }} as w
+            on co.academic_year = w.academic_year
+            and co.schoolid = w.schoolid
+            and w.week_start_monday between co.entrydate and co.exitdate
+        left join
+            {{ ref("int_iready__instruction_by_lesson_union") }} as lu
+            on co.student_number = lu.student_id
+            and co.academic_year = lu.academic_year_int
+            and subj = lu.subject
+            and lu.completion_date between w.week_start_monday and w.week_end_sunday
+        where
+            co.academic_year = {{ var("current_academic_year") }}
+            and co.grade_level < 12
+
+        union all
+
+        select
+            'DeansList Weeks' as week_type,
+            co.academic_year,
+            co.student_number,
+
+            subj as `subject`,
+
+            w.week_start_monday,
+            null as quarter,
+
+            dw.term_name as deanslist_week,
+            dw.term_id as deanslist_term_id,
+            dw.academic_year_id as deanslist_academic_year_id,
+
+            lu.lesson_source,
+            lu.lesson_id,
+            lu.passed_or_not_passed_numeric,
+        from {{ ref("base_powerschool__student_enrollments") }} as co
+        cross join unnest(['Reading', 'Math']) as subj
+        inner join
+            {{ ref("int_powerschool__calendar_week") }} as w
+            on co.academic_year = w.academic_year
+            and co.schoolid = w.schoolid
+            and w.week_start_monday between co.entrydate and co.exitdate
+        inner join school_id_crosswalk as cw on co.schoolid = cw.powerschool_school_id
+        inner join
+            deanslist_weeks_clean as dw
+            on cw.deanslist_school_id = dw.school_id
+            and co.academic_year = dw.academic_year
+            and lu.completion_date between dw.start_date and dw.end_date
+        left join
+            {{ ref("int_iready__instruction_by_lesson_union") }} as lu
+            on co.student_number = lu.student_id
+            and co.academic_year = lu.academic_year_int
+            and subj = lu.subject
+            and lu.completion_date between w.week_start_monday and w.week_end_sunday
+        where
+            co.academic_year = {{ var("current_academic_year") }}
+            and co.grade_level < 12
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03)
+    week_rollup as (
+        select
+            student_number,
+            academic_year,
+            week_start_monday,
+            `subject`,
+
+            coalesce(sum(passed_or_not_passed_numeric), 0) as lessons_passed,
+            coalesce(count(lesson_id), 0) as total_lessons,
+
+            if(
+                coalesce(sum(passed_or_not_passed_numeric), 0) >= 2, 1, 0
+            ) as is_2plus_lessons_passed_int,
+
+            if(
+                coalesce(sum(passed_or_not_passed_numeric), 0) >= 4, 1, 0
+            ) as is_4plus_lessons_passed_int,
+
+            coalesce(
+                round(sum(passed_or_not_passed_numeric) / count(lesson_id), 2) * 100, 0
+            ) as pct_passed,
+        from scaffold
+        group by all
+    ),
+
+    dl_week_rollup as (
+        select
+            student_number,
+            academic_year,
+            week_start_monday,
+            `subject`,
+
+            coalesce(sum(passed_or_not_passed_numeric), 0) as lessons_passed,
+            coalesce(count(lesson_id), 0) as total_lessons,
+
+            if(
+                coalesce(sum(passed_or_not_passed_numeric), 0) >= 2, 1, 0
+            ) as is_2plus_lessons_passed_int,
+
+            if(
+                coalesce(sum(passed_or_not_passed_numeric), 0) >= 4, 1, 0
+            ) as is_4plus_lessons_passed_int,
+
+            coalesce(
+                round(sum(passed_or_not_passed_numeric) / count(lesson_id), 2) * 100, 0
+            ) as pct_passed,
+        from scaffold
+        group by all
+    ),
+
+    quarter_rollup as (
+        select
+            student_number,
+            academic_year,
+            `quarter`,
+            `subject`,
+
+            coalesce(sum(passed_or_not_passed_numeric), 0) as lessons_passed,
+            coalesce(count(lesson_id), 0) as total_lessons,
+
+            if(
+                coalesce(sum(passed_or_not_passed_numeric), 0) >= 2, 1, 0
+            ) as is_2plus_lessons_passed_int,
+
+            if(
+                coalesce(sum(passed_or_not_passed_numeric), 0) >= 4, 1, 0
+            ) as is_4plus_lessons_passed_int,
+
+            coalesce(
+                round(sum(passed_or_not_passed_numeric) / count(lesson_id), 2) * 100, 0
+            ) as pct_passed,
+        from scaffold
+        group by all
+    )
+
+select
+    'Quarter' as term_type,
+    student_number as student_id,
+    `subject`,
+    `quarter` as term,
+    lessons_passed,
+    total_lessons,
+    pct_passed,
+from quarter_rollup
+
+union all
+
+select
+    'PowerSchool Week' as term_type,
+    student_number as student_id,
+    `subject`,
+    cast(`week_start_monday` as string) as term,
+    lessons_passed,
+    total_lessons,
+    pct_passed,
+from week_rollup
