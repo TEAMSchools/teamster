@@ -1,6 +1,5 @@
 from dagster import (
     AssetExecutionContext,
-    AutomationCondition,
     DailyPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -8,7 +7,6 @@ from dagster import (
     StaticPartitionsDefinition,
     asset,
 )
-from dagster._core.definitions.declarative_automation import OrAutomationCondition
 from dagster_shared import check
 from slugify import slugify
 
@@ -20,34 +18,8 @@ from teamster.libraries.tableau.resources import TableauServerResource
 
 
 def build_tableau_workbook_refresh_asset(
-    code_location: str,
-    name: str,
-    deps: list[str],
-    metadata: dict[str, str],
-    cron_schedule: str | list[str] | None = None,
-    cron_timezone: str | None = None,
+    code_location: str, name: str, deps: list[str], metadata: dict[str, str]
 ):
-    if isinstance(cron_schedule, str):
-        cron_schedule = [cron_schedule]
-
-    if cron_schedule is None:
-        automation_condition = None
-    else:
-        cron_timezone = check.not_none(value=cron_timezone)
-
-        automation_condition = OrAutomationCondition(
-            operands=[
-                AutomationCondition.on_cron(
-                    cron_schedule=cs, cron_timezone=cron_timezone
-                ).without(
-                    AutomationCondition.all_deps_updated_since_cron(
-                        cron_schedule=cs, cron_timezone=cron_timezone
-                    )
-                )
-                for cs in cron_schedule
-            ]
-        )
-
     @asset(
         key=[
             code_location,
@@ -57,7 +29,6 @@ def build_tableau_workbook_refresh_asset(
         description=name,
         deps=deps,
         metadata=metadata,
-        automation_condition=automation_condition,
         kinds={"tableau"},
         group_name="tableau",
         output_required=False,
