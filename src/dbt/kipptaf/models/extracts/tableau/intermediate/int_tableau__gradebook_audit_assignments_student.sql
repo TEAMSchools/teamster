@@ -138,9 +138,7 @@ select
         false
     ) as assign_s_hs_score_not_conversion_chart_options,
 
-from
-    {{ ref("int_tableau__gradebook_audit_section_week_student_category_scaffold") }}
-    as ce
+from {{ ref("int_tableau__gradebook_audit_student_scaffold") }} as ce
 left join
     {{ ref("int_powerschool__gradebook_assignments_scores") }} as a
     on ce.sections_dcid = a.sectionsdcid
@@ -157,6 +155,6 @@ left join
     and ce.region = e.region
     and ce.school_level = e.school_level
     and ce.course_number = e.course_number
-    and e.view_name = 'int_tableau__gradebook_audit_assignments_student'
+    and e.view_name = 'assignments_student'
     and e.course_number is not null
-where e.`include` is null
+where ce.scaffold_name = 'student_category_scaffold' and e.`include` is null

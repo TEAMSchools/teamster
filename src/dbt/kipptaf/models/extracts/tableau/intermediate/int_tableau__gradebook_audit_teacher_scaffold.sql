@@ -108,7 +108,7 @@ select
     null as expectation,
     null as notes,
 
-    'teacher_section_week_scaffold' as scaffold_name,
+    'teacher_scaffold' as scaffold_name,
 
     case
         when
@@ -132,18 +132,20 @@ inner join
     and tw.yearid = sec.terms_yearid
     and tw.week_end_date between sec.terms_firstday and sec.terms_lastday
     and {{ union_dataset_join_clause(left_alias="tw", right_alias="sec") }}
+/* exceptions listed below completely remove a course/section/credit type from the
+   entire gradebook audit dash */
 left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
     on sec.academic_year = e1.academic_year
     and sec.course_number = e1.course_number
-    and e1.view_name = 'gradebook_audit_section_week_scaffold'
+    and e1.view_name = 'teacher_scaffold'
     and e1.school_id is null
 left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
     on sec.academic_year = e2.academic_year
     and sec.schoolid = e2.school_id
     and sec.course_number = e2.course_number
-    and e2.view_name = 'gradebook_audit_section_week_scaffold'
+    and e2.view_name = 'teacher_scaffold'
     and e2.school_id is not null
 where
     sec.academic_year = {{ var("current_academic_year") }}
@@ -174,7 +176,7 @@ select
     ge.expectation,
     ge.notes,
 
-    'teacher_section_week_category_scaffold' as scaffold_name,
+    'teacher_category_scaffold' as scaffold_name,
 
     case
         when
@@ -205,23 +207,28 @@ inner join
     and tw.academic_year = ge.academic_year
     and tw.quarter = ge.quarter
     and tw.week_number_quarter = ge.week_number
+/* exceptions listed below completely remove a course/section/credit type from the
+   entire gradebook audit dash */
 left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
     on sec.academic_year = e1.academic_year
     and sec.course_number = e1.course_number
-    and e1.view_name = 'gradebook_audit_section_week_scaffold'
+    and e1.view_name = 'teacher_scaffold'
     and e1.school_id is null
 left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
     on sec.academic_year = e2.academic_year
     and sec.schoolid = e2.school_id
     and sec.course_number = e2.course_number
-    and e2.view_name = 'gradebook_audit_section_week_scaffold'
+    and e2.view_name = 'teacher_scaffold'
     and e2.school_id is not null
+/* exceptions listed below completely remove rows for certain gradebook categories for
+   a course/section/credit type from the entire gradebook audit dash, but NOT the 
+   entire course/section/credit type */
 left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e3
     on sec.academic_year = e3.academic_year
     and sec.course_number = e3.course_number
     and ge.assignment_category_code = e3.gradebook_category
-    and e3.view_name = 'gradebook_audit_section_week_category_scaffold'
+    and e3.view_name = 'teacher_category_scaffold'
 where e1.include is null and e2.include is null and e3.include is null

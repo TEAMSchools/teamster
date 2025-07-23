@@ -94,10 +94,10 @@ select
 
     qg.term_percent_grade_adjusted as quarter_course_percent_grade,
     qg.term_grade_points as quarter_course_grade_points,
-    qg.citizenship as quarter_citizenship,
+    qg.citizenship as quarter_conduct,
     qg.comment_value as quarter_comment_value,
 
-    'student_section_week_scaffold' as scaffold_name,
+    'student_scaffold' as scaffold_name,
 
     null as assignment_category_name,
     null as assignment_category_code,
@@ -107,6 +107,101 @@ select
 
     null as category_quarter_percent_grade,
     null as category_quarter_average_all_courses,
+
+    -- gpa and ada tag
+    if(
+        s.school_level != 'ES' and s.ada_above_or_at_80 and qg.term_grade_points < 2.0,
+        true,
+        false
+    ) as qt_student_is_ada_80_plus_gpa_less_2,
+
+    -- quarter course grade above 100
+    if(
+        qg.term_percent_grade_adjusted > 100, true, false
+    ) as qt_percent_grade_greater_100,
+
+    -- course comments
+    if(
+        s.school_level != 'ES'
+        and sec.is_quarter_end_date_range
+        and qg.term_percent_grade_adjusted < 70
+        and qg.comment_value is null,
+        true,
+        false
+    ) as qt_grade_70_comment_missing,
+
+    if(
+        sec.region_school_level = 'MiamiES'
+        and sec.is_quarter_end_date_range
+        and qg.comment_value is null,
+        true,
+        false
+    ) as qt_comment_missing,
+
+    if(
+        sec.region_school_level = 'MiamiES'
+        and sec.is_quarter_end_date_range
+        and ce.courses_credittype in ('HR', 'MATH', 'ENG', 'RHET')
+        and qg.comment_value is null,
+        true,
+        false
+    ) as qt_es_comment_missing,
+
+    -- conduct codes
+    if(
+        s.region = 'Miami'
+        and s.grade_level != 0
+        and sec.is_quarter_end_date_range
+        and ce.courses_course_name != 'HR'
+        and qg.citizenship is null,
+        true,
+        false
+    ) as qt_g1_g8_conduct_code_missing,
+
+    if(
+        s.region = 'Miami'
+        and s.grade_level != 0
+        and sec.is_quarter_end_date_range
+        and ce.courses_course_name != 'HR'
+        and qg.citizenship not in ('A', 'B', 'C', 'D', 'E', 'F'),
+        true,
+        false
+    ) as qt_g1_g8_conduct_code_incorrect,
+
+    if(
+        sec.region_school_level = 'MiamiES'
+        and s.grade_level = 0
+        and sec.is_quarter_end_date_range
+        and ce.courses_course_name = 'HR'
+        and qg.citizenship is null,
+        true,
+        false
+    ) as qt_kg_conduct_code_missing,
+
+    if(
+        sec.region_school_level = 'MiamiES'
+        and s.grade_level = 0
+        and sec.is_quarter_end_date_range
+        and ce.courses_course_name = 'HR'
+        and qg.citizenship not in ('E', 'G', 'S', 'M'),
+        true,
+        false
+    ) as qt_kg_conduct_code_incorrect,
+
+    if(
+        sec.region_school_level = 'MiamiES'
+        and s.grade_level = 0
+        and sec.is_quarter_end_date_range
+        and ce.courses_course_name != 'HR'
+        and qg.citizenship is not null,
+        true,
+        false
+    ) as qt_kg_conduct_code_not_hr,
+
+    null as w_grade_inflation,
+    null as qt_effort_grade_missing,
+    null as qt_formative_grade_missing,
+    null as qt_summative_grade_missing,
 
 from {{ ref("int_extracts__student_enrollments") }} as s
 inner join
@@ -119,7 +214,7 @@ inner join
     {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
     on ce.cc_sectionid = sec.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
-    and sec.scaffold_name = 'teacher_section_week_scaffold'
+    and sec.scaffold_name = 'teacher_scaffold'
 left join
     {{ ref("base_powerschool__final_grades") }} as qg
     on ce.cc_studentid = qg.studentid
@@ -209,10 +304,10 @@ select
 
     qg.term_percent_grade_adjusted as quarter_course_percent_grade,
     qg.term_grade_points as quarter_course_grade_points,
-    qg.citizenship as quarter_citizenship,
+    qg.citizenship as quarter_conduct,
     qg.comment_value as quarter_comment_value,
 
-    'student_section_week_category_scaffold' as scaffold_name,
+    'student_category_scaffold' as scaffold_name,
 
     ge.assignment_category_name,
     ge.assignment_category_code,
@@ -222,6 +317,57 @@ select
 
     cg.category_quarter_percent_grade,
     cg.category_quarter_average_all_courses,
+
+    null as qt_student_is_ada_80_plus_gpa_less_2,
+    null as qt_percent_grade_greater_100,
+    null as qt_grade_70_comment_missing,
+    null as qt_comment_missing,
+    null as qt_es_comment_missing,
+    null as qt_g1_g8_conduct_code_missing,
+    null as qt_g1_g8_conduct_code_incorrect,
+    null as qt_kg_conduct_code_missing,
+    null as qt_kg_conduct_code_incorrect,
+    null as qt_kg_conduct_code_not_hr,
+
+    if(
+        ge.assignment_category_code = 'W'
+        and s.school_level != 'ES'
+        and abs(
+            round(cg.category_quarter_average_all_courses, 2)
+            - round(cg.category_quarter_percent_grade, 2)
+        )
+        >= 30,
+        true,
+        false
+    ) as w_grade_inflation,
+
+    if(
+        s.region = 'Miami'
+        and ge.assignment_category_code = 'W'
+        and cg.category_quarter_percent_grade is null
+        and sec.is_quarter_end_date_range,
+        true,
+        false
+    ) as qt_effort_grade_missing,
+
+    if(
+        s.region_school_level = 'MiamiES'
+        and ge.assignment_category_code = 'F'
+        and cg.category_quarter_percent_grade is null
+        and sec.is_quarter_end_date_range,
+        true,
+        false
+    ) as qt_formative_grade_missing,
+
+    if(
+        s.region_school_level = 'MiamiES'
+        and sec.credit_type not in ('ENG', 'MATH')
+        and ge.assignment_category_code = 'S'
+        and cg.category_quarter_percent_grade is null
+        and sec.is_quarter_end_date_range,
+        true,
+        false
+    ) as qt_summative_grade_missing,
 
 from {{ ref("int_extracts__student_enrollments") }} as s
 inner join
@@ -234,7 +380,7 @@ inner join
     {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
     on ce.cc_sectionid = sec.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
-    and sec.scaffold_name = 'teacher_section_week_category_scaffold'
+    and sec.scaffold_name = 'teacher_category_scaffold'
 inner join
     {{ ref("stg_reporting__gradebook_expectations") }} as ge
     on sec.region = ge.region

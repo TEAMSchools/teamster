@@ -1,3 +1,81 @@
+with
+    school_course_exceptions as (
+        select s._dbt_source_relation, s.sections_dcid, e.`include`,
+        from {{ ref("base_powerschool__sections") }} as s
+        inner join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+            on s.terms_academic_year = e.academic_year
+            and s.sections_schoolid = e.school_id
+            and s.sections_course_number = e.course_number
+            and e.view_name = 'int_powerschool__assignment_score_rollup'
+            and e.cte = 'school_course_exceptions'
+            and e.course_number is not null
+            and e.is_quarter_end_date_range is null
+
+        union all
+
+        select s._dbt_source_relation, s.sections_dcid, e.`include`,
+        from {{ ref("base_powerschool__sections") }} as s
+        inner join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+            on s.terms_academic_year = e.academic_year
+            and s.sections_schoolid = e.school_id
+            and s.courses_credittype = e.credit_type
+            and e.view_name = 'int_powerschool__assignment_score_rollup'
+            and e.cte = 'school_course_exceptions'
+            and e.credit_type is not null
+            and e.is_quarter_end_date_range is null
+
+        union all
+
+        select s._dbt_source_relation, s.sections_dcid, e.`include`,
+        from {{ ref("base_powerschool__sections") }} as s
+        inner join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+            on s.terms_academic_year = e.academic_year
+            and s.sections_course_number = e.course_number
+            and e.view_name = 'int_powerschool__assignment_score_rollup'
+            and e.cte = 'school_course_exceptions'
+            and e.course_number is not null
+            and e.is_quarter_end_date_range is not null
+    ),
+
+    assignment_score_rollup as (
+        select
+            s._dbt_source_relation,
+            s.assignmentsectionid,
+
+            count(s.students_dcid) as n_students,
+
+            sum(s.is_expected_late) as n_late,
+            sum(s.is_exempt) as n_exempt,
+            sum(s.is_expected_missing) as n_missing,
+            sum(s.is_expected_null) as n_null,
+
+            sum(
+                if(s.is_expected_null = 1 and s.is_expected_missing = 1, 1, 0)
+            ) as n_is_null_missing,
+
+            sum(
+                if(s.is_expected_null = 1 and s.is_expected_missing = 0, 1, 0)
+            ) as n_is_null_not_missing,
+
+            countif(s.is_expected) as n_expected,
+            countif(s.is_expected_scored) as n_expected_scored,
+
+            avg(
+                if(s.is_expected_scored, s.assign_final_score_percent, null)
+            ) as avg_expected_scored_percent,
+
+        from {{ ref("int_powerschool__gradebook_assignments_scores") }} as s
+        left join
+            school_course_exceptions as e1
+            on s.sectionsdcid = e1.sections_dcid
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="e1") }}
+        where e1.`include` is null
+        group by s._dbt_source_relation, s.assignmentsectionid
+    )
+
 select
     sec.*,
 
@@ -57,7 +135,25 @@ select
             sec.assignment_category_code
     ) as sum_totalpointvalue_section_quarter_category,
 
-from {{ ref("int_tableau__gradebook_audit_section_week_category_scaffold") }} as sec
+    sum(asg.n_expected) over (
+        partition by
+            sec._dbt_source_relation,
+            sec.sectionid,
+            sec.quarter,
+            sec.week_number_quarter,
+            sec.assignment_category_code
+    ) as total_expected_section_quarter_week_category,
+
+    sum(asg.n_expected_scored) over (
+        partition by
+            sec._dbt_source_relation,
+            sec.sectionid,
+            sec.quarter,
+            sec.week_number_quarter,
+            sec.assignment_category_code
+    ) as total_expected_scored_section_quarter_week_category,
+
+from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
 left join
     {{ ref("int_powerschool__gradebook_assignments") }} as a
     on sec.sections_dcid = a.sectionsdcid
@@ -65,7 +161,7 @@ left join
     and a.duedate between sec.week_start_monday and sec.week_end_sunday
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
 left join
-    {{ ref("int_powerschool__assignment_score_rollup") }} as asg
+    assignment_score_rollup as asg
     on a.assignmentsectionid = asg.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
 left join
@@ -84,4 +180,7 @@ left join
     and sec.is_quarter_end_date_range = e2.is_quarter_end_date_range
     and e2.view_name = 'int_tableau__gradebook_audit_assignments_teacher'
     and e2.is_quarter_end_date_range is not null
-where e1.`include` is null and e2.`include` is null
+where
+    sec.scaffold_name = 'teacher_section_week_category_scaffold'
+    and e1.`include` is null
+    and e2.`include` is null
