@@ -1,8 +1,8 @@
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     student_number as `01 Student ID`,
-    username as `02 Username`,
-    student_web_id as `03 Email`,
+    student_web_id as `02 Username`,
+    student_email as `03 Email`,
 
     1 as `04 Enable Portal`,
 
