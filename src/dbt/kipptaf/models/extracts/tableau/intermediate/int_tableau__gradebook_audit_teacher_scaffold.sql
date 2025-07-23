@@ -209,6 +209,19 @@ left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
     on sec.academic_year = e1.academic_year
     and sec.course_number = e1.course_number
-    and ge.assignment_category_code = e1.gradebook_category
-    and e1.view_name = 'gradebook_audit_section_week_category_scaffold'
-where e1.include is null
+    and e1.view_name = 'gradebook_audit_section_week_scaffold'
+    and e1.school_id is null
+left join
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+    on sec.academic_year = e2.academic_year
+    and sec.schoolid = e2.school_id
+    and sec.course_number = e2.course_number
+    and e2.view_name = 'gradebook_audit_section_week_scaffold'
+    and e2.school_id is not null
+left join
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e3
+    on sec.academic_year = e3.academic_year
+    and sec.course_number = e3.course_number
+    and ge.assignment_category_code = e3.gradebook_category
+    and e3.view_name = 'gradebook_audit_section_week_category_scaffold'
+where e1.include is null and e2.include is null and e3.include is null
