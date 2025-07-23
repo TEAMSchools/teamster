@@ -1,5 +1,6 @@
 snapshots:
   - name: snapshot_powerschool__gpa_cumulative
+    relation: ref("int_powerschool__gpa_cumulative")
     config:
       schema: powerschool
       strategy: check
@@ -12,6 +13,7 @@ snapshots:
             - powerschool
             - snapshot_powerschool__gpa_cumulative
   - name: snapshot_powerschool__gpa_term
+    relation: ref("int_powerschool__gpa_term")
     config:
       schema: powerschool
       strategy: check
