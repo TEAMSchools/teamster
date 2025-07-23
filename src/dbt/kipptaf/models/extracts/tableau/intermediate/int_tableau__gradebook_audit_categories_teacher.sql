@@ -1,55 +1,8 @@
 with
     assignments as (
-        select
-            sec.*,
+        select sec.*,
 
-            count(a.assignmentid) over (
-                partition by
-                    sec._dbt_source_relation,
-                    sec.sectionid,
-                    sec.assignment_category_term
-                order by sec.week_number_quarter asc
-            ) as running_count_assignments_section_category_term,
-
-            sum(a.totalpointvalue) over (
-                partition by
-                    sec._dbt_source_relation,
-                    sec.quarter,
-                    sec.sectionid,
-                    sec.assignment_category_code
-            ) as sum_totalpointvalue_section_quarter_category,
-
-            sum(asg.n_expected) over (
-                partition by
-                    sec._dbt_source_relation,
-                    sec.sectionid,
-                    sec.quarter,
-                    sec.week_number_quarter,
-                    sec.assignment_category_code
-            ) as total_expected_section_quarter_week_category,
-
-            sum(asg.n_expected_scored) over (
-                partition by
-                    sec._dbt_source_relation,
-                    sec.sectionid,
-                    sec.quarter,
-                    sec.week_number_quarter,
-                    sec.assignment_category_code
-            ) as total_expected_scored_section_quarter_week_category,
-
-        from
-            {{ ref("int_tableau__gradebook_audit_section_week_category_scaffold") }}
-            as sec
-        left join
-            {{ ref("int_powerschool__gradebook_assignments") }} as a
-            on sec.sections_dcid = a.sectionsdcid
-            and sec.assignment_category_name = a.category_name
-            and a.duedate between sec.week_start_monday and sec.week_end_sunday
-            and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
-        left join
-            {{ ref("int_powerschool__assignment_score_rollup") }} as asg
-            on a.assignmentsectionid = asg.assignmentsectionid
-            and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
+        from {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as sec
         left join
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
             on sec.academic_year = e1.academic_year

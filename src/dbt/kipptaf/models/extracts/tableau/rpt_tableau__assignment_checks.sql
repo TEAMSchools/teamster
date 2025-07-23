@@ -18,10 +18,12 @@ select
 
     if(a.iscountedinfinalgrade = 1, true, false) as is_counted_final_grade,
 
-from {{ ref("int_tableau__gradebook_audit_section_week_scaffold") }} as b
+from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as b
 inner join
     {{ ref("int_powerschool__gradebook_assignments") }} as a
     on b.sections_dcid = a.sectionsdcid
     and a.duedate between b.week_start_monday and b.week_end_sunday
     and {{ union_dataset_join_clause(left_alias="b", right_alias="a") }}
-where b.region_school_level not in ('CamdenES', 'NewarkES')
+where
+    b.region_school_level not in ('CamdenES', 'NewarkES')
+    and b.scaffold_name = 'teacher_scaffold'

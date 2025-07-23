@@ -117,8 +117,7 @@ with
             r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_comment_missing,
                     qt_es_comment_missing,
@@ -175,8 +174,7 @@ with
             r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_kg_conduct_code_missing,
                     qt_kg_conduct_code_incorrect,
@@ -220,12 +218,7 @@ with
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
-                )
-            }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (qt_effort_grade_missing)
             ) as r
 
@@ -243,11 +236,7 @@ with
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
-                )
-            }}
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }}
             unpivot (audit_flag_value for audit_flag_name in (w_grade_inflation)) as r
 
         inner join
@@ -284,12 +273,7 @@ with
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
-                )
-            }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (qt_formative_grade_missing)
             ) as r
         inner join
@@ -326,12 +310,7 @@ with
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
-                )
-            }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (qt_summative_grade_missing)
             ) as r
 
@@ -436,7 +415,7 @@ select
     r.week_number_quarter,
     r.quarter_course_percent_grade,
     r.quarter_course_grade_points,
-    r.quarter_citizenship,
+    r.quarter_conduct,
     r.quarter_comment_value,
     r.section_or_period,
     r.assignment_category_name,
@@ -585,7 +564,7 @@ select
     week_number_quarter,
     quarter_course_percent_grade,
     quarter_course_grade_points,
-    quarter_citizenship,
+    quarter_conduct,
     quarter_comment_value,
     section_or_period,
     assignment_category_name,
@@ -716,7 +695,7 @@ select
     week_number_quarter,
     quarter_course_percent_grade,
     quarter_course_grade_points,
-    quarter_citizenship,
+    quarter_conduct,
     quarter_comment_value,
     section_or_period,
 
@@ -849,7 +828,7 @@ select
     week_number_quarter,
     quarter_course_percent_grade,
     quarter_course_grade_points,
-    quarter_citizenship,
+    quarter_conduct,
     quarter_comment_value,
     section_or_period,
 
@@ -990,7 +969,7 @@ select
 
     null as quarter_course_percent_grade,
     null as quarter_course_grade_points,
-    null as quarter_citizenship,
+    null as quarter_conduct,
     null as quarter_comment_value,
 
     r.section_or_period,
@@ -1134,7 +1113,7 @@ select
 
     null as quarter_course_percent_grade,
     null as quarter_course_grade_points,
-    null as quarter_citizenship,
+    null as quarter_conduct,
     null as quarter_comment_value,
 
     r.section_or_period,
