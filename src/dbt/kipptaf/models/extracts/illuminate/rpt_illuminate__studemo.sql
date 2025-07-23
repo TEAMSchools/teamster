@@ -92,8 +92,8 @@ select
     null as `63 Prior District`,
     null as `64 Prior School`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("base_powerschool__student_enrollments") }}
+from {{ ref("int_extracts__student_enrollments") }}
 where
-    academic_year = {{ var("current_academic_year") }}
+    academic_year = {{ current_school_year(var("local_timezone")) }}
     and rn_year = 1
     and grade_level != 99
