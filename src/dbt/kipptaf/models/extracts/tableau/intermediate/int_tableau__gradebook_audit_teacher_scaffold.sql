@@ -223,7 +223,7 @@ left join
     and e2.view_name = 'teacher_scaffold'
     and e2.school_id is not null
 /* exceptions listed below completely remove rows for certain gradebook categories for
-   a course/section/credit type from the entire gradebook audit dash, but NOT the 
+   a course/section/credit type from the entire gradebook audit dash, but NOT the
    entire course/section/credit type */
 left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e3
