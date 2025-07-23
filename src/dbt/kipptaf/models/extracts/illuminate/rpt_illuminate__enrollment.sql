@@ -29,5 +29,7 @@ select
     null as `15 Session Type ID`,
     null as `16 Enrollment Entry Code`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("base_powerschool__student_enrollments") }}
-where academic_year = {{ var("current_academic_year") }} and grade_level != 99
+from {{ ref("int_extracts__student_enrollments") }}
+where
+    academic_year = {{ current_school_year(var("local_timezone")) }}
+    and grade_level != 99
