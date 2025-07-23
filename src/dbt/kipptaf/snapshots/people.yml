@@ -10,6 +10,7 @@ snapshots:
         - coalesce(adp_associate_id_legacy, '')
         - is_active
       check_cols: all
+      dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
           asset_key:
@@ -23,6 +24,7 @@ snapshots:
       strategy: check
       unique_key: student_number
       check_cols: all
+      dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
           asset_key:

@@ -6,6 +6,7 @@ snapshots:
       strategy: timestamp
       unique_key: assignment_id
       updated_at: edited_at_timestamp
+      dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
           group: google_appsheet
@@ -21,6 +22,7 @@ snapshots:
       strategy: timestamp
       unique_key: surrogate_key
       updated_at: edited_at
+      dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
           group: google_appsheet
@@ -36,6 +38,7 @@ snapshots:
       strategy: timestamp
       unique_key: event_id
       updated_at: edited_at
+      dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
           group: google_appsheet
