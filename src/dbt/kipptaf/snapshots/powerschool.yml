@@ -1,0 +1,43 @@
+snapshots:
+  - name: snapshot_powerschool__gpa_cumulative
+    relation: ref("int_powerschool__gpa_cumulative")
+    config:
+      schema: powerschool
+      strategy: check
+      unique_key:
+        - _dbt_source_relation
+        - studentid
+        - schoolid
+      check_cols:
+        - cumulative_y1_gpa
+        - cumulative_y1_gpa_unweighted
+        - cumulative_y1_gpa_projected
+        - cumulative_y1_gpa_projected_s1_unweighted
+      dbt_valid_to_current: "'9999-12-31'"
+      meta:
+        dagster:
+          asset_key:
+            - kipptaf
+            - powerschool
+            - snapshot_powerschool__gpa_cumulative
+  - name: snapshot_powerschool__gpa_term
+    relation: ref("int_powerschool__gpa_term_current")
+    config:
+      schema: powerschool
+      strategy: check
+      unique_key:
+        - _dbt_source_relation
+        - studentid
+        - yearid
+        - schoolid
+      check_cols:
+        - gpa_y1
+        - gpa_y1_unweighted
+        - n_failing_y1
+      dbt_valid_to_current: "'9999-12-31'"
+      meta:
+        dagster:
+          asset_key:
+            - kipptaf
+            - powerschool
+            - snapshot_powerschool__gpa_term
