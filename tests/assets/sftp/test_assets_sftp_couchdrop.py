@@ -157,6 +157,18 @@ def test_pearson_student_list_report_kippnewark():
     _test_asset(asset=student_list_report)
 
 
+def test_pearson_student_test_update_kippnewark():
+    from teamster.code_locations.kippnewark.pearson.assets import student_test_update
+
+    _test_asset(asset=student_test_update)
+
+
+def test_pearson_student_test_update_kippcamden():
+    from teamster.code_locations.kippcamden.pearson.assets import student_test_update
+
+    _test_asset(asset=student_test_update)
+
+
 def test_tableau_traffic_to_views_kipptaf():
     from teamster.code_locations.kipptaf.tableau.assets import view_count_per_view
 

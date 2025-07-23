@@ -49,6 +49,8 @@ select
     wa.benefits_eligibility_class__group_code__name,
     wa.worker_time_profile__badge_id,
     wa.worker_time_profile__time_service_supervisor__position_id,
+    wa.worker_time_profile__time_and_attendance_indicator,
+    wa.worker_time_profile__time_zone_code,
 
     com.communication__personal_cell__formatted_number,
     com.communication__personal_email__email_uri,
