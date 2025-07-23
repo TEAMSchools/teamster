@@ -5,8 +5,8 @@ select
 
     null as `02 State Student ID`,
 
-    last_name as `03 Student Last Name`,
-    first_name as `04 Student First Name`,
+    student_last_name as `03 Student Last Name`,
+    student_first_name as `04 Student First Name`,
 
     null as `05 Student Middle Name`,
 
@@ -28,9 +28,7 @@ select
 from {{ ref("int_extracts__student_enrollments") }}
 where
     academic_year = {{ current_school_year(var("local_timezone")) }}
-    and rn_year = 1
     and gifted_and_talented = 'Y'
-    and grade_level != 99
 
 union all
 
@@ -41,8 +39,8 @@ select
 
     null as `02 State Student ID`,
 
-    last_name as `03 Student Last Name`,
-    first_name as `04 Student First Name`,
+    student_last_name as `03 Student Last Name`,
+    student_first_name as `04 Student First Name`,
 
     null as `05 Student Middle Name`,
 
@@ -62,11 +60,7 @@ select
     null as `15 Site ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments") }}
-where
-    academic_year = {{ current_school_year(var("local_timezone")) }}
-    and rn_year = 1
-    and lep_status
-    and grade_level != 99
+where academic_year = {{ current_school_year(var("local_timezone")) }} and lep_status
 
 union all
 

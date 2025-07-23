@@ -3,9 +3,9 @@ select
     -- trunk-ignore-begin(sqlfluff/RF05)
     student_number as `01 Import Student ID`,
     state_studentnumber as `02 State Student ID`,
-    last_name as `03 Last Name`,
-    first_name as `04 First Name`,
-    middle_name as `05 Middle Name`,
+    student_last_name as `03 Last Name`,
+    student_first_name as `04 First Name`,
+    student_middle_name as `05 Middle Name`,
     dob as `06 Birth Date`,
 
     null as `07 Gender`,
@@ -93,7 +93,4 @@ select
     null as `64 Prior School`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments") }}
-where
-    academic_year = {{ current_school_year(var("local_timezone")) }}
-    and rn_year = 1
-    and grade_level != 99
+where academic_year = {{ current_school_year(var("local_timezone")) }}

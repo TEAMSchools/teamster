@@ -79,6 +79,7 @@ select
     e.lastfirst as student_name,
     e.last_name as student_last_name,
     e.first_name as student_first_name,
+    e.middle_name as student_middle_name,
     e.student_email_google as student_email,
     e.student_web_id,
     e.student_web_password,
