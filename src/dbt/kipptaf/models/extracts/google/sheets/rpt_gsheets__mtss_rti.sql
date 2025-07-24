@@ -24,19 +24,18 @@ with
 
     dibels_recent as (
         select
-            mclass_academic_year,
-            mclass_student_number,
-            mclass_client_date,
-            mclass_measure_standard_level,
+            academic_year,
+            student_number,
+            client_date,
+            measure_standard_level,
 
             'Reading' as iready_subject,
 
             row_number() over (
-                partition by mclass_academic_year, mclass_student_number
-                order by mclass_client_date desc
+                partition by academic_year, student_number order by client_date desc
             ) as rn_benchmark,
         from {{ ref("int_amplify__all_assessments") }}
-        where mclass_measure_standard = 'Composite'
+        where measure_standard = 'Composite'
     ),
 
     gpa as (
@@ -86,9 +85,9 @@ with
             ) as most_recent_iready_math_prev_year,
 
             coalesce(
-                dr.mclass_measure_standard_level, 'No Data'
+                dr.measure_standard_level, 'No Data'
             ) as most_recent_dibels_composite_current,
-            lag(coalesce(dr.mclass_measure_standard_level, 'No Data'), 1) over (
+            lag(coalesce(dr.measure_standard_level, 'No Data'), 1) over (
                 partition by co.student_number order by co.academic_year asc
             ) as most_recent_dibels_composite_prev_year,
 
@@ -115,8 +114,8 @@ with
             and co.academic_year = ir.academic_year_int
         left join
             dibels_recent as dr
-            on co.student_number = dr.mclass_student_number
-            and co.academic_year = dr.mclass_academic_year
+            on co.student_number = dr.student_number
+            and co.academic_year = dr.academic_year
             and dr.rn_benchmark = 1
         left join
             gpa as g

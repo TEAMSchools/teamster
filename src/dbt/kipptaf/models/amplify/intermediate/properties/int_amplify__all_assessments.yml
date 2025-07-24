@@ -2,45 +2,47 @@ version: 2
 models:
   - name: int_amplify__all_assessments
     columns:
-      - name: mclass_academic_year
+      - name: academic_year
         data_type: int64
-      - name: mclass_student_number
+      - name: region
+        data_type: string
+      - name: student_number
         data_type: int64
       - name: assessment_type
         data_type: string
-      - name: mclass_assessment_grade
+      - name: assessment_grade
         data_type: string
-      - name: mclass_assessment_grade_int
+      - name: ssessment_grade_int
         data_type: int64
-      - name: mclass_period
+      - name: period
         data_type: string
-      - name: mclass_client_date
+      - name: client_date
         data_type: date
-      - name: mclass_sync_date
+      - name: sync_date
         data_type: date
-      - name: mclass_measure_name
+      - name: measure_name
         data_type: string
-      - name: mclass_measure_name_code
+      - name: measure_name_code
         data_type: string
-      - name: mclass_measure_standard
+      - name: measure_standard
         data_type: string
-      - name: mclass_measure_standard_score
+      - name: measure_standard_score
         data_type: float64
-      - name: mclass_measure_standard_level
+      - name: measure_standard_level
         data_type: string
-      - name: mclass_measure_standard_level_int
+      - name: measure_standard_level_int
         data_type: int64
-      - name: mclass_measure_percentile
+      - name: measure_percentile
         data_type: float64
-      - name: mclass_measure_semester_growth
+      - name: measure_semester_growth
         data_type: string
-      - name: mclass_measure_year_growth
+      - name: measure_year_growth
         data_type: string
-      - name: mclass_probe_number
+      - name: probe_number
         data_type: int64
-      - name: mclass_total_number_of_probes
+      - name: total_number_of_probes
         data_type: int64
-      - name: mclass_score_change
+      - name: score_change
         data_type: numeric
       - name: boy_probe_eligible
         data_type: string
@@ -51,4 +53,6 @@ models:
       - name: moy_composite
         data_type: string
       - name: eoy_composite
+        data_type: string
+      - name: aggregated_measure_standard_level
         data_type: string
