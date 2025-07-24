@@ -1,12 +1,12 @@
 {% macro illuminate_repository_unpivot(model_name) %}
-    {%- set repository_id = model_name | replace(
+    {% set repository_id = model_name | replace(
         "stg_illuminate__dna_repositories__repository_", ""
-    ) -%}
-    {%- set relation = source(
+    ) %}
+    {% set relation = source(
         "illuminate_dna_repositories", "repository_" + repository_id
-    ) -%}
+    ) %}
 
-    {%- set cols = adapter.get_columns_in_relation(relation) -%}
+    {% set cols = adapter.get_columns_in_relation(relation) %}
 
     with
         dbt_unpivot as (

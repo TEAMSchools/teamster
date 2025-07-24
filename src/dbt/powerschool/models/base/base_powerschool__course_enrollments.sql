@@ -10,6 +10,7 @@ with
 
             s.dcid as students_dcid,
             s.student_number as students_student_number,
+            s.grade_level as students_grade_level,
 
             case
                 when cc.sectionid < 0 and cc.dateleft = s.exitdate
