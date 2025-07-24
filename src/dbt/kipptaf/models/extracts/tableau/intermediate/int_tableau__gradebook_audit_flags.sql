@@ -11,9 +11,14 @@ with
                     assign_score_above_max,
                     assign_exempt_with_score,
                     assign_w_score_less_5,
+                    assign_h_score_less_5,
                     assign_f_score_less_5,
                     assign_w_missing_score_not_5,
                     assign_f_missing_score_not_5,
+                    assign_h_missing_score_not_5,
+                    assign_w_missing_score_not_0,
+                    assign_f_missing_score_not_0,
+                    assign_h_missing_score_not_0,
                     assign_s_score_less_50p,
                     assign_s_ms_score_not_conversion_chart_options,
                     assign_s_hs_score_not_conversion_chart_options
@@ -24,14 +29,24 @@ with
         incorrectly omitting flags for effort grade, conduct code, grade > 100, and
         summative or formative grades missing for COCUR, RHET, SCI, and SOC */
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-            on u.academic_year = e.academic_year
-            and u.region = e.region
-            and u.school_level = e.school_level
-            and u.credit_type = e.credit_type
-            and e.view_name = 'int_tableau__gradebook_audit_flags'
-            and e.cte = 'student_unpivot'
-        where e.`include` is null
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            on u.academic_year = e1.academic_year
+            and u.region = e1.region
+            and u.school_level = e1.school_level
+            and u.credit_type = e1.credit_type
+            and e1.view_name = 'int_tableau__gradebook_audit_flags'
+            and e1.cte = 'student_unpivot'
+            and e1.is_quarter_end_date_range is null
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            on u.academic_year = e2.academic_year
+            and u.region = e2.region
+            and u.course_number = e2.course_number
+            and u.is_quarter_end_date_range = e2.is_quarter_end_date_range
+            and e2.view_name = 'int_tableau__gradebook_audit_flags'
+            and e2.cte = 'student_unpivot'
+            and e2.is_quarter_end_date_range is not null
+        where e1.`include` is null and e2.`include` is null
     ),
 
     teacher_unpivot_cca as (
@@ -41,6 +56,7 @@ with
             {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     w_assign_max_score_not_10,
+                    h_assign_max_score_not_10,
                     f_assign_max_score_not_10,
                     s_max_score_greater_100
                 )
@@ -78,9 +94,11 @@ with
                     qt_teacher_s_total_greater_100,
                     qt_teacher_s_total_less_100,
                     w_expected_assign_count_not_met,
+                    h_expected_assign_count_not_met,
                     f_expected_assign_count_not_met,
                     s_expected_assign_count_not_met,
                     w_percent_graded_min_not_met,
+                    h_percent_graded_min_not_met,
                     f_percent_graded_min_not_met,
                     s_percent_graded_min_not_met
                 )
@@ -99,8 +117,7 @@ with
             r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_comment_missing,
                     qt_es_comment_missing,
@@ -157,8 +174,7 @@ with
             r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_kg_conduct_code_missing,
                     qt_kg_conduct_code_incorrect,
@@ -202,12 +218,7 @@ with
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
-                )
-            }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (qt_effort_grade_missing)
             ) as r
 
@@ -225,11 +236,7 @@ with
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
-                )
-            }}
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }}
             unpivot (audit_flag_value for audit_flag_name in (w_grade_inflation)) as r
 
         inner join
@@ -266,12 +273,7 @@ with
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
-                )
-            }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (qt_formative_grade_missing)
             ) as r
         inner join
@@ -308,12 +310,7 @@ with
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
-                )
-            }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (qt_summative_grade_missing)
             ) as r
 
@@ -418,7 +415,7 @@ select
     r.week_number_quarter,
     r.quarter_course_percent_grade,
     r.quarter_course_grade_points,
-    r.quarter_citizenship,
+    r.quarter_conduct,
     r.quarter_comment_value,
     r.section_or_period,
     r.assignment_category_name,
@@ -433,16 +430,14 @@ select
     r.duedate,
     r.scoretype,
     r.totalpointvalue,
-    r.category_name,
     r.scorepoints,
-    r.actualscoreentered,
-    r.is_late,
+    r.is_expected_late,
     r.is_exempt,
-    r.is_missing,
+    r.is_expected_missing,
+    r.is_expected_zero,
     r.score_entered,
     r.assign_final_score_percent,
     r.assign_expected_to_be_scored,
-    r.assign_scored,
     r.assign_expected_with_score,
 
     r.cte_grouping,
@@ -569,7 +564,7 @@ select
     week_number_quarter,
     quarter_course_percent_grade,
     quarter_course_grade_points,
-    quarter_citizenship,
+    quarter_conduct,
     quarter_comment_value,
     section_or_period,
     assignment_category_name,
@@ -585,16 +580,14 @@ select
     null as duedate,
     null as scoretype,
     null as totalpointvalue,
-    null as category_name,
     null as scorepoints,
-    null as actualscoreentered,
-    null as is_late,
+    null as is_expected_late,
     null as is_exempt,
-    null as is_missing,
+    null as is_expected_missing,
+    null as is_expected_zero,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
-    null as assign_scored,
     null as assign_expected_with_score,
 
     cte_grouping,
@@ -702,7 +695,7 @@ select
     week_number_quarter,
     quarter_course_percent_grade,
     quarter_course_grade_points,
-    quarter_citizenship,
+    quarter_conduct,
     quarter_comment_value,
     section_or_period,
 
@@ -718,16 +711,14 @@ select
     null as duedate,
     null as scoretype,
     null as totalpointvalue,
-    null as category_name,
     null as scorepoints,
-    null as actualscoreentered,
-    null as is_late,
+    null as is_expected_late,
     null as is_exempt,
-    null as is_missing,
+    null as is_expected_missing,
+    null as is_expected_zero,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
-    null as assign_scored,
     null as assign_expected_with_score,
 
     cte_grouping,
@@ -837,7 +828,7 @@ select
     week_number_quarter,
     quarter_course_percent_grade,
     quarter_course_grade_points,
-    quarter_citizenship,
+    quarter_conduct,
     quarter_comment_value,
     section_or_period,
 
@@ -853,16 +844,14 @@ select
     null as duedate,
     null as scoretype,
     null as totalpointvalue,
-    null as category_name,
     null as scorepoints,
-    null as actualscoreentered,
-    null as is_late,
+    null as expected_,
     null as is_exempt,
-    null as is_missing,
+    null as is_expected_missing,
+    null as is_expected_zero,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
-    null as assign_scored,
     null as assign_expected_with_score,
 
     cte_grouping,
@@ -980,7 +969,7 @@ select
 
     null as quarter_course_percent_grade,
     null as quarter_course_grade_points,
-    null as quarter_citizenship,
+    null as quarter_conduct,
     null as quarter_comment_value,
 
     r.section_or_period,
@@ -999,16 +988,14 @@ select
     r.scoretype,
     r.totalpointvalue,
 
-    null as category_name,
     null as scorepoints,
-    null as actualscoreentered,
-    null as is_late,
+    null as is_expected_late,
     null as is_exempt,
-    null as is_missing,
+    null as is_expected_missing,
+    null as is_expected_zero,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
-    null as assign_scored,
     null as assign_expected_with_score,
 
     r.cte_grouping,
@@ -1126,7 +1113,7 @@ select
 
     null as quarter_course_percent_grade,
     null as quarter_course_grade_points,
-    null as quarter_citizenship,
+    null as quarter_conduct,
     null as quarter_comment_value,
 
     r.section_or_period,
@@ -1143,16 +1130,14 @@ select
     null as duedate,
     null as scoretype,
     null as totalpointvalue,
-    null as category_name,
     null as scorepoints,
-    null as actualscoreentered,
-    null as is_late,
+    null as is_expected_late,
     null as is_exempt,
-    null as is_missing,
+    null as is_expected_missing,
+    null as is_expected_zero,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
-    null as assign_scored,
     null as assign_expected_with_score,
 
     r.cte_grouping,
