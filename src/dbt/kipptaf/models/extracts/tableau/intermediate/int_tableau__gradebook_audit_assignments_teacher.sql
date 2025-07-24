@@ -181,6 +181,6 @@ left join
     and e2.view_name = 'int_tableau__gradebook_audit_assignments_teacher'
     and e2.is_quarter_end_date_range is not null
 where
-    sec.scaffold_name = 'teacher_section_week_category_scaffold'
+    sec.scaffold_name = 'teacher_category_scaffold'
     and e1.`include` is null
     and e2.`include` is null
