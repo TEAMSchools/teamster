@@ -79,48 +79,10 @@ with
     )
 
 select
-    *,
+    p.*,
 
     case
-        school_name
-        when 'KIPP BOLD Academy'
-        then 'Newark'
-        when 'KIPP Courage Academy'
-        then 'Miami'
-        when 'KIPP Hatch (Camden, NJ)'
-        then 'Camden'
-        when 'KIPP Justice Academy'
-        then 'Newark'
-        when 'KIPP Lanning Square Middle'
-        then 'Camden'
-        when 'KIPP Lanning Square Primary (Camden, NJ)'
-        then 'Camden'
-        when 'KIPP Life Academy (Newark, NJ)'
-        then 'Newark'
-        when 'KIPP Purpose Academy'
-        then 'Newark'
-        when 'KIPP Rise Academy'
-        then 'Newark'
-        when 'KIPP Royalty Academy (Mia)'
-        then 'Miami'
-        when 'KIPP SPARK (Newark, NJ)'
-        then 'Newark'
-        when 'KIPP Seek Academy (Newark, NJ)'
-        then 'Newark'
-        when 'KIPP Sumner Elementary (Camden, NJ)'
-        then 'Camden'
-        when 'KIPP TEAM Academy'
-        then 'Newark'
-        when 'KIPP THRIVE (Newark, NJ)'
-        then 'Newark'
-        when 'KIPP Truth Academy (Newark, NJ)'
-        then 'Newark'
-        when 'KIPP Upper Roseville Academy (Newark, NJ)'
-        then 'Newark'
-    end as region,
-
-    case
-        measure_name_code
+        p.measure_name_code
         when 'LNF'
         then 'Letter Names'
         when 'PSF'
@@ -131,15 +93,20 @@ select
         then 'Word Reading Fluency'
         when 'ORF'
         then 'Oral Reading Fluency'
-        else measure_name_code
+        else p.measure_name_code
     end as measure_name,
 
     if(
-        assessment_grade = 'K', 0, safe_cast(assessment_grade as int)
+        p.assessment_grade = 'K', 0, safe_cast(p.assessment_grade as int)
     ) as assessment_grade_int,
 
     if(
-        enrollment_grade = 'K', 0, safe_cast(enrollment_grade as int)
+        p.enrollment_grade = 'K', 0, safe_cast(p.enrollment_grade as int)
     ) as enrollment_grade_int,
 
-from pm_data
+    x.abbreviation as school,
+    x.powerschool_school_id as schoolid,
+    initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
+
+from pm_data as p
+left join {{ ref("stg_people__location_crosswalk") }} as x on p.school_name = x.name
