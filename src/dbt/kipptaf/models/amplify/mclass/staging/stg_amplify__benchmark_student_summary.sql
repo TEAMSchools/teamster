@@ -51,206 +51,192 @@ with
                 word_reading_wrf_national_norm_percentile,
                 word_reading_wrf_score,
                 word_reading_wrf_semester_growth,
-                word_reading_wrf_year_growth
+                word_reading_wrf_year_growth,
+                name,
+                clean_name,
+                grade_band,
+                region,
+                abbreviation,
+                powerschool_school_id,
+                deanslist_school_id,
+                reporting_school_id,
+                is_campus,
+                is_pathways,
+                dagster_code_location,
+                head_of_schools_employee_number
             ),
 
-            cast(left(school_year, 4) as int) as academic_year,
+            x.abbreviation as school,
+            x.powerschool_school_id as schoolid,
+
+            initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
+
+            cast(left(s.school_year, 4) as int) as academic_year,
 
             /* score */
-            cast(decoding_nwf_wrc_score as numeric) as decoding_nwf_wrc_score,
-            cast(letter_names_lnf_score as numeric) as letter_names_lnf_score,
-            cast(letter_sounds_nwf_cls_score as numeric) as letter_sounds_nwf_cls_score,
+            cast(s.decoding_nwf_wrc_score as numeric) as decoding_nwf_wrc_score,
+            cast(s.letter_names_lnf_score as numeric) as letter_names_lnf_score,
             cast(
-                phonemic_awareness_psf_score as numeric
+                s.letter_sounds_nwf_cls_score as numeric
+            ) as letter_sounds_nwf_cls_score,
+            cast(
+                s.phonemic_awareness_psf_score as numeric
             ) as phonemic_awareness_psf_score,
             cast(
-                reading_accuracy_orf_accu_score as numeric
+                s.reading_accuracy_orf_accu_score as numeric
             ) as reading_accuracy_orf_accu_score,
             cast(
-                reading_comprehension_maze_score as numeric
+                s.reading_comprehension_maze_score as numeric
             ) as reading_comprehension_maze_score,
-            cast(reading_fluency_orf_score as numeric) as reading_fluency_orf_score,
-            cast(word_reading_wrf_score as numeric) as word_reading_wrf_score,
+            cast(s.reading_fluency_orf_score as numeric) as reading_fluency_orf_score,
+            cast(s.word_reading_wrf_score as numeric) as word_reading_wrf_score,
 
             /* level */
-            cast(composite_level as string) as composite_level,
-            cast(decoding_nwf_wrc_level as string) as decoding_nwf_wrc_level,
-            cast(letter_names_lnf_level as string) as letter_names_lnf_level,
-            cast(letter_sounds_nwf_cls_level as string) as letter_sounds_nwf_cls_level,
+            cast(s.composite_level as string) as composite_level,
+            cast(s.decoding_nwf_wrc_level as string) as decoding_nwf_wrc_level,
+            cast(s.letter_names_lnf_level as string) as letter_names_lnf_level,
             cast(
-                phonemic_awareness_psf_level as string
+                s.letter_sounds_nwf_cls_level as string
+            ) as letter_sounds_nwf_cls_level,
+            cast(
+                s.phonemic_awareness_psf_level as string
             ) as phonemic_awareness_psf_level,
             cast(
-                reading_accuracy_orf_accu_level as string
+                s.reading_accuracy_orf_accu_level as string
             ) as reading_accuracy_orf_accu_level,
             cast(
-                reading_comprehension_maze_level as string
+                s.reading_comprehension_maze_level as string
             ) as reading_comprehension_maze_level,
-            cast(reading_fluency_orf_level as string) as reading_fluency_orf_level,
-            cast(word_reading_wrf_level as string) as word_reading_wrf_level,
+            cast(s.reading_fluency_orf_level as string) as reading_fluency_orf_level,
+            cast(s.word_reading_wrf_level as string) as word_reading_wrf_level,
 
             /* semester growth */
-            cast(composite_semester_growth as string) as composite_semester_growth,
+            cast(s.composite_semester_growth as string) as composite_semester_growth,
             cast(
-                decoding_nwf_wrc_semester_growth as string
+                s.decoding_nwf_wrc_semester_growth as string
             ) as decoding_nwf_wrc_semester_growth,
             cast(
-                letter_names_lnf_semester_growth as string
+                s.letter_names_lnf_semester_growth as string
             ) as letter_names_lnf_semester_growth,
             cast(
-                letter_sounds_nwf_cls_semester_growth as string
+                s.letter_sounds_nwf_cls_semester_growth as string
             ) as letter_sounds_nwf_cls_semester_growth,
             cast(
-                phonemic_awareness_psf_semester_growth as string
+                s.phonemic_awareness_psf_semester_growth as string
             ) as phonemic_awareness_psf_semester_growth,
             cast(
-                reading_accuracy_orf_accu_semester_growth as string
+                s.reading_accuracy_orf_accu_semester_growth as string
             ) as reading_accuracy_orf_accu_semester_growth,
             cast(
-                reading_comprehension_maze_semester_growth as string
+                s.reading_comprehension_maze_semester_growth as string
             ) as reading_comprehension_maze_semester_growth,
             cast(
-                reading_fluency_orf_semester_growth as string
+                s.reading_fluency_orf_semester_growth as string
             ) as reading_fluency_orf_semester_growth,
             cast(
-                word_reading_wrf_semester_growth as string
+                s.word_reading_wrf_semester_growth as string
             ) as word_reading_wrf_semester_growth,
 
             /* year growth */
-            cast(composite_year_growth as string) as composite_year_growth,
+            cast(s.composite_year_growth as string) as composite_year_growth,
             cast(
-                decoding_nwf_wrc_year_growth as string
+                s.decoding_nwf_wrc_year_growth as string
             ) as decoding_nwf_wrc_year_growth,
             cast(
-                letter_names_lnf_year_growth as string
+                s.letter_names_lnf_year_growth as string
             ) as letter_names_lnf_year_growth,
             cast(
-                letter_sounds_nwf_cls_year_growth as string
+                s.letter_sounds_nwf_cls_year_growth as string
             ) as letter_sounds_nwf_cls_year_growth,
             cast(
-                phonemic_awareness_psf_year_growth as string
+                s.phonemic_awareness_psf_year_growth as string
             ) as phonemic_awareness_psf_year_growth,
             cast(
-                reading_accuracy_orf_accu_year_growth as string
+                s.reading_accuracy_orf_accu_year_growth as string
             ) as reading_accuracy_orf_accu_year_growth,
             cast(
-                reading_comprehension_maze_year_growth as string
+                s.reading_comprehension_maze_year_growth as string
             ) as reading_comprehension_maze_year_growth,
             cast(
-                reading_fluency_orf_year_growth as string
+                s.reading_fluency_orf_year_growth as string
             ) as reading_fluency_orf_year_growth,
             cast(
-                word_reading_wrf_year_growth as string
+                s.word_reading_wrf_year_growth as string
             ) as word_reading_wrf_year_growth,
 
             /* national norm percentile */
             cast(
-                composite_national_norm_percentile as string
+                s.composite_national_norm_percentile as string
             ) as composite_national_norm_percentile,
             cast(
-                reading_comprehension_maze_national_norm_percentile as string
+                s.reading_comprehension_maze_national_norm_percentile as string
             ) as reading_comprehension_maze_national_norm_percentile,
             cast(
-                decoding_nwf_wrc_national_norm_percentile as string
+                s.decoding_nwf_wrc_national_norm_percentile as string
             ) as decoding_nwf_wrc_national_norm_percentile,
             cast(
-                letter_sounds_nwf_cls_national_norm_percentile as string
+                s.letter_sounds_nwf_cls_national_norm_percentile as string
             ) as letter_sounds_nwf_cls_national_norm_percentile,
             cast(
-                word_reading_wrf_national_norm_percentile as string
+                s.word_reading_wrf_national_norm_percentile as string
             ) as word_reading_wrf_national_norm_percentile,
 
-            date(client_date) as client_date,
-            date(sync_date) as sync_date,
-
-            case
-                school_name
-                when 'KIPP BOLD Academy'
-                then 'Newark'
-                when 'KIPP Courage Academy'
-                then 'Miami'
-                when 'KIPP Hatch (Camden, NJ)'
-                then 'Camden'
-                when 'KIPP Justice Academy'
-                then 'Newark'
-                when 'KIPP Lanning Square Middle'
-                then 'Camden'
-                when 'KIPP Lanning Square Primary (Camden, NJ)'
-                then 'Camden'
-                when 'KIPP Life Academy (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Purpose Academy'
-                then 'Newark'
-                when 'KIPP Rise Academy'
-                then 'Newark'
-                when 'KIPP Royalty Academy (Mia)'
-                then 'Miami'
-                when 'KIPP SPARK (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Seek Academy (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Sumner Elementary (Camden, NJ)'
-                then 'Camden'
-                when 'KIPP TEAM Academy'
-                then 'Newark'
-                when 'KIPP THRIVE (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Truth Academy (Newark, NJ)'
-                then 'Newark'
-                when 'KIPP Upper Roseville Academy (Newark, NJ)'
-                then 'Newark'
-            end as region,
+            date(s.client_date) as client_date,
+            date(s.sync_date) as sync_date,
 
             coalesce(
-                assessment_grade.string_value,
-                cast(assessment_grade.long_value as string)
+                s.assessment_grade.string_value,
+                cast(s.assessment_grade.long_value as string)
             ) as assessment_grade,
 
             coalesce(
-                enrollment_grade.string_value,
-                cast(enrollment_grade.long_value as string)
+                s.enrollment_grade.string_value,
+                cast(s.enrollment_grade.long_value as string)
             ) as enrollment_grade,
 
             coalesce(
-                official_teacher_staff_id.string_value,
-                cast(official_teacher_staff_id.long_value as string),
-                cast(official_teacher_staff_id.double_value as string)
+                s.official_teacher_staff_id.string_value,
+                cast(s.official_teacher_staff_id.long_value as string),
+                cast(s.official_teacher_staff_id.double_value as string)
             ) as official_teacher_staff_id,
 
             coalesce(
-                cast(composite_score.double_value as numeric),
-                cast(composite_score.long_value as numeric)
+                cast(s.composite_score.double_value as numeric),
+                cast(s.composite_score.long_value as numeric)
             ) as composite_score,
 
             coalesce(
-                reading_accuracy_orf_accu_national_norm_percentile.string_value,
+                s.reading_accuracy_orf_accu_national_norm_percentile.string_value,
                 cast(
-                    reading_accuracy_orf_accu_national_norm_percentile.double_value
+                    s.reading_accuracy_orf_accu_national_norm_percentile.double_value
                     as string
                 )
             ) as reading_accuracy_orf_accu_national_norm_percentile,
 
             coalesce(
-                reading_fluency_orf_national_norm_percentile.string_value,
+                s.reading_fluency_orf_national_norm_percentile.string_value,
                 cast(
-                    reading_fluency_orf_national_norm_percentile.double_value as string
+                    s.reading_fluency_orf_national_norm_percentile.double_value
+                    as string
                 )
             ) as reading_fluency_orf_national_norm_percentile,
 
             coalesce(
-                letter_names_lnf_national_norm_percentile.string_value,
-                cast(letter_names_lnf_national_norm_percentile.double_value as string)
+                s.letter_names_lnf_national_norm_percentile.string_value,
+                cast(s.letter_names_lnf_national_norm_percentile.double_value as string)
             ) as letter_names_lnf_national_norm_percentile,
 
             coalesce(
-                phonemic_awareness_psf_national_norm_percentile.string_value,
+                s.phonemic_awareness_psf_national_norm_percentile.string_value,
                 cast(
-                    phonemic_awareness_psf_national_norm_percentile.double_value
+                    s.phonemic_awareness_psf_national_norm_percentile.double_value
                     as string
                 )
             ) as phonemic_awareness_psf_national_norm_percentile,
 
-        from {{ source("amplify", "src_amplify__benchmark_student_summary") }}
+        from {{ source("amplify", "src_amplify__benchmark_student_summary") }} as s
+        left join
+            {{ ref("stg_people__location_crosswalk") }} as x on s.school_name = x.name
     )
 
 select
