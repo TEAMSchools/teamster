@@ -1,5 +1,5 @@
 with
-    school_course_exceptions as (
+    exceptions as (
         select s._dbt_source_relation, s.sections_dcid, e.`include`,
         from {{ ref("base_powerschool__sections") }} as s
         inner join
@@ -7,7 +7,7 @@ with
             on s.terms_academic_year = e.academic_year
             and s.sections_schoolid = e.school_id
             and s.sections_course_number = e.course_number
-            and e.view_name = 'int_powerschool__assignment_score_rollup'
+            and e.view_name = 'assignments_teacher'
             and e.cte = 'school_course_exceptions'
             and e.course_number is not null
             and e.is_quarter_end_date_range is null
@@ -21,7 +21,7 @@ with
             on s.terms_academic_year = e.academic_year
             and s.sections_schoolid = e.school_id
             and s.courses_credittype = e.credit_type
-            and e.view_name = 'int_powerschool__assignment_score_rollup'
+            and e.view_name = 'assignments_teacher'
             and e.cte = 'school_course_exceptions'
             and e.credit_type is not null
             and e.is_quarter_end_date_range is null
@@ -34,7 +34,7 @@ with
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
             on s.terms_academic_year = e.academic_year
             and s.sections_course_number = e.course_number
-            and e.view_name = 'int_powerschool__assignment_score_rollup'
+            and e.view_name = 'assignments_teacher'
             and e.cte = 'school_course_exceptions'
             and e.course_number is not null
             and e.is_quarter_end_date_range is not null
@@ -69,10 +69,10 @@ with
 
         from {{ ref("int_powerschool__gradebook_assignments_scores") }} as s
         left join
-            school_course_exceptions as e1
-            on s.sectionsdcid = e1.sections_dcid
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="e1") }}
-        where e1.`include` is null
+            exceptions as e
+            on s.sectionsdcid = e.sections_dcid
+            and {{ union_dataset_join_clause(left_alias="s", right_alias="e") }}
+        where e.`include` is null
         group by s._dbt_source_relation, s.assignmentsectionid
     )
 
@@ -121,38 +121,6 @@ select
         false
     ) as s_max_score_greater_100,
 
-    count(a.assignmentid) over (
-        partition by
-            sec._dbt_source_relation, sec.sectionid, sec.assignment_category_term
-        order by sec.week_number_quarter asc
-    ) as running_count_assignments_section_category_term,
-
-    sum(a.totalpointvalue) over (
-        partition by
-            sec._dbt_source_relation,
-            sec.quarter,
-            sec.sectionid,
-            sec.assignment_category_code
-    ) as sum_totalpointvalue_section_quarter_category,
-
-    sum(asg.n_expected) over (
-        partition by
-            sec._dbt_source_relation,
-            sec.sectionid,
-            sec.quarter,
-            sec.week_number_quarter,
-            sec.assignment_category_code
-    ) as total_expected_section_quarter_week_category,
-
-    sum(asg.n_expected_scored) over (
-        partition by
-            sec._dbt_source_relation,
-            sec.sectionid,
-            sec.quarter,
-            sec.week_number_quarter,
-            sec.assignment_category_code
-    ) as total_expected_scored_section_quarter_week_category,
-
 from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
 left join
     {{ ref("int_powerschool__gradebook_assignments") }} as a
@@ -170,7 +138,7 @@ left join
     and sec.region = e1.region
     and sec.school_level = e1.school_level
     and sec.course_number = e1.course_number
-    and e1.view_name = 'int_tableau__gradebook_audit_assignments_teacher'
+    and e1.view_name = 'assignments_teacher'
     and e1.is_quarter_end_date_range is null
 left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
@@ -178,7 +146,7 @@ left join
     and sec.region = e2.region
     and sec.course_number = e2.course_number
     and sec.is_quarter_end_date_range = e2.is_quarter_end_date_range
-    and e2.view_name = 'int_tableau__gradebook_audit_assignments_teacher'
+    and e2.view_name = 'assignments_teacher'
     and e2.is_quarter_end_date_range is not null
 where
     sec.scaffold_name = 'teacher_category_scaffold'
