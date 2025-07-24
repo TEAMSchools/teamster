@@ -81,6 +81,10 @@ with
 select
     p.*,
 
+    x.abbreviation as school,
+    x.powerschool_school_id as schoolid,
+    initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
+
     case
         p.measure_name_code
         when 'LNF'
@@ -103,10 +107,6 @@ select
     if(
         p.enrollment_grade = 'K', 0, safe_cast(p.enrollment_grade as int)
     ) as enrollment_grade_int,
-
-    x.abbreviation as school,
-    x.powerschool_school_id as schoolid,
-    initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
 
 from pm_data as p
 left join {{ ref("stg_people__location_crosswalk") }} as x on p.school_name = x.name
