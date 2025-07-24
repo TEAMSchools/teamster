@@ -29,6 +29,8 @@ with
             annual_stretch_growth_measure,
             overall_placement,
 
+            if(overall_relative_placement_int >= 4, true, false) as is_proficient,
+
             if(`subject` = 'Reading', 'ELA', 'Math') as discipline,
 
             if(
@@ -115,6 +117,7 @@ select
     dr.percent_progress_to_annual_stretch_growth_percent,
     dr.is_met_typical,
     dr.is_met_stretch,
+    dr.is_proficient,
     dr.diagnostic_gain,
     dr.annual_typical_growth_measure,
     dr.annual_stretch_growth_measure,

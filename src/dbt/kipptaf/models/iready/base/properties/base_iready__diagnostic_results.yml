@@ -44,6 +44,12 @@ models:
         data_type: float64
       - name: percent_progress_to_annual_stretch_growth_percent
         data_type: float64
+      - name: is_met_typical
+        data_type: boolean
+      - name: is_met_stretch
+        data_type: boolean
+      - name: is_proficient
+        data_type: boolean
       - name: diagnostic_gain
         data_type: float64
       - name: annual_typical_growth_measure
@@ -64,6 +70,8 @@ models:
         data_type: string
       - name: most_recent_rush_flag
         data_type: string
+      - name: most_recent_completion_date
+        data_type: date
       - name: rn_subj_year
         data_type: int64
       - name: region
