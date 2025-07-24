@@ -9,12 +9,12 @@ plugins:
 lint:
   enabled:
     - bandit@1.8.6
-    - checkov@3.2.451
+    - checkov@3.2.454
     - terrascan@1.19.1
     - trivy@0.64.1
     - actionlint@1.7.7
     - git-diff-check
-    - gitleaks@8.27.2
+    - gitleaks@8.28.0
     - hadolint@2.12.1-beta
     - isort@6.0.1
     - markdownlint@0.45.0
@@ -29,7 +29,7 @@ lint:
     - sqlfmt@0.26.0
     - svgo@4.0.0
     - taplo@0.9.3
-    - trufflehog@3.90.0
+    - trufflehog@3.90.2
     - yamllint@1.37.1
   disabled:
     - black
