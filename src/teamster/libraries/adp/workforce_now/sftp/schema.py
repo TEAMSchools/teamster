@@ -32,10 +32,9 @@ class PensionBenefitsEnrollments(BaseModel):
 
 
 class TimeAndAttendance(BaseModel):
-    position_id: str | None = None
     badge: str | None = None
+    include_in_time_summary_payroll: str | None = None
     pay_class: str | None = None
+    position_id: str | None = None
     supervisor_id: str | None = None
     supervisor_position: str | None = None
-    start_using_time_attendance: str | None = None
-    stop_using_time_attendance: str | None = None

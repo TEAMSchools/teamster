@@ -29,17 +29,6 @@ vars:
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
   current_academic_year: 2024
   current_fiscal_year: 2025
-  alchemer_survey_identifier_short_names:
-    - respondent_employee_number
-    - respondent_df_employee_number
-    - respondent_userprincipalname
-    - respondent_adp_associate_id
-    - subject_df_employee_number
-    - employee_number
-    - email
-    - employee_preferred_name
-    - salesforce_id
-    - is_manager
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -137,6 +126,18 @@ models:
     fldoe:
       +schema: fldoe
     google:
+      appsheet:
+        +schema: google_appsheet
+        +meta:
+          dagster:
+            group: google_appsheet
+      directory:
+        +schema: google_directory
+        +meta:
+          dagster:
+            group: google_directory
+        staging:
+          +materialized: table
       forms:
         +schema: google_forms
         +meta:
@@ -147,18 +148,6 @@ models:
         drive:
           staging:
             +materialized: table
-      directory:
-        +schema: google_directory
-        +meta:
-          dagster:
-            group: google_directory
-        staging:
-          +materialized: table
-      appsheet:
-        +schema: google_appsheet
-        +meta:
-          dagster:
-            group: google_appsheet
       sheets:
         +schema: google_sheets
         +meta:
@@ -181,10 +170,6 @@ models:
       fivetran:
         +materialized: table
         +enabled: false
-        staging:
-          repositories:
-            archive:
-              +enabled: false
     instagram:
       +enabled: false
       business:
