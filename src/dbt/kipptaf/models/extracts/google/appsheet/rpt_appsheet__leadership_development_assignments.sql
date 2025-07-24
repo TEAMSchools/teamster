@@ -18,7 +18,7 @@ with
     leader_pm_participants as (
         select
             roster.employee_number,
-            coalesce(active_users.app_selection_active, roster.active) as active,
+            coalesce(active_users.active_override, roster.active) as active,
         from roster
         left join active_users on roster.employee_number = active_users.employee_number
     ),
