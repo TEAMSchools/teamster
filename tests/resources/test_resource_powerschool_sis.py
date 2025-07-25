@@ -5,7 +5,7 @@ from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 
 
-def test():
+def test_powerschool_ssh():
     with build_resources(
         resources={
             "ssh_powerschool": SSHResource(
@@ -33,6 +33,37 @@ def test():
     except Exception as e:
         ssh_tunnel.kill()
         raise e
+
+    result = db_powerschool.execute_query(
+        connection=connection,
+        query=TextClause("SELECT network_service_banner FROM v$session_connect_info"),
+    )
+
+    print(result)
+
+
+def test_powerschool_vpn():
+    import subprocess
+    import time
+
+    with build_resources(
+        resources={
+            "db_powerschool": PowerSchoolODBCResource(
+                user=..., password=..., host=..., sid=...
+            ),
+        }
+    ) as resources:
+        db_powerschool: PowerSchoolODBCResource = resources.db_powerschool
+
+    subprocess.call(
+        ["f5fpc", "--start", "--host", ..., "--user", ..., "--password", ...]
+    )
+
+    time.sleep(1)
+
+    subprocess.call(["f5fpc", "--info"])
+
+    connection = db_powerschool.connect()
 
     result = db_powerschool.execute_query(
         connection=connection,

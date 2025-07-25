@@ -15,11 +15,12 @@ class PowerSchoolODBCResource(ConfigurableResource):
     password: str
     host: str
     port: str = "1521"
-    service_name: str
     expire_time: int = 0
     retry_count: int = 0
     retry_delay: int = 1
     tcp_connect_timeout: float = 20.0
+    service_name: str | None = None
+    sid: str | None = None
 
     _connect_params: ConnectParams = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
@@ -35,6 +36,7 @@ class PowerSchoolODBCResource(ConfigurableResource):
             host=self.host,
             port=int(self.port),
             service_name=self.service_name,
+            sid=self.sid,
             expire_time=self.expire_time,
             retry_count=self.retry_count,
             retry_delay=self.retry_delay,
