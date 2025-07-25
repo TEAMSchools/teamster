@@ -167,7 +167,7 @@ def test_pearson_student_test_update_kippcamden():
     _test_asset(asset=student_test_update)
 
 
-def test_tableau_traffic_to_views_kipptaf():
+def test_tableau_view_count_per_view_kipptaf():
     from teamster.code_locations.kipptaf.tableau.assets import view_count_per_view
 
     _test_asset(asset=view_count_per_view)
