@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("titan",
         "src_titan__person_data") | replace("`", "") }}')
+      contract:
+        enforced: true
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:

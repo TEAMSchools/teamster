@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("iready",
         "src_iready__instruction_by_lesson") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: academic_year_int
         data_type: int64

@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("renlearn",
         "src_renlearn__accelerated_reader") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: _dagster_partition_fiscal_year
         data_type: int64

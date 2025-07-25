@@ -5,3 +5,330 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("collegeboard",
         "src_collegeboard__ap") | replace("`", "") }}')
+      contract:
+        enforced: true
+    columns:
+      - name: enrollment_school_year
+        data_type: int64
+      - name: ap_number_ap_id
+        data_type: string
+      - name: powerschool_student_number
+        data_type: int64
+      - name: student_identifier
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: middle_initial
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: ai_code
+        data_type: string
+      - name: ai_institution_name
+        data_type: string
+      - name: admin_year_01
+        data_type: string
+      - name: admin_year_02
+        data_type: string
+      - name: admin_year_03
+        data_type: string
+      - name: admin_year_04
+        data_type: string
+      - name: admin_year_05
+        data_type: string
+      - name: admin_year_06
+        data_type: string
+      - name: admin_year_07
+        data_type: string
+      - name: admin_year_08
+        data_type: string
+      - name: admin_year_09
+        data_type: string
+      - name: admin_year_10
+        data_type: string
+      - name: admin_year_11
+        data_type: string
+      - name: admin_year_12
+        data_type: string
+      - name: admin_year_13
+        data_type: string
+      - name: admin_year_14
+        data_type: string
+      - name: admin_year_15
+        data_type: string
+      - name: admin_year_16
+        data_type: string
+      - name: admin_year_17
+        data_type: string
+      - name: admin_year_18
+        data_type: string
+      - name: admin_year_19
+        data_type: string
+      - name: admin_year_20
+        data_type: string
+      - name: admin_year_21
+        data_type: string
+      - name: admin_year_22
+        data_type: string
+      - name: admin_year_23
+        data_type: string
+      - name: admin_year_24
+        data_type: string
+      - name: admin_year_25
+        data_type: string
+      - name: admin_year_26
+        data_type: string
+      - name: admin_year_27
+        data_type: string
+      - name: admin_year_28
+        data_type: string
+      - name: admin_year_29
+        data_type: string
+      - name: admin_year_30
+        data_type: string
+      - name: exam_code_01
+        data_type: string
+      - name: exam_code_02
+        data_type: string
+      - name: exam_code_03
+        data_type: string
+      - name: exam_code_04
+        data_type: string
+      - name: exam_code_05
+        data_type: string
+      - name: exam_code_06
+        data_type: string
+      - name: exam_code_07
+        data_type: string
+      - name: exam_code_08
+        data_type: string
+      - name: exam_code_09
+        data_type: string
+      - name: exam_code_10
+        data_type: string
+      - name: exam_code_11
+        data_type: string
+      - name: exam_code_12
+        data_type: string
+      - name: exam_code_13
+        data_type: string
+      - name: exam_code_14
+        data_type: string
+      - name: exam_code_15
+        data_type: string
+      - name: exam_code_16
+        data_type: string
+      - name: exam_code_17
+        data_type: string
+      - name: exam_code_18
+        data_type: string
+      - name: exam_code_19
+        data_type: string
+      - name: exam_code_20
+        data_type: string
+      - name: exam_code_21
+        data_type: string
+      - name: exam_code_22
+        data_type: string
+      - name: exam_code_23
+        data_type: string
+      - name: exam_code_24
+        data_type: string
+      - name: exam_code_25
+        data_type: string
+      - name: exam_code_26
+        data_type: string
+      - name: exam_code_27
+        data_type: string
+      - name: exam_code_28
+        data_type: string
+      - name: exam_code_29
+        data_type: string
+      - name: exam_code_30
+        data_type: string
+      - name: exam_grade_01
+        data_type: string
+      - name: exam_grade_02
+        data_type: string
+      - name: exam_grade_03
+        data_type: string
+      - name: exam_grade_04
+        data_type: string
+      - name: exam_grade_05
+        data_type: string
+      - name: exam_grade_06
+        data_type: string
+      - name: exam_grade_07
+        data_type: string
+      - name: exam_grade_08
+        data_type: string
+      - name: exam_grade_09
+        data_type: string
+      - name: exam_grade_10
+        data_type: string
+      - name: exam_grade_11
+        data_type: string
+      - name: exam_grade_12
+        data_type: string
+      - name: exam_grade_13
+        data_type: string
+      - name: exam_grade_14
+        data_type: string
+      - name: exam_grade_15
+        data_type: string
+      - name: exam_grade_16
+        data_type: string
+      - name: exam_grade_17
+        data_type: string
+      - name: exam_grade_18
+        data_type: string
+      - name: exam_grade_19
+        data_type: string
+      - name: exam_grade_20
+        data_type: string
+      - name: exam_grade_21
+        data_type: string
+      - name: exam_grade_22
+        data_type: string
+      - name: exam_grade_23
+        data_type: string
+      - name: exam_grade_24
+        data_type: string
+      - name: exam_grade_25
+        data_type: string
+      - name: exam_grade_26
+        data_type: string
+      - name: exam_grade_27
+        data_type: string
+      - name: exam_grade_28
+        data_type: string
+      - name: exam_grade_29
+        data_type: string
+      - name: exam_grade_30
+        data_type: string
+      - name: irregularity_code_1_01
+        data_type: string
+      - name: irregularity_code_1_02
+        data_type: string
+      - name: irregularity_code_1_03
+        data_type: string
+      - name: irregularity_code_1_04
+        data_type: string
+      - name: irregularity_code_1_05
+        data_type: string
+      - name: irregularity_code_1_06
+        data_type: string
+      - name: irregularity_code_1_07
+        data_type: string
+      - name: irregularity_code_1_08
+        data_type: string
+      - name: irregularity_code_1_09
+        data_type: string
+      - name: irregularity_code_1_10
+        data_type: string
+      - name: irregularity_code_1_11
+        data_type: string
+      - name: irregularity_code_1_12
+        data_type: string
+      - name: irregularity_code_1_13
+        data_type: string
+      - name: irregularity_code_1_14
+        data_type: string
+      - name: irregularity_code_1_15
+        data_type: string
+      - name: irregularity_code_1_16
+        data_type: string
+      - name: irregularity_code_1_17
+        data_type: string
+      - name: irregularity_code_1_18
+        data_type: string
+      - name: irregularity_code_1_19
+        data_type: string
+      - name: irregularity_code_1_20
+        data_type: string
+      - name: irregularity_code_1_21
+        data_type: string
+      - name: irregularity_code_1_22
+        data_type: string
+      - name: irregularity_code_1_23
+        data_type: string
+      - name: irregularity_code_1_24
+        data_type: string
+      - name: irregularity_code_1_25
+        data_type: string
+      - name: irregularity_code_1_26
+        data_type: string
+      - name: irregularity_code_1_27
+        data_type: string
+      - name: irregularity_code_1_28
+        data_type: string
+      - name: irregularity_code_1_29
+        data_type: string
+      - name: irregularity_code_1_30
+        data_type: string
+      - name: irregularity_code_2_01
+        data_type: string
+      - name: irregularity_code_2_02
+        data_type: string
+      - name: irregularity_code_2_03
+        data_type: string
+      - name: irregularity_code_2_04
+        data_type: string
+      - name: irregularity_code_2_05
+        data_type: string
+      - name: irregularity_code_2_06
+        data_type: string
+      - name: irregularity_code_2_07
+        data_type: string
+      - name: irregularity_code_2_08
+        data_type: string
+      - name: irregularity_code_2_09
+        data_type: string
+      - name: irregularity_code_2_10
+        data_type: string
+      - name: irregularity_code_2_11
+        data_type: string
+      - name: irregularity_code_2_12
+        data_type: string
+      - name: irregularity_code_2_13
+        data_type: string
+      - name: irregularity_code_2_14
+        data_type: string
+      - name: irregularity_code_2_15
+        data_type: string
+      - name: irregularity_code_2_16
+        data_type: string
+      - name: irregularity_code_2_17
+        data_type: string
+      - name: irregularity_code_2_18
+        data_type: string
+      - name: irregularity_code_2_19
+        data_type: string
+      - name: irregularity_code_2_20
+        data_type: string
+      - name: irregularity_code_2_21
+        data_type: string
+      - name: irregularity_code_2_22
+        data_type: string
+      - name: irregularity_code_2_23
+        data_type: string
+      - name: irregularity_code_2_24
+        data_type: string
+      - name: irregularity_code_2_25
+        data_type: string
+      - name: irregularity_code_2_26
+        data_type: string
+      - name: irregularity_code_2_27
+        data_type: string
+      - name: irregularity_code_2_28
+        data_type: string
+      - name: irregularity_code_2_29
+        data_type: string
+      - name: irregularity_code_2_30
+        data_type: string
+      - name: date_of_birth
+        data_type: date
+      - name: grade_level
+        data_type: int64

@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("renlearn",
         "src_renlearn__star_dashboard_standards") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: assessment_id
         data_type: string
