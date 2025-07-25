@@ -86,7 +86,7 @@ select
     p.column_name,
     p.column_value,
 
-    a.active_title,
+    a.app_selection_active,
 
     m.metric_id,
     m.region,
@@ -141,4 +141,4 @@ left join
 left join metrics_lookup as m on p.metric_id = m.metric_id
 left join
     {{ ref("int_people__staff_roster") }} as r on p.employee_number = r.employee_number
-where a.active_title and not a.special_case
+where a.app_selection_active
