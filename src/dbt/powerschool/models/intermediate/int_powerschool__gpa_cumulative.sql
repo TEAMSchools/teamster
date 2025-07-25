@@ -39,6 +39,9 @@ with
             ) as gpa_points_core,
 
             if(sg.excludefromgpa = 0, su.grade_points, null) as unweighted_grade_points,
+            if(
+                sg.excludefromgpa = 0, su.grade_points, null
+            ) as unweighted_grade_points_projected,
         from {{ ref("stg_powerschool__storedgrades") }} as sg
         left join
             {{ ref("int_powerschool__gradescaleitem_lookup") }} as su
@@ -75,6 +78,7 @@ with
             null as potentialcrhrs_core,
             null as gpa_points_core,
             null as unweighted_grade_points,
+            fg.y1_grade_points_unweighted as unweighted_grade_points_projected,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
@@ -123,6 +127,7 @@ with
             null as potentialcrhrs_core,
             null as gpa_points_core,
             null as unweighted_grade_points,
+            null as unweighted_grade_points_projected,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
@@ -167,6 +172,9 @@ with
             (
                 potentialcrhrs_projected_s1 * gpa_points_projected_s1_unweighted
             ) as weighted_points_projected_s1_unweighted,
+            (
+                potentialcrhrs_projected * unweighted_grade_points_projected
+            ) as weighted_points_projected_unweighted,
         from grades_union
     ),
 
@@ -181,6 +189,9 @@ with
             sum(
                 weighted_points_projected_s1_unweighted
             ) as weighted_points_projected_s1_unweighted,
+            sum(
+                weighted_points_projected_unweighted
+            ) as weighted_points_projected_unweighted,
             sum(unweighted_points) as unweighted_points,
             sum(earnedcrhrs) as earned_credits_cum,
             sum(earnedcrhrs_projected) as earned_credits_cum_projected,
@@ -224,6 +235,9 @@ select
         ),
         2
     ) as cumulative_y1_gpa_projected_s1_unweighted,
+    round(
+        safe_divide(weighted_points_projected_unweighted, potentialcrhrs_projected), 2
+    ) as cumulative_y1_gpa_projected_unweighted,
     round(
         safe_divide(weighted_points_core, potentialcrhrs_core), 2
     ) as core_cumulative_y1_gpa,
