@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("tableau",
         "src_tableau__view_count_per_view") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: user_name
         data_type: string

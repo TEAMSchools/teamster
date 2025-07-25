@@ -38,25 +38,17 @@ with
             'Spring' as season,
 
             cast(_dagster_partition_school_year_term as int) as academic_year,
+            cast(enrolled_grade as int) as enrolled_grade,
 
-            coalesce(
+            cast(
                 coalesce(
-                    b_e_s_t_algebra_1_eoc_scale_score.string_value,
-                    cast(b_e_s_t_algebra_1_eoc_scale_score.long_value as string)
-                ),
-                coalesce(
-                    civics_eoc_scale_score.string_value,
-                    cast(civics_eoc_scale_score.long_value as string)
-                )
+                    b_e_s_t_algebra_1_eoc_scale_score, civics_eoc_scale_score
+                ) as int
             ) as scale_score,
 
             coalesce(
                 b_e_s_t_algebra_1_eoc_achievement_level, civics_eoc_achievement_level
             ) as achievement_level,
-
-            coalesce(
-                enrolled_grade.long_value, cast(enrolled_grade.double_value as int)
-            ) as enrolled_grade,
 
             if(
                 _dagster_partition_grade_level_subject = 'B.E.S.T.Algebra1',
@@ -78,17 +70,13 @@ with
                 then 'SOC08'
             end as test_code,
         from {{ source("fldoe", "src_fldoe__eoc") }}
+        where scale_score != 'Invalidated'
     ),
 
     with_achievement_level_int as (
         select
-            * except (scale_score),
-
-            safe_cast(scale_score as int) as scale_score,
-
-            safe_cast(right(achievement_level, 1) as int) as achievement_level_int,
+            *, safe_cast(right(achievement_level, 1) as int) as achievement_level_int,
         from eoc
-        where scale_score != 'Invalidated'
     )
 
 select *, if(achievement_level_int >= 3, true, false) as is_proficient,
