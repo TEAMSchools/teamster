@@ -229,6 +229,7 @@ select
     c.contact_last_successful_advisor_contact as last_successful_advisor_contact_date,
     c.contact_last_outreach as last_outreach_date,
     c.student_number as powerschool_student_number,
+    c.is_dlm,
 
     ay.academic_year,
 
