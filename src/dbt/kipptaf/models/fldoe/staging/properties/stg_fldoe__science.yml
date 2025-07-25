@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: stg_fldoe__science
+    config:
+      enabled: false
     columns:
       - name: _dbt_source_relation
         data_type: string

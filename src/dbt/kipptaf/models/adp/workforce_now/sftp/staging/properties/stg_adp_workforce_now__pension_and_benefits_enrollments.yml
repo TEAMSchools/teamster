@@ -7,6 +7,8 @@ models:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("adp_workforce_now",
         "src_adp_workforce_now__pension_and_benefits_enrollments") |
         replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: employee_number
         data_type: float64

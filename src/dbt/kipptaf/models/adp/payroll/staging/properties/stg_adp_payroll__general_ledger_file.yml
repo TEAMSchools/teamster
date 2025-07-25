@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("adp_payroll",
         "src_adp_payroll__general_ledger_file") | replace("`", "") }}')
+      contract:
+        enforced: true
     meta:
       dagster:
         group: adp_payroll

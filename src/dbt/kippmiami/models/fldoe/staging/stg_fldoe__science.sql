@@ -30,17 +30,17 @@ with
 
             cast(_dagster_partition_grade_level_subject as int) as assessment_grade,
             cast(_dagster_partition_school_year_term as int) as academic_year,
+            cast(enrolled_grade as int) as enrolled_grade,
 
-            coalesce(
-                grade_5_science_scale_score, grade_8_science_scale_score
+            cast(
+                coalesce(
+                    grade_5_science_scale_score, grade_8_science_scale_score
+                ) as int
             ) as scale_score,
+
             coalesce(
                 grade_5_science_achievement_level, grade_8_science_achievement_level
             ) as achievement_level,
-
-            coalesce(
-                enrolled_grade.long_value, cast(enrolled_grade.double_value as int)
-            ) as enrolled_grade,
         from {{ source("fldoe", "src_fldoe__science") }}
     ),
 
