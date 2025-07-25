@@ -420,6 +420,8 @@ models:
         data_type: int64
       - name: students_student_number
         data_type: int64
+      - name: students_grade_level
+        data_type: int64
       - name: is_dropped_section
         data_type: boolean
       - name: is_dropped_course

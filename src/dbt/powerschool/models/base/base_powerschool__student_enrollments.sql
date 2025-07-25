@@ -1,35 +1,48 @@
 with
     enr_order as (
         select
-            *,
+            seu.*,
 
-            (academic_year + 13) + (-1 * grade_level) as cohort_primary,
+            x1.exit_code as exit_code_kf,
+            x2.exit_code as exit_code_ts,
 
-            lag(yearid, 1) over (
-                partition by studentid order by yearid asc
+            (seu.academic_year + 13) + (-1 * seu.grade_level) as cohort_primary,
+
+            lag(seu.yearid, 1) over (
+                partition by seu.studentid order by seu.yearid asc
             ) as yearid_prev,
 
-            lag(grade_level, 1) over (
-                partition by studentid order by yearid asc
+            lag(seu.grade_level, 1) over (
+                partition by seu.studentid order by seu.yearid asc
             ) as grade_level_prev,
 
             row_number() over (
-                partition by studentid order by yearid desc, exitdate desc
+                partition by seu.studentid order by seu.yearid desc, seu.exitdate desc
             ) as rn_all,
 
             row_number() over (
-                partition by studentid, yearid order by yearid desc, exitdate desc
+                partition by seu.studentid, seu.yearid
+                order by seu.yearid desc, seu.exitdate desc
             ) as rn_year,
 
             row_number() over (
-                partition by studentid, schoolid order by yearid desc, exitdate desc
+                partition by seu.studentid, seu.schoolid
+                order by seu.yearid desc, seu.exitdate desc
             ) as rn_school,
 
             row_number() over (
-                partition by studentid, if(grade_level = 99, true, false)
-                order by yearid desc, exitdate desc
+                partition by seu.studentid, if(seu.grade_level = 99, true, false)
+                order by seu.yearid desc, seu.exitdate desc
             ) as rn_undergrad,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_powerschool__student_enrollment_union") }} as seu
+        left join
+            {{ ref("stg_powerschool__u_clg_et_stu") }} as x1
+            on seu.students_dcid = x1.studentsdcid
+            and seu.exitdate = x1.exit_date
+        left join
+            {{ ref("stg_powerschool__u_clg_et_stu_alt") }} as x2
+            on seu.students_dcid = x2.studentsdcid
+            and seu.exitdate = x2.exit_date
     ),
 
     enr_window as (
