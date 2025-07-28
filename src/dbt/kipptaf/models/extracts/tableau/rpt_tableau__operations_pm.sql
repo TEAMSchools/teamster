@@ -7,7 +7,7 @@ with
     schools as (select *, from {{ ref("stg_people__location_crosswalk") }}),
 
     form_responses as (
-        select *
+        select *,
         from {{ ref("int_google_forms__form_responses") }}
         -- filtering for Operations EKG Form
         where
@@ -79,7 +79,7 @@ with
             on ops_pm_roster.employee_number = responses_pivoted.form_employee_number
         left join schools on ops_pm_roster.home_work_location_name = schools.name
         left join
-            full_roster on full_roster.google_email = responses_pivoted.respondent_email
+            full_roster on responses_pivoted.respondent_email = full_roster.google_email
 
     )
 
