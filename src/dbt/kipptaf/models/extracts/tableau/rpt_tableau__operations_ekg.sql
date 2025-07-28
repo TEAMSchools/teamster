@@ -8,7 +8,7 @@ with
         from {{ ref("int_people__staff_roster") }}
     ),
 
-    schools as (select *, from {{ ref("stg_people__campus_crosswalk") }}),
+    schools as (select *, from {{ ref("stg_people__location_crosswalk") }}),
 
     form_responses as (
         select
@@ -58,7 +58,7 @@ with
         select roster.*, responses_pivoted.*, schools.region, schools.grade_band,
         from responses_pivoted
         left join roster on responses_pivoted.respondent_email = roster.google_email
-        left join schools on responses_pivoted.school = schools.location_name
+        left join schools on responses_pivoted.school = schools.name
         where responses_pivoted.item_id not in ('27596233', '669334db')
     )
 
