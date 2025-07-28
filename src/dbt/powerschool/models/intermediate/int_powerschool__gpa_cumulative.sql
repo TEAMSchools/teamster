@@ -5,6 +5,7 @@ with
             sg.schoolid,
             sg.course_number,
             sg.academic_year,
+
             if(sg.excludefromgpa = 0, sg.potentialcrhrs, null) as potentialcrhrs,
             if(sg.excludefromgraduation = 0, sg.earnedcrhrs, null) as earnedcrhrs,
             if(sg.excludefromgpa = 0, sg.gpa_points, null) as gpa_points,
@@ -58,6 +59,7 @@ with
             fg.course_number,
 
             {{ var("current_academic_year") }} as academic_year,
+
             null as potentialcrhrs,
             null as earnedcrhrs,
             null as gpa_points,
@@ -77,6 +79,7 @@ with
             null as potentialcrhrs_core,
             null as gpa_points_core,
             null as unweighted_grade_points,
+
             fg.y1_grade_points_unweighted as unweighted_grade_points_projected,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
@@ -117,15 +120,18 @@ with
             null as gpa_points_projected,
 
             fg.potential_credit_hours as potentialcrhrs_projected_s1,
+
             if(
                 fg.y1_letter_grade not like 'F%', fg.potential_credit_hours, 0
             ) as earnedcrhrs_projected_s1,
+
             fg.y1_grade_points as gpa_points_projected_s1,
             fg.y1_grade_points_unweighted as gpa_points_projected_s1_unweighted,
 
             null as potentialcrhrs_core,
             null as gpa_points_core,
             null as unweighted_grade_points,
+            null as unweighted_grade_points_projected,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
@@ -158,6 +164,7 @@ with
             potentialcrhrs_core,
             earnedcrhrs_projected,
             earnedcrhrs_projected_s1,
+
             (potentialcrhrs * gpa_points) as weighted_points,
             (potentialcrhrs * unweighted_grade_points) as unweighted_points,
             (potentialcrhrs_core * gpa_points_core) as weighted_points_core,
@@ -180,6 +187,7 @@ with
         select
             studentid,
             schoolid,
+
             sum(weighted_points) as weighted_points,
             sum(weighted_points_core) as weighted_points_core,
             sum(weighted_points_projected) as weighted_points_projected,
@@ -198,6 +206,7 @@ with
             sum(potentialcrhrs_core) as potentialcrhrs_core,
             sum(potentialcrhrs_projected) as potentialcrhrs_projected,
             sum(potentialcrhrs_projected_s1) as potentialcrhrs_projected_s1,
+
             sum(
                 if(
                     academic_year < {{ var("current_academic_year") }},
