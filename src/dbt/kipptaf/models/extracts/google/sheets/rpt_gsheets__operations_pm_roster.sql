@@ -30,8 +30,8 @@ select
     roster.home_work_location_name,
     roster.home_work_location_abbreviation,
     roster.reports_to_formatted_name,
-    -- noqa: RF05 
+
     -- has to match question title on form
-    roster.name_dropdown as `Ops Teammate Name`,
+    roster.name_dropdown as `Ops Teammate Name`,  -- noqa: RF05 
 from roster
 order by roster.home_work_location_name, roster.formatted_name
