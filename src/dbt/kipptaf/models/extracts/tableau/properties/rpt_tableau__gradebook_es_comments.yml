@@ -178,9 +178,9 @@ models:
         data_type: date
       - name: category_quarter_average_all_courses
         data_type: float64
-      - name: quarter_course_percent_grade_that_matters
+      - name: quarter_course_percent_grade
         data_type: float64
-      - name: quarter_course_grade_points_that_matters
+      - name: quarter_course_grade_points
         data_type: float64
       - name: quarter_citizenship
         data_type: string

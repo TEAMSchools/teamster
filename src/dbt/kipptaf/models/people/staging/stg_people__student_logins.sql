@@ -1,16 +1,17 @@
 -- depends_on: {{ ref("stg_powerschool__students") }}
+-- depends_on: {{ source("people", "src_people__student_logins") }}
 -- depends_on: {{ source("people", "src_people__student_logins_archive") }}
-{{-
+{{
     config(
         materialized="incremental",
         incremental_strategy="merge",
         unique_key="student_number",
         merge_update_columns=["default_password"],
     )
--}}
+}}
 
-{%- if execute -%}
-    {%- if flags.FULL_REFRESH -%}
+{% if execute %}
+    {% if flags.FULL_REFRESH %}
         {{
             exceptions.raise_compiler_error(
                 (
@@ -19,8 +20,8 @@
                 )
             )
         }}
-    {%- endif -%}
-{%- endif -%}
+    {% endif %}
+{% endif %}
 
 {% if env_var("DBT_CLOUD_ENVIRONMENT_TYPE", "") == "dev" %}
     select student_number, username, default_password, google_email,

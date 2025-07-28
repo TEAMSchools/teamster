@@ -6,7 +6,6 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    define_asset_job,
     sensor,
 )
 from dagster_shared import check
@@ -15,10 +14,12 @@ from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_now.sftp.assets import assets
 from teamster.libraries.ssh.resources import SSHResource
 
-job = define_asset_job(name=f"{CODE_LOCATION}_adp_wfn_sftp_asset_job", selection=assets)
 
-
-@sensor(name=f"{job.name}_sensor", minimum_interval_seconds=(60 * 10), job=job)
+@sensor(
+    name=f"{CODE_LOCATION}__adp__workforce_now__sftp_assets_sensor",
+    target=assets,
+    minimum_interval_seconds=(60 * 10),
+)
 def adp_wfn_sftp_sensor(
     context: SensorEvaluationContext, ssh_adp_workforce_now: SSHResource
 ):

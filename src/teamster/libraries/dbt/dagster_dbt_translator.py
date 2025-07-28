@@ -59,10 +59,16 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     AutomationCondition.newly_requested()
                     | AutomationCondition.newly_updated()
                 )
-                & ~AutomationCondition.any_deps_missing().ignore(ignore_selection)
+                & ~AutomationCondition.any_deps_missing().ignore(
+                    ignore_selection
+                    | (
+                        AssetSelection.all(include_sources=True)
+                        - AssetSelection.all(include_sources=False)
+                    )
+                )
                 & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
                 & ~AutomationCondition.in_progress()
-            ).ignore(AssetSelection.all(include_sources=True).sources())
+            )
         else:
             """forked from AutomationCondition.eager()
             - add code_version_changed()
@@ -80,10 +86,16 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                     AutomationCondition.newly_requested()
                     | AutomationCondition.newly_updated()
                 )
-                & ~AutomationCondition.any_deps_missing().ignore(ignore_selection)
+                & ~AutomationCondition.any_deps_missing().ignore(
+                    ignore_selection
+                    | (
+                        AssetSelection.all(include_sources=True)
+                        - AssetSelection.all(include_sources=False)
+                    )
+                )
                 & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
                 & ~AutomationCondition.in_progress()
-            ).ignore(AssetSelection.all(include_sources=True).sources())
+            )
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         group = super().get_group_name(dbt_resource_props)

@@ -1,8 +1,6 @@
 import time
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._utils.backoff import backoff, backoff_delay_generator
 from dagster_shared import check
 from google.auth import default, load_credentials_from_file
@@ -12,6 +10,8 @@ from google.auth.transport import requests
 from google.oauth2 import service_account
 from googleapiclient import discovery, errors
 from pydantic import PrivateAttr
+
+from teamster.core.utils.functions import chunk
 
 
 class GoogleDirectoryResource(ConfigurableResource):
@@ -179,13 +179,9 @@ class GoogleDirectoryResource(ConfigurableResource):
         # trunk-ignore(pyright/reportAttributeAccessIssue)
         return self._resource.users().update(userKey=user_key, body=body).execute()
 
-    @staticmethod
-    def _batch_list(obj: list, size: int):
-        """via https://stackoverflow.com/a/312464"""
-        for i in range(0, len(obj), size):
-            yield obj[i : i + size]
-
     def callback(self, id: str, response: dict, exception: Exception):
+        self._exceptions = []
+
         if exception is not None:
             self._log.exception(msg=(id, exception))
             self._exceptions.append((int(id) - 1, exception))
@@ -198,7 +194,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         # You cannot create more than 10 users per domain per second using the
         # Directory API
         # developers.google.com/admin-sdk/directory/v1/limits#api-limits-and-quotas
-        batches = self._batch_list(obj=users, size=10)
+        batches = chunk(obj=users, size=10)
 
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
@@ -224,7 +220,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         exceptions = []
 
         # Queries per minute per user == 2400 (40/sec)
-        batches = self._batch_list(obj=users, size=40)
+        batches = chunk(obj=users, size=40)
 
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
@@ -254,7 +250,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         exceptions = []
 
         # Queries per minute per user == 2400 (40/sec)
-        batches = self._batch_list(obj=members, size=40)
+        batches = chunk(obj=members, size=40)
 
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
@@ -285,7 +281,7 @@ class GoogleDirectoryResource(ConfigurableResource):
     ):
         exceptions = []
 
-        batches = self._batch_list(obj=role_assignments, size=10)
+        batches = chunk(obj=role_assignments, size=10)
 
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")

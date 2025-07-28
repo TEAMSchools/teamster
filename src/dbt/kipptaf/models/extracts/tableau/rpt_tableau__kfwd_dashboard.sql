@@ -229,6 +229,7 @@ select
     c.contact_last_successful_advisor_contact as last_successful_advisor_contact_date,
     c.contact_last_outreach as last_outreach_date,
     c.student_number as powerschool_student_number,
+    c.is_dlm,
 
     ay.academic_year,
 
@@ -600,6 +601,7 @@ select
     ) as has_4yr_ecc_enrollment,
 
     coalesce(ei.ecc_adjusted_6_year_minority_graduation_rate, 0) as urm_ecc_school,
+    c.contact_highest_sat_score as highest_sat_score,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student

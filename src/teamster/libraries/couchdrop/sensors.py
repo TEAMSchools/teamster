@@ -20,7 +20,7 @@ from dagster import (
 )
 from dagster_shared import check
 
-from teamster.libraries.ssh.resources import SSHResource
+from teamster.libraries.google.drive.resources import GoogleDriveResource
 
 
 def build_couchdrop_sftp_sensor(
@@ -28,6 +28,7 @@ def build_couchdrop_sftp_sensor(
     local_timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
     minimum_interval_seconds: int,
+    folder_id: str,
     exclude_dirs: list | None = None,
 ):
     if exclude_dirs is None:
@@ -57,7 +58,7 @@ def build_couchdrop_sftp_sensor(
         jobs=jobs,
         minimum_interval_seconds=minimum_interval_seconds,
     )
-    def _sensor(context: SensorEvaluationContext, ssh_couchdrop: SSHResource):
+    def _sensor(context: SensorEvaluationContext, google_drive: GoogleDriveResource):
         now_timestamp = datetime.now(local_timezone).timestamp()
 
         run_request_kwargs = []
@@ -65,15 +66,24 @@ def build_couchdrop_sftp_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
-        files = ssh_couchdrop.listdir_attr_r(
-            remote_dir=f"/data-team/{code_location}", exclude_dirs=exclude_dirs
+        files = google_drive.files_list_recursive(
+            corpora="drive",
+            drive_id="0AKZ2G1Z8rxooUk9PVA",
+            include_items_from_all_drives=True,
+            supports_all_drives=True,
+            fields="files(id,name,mimeType,modifiedTime,size)",
+            folder_id=folder_id,
+            file_path=f"/data-team/{code_location}",
+            exclude=exclude_dirs,
         )
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()
             metadata = a.metadata_by_key[a.key]
 
-            max_st_mtime = cursor_st_mtime = cursor.get(asset_identifier, 0)
+            max_modified_timestamp = cursor_modified_timestamp = cursor.get(
+                asset_identifier, 0
+            )
 
             pattern = re.compile(
                 pattern=(
@@ -82,20 +92,18 @@ def build_couchdrop_sftp_sensor(
             )
 
             file_matches = [
-                (f, path)
-                for f, path in files
-                if pattern.match(string=path)
-                and check.not_none(value=f.st_mtime) > cursor_st_mtime
-                and check.not_none(value=f.st_size) > 0
+                f
+                for f in files
+                if pattern.match(string=f["path"])
+                and f["modified_timestamp"] > cursor_modified_timestamp
+                and f["size"] > 0
             ]
 
-            for f, path in file_matches:
-                f_st_mtime = f.st_mtime or 0
+            for f in file_matches:
+                if f["modified_timestamp"] > max_modified_timestamp:
+                    max_modified_timestamp = f["modified_timestamp"]
 
-                if f_st_mtime > max_st_mtime:
-                    max_st_mtime = f_st_mtime
-
-                match = check.not_none(value=pattern.match(string=path))
+                match = check.not_none(value=pattern.match(string=f["path"]))
 
                 if isinstance(a.partitions_def, MultiPartitionsDefinition):
                     partition_key = MultiPartitionKey(match.groupdict())
@@ -104,7 +112,7 @@ def build_couchdrop_sftp_sensor(
                 else:
                     partition_key = None
 
-                context.log.info(f"{asset_identifier}\n{f.filename}: {partition_key}")
+                context.log.info(f"{asset_identifier}\n{f['name']}: {partition_key}")
 
                 if a.partitions_def is not None:
                     run_request_kwargs.append(
@@ -126,7 +134,7 @@ def build_couchdrop_sftp_sensor(
                         }
                     )
 
-            cursor[asset_identifier] = max_st_mtime
+            cursor[asset_identifier] = max_modified_timestamp
 
         if run_request_kwargs:
             item_getter_key = itemgetter("job_name", "partition_key")

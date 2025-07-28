@@ -1,38 +1,21 @@
 from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudWorkspace
-from dagster_dlt import DagsterDltResource
 from dagster_shared import check
 
-from teamster.libraries.adp.workforce_manager.resources import (
-    AdpWorkforceManagerResource,
-)
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
-from teamster.libraries.amplify.dibels.resources import DibelsDataSystemResource
 from teamster.libraries.amplify.mclass.resources import MClassResource
 from teamster.libraries.coupa.resources import CoupaResource
 from teamster.libraries.email.resources import EmailResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
-from teamster.libraries.google.drive.resources import GoogleDriveResource
-from teamster.libraries.google.forms.resources import GoogleFormsResource
-from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.ldap.resources import LdapResource
+from teamster.libraries.level_data.grow.resources import GrowResource
 from teamster.libraries.powerschool.enrollment.resources import (
     PowerSchoolEnrollmentResource,
 )
-from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
-
-ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
-    subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
-    app_key=EnvVar("ADP_WFM_APP_KEY"),
-    client_id=EnvVar("ADP_WFM_CLIENT_ID"),
-    client_secret=EnvVar("ADP_WFM_CLIENT_SECRET"),
-    username=EnvVar("ADP_WFM_USERNAME"),
-    password=EnvVar("ADP_WFM_PASSWORD"),
-)
 
 ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
     client_id=EnvVar("ADP_WFN_CLIENT_ID"),
@@ -55,12 +38,6 @@ COUPA_RESOURCE = CoupaResource(
     scope=["core.common.read", "core.user.read"],
 )
 
-DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
-    username=EnvVar("AMPLIFY_DDS_USERNAME"), password=EnvVar("AMPLIFY_DDS_PASSWORD")
-)
-
-DLT_RESOURCE = DagsterDltResource()
-
 OUTLOOK_RESOURCE = EmailResource(
     host=EnvVar("OUTLOOK_HOST"),
     port=int(check.not_none(value=EnvVar("OUTLOOK_PORT").get_value())),
@@ -69,16 +46,10 @@ OUTLOOK_RESOURCE = EmailResource(
     chunk_size=450,
 )
 
-GOOGLE_DRIVE_RESOURCE = GoogleDriveResource()
-
-GOOGLE_FORMS_RESOURCE = GoogleFormsResource()
-
 GOOGLE_DIRECTORY_RESOURCE = GoogleDirectoryResource(
     customer_id=EnvVar("GOOGLE_WORKSPACE_CUSTOMER_ID"),
     delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
 )
-
-GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource()
 
 KNOWBE4_RESOURCE = KnowBe4Resource(
     api_key=EnvVar("KNOWBE4_API_KEY"), server="us", page_size=500
@@ -101,7 +72,7 @@ POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(
     api_key=EnvVar("PS_ENROLLMENT_API_KEY"), page_size=1000
 )
 
-SCHOOLMINT_GROW_RESOURCE = SchoolMintGrowResource(
+GROW_RESOURCE = GrowResource(
     client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
     client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
     district_id=EnvVar("SCHOOLMINT_GROW_DISTRICT_ID"),

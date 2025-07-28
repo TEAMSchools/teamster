@@ -286,6 +286,7 @@ select distinct
         ceo.cc_dateleft
     ) as detail,
     1 as flag,
+
 from student_enrollments as se
 inner join
     {{ ref("qa_powerschool__course_enrollment_overlap") }} as ceo

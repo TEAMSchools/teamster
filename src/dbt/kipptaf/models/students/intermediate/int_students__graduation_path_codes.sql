@@ -14,6 +14,7 @@ with
             e.cohort,
             e.discipline,
             e.powerschool_credittype,
+            e.met_fafsa_requirement as has_fafsa,
 
             /* this is not their final code, but it is used to calculate their final 
             code */
@@ -22,13 +23,11 @@ with
             /* needed to join on transfer njgpa scores */
             safe_cast(e.state_studentnumber as int) as state_studentnumber_int,
 
-            if(e.has_fafsa = 'Yes', true, false) as has_fafsa,
-
             /* this is the date we start holding 11th graders accountable to 
             fulfilling the NJGPA test requirement */
             if(
                 current_date('{{ var("local_timezone") }}')
-                < date({{ var("current_academic_year") + 1 }}, 05, 31),
+                < date({{ var("current_academic_year") + 1 }}, 06, 05),
                 false,
                 true
             ) as njgpa_season_11th,
@@ -71,6 +70,7 @@ with
             x.testcode as subject_area,
             x.test_name as pathway_option,
             x.discipline,
+
         from students as s
         inner join
             {{ ref("int_powerschool__state_assessments_transfer_scores") }} as x
@@ -88,6 +88,7 @@ with
             n.testcode as subject_area,
             n.assessment_name as pathway_option,
             n.discipline,
+
         from students as s
         inner join
             {{ ref("stg_pearson__njgpa") }} as n
@@ -143,9 +144,9 @@ with
             s.njgpa_season_11th,
             s.fafsa_season_12th,
 
-            c.type as pathway_option,
-            c.subject as score_type,
-            c.code as pathway_code,
+            c.pathway_option,
+            c.score_type,
+            c.pathway_code,
             c.cutoff,
 
             p.scale_score,
@@ -162,14 +163,13 @@ with
         from students as s
         left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         left join
-            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
+            {{ ref("stg_google_sheets__student_graduation_path_cutoffs") }} as c
             on s.cohort = c.cohort
             and s.discipline = c.discipline
-            and c.`domain` = 'Graduation Pathway'
         left join
             scores as p
-            on c.type = p.pathway_option
-            and c.subject = p.score_type
+            on c.pathway_option = p.pathway_option
+            and c.score_type = p.score_type
             and s.student_number = p.student_number
         where
             s.ps_grad_path_code is null
@@ -282,6 +282,7 @@ with
             max(met_sat) as met_sat,
             max(met_psat10) as met_psat10,
             max(met_psat_nmsqt) as met_psat_nmsqt,
+
         from
             lookup_table pivot (
                 max(met_pathway_cutoff)
@@ -476,7 +477,7 @@ select
 
 from roster as r
 left join
-    {{ ref("stg_reporting__graduation_paths_combos") }} as g
+    {{ ref("stg_google_sheets__student_graduation_path_combos") }} as g
     on r.grade_level = g.grade_level
     and r.has_fafsa = g.has_fafsa
     and r.njgpa_season_11th = g.njgpa_season_11th

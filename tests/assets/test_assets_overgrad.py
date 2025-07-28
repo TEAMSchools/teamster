@@ -5,8 +5,6 @@ from dagster import (
     instance_for_test,
     materialize,
 )
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 

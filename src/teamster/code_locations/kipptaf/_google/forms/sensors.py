@@ -34,6 +34,18 @@ def google_forms_responses_sensor(
     run_requests = []
     cursor: dict = json.loads(context.cursor or "{}")
 
+    # get forms for partition
+    forms = google_drive.files_list(
+        corpora="drive",
+        drive_id="0AKZ2G1Z8rxooUk9PVA",
+        include_items_from_all_drives=True,
+        q=(
+            "mimeType='application/vnd.google-apps.form' and "
+            "'1ZJAXcPfmdTDmJCqcMRje0czrwR7cF6hC' in parents"
+        ),
+        supports_all_drives=True,
+    )
+
     for form_id in GOOGLE_FORMS_PARTITIONS_DEF.get_partition_keys(
         dynamic_partitions_store=context.instance
     ):
@@ -52,18 +64,6 @@ def google_forms_responses_sensor(
                 )
             )
             cursor[form_id] = now.isoformat().replace("+00:00", "Z")
-
-    # get tracked forms to partition
-    forms = google_drive.list_files(
-        q=(
-            "mimeType='application/vnd.google-apps.form' and "
-            "'1ZJAXcPfmdTDmJCqcMRje0czrwR7cF6hC' in parents"
-        ),
-        corpora="drive",
-        driveId="0AKZ2G1Z8rxooUk9PVA",
-        includeItemsFromAllDrives=True,
-        supportsAllDrives=True,
-    )
 
     return SensorResult(
         run_requests=run_requests,

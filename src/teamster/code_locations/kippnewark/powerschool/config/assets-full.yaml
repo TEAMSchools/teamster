@@ -14,8 +14,6 @@ assets:
   - asset_name: terms
     partition_column: transaction_date
   # whenmodified
-  - asset_name: codeset
-    partition_column: whenmodified
   - asset_name: emailaddress
     partition_column: whenmodified
   - asset_name: gradescaleitem
@@ -37,6 +35,8 @@ assets:
   - asset_name: s_nj_ren_x
     partition_column: whenmodified
   - asset_name: s_nj_usr_x
+    partition_column: whenmodified
+  - asset_name: s_stu_x
     partition_column: whenmodified
   - asset_name: schoolstaff
     partition_column: whenmodified

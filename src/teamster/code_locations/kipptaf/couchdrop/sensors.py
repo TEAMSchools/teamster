@@ -8,11 +8,12 @@ couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
     local_timezone=LOCAL_TIMEZONE,
     asset_selection=[ap, psat, view_count_per_view],
     minimum_interval_seconds=(60 * 10),
+    folder_id="1B40ZL6jjXPMP3FDaHduqwbYmiEbfByNR",
     exclude_dirs=[
-        "/data-team/kipptaf/dayforce",
-        "/data-team/kipptaf/njdoe",
-        "/data-team/kipptaf/performance-management",
-        "/data-team/kipptaf/surveys",
+        f"/data-team/{CODE_LOCATION}/dayforce",
+        f"/data-team/{CODE_LOCATION}/njdoe",
+        f"/data-team/{CODE_LOCATION}/performance-management",
+        f"/data-team/{CODE_LOCATION}/surveys",
     ],
 )
 

@@ -1,0 +1,81 @@
+version: 2
+models:
+  - name: int_powerschool__student_enrollment_union
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - student_number
+            - academic_year
+            - entrydate
+          config:
+            severity: warn
+            store_failures: true
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: students_dcid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: reenrollments_dcid
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: entrydate
+        data_type: date
+      - name: exitdate
+        data_type: date
+      - name: entrycode
+        data_type: string
+      - name: exitcode
+        data_type: string
+      - name: exitcomment
+        data_type: string
+      - name: lunchstatus
+        data_type: string
+      - name: fteid
+        data_type: int64
+      - name: state_studentnumber
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: lastfirst
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: dob
+        data_type: date
+      - name: street
+        data_type: string
+      - name: city
+        data_type: string
+      - name: state
+        data_type: string
+      - name: zip
+        data_type: string
+      - name: home_phone
+        data_type: string
+      - name: fedethnicity
+        data_type: int64
+      - name: next_school
+        data_type: int64
+      - name: sched_nextyeargrade
+        data_type: int64
+      - name: highest_grade_level_achieved
+        data_type: int64
+      - name: gender
+        data_type: string
+      - name: ethnicity
+        data_type: string
+      - name: yearid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: track
+        data_type: string

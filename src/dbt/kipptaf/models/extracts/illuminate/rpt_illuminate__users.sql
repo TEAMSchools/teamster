@@ -2,8 +2,9 @@
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     powerschool_teacher_number as `01 User ID`,
-    family_name_1 as `02 User Last Name`,
-    given_name as `03 User First Name`,
+
+    regexp_replace(normalize(family_name_1, nfd), r'\pM', '') as `02 User Last Name`,
+    regexp_replace(normalize(given_name, nfd), r'\pM', '') as `03 User First Name`,
 
     null as `04 User Middle Name`,
     null as `05 Birth Date`,

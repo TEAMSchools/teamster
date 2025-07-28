@@ -217,12 +217,14 @@ with
             lg.academic_year,
             lg.entry_date,
             lg.entry,
+
+            g.name,
         from {{ ref("stg_powerschool__log") }} as lg
         inner join
             {{ ref("stg_powerschool__gen") }} as g
             on lg.logtypeid = g.id
             and g.cat = 'logtype'
-            and g.name = 'Exempt from retention'
+            and g.name in ('Exempt from retention', 'Retain without criteria')
     ),
 
     exempt_override as (
@@ -238,6 +240,23 @@ with
                 order by entry_date desc
             ) as rn_log,
         from ps_log
+        where name = 'Exempt from retention'
+    ),
+
+    force_retention as (
+        select
+            _dbt_source_relation,
+            studentid,
+            academic_year,
+            entry_date,
+            `entry`,
+
+            row_number() over (
+                partition by _dbt_source_relation, studentid, academic_year
+                order by entry_date desc
+            ) as rn_log,
+        from ps_log
+        where name = 'Retain without criteria'
     ),
 
     promo as (
@@ -288,6 +307,8 @@ with
                 when lg.entry_date is not null
                 then 'Exempt - Manual Override'
             end as exemption,
+
+            if(fr.entry_date is not null, 'Manual Retention', null) as manual_retention,
 
             case
                 /* NJ Gr K-8 */
@@ -505,6 +526,12 @@ with
             and {{ union_dataset_join_clause(left_alias="co", right_alias="lg") }}
             and co.academic_year = lg.academic_year
             and lg.rn_log = 1
+        left join
+            force_retention as fr
+            on co.studentid = fr.studentid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="fr") }}
+            and co.academic_year = fr.academic_year
+            and fr.rn_log = 1
         where co.rn_year = 1
     )
 
@@ -531,6 +558,7 @@ select
     attendance_status_hs_detail,
     academic_status,
     exemption,
+    manual_retention,
 
     case
         /* NJ */

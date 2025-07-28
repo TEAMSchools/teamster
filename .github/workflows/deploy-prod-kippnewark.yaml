@@ -31,6 +31,7 @@ on:
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**
+      - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/iready/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**

@@ -2,8 +2,6 @@ import re
 
 from dagster import DagsterInstance
 
-from teamster.code_locations.kipptaf._dbt.assets import dbt_assets
-
 
 def _add_dynamic_partitions(partitions_def_name: str, partition_keys: list):
     instance = DagsterInstance.from_config(
@@ -36,6 +34,8 @@ def _test_delete_dynamic_partitions_alchemer():
 
 
 def test_code_versions():
+    from teamster.code_locations.kipptaf._dbt.assets import dbt_assets
+
     instance = DagsterInstance.from_config(
         config_dir=".dagster/home", config_filename="dagster-cloud.yaml"
     )

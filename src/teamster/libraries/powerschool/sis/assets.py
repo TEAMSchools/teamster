@@ -1,6 +1,6 @@
 import hashlib
 import pathlib
-from datetime import datetime, timezone
+from datetime import datetime
 from io import BufferedReader
 
 from dagster import (
@@ -69,11 +69,7 @@ def build_powerschool_table_asset(
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
     ):
-        hour_timestamp = (
-            datetime.now(timezone.utc)
-            .replace(minute=0, second=0, microsecond=0)
-            .timestamp()
-        )
+        timestamp = datetime.now().timestamp()
 
         first_partition_key = (
             partitions_def.get_first_partition_key()
@@ -161,7 +157,7 @@ def build_powerschool_table_asset(
             metadata={
                 "records": num_records,
                 "digest": digest,
-                "latest_materialization_timestamp": hour_timestamp,
+                "latest_materialization_timestamp": timestamp,
             },
         )
 

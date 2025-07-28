@@ -37,6 +37,7 @@ select
     co.contact_2_phone_mobile,
     co.contact_2_email_current,
     co.enroll_status,
+    co.grade_level,
 
     fp.fast_ela,
     fp.fast_math,
@@ -63,5 +64,5 @@ left join
 where
     co.academic_year >= {{ var("current_academic_year") }} - 1
     and co.rn_year = 1
-    and co.grade_level = 8
+    and co.grade_level in (7, 8)
     and co.region = 'Miami'
