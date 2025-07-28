@@ -8,7 +8,7 @@ with
         from {{ ref("int_people__staff_roster") }}
     ),
 
-    schools as (select * from {{ ref("stg_people__campus_crosswalk") }}),
+    schools as (select *, from {{ ref("stg_people__campus_crosswalk") }}),
 
     form_responses as (
         select
@@ -39,12 +39,18 @@ with
         select
             *,
             -- pivoting out walkthrough round and school selection items 
-            max(case when item_id = '27596233' then text_value end) over (
-                partition by response_id
-            ) as walkthrough_round,
-            max(case when item_id = '669334db' then text_value end) over (
-                partition by response_id
-            ) as school,
+            max(
+                case
+                    when form_responses.item_id = '27596233'
+                    then form_responses.text_value
+                end
+            ) over (partition by form_responses.response_id) as walkthrough_round,
+            max(
+                case
+                    when form_responses.item_id = '669334db'
+                    then form_responses.text_value
+                end
+            ) over (partition by form_responses.response_id) as school,
         from form_responses
     ),
 
@@ -53,8 +59,8 @@ with
         from responses_pivoted
         left join roster on responses_pivoted.respondent_email = roster.google_email
         left join schools on responses_pivoted.school = schools.location_name
-        where item_id not in ('27596233', '669334db')
+        where responses_pivoted.item_id not in ('27596233', '669334db')
     )
 
-select *
+select *,
 from final
