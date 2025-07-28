@@ -291,6 +291,8 @@ with
             f.fast_ela as fast_ela_level_recent,
             f.fast_math as fast_math_level_recent,
 
+            rt.is_current,
+
             case
                 when
                     co.grade_level < 3
@@ -532,6 +534,12 @@ with
             and {{ union_dataset_join_clause(left_alias="co", right_alias="fr") }}
             and co.academic_year = fr.academic_year
             and fr.rn_log = 1
+        left join
+            {{ ref("stg_reporting__terms") }} as rt
+            on co.academic_year = rt.academic_year
+            and co.schoolid = rt.school_id
+            and term_name = rt.name
+            and rt.type = 'RT'
         where co.rn_year = 1
     )
 
@@ -539,6 +547,7 @@ select
     student_number,
     academic_year,
     term_name,
+    is_current,
     ada_term_running,
     n_absences_y1_running,
     n_absences_y1_running_non_susp,
