@@ -567,4 +567,4 @@ left join
     and w.week_start_monday = m.week_start_monday
 where
     o.observation_type_abbreviation = 'WT'
-    and w.academic_year >= {{ var("current_academic_year") }}
+    and w.academic_year = {{ var("current_academic_year") }}
