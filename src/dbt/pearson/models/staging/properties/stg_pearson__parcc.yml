@@ -65,7 +65,7 @@ models:
       - name: closedcaptioningforelal
         data_type: string
       - name: colorcontrast
-        data_type: float64
+        data_type: numeric
       - name: datefirstenrolledinusschool
         data_type: string
       - name: economicdisadvantagestatus
@@ -73,13 +73,13 @@ models:
       - name: elaccommodation
         data_type: string
       - name: elaconstructedresponse
-        data_type: float64
+        data_type: numeric
       - name: elalconstructedresponse
-        data_type: float64
+        data_type: numeric
       - name: elalselectedresponseortechnologyenhanceditems
-        data_type: float64
+        data_type: numeric
       - name: elaselectedresponseortechnologyenhanceditems
-        data_type: float64
+        data_type: numeric
       - name: electronicbrailleresponse
         data_type: string
       - name: elexemptfromtakingela
@@ -87,9 +87,9 @@ models:
       - name: elexemptfromtakingelal
         data_type: string
       - name: emergencyaccommodation
-        data_type: float64
+        data_type: numeric
       - name: englishlearneraccommodatedresponses
-        data_type: float64
+        data_type: numeric
       - name: englishlearnerel
         data_type: string
       - name: extendedtime
@@ -117,7 +117,7 @@ models:
       - name: homeless
         data_type: string
       - name: humanreaderorhumansigner
-        data_type: float64
+        data_type: numeric
       - name: humansignerfortestdirections
         data_type: string
       - name: iepexemptfrompassing
@@ -129,13 +129,13 @@ models:
       - name: lastorsurname
         data_type: string
       - name: localstudentidentifier
-        data_type: float64
+        data_type: numeric
       - name: mathematicsresponse
-        data_type: float64
+        data_type: numeric
       - name: mathematicsresponseel
-        data_type: float64
+        data_type: numeric
       - name: mathematicsscienceaccommodatedresponse
-        data_type: float64
+        data_type: numeric
       - name: middlename
         data_type: string
       - name: migrantstatus
@@ -153,7 +153,7 @@ models:
       - name: nottestedcode
         data_type: string
       - name: nottestedreason
-        data_type: float64
+        data_type: numeric
       - name: onlineformid
         data_type: string
       - name: onlinepcr1
@@ -165,25 +165,25 @@ models:
       - name: paperformid
         data_type: string
       - name: paperpcr1
-        data_type: float64
+        data_type: numeric
       - name: paperpcr2
-        data_type: float64
+        data_type: numeric
       - name: papersection1numberofattempteditems
-        data_type: float64
+        data_type: numeric
       - name: papersection1totaltestitems
-        data_type: float64
+        data_type: numeric
       - name: papersection2numberofattempteditems
-        data_type: float64
+        data_type: numeric
       - name: papersection2totaltestitems
-        data_type: float64
+        data_type: numeric
       - name: papersection3numberofattempteditems
-        data_type: float64
+        data_type: numeric
       - name: papersection3totaltestitems
-        data_type: float64
+        data_type: numeric
       - name: papersection4numberofattempteditems
-        data_type: float64
+        data_type: numeric
       - name: papersection4totaltestitems
-        data_type: float64
+        data_type: numeric
       - name: paperunit1totaltestitems
         data_type: string
       - name: parccstudentidentifier
@@ -235,7 +235,7 @@ models:
       - name: spanishtransadaptationofthemathematicsassessment
         data_type: string
       - name: specialeducationplacement
-        data_type: float64
+        data_type: numeric
       - name: specializedequipmentorfurniture
         data_type: string
       - name: specifiedareaorsetting
@@ -267,9 +267,9 @@ models:
       - name: statefield5
         data_type: string
       - name: statefield7
-        data_type: float64
+        data_type: numeric
       - name: statefield8
-        data_type: float64
+        data_type: numeric
       - name: statestudentidentifier
         data_type: int64
       - name: studentassessmentidentifier
@@ -293,23 +293,23 @@ models:
       - name: studentwithdisabilities
         data_type: string
       - name: subclaim1category
-        data_type: float64
+        data_type: numeric
       - name: subclaim1categoryifnotattempted
         data_type: string
       - name: subclaim2category
-        data_type: float64
+        data_type: numeric
       - name: subclaim2categoryifnotattempted
         data_type: string
       - name: subclaim3category
-        data_type: float64
+        data_type: numeric
       - name: subclaim3categoryifnotattempted
         data_type: string
       - name: subclaim4category
-        data_type: float64
+        data_type: numeric
       - name: subclaim4categoryifnotattempted
         data_type: string
       - name: subclaim5category
-        data_type: float64
+        data_type: numeric
       - name: subclaim5categoryifnotattempted
         data_type: string
       - name: subclaim6category
@@ -325,7 +325,7 @@ models:
       - name: testcode
         data_type: string
       - name: testcsemprobablerange
-        data_type: float64
+        data_type: numeric
       - name: testcsemprobablerangeifnotattempted
         data_type: string
       - name: testingdistrictcode
@@ -339,43 +339,43 @@ models:
       - name: testingschoolname
         data_type: string
       - name: testperformancelevel
-        data_type: float64
+        data_type: int64
       - name: testperformancelevelifnotattempted
         data_type: string
       - name: testreadingcsem
-        data_type: float64
+        data_type: numeric
       - name: testreadingcsemifnotattempted
         data_type: string
       - name: testreadingscalescore
-        data_type: float64
+        data_type: numeric
       - name: testreadingscalescoreifnotattempted
         data_type: string
       - name: testscalescore
-        data_type: float64
+        data_type: numeric
       - name: testscalescoreifnotattempted
         data_type: string
       - name: testscorecomplete
-        data_type: float64
+        data_type: numeric
       - name: teststatus
         data_type: string
       - name: testwritingcsem
-        data_type: float64
+        data_type: numeric
       - name: testwritingcsemifnotattempted
         data_type: string
       - name: testwritingscalescore
-        data_type: float64
+        data_type: numeric
       - name: testwritingscalescoreifnotattempted
         data_type: string
       - name: texttospeech
-        data_type: float64
+        data_type: numeric
       - name: timeofday
         data_type: string
       - name: titleiiilimitedenglishproficientparticipationstatus
         data_type: string
       - name: totaltestitems
-        data_type: float64
+        data_type: numeric
       - name: totaltestitemsattempted
-        data_type: float64
+        data_type: numeric
       - name: translationofthemathematicsassessment
         data_type: string
       - name: twoormoreraces
@@ -385,47 +385,47 @@ models:
       - name: unit1formid
         data_type: string
       - name: unit1numberofattempteditems
-        data_type: float64
+        data_type: numeric
       - name: unit1onlinetestenddatetime
         data_type: string
       - name: unit1onlineteststartdatetime
         data_type: string
       - name: unit1totaltestitems
-        data_type: float64
+        data_type: numeric
       - name: unit2formid
         data_type: string
       - name: unit2numberofattempteditems
-        data_type: float64
+        data_type: numeric
       - name: unit2onlinetestenddatetime
         data_type: string
       - name: unit2onlineteststartdatetime
         data_type: string
       - name: unit2totaltestitems
-        data_type: float64
+        data_type: numeric
       - name: unit3formid
         data_type: string
       - name: unit3numberofattempteditems
-        data_type: float64
+        data_type: numeric
       - name: unit3onlinetestenddatetime
         data_type: string
       - name: unit3onlineteststartdatetime
         data_type: string
       - name: unit3totaltestitems
-        data_type: float64
+        data_type: numeric
       - name: unit4formid
         data_type: string
       - name: unit4numberofattempteditems
-        data_type: float64
+        data_type: numeric
       - name: unit4onlinetestenddatetime
         data_type: string
       - name: unit4onlineteststartdatetime
         data_type: string
       - name: unit4totaltestitems
-        data_type: float64
+        data_type: numeric
       - name: voidscorecode
         data_type: string
       - name: voidscorereason
-        data_type: float64
+        data_type: numeric
       - name: white
         data_type: string
       - name: wordprediction
@@ -460,3 +460,5 @@ models:
         data_type: boolean
       - name: testperformancelevel_text
         data_type: string
+      - name: is_bl_fb
+        data_type: boolean

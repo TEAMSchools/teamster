@@ -11,10 +11,10 @@ select
     lesson_language,
 
     cast(lesson_time_on_task_min as int) as lesson_time_on_task_min,
-    cast(percent_skills_successful as numeric) as percent_skills_successful,
     cast(skills_completed as int) as skills_completed,
     cast(skills_successful as int) as skills_successful,
     cast(student_id as int) as student_id,
+    cast(percent_skills_successful as numeric) as percent_skills_successful,
 
     parse_date('%m/%d/%Y', completion_date) as completion_date,
 

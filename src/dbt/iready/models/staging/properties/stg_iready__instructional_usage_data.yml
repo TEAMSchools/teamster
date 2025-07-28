@@ -47,9 +47,9 @@ models:
       - name: april_lessons_completed
         data_type: int64
       - name: april_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: april_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: april_total_time_on_task_min
         data_type: int64
       - name: april_weekly_average_time_on_task_min
@@ -57,9 +57,9 @@ models:
       - name: august_lessons_completed
         data_type: int64
       - name: august_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: august_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: august_total_time_on_task_min
         data_type: int64
       - name: august_weekly_average_time_on_task_min
@@ -67,9 +67,9 @@ models:
       - name: december_lessons_completed
         data_type: int64
       - name: december_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: december_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: december_total_time_on_task_min
         data_type: int64
       - name: december_weekly_average_time_on_task_min
@@ -77,9 +77,9 @@ models:
       - name: february_lessons_completed
         data_type: int64
       - name: february_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: february_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: february_total_time_on_task_min
         data_type: int64
       - name: february_weekly_average_time_on_task_min
@@ -87,9 +87,9 @@ models:
       - name: january_lessons_completed
         data_type: int64
       - name: january_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: january_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: january_total_time_on_task_min
         data_type: int64
       - name: january_weekly_average_time_on_task_min
@@ -97,9 +97,9 @@ models:
       - name: july_lessons_completed
         data_type: int64
       - name: july_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: july_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: july_total_time_on_task_min
         data_type: int64
       - name: july_weekly_average_time_on_task_min
@@ -107,9 +107,9 @@ models:
       - name: june_lessons_completed
         data_type: int64
       - name: june_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: june_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: june_total_time_on_task_min
         data_type: int64
       - name: june_weekly_average_time_on_task_min
@@ -117,17 +117,17 @@ models:
       - name: last_week_lessons_completed
         data_type: int64
       - name: last_week_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: last_week_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: last_week_time_on_task_min
         data_type: int64
       - name: march_lessons_completed
         data_type: int64
       - name: march_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: march_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: march_total_time_on_task_min
         data_type: int64
       - name: march_weekly_average_time_on_task_min
@@ -135,9 +135,9 @@ models:
       - name: may_lessons_completed
         data_type: int64
       - name: may_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: may_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: may_total_time_on_task_min
         data_type: int64
       - name: may_weekly_average_time_on_task_min
@@ -145,9 +145,9 @@ models:
       - name: november_lessons_completed
         data_type: int64
       - name: november_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: november_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: november_total_time_on_task_min
         data_type: int64
       - name: november_weekly_average_time_on_task_min
@@ -155,9 +155,9 @@ models:
       - name: october_lessons_completed
         data_type: int64
       - name: october_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: october_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: october_total_time_on_task_min
         data_type: int64
       - name: october_weekly_average_time_on_task_min
@@ -165,9 +165,9 @@ models:
       - name: september_lessons_completed
         data_type: int64
       - name: september_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: september_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: september_total_time_on_task_min
         data_type: int64
       - name: september_weekly_average_time_on_task_min
@@ -175,89 +175,89 @@ models:
       - name: year_to_date_algebra_and_algebraic_thinking_lessons_completed
         data_type: int64
       - name: year_to_date_algebra_and_algebraic_thinking_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_algebra_and_algebraic_thinking_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_algebra_and_algebraic_thinking_time_on_task_min
         data_type: int64
       - name: year_to_date_comprehension_close_reading_lessons_completed
         data_type: int64
       - name: year_to_date_comprehension_close_reading_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_comprehension_close_reading_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_comprehension_close_reading_time_on_task_min
         data_type: int64
       - name: year_to_date_comprehension_lessons_completed
         data_type: int64
       - name: year_to_date_comprehension_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_comprehension_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_comprehension_time_on_task_min
         data_type: int64
       - name: year_to_date_geometry_lessons_completed
         data_type: int64
       - name: year_to_date_geometry_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_geometry_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_geometry_time_on_task_min
         data_type: int64
       - name: year_to_date_high_frequency_words_lessons_completed
         data_type: int64
       - name: year_to_date_high_frequency_words_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_high_frequency_words_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_high_frequency_words_time_on_task_min
         data_type: int64
       - name: year_to_date_measurement_and_data_lessons_completed
         data_type: int64
       - name: year_to_date_measurement_and_data_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_measurement_and_data_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_measurement_and_data_time_on_task_min
         data_type: int64
       - name: year_to_date_number_and_operations_lessons_completed
         data_type: int64
       - name: year_to_date_number_and_operations_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_number_and_operations_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_number_and_operations_time_on_task_min
         data_type: int64
       - name: year_to_date_overall_lessons_completed
         data_type: int64
       - name: year_to_date_overall_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_overall_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_overall_time_on_task_min
         data_type: int64
       - name: year_to_date_phonics_lessons_completed
         data_type: int64
       - name: year_to_date_phonics_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_phonics_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_phonics_time_on_task_min
         data_type: int64
       - name: year_to_date_phonological_awareness_lessons_completed
         data_type: int64
       - name: year_to_date_phonological_awareness_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_phonological_awareness_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_phonological_awareness_time_on_task_min
         data_type: int64
       - name: year_to_date_vocabulary_lessons_completed
         data_type: int64
       - name: year_to_date_vocabulary_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_vocabulary_percent_lessons_passed
-        data_type: float64
+        data_type: numeric
       - name: year_to_date_vocabulary_time_on_task_min
         data_type: int64
       - name: _dagster_partition_academic_year

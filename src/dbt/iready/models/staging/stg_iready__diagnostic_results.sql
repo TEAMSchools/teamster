@@ -2,27 +2,42 @@ with
     transformations as (
         select
             * except (
+                `grouping`,
+                `start_date`,
+                `subject`,
+                algebra_and_algebraic_thinking_scale_score,
                 annual_stretch_growth_measure,
                 annual_typical_growth_measure,
                 completion_date,
+                comprehension_informational_text_scale_score,
+                comprehension_literature_scale_score,
+                comprehension_overall_scale_score,
                 diagnostic_gain,
-                `grouping`,
+                duration_min,
+                geometry_scale_score,
+                high_frequency_words_scale_score,
                 measurement_and_data_scale_score,
                 mid_on_grade_level_scale_score,
                 most_recent_diagnostic_y_n,
                 most_recent_diagnostic_ytd_y_n,
                 number_and_operations_scale_score,
                 overall_scale_score,
+                percent_progress_to_annual_stretch_growth_percent,
+                percent_progress_to_annual_typical_growth_percent,
                 percentile,
-                `start_date`,
-                `subject`
+                phonics_scale_score,
+                phonological_awareness_scale_score,
+                reading_comprehension_informational_text_scale_score,
+                reading_comprehension_literature_scale_score,
+                reading_comprehension_overall_scale_score,
+                student_id,
+                vocabulary_scale_score
             ),
 
             cast(_dagster_partition_academic_year as int) as academic_year_int,
             cast(annual_stretch_growth_measure as int) as annual_stretch_growth_measure,
             cast(annual_typical_growth_measure as int) as annual_typical_growth_measure,
-            cast(diagnostic_gain as int) as diagnostic_gain,
-            cast(`grouping` as int) as `grouping`,
+            cast(`grouping` as int) as _grouping,
             cast(
                 measurement_and_data_scale_score as int
             ) as measurement_and_data_scale_score,
@@ -34,6 +49,45 @@ with
             ) as number_and_operations_scale_score,
             cast(overall_scale_score as int) as overall_scale_score,
             cast(percentile as int) as percentile,
+            cast(
+                algebra_and_algebraic_thinking_scale_score as int
+            ) as algebra_and_algebraic_thinking_scale_score,
+            cast(
+                comprehension_informational_text_scale_score as int
+            ) as comprehension_informational_text_scale_score,
+            cast(
+                comprehension_literature_scale_score as int
+            ) as comprehension_literature_scale_score,
+            cast(
+                comprehension_overall_scale_score as int
+            ) as comprehension_overall_scale_score,
+            cast(duration_min as int) as duration_min,
+            cast(geometry_scale_score as int) as geometry_scale_score,
+            cast(student_id as int) as student_id,
+            cast(vocabulary_scale_score as int) as vocabulary_scale_score,
+            cast(diagnostic_gain as numeric) as diagnostic_gain,
+            cast(
+                high_frequency_words_scale_score as numeric
+            ) as high_frequency_words_scale_score,
+            cast(
+                percent_progress_to_annual_stretch_growth_percent as numeric
+            ) as percent_progress_to_annual_stretch_growth_percent,
+            cast(
+                percent_progress_to_annual_typical_growth_percent as numeric
+            ) as percent_progress_to_annual_typical_growth_percent,
+            cast(phonics_scale_score as numeric) as phonics_scale_score,
+            cast(
+                phonological_awareness_scale_score as numeric
+            ) as phonological_awareness_scale_score,
+            cast(
+                reading_comprehension_informational_text_scale_score as numeric
+            ) as reading_comprehension_informational_text_scale_score,
+            cast(
+                reading_comprehension_literature_scale_score as numeric
+            ) as reading_comprehension_literature_scale_score,
+            cast(
+                reading_comprehension_overall_scale_score as numeric
+            ) as reading_comprehension_overall_scale_score,
 
             coalesce(
                 most_recent_diagnostic_y_n, most_recent_diagnostic_ytd_y_n
