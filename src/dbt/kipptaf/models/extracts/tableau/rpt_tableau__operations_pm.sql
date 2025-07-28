@@ -60,7 +60,7 @@ with
                 end
             ) over (partition by form_responses.response_id) as form_school,
         from form_responses
-        
+
     ),
 
     final as (
@@ -85,4 +85,3 @@ with
 
 select *,
 from final
-
