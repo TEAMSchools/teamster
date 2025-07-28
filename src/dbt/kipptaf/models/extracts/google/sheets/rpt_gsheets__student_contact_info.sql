@@ -70,7 +70,13 @@ select
     co.gifted_and_talented,
 
     c.id as salesforce_contact_id,
+
+    nj.home_language,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("stg_kippadb__contact") }} as c on co.student_number = c.school_specific_id
+left join
+    {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
+    on co.students_dcid = nj.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
 where co.enroll_status in (0, -1) and co.rn_all = 1
