@@ -43,14 +43,6 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
     assert extras.text == ""
 
 
-def test_performance_management_observation_details_kipptaf():
-    from teamster.code_locations.kipptaf.performance_management.assets import (
-        observation_details,
-    )
-
-    _test_asset(asset=observation_details)
-
-
 def test_adp_payroll_general_ledger_file_kipptaf():
     from teamster.code_locations.kipptaf.adp.payroll.assets import general_ledger_file
 
@@ -81,25 +73,19 @@ def test_adp_payroll_general_ledger_file_kipptaf():
 def test_fldoe_fast_kippmiami():
     from teamster.code_locations.kippmiami.fldoe.assets import fast
 
-    _test_asset(asset=fast)
-
-
-def test_fldoe_fsa_kippmiami():
-    from teamster.code_locations.kippmiami.fldoe.assets import fsa
-
-    _test_asset(asset=fsa)
+    _test_asset(asset=fast, partition_key="Grade8FASTMathematics|SY25/PM3")
 
 
 def test_fldoe_eoc_kippmiami():
     from teamster.code_locations.kippmiami.fldoe.assets import eoc
 
-    _test_asset(asset=eoc)
+    _test_asset(asset=eoc, partition_key="B.E.S.T.Algebra1|2024")
 
 
 def test_fldoe_science_kippmiami():
     from teamster.code_locations.kippmiami.fldoe.assets import science
 
-    _test_asset(asset=science)
+    _test_asset(asset=science, partition_key="8|2024")
 
 
 def test_fldoe_fte_kippmiami():
@@ -169,6 +155,18 @@ def test_pearson_student_list_report_kippnewark():
     from teamster.code_locations.kippnewark.pearson.assets import student_list_report
 
     _test_asset(asset=student_list_report)
+
+
+def test_pearson_student_test_update_kippnewark():
+    from teamster.code_locations.kippnewark.pearson.assets import student_test_update
+
+    _test_asset(asset=student_test_update)
+
+
+def test_pearson_student_test_update_kippcamden():
+    from teamster.code_locations.kippcamden.pearson.assets import student_test_update
+
+    _test_asset(asset=student_test_update)
 
 
 def test_tableau_traffic_to_views_kipptaf():

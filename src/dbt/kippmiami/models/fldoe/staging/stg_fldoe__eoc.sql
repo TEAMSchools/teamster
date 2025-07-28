@@ -19,13 +19,20 @@ with
             test_oppnumber,
             test_reason,
             testing_location,
-            `1_origins_and_purposes_of_law_and_government_performance`,
-            `2_roles_rights_and_responsibilities_of_citizens_performance`,
-            `3_government_policies_and_political_processes_performance`,
-            `4_organization_and_function_of_government_performance`,
-            `1_expressions_functions_and_data_analysis_performance`,
-            `2_linear_relationships_performance`,
-            `3_non_linear_relationships_performance`,
+            field_1_origins_and_purposes_of_law_and_government_performance
+            as `1_origins_and_purposes_of_law_and_government_performance`,
+            field_2_roles_rights_and_responsibilities_of_citizens_performance
+            as `2_roles_rights_and_responsibilities_of_citizens_performance`,
+            field_3_government_policies_and_political_processes_performance
+            as `3_government_policies_and_political_processes_performance`,
+            field_4_organization_and_function_of_government_performance
+            as `4_organization_and_function_of_government_performance`,
+            field_1_expressions_functions_and_data_analysis_performance
+            as `1_expressions_functions_and_data_analysis_performance`,
+            field_2_linear_relationships_performance
+            as `2_linear_relationships_performance`,
+            field_3_non_linear_relationships_performance
+            as `3_non_linear_relationships_performance`,
 
             'PM3' as administration_window,
             'Spring' as season,
@@ -33,7 +40,14 @@ with
             cast(_dagster_partition_school_year_term as int) as academic_year,
 
             coalesce(
-                b_e_s_t_algebra_1_eoc_scale_score, civics_eoc_scale_score
+                coalesce(
+                    b_e_s_t_algebra_1_eoc_scale_score.string_value,
+                    cast(b_e_s_t_algebra_1_eoc_scale_score.long_value as string)
+                ),
+                coalesce(
+                    civics_eoc_scale_score.string_value,
+                    cast(civics_eoc_scale_score.long_value as string)
+                )
             ) as scale_score,
 
             coalesce(

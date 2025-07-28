@@ -2,6 +2,7 @@ with
     ap_data as (
         select
             ap_number_ap_id,
+            powerschool_student_number,
 
             /* unpivot cols */
             rn_exam_number,
@@ -12,6 +13,7 @@ with
             cast(exam_grade as int) as exam_grade,
 
             extract(year from parse_date('%y', admin_year)) as admin_year,
+            extract(year from parse_date('%y', admin_year)) - 1 as academic_year,
         from
             {{ ref("stg_collegeboard__ap") }} unpivot (
                 (
@@ -233,22 +235,34 @@ with
                     ) as 30
                 )
             )
+    ),
+
+    ap_course_crosswalk_long as (
+        select
+            x.data_source,
+            x.test_name,
+            x.ap_course_name,
+
+            p as ps_ap_course_subject_code,
+        from {{ ref("stg_collegeboard__ap_course_crosswalk") }} as x
+        cross join unnest(split(x.ps_ap_course_subject_code, ',')) as p
+        where x.data_source = 'CB File'
     )
 
 select
     a.*,
-
-    x.powerschool_student_number,
 
     c1.description as exam_code_description,
 
     c2.description as irregularity_code_1_description,
 
     c3.description as irregularity_code_2_description,
+
+    x.test_name,
+    x.ps_ap_course_subject_code,
+    x.ap_course_name,
+    x.data_source,
 from ap_data as a
-left join
-    {{ ref("stg_collegeboard__ap_id_crosswalk") }} as x
-    on a.ap_number_ap_id = x.college_board_id
 left join
     {{ ref("stg_collegeboard__ap_codes") }} as c1
     on a.exam_code = c1.code
@@ -261,3 +275,5 @@ left join
     {{ ref("stg_collegeboard__ap_codes") }} as c3
     on a.irregularity_code_2 = c3.code
     and c3.`domain` = 'Irregularity Scores'
+left join ap_course_crosswalk_long as x on c1.description = x.test_name
+where a.exam_grade is not null

@@ -12,6 +12,7 @@ couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
     local_timezone=LOCAL_TIMEZONE,
     asset_selection=[njgpa, njsla, njsla_science, student_list_report],
     minimum_interval_seconds=(60 * 10),
+    folder_id="1B24uuik9MuBf-pKrrRn1lt3cWVtVAYJE",
     exclude_dirs=[
         f"/data-team/{CODE_LOCATION}/edplan",
         f"/data-team/{CODE_LOCATION}/pearson/parcc",

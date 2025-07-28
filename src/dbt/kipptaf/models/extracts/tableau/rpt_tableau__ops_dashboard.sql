@@ -129,6 +129,8 @@ select
     se.physical_therapy_services_yn,
     se.speech_lang_theapy_services_yn,
     se.other_related_services_yn,
+    se.is_retained_year,
+    se.is_retained_ever,
 
     cal.days_remaining,
     cal.days_total,
