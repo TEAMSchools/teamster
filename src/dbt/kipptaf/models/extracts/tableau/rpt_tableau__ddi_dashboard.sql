@@ -185,7 +185,7 @@ with
             on co.schoolid = lc.home_work_location_powerschool_school_id
         where
             co.enroll_status = 0
-            and co.academic_year = {{ var("current_academic_year") }}
+            and co.academic_year >= {{ var("current_academic_year") - 1 }}
             and not co.is_out_of_district
             {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
