@@ -2,6 +2,7 @@ version: 2
 models:
   - name: stg_fldoe__fsa
     config:
+      enabled: false
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("fldoe",
         "src_fldoe__fsa") | replace("`", "") }}')

@@ -9,9 +9,9 @@ with
 
             'Spring' as season,
 
-            cast(trim(scoreflag_r) as int) as score_flag_r,
-            cast(trim(scalescore) as int) as scale_score,
-            cast(trim(performancelevel) as int) as performance_level,
+            cast(nullif(trim(scoreflag_r), '') as int) as score_flag_r,
+            cast(nullif(trim(scalescore), '') as int) as scale_score,
+            cast(nullif(trim(performancelevel), '') as int) as performance_level,
 
             cast(left(schoolyear, 2) as int) + 2000 as academic_year,
 

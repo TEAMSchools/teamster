@@ -93,33 +93,31 @@ with
                 field_4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance
             ) as geometric_reasoning_measurement_and_data_analysis_and_probability,
 
-            cast(
-                coalesce(
-                    fast_grade_3_ela_reading_percentile_rank,
-                    fast_grade_3_mathematics_percentile_rank,
-                    fast_grade_4_ela_reading_percentile_rank,
-                    fast_grade_4_mathematics_percentile_rank,
-                    fast_grade_5_ela_reading_percentile_rank,
-                    fast_grade_5_mathematics_percentile_rank,
-                    fast_grade_6_ela_reading_percentile_rank,
-                    fast_grade_6_mathematics_percentile_rank,
-                    fast_grade_7_ela_reading_percentile_rank,
-                    fast_grade_7_mathematics_percentile_rank,
-                    fast_grade_8_ela_reading_percentile_rank,
-                    fast_grade_8_mathematics_percentile_rank,
-                    grade_3_fast_ela_reading_percentile_rank,
-                    grade_3_fast_mathematics_percentile_rank,
-                    grade_4_fast_ela_reading_percentile_rank,
-                    grade_4_fast_mathematics_percentile_rank,
-                    grade_5_fast_ela_reading_percentile_rank,
-                    grade_5_fast_mathematics_percentile_rank,
-                    grade_6_fast_ela_reading_percentile_rank,
-                    grade_6_fast_mathematics_percentile_rank,
-                    grade_7_fast_ela_reading_percentile_rank,
-                    grade_7_fast_mathematics_percentile_rank,
-                    grade_8_fast_ela_reading_percentile_rank,
-                    grade_8_fast_mathematics_percentile_rank
-                ) as numeric
+            coalesce(
+                fast_grade_3_ela_reading_percentile_rank,
+                fast_grade_3_mathematics_percentile_rank,
+                fast_grade_4_ela_reading_percentile_rank,
+                fast_grade_4_mathematics_percentile_rank,
+                fast_grade_5_ela_reading_percentile_rank,
+                fast_grade_5_mathematics_percentile_rank,
+                fast_grade_6_ela_reading_percentile_rank,
+                fast_grade_6_mathematics_percentile_rank,
+                fast_grade_7_ela_reading_percentile_rank,
+                fast_grade_7_mathematics_percentile_rank,
+                fast_grade_8_ela_reading_percentile_rank,
+                fast_grade_8_mathematics_percentile_rank,
+                grade_3_fast_ela_reading_percentile_rank,
+                grade_3_fast_mathematics_percentile_rank,
+                grade_4_fast_ela_reading_percentile_rank,
+                grade_4_fast_mathematics_percentile_rank,
+                grade_5_fast_ela_reading_percentile_rank,
+                grade_5_fast_mathematics_percentile_rank,
+                grade_6_fast_ela_reading_percentile_rank,
+                grade_6_fast_mathematics_percentile_rank,
+                grade_7_fast_ela_reading_percentile_rank,
+                grade_7_fast_mathematics_percentile_rank,
+                grade_8_fast_ela_reading_percentile_rank,
+                grade_8_fast_mathematics_percentile_rank
             ) as percentile_rank,
 
             cast(

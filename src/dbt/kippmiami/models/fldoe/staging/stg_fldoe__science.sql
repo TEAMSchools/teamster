@@ -18,10 +18,11 @@ with
             test_oppnumber,
             test_reason,
             testing_location,
-            `1_nature_of_science_performance`,
-            `2_earth_and_space_science_performance`,
-            `3_physical_science_performance`,
-            `4_life_science_performance`,
+            field_1_nature_of_science_performance as nature_of_science_performance,
+            field_2_earth_and_space_science_performance
+            as earth_and_space_science_performance,
+            field_3_physical_science_performance as physical_science_performance,
+            field_4_life_science_performance as life_science_performance,
 
             'PM3' as administration_window,
             'Spring' as season,
