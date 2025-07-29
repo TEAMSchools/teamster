@@ -210,9 +210,9 @@ with
             and tw.academic_year = ge.academic_year
             and tw.quarter = ge.quarter
             and tw.week_number_quarter = ge.week_number
-        /* exceptions listed below completely remove rows for certain gradebook categories for
-           a course/section/credit type from the entire gradebook audit dash, but NOT the
-           entire course/section/credit type */
+        /* exceptions listed below completely remove rows for certain gradebook
+           categories for a course/section/credit type from the entire gradebook audit
+           dash, but NOT the entire course/section/credit type */
         left join
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
             on sec.academic_year = e1.academic_year
