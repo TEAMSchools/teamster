@@ -1,0 +1,60 @@
+semantic_models:
+  - name: dim_staff
+    model: ref('dim_staff')
+    description: "Staff roster dimension with job info"
+    primary_entity: teammate
+
+
+    entities:
+      - name: teammate
+        type: primary
+        expr: employee_number
+    dimensions:
+      - name: assignment_status
+        type: categorical
+      
+      - name: race_ethnicity_reporting
+        type: categorical
+
+      - name: entity
+        type: categorical
+
+      - name: location
+        type: categorical
+
+      - name: grade_band
+        type: categorical
+
+      - name: department
+        type: categorical
+
+      - name: job_title
+        type: categorical
+
+      - name: manager
+        type: categorical
+
+      - name: worker_original_hire_date
+        type: time
+        type_params:
+          time_granularity: day
+
+      - name: work_assignment_actual_start_date
+        type: time
+        type_params:
+          time_granularity: day
+
+    measures:
+      - name: staff_count
+        description: "Total number of staff"
+        agg: count
+        expr: employee_number
+    
+metrics:
+  - name: staff_count
+    description: count of staff employee numbers
+    type: simple
+    label: staff_count
+    type_params:
+      measure:
+        name: staff_count
