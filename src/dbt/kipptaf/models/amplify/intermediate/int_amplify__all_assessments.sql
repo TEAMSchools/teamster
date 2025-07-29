@@ -79,8 +79,7 @@ with
             and u.measure_standard = e.expected_measure_standard
 
         where
-            bss.academic_year >= 2023
-            and bss.enrollment_grade = bss.assessment_grade
+            bss.enrollment_grade = bss.assessment_grade
             and bss.assessment_grade is not null
 
         union all
@@ -186,10 +185,7 @@ with
             and p.measure = e.expected_measure_standard
             and p.pm_period = e.admin_season
             and p.client_date between e.start_date and e.end_date
-        where
-            p.academic_year >= 2024
-            and p.enrollment_grade = p.assessment_grade
-            and p.assessment_grade is not null
+        where p.enrollment_grade = p.assessment_grade and p.assessment_grade is not null
     ),
 
     composite_only as (
