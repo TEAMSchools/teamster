@@ -25,7 +25,27 @@ with
         left join
             {{ ref("int_people__staff_roster") }} as r
             on s.teachernumber = r.powerschool_teacher_number
-        where s.terms_academic_year = {{ var("current_academic_year") }}
+        /* exceptions listed below completely remove a course/section/credit type from the
+           entire gradebook audit dash, including from the gradebook categories view */
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            on s.terms_academic_year = e1.academic_year
+            and s.sections_course_number = e1.course_number
+            and e1.view_name = 'teacher_scaffold'
+            and e1.cte = 'sections'
+            and e1.school_id is null
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            on s.terms_academic_year = e2.academic_year
+            and s.sections_schoolid = e2.school_id
+            and s.sections_course_number = e2.course_number
+            and e2.view_name = 'teacher_scaffold'
+            and e2.cte = 'sections'
+            and e2.school_id is not null
+        where
+            s.terms_academic_year = {{ var("current_academic_year") }}
+            and e1.`include` is null
+            and e2.`include` is null
     ),
 
     term_weeks as (
@@ -84,151 +104,136 @@ with
             t.academic_year = {{ var("current_academic_year") }}
             and t.term_start_date <= current_date('{{ var("local_timezone") }}')
             and t.schoolid not in (0, 999999)
+    ),
+
+    final as (
+        select
+            tw.*,
+
+            sec.sections_dcid,
+            sec.sectionid,
+            sec.section_number,
+            sec.external_expression,
+            sec.course_number,
+            sec.course_name,
+            sec.credit_type,
+            sec.exclude_from_gpa,
+            sec.is_ap_course,
+            sec.teacher_number,
+            sec.teacher_name,
+            sec.teacher_tableau_username,
+
+            null as assignment_category_code,
+            null as assignment_category_name,
+            null as assignment_category_term,
+            null as expectation,
+            null as notes,
+
+            'teacher_scaffold' as scaffold_name,
+
+            case
+                when
+                    current_date(
+                        '{{ var("local_timezone") }}'
+                    ) between (tw.quarter_end_date_insession - interval 7 day) and (
+                        tw.quarter_end_date_insession + interval 14 day
+                    )
+                then true
+                else false
+            end as is_quarter_end_date_range,
+
+            if(
+                tw.school_level = 'HS', sec.external_expression, sec.section_number
+            ) as section_or_period,
+
+        from term_weeks as tw
+        inner join
+            sections as sec
+            on tw.schoolid = sec.schoolid
+            and tw.yearid = sec.terms_yearid
+            and tw.week_end_date between sec.terms_firstday and sec.terms_lastday
+            and {{ union_dataset_join_clause(left_alias="tw", right_alias="sec") }}
+        where sec.academic_year = {{ var("current_academic_year") }}
+
+        union all
+
+        select
+            tw.*,
+
+            sec.sections_dcid,
+            sec.sectionid,
+            sec.section_number,
+            sec.external_expression,
+            sec.course_number,
+            sec.course_name,
+            sec.credit_type,
+            sec.exclude_from_gpa,
+            sec.is_ap_course,
+            sec.teacher_number,
+            sec.teacher_name,
+            sec.teacher_tableau_username,
+
+            ge.assignment_category_code,
+            ge.assignment_category_name,
+            ge.assignment_category_term,
+            ge.expectation,
+            ge.notes,
+
+            'teacher_category_scaffold' as scaffold_name,
+
+            case
+                when
+                    current_date(
+                        '{{ var("local_timezone") }}'
+                    ) between (tw.quarter_end_date_insession - interval 7 day) and (
+                        tw.quarter_end_date_insession + interval 14 day
+                    )
+                then true
+                else false
+            end as is_quarter_end_date_range,
+
+            if(
+                tw.school_level = 'HS', sec.external_expression, sec.section_number
+            ) as section_or_period,
+
+        from term_weeks as tw
+        inner join
+            sections as sec
+            on tw.schoolid = sec.schoolid
+            and tw.yearid = sec.terms_yearid
+            and tw.week_end_date between sec.terms_firstday and sec.terms_lastday
+            and {{ union_dataset_join_clause(left_alias="tw", right_alias="sec") }}
+        inner join
+            {{ ref("stg_google_sheets__gradebook_expectations_assignments") }} as ge
+            on tw.region = ge.region
+            and tw.school_level = ge.school_level
+            and tw.academic_year = ge.academic_year
+            and tw.quarter = ge.quarter
+            and tw.week_number_quarter = ge.week_number
+        /* exceptions listed below completely remove rows for certain gradebook categories for
+           a course/section/credit type from the entire gradebook audit dash, but NOT the
+           entire course/section/credit type */
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            on sec.academic_year = e1.academic_year
+            and sec.course_number = e1.course_number
+            and ge.assignment_category_code = e1.gradebook_category
+            and e1.view_name = 'teacher_category_scaffold'
+        where e1.include is null
     )
 
-select
-    tw.*,
-
-    sec.sections_dcid,
-    sec.sectionid,
-    sec.section_number,
-    sec.external_expression,
-    sec.course_number,
-    sec.course_name,
-    sec.credit_type,
-    sec.exclude_from_gpa,
-    sec.is_ap_course,
-    sec.teacher_number,
-    sec.teacher_name,
-    sec.teacher_tableau_username,
-
-    null as assignment_category_code,
-    null as assignment_category_name,
-    null as assignment_category_term,
-    null as expectation,
-    null as notes,
-
-    'teacher_scaffold' as scaffold_name,
-
-    case
-        when
-            current_date(
-                '{{ var("local_timezone") }}'
-            ) between (tw.quarter_end_date_insession - interval 7 day) and (
-                tw.quarter_end_date_insession + interval 14 day
-            )
-        then true
-        else false
-    end as is_quarter_end_date_range,
-
-    if(
-        tw.school_level = 'HS', sec.external_expression, sec.section_number
-    ) as section_or_period,
-
-from term_weeks as tw
-inner join
-    sections as sec
-    on tw.schoolid = sec.schoolid
-    and tw.yearid = sec.terms_yearid
-    and tw.week_end_date between sec.terms_firstday and sec.terms_lastday
-    and {{ union_dataset_join_clause(left_alias="tw", right_alias="sec") }}
-/* exceptions listed below completely remove a course/section/credit type from the
-   entire gradebook audit dash */
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-    on sec.academic_year = e1.academic_year
-    and sec.course_number = e1.course_number
-    and e1.view_name = 'teacher_scaffold'
-    and e1.school_id is null
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-    on sec.academic_year = e2.academic_year
-    and sec.schoolid = e2.school_id
-    and sec.course_number = e2.course_number
-    and e2.view_name = 'teacher_scaffold'
-    and e2.school_id is not null
-where
-    sec.academic_year = {{ var("current_academic_year") }}
-    and e1.`include` is null
-    and e2.`include` is null
-
-union all
-
-select
-    tw.*,
-
-    sec.sections_dcid,
-    sec.sectionid,
-    sec.section_number,
-    sec.external_expression,
-    sec.course_number,
-    sec.course_name,
-    sec.credit_type,
-    sec.exclude_from_gpa,
-    sec.is_ap_course,
-    sec.teacher_number,
-    sec.teacher_name,
-    sec.teacher_tableau_username,
-
-    ge.assignment_category_code,
-    ge.assignment_category_name,
-    ge.assignment_category_term,
-    ge.expectation,
-    ge.notes,
-
-    'teacher_category_scaffold' as scaffold_name,
-
-    case
-        when
-            current_date(
-                '{{ var("local_timezone") }}'
-            ) between (tw.quarter_end_date_insession - interval 7 day) and (
-                tw.quarter_end_date_insession + interval 14 day
-            )
-        then true
-        else false
-    end as is_quarter_end_date_range,
-
-    if(
-        tw.school_level = 'HS', sec.external_expression, sec.section_number
-    ) as section_or_period,
-
-from term_weeks as tw
-inner join
-    sections as sec
-    on tw.schoolid = sec.schoolid
-    and tw.yearid = sec.terms_yearid
-    and tw.week_end_date between sec.terms_firstday and sec.terms_lastday
-    and {{ union_dataset_join_clause(left_alias="tw", right_alias="sec") }}
-inner join
-    {{ ref("stg_google_sheets__gradebook_expectations_assignments") }} as ge
-    on tw.region = ge.region
-    and tw.school_level = ge.school_level
-    and tw.academic_year = ge.academic_year
-    and tw.quarter = ge.quarter
-    and tw.week_number_quarter = ge.week_number
-/* exceptions listed below completely remove a course/section/credit type from the
-   entire gradebook audit dash */
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-    on sec.academic_year = e1.academic_year
-    and sec.course_number = e1.course_number
-    and e1.view_name = 'teacher_scaffold'
-    and e1.school_id is null
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-    on sec.academic_year = e2.academic_year
-    and sec.schoolid = e2.school_id
-    and sec.course_number = e2.course_number
-    and e2.view_name = 'teacher_scaffold'
-    and e2.school_id is not null
+select f.*,
+from final as f
 /* exceptions listed below completely remove rows for certain gradebook categories for
    a course/section/credit type from the entire gradebook audit dash, but NOT the
    entire course/section/credit type */
 left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e3
-    on sec.academic_year = e3.academic_year
-    and sec.course_number = e3.course_number
-    and ge.assignment_category_code = e3.gradebook_category
-    and e3.view_name = 'teacher_category_scaffold'
-where e1.include is null and e2.include is null and e3.include is null
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+    on f.academic_year = e1.academic_year
+    and f.region = e1.region
+    and f.school_level = e1.school_level
+    and f.credit_type = e1.credit_type
+    and f.is_quarter_end_date_range = e1.is_quarter_end_date_range
+    and e1.view_name = 'teacher_scaffold'
+    and e1.cte is null
+where e1.include is null
