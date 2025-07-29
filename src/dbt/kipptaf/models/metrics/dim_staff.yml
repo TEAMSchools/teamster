@@ -2,17 +2,16 @@ semantic_models:
   - name: dim_staff
     model: ref('dim_staff')
     description: "Staff roster dimension with job info"
-    primary_entity: teammate
-
 
     entities:
       - name: teammate
         type: primary
         expr: employee_number
+
     dimensions:
       - name: assignment_status
         type: categorical
-      
+
       - name: race_ethnicity_reporting
         type: categorical
 
@@ -49,7 +48,8 @@ semantic_models:
         description: "Total number of staff"
         agg: count
         expr: employee_number
-    
+        agg_time_dimension: worker_original_hire_date
+
 metrics:
   - name: staff_count
     description: count of staff employee numbers
