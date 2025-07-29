@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
     pm_round_days as (
         select
             s.schoolcity as region,
@@ -88,5 +89,6 @@ with
         }}
     )
 
-select *
+-- trunk-ignore(sqlfluff/AM04)
+select *,
 from deduplicate
