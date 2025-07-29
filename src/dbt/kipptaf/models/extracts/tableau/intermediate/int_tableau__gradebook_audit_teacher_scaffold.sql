@@ -25,8 +25,9 @@ with
         left join
             {{ ref("int_people__staff_roster") }} as r
             on s.teachernumber = r.powerschool_teacher_number
-        /* exceptions listed below completely remove a course/section/credit type from the
-           entire gradebook audit dash, including from the gradebook categories view */
+        /* exceptions listed below completely remove a course/section/credit type from
+           the entire gradebook audit dash, including from the gradebook categories
+           view */
         left join
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
             on s.terms_academic_year = e1.academic_year
