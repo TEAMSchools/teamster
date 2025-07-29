@@ -1,4 +1,4 @@
-with staff_roster as (select * from {{ ref("int_people__staff_roster") }})
+with staff_roster as (select *, from {{ ref("int_people__staff_roster") }})
 
 select
     employee_number,

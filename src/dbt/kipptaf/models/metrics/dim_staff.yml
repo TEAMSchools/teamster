@@ -1,7 +1,7 @@
 semantic_models:
   - name: dim_staff
     model: ref('dim_staff')
-    description: "Staff roster dimension with job info"
+    description: Staff roster dimension with job info
 
     entities:
       - name: teammate
@@ -45,7 +45,7 @@ semantic_models:
 
     measures:
       - name: staff_count
-        description: "Total number of staff"
+        description: Total number of staff
         agg: count
         expr: employee_number
         agg_time_dimension: worker_original_hire_date
