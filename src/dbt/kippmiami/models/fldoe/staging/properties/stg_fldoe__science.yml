@@ -42,13 +42,13 @@ models:
         data_type: string
       - name: testing_location
         data_type: string
-      - name: 1_nature_of_science_performance
+      - name: nature_of_science_performance
         data_type: string
-      - name: 2_earth_and_space_science_performance
+      - name: earth_and_space_science_performance
         data_type: string
-      - name: 3_physical_science_performance
+      - name: physical_science_performance
         data_type: string
-      - name: 4_life_science_performance
+      - name: life_science_performance
         data_type: string
       - name: administration_window
         data_type: string
