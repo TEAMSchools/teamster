@@ -11,7 +11,7 @@ models:
         enforced: true
     columns:
       - name: employee_number
-        data_type: float64
+        data_type: int64
       - name: position_id
         data_type: string
       - name: plan_type

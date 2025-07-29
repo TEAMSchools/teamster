@@ -1,9 +1,10 @@
 with
     additional_earnings_report as (
         select
-            * except (employee_number, pay_date, gross_pay),
+            * except (employee_number, file_number_pay_statements, gross_pay, pay_date),
 
             cast(employee_number as int) as employee_number,
+            cast(file_number_pay_statements as int) as file_number_pay_statements,
 
             cast(regexp_replace(gross_pay, r'[^\d\.-]', '') as numeric) as gross_pay,
 
