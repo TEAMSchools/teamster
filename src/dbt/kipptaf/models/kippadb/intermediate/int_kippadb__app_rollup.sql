@@ -165,6 +165,14 @@ with
             ) as n_60plus_ecc_wishlist,
             count(
                 if(
+                    adjusted_6_year_minority_graduation_rate >= 60
+                    and application_submission_status = 'Submitted',
+                    id,
+                    null
+                )
+            ) as n_60plus_ecc_submitted,
+            count(
+                if(
                     adjusted_6_year_minority_graduation_rate >= 68
                     and application_submission_status = 'Wishlist',
                     id,
@@ -181,6 +189,14 @@ with
             ) as n_nj_wishlist,
             count(
                 if(
+                    account_billing_state = 'NJ'
+                    and application_submission_status = 'Submitted',
+                    id,
+                    null
+                )
+            ) as n_nj_submitted,
+            count(
+                if(
                     meets_full_need and application_submission_status = 'Wishlist',
                     id,
                     null
@@ -188,11 +204,26 @@ with
             ) as n_meets_full_need_wishlist,
             count(
                 if(
+                    meets_full_need and application_submission_status = 'Submitted',
+                    id,
+                    null
+                )
+            ) as n_meets_full_need_submitted,
+            count(
+                if(
                     is_strong_oos_option and application_submission_status = 'Wishlist',
                     id,
                     null
                 )
             ) as n_strong_oos_wishlist,
+            count(
+                if(
+                    is_strong_oos_option
+                    and application_submission_status = 'Submitted',
+                    id,
+                    null
+                )
+            ) as n_strong_oos_submitted,
             count(
                 if(
                     account_type in (
@@ -207,6 +238,20 @@ with
                     null
                 )
             ) as n_aa_cte_wishlist,
+            count(
+                if(
+                    account_type in (
+                        'Non-profit',
+                        'NonProfit',
+                        'Private',
+                        'Private 2 yr',
+                        'Public 2 yr'
+                    )
+                    and application_submission_status = 'Submitted',
+                    id,
+                    null
+                )
+            ) as n_aa_cte_submitted,
             count(
                 if(
                     adjusted_6_year_minority_graduation_rate >= 68
@@ -225,6 +270,15 @@ with
                     null
                 )
             ) as n_meets_full_need_ea_ed_wishlist,
+            count(
+                if(
+                    meets_full_need
+                    and application_submission_status = 'Submitted'
+                    and is_early_action_decision,
+                    id,
+                    null
+                )
+            ) as n_meets_full_need_ea_ed_submitted,
             count(
                 if(
                     meets_full_need
@@ -347,13 +401,18 @@ select
     aa.n_meets_full_need_ea_ed_wishlist,
     aa.n_meets_full_need_ea_ed_85ecc_wishlist,
     aa.n_app_outcomes,
+    aa.n_nj_submitted,
+    aa.n_strong_oos_submitted,
+    aa.n_meets_full_need_submitted,
     aa.n_68_plus_ecc_submitted,
     aa.n_60_plus_ecc_submitted,
     aa.n_55_plus_ecc_submitted,
+    aa.n_meets_full_need_ea_ed_submitted,
     aa.n_85plus_ecc_ea_ed_submitted,
     aa.n_68plus_ecc_ea_ed_submitted,
     aa.n_meets_full_need_68plus_ecc_ea_ed_submitted,
     aa.n_meets_full_need_85plus_ecc_ea_ed_submitted,
+    aa.n_aa_cte_submitted,
     aa.max_ecc_accepted,
 
     ocf.best_guess_pathway,
@@ -440,6 +499,60 @@ select
         then 1
         else 0
     end as is_submitted_quality_bar_ea_int,
+
+    case
+        when
+            ocf.best_guess_pathway = '4-year'
+            and round(r.contact_college_match_display_gpa, 2) >= 3.50
+            and aa.n_submitted >= 9
+            and aa.n_68_plus_ecc_submitted >= 7
+            and aa.n_nj_submitted >= 4
+            and aa.n_meets_full_need_submitted >= 2
+            and aa.n_meets_full_need_85plus_ecc_ea_ed_submitted >= 1
+            and aa.n_68plus_ecc_ea_ed_submitted >= 2
+        then 1
+        when
+            ocf.is_ed_ea != 'Yes'
+            and ocf.best_guess_pathway = '4-year'
+            and round(r.contact_college_match_display_gpa, 2) >= 3.00
+            and aa.n_submitted >= 9
+            and aa.n_60plus_ecc_submitted >= 7
+            and aa.n_nj_submitted >= 6
+            and aa.n_strong_oos_submitted >= 2
+        then 1
+        when
+            ocf.is_ed_ea = 'Yes'
+            and ocf.best_guess_pathway = '4-year'
+            and round(r.contact_college_match_display_gpa, 2) >= 3.00
+            and aa.n_submitted >= 9
+            and aa.n_68_plus_ecc_submitted >= 7
+            and aa.n_nj_submitted >= 6
+            and aa.n_strong_oos_submitted >= 2
+            and aa.n_68plus_ecc_ea_ed_submitted >= 2
+            and aa.n_meets_full_need_ea_ed_submitted >= 1
+        then 1
+        when
+            ocf.best_guess_pathway = '4-year'
+            and round(r.contact_college_match_display_gpa, 2) >= 2.50
+            and aa.n_submitted >= 6
+            and aa.n_nj_submitted >= 6
+            and aa.n_55_plus_ecc_submitted >= 4
+        then 1
+        when
+            ocf.best_guess_pathway = '4-year'
+            and round(r.contact_college_match_display_gpa, 2) >= 2.00
+            and aa.n_submitted >= 6
+            and aa.n_nj_submitted >= 6
+        then 1
+        when
+            ocf.best_guess_pathway = '4-year'
+            and round(r.contact_college_match_display_gpa, 2) < 2.00
+            and aa.n_submitted >= 3
+            and aa.n_nj_submitted >= 3
+            and aa.n_aa_cte_submitted >= 1
+        then 1
+        else 0
+    end as is_submitted_quality_bar_4yr_int,
 from app_agg as aa
 inner join {{ ref("int_kippadb__roster") }} as r on aa.applicant = r.contact_id
 left join
