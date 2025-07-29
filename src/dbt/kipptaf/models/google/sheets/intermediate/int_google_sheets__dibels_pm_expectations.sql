@@ -83,6 +83,7 @@ with
             dbt_utils.deduplicate(
                 relation="final",
                 partition_by="academic_year, region, grade, admin_season, round, expected_measure_standard, pm_round_days",
+                order_by="start_date",
             )
         }}
     )
