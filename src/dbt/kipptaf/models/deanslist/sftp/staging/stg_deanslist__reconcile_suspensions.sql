@@ -1,7 +1,4 @@
 select
-    dlincidentid as dl_incident_id,
-    dlpenaltyid as dl_penalty_id,
-    studentid as student_id,
     schoolname as school_name,
     studentfirst as student_first_name,
     studentlast as student_last_name,
@@ -9,8 +6,13 @@ select
     attendancebehavior as attendance_behavior,
     submittedfn as submitted_first_name,
     submittedln as submitted_last_name,
-    safe_cast(submittedat as datetime) as submitted_at,
-    safe_cast(constart as date) as consequence_start_date,
-    safe_cast(conend as date) as consequence_end_date,
-    safe_cast(attendancedate as date) as attendance_date,
+
+    cast(dlincidentid as int) as dl_incident_id,
+    cast(dlpenaltyid as int) as dl_penalty_id,
+    cast(studentid as int) as student_id,
+
+    cast(attendancedate as date) as attendance_date,
+    cast(conend as date) as consequence_end_date,
+    cast(constart as date) as consequence_start_date,
+    cast(submittedat as datetime) as submitted_at,
 from {{ source("deanslist", "src_deanslist__reconcile_suspensions") }}

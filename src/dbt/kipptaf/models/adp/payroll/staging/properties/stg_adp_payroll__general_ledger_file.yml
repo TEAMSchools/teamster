@@ -26,9 +26,9 @@ models:
       - name: document
         data_type: string
       - name: debit
-        data_type: float64
+        data_type: numeric
       - name: credit
-        data_type: float64
+        data_type: numeric
       - name: memo
         data_type: string
       - name: gl_dim_function

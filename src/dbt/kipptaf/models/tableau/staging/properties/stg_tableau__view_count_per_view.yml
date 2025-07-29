@@ -21,7 +21,7 @@ models:
       - name: action_views
         data_type: string
       - name: created_at_local
-        data_type: string
+        data_type: datetime
       - name: name_hist_views
         data_type: string
       - name: name_hist_workbooks
@@ -37,7 +37,7 @@ models:
       - name: number_of_records
         data_type: int64
       - name: tz_offset_days
-        data_type: float64
+        data_type: numeric
       - name: sites_id
         data_type: int64
       - name: action_bridge
@@ -111,9 +111,9 @@ models:
       - name: repository_url_hist_views
         data_type: string
       - name: revision_hist_views
-        data_type: float64
+        data_type: numeric
       - name: revision_hist_workbooks
-        data_type: float64
+        data_type: numeric
       - name: site
         data_type: string
       - name: site_id
@@ -255,4 +255,10 @@ models:
       - name: tableau_bridge_client_name
         data_type: string
       - name: using_remote_query_agent
+        data_type: string
+      - name: created_at_timestamp
+        data_type: timestamp
+      - name: url
+        data_type: string
+      - name: user_name_lower
         data_type: string
