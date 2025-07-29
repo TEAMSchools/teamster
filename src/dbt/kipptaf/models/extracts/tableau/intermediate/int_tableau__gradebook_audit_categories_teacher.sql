@@ -68,7 +68,7 @@ with
                     sec.assignment_category_code
             ) as total_expected_scored_section_quarter_week_category,
 
-        from {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as sec
+        from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on sec.sections_dcid = a.sectionsdcid
@@ -95,7 +95,10 @@ with
             and sec.credit_type = e2.credit_type
             and e2.view_name = 'categories_teacher'
             and e2.credit_type is not null
-        where e1.`include` is null and e2.`include` is null
+        where
+            sec.scaffold_name = 'teacher_category_scaffold'
+            and e1.`include` is null
+            and e2.`include` is null
     ),
 
     percent_graded as (
