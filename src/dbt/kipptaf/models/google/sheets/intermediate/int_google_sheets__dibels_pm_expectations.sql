@@ -1,5 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
     pm_round_days as (
         select
             s.schoolcity as region,
@@ -32,6 +31,7 @@ with
         where s.state_excludefromreporting = 0
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     final as (
         select
             e.academic_year,
