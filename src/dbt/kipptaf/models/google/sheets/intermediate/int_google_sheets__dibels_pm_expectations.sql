@@ -29,6 +29,7 @@ with
             and t.type = 'LIT'
             and t.name in ('BOY->MOY', 'MOY->EOY')
         where s.state_excludefromreporting = 0
+        group by s.schoolcity, t.academic_year, t.name, right(t.code, 1)
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
