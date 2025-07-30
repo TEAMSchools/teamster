@@ -190,6 +190,10 @@ models:
       +schema: ldap
       staging:
         +materialized: table
+    marts:
+      +schema: marts
+    metrics:
+      +schema: metrics
     njdoe:
       +schema: njdoe
       staging:
