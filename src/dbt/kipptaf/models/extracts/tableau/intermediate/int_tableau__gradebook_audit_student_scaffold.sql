@@ -16,8 +16,51 @@ with
 
         from {{ ref("int_powerschool__category_grades") }}
         where
-            yearid = {{ var("current_academic_year") - 1990 }}
+            -- change 1991 to 1990 when ready
+            yearid = {{ var("current_academic_year") - 1991 }}
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    ),
+
+    grades as (
+        select
+            _dbt_source_relation,
+            academic_year,
+            yearid,
+            studentid,
+            sectionid,
+            storecode,
+            termbin_start_date,
+            term_percent_grade_adjusted,
+            term_grade_points,
+            citizenship,
+            comment_value,
+
+            'current_year' as grades_type,
+
+        from {{ ref("base_powerschool__final_grades") }}
+
+        union all
+
+        select
+            _dbt_source_relation,
+            academic_year,
+            yearid,
+            studentid,
+            sectionid,
+            storecode,
+            null as termbin_start_date,
+            `percent` as term_percent_grade_adjusted,
+            gpa_points as term_grade_points,
+            behavior as citizenship,
+            comment_value,
+
+            'last_year' as grades_type,
+
+        from {{ ref("stg_powerschool__storedgrades") }}
+        where
+            academic_year = {{ var("current_academic_year") - 1 }}
+            and storecode_type = 'Q'
+            and not is_transfer_grade
     )
 
 select
@@ -216,15 +259,16 @@ inner join
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
     and sec.scaffold_name = 'teacher_scaffold'
 left join
-    {{ ref("base_powerschool__final_grades") }} as qg
+    grades as qg
     on ce.cc_studentid = qg.studentid
     and ce.cc_sectionid = qg.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
     and sec.quarter = qg.storecode
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="qg") }}
-    and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    -- and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    and qg.grades_type = 'last_year'
 where
-    s.academic_year = {{ var("current_academic_year") }}
+    s.academic_year = {{ var("current_academic_year") - 1 }}
     and s.enroll_status = 0
     and not s.is_out_of_district
 
@@ -389,13 +433,14 @@ inner join
     and sec.quarter = ge.quarter
     and sec.week_number_quarter = ge.week_number
 left join
-    {{ ref("base_powerschool__final_grades") }} as qg
+    grades as qg
     on ce.cc_studentid = qg.studentid
     and ce.cc_sectionid = qg.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
     and sec.quarter = qg.storecode
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="qg") }}
-    and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    -- and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    and qg.grades_type = 'last_year'
 left join
     category_grades as cg
     on s.studentid = cg.studentid
@@ -404,6 +449,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="cg") }}
     and ge.assignment_category_term = cg.storecode
 where
-    s.academic_year = {{ var("current_academic_year") }}
+    s.academic_year = {{ var("current_academic_year") - 1 }}
     and s.enroll_status = 0
     and not s.is_out_of_district

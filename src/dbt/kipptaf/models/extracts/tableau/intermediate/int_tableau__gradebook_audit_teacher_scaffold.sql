@@ -46,7 +46,7 @@ with
             and e2.cte = 'sections'
             and e2.school_id is not null
         where
-            s.terms_academic_year = {{ var("current_academic_year") }}
+            s.terms_academic_year = {{ var("current_academic_year") - 1 }}
             and e1.`include` is null
             and e2.`include` is null
     ),
@@ -104,8 +104,8 @@ with
             {{ ref("int_people__leadership_crosswalk") }} as l
             on t.schoolid = l.home_work_location_powerschool_school_id
         where
-            t.academic_year = {{ var("current_academic_year") }}
-            and t.term_start_date <= current_date('{{ var("local_timezone") }}')
+            t.academic_year = {{ var("current_academic_year") - 1 }}
+            -- and t.term_start_date <= current_date('{{ var("local_timezone") }}')
             and t.schoolid not in (0, 999999)
     ),
 
@@ -156,7 +156,7 @@ with
             and tw.yearid = sec.terms_yearid
             and tw.week_end_date between sec.terms_firstday and sec.terms_lastday
             and {{ union_dataset_join_clause(left_alias="tw", right_alias="sec") }}
-        where sec.academic_year = {{ var("current_academic_year") }}
+        where sec.academic_year = {{ var("current_academic_year") - 1 }}
 
         union all
 

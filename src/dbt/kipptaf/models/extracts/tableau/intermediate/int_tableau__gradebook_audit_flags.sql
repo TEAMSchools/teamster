@@ -34,7 +34,7 @@ with
             and u.region = e1.region
             and u.school_level = e1.school_level
             and u.credit_type = e1.credit_type
-            and e1.view_name = 'int_tableau__gradebook_audit_flags'
+            and e1.view_name = 'audit_flags'
             and e1.cte = 'student_unpivot'
             and e1.is_quarter_end_date_range is null
         left join
@@ -43,7 +43,7 @@ with
             and u.region = e2.region
             and u.course_number = e2.course_number
             and u.is_quarter_end_date_range = e2.is_quarter_end_date_range
-            and e2.view_name = 'int_tableau__gradebook_audit_flags'
+            and e2.view_name = 'audit_flags'
             and e2.cte = 'student_unpivot'
             and e2.is_quarter_end_date_range is not null
         where e1.`include` is null and e2.`include` is null
@@ -78,7 +78,7 @@ with
             and r.region = e.region
             and r.school_level = e.school_level
             and r.credit_type = e.credit_type
-            and e.view_name = 'int_tableau__gradebook_audit_flags'
+            and e.view_name = 'audit_flags'
             and e.cte = 'teacher_unpivot_cca'
         where e.`include` is null
     ),
@@ -143,7 +143,7 @@ with
             and r.school_level = e1.school_level
             and r.credit_type = e1.credit_type
             and r.audit_flag_name = e1.audit_flag_name
-            and e1.view_name = 'int_tableau__gradebook_audit_flags'
+            and e1.view_name = 'audit_flags'
             and e1.cte = 'eoq_items'
             and e1.audit_flag_name = 'qt_comment_missing'
         left join
@@ -153,7 +153,7 @@ with
             and r.school_level = e2.school_level
             and r.credit_type = e2.credit_type
             and r.audit_flag_name = e2.audit_flag_name
-            and e2.view_name = 'int_tableau__gradebook_audit_flags'
+            and e2.view_name = 'audit_flags'
             and e2.cte = 'eoq_items'
             and e2.audit_flag_name
             in ('qt_g1_g8_conduct_code_missing', 'qt_g1_g8_conduct_code_incorrect')
@@ -163,7 +163,7 @@ with
             and r.region = e3.region
             and r.course_number = e3.course_number
             and r.audit_flag_name = e3.audit_flag_name
-            and e3.view_name = 'int_tableau__gradebook_audit_flags'
+            and e3.view_name = 'audit_flags'
             and e3.cte = 'eoq_items'
             and e3.course_number is not null
         where e1.`include` is null and e2.`include` is null and e3.`include` is null
@@ -198,7 +198,7 @@ with
             and r.region = e1.region
             and r.school_level = e1.school_level
             and r.credit_type = e1.credit_type
-            and e1.view_name = 'int_tableau__gradebook_audit_flags'
+            and e1.view_name = 'audit_flags'
             and e1.cte = 'eoq_items_conduct_code'
             and e1.credit_type is not null
         left join
@@ -206,7 +206,7 @@ with
             on r.academic_year = e2.academic_year
             and r.region = e2.region
             and r.course_number = e2.course_number
-            and e2.view_name = 'int_tableau__gradebook_audit_flags'
+            and e2.view_name = 'audit_flags'
             and e2.cte = 'eoq_items_conduct_code'
             and e2.credit_type is null
         where r.school_level = 'ES' and e1.`include` is null and e2.`include` is null
@@ -254,7 +254,7 @@ with
             and r.school_level = e1.school_level
             and r.credit_type = e1.credit_type
             and r.audit_flag_name = e1.audit_flag_name
-            and e1.view_name = 'int_tableau__gradebook_audit_flags'
+            and e1.view_name = 'audit_flags'
             and e1.cte = 'student_course_category'
             and e1.credit_type is not null
         left join
@@ -263,7 +263,7 @@ with
             and r.region = e2.region
             and r.course_number = e2.course_number
             and r.audit_flag_name = e2.audit_flag_name
-            and e2.view_name = 'int_tableau__gradebook_audit_flags'
+            and e2.view_name = 'audit_flags'
             and e2.cte = 'student_course_category'
             and e2.credit_type is null
         where e1.`include` is null and e2.`include` is null
@@ -291,7 +291,7 @@ with
             and r.school_level = e1.school_level
             and r.credit_type = e1.credit_type
             and r.audit_flag_name = e1.audit_flag_name
-            and e1.view_name = 'int_tableau__gradebook_audit_flags'
+            and e1.view_name = 'audit_flags'
             and e1.cte = 'student_course_category'
             and e1.credit_type is not null
         left join
@@ -300,7 +300,7 @@ with
             and r.region = e2.region
             and r.course_number = e2.course_number
             and r.audit_flag_name = e2.audit_flag_name
-            and e2.view_name = 'int_tableau__gradebook_audit_flags'
+            and e2.view_name = 'audit_flags'
             and e2.cte = 'student_course_category'
             and e2.credit_type is null
         where e1.`include` is null and e2.`include` is null
@@ -329,7 +329,7 @@ with
             and r.school_level = e1.school_level
             and r.credit_type = e1.credit_type
             and r.audit_flag_name = e1.audit_flag_name
-            and e1.view_name = 'int_tableau__gradebook_audit_flags'
+            and e1.view_name = 'audit_flags'
             and e1.cte = 'student_course_category'
             and e1.credit_type is not null
         left join
@@ -338,7 +338,7 @@ with
             and r.region = e2.region
             and r.course_number = e2.course_number
             and r.audit_flag_name = e2.audit_flag_name
-            and e2.view_name = 'int_tableau__gradebook_audit_flags'
+            and e2.view_name = 'audit_flags'
             and e2.cte = 'student_course_category'
             and e2.credit_type is null
         where e1.`include` is null and e2.`include` is null
@@ -435,6 +435,7 @@ select
     r.is_exempt,
     r.is_expected_missing,
     r.is_expected_zero,
+    r.is_expected_academic_dishonesty,
     r.score_entered,
     r.assign_final_score_percent,
     r.assign_expected_to_be_scored,
@@ -585,6 +586,7 @@ select
     null as is_exempt,
     null as is_expected_missing,
     null as is_expected_zero,
+    null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
@@ -716,6 +718,7 @@ select
     null as is_exempt,
     null as is_expected_missing,
     null as is_expected_zero,
+    null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
@@ -849,6 +852,7 @@ select
     null as is_exempt,
     null as is_expected_missing,
     null as is_expected_zero,
+    null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
@@ -993,6 +997,7 @@ select
     null as is_exempt,
     null as is_expected_missing,
     null as is_expected_zero,
+    null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
@@ -1135,6 +1140,7 @@ select
     null as is_exempt,
     null as is_expected_missing,
     null as is_expected_zero,
+    null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
