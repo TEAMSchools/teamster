@@ -27,8 +27,9 @@ with
             on s.teachernumber = r.powerschool_teacher_number
         /* exceptions listed below completely remove a course/section/credit type from
            the entire gradebook audit dash, including from the gradebook categories
-           view */
+           view, for the entire school year */
         left join
+            -- global on course_number
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
             on s.terms_academic_year = e1.academic_year
             and s.sections_course_number = e1.course_number
@@ -36,6 +37,7 @@ with
             and e1.cte = 'sections'
             and e1.school_id is null
         left join
+            -- course_number for certain schools only
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
             on s.terms_academic_year = e2.academic_year
             and s.sections_schoolid = e2.school_id
@@ -213,21 +215,23 @@ with
             and tw.week_number_quarter = ge.week_number
         /* exceptions listed below completely remove rows for certain gradebook
            categories for a course/section/credit type from the entire gradebook audit
-           dash, but NOT the entire course/section/credit type */
+           dash, but NOT the entire course/section/credit type, for the entire sy */
         left join
+            -- global by course_number
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
             on sec.academic_year = e1.academic_year
             and sec.course_number = e1.course_number
             and ge.assignment_category_code = e1.gradebook_category
             and e1.view_name = 'teacher_category_scaffold'
+            and e1.cte = 'final'
         where e1.include is null
     )
 
 select f.*,
 from final as f
-/* exceptions listed below completely remove rows for certain gradebook categories for
-   a course/section/credit type from the entire gradebook audit dash, but NOT the
-   entire course/section/credit type */
+/* exceptions listed below completely remove rows for a course/section/credit type
+   from the entire gradebook audit dash, but only when EOQ is false. these rows will
+   reappear when EOQ starts */
 left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
     on f.academic_year = e1.academic_year
