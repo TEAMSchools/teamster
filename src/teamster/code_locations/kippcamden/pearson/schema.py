@@ -16,10 +16,6 @@ PARCC_SCHEMA = json.loads(py_avro_schema.generate(py_type=PARCC, options=pas_opt
 
 NJSLA_SCHEMA = json.loads(py_avro_schema.generate(py_type=NJSLA, options=pas_options))
 
-NJSLA_SCIENCE_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=NJSLA, options=pas_options)
-)
-
 NJGPA_SCHEMA = json.loads(py_avro_schema.generate(py_type=NJGPA, options=pas_options))
 
 STUDENT_LIST_REPORT_SCHEMA = json.loads(
