@@ -120,6 +120,7 @@ with
             is_exempt,
             is_expected_late,
             is_expected_missing,
+            is_expected_academic_dishonesty,
             audit_category,
             cte_grouping,
             code_type,
@@ -172,6 +173,7 @@ select
     v.is_exempt,
     v.is_expected_late,
     v.is_expected_missing,
+    v.is_expected_academic_dishonesty,
 
     coalesce(v.flag_value, 0) as flag_value,
 
@@ -240,6 +242,7 @@ select
     v.is_exempt,
     v.is_expected_late,
     v.is_expected_missing,
+    v.is_expected_academic_dishonesty,
 
     coalesce(v.flag_value, 0) as flag_value,
 
@@ -306,6 +309,7 @@ select
     v.is_exempt,
     v.is_expected_late,
     v.is_expected_missing,
+    v.is_expected_academic_dishonesty,
 
     coalesce(v.flag_value, 0) as flag_value,
 
@@ -372,6 +376,7 @@ select
     v.is_exempt,
     v.is_expected_late,
     v.is_expected_missing,
+    v.is_expected_academic_dishonesty,
 
     coalesce(v.flag_value, 0) as flag_value,
 
@@ -440,6 +445,7 @@ select
     v.is_exempt,
     v.is_expected_late,
     v.is_expected_missing,
+    v.is_expected_academic_dishonesty,
 
     coalesce(v.flag_value, 0) as flag_value,
 

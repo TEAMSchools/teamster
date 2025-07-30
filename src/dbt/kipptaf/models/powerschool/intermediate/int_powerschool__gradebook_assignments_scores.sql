@@ -68,11 +68,17 @@ select
 
     if(score_entered = 0, 1, 0) as is_zero,
 
+    if(score_entered = 0 and is_missing = 0, 1, 0) as is_academic_dishonesty,
+
     if(score_entered is null, 1, 0) as is_null,
 
     if(score_entered is not null, 1, 0) as is_scored,
 
     if(is_expected and score_entered = 0, 1, 0) as is_expected_zero,
+
+    if(
+        is_expected and score_entered = 0 and is_missing = 0, 1, 0
+    ) as is_expected_academic_dishonesty,
 
     if(is_expected and score_entered is null, 1, 0) as is_expected_null,
 
