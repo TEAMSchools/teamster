@@ -18,6 +18,8 @@ with
 
             e.students_dcid,
 
+            d.school_level,
+
             coalesce(s.islate, 0) as is_late,
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
@@ -55,12 +57,15 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
             and not e.is_dropped_section
         left join
+            {{ ref("stg_powerschool__schools") }} as d
+            on e.cc_schoolid = d.school_number
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="d") }}
+        left join
             {{ ref("stg_powerschool__assignmentscore") }} as s
             on a.assignmentsectionid = s.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
             and e.students_dcid = s.studentsdcid
             and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
-
     )
 
 select
@@ -68,7 +73,9 @@ select
 
     if(score_entered = 0, 1, 0) as is_zero,
 
-    if(score_entered = 0 and is_missing = 0, 1, 0) as is_academic_dishonesty,
+    if(
+        score_entered = 0 and school_level = 'HS' and is_missing = 0, 1, 0
+    ) as is_academic_dishonesty,
 
     if(score_entered is null, 1, 0) as is_null,
 
@@ -77,7 +84,9 @@ select
     if(is_expected and score_entered = 0, 1, 0) as is_expected_zero,
 
     if(
-        is_expected and score_entered = 0 and is_missing = 0, 1, 0
+        is_expected and score_entered = 0 and school_level = 'HS' and is_missing = 0,
+        1,
+        0
     ) as is_expected_academic_dishonesty,
 
     if(is_expected and score_entered is null, 1, 0) as is_expected_null,

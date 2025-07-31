@@ -11,17 +11,13 @@ select
     a.is_expected_late,
     a.is_expected_missing,
     a.is_expected_zero,
+    a.is_expected_academic_dishonesty,
     a.is_expected_null,
     a.score_entered,
     a.assign_final_score_percent,
 
     a.is_expected as assign_expected_to_be_scored,
     a.is_expected_scored as assign_expected_with_score,
-
-    -- academic dishonesty tag for hs
-    if(
-        ce.school_level = 'HS' and a.is_expected_academic_dishonesty = 1, 1, 0
-    ) as is_expected_academic_dishonesty,
 
     -- exempt, nulls and max
     if(a.is_exempt = 1 and a.is_null = 0, true, false) as assign_exempt_with_score,

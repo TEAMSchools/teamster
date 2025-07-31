@@ -224,7 +224,7 @@ with
             and ge.assignment_category_code = e1.gradebook_category
             and e1.view_name = 'teacher_category_scaffold'
             and e1.cte = 'final'
-        where e1.include is null
+        where e1.`include` is null
     )
 
 select f.*,
@@ -241,4 +241,24 @@ left join
     and f.is_quarter_end_date_range = e1.is_quarter_end_date_range
     and e1.view_name = 'teacher_scaffold'
     and e1.cte is null
-where e1.include is null
+-- permantently remove flags for certain categories for credit types
+left join
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+    on f.academic_year = e2.academic_year
+    and f.region = e2.region
+    and f.school_level = e2.school_level
+    and f.credit_type = e2.credit_type
+    and f.assignment_category_code = e2.gradebook_category
+    and e2.view_name = 'teacher_category_scaffold'
+    and e2.cte = 'final'
+-- permantently remove flags for certain categories for courses
+left join
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e3
+    on f.academic_year = e3.academic_year
+    and f.region = e3.region
+    and f.course_number = e3.course_number
+    and f.assignment_category_code = e3.gradebook_category
+    and e3.credit_type is null
+    and e3.view_name = 'teacher_category_scaffold'
+    and e3.cte = 'final'
+where e1.`include` is null and e2.`include` is null and e3.`include` is null
