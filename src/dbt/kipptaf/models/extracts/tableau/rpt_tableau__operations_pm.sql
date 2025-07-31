@@ -53,12 +53,6 @@ with
                     then form_responses.text_value
                 end
             ) over (partition by form_responses.response_id) as walkthrough_round,
-            max(
-                case
-                    when form_responses.item_id = '3a4fdfe4'
-                    then form_responses.text_value
-                end
-            ) over (partition by form_responses.response_id) as form_school,
         from form_responses
 
     ),
