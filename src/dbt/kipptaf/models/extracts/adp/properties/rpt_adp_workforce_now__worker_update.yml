@@ -10,13 +10,7 @@ models:
         data_type: int64
       - name: mail
         data_type: string
-      - name: wf_mgr_trigger
-        data_type: string
       - name: adp__custom_field__employee_number
         data_type: int64
-      - name: adp__wf_mgr_badge_number
-        data_type: int64
       - name: adp__work_email
-        data_type: string
-      - name: adp__wf_mgr_trigger
         data_type: string
