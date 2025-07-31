@@ -33,6 +33,7 @@ def get_titan_ssh_resource(code_location: str):
 
     return SSHResource(
         remote_host="sftp.titank12.com",
+        remote_port=22,
         username=EnvVar(f"TITAN_SFTP_USERNAME_{code_location}"),
         password=EnvVar(f"TITAN_SFTP_PASSWORD_{code_location}"),
     )

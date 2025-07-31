@@ -5,8 +5,8 @@ with
                 relations=[
                     ref("stg_fldoe__eoc"),
                     ref("stg_fldoe__fast"),
-                    ref("stg_fldoe__fsa"),
                     ref("stg_fldoe__science"),
+                    source("fldoe", "stg_fldoe__fsa"),
                 ]
             )
         }}
