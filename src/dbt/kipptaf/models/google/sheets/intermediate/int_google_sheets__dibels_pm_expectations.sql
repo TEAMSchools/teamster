@@ -1,21 +1,14 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
-    pm_round_days as (
+    pm_rounds as (
         select
             s.schoolcity as region,
 
             t.academic_year,
-            t.name,
+            t.name as term_name,
 
-            safe_cast(right(t.code, 1) as int64) as `round`,
+            safe_cast(right(t.code, 1) as int) as round_number,
 
-            count(distinct c.date_value) over (
-                partition by t.academic_year, s.schoolcity, t.name, right(t.code, 1)
-            ) as pm_round_days,
-
-            count(distinct c.date_value) over (
-                partition by t.academic_year, s.schoolcity, t.name
-            ) as pm_days,
+            count(distinct c.date_value) as pm_round_days,
 
         from {{ ref("stg_powerschool__schools") }} as s
         inner join
@@ -30,18 +23,21 @@ with
             and t.type = 'LIT'
             and t.name in ('BOY->MOY', 'MOY->EOY')
         where s.state_excludefromreporting = 0
-        group by s.schoolcity, t.academic_year, t.name, t.code, c.date_value
+        -- trunk-ignore(sqlfluff/RF01)
+        group by s.schoolcity, t.academic_year, t.name, round_number
     ),
 
-    pm_round_days_deduplicated as (
-        {{
-            dbt_utils.deduplicate(
-                relation="pm_round_days",
-                partition_by="academic_year, region, name, round",
-                order_by="academic_year, name, round",
-            )
-        }}
+    pm_rounds_agg as (
+        select
+            *,
+
+            sum(pm_round_days) over (
+                partition by academic_year, region, term_name
+            ) as pm_days,
+
+        from pm_rounds
     )
+
 select
     e.academic_year,
     e.region,
@@ -75,14 +71,14 @@ inner join
     and e.assessment_type = 'PM'
     and t.type = 'LIT'
 left join
-    pm_round_days_deduplicated as d
+    pm_rounds_agg as d
     on t.academic_year = d.academic_year
     and t.region = d.region
-    and t.name = d.name
-    and e.`round` = d.`round`
+    and t.name = d.term_name
+    and e.`round` = d.round_number
 left join
     {{ ref("stg_google_sheets__dibels_goals_long") }} as g
     on e.expected_measure_standard = g.measure_standard
     and e.grade = g.grade_level
     and e.admin_season = g.matching_pm_season
-where e.academic_year >= 2024
+where e.academic_year >= 2024  /* TODO: update to current_school_year var */
