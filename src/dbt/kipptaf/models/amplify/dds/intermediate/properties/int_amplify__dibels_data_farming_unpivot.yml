@@ -36,5 +36,9 @@ models:
         data_type: int64
       - name: surrogate_key
         data_type: string
+      - name: assessment_grade_int
+        data_type: int64
+      - name: assessment_grade
+        data_type: string
       - name: mclass_measure_name
         data_type: string
