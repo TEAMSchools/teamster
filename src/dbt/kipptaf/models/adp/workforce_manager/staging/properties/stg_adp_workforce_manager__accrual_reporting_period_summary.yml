@@ -7,6 +7,8 @@ models:
         source("adp_workforce_manager",
         "src_adp_workforce_manager__accrual_reporting_period_summary") |
         replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: employee_name_id
         data_type: string
