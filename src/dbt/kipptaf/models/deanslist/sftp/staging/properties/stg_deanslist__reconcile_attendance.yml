@@ -1,15 +1,13 @@
 version: 2
 models:
-  - name: stg_deanslist__reconcile_suspensions
+  - name: stg_deanslist__reconcile_attendance
     config:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
-        "src_deanslist__reconcile_suspensions") | replace("`", "") }}')
+        "src_deanslist__reconcile_attendance") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
-      - name: dl_incident_id
-        data_type: int64
-      - name: dl_penalty_id
-        data_type: int64
       - name: student_id
         data_type: int64
       - name: school_name
@@ -17,8 +15,6 @@ models:
       - name: student_first_name
         data_type: string
       - name: student_last_name
-        data_type: string
-      - name: consequence
         data_type: string
       - name: attendance_behavior
         data_type: string
@@ -28,9 +24,5 @@ models:
         data_type: string
       - name: submitted_at
         data_type: datetime
-      - name: consequence_start_date
-        data_type: date
-      - name: consequence_end_date
-        data_type: date
       - name: attendance_date
         data_type: date

@@ -1,75 +1,55 @@
+with
+    njgpa as (
+        select
+            firstname,
+            lastorsurname,
+            assessmentgrade,
+            assessmentyear,
+            `period`,
+            `subject`,
+            testcode,
+            studenttestuuid,
+            studentwithdisabilities,
+            hispanicorlatinoethnicity,
+            americanindianoralaskanative,
+            asian,
+            blackorafricanamerican,
+            nativehawaiianorotherpacificislander,
+            white,
+            twoormoreraces,
+
+            cast(localstudentidentifier as int) as localstudentidentifier,
+            cast(staffmemberidentifier as int) as staffmemberidentifier,
+            cast(statestudentidentifier as int) as statestudentidentifier,
+            cast(testadministrator as int) as testadministrator,
+            cast(testperformancelevel as numeric) as testperformancelevel,
+            cast(testscalescore as numeric) as testscalescore,
+            cast(testscorecomplete as numeric) as testscorecomplete,
+
+            cast(trim(testcsemprobablerange) as numeric) as testcsemprobablerange,
+            cast(trim(testreadingcsem) as numeric) as testreadingcsem,
+            cast(trim(testreadingscalescore) as numeric) as testreadingscalescore,
+            cast(trim(testwritingcsem) as numeric) as testwritingcsem,
+            cast(trim(testwritingscalescore) as numeric) as testwritingscalescore,
+
+            cast(left(assessmentyear, 4) as int) as academic_year,
+
+            cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
+
+            coalesce(multilinguallearnerml, englishlearnerel) as englishlearnerel,
+
+            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
+            if(`period` = 'FallBlock', 'Fall', `period`) as season,
+            if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
+
+        from {{ source("pearson", "src_pearson__njgpa") }}
+        where summativeflag = 'Y' and testattemptednessflag = 'Y'
+    )
+
 select
-    statestudentidentifier,
-    localstudentidentifier,
-    firstname,
-    lastorsurname,
-
-    assessmentgrade,
-    assessmentyear,
-    `period`,
-    `subject`,
-    testcode,
-    studenttestuuid,
-    testperformancelevel,
-    testscalescore,
-    testscorecomplete,
-
-    studentwithdisabilities,
-    hispanicorlatinoethnicity,
-    americanindianoralaskanative,
-    asian,
-    blackorafricanamerican,
-    nativehawaiianorotherpacificislander,
-    white,
-    twoormoreraces,
+    *,
 
     'NJGPA' as assessment_name,
-
-    cast(left(assessmentyear, 4) as int) as academic_year,
-
-    cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
-
-    coalesce(multilinguallearnerml, englishlearnerel) as englishlearnerel,
-
-    coalesce(
-        staffmemberidentifier.long_value,
-        cast(staffmemberidentifier.double_value as int)
-    ) as staffmemberidentifier,
-
-    coalesce(
-        testadministrator.long_value, cast(testadministrator.double_value as int)
-    ) as testadministrator,
-
-    coalesce(
-        testcsemprobablerange.double_value,
-        safe_cast(trim(testcsemprobablerange.string_value) as numeric)
-    ) as testcsemprobablerange,
-
-    coalesce(
-        testreadingcsem.double_value,
-        safe_cast(trim(testreadingcsem.string_value) as numeric)
-    ) as testreadingcsem,
-
-    coalesce(
-        testreadingscalescore.double_value,
-        safe_cast(trim(testreadingscalescore.string_value) as numeric)
-    ) as testreadingscalescore,
-
-    coalesce(
-        testwritingcsem.double_value,
-        safe_cast(trim(testwritingcsem.string_value) as numeric)
-    ) as testwritingcsem,
-
-    coalesce(
-        testwritingscalescore.double_value,
-        safe_cast(trim(testwritingscalescore.string_value) as numeric)
-    ) as testwritingscalescore,
-
-    if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
-
-    if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
-
-    if(`period` = 'FallBlock', 'Fall', `period`) as season,
 
     if(testperformancelevel = 2, true, false) as is_proficient,
 
@@ -81,5 +61,4 @@ select
         then 'Not Yet Graduation Ready'
     end as testperformancelevel_text,
 
-from {{ source("pearson", "src_pearson__njgpa") }}
-where summativeflag = 'Y' and testattemptednessflag = 'Y'
+from njgpa
