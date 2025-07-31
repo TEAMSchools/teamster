@@ -6,6 +6,8 @@ models:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{
         source("adp_workforce_manager",
         "src_adp_workforce_manager__time_details") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: symbolic_period_begin
         data_type: date

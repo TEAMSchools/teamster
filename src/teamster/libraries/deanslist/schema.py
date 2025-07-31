@@ -1,5 +1,9 @@
 from pydantic import BaseModel
 
+"""
+API assets
+"""
+
 
 class Date(BaseModel):
     date: str | None = None
@@ -504,12 +508,17 @@ class Student(BaseModel):
     CustomFields: list[CustomField | None] | None = None
 
 
+"""
+SFTP assets
+"""
+
+
 class ReconcileAttendance(BaseModel):
     attendancebehavior: str | None = None
     attendancedate: str | None = None
     schoolname: str | None = None
     studentfirst: str | None = None
-    studentid: int | None = None
+    studentid: str | None = None
     studentlast: str | None = None
     submittedat: str | None = None
     submittedfn: str | None = None
@@ -523,11 +532,11 @@ class ReconcileSuspensions(BaseModel):
     conend: str | None = None
     consequence: str | None = None
     constart: str | None = None
-    dlincidentid: int | None = None
-    dlpenaltyid: int | None = None
+    dlincidentid: str | None = None
+    dlpenaltyid: str | None = None
     schoolname: str | None = None
     studentfirst: str | None = None
-    studentid: int | None = None
+    studentid: str | None = None
     studentlast: str | None = None
     submittedat: str | None = None
     submittedfn: str | None = None
@@ -537,5 +546,5 @@ class ReconcileSuspensions(BaseModel):
 
 
 class DFFStats(BaseModel):
-    StudentCount: int | None = None
-    StudentWithGuardianCount: int | None = None
+    StudentCount: str | None = None
+    StudentWithGuardianCount: str | None = None
