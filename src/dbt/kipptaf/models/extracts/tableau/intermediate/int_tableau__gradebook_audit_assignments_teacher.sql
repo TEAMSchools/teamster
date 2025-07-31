@@ -51,6 +51,7 @@ with
             sum(s.is_exempt) as n_exempt,
             sum(s.is_expected_missing) as n_missing,
             sum(s.is_expected_null) as n_null,
+            sum(s.is_expected_academic_dishonesty) as n_academic_dishonesty,
 
             sum(
                 if(s.is_expected_null = 1 and s.is_expected_missing = 1, 1, 0)
@@ -90,6 +91,7 @@ select
     asg.n_late,
     asg.n_exempt,
     asg.n_missing,
+    asg.n_academic_dishonesty,
     asg.n_null,
     asg.n_is_null_missing,
     asg.n_is_null_not_missing,

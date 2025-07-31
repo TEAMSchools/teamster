@@ -10,6 +10,7 @@ with
             sum(is_exempt) as n_exempt,
             sum(is_expected_missing) as n_missing,
             sum(is_expected_null) as n_null,
+            sum(is_expected_academic_dishonesty) as n_academic_dishonesty,
 
             sum(
                 if(is_expected_null = 1 and is_expected_missing = 1, 1, 0)
