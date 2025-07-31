@@ -1,0 +1,42 @@
+version: 2
+models:
+  - name: stg_google_sheets__dibels_pm_goals
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Academic_Year
+        data_type: int64
+      - name: Region
+        data_type: string
+      - name: Admin_Season
+        data_type: string
+      - name: Assessment_Grade
+        data_type: string
+      - name: Assessment_Grade_Int
+        data_type: int64
+      - name: Measure_Standard
+        data_type: string
+      - name: Starting_Words
+        data_type: int64
+      - name: Round
+        data_type: int64
+      - name: PM_Goal_Include
+        data_type: boolean
+      - name: PM_Goal_Criteria
+        data_type: string
+      - name: PM_Round_Days
+        data_type: int64
+      - name: Benchmark_Goal
+        data_type: int64
+      - name: Required_Growth_Words
+        data_type: int64
+      - name: PM_Days
+        data_type: int64
+      - name: Daily_Growth_Rate
+        data_type: float64
+      - name: Round_Growth_Words_Goal
+        data_type: int64
+      - name: Cumulative_Growth_Words
+        data_type: int64
