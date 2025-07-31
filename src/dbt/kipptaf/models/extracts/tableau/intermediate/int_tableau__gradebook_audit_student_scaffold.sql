@@ -2,6 +2,7 @@ with
     category_grades as (
         select
             _dbt_source_relation,
+            yearid,
             studentid,
             sectionid,
             storecode,
@@ -21,7 +22,7 @@ with
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
     ),
 
-    grades as (
+    quarter_course_grades as (
         select
             _dbt_source_relation,
             academic_year,
@@ -30,10 +31,10 @@ with
             sectionid,
             storecode,
             termbin_start_date,
-            term_percent_grade_adjusted,
-            term_grade_points,
-            citizenship,
-            comment_value,
+            term_percent_grade_adjusted as quarter_course_percent_grade,
+            term_grade_points as quarter_course_grade_points,
+            citizenship as quarter_conduct,
+            comment_value as quarter_comment_value,
 
             'current_year' as grades_type,
 
@@ -49,10 +50,10 @@ with
             sectionid,
             storecode,
             null as termbin_start_date,
-            `percent` as term_percent_grade_adjusted,
-            gpa_points as term_grade_points,
-            behavior as citizenship,
-            comment_value,
+            `percent` as quarter_course_percent_grade,
+            gpa_points as quarter_course_grade_points,
+            behavior as quarter_conduct,
+            comment_value as quarter_comment_value,
 
             'last_year' as grades_type,
 
@@ -135,10 +136,10 @@ select
     sec.week_number_quarter,
     sec.section_or_period,
 
-    qg.term_percent_grade_adjusted as quarter_course_percent_grade,
-    qg.term_grade_points as quarter_course_grade_points,
-    qg.citizenship as quarter_conduct,
-    qg.comment_value as quarter_comment_value,
+    qg.quarter_course_percent_grade,
+    qg.quarter_course_grade_points,
+    qg.quarter_conduct,
+    qg.quarter_comment_value,
 
     'student_scaffold' as scaffold_name,
 
@@ -153,22 +154,24 @@ select
 
     -- gpa and ada tag
     if(
-        s.school_level != 'ES' and s.ada_above_or_at_80 and qg.term_grade_points < 2.0,
+        s.school_level != 'ES'
+        and s.ada_above_or_at_80
+        and qg.quarter_course_grade_points < 2.0,
         true,
         false
     ) as qt_student_is_ada_80_plus_gpa_less_2,
 
     -- quarter course grade above 100
     if(
-        qg.term_percent_grade_adjusted > 100, true, false
+        qg.quarter_course_percent_grade > 100, true, false
     ) as qt_percent_grade_greater_100,
 
     -- course comments
     if(
         s.school_level != 'ES'
         and sec.is_quarter_end_date_range
-        and qg.term_percent_grade_adjusted < 70
-        and qg.comment_value is null,
+        and qg.quarter_course_percent_grade < 70
+        and qg.quarter_comment_value is null,
         true,
         false
     ) as qt_grade_70_comment_missing,
@@ -176,7 +179,7 @@ select
     if(
         sec.region_school_level = 'MiamiES'
         and sec.is_quarter_end_date_range
-        and qg.comment_value is null,
+        and qg.quarter_comment_value is null,
         true,
         false
     ) as qt_comment_missing,
@@ -185,7 +188,7 @@ select
         sec.region_school_level = 'MiamiES'
         and sec.is_quarter_end_date_range
         and ce.courses_credittype in ('HR', 'MATH', 'ENG', 'RHET')
-        and qg.comment_value is null,
+        and qg.quarter_comment_value is null,
         true,
         false
     ) as qt_es_comment_missing,
@@ -196,7 +199,7 @@ select
         and s.grade_level != 0
         and sec.is_quarter_end_date_range
         and ce.courses_course_name != 'HR'
-        and qg.citizenship is null,
+        and qg.quarter_conduct is null,
         true,
         false
     ) as qt_g1_g8_conduct_code_missing,
@@ -206,7 +209,7 @@ select
         and s.grade_level != 0
         and sec.is_quarter_end_date_range
         and ce.courses_course_name != 'HR'
-        and qg.citizenship not in ('A', 'B', 'C', 'D', 'E', 'F'),
+        and qg.quarter_conduct not in ('A', 'B', 'C', 'D', 'E', 'F'),
         true,
         false
     ) as qt_g1_g8_conduct_code_incorrect,
@@ -216,7 +219,7 @@ select
         and s.grade_level = 0
         and sec.is_quarter_end_date_range
         and ce.courses_course_name = 'HR'
-        and qg.citizenship is null,
+        and qg.quarter_conduct is null,
         true,
         false
     ) as qt_kg_conduct_code_missing,
@@ -226,7 +229,7 @@ select
         and s.grade_level = 0
         and sec.is_quarter_end_date_range
         and ce.courses_course_name = 'HR'
-        and qg.citizenship not in ('E', 'G', 'S', 'M'),
+        and qg.quarter_conduct not in ('E', 'G', 'S', 'M'),
         true,
         false
     ) as qt_kg_conduct_code_incorrect,
@@ -236,7 +239,7 @@ select
         and s.grade_level = 0
         and sec.is_quarter_end_date_range
         and ce.courses_course_name != 'HR'
-        and qg.citizenship is not null,
+        and qg.quarter_conduct is not null,
         true,
         false
     ) as qt_kg_conduct_code_not_hr,
@@ -259,8 +262,9 @@ inner join
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
     and sec.scaffold_name = 'teacher_scaffold'
 left join
-    grades as qg
-    on ce.cc_studentid = qg.studentid
+    quarter_course_grades as qg
+    on ce.terms_yearid = qg.yearid
+    and ce.cc_studentid = qg.studentid
     and ce.cc_sectionid = qg.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
     and sec.quarter = qg.storecode
@@ -346,10 +350,10 @@ select
     sec.week_number_quarter,
     sec.section_or_period,
 
-    qg.term_percent_grade_adjusted as quarter_course_percent_grade,
-    qg.term_grade_points as quarter_course_grade_points,
-    qg.citizenship as quarter_conduct,
-    qg.comment_value as quarter_comment_value,
+    qg.quarter_course_percent_grade,
+    qg.quarter_course_grade_points,
+    qg.quarter_conduct,
+    qg.quarter_comment_value,
 
     'student_category_scaffold' as scaffold_name,
 
@@ -433,7 +437,7 @@ inner join
     and sec.quarter = ge.quarter
     and sec.week_number_quarter = ge.week_number
 left join
-    grades as qg
+    quarter_course_grades as qg
     on ce.cc_studentid = qg.studentid
     and ce.cc_sectionid = qg.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
@@ -443,9 +447,9 @@ left join
     and qg.grades_type = 'last_year'
 left join
     category_grades as cg
-    on s.studentid = cg.studentid
+    on ce.terms_yearid = cg.yearid
+    and ce.cc_studentid = cg.studentid
     and ce.cc_sectionid = cg.sectionid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="cg") }}
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="cg") }}
     and ge.assignment_category_term = cg.storecode
 where
