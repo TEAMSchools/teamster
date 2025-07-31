@@ -103,7 +103,7 @@ with
         select powerschool_student_number, discipline, max(score) as max_score,
         from {{ ref("int_collegeboard__psat_unpivot") }} as pt
         where test_subject in ('EBRW', 'Math') and test_type != 'PSAT 8/9'
-        group by all
+        group by powerschool_student_number, discipline
     ),
 
     prev_yr_iready as (
