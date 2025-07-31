@@ -59,19 +59,13 @@ select
     white,
 
     cast(districtstateid as int) as district_state_id,
-    cast(lexilelevel as int) as lexile_level,
-    cast(questionscorrect as int) as questions_correct,
-    cast(questionspresented as int) as questions_presented,
     cast(quizdeleted as int) as quiz_deleted,
-    cast(quiznumber as int) as quiz_number,
     cast(renaissanceclientid as int) as renaissance_client_id,
     cast(schoolidentifier as int) as school_identifier,
     cast(schoolstateid as int) as school_state_id,
     cast(studentidentifier as int) as student_identifier,
     cast(studentsourcedid as int) as student_sourced_id,
     cast(studentuserid as int) as student_user_id,
-    cast(teacherstateid as int) as teacher_state_id,
-    cast(wordcount as int) as word_count,
 
     cast(booklevel as numeric) as book_level,
     cast(percentcorrect as numeric) as percent_correct,
@@ -79,4 +73,11 @@ select
     cast(pointspossible as numeric) as points_possible,
 
     cast(passed as boolean) as passed,
+
+    cast(cast(lexilelevel as numeric) as int) as lexile_level,
+    cast(cast(questionscorrect as numeric) as int) as questions_correct,
+    cast(cast(questionspresented as numeric) as int) as questions_presented,
+    cast(cast(quiznumber as numeric) as int) as quiz_number,
+    cast(cast(teacherstateid as numeric) as int) as teacher_state_id,
+    cast(cast(wordcount as numeric) as int) as word_count,
 from {{ source("renlearn", "src_renlearn__accelerated_reader") }}

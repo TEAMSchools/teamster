@@ -16,7 +16,8 @@ select
 
     cast(student_id as int) as student_id,
     cast(score as int) as score,
-    cast(total_time_on_lesson_min as int) as total_time_on_lesson_min,
+
+    cast(cast(total_time_on_lesson_min as numeric) as int) as total_time_on_lesson_min,
 
     parse_date('%m/%d/%Y', completion_date) as completion_date,
 

@@ -15,12 +15,13 @@ select
     studentrenaissanceid as student_renaissance_id,
     studentstateid as student_state_id,
 
-    cast(domainconfidencelevel as int) as domain_confidence_level,
-    cast(domainmasterylevel as int) as domain_mastery_level,
-    cast(domainpercentmastery as int) as domain_percent_mastery,
     cast(renaissanceclientid as int) as renaissance_client_id,
     cast(standardpercentmastery as int) as standard_percent_mastery,
     cast(studentidentifier as int) as student_identifier,
     cast(studentsourcedid as int) as student_sourced_id,
     cast(studentuserid as int) as student_user_id,
+
+    cast(cast(domainconfidencelevel as numeric) as int) as domain_confidence_level,
+    cast(cast(domainmasterylevel as numeric) as int) as domain_mastery_level,
+    cast(cast(domainpercentmastery as numeric) as int) as domain_percent_mastery,
 from {{ source("renlearn", "src_renlearn__star_dashboard_standards") }}
