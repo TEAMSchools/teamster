@@ -57,12 +57,12 @@ with
 
             coalesce(
                 cast(score.double_value as numeric), cast(score.long_value as numeric)
-            ) as mclass_measure_standard_score,
+            ) as measure_standard_score,
 
             coalesce(
                 cast(score_change.double_value as numeric),
                 cast(score_change.string_value as numeric)
-            ) as mclass_measure_standard_score_change,
+            ) as measure_standard_score_change,
 
             cast(left(school_year, 4) as int) as academic_year,
 
@@ -73,26 +73,20 @@ with
                 when 'Reading Comprehension (Maze)'
                 then 'Comprehension'
                 else substr(measure, strpos(measure, '(') + 1, 3)
-            end as mclass_measure_name_code,
+            end as measure_name_code,
 
         from {{ src_pss }}
     )
 
 select
-    *,
+    p.*,
+
+    x.abbreviation as school,
+    x.powerschool_school_id as schoolid,
+    initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
 
     case
-        regexp_extract(cast(student_primary_id as string), r'^\d')
-        when '1'
-        then 'Newark'
-        when '2'
-        then 'Camden'
-        when '3'
-        then 'Miami'
-    end as region,
-
-    case
-        mclass_measure_name_code
+        p.measure_name_code
         when 'LNF'
         then 'Letter Names'
         when 'PSF'
@@ -103,14 +97,16 @@ select
         then 'Word Reading Fluency'
         when 'ORF'
         then 'Oral Reading Fluency'
-        else mclass_measure_name_code
-    end as mclass_measure_name,
+        else p.measure_name_code
+    end as measure_name,
 
     if(
-        assessment_grade = 'K', 0, safe_cast(assessment_grade as int)
+        p.assessment_grade = 'K', 0, safe_cast(p.assessment_grade as int)
     ) as assessment_grade_int,
 
     if(
-        enrollment_grade = 'K', 0, safe_cast(enrollment_grade as int)
+        p.enrollment_grade = 'K', 0, safe_cast(p.enrollment_grade as int)
     ) as enrollment_grade_int,
-from pm_data
+
+from pm_data as p
+left join {{ ref("stg_people__location_crosswalk") }} as x on p.school_name = x.name

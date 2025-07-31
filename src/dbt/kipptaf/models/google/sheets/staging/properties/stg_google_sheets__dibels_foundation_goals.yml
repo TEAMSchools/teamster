@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: stg_google_sheets__dibels_foundation_goals
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Academic_Year
+        data_type: int64
+      - name: Region
+        data_type: string
+      - name: Grade_Range
+        data_type: string
+      - name: Grade_Level
+        data_type: int64
+      - name: Period
+        data_type: string
+      - name: Grade_Goal_Type
+        data_type: string
+      - name: Grade_Goal
+        data_type: float64
+      - name: Grade_Range_Goal
+        data_type: float64
