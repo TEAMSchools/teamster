@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("iready",
         "src_iready__diagnostic_results") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: academic_year
         data_type: string
@@ -67,7 +69,7 @@ models:
       - name: comprehension_overall_scale_score
         data_type: int64
       - name: diagnostic_gain
-        data_type: float64
+        data_type: numeric
       - name: diagnostic_language
         data_type: string
       - name: duration_min
@@ -83,7 +85,7 @@ models:
       - name: high_frequency_words_relative_placement
         data_type: string
       - name: high_frequency_words_scale_score
-        data_type: float64
+        data_type: numeric
       - name: lexile_measure
         data_type: string
       - name: lexile_range
@@ -103,21 +105,21 @@ models:
       - name: overall_scale_score
         data_type: int64
       - name: percent_progress_to_annual_stretch_growth_percent
-        data_type: float64
+        data_type: numeric
       - name: percent_progress_to_annual_typical_growth_percent
-        data_type: float64
+        data_type: numeric
       - name: phonics_placement
         data_type: string
       - name: phonics_relative_placement
         data_type: string
       - name: phonics_scale_score
-        data_type: float64
+        data_type: numeric
       - name: phonological_awareness_placement
         data_type: string
       - name: phonological_awareness_relative_placement
         data_type: string
       - name: phonological_awareness_scale_score
-        data_type: float64
+        data_type: numeric
       - name: quantile_measure
         data_type: string
       - name: quantile_range
@@ -129,19 +131,19 @@ models:
       - name: reading_comprehension_informational_text_relative_placement
         data_type: string
       - name: reading_comprehension_informational_text_scale_score
-        data_type: float64
+        data_type: numeric
       - name: reading_comprehension_literature_placement
         data_type: string
       - name: reading_comprehension_literature_relative_placement
         data_type: string
       - name: reading_comprehension_literature_scale_score
-        data_type: float64
+        data_type: numeric
       - name: reading_comprehension_overall_placement
         data_type: string
       - name: reading_comprehension_overall_relative_placement
         data_type: string
       - name: reading_comprehension_overall_scale_score
-        data_type: float64
+        data_type: numeric
       - name: reading_difficulty_indicator_y_n
         data_type: string
       - name: rush_flag
@@ -170,7 +172,7 @@ models:
         data_type: int64
       - name: annual_typical_growth_measure
         data_type: int64
-      - name: grouping
+      - name: _grouping
         data_type: int64
       - name: measurement_and_data_scale_score
         data_type: int64
@@ -187,10 +189,10 @@ models:
       - name: placement_3_level
         data_type: string
       - name: typical_growth
-        data_type: float64
+        data_type: numeric
       - name: stretch_growth
-        data_type: float64
+        data_type: numeric
       - name: overall_scale_score_plus_typical_growth
-        data_type: float64
+        data_type: numeric
       - name: overall_scale_score_plus_stretch_growth
-        data_type: float64
+        data_type: numeric
