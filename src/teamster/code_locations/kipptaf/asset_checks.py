@@ -25,7 +25,7 @@ adp_wfn_asset_selection = [
         [
             "kipptaf",
             "adp_workforce_now",
-            "int_adp_workforce_now_assignments__organizational_units__pivot",
+            "int_adp_workforce_now__workers__work_assignments__organizational_units__pivot",
         ]
     ),
 ]
