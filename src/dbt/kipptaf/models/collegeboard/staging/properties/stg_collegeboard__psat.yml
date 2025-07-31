@@ -11,11 +11,11 @@ models:
       - name: cb_id
         data_type: int64
       - name: latest_psat_total
-        data_type: int64
+        data_type: numeric
       - name: latest_psat_math_section
-        data_type: int64
+        data_type: numeric
       - name: latest_psat_ebrw
-        data_type: int64
+        data_type: numeric
       - name: latest_psat_date
         data_type: date
       - name: district_student_id
@@ -39,7 +39,7 @@ models:
       - name: latest_psat_math_test
         data_type: numeric
       - name: latest_psat_reading
-        data_type: int64
+        data_type: numeric
       - name: name_first
         data_type: string
       - name: name_last
