@@ -1,5 +1,4 @@
 with
-
     roster as (
         select
             employee_number,

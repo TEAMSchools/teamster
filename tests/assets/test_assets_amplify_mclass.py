@@ -37,17 +37,22 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
 
     assert result.success
     asset_materialization_event = result.get_asset_materialization_events()[0]
+
     event_specific_data = check.inst(
         asset_materialization_event.event_specific_data, StepMaterializationData
     )
+
     records = check.inst(
         event_specific_data.materialization.metadata["records"].value, int
     )
+
     assert records > 0
+
     extras = check.inst(
         obj=result.get_asset_check_evaluations()[0].metadata.get("extras"),
         ttype=TextMetadataValue,
     )
+
     assert extras.text == ""
 
 

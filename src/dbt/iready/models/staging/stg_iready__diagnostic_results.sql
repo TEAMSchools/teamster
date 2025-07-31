@@ -2,60 +2,99 @@ with
     transformations as (
         select
             * except (
+                `grouping`,
+                `start_date`,
+                `subject`,
+                algebra_and_algebraic_thinking_scale_score,
                 annual_stretch_growth_measure,
                 annual_typical_growth_measure,
                 completion_date,
-                `grouping`,
+                comprehension_informational_text_scale_score,
+                comprehension_literature_scale_score,
+                comprehension_overall_scale_score,
+                diagnostic_gain,
+                duration_min,
+                geometry_scale_score,
+                high_frequency_words_scale_score,
                 measurement_and_data_scale_score,
                 mid_on_grade_level_scale_score,
                 most_recent_diagnostic_y_n,
                 most_recent_diagnostic_ytd_y_n,
                 number_and_operations_scale_score,
+                overall_scale_score,
+                percent_progress_to_annual_stretch_growth_percent,
+                percent_progress_to_annual_typical_growth_percent,
                 percentile,
-                `start_date`,
-                student_grade,
-                `subject`
+                phonics_scale_score,
+                phonological_awareness_scale_score,
+                reading_comprehension_informational_text_scale_score,
+                reading_comprehension_literature_scale_score,
+                reading_comprehension_overall_scale_score,
+                student_id,
+                vocabulary_scale_score
             ),
 
             cast(_dagster_partition_academic_year as int) as academic_year_int,
-
-            parse_date('%m/%d/%Y', `start_date`) as `start_date`,
-            parse_date('%m/%d/%Y', completion_date) as completion_date,
+            cast(annual_stretch_growth_measure as int) as annual_stretch_growth_measure,
+            cast(annual_typical_growth_measure as int) as annual_typical_growth_measure,
+            cast(`grouping` as int) as _grouping,
+            cast(
+                measurement_and_data_scale_score as int
+            ) as measurement_and_data_scale_score,
+            cast(
+                mid_on_grade_level_scale_score as int
+            ) as mid_on_grade_level_scale_score,
+            cast(
+                number_and_operations_scale_score as int
+            ) as number_and_operations_scale_score,
+            cast(overall_scale_score as int) as overall_scale_score,
+            cast(percentile as int) as percentile,
+            cast(
+                algebra_and_algebraic_thinking_scale_score as int
+            ) as algebra_and_algebraic_thinking_scale_score,
+            cast(
+                comprehension_informational_text_scale_score as int
+            ) as comprehension_informational_text_scale_score,
+            cast(
+                comprehension_literature_scale_score as int
+            ) as comprehension_literature_scale_score,
+            cast(
+                comprehension_overall_scale_score as int
+            ) as comprehension_overall_scale_score,
+            cast(duration_min as int) as duration_min,
+            cast(geometry_scale_score as int) as geometry_scale_score,
+            cast(student_id as int) as student_id,
+            cast(vocabulary_scale_score as int) as vocabulary_scale_score,
+            cast(diagnostic_gain as numeric) as diagnostic_gain,
+            cast(
+                high_frequency_words_scale_score as numeric
+            ) as high_frequency_words_scale_score,
+            cast(
+                percent_progress_to_annual_stretch_growth_percent as numeric
+            ) as percent_progress_to_annual_stretch_growth_percent,
+            cast(
+                percent_progress_to_annual_typical_growth_percent as numeric
+            ) as percent_progress_to_annual_typical_growth_percent,
+            cast(phonics_scale_score as numeric) as phonics_scale_score,
+            cast(
+                phonological_awareness_scale_score as numeric
+            ) as phonological_awareness_scale_score,
+            cast(
+                reading_comprehension_informational_text_scale_score as numeric
+            ) as reading_comprehension_informational_text_scale_score,
+            cast(
+                reading_comprehension_literature_scale_score as numeric
+            ) as reading_comprehension_literature_scale_score,
+            cast(
+                reading_comprehension_overall_scale_score as numeric
+            ) as reading_comprehension_overall_scale_score,
 
             coalesce(
                 most_recent_diagnostic_y_n, most_recent_diagnostic_ytd_y_n
             ) as most_recent_diagnostic_ytd_y_n,
 
-            coalesce(
-                student_grade.string_value, cast(student_grade.long_value as string)
-            ) as student_grade,
-
-            coalesce(
-                annual_stretch_growth_measure.long_value,
-                cast(annual_stretch_growth_measure.double_value as int)
-            ) as annual_stretch_growth_measure,
-            coalesce(
-                annual_typical_growth_measure.long_value,
-                cast(annual_typical_growth_measure.double_value as int)
-            ) as annual_typical_growth_measure,
-            coalesce(
-                `grouping`.long_value, cast(`grouping`.double_value as int)
-            ) as `grouping`,
-            coalesce(
-                measurement_and_data_scale_score.long_value,
-                cast(measurement_and_data_scale_score.double_value as int)
-            ) as measurement_and_data_scale_score,
-            coalesce(
-                mid_on_grade_level_scale_score.long_value,
-                cast(mid_on_grade_level_scale_score.double_value as int)
-            ) as mid_on_grade_level_scale_score,
-            coalesce(
-                number_and_operations_scale_score.long_value,
-                cast(number_and_operations_scale_score.double_value as int)
-            ) as number_and_operations_scale_score,
-            coalesce(
-                percentile.long_value, cast(percentile.double_value as int)
-            ) as percentile,
+            parse_date('%m/%d/%Y', `start_date`) as `start_date`,
+            parse_date('%m/%d/%Y', completion_date) as completion_date,
 
             if(
                 _dagster_partition_subject = 'ela',
