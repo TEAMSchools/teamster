@@ -258,7 +258,8 @@ inner join
     and not ce.is_dropped_section
 inner join
     {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
-    on ce.cc_sectionid = sec.sectionid
+    on ce.terms_yearid = sec.yearid
+    and ce.cc_sectionid = sec.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
     and sec.scaffold_name = 'teacher_scaffold'
 left join
@@ -426,7 +427,8 @@ inner join
     and not ce.is_dropped_section
 inner join
     {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
-    on ce.cc_sectionid = sec.sectionid
+    on ce.terms_yearid = sec.yearid
+    and ce.cc_sectionid = sec.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
     and sec.scaffold_name = 'teacher_category_scaffold'
 inner join
