@@ -49,6 +49,7 @@ with
             n_exempt,
             n_missing,
             n_null,
+            n_academic_dishonesty,
             n_is_null_missing,
             n_is_null_not_missing,
             n_expected,
