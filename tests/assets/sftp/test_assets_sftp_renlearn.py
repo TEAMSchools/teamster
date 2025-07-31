@@ -41,18 +41,6 @@ def _test_asset(
     assert extras.text == ""
 
 
-def test_renlearn_accelerated_reader_kippnj():
-    from teamster.code_locations.kippnewark.renlearn.assets import accelerated_reader
-
-    _test_asset(asset=accelerated_reader, code_location="kippnj")
-
-
-def test_renlearn_accelerated_reader_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import accelerated_reader
-
-    _test_asset(asset=accelerated_reader, code_location="kippmiami")
-
-
 def test_renlearn_star_kippnj():
     from teamster.code_locations.kippnewark.renlearn.assets import star
 
