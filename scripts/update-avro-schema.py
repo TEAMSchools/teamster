@@ -101,99 +101,99 @@ def rewrite_blobs(asset_key: list[str], schema: Schema):
 #     )
 
 
-def kippmiami_fldoe_eoc():
-    from teamster.code_locations.kippmiami.fldoe.schema import EOC_SCHEMA
+# def kippmiami_fldoe_eoc():
+#     from teamster.code_locations.kippmiami.fldoe.schema import EOC_SCHEMA
 
-    rewrite_blobs(
-        asset_key=["kippmiami", "fldoe", "eoc"], schema=parse_schema(EOC_SCHEMA)
-    )
-
-
-def kippmiami_fldoe_fast():
-    from teamster.code_locations.kippmiami.fldoe.schema import FAST_SCHEMA
-
-    rewrite_blobs(
-        asset_key=["kippmiami", "fldoe", "fast"], schema=parse_schema(FAST_SCHEMA)
-    )
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "fldoe", "eoc"], schema=parse_schema(EOC_SCHEMA)
+#     )
 
 
-def kippmiami_fldoe_fsa():
-    from teamster.code_locations.kippmiami.fldoe.schema import FSA_SCHEMA
+# def kippmiami_fldoe_fast():
+#     from teamster.code_locations.kippmiami.fldoe.schema import FAST_SCHEMA
 
-    rewrite_blobs(
-        asset_key=["kippmiami", "fldoe", "fsa"], schema=parse_schema(FSA_SCHEMA)
-    )
-
-
-def kippmiami_fldoe_fte():
-    from teamster.code_locations.kippmiami.fldoe.schema import FTE_SCHEMA
-
-    rewrite_blobs(
-        asset_key=["kippmiami", "fldoe", "fte"], schema=parse_schema(FTE_SCHEMA)
-    )
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "fldoe", "fast"], schema=parse_schema(FAST_SCHEMA)
+#     )
 
 
-def kippmiami_fldoe_science():
-    from teamster.code_locations.kippmiami.fldoe.schema import SCIENCE_SCHEMA
+# def kippmiami_fldoe_fsa():
+#     from teamster.code_locations.kippmiami.fldoe.schema import FSA_SCHEMA
 
-    rewrite_blobs(
-        asset_key=["kippmiami", "fldoe", "science"], schema=parse_schema(SCIENCE_SCHEMA)
-    )
-
-
-def kippnewark_edplan_njsmart_powerschool():
-    from teamster.code_locations.kippnewark.edplan.schema import (
-        NJSMART_POWERSCHOOL_SCHEMA,
-    )
-
-    rewrite_blobs(
-        asset_key=["kippnewark", "edplan", "njsmart_powerschool"],
-        schema=parse_schema(NJSMART_POWERSCHOOL_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "fldoe", "fsa"], schema=parse_schema(FSA_SCHEMA)
+#     )
 
 
-def kippnewark_pearson_njgpa():
-    from teamster.code_locations.kippnewark.pearson.schema import NJGPA_SCHEMA
+# def kippmiami_fldoe_fte():
+#     from teamster.code_locations.kippmiami.fldoe.schema import FTE_SCHEMA
 
-    rewrite_blobs(
-        asset_key=["kippnewark", "pearson", "njgpa"], schema=parse_schema(NJGPA_SCHEMA)
-    )
-
-
-def kippnewark_pearson_njsla():
-    from teamster.code_locations.kippnewark.pearson.schema import NJSLA_SCHEMA
-
-    rewrite_blobs(
-        asset_key=["kippnewark", "pearson", "njsla"], schema=parse_schema(NJSLA_SCHEMA)
-    )
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "fldoe", "fte"], schema=parse_schema(FTE_SCHEMA)
+#     )
 
 
-def kippnewark_pearson_njsla_science():
-    from teamster.code_locations.kippnewark.pearson.schema import NJSLA_SCHEMA
+# def kippmiami_fldoe_science():
+#     from teamster.code_locations.kippmiami.fldoe.schema import SCIENCE_SCHEMA
 
-    rewrite_blobs(
-        asset_key=["kippnewark", "pearson", "njsla_science"],
-        schema=parse_schema(NJSLA_SCHEMA),
-    )
-
-
-def kippnewark_pearson_parcc():
-    from teamster.code_locations.kippnewark.pearson.schema import PARCC_SCHEMA
-
-    rewrite_blobs(
-        asset_key=["kippnewark", "pearson", "parcc"], schema=parse_schema(PARCC_SCHEMA)
-    )
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "fldoe", "science"], schema=parse_schema(SCIENCE_SCHEMA)
+#     )
 
 
-def kippnewark_pearson_student_list_report():
-    from teamster.code_locations.kippnewark.pearson.schema import (
-        STUDENT_LIST_REPORT_SCHEMA,
-    )
+# def kippnewark_edplan_njsmart_powerschool():
+#     from teamster.code_locations.kippnewark.edplan.schema import (
+#         NJSMART_POWERSCHOOL_SCHEMA,
+#     )
 
-    rewrite_blobs(
-        asset_key=["kippnewark", "pearson", "student_list_report"],
-        schema=parse_schema(STUDENT_LIST_REPORT_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "edplan", "njsmart_powerschool"],
+#         schema=parse_schema(NJSMART_POWERSCHOOL_SCHEMA),
+#     )
+
+
+# def kippnewark_pearson_njgpa():
+#     from teamster.code_locations.kippnewark.pearson.schema import NJGPA_SCHEMA
+
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "pearson", "njgpa"], schema=parse_schema(NJGPA_SCHEMA)
+#     )
+
+
+# def kippnewark_pearson_njsla():
+#     from teamster.code_locations.kippnewark.pearson.schema import NJSLA_SCHEMA
+
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "pearson", "njsla"], schema=parse_schema(NJSLA_SCHEMA)
+#     )
+
+
+# def kippnewark_pearson_njsla_science():
+#     from teamster.code_locations.kippnewark.pearson.schema import NJSLA_SCHEMA
+
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "pearson", "njsla_science"],
+#         schema=parse_schema(NJSLA_SCHEMA),
+#     )
+
+
+# def kippnewark_pearson_parcc():
+#     from teamster.code_locations.kippnewark.pearson.schema import PARCC_SCHEMA
+
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "pearson", "parcc"], schema=parse_schema(PARCC_SCHEMA)
+#     )
+
+
+# def kippnewark_pearson_student_list_report():
+#     from teamster.code_locations.kippnewark.pearson.schema import (
+#         STUDENT_LIST_REPORT_SCHEMA,
+#     )
+
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "pearson", "student_list_report"],
+#         schema=parse_schema(STUDENT_LIST_REPORT_SCHEMA),
+#     )
 
 
 def kippnewark_pearson_student_test_update():
@@ -207,68 +207,68 @@ def kippnewark_pearson_student_test_update():
     )
 
 
-def kippnewark_titan_person_data():
-    from teamster.code_locations.kippnewark.titan.schema import PERSON_DATA_SCHEMA
+# def kippnewark_titan_person_data():
+#     from teamster.code_locations.kippnewark.titan.schema import PERSON_DATA_SCHEMA
 
-    rewrite_blobs(
-        asset_key=["kippnewark", "titan", "person_data"],
-        schema=parse_schema(PERSON_DATA_SCHEMA),
-    )
-
-
-def kippcamden_edplan_njsmart_powerschool():
-    from teamster.code_locations.kippcamden.edplan.schema import (
-        NJSMART_POWERSCHOOL_SCHEMA,
-    )
-
-    rewrite_blobs(
-        asset_key=["kippcamden", "edplan", "njsmart_powerschool"],
-        schema=parse_schema(NJSMART_POWERSCHOOL_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "titan", "person_data"],
+#         schema=parse_schema(PERSON_DATA_SCHEMA),
+#     )
 
 
-def kippcamden_pearson_njgpa():
-    from teamster.code_locations.kippcamden.pearson.schema import NJGPA_SCHEMA
+# def kippcamden_edplan_njsmart_powerschool():
+#     from teamster.code_locations.kippcamden.edplan.schema import (
+#         NJSMART_POWERSCHOOL_SCHEMA,
+#     )
 
-    rewrite_blobs(
-        asset_key=["kippcamden", "pearson", "njgpa"], schema=parse_schema(NJGPA_SCHEMA)
-    )
-
-
-def kippcamden_pearson_njsla():
-    from teamster.code_locations.kippcamden.pearson.schema import NJSLA_SCHEMA
-
-    rewrite_blobs(
-        asset_key=["kippcamden", "pearson", "njsla"], schema=parse_schema(NJSLA_SCHEMA)
-    )
+#     rewrite_blobs(
+#         asset_key=["kippcamden", "edplan", "njsmart_powerschool"],
+#         schema=parse_schema(NJSMART_POWERSCHOOL_SCHEMA),
+#     )
 
 
-def kippcamden_pearson_njsla_science():
-    from teamster.code_locations.kippcamden.pearson.schema import NJSLA_SCHEMA
+# def kippcamden_pearson_njgpa():
+#     from teamster.code_locations.kippcamden.pearson.schema import NJGPA_SCHEMA
 
-    rewrite_blobs(
-        asset_key=["kippcamden", "pearson", "njsla_science"],
-        schema=parse_schema(NJSLA_SCHEMA),
-    )
-
-
-def kippcamden_pearson_parcc():
-    from teamster.code_locations.kippcamden.pearson.schema import PARCC_SCHEMA
-
-    rewrite_blobs(
-        asset_key=["kippcamden", "pearson", "parcc"], schema=parse_schema(PARCC_SCHEMA)
-    )
+#     rewrite_blobs(
+#         asset_key=["kippcamden", "pearson", "njgpa"], schema=parse_schema(NJGPA_SCHEMA)
+#     )
 
 
-def kippcamden_pearson_student_list_report():
-    from teamster.code_locations.kippcamden.pearson.schema import (
-        STUDENT_LIST_REPORT_SCHEMA,
-    )
+# def kippcamden_pearson_njsla():
+#     from teamster.code_locations.kippcamden.pearson.schema import NJSLA_SCHEMA
 
-    rewrite_blobs(
-        asset_key=["kippcamden", "pearson", "student_list_report"],
-        schema=parse_schema(STUDENT_LIST_REPORT_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippcamden", "pearson", "njsla"], schema=parse_schema(NJSLA_SCHEMA)
+#     )
+
+
+# def kippcamden_pearson_njsla_science():
+#     from teamster.code_locations.kippcamden.pearson.schema import NJSLA_SCHEMA
+
+#     rewrite_blobs(
+#         asset_key=["kippcamden", "pearson", "njsla_science"],
+#         schema=parse_schema(NJSLA_SCHEMA),
+#     )
+
+
+# def kippcamden_pearson_parcc():
+#     from teamster.code_locations.kippcamden.pearson.schema import PARCC_SCHEMA
+
+#     rewrite_blobs(
+#         asset_key=["kippcamden", "pearson", "parcc"], schema=parse_schema(PARCC_SCHEMA)
+#     )
+
+
+# def kippcamden_pearson_student_list_report():
+#     from teamster.code_locations.kippcamden.pearson.schema import (
+#         STUDENT_LIST_REPORT_SCHEMA,
+#     )
+
+#     rewrite_blobs(
+#         asset_key=["kippcamden", "pearson", "student_list_report"],
+#         schema=parse_schema(STUDENT_LIST_REPORT_SCHEMA),
+#     )
 
 
 def kippcamden_pearson_student_test_update():
@@ -282,101 +282,101 @@ def kippcamden_pearson_student_test_update():
     )
 
 
-def kippcamden_titan_person_data():
-    from teamster.code_locations.kippcamden.titan.schema import PERSON_DATA_SCHEMA
+# def kippcamden_titan_person_data():
+#     from teamster.code_locations.kippcamden.titan.schema import PERSON_DATA_SCHEMA
 
-    rewrite_blobs(
-        asset_key=["kippcamden", "titan", "person_data"],
-        schema=parse_schema(PERSON_DATA_SCHEMA),
-    )
-
-
-def kippnewark_iready_diagnostic_results():
-    from teamster.code_locations.kippnewark.iready.schema import (
-        DIAGNOSTIC_RESULTS_SCHEMA,
-    )
-
-    rewrite_blobs(
-        asset_key=["kippnewark", "iready", "diagnostic_results"],
-        schema=parse_schema(DIAGNOSTIC_RESULTS_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippcamden", "titan", "person_data"],
+#         schema=parse_schema(PERSON_DATA_SCHEMA),
+#     )
 
 
-def kippnewark_iready_instruction_by_lesson():
-    from teamster.code_locations.kippnewark.iready.schema import (
-        PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
-    )
+# def kippnewark_iready_diagnostic_results():
+#     from teamster.code_locations.kippnewark.iready.schema import (
+#         DIAGNOSTIC_RESULTS_SCHEMA,
+#     )
 
-    rewrite_blobs(
-        asset_key=["kippnewark", "iready", "instruction_by_lesson"],
-        schema=parse_schema(PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA),
-    )
-
-
-def kippnewark_iready_instruction_by_lesson_pro():
-    from teamster.code_locations.kippnewark.iready.schema import (
-        INSTRUCTION_BY_LESSON_SCHEMA,
-    )
-
-    rewrite_blobs(
-        asset_key=["kippnewark", "iready", "instruction_by_lesson_pro"],
-        schema=parse_schema(INSTRUCTION_BY_LESSON_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "iready", "diagnostic_results"],
+#         schema=parse_schema(DIAGNOSTIC_RESULTS_SCHEMA),
+#     )
 
 
-def kippnewark_iready_instructional_usage_data():
-    from teamster.code_locations.kippnewark.iready.schema import (
-        INSTRUCTIONAL_USAGE_DATA_SCHEMA,
-    )
+# def kippnewark_iready_instruction_by_lesson():
+#     from teamster.code_locations.kippnewark.iready.schema import (
+#         PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
+#     )
 
-    rewrite_blobs(
-        asset_key=["kippnewark", "iready", "instructional_usage_data"],
-        schema=parse_schema(INSTRUCTIONAL_USAGE_DATA_SCHEMA),
-    )
-
-
-def kippmiami_iready_diagnostic_results():
-    from teamster.code_locations.kippmiami.iready.schema import (
-        DIAGNOSTIC_RESULTS_SCHEMA,
-    )
-
-    rewrite_blobs(
-        asset_key=["kippmiami", "iready", "diagnostic_results"],
-        schema=parse_schema(DIAGNOSTIC_RESULTS_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "iready", "personalized_instruction_by_lesson"],
+#         schema=parse_schema(PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA),
+#     )
 
 
-def kippmiami_iready_instruction_by_lesson():
-    from teamster.code_locations.kippmiami.iready.schema import (
-        PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
-    )
+# def kippnewark_iready_instruction_by_lesson_pro():
+#     from teamster.code_locations.kippnewark.iready.schema import (
+#         INSTRUCTION_BY_LESSON_SCHEMA,
+#     )
 
-    rewrite_blobs(
-        asset_key=["kippmiami", "iready", "instruction_by_lesson"],
-        schema=parse_schema(PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA),
-    )
-
-
-def kippmiami_iready_instruction_by_lesson_pro():
-    from teamster.code_locations.kippmiami.iready.schema import (
-        INSTRUCTION_BY_LESSON_SCHEMA,
-    )
-
-    rewrite_blobs(
-        asset_key=["kippmiami", "iready", "instruction_by_lesson_pro"],
-        schema=parse_schema(INSTRUCTION_BY_LESSON_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "iready", "instruction_by_lesson"],
+#         schema=parse_schema(INSTRUCTION_BY_LESSON_SCHEMA),
+#     )
 
 
-def kippmiami_iready_instructional_usage_data():
-    from teamster.code_locations.kippmiami.iready.schema import (
-        INSTRUCTIONAL_USAGE_DATA_SCHEMA,
-    )
+# def kippnewark_iready_instructional_usage_data():
+#     from teamster.code_locations.kippnewark.iready.schema import (
+#         INSTRUCTIONAL_USAGE_DATA_SCHEMA,
+#     )
 
-    rewrite_blobs(
-        asset_key=["kippmiami", "iready", "instructional_usage_data"],
-        schema=parse_schema(INSTRUCTIONAL_USAGE_DATA_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "iready", "instructional_usage_data"],
+#         schema=parse_schema(INSTRUCTIONAL_USAGE_DATA_SCHEMA),
+#     )
+
+
+# def kippmiami_iready_diagnostic_results():
+#     from teamster.code_locations.kippmiami.iready.schema import (
+#         DIAGNOSTIC_RESULTS_SCHEMA,
+#     )
+
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "iready", "diagnostic_results"],
+#         schema=parse_schema(DIAGNOSTIC_RESULTS_SCHEMA),
+#     )
+
+
+# def kippmiami_iready_instruction_by_lesson():
+#     from teamster.code_locations.kippmiami.iready.schema import (
+#         PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
+#     )
+
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "iready", "personalized_instruction_by_lesson"],
+#         schema=parse_schema(PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA),
+#     )
+
+
+# def kippmiami_iready_instruction_by_lesson_pro():
+#     from teamster.code_locations.kippmiami.iready.schema import (
+#         INSTRUCTION_BY_LESSON_SCHEMA,
+#     )
+
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "iready", "instruction_by_lesson"],
+#         schema=parse_schema(INSTRUCTION_BY_LESSON_SCHEMA),
+#     )
+
+
+# def kippmiami_iready_instructional_usage_data():
+#     from teamster.code_locations.kippmiami.iready.schema import (
+#         INSTRUCTIONAL_USAGE_DATA_SCHEMA,
+#     )
+
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "iready", "instructional_usage_data"],
+#         schema=parse_schema(INSTRUCTIONAL_USAGE_DATA_SCHEMA),
+#     )
 
 
 # def kippnewark_renlearn_accelerated_reader():
