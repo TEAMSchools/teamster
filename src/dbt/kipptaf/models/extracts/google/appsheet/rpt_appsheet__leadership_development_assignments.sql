@@ -8,7 +8,7 @@ with
     metrics as (
         select *,
         from {{ ref("stg_performance_management__leadership_development_metrics") }}
-        where academic_year = 2025 and not disabled
+        where academic_year = 2025 and not `disabled`
     ),
 
     existing_assignments as (
