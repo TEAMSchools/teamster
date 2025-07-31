@@ -11,8 +11,9 @@ with
                 formatted_name,
                 ' - ',
                 coalesce(home_work_location_abbreviation, home_work_location_name),
-                ' - ',
-                employee_number
+                ' - [',
+                employee_number,
+                ']'
             ) as name_dropdown,
         from {{ ref("int_people__staff_roster") }}
         where
