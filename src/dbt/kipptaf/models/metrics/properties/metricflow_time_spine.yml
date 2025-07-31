@@ -1,0 +1,12 @@
+models:
+  - name: metricflow_time_spine
+    description:
+      A time spine with one row per day, ranging from 7/1/2002 (first ever day
+      at TEAM) to 6/30 of the current school year.
+    config:
+      materialized: table
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        granularity: day
