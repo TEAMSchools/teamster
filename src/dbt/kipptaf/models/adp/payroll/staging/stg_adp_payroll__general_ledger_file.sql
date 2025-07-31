@@ -11,6 +11,9 @@ select
     position_id,
     sourceentity as source_entity,
 
+    cast(line_no as int) as line_no,
+    cast(reference_no as int) as reference_no,
+
     cast(credit as numeric) as credit,
     cast(debit as numeric) as debit,
 
