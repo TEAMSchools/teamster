@@ -4,7 +4,7 @@ import py_avro_schema
 
 from teamster.libraries.tableau.schema import ViewCountPerView
 
-VIEW_COUNT_PER_VIEW = json.loads(
+VIEW_COUNT_PER_VIEW_SCHEMA = json.loads(
     py_avro_schema.generate(
         py_type=ViewCountPerView,
         options=(
