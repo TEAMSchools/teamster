@@ -30,10 +30,6 @@ select
         then 'Met Expectations'
         when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 60
         then 'Approaching Expectations'
-        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 30
-        then 'Below Expectations'
-        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 0
-        then 'Far Below Expectations'
         when round(avg(ar.percent_correct), 0) >= 85
         then 'Exceeds Expectations'
         when round(avg(ar.percent_correct), 0) >= 70
@@ -84,10 +80,6 @@ select
         then 'Met Expectations'
         when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 60
         then 'Approaching Expectations'
-        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 30
-        then 'Below Expectations'
-        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 0
-        then 'Far Below Expectations'
         when round(avg(ar.percent_correct), 0) >= 85
         then 'Exceeds Expectations'
         when round(avg(ar.percent_correct), 0) >= 70
