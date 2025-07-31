@@ -139,18 +139,17 @@ with
 
     mclass as (
         select
-            mclass_academic_year as academic_year,
-            mclass_student_number as student_number,
-            mclass_measure_standard_level,
-            mclass_measure_standard_level_int,
-            mclass_client_date,
+            academic_year,
+            student_number,
+            measure_standard_level,
+            measure_standard_level_int,
+            client_date,
 
             row_number() over (
-                partition by mclass_academic_year, mclass_student_number
-                order by mclass_client_date desc
+                partition by academic_year, student_number order by client_date desc
             ) as rn_composite,
         from {{ ref("int_amplify__all_assessments") }}
-        where assessment_type = 'Benchmark' and mclass_measure_name_code = 'Composite'
+        where assessment_type = 'Benchmark' and measure_name_code = 'Composite'
     ),
 
     star_results as (
@@ -282,8 +281,8 @@ with
             c.projected_credits_y1_term,
             c.projected_credits_cum,
 
-            m.mclass_measure_standard_level as dibels_composite_level_recent_str,
-            m.mclass_measure_standard_level_int as dibels_composite_level_recent,
+            m.measure_standard_level as dibels_composite_level_recent_str,
+            m.measure_standard_level_int as dibels_composite_level_recent,
 
             s.star_math_level as star_math_level_recent,
             s.star_ela_level as star_reading_level_recent,
@@ -435,7 +434,7 @@ with
                 when
                     co.region in ('Camden', 'Newark')
                     and co.grade_level <= 1
-                    and coalesce(m.mclass_measure_standard_level_int, 0) <= 1
+                    and coalesce(m.measure_standard_level_int, 0) <= 1
                 then 'Off-Track'
                 /* Gr2 NJ */
                 when
