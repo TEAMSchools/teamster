@@ -24,6 +24,16 @@ select
 
     round(avg(ar.percent_correct), 0) as avg_percent_correct,
     case
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 90
+        then 'Exceeds Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 75
+        then 'Met Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 60
+        then 'Approaching Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 30
+        then 'Below Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 0
+        then 'Far Below Expectations'
         when round(avg(ar.percent_correct), 0) >= 85
         then 'Exceeds Expectations'
         when round(avg(ar.percent_correct), 0) >= 70
@@ -51,7 +61,8 @@ group by
     ar.academic_year,
     ar.powerschool_student_number,
     ar.subject_area,
-    ar.term_administered
+    ar.term_administered,
+    co.grade_level
 
 union all
 
@@ -67,6 +78,16 @@ select
 
     round(avg(ar.percent_correct), 0) as avg_percent_correct,
     case
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 90
+        then 'Exceeds Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 75
+        then 'Met Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 60
+        then 'Approaching Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 30
+        then 'Below Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 0
+        then 'Far Below Expectations'
         when round(avg(ar.percent_correct), 0) >= 85
         then 'Exceeds Expectations'
         when round(avg(ar.percent_correct), 0) >= 70
@@ -98,4 +119,5 @@ group by
     ar.powerschool_student_number,
     ar.subject_area,
     ar.term_administered,
-    sd.standard_domain
+    sd.standard_domain,
+    co.grade_level
