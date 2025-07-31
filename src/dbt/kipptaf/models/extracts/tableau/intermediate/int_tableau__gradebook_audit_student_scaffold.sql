@@ -432,12 +432,13 @@ inner join
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
     and sec.scaffold_name = 'teacher_category_scaffold'
 inner join
-    {{ ref("stg_reporting__gradebook_expectations") }} as ge
+    {{ ref("stg_google_sheets__gradebook_expectations_assignments") }} as ge
     on sec.region = ge.region
     and sec.school_level = ge.school_level
     and sec.academic_year = ge.academic_year
     and sec.quarter = ge.quarter
     and sec.week_number_quarter = ge.week_number
+    and sec.assignment_category_code = ge.assignment_category_code
 left join
     quarter_course_grades as qg
     on ce.terms_yearid = qg.yearid
