@@ -438,7 +438,8 @@ inner join
     and sec.week_number_quarter = ge.week_number
 left join
     quarter_course_grades as qg
-    on ce.cc_studentid = qg.studentid
+    on ce.terms_yearid = qg.yearid
+    and ce.cc_studentid = qg.studentid
     and ce.cc_sectionid = qg.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
     and sec.quarter = qg.storecode
