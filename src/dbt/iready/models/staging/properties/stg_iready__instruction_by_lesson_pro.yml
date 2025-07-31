@@ -1,46 +1,44 @@
 version: 2
 models:
-  - name: stg_iready__instruction_by_lesson
+  - name: stg_iready__instruction_by_lesson_pro
     config:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("iready",
-        "src_iready__instruction_by_lesson") | replace("`", "") }}')
+        "src_iready__instruction_by_lesson_pro") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: academic_year_int
         data_type: int64
       - name: student_id
         data_type: int64
-      - name: academic_year
-        data_type: string
       - name: school
         data_type: string
       - name: subject
         data_type: string
-      - name: domain
+      - name: level
         data_type: string
-      - name: lesson_grade
+      - name: topic
         data_type: string
-      - name: lesson_level
+      - name: lesson
         data_type: string
-      - name: lesson_id
+      - name: lesson_status
         data_type: string
-      - name: lesson_name
+      - name: lesson_result
         data_type: string
-      - name: lesson_objective
-        data_type: string
+      - name: lesson_time_on_task_min
+        data_type: int64
       - name: lesson_language
         data_type: string
-      - name: passed_or_not_passed
-        data_type: string
-      - name: teacher_assigned_lesson
-        data_type: string
-      - name: student_grade
-        data_type: string
-      - name: score
+      - name: skills_completed
         data_type: int64
-      - name: total_time_on_lesson_min
+      - name: skills_successful
         data_type: int64
       - name: completion_date
         data_type: date
+      - name: student_grade
+        data_type: string
+      - name: percent_skills_successful
+        data_type: numeric
       - name: passed_or_not_passed_numeric
         data_type: float64

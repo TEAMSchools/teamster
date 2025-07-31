@@ -23,7 +23,16 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/fldoe/fast/"
             format: AVRO
             enable_logical_types: true
+      - name: stg_fldoe__fsa
+        meta:
+          dagster:
+            asset_key:
+              - kippmiami
+              - fldoe
+              - fsa
       - name: src_fldoe__fsa
+        conifg:
+          enabled: false
         meta:
           dagster:
             asset_key:

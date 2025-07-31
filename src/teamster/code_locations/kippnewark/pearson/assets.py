@@ -4,7 +4,6 @@ from teamster.code_locations.kippnewark import CODE_LOCATION, CURRENT_FISCAL_YEA
 from teamster.code_locations.kippnewark.pearson.schema import (
     NJGPA_SCHEMA,
     NJSLA_SCHEMA,
-    NJSLA_SCIENCE_SCHEMA,
     PARCC_SCHEMA,
     STUDENT_LIST_REPORT_SCHEMA,
     STUDENT_TEST_UPDATE_SCHEMA,
@@ -79,7 +78,7 @@ njsla_science = build_sftp_file_asset(
     asset_key=[*key_prefix, "njsla_science"],
     remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla_science",
     remote_file_regex=r"njs(?P<fiscal_year>\d+)_NJ-\d+_\w+\.csv",
-    avro_schema=NJSLA_SCIENCE_SCHEMA,
+    avro_schema=NJSLA_SCHEMA,
     ssh_resource_key=ssh_resource_key,
     partitions_def=StaticPartitionsDefinition(
         [str(year)[-2:] for year in range(2022, CURRENT_FISCAL_YEAR.fiscal_year + 1)]

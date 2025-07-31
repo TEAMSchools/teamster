@@ -1,9 +1,8 @@
 select
     _dagster_partition_academic_year as academic_year_int,
-    student_id,
     academic_year,
     school,
-
+    student_grade,
     `subject`,
     domain,
     lesson_grade,
@@ -15,15 +14,10 @@ select
     passed_or_not_passed,
     teacher_assigned_lesson,
 
-    coalesce(
-        student_grade.string_value, cast(student_grade.long_value as string)
-    ) as student_grade,
+    cast(student_id as int) as student_id,
 
-    coalesce(cast(score.double_value as int), score.long_value) as score,
-    coalesce(
-        cast(total_time_on_lesson_min.double_value as int),
-        total_time_on_lesson_min.long_value
-    ) as total_time_on_lesson_min,
+    cast(cast(score as numeric) as int) as score,
+    cast(cast(total_time_on_lesson_min as numeric) as int) as total_time_on_lesson_min,
 
     parse_date('%m/%d/%Y', completion_date) as completion_date,
 
