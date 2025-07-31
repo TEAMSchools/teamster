@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
     pm_round_days as (
         select
             s.schoolcity as region,
@@ -29,7 +30,17 @@ with
             and t.type = 'LIT'
             and t.name in ('BOY->MOY', 'MOY->EOY')
         where s.state_excludefromreporting = 0
-        group by s.schoolcity, t.academic_year, t.name, right(t.code, 1)
+        group by s.schoolcity, t.academic_year, t.name, t.code, c.date_value
+    ),
+
+    pm_round_days_deduplicated as (
+        {{
+            dbt_utils.deduplicate(
+                relation="pm_round_days",
+                partition_by="academic_year, region, name, round",
+                order_by="academic_year, name, round",
+            )
+        }}
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
@@ -67,7 +78,7 @@ with
             and e.assessment_type = 'PM'
             and t.type = 'LIT'
         left join
-            pm_round_days as d
+            pm_round_days_deduplicated as d
             on t.academic_year = d.academic_year
             and t.region = d.region
             and t.name = d.name
