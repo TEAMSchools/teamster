@@ -90,13 +90,11 @@ with
                 responsibleorganizationcodetype as int
             ) as responsibleorganizationcodetype,
             cast(responsibleschoolcode as int) as responsibleschoolcode,
-            cast(shipreportdistrictcode as int) as shipreportdistrictcode,
-            cast(shipreportschoolcode as int) as shipreportschoolcode,
             cast(statestudentidentifier as int) as statestudentidentifier,
             cast(testingdistrictcode as int) as testingdistrictcode,
             cast(testingorganizationaltype as int) as testingorganizationaltype,
             cast(testingschoolcode as int) as testingschoolcode,
-            cast(testperformancelevel as int) as testperformancelevel,
+
             cast(colorcontrast as numeric) as colorcontrast,
             cast(elaconstructedresponse as numeric) as elaconstructedresponse,
             cast(elalconstructedresponse as numeric) as elalconstructedresponse,
@@ -163,6 +161,12 @@ with
             cast(unit4numberofattempteditems as numeric) as unit4numberofattempteditems,
             cast(unit4totaltestitems as numeric) as unit4totaltestitems,
             cast(voidscorereason as numeric) as voidscorereason,
+
+            cast(
+                cast(shipreportdistrictcode as numeric) as int
+            ) as shipreportdistrictcode,
+            cast(cast(shipreportschoolcode as numeric) as int) as shipreportschoolcode,
+            cast(cast(testperformancelevel as numeric) as int) as testperformancelevel,
 
             cast(left(assessmentyear, 4) as int) as academic_year,
 

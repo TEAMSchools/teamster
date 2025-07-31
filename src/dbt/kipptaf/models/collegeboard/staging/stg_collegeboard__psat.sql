@@ -7,15 +7,16 @@ with
             gender,
 
             cast(cb_id as int) as cb_id,
-            cast(district_student_id as int) as district_student_id,
             cast(latest_psat_ebrw as int) as latest_psat_ebrw,
-            cast(latest_psat_grade as int) as latest_psat_grade,
             cast(latest_psat_math_section as int) as latest_psat_math_section,
             cast(latest_psat_reading as int) as latest_psat_reading,
             cast(latest_psat_total as int) as latest_psat_total,
-            cast(secondary_id as int) as secondary_id,
 
             cast(latest_psat_math_test as numeric) as latest_psat_math_test,
+
+            cast(cast(district_student_id as numeric) as int) as district_student_id,
+            cast(cast(latest_psat_grade as numeric) as int) as latest_psat_grade,
+            cast(cast(secondary_id as numeric) as int) as secondary_id,
 
             cast(birth_date as date) as birth_date,
             cast(latest_psat_date as date) as latest_psat_date,

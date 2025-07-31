@@ -97,7 +97,6 @@ select
         districtbenchmarknumberofcategorylevels as int
     ) as district_benchmark_number_of_category_levels,
     cast(districtbenchmarkcategorylevel as int) as district_benchmark_category_level,
-    cast(districtstateid as int) as district_state_id,
     cast(grade3_assessmentattempts as int) as grade3_assessment_attempts,
     cast(percentilerank as int) as percentile_rank,
     cast(renaissanceclientid as int) as renaissance_client_id,
@@ -116,46 +115,11 @@ select
         schoolbenchmarknumberofcategorylevels as int
     ) as school_benchmark_number_of_category_levels,
     cast(schoolidentifier as int) as school_identifier,
-    cast(schoolstateid as int) as school_state_id,
     cast(studentdisplayid as int) as student_display_id,
     cast(studentidentifier as int) as student_identifier,
     cast(studentsourcedid as int) as student_sourced_id,
     cast(studentuserid as int) as student_user_id,
-    cast(teacherstateid as int) as teacher_state_id,
-    cast(totaltimeinseconds as int) as total_time_in_seconds,
     cast(unifiedscore as int) as unified_score,
-    cast(currentsgp as int) as current_sgp,
-    cast(
-        renaissancebenchmarkcategorylevel as int
-    ) as renaissance_benchmark_category_level,
-    cast(
-        renaissancebenchmarkcategorymaxpercentilerank as int
-    ) as renaissance_benchmark_category_max_percentile_rank,
-    cast(
-        renaissancebenchmarkcategoryminpercentilerank as int
-    ) as renaissance_benchmark_category_min_percentile_rank,
-    cast(studentgrowthpercentilefallfall as int) as student_growth_percentile_fall_fall,
-    cast(
-        studentgrowthpercentilefallspring as int
-    ) as student_growth_percentile_fall_spring,
-    cast(
-        studentgrowthpercentilefallwinter as int
-    ) as student_growth_percentile_fall_winter,
-    cast(
-        studentgrowthpercentilespringfall as int
-    ) as student_growth_percentile_spring_fall,
-    cast(
-        studentgrowthpercentilespringspring as int
-    ) as student_growth_percentile_spring_spring,
-    cast(
-        studentgrowthpercentilewinterspring as int
-    ) as student_growth_percentile_winter_spring,
-    cast(statebenchmarkcategorylevel as int) as state_benchmark_category_level,
-    cast(statebenchmarkmaxscaledscore as int) as state_benchmark_max_scaled_score,
-    cast(statebenchmarkminscaledscore as int) as state_benchmark_min_scaled_score,
-    cast(
-        statebenchmarknumberofcategorylevels as int
-    ) as state_benchmark_number_of_category_levels,
 
     cast(estimatedoralreadingfluency as numeric) as estimated_oral_reading_fluency,
     cast(gradeplacement as numeric) as grade_placement,
@@ -170,4 +134,49 @@ select
     cast(
         upperzoneofproximaldevelopment as numeric
     ) as upper_zone_of_proximal_development,
+
+    cast(cast(districtstateid as numeric) as int) as district_state_id,
+    cast(cast(schoolstateid as numeric) as int) as school_state_id,
+    cast(cast(teacherstateid as numeric) as int) as teacher_state_id,
+    cast(cast(totaltimeinseconds as numeric) as int) as total_time_in_seconds,
+    cast(cast(currentsgp as numeric) as int) as current_sgp,
+    cast(
+        cast(renaissancebenchmarkcategorylevel as numeric) as int
+    ) as renaissance_benchmark_category_level,
+    cast(
+        cast(renaissancebenchmarkcategorymaxpercentilerank as numeric) as int
+    ) as renaissance_benchmark_category_max_percentile_rank,
+    cast(
+        cast(renaissancebenchmarkcategoryminpercentilerank as numeric) as int
+    ) as renaissance_benchmark_category_min_percentile_rank,
+    cast(
+        cast(studentgrowthpercentilefallfall as numeric) as int
+    ) as student_growth_percentile_fall_fall,
+    cast(
+        cast(studentgrowthpercentilefallspring as numeric) as int
+    ) as student_growth_percentile_fall_spring,
+    cast(
+        cast(studentgrowthpercentilefallwinter as numeric) as int
+    ) as student_growth_percentile_fall_winter,
+    cast(
+        cast(studentgrowthpercentilespringfall as numeric) as int
+    ) as student_growth_percentile_spring_fall,
+    cast(
+        cast(studentgrowthpercentilespringspring as numeric) as int
+    ) as student_growth_percentile_spring_spring,
+    cast(
+        cast(studentgrowthpercentilewinterspring as numeric) as int
+    ) as student_growth_percentile_winter_spring,
+    cast(
+        cast(statebenchmarkcategorylevel as numeric) as int
+    ) as state_benchmark_category_level,
+    cast(
+        cast(statebenchmarkmaxscaledscore as numeric) as int
+    ) as state_benchmark_max_scaled_score,
+    cast(
+        cast(statebenchmarkminscaledscore as numeric) as int
+    ) as state_benchmark_min_scaled_score,
+    cast(
+        cast(statebenchmarknumberofcategorylevels as numeric) as int
+    ) as state_benchmark_number_of_category_levels,
 from {{ source("renlearn", "src_renlearn__star") }}
