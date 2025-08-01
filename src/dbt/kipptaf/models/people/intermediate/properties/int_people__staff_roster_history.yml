@@ -119,18 +119,6 @@ models:
         data_type: string
       - name: custom_field__employee_number
         data_type: int64
-      - name: wf_mgr_accrual_profile
-        data_type: string
-      - name: wf_mgr_badge_number
-        data_type: int64
-      - name: wf_mgr_ee_type
-        data_type: string
-      - name: wf_mgr_pay_rule
-        data_type: string
-      - name: wf_mgr_trigger
-        data_type: string
-      - name: wf_mgr_trigger_new
-        data_type: string
       - name: assigned_business_unit_code
         data_type: string
       - name: assigned_business_unit_name
