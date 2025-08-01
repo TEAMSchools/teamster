@@ -169,12 +169,4 @@ left join
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="a") }}
     and a.iscountedinfinalgrade = 1
     and a.scoretype in ('POINTS', 'PERCENT')
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-    on ce.academic_year = e.academic_year
-    and ce.region = e.region
-    and ce.school_level = e.school_level
-    and ce.course_number = e.course_number
-    and e.view_name = 'assignments_student'
-    and e.course_number is not null
-where ce.scaffold_name = 'student_category_scaffold' and e.include_row is null
+where ce.scaffold_name = 'student_category_scaffold'

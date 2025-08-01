@@ -259,4 +259,15 @@ left join
     and f.is_quarter_end_date_range = e1.is_quarter_end_date_range
     and e1.view_name = 'teacher_scaffold'
     and e1.cte is null
-where e1.include_row is null
+/* temporarily remove rows from the entire gradebook audit dash when EOQ is false
+   by region/school level and course number */
+left join
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+    on f.academic_year = e2.academic_year
+    and f.region = e2.region
+    and f.school_level = e2.school_level
+    and f.course_number = e2.course_number
+    and f.is_quarter_end_date_range = e2.is_quarter_end_date_range
+    and e2.view_name = 'teacher_scaffold'
+    and e2.cte is null
+where e1.include_row is null and e2.include_row is null
