@@ -167,4 +167,4 @@ left join
     and ce.course_number = e.course_number
     and e.view_name = 'assignments_student'
     and e.course_number is not null
-where ce.scaffold_name = 'student_category_scaffold' and e.`include` is null
+where ce.scaffold_name = 'student_category_scaffold' and e.include_row is null

@@ -1,6 +1,6 @@
 with
     exceptions as (
-        select s._dbt_source_relation, s.sections_dcid, e.`include`,
+        select s._dbt_source_relation, s.sections_dcid, e.include_row,
         from {{ ref("base_powerschool__sections") }} as s
         inner join
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
@@ -14,7 +14,7 @@ with
 
         union all
 
-        select s._dbt_source_relation, s.sections_dcid, e.`include`,
+        select s._dbt_source_relation, s.sections_dcid, e.include_row,
         from {{ ref("base_powerschool__sections") }} as s
         inner join
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
@@ -28,7 +28,7 @@ with
 
         union all
 
-        select s._dbt_source_relation, s.sections_dcid, e.`include`,
+        select s._dbt_source_relation, s.sections_dcid, e.include_row,
         from {{ ref("base_powerschool__sections") }} as s
         inner join
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
@@ -73,7 +73,7 @@ with
             exceptions as e
             on s.sectionsdcid = e.sections_dcid
             and {{ union_dataset_join_clause(left_alias="s", right_alias="e") }}
-        where e.`include` is null
+        where e.include_row is null
         group by s._dbt_source_relation, s.assignmentsectionid
     )
 
@@ -166,5 +166,5 @@ left join
     and e2.is_quarter_end_date_range is not null
 where
     sec.scaffold_name = 'teacher_category_scaffold'
-    and e1.`include` is null
-    and e2.`include` is null
+    and e1.include_row is null
+    and e2.include_row is null

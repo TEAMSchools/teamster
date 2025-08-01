@@ -13,7 +13,7 @@ select
     view_name,
     cte,
     purpose,
-    `include`,
+    include_row,
 
     safe_cast(grade_level as int64) as grade_level,
 

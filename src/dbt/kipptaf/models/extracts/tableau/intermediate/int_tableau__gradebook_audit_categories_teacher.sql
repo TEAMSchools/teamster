@@ -98,8 +98,8 @@ with
             and e2.credit_type is not null
         where
             sec.scaffold_name = 'teacher_category_scaffold'
-            and e1.`include` is null
-            and e2.`include` is null
+            and e1.include_row is null
+            and e2.include_row is null
     ),
 
     percent_graded as (

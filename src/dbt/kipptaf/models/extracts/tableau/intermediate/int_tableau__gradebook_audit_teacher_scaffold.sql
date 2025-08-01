@@ -47,8 +47,8 @@ with
             and e2.school_id is not null
         where
             s.terms_academic_year = {{ var("current_academic_year") - 1 }}
-            and e1.`include` is null
-            and e2.`include` is null
+            and e1.include_row is null
+            and e2.include_row is null
     ),
 
     term_weeks as (
@@ -226,7 +226,7 @@ with
             and ge.assignment_category_code = e1.gradebook_category
             and e1.view_name = 'teacher_category_scaffold'
             and e1.cte = 'final'
-        where e1.`include` is null
+        where e1.include_row is null
     )
 
 select f.*,
@@ -262,4 +262,4 @@ left join
     and e3.credit_type is null
     and e3.view_name = 'teacher_category_scaffold'
     and e3.cte = 'final'
-where e1.`include` is null and e2.`include` is null and e3.`include` is null
+where e1.include_row is null and e2.include_row is null and e3.include_row is null

@@ -47,7 +47,7 @@ with
             and e2.view_name = 'audit_flags'
             and e2.cte = 'student_unpivot'
             and e2.is_quarter_end_date_range is not null
-        where e1.`include` is null and e2.`include` is null
+        where e1.include_row is null and e2.include_row is null
     ),
 
     teacher_unpivot_cca as (
@@ -81,7 +81,7 @@ with
             and r.credit_type = e.credit_type
             and e.view_name = 'audit_flags'
             and e.cte = 'teacher_unpivot_cca'
-        where e.`include` is null
+        where e.include_row is null
     ),
 
     teacher_unpivot_cc as (
@@ -167,7 +167,7 @@ with
             and e3.view_name = 'audit_flags'
             and e3.cte = 'eoq_items'
             and e3.course_number is not null
-        where e1.`include` is null and e2.`include` is null and e3.`include` is null
+        where e1.include_row is null and e2.include_row is null and e3.include_row is null
     ),
 
     eoq_items_conduct_code as (
@@ -210,7 +210,7 @@ with
             and e2.view_name = 'audit_flags'
             and e2.cte = 'eoq_items_conduct_code'
             and e2.credit_type is null
-        where r.school_level = 'ES' and e1.`include` is null and e2.`include` is null
+        where r.school_level = 'ES' and e1.include_row is null and e2.include_row is null
     ),
 
     /* w_grade_inflation, qt_effort_grade_missing, qt_formative_grade_missing,
@@ -267,7 +267,7 @@ with
             and e2.view_name = 'audit_flags'
             and e2.cte = 'student_course_category'
             and e2.credit_type is null
-        where e1.`include` is null and e2.`include` is null
+        where e1.include_row is null and e2.include_row is null
 
         union all
 
@@ -304,7 +304,7 @@ with
             and e2.view_name = 'audit_flags'
             and e2.cte = 'student_course_category'
             and e2.credit_type is null
-        where e1.`include` is null and e2.`include` is null
+        where e1.include_row is null and e2.include_row is null
 
         union all
 
@@ -342,7 +342,7 @@ with
             and e2.view_name = 'audit_flags'
             and e2.cte = 'student_course_category'
             and e2.credit_type is null
-        where e1.`include` is null and e2.`include` is null
+        where e1.include_row is null and e2.include_row is null
     )
 
 -- this captures all flags from assignment_student
