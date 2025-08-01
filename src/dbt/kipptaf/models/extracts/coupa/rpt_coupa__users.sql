@@ -210,7 +210,7 @@ select
     'No' as `Generate Password And Notify User`,
     'CoupaPay' as `Employee Payment Channel`,
 
-    case when sub.coupa_status = 'inactive' then 'No' else 'Yes' end as `Expense User`,
+    if(sub.coupa_status = 'inactive', 'No', 'Yes') as `Expense User`,
 
     case
         when sub.coupa_status = 'inactive'
