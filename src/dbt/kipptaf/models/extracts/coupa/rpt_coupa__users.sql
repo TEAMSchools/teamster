@@ -18,6 +18,7 @@ with
     business_groups as (
         select
             user_id,
+
             string_agg(
                 content_group_name order by content_group_name asc
             ) as business_group_names,
@@ -56,9 +57,7 @@ with
                 day
             ) as days_terminated,
 
-            case
-                cu.purchasing_user when true then 'Yes' when false then 'No'
-            end as purchasing_user,
+            if(cu.purchasing_user, 'Yes', 'No') as purchasing_user,
         from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_coupa__users") }} as cu
