@@ -107,6 +107,15 @@ select
         false
     ) as assign_f_missing_score_not_0,
 
+    if(
+        ce.assignment_category_code = 'S'
+        and ce.school_level = 'HS'
+        and a.is_expected_missing = 1
+        and a.score_entered != 0,
+        true,
+        false
+    ) as assign_s_missing_score_not_0,
+
     -- 50% s assign min
     if(
         ce.assignment_category_code = 'S'
