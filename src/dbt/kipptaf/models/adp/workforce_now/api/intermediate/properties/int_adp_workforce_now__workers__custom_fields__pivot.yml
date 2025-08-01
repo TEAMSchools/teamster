@@ -4,17 +4,11 @@ models:
     columns:
       - name: associate_oid
         data_type: string
-      - name: wf_mgr_loa_return_date
-        data_type: string
       - name: received_sign_on_bonus
-        data_type: boolean
-      - name: wf_mgr_loa
         data_type: boolean
       - name: miami_aces_number
         data_type: string
       - name: nj_pension_number
-        data_type: string
-      - name: wf_mgr_trigger
         data_type: string
       - name: preferred_race_ethnicity
         data_type: string
@@ -22,19 +16,9 @@ models:
         data_type: string
       - name: teacher_prep_program
         data_type: string
-      - name: wf_mgr_accrual_profile
-        data_type: string
-      - name: wf_mgr_ee_type
-        data_type: string
-      - name: wf_mgr_home_hyperfind
-        data_type: string
-      - name: wf_mgr_pay_rule
-        data_type: string
       - name: life_experience_in_communities_we_serve
         data_type: string
       - name: professional_experience_in_communities_we_serve
         data_type: string
       - name: employee_number
-        data_type: int64
-      - name: wf_mgr_badge_number
         data_type: int64
