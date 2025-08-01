@@ -25,11 +25,9 @@ with
         left join
             {{ ref("int_people__staff_roster") }} as r
             on s.teachernumber = r.powerschool_teacher_number
-        /* exceptions listed below completely remove a course/section/credit type from
-           the entire gradebook audit dash, including from the gradebook categories
-           view, for the entire school year */
         left join
-            -- global on course_number
+            /* permanently remove rows from the gradebook audit dash based on course
+            number */
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
             on s.terms_academic_year = e1.academic_year
             and s.sections_course_number = e1.course_number
@@ -37,7 +35,8 @@ with
             and e1.cte = 'sections'
             and e1.school_id is null
         left join
-            -- course_number for certain schools only
+            /* permanently remove rows from the gradebook audit dash based on course
+            number for certain schools only */
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
             on s.terms_academic_year = e2.academic_year
             and s.sections_schoolid = e2.school_id
@@ -105,7 +104,7 @@ with
             on t.schoolid = l.home_work_location_powerschool_school_id
         where
             t.academic_year = {{ var("current_academic_year") - 1 }}
-            -- and t.term_start_date <= current_date('{{ var("local_timezone") }}')
+            and t.term_start_date <= current_date('{{ var("local_timezone") }}')
             and t.schoolid not in (0, 999999)
     ),
 
@@ -215,24 +214,44 @@ with
             and tw.academic_year = ge.academic_year
             and tw.quarter = ge.quarter
             and tw.week_number_quarter = ge.week_number
-        /* exceptions listed below completely remove rows for certain gradebook
-           categories for a course/section/credit type from the entire gradebook audit
-           dash, but NOT the entire course/section/credit type, for the entire sy */
+        /* permanently remove rows for certain gradebook category(s) from the entire
+           gradebook audit dash by course_number */
         left join
-            -- global by course_number
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
             on sec.academic_year = e1.academic_year
             and sec.course_number = e1.course_number
             and ge.assignment_category_code = e1.gradebook_category
             and e1.view_name = 'teacher_category_scaffold'
             and e1.cte = 'final'
-        where e1.include_row is null
+        /* permanently remove rows for certain gradebook category(s) from the entire
+           gradebook audit dash by course_number for a region */
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            on sec.academic_year = e2.academic_year
+            and sec.course_number = e2.course_number
+            and tw.region = e2.region
+            and ge.assignment_category_code = e2.gradebook_category
+            and e2.view_name = 'teacher_category_scaffold'
+            and e2.cte = 'final'
+        /* permanently remove rows for certain gradebook category(s) from the entire
+           gradebook audit dash by credit type for a region/school level */
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e3
+            on sec.academic_year = e3.academic_year
+            and sec.credit_type = e3.credit_type
+            and tw.region = e3.region
+            and tw.school_level = e3.school_level
+            and ge.assignment_category_code = e3.gradebook_category
+            and e3.view_name = 'teacher_category_scaffold'
+            and e3.cte = 'final'
+        where
+            e1.include_row is null and e2.include_row is null and e3.include_row is null
     )
 
 select f.*,
 from final as f
-/* exceptions listed below completely remove rows from the entire gradebook audit
-   dash, but only when EOQ is false. these rows will reappear when eoq starts */
+/* temporarily remove rows from the entire gradebook audit dash when EOQ is false
+   by region/school level and credit type */
 left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
     on f.academic_year = e1.academic_year
@@ -242,24 +261,4 @@ left join
     and f.is_quarter_end_date_range = e1.is_quarter_end_date_range
     and e1.view_name = 'teacher_scaffold'
     and e1.cte is null
--- permantently remove flags for certain categories for credit types
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-    on f.academic_year = e2.academic_year
-    and f.region = e2.region
-    and f.school_level = e2.school_level
-    and f.credit_type = e2.credit_type
-    and f.assignment_category_code = e2.gradebook_category
-    and e2.view_name = 'teacher_category_scaffold'
-    and e2.cte = 'final'
--- permantently remove flags for certain categories for courses
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e3
-    on f.academic_year = e3.academic_year
-    and f.region = e3.region
-    and f.course_number = e3.course_number
-    and f.assignment_category_code = e3.gradebook_category
-    and e3.credit_type is null
-    and e3.view_name = 'teacher_category_scaffold'
-    and e3.cte = 'final'
-where e1.include_row is null and e2.include_row is null and e3.include_row is null
+where e1.include_row is null
