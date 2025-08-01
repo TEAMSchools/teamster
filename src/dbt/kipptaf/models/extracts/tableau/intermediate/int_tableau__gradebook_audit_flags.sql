@@ -167,7 +167,8 @@ with
             and e3.view_name = 'audit_flags'
             and e3.cte = 'eoq_items'
             and e3.course_number is not null
-        where e1.include_row is null and e2.include_row is null and e3.include_row is null
+        where
+            e1.include_row is null and e2.include_row is null and e3.include_row is null
     ),
 
     eoq_items_conduct_code as (
@@ -210,7 +211,8 @@ with
             and e2.view_name = 'audit_flags'
             and e2.cte = 'eoq_items_conduct_code'
             and e2.credit_type is null
-        where r.school_level = 'ES' and e1.include_row is null and e2.include_row is null
+        where
+            r.school_level = 'ES' and e1.include_row is null and e2.include_row is null
     ),
 
     /* w_grade_inflation, qt_effort_grade_missing, qt_formative_grade_missing,
