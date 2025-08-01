@@ -508,6 +508,11 @@ class Student(BaseModel):
     CustomFields: list[CustomField | None] | None = None
 
 
+class DFFStats(BaseModel):
+    StudentCount: int | None = None
+    StudentWithGuardianCount: int | None = None
+
+
 """
 SFTP assets
 """
@@ -543,8 +548,3 @@ class ReconcileSuspensions(BaseModel):
     submittedln: str | None = None
     unnamed_13: str | None = None
     unnamed_14: str | None = None
-
-
-class DFFStats(BaseModel):
-    StudentCount: str | None = None
-    StudentWithGuardianCount: str | None = None
