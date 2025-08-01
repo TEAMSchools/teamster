@@ -12,7 +12,13 @@ with
             if(gpa.gpa_term >= 3.0, 'Quarter GPA 3.0+', null) as is_quarter_gpa_3plus,
             if(gpa.gpa_term >= 3.5, 'Quarter GPA 3.5+', null) as is_quarter_gpa_35plus,
 
-            if(att.ada < 0.9, 'Chronic Absence', null) as is_chronic_absentee,
+            if(att.ada <= 0.9, 'Chronic Absence', null) as is_chronic_absentee,
+
+            if(
+                ps.n_failing is null or ps.n_failing = 0 and co.grade_level >= 5,
+                'Failing 0 Classes',
+                null
+            ) as is_failing_0_classes_y1,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         left join
             {{ ref("int_powerschool__gpa_term") }} as gpa
@@ -25,6 +31,11 @@ with
             on co.studentid = att.studentid
             and co.yearid = att.yearid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
+        left join
+            {{ ref("int_reporting__promotional_status") }} as ps
+            on co.student_number = ps.student_number
+            and co.academic_year = ps.academic_year
+            and ps.is_current
         where co.rn_year = 1 and co.academic_year = {{ var("current_academic_year") }}
     )
 
@@ -59,6 +70,7 @@ from
             is_quarter_gpa_2plus,
             is_quarter_gpa_25plus,
             is_quarter_gpa_35plus,
-            is_quarter_gpa_3plus
+            is_quarter_gpa_3plus,
+            is_failing_0_classes_y1
         )
     )
