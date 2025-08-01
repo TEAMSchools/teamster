@@ -19,6 +19,7 @@ with
                     assign_w_missing_score_not_0,
                     assign_f_missing_score_not_0,
                     assign_h_missing_score_not_0,
+                    assign_s_missing_score_not_0,
                     assign_s_score_less_50p,
                     assign_s_ms_score_not_conversion_chart_options,
                     assign_s_hs_score_not_conversion_chart_options
