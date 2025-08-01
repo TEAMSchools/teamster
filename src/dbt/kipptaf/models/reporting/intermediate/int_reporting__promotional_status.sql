@@ -139,18 +139,17 @@ with
 
     mclass as (
         select
-            mclass_academic_year as academic_year,
-            mclass_student_number as student_number,
-            mclass_measure_standard_level,
-            mclass_measure_standard_level_int,
-            mclass_client_date,
+            academic_year,
+            student_number,
+            measure_standard_level,
+            measure_standard_level_int,
+            client_date,
 
             row_number() over (
-                partition by mclass_academic_year, mclass_student_number
-                order by mclass_client_date desc
+                partition by academic_year, student_number order by client_date desc
             ) as rn_composite,
         from {{ ref("int_amplify__all_assessments") }}
-        where assessment_type = 'Benchmark' and mclass_measure_name_code = 'Composite'
+        where assessment_type = 'Benchmark' and measure_name_code = 'Composite'
     ),
 
     star_results as (
@@ -217,12 +216,14 @@ with
             lg.academic_year,
             lg.entry_date,
             lg.entry,
+
+            g.name,
         from {{ ref("stg_powerschool__log") }} as lg
         inner join
             {{ ref("stg_powerschool__gen") }} as g
             on lg.logtypeid = g.id
             and g.cat = 'logtype'
-            and g.name = 'Exempt from retention'
+            and g.name in ('Exempt from retention', 'Retain without criteria')
     ),
 
     exempt_override as (
@@ -238,6 +239,23 @@ with
                 order by entry_date desc
             ) as rn_log,
         from ps_log
+        where name = 'Exempt from retention'
+    ),
+
+    force_retention as (
+        select
+            _dbt_source_relation,
+            studentid,
+            academic_year,
+            entry_date,
+            `entry`,
+
+            row_number() over (
+                partition by _dbt_source_relation, studentid, academic_year
+                order by entry_date desc
+            ) as rn_log,
+        from ps_log
+        where name = 'Retain without criteria'
     ),
 
     promo as (
@@ -263,8 +281,8 @@ with
             c.projected_credits_y1_term,
             c.projected_credits_cum,
 
-            m.mclass_measure_standard_level as dibels_composite_level_recent_str,
-            m.mclass_measure_standard_level_int as dibels_composite_level_recent,
+            m.measure_standard_level as dibels_composite_level_recent_str,
+            m.measure_standard_level_int as dibels_composite_level_recent,
 
             s.star_math_level as star_math_level_recent,
             s.star_ela_level as star_reading_level_recent,
@@ -288,6 +306,8 @@ with
                 when lg.entry_date is not null
                 then 'Exempt - Manual Override'
             end as exemption,
+
+            if(fr.entry_date is not null, 'Manual Retention', null) as manual_retention,
 
             case
                 /* NJ Gr K-8 */
@@ -414,7 +434,7 @@ with
                 when
                     co.region in ('Camden', 'Newark')
                     and co.grade_level <= 1
-                    and coalesce(m.mclass_measure_standard_level_int, 0) <= 1
+                    and coalesce(m.measure_standard_level_int, 0) <= 1
                 then 'Off-Track'
                 /* Gr2 NJ */
                 when
@@ -505,6 +525,12 @@ with
             and {{ union_dataset_join_clause(left_alias="co", right_alias="lg") }}
             and co.academic_year = lg.academic_year
             and lg.rn_log = 1
+        left join
+            force_retention as fr
+            on co.studentid = fr.studentid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="fr") }}
+            and co.academic_year = fr.academic_year
+            and fr.rn_log = 1
         where co.rn_year = 1
     )
 
@@ -531,6 +557,7 @@ select
     attendance_status_hs_detail,
     academic_status,
     exemption,
+    manual_retention,
 
     case
         /* NJ */

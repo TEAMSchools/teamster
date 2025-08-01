@@ -1,0 +1,58 @@
+version: 2
+models:
+  - name: int_amplify__all_assessments
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: assessment_type
+        data_type: string
+      - name: assessment_grade
+        data_type: string
+      - name: ssessment_grade_int
+        data_type: int64
+      - name: period
+        data_type: string
+      - name: client_date
+        data_type: date
+      - name: sync_date
+        data_type: date
+      - name: measure_name
+        data_type: string
+      - name: measure_name_code
+        data_type: string
+      - name: measure_standard
+        data_type: string
+      - name: measure_standard_score
+        data_type: float64
+      - name: measure_standard_level
+        data_type: string
+      - name: measure_standard_level_int
+        data_type: int64
+      - name: measure_percentile
+        data_type: float64
+      - name: measure_semester_growth
+        data_type: string
+      - name: measure_year_growth
+        data_type: string
+      - name: probe_number
+        data_type: int64
+      - name: total_number_of_probes
+        data_type: int64
+      - name: score_change
+        data_type: numeric
+      - name: boy_probe_eligible
+        data_type: string
+      - name: moy_probe_eligible
+        data_type: string
+      - name: boy_composite
+        data_type: string
+      - name: moy_composite
+        data_type: string
+      - name: eoy_composite
+        data_type: string
+      - name: aggregated_measure_standard_level
+        data_type: string

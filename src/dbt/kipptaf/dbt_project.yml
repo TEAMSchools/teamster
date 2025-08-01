@@ -27,19 +27,8 @@ vars:
   local_timezone: America/New_York
   cloud_storage_uri_base: gs://teamster-kipptaf/dagster/kipptaf
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
-  current_academic_year: 2024
-  current_fiscal_year: 2025
-  alchemer_survey_identifier_short_names:
-    - respondent_employee_number
-    - respondent_df_employee_number
-    - respondent_userprincipalname
-    - respondent_adp_associate_id
-    - subject_df_employee_number
-    - employee_number
-    - email
-    - employee_preferred_name
-    - salesforce_id
-    - is_manager
+  current_academic_year: 2025
+  current_fiscal_year: 2026
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -82,9 +71,6 @@ models:
     amplify:
       +schema: amplify
       +materialized: table
-      drive:
-        disabled:
-          +enabled: false
     assessments:
       +schema: assessments
       staging:
@@ -140,6 +126,18 @@ models:
     fldoe:
       +schema: fldoe
     google:
+      appsheet:
+        +schema: google_appsheet
+        +meta:
+          dagster:
+            group: google_appsheet
+      directory:
+        +schema: google_directory
+        +meta:
+          dagster:
+            group: google_directory
+        staging:
+          +materialized: table
       forms:
         +schema: google_forms
         +meta:
@@ -150,18 +148,17 @@ models:
         drive:
           staging:
             +materialized: table
-      directory:
-        +schema: google_directory
+      sheets:
+        +schema: google_sheets
         +meta:
           dagster:
-            group: google_directory
+            group: google_sheets
         staging:
           +materialized: table
-      appsheet:
-        +schema: google_appsheet
-        +meta:
-          dagster:
-            group: google_appsheet
+        intermediate:
+          +materialized: table
+        disabled:
+          +enabled: false
     illuminate:
       +schema: illuminate
       dlt:
@@ -173,10 +170,6 @@ models:
       fivetran:
         +materialized: table
         +enabled: false
-        staging:
-          repositories:
-            archive:
-              +enabled: false
     instagram:
       +enabled: false
       business:
@@ -198,6 +191,10 @@ models:
       +schema: ldap
       staging:
         +materialized: table
+    marts:
+      +schema: marts
+    metrics:
+      +schema: metrics
     njdoe:
       +schema: njdoe
       staging:

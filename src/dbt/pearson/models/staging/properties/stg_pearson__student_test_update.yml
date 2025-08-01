@@ -1,0 +1,206 @@
+version: 2
+models:
+  - name: stg_pearson__student_test_update
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("pearson",
+        "src_pearson__student_test_update") | replace("`", "") }}')
+      contract:
+        enforced: true
+    columns:
+      - name: accountable_district_code
+        data_type: string
+      - name: accountable_school_code
+        data_type: string
+      - name: administration_directions_clarified_in_student_s_native_language
+        data_type: string
+      - name: administration_directions_read_aloud_in_student_s_native_language
+        data_type: string
+      - name: alternate_representation_paper_test
+        data_type: string
+      - name: american_indian_or_alaska_native
+        data_type: string
+      - name: answer_masking
+        data_type: string
+      - name: answers_recorded_in_test_booklet
+        data_type: string
+      - name: asian
+        data_type: string
+      - name: asl_video
+        data_type: string
+      - name: assistive_technology_non_screen_reader
+        data_type: string
+      - name: assistive_technology_screen_reader
+        data_type: string
+      - name: birth_date
+        data_type: string
+      - name: black_or_african_american
+        data_type: string
+      - name: braille_with_tactile_graphics
+        data_type: string
+      - name: calculation_device_and_mathematics_tools
+        data_type: string
+      - name: class_name
+        data_type: string
+      - name: closed_captioning_for_ela
+        data_type: string
+      - name: color_contrast
+        data_type: string
+      - name: date_first_enrolled_in_us_school
+        data_type: string
+      - name: economic_disadvantage_status
+        data_type: string
+      - name: ela_constructed_response
+        data_type: string
+      - name: ela_selected_response_or_technology_enhanced_items
+        data_type: string
+      - name: electronic_braille_response
+        data_type: string
+      - name: emergency_accommodation
+        data_type: string
+      - name: extended_time
+        data_type: string
+      - name: federal_race_ethnicity
+        data_type: string
+      - name: filler
+        data_type: string
+      - name: first_high_school_math_assessment
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: former_iep
+        data_type: string
+      - name: frequent_breaks
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: grade_level_when_assessed
+        data_type: string
+      - name: hispanic_or_latino_ethnicity
+        data_type: string
+      - name: home_language
+        data_type: string
+      - name: homeless_primary_nighttime_residence
+        data_type: string
+      - name: homeless
+        data_type: string
+      - name: human_reader_or_human_signer
+        data_type: string
+      - name: human_signer_for_test_directions
+        data_type: string
+      - name: iep_exempt_from_passing
+        data_type: string
+      - name: large_print
+        data_type: string
+      - name: last_or_surname
+        data_type: string
+      - name: local_student_identifier
+        data_type: string
+      - name: mathematics_science_accommodated_response
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: migrant_status
+        data_type: string
+      - name: ml_accommodation
+        data_type: string
+      - name: ml_exempt_from_taking_ela
+        data_type: string
+      - name: monitor_test_response
+        data_type: string
+      - name: multilingual_learner_accommodated_response
+        data_type: string
+      - name: multilingual_learner_ml
+        data_type: string
+      - name: multiple_test_registration
+        data_type: string
+      - name: native_hawaiian_or_other_pacific_islander
+        data_type: string
+      - name: nj_ml_status
+        data_type: string
+      - name: not_tested_code
+        data_type: string
+      - name: not_tested_reason
+        data_type: string
+      - name: pas_mi
+        data_type: string
+      - name: primary_disability_type
+        data_type: string
+      - name: refreshable_braille_display
+        data_type: string
+      - name: report_suppression_action
+        data_type: string
+      - name: report_suppression_code
+        data_type: string
+      - name: required_high_school_math_assessment
+        data_type: string
+      - name: retest
+        data_type: string
+      - name: separate_alternate_location
+        data_type: string
+      - name: session_name
+        data_type: string
+      - name: small_group_testing
+        data_type: string
+      - name: spanish_transadaptation
+        data_type: string
+      - name: special_education_placement
+        data_type: string
+      - name: specialized_equipment_or_furniture
+        data_type: string
+      - name: specified_area_or_setting
+        data_type: string
+      - name: speech_to_text_and_word_prediction
+        data_type: string
+      - name: staff_member_identifier
+        data_type: string
+      - name: state_student_identifier
+        data_type: string
+      - name: student_assessment_identifier
+        data_type: string
+      - name: student_reads_assessment_aloud_to_self
+        data_type: string
+      - name: student_test_uuid
+        data_type: string
+      - name: student_uuid
+        data_type: string
+      - name: student_with_disabilities
+        data_type: string
+      - name: test_administration
+        data_type: string
+      - name: test_administrator
+        data_type: string
+      - name: test_code
+        data_type: string
+      - name: test_format
+        data_type: string
+      - name: test_status
+        data_type: string
+      - name: testing_district_code
+        data_type: string
+      - name: testing_school_code
+        data_type: string
+      - name: text_to_speech
+        data_type: string
+      - name: time_of_day
+        data_type: string
+      - name: total_attemptedness_flag
+        data_type: string
+      - name: total_test_items_attempted
+        data_type: string
+      - name: total_test_items
+        data_type: string
+      - name: two_or_more_races
+        data_type: string
+      - name: unique_accommodation
+        data_type: string
+      - name: void_test_score_code
+        data_type: string
+      - name: void_test_score_reason
+        data_type: string
+      - name: white
+        data_type: string
+      - name: word_prediction
+        data_type: string
+      - name: word_to_word_dictionary_english_native_language
+        data_type: string
