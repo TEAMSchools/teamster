@@ -154,13 +154,6 @@ sources:
             data_type: string
           - name: PS_Credit_Type
             data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google_sheets
-              - state_test_expected_assessments
-      - name: src_google_sheets__dibels_pm_expectations
           - name: Assessment_Include
             data_type: boolean
           - name: PM_Goal_Include
