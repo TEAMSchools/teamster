@@ -134,17 +134,18 @@ with
 
             'teacher_scaffold' as scaffold_name,
 
-            case
-                when
-                    current_date(
-                        '{{ var("local_timezone") }}'
-                    ) between (tw.quarter_end_date_insession - interval 7 day) and (
-                        tw.quarter_end_date_insession + interval 14 day
-                    )
-                then true
-                else false
-            end as is_quarter_end_date_range,
+            if(tw.`quarter` = 'Q4', true, false) as is_quarter_end_date_range,
 
+            -- case
+            -- when
+            -- current_date(
+            -- '{{ var("local_timezone") }}'
+            -- ) between (tw.quarter_end_date_insession - interval 7 day) and (
+            -- tw.quarter_end_date_insession + interval 14 day
+            -- )
+            -- then true
+            -- else false
+            -- end as is_quarter_end_date_range,
             if(
                 tw.school_level = 'HS', sec.external_expression, sec.section_number
             ) as section_or_period,
