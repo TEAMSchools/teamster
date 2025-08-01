@@ -119,10 +119,20 @@ select
     -- 50% s assign min
     if(
         ce.assignment_category_code = 'S'
+        and ce.school_level != 'HS'
         and a.score_entered < a.half_total_point_value,
         true,
         false
     ) as assign_s_score_less_50p,
+
+    if(
+        ce.assignment_category_code = 'S'
+        and ce.school_level = 'HS'
+        and a.is_missing = 0
+        and a.score_entered < a.half_total_point_value,
+        true,
+        false
+    ) as assign_s_hs_score_less_50p,
 
     -- conversion chart
     if(
