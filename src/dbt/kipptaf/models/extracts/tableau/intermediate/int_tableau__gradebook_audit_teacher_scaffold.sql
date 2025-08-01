@@ -185,17 +185,18 @@ with
 
             'teacher_category_scaffold' as scaffold_name,
 
-            case
-                when
-                    current_date(
-                        '{{ var("local_timezone") }}'
-                    ) between (tw.quarter_end_date_insession - interval 7 day) and (
-                        tw.quarter_end_date_insession + interval 14 day
-                    )
-                then true
-                else false
-            end as is_quarter_end_date_range,
+            if(tw.`quarter` = 'Q4', true, false) as is_quarter_end_date_range,
 
+            -- case
+            -- when
+            -- current_date(
+            -- '{{ var("local_timezone") }}'
+            -- ) between (tw.quarter_end_date_insession - interval 7 day) and (
+            -- tw.quarter_end_date_insession + interval 14 day
+            -- )
+            -- then true
+            -- else false
+            -- end as is_quarter_end_date_range,
             if(
                 tw.school_level = 'HS', sec.external_expression, sec.section_number
             ) as section_or_period,
@@ -230,9 +231,8 @@ with
 
 select f.*,
 from final as f
-/* exceptions listed below completely remove rows for a course/section/credit type
-   from the entire gradebook audit dash, but only when EOQ is false. these rows will
-   reappear when EOQ starts */
+/* exceptions listed below completely remove rows from the entire gradebook audit
+   dash, but only when EOQ is false. these rows will reappear when eoq starts */
 left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
     on f.academic_year = e1.academic_year
