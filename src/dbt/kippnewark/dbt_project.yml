@@ -60,6 +60,8 @@ models:
   renlearn:
     +materialized: table
     staging:
+      stg_renlearn__accelerated_reader:
+        +enabled: false
       stg_renlearn__fast_star:
         +enabled: false
       stg_renlearn__star_dashboard_standards:
@@ -91,6 +93,8 @@ sources:
         +enabled: false
   renlearn:
     renlearn:
+      src_renlearn__accelerated_reader:
+        +enabled: false
       src_renlearn__star_skill_area:
         +enabled: false
       src_renlearn__star_dashboard_standards:
