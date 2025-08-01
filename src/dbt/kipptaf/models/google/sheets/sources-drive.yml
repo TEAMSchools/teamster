@@ -154,7 +154,6 @@ sources:
             data_type: string
           - name: PS_Credit_Type
             data_type: string
-<<<<<<< HEAD
         meta:
           dagster:
             asset_key:
@@ -162,7 +161,6 @@ sources:
               - google_sheets
               - state_test_expected_assessments
       - name: src_google_sheets__dibels_pm_expectations
-=======
           - name: Assessment_Include
             data_type: boolean
           - name: PM_Goal_Include
@@ -170,7 +168,6 @@ sources:
           - name: PM_Goal_Criteria
             data_type: string
       - name: src_google_sheets__dibels_foundation_goals
->>>>>>> 12a8f003e0a1fb97ec336e2c048f003c93059dbf
         external:
           options:
             format: GOOGLE_SHEETS
