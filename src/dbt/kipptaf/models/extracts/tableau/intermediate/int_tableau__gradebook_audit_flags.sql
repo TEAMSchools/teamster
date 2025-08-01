@@ -21,33 +21,11 @@ with
                     assign_h_missing_score_not_0,
                     assign_s_missing_score_not_0,
                     assign_s_score_less_50p,
+                    assign_s_hs_score_less_50p,
                     assign_s_ms_score_not_conversion_chart_options,
                     assign_s_hs_score_not_conversion_chart_options
                 )
             ) as u
-        /* these exceptions exist here because if they are placed upstream on
-        int_tableau__gradebook_audit_assignments_student, then we will be
-        incorrectly omitting flags for effort grade, conduct code, grade > 100, and
-        summative or formative grades missing for COCUR, RHET, SCI, and SOC */
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-            on u.academic_year = e1.academic_year
-            and u.region = e1.region
-            and u.school_level = e1.school_level
-            and u.credit_type = e1.credit_type
-            and e1.view_name = 'audit_flags'
-            and e1.cte = 'student_unpivot'
-            and e1.is_quarter_end_date_range is null
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-            on u.academic_year = e2.academic_year
-            and u.region = e2.region
-            and u.course_number = e2.course_number
-            and u.is_quarter_end_date_range = e2.is_quarter_end_date_range
-            and e2.view_name = 'audit_flags'
-            and e2.cte = 'student_unpivot'
-            and e2.is_quarter_end_date_range is not null
-        where e1.include_row is null and e2.include_row is null
     ),
 
     teacher_unpivot_cca as (
