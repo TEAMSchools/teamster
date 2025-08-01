@@ -18,6 +18,6 @@ select
 from {{ ref("stg_people__location_crosswalk") }} as lc
 left join
     {{ ref("stg_people__campus_crosswalk") }} as cc on lc.clean_name = cc.location_name
-left join
+left join  {# TODO: refactor to int_people__staff_roster_history #}
     {{ ref("stg_ldap__user_person") }} as ldap
     on lc.head_of_schools_employee_number = ldap.employee_number
