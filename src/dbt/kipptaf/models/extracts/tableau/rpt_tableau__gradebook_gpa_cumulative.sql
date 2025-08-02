@@ -51,5 +51,5 @@ left join
 where
     not enr.is_out_of_district
     and enr.school_level in ('MS', 'HS')
-    and enr.enroll_status != -1
+    and enr.enroll_status in (0, 3)
     and enr.rn_undergrad = 1
