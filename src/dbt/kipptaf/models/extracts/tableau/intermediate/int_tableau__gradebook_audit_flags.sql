@@ -100,6 +100,7 @@ with
             and r.school_level = f.school_level
             and r.quarter = f.code
             and r.audit_flag_name = f.audit_flag_name
+            and r.scaffold_name = 'student_scaffold'
             and f.cte_grouping in ('student_course', 'student')
             and f.audit_category != 'Conduct Code'
     ),
@@ -125,6 +126,7 @@ with
             and r.quarter = f.code
             and r.grade_level = f.grade_level
             and r.audit_flag_name = f.audit_flag_name
+            and r.scaffold_name = 'student_scaffold'
             and f.cte_grouping = 'student_course'
             and f.audit_category = 'Conduct Code'
         where r.school_level = 'ES'
@@ -151,6 +153,7 @@ with
             and r.quarter = f.code
             and r.assignment_category_code = f.alt_code
             and r.audit_flag_name = f.audit_flag_name
+            and r.scaffold_name = 'student_category_scaffold'
             and f.cte_grouping = 'student_course_category'
     )
 
