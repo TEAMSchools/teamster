@@ -67,7 +67,7 @@ with
 
             avg(
                 if(s.is_expected_scored, s.assign_final_score_percent, null)
-            ) as avg_expected_scored_percent,
+            ) as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
         from {{ ref("int_powerschool__gradebook_assignments_scores") }} as s
         left join
@@ -98,7 +98,7 @@ select
     asg.n_is_null_not_missing,
     asg.n_expected,
     asg.n_expected_scored,
-    asg.avg_expected_scored_percent,
+    asg.teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     if(
         sec.assignment_category_code = 'W' and a.totalpointvalue != 10, true, false
@@ -136,7 +136,7 @@ select
         partition by
             sec._dbt_source_relation, sec.sectionid, sec.assignment_category_term
         order by sec.week_number_quarter asc
-    ) as running_count_assignments_section_category_term,
+    ) as teacher_running_total_assign_by_cat
 
 from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
 left join

@@ -25,7 +25,7 @@ with
 
             avg(
                 if(is_expected_scored, assign_final_score_percent, null)
-            ) as avg_expected_scored_percent,
+            ) as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
         from {{ ref("int_powerschool__gradebook_assignments_scores") }}
         group by _dbt_source_relation, assignmentsectionid
@@ -41,7 +41,7 @@ with
                     sec.sectionid,
                     sec.assignment_category_term
                 order by sec.week_number_quarter asc
-            ) as running_count_assignments_section_category_term,
+            ) as teacher_running_total_assign_by_cat,
 
             sum(a.totalpointvalue) over (
                 partition by
@@ -153,8 +153,8 @@ with
             avg(expectation) as expectation,
 
             avg(
-                running_count_assignments_section_category_term
-            ) as running_count_assignments_section_category_term,
+                teacher_running_total_assign_by_cat
+            ) as teacher_running_total_assign_by_cat,
 
             avg(
                 sum_totalpointvalue_section_quarter_category
@@ -249,28 +249,28 @@ select
 
     if(
         assignment_category_code = 'W'
-        and running_count_assignments_section_category_term < expectation,
+        and teacher_running_total_assign_by_cat < expectation,
         true,
         false
     ) as w_expected_assign_count_not_met,
 
     if(
         assignment_category_code = 'H'
-        and running_count_assignments_section_category_term < expectation,
+        and teacher_running_total_assign_by_cat < expectation,
         true,
         false
     ) as h_expected_assign_count_not_met,
 
     if(
         assignment_category_code = 'F'
-        and running_count_assignments_section_category_term < expectation,
+        and teacher_running_total_assign_by_cat < expectation,
         true,
         false
     ) as f_expected_assign_count_not_met,
 
     if(
         assignment_category_code = 'S'
-        and running_count_assignments_section_category_term < expectation,
+        and teacher_running_total_assign_by_cat < expectation,
         true,
         false
     ) as s_expected_assign_count_not_met,
