@@ -67,6 +67,7 @@ with
             and sec.school_level = e1.school_level
             and sec.credit_type = e1.credit_type
             and e1.view_name = 'categories_teacher'
+            and e1.cte_name = 'assignemnts'
             and e1.credit_type is not null
         where sec.scaffold_name = 'teacher_category_scaffold' and e1.include_row is null
     ),
