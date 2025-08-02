@@ -1,81 +1,34 @@
 with
-    -- these exceptions will exclude aggregate calculations values for courses listed 
-    exceptions as (
-        select s._dbt_source_relation, s.sections_dcid, e.include_row,
-        from {{ ref("base_powerschool__sections") }} as s
-        inner join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-            on s.terms_academic_year = e.academic_year
-            and s.sections_schoolid = e.school_id
-            and s.sections_course_number = e.course_number
-            and e.view_name = 'assignments_teacher'
-            and e.cte = 'exceptions'
-            and e.course_number is not null
-            and e.is_quarter_end_date_range is null
-
-        union all
-
-        select s._dbt_source_relation, s.sections_dcid, e.include_row,
-        from {{ ref("base_powerschool__sections") }} as s
-        inner join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-            on s.terms_academic_year = e.academic_year
-            and s.sections_schoolid = e.school_id
-            and s.courses_credittype = e.credit_type
-            and e.view_name = 'assignments_teacher'
-            and e.cte = 'exceptions'
-            and e.credit_type is not null
-            and e.is_quarter_end_date_range is null
-
-        union all
-
-        select s._dbt_source_relation, s.sections_dcid, e.include_row,
-        from {{ ref("base_powerschool__sections") }} as s
-        inner join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-            on s.terms_academic_year = e.academic_year
-            and s.sections_course_number = e.course_number
-            and e.view_name = 'assignments_teacher'
-            and e.cte = 'exceptions'
-            and e.course_number is not null
-            and e.is_quarter_end_date_range is not null
-    ),
-
     assignment_score_rollup as (
         select
-            s._dbt_source_relation,
-            s.assignmentsectionid,
+            _dbt_source_relation,
+            assignmentsectionid,
 
-            count(s.students_dcid) as n_students,
+            count(students_dcid) as n_students,
 
-            sum(s.is_expected_late) as n_late,
-            sum(s.is_exempt) as n_exempt,
-            sum(s.is_expected_missing) as n_missing,
-            sum(s.is_expected_null) as n_null,
-            sum(s.is_expected_academic_dishonesty) as n_academic_dishonesty,
+            sum(is_expected_late) as n_late,
+            sum(is_exempt) as n_exempt,
+            sum(is_expected_missing) as n_missing,
+            sum(is_expected_null) as n_null,
+            sum(is_expected_academic_dishonesty) as n_academic_dishonesty,
 
             sum(
-                if(s.is_expected_null = 1 and s.is_expected_missing = 1, 1, 0)
+                if(is_expected_null = 1 and is_expected_missing = 1, 1, 0)
             ) as n_is_null_missing,
 
             sum(
-                if(s.is_expected_null = 1 and s.is_expected_missing = 0, 1, 0)
+                if(is_expected_null = 1 and is_expected_missing = 0, 1, 0)
             ) as n_is_null_not_missing,
 
-            countif(s.is_expected) as n_expected,
-            countif(s.is_expected_scored) as n_expected_scored,
+            countif(is_expected) as n_expected,
+            countif(is_expected_scored) as n_expected_scored,
 
             avg(
-                if(s.is_expected_scored, s.assign_final_score_percent, null)
+                if(is_expected_scored, assign_final_score_percent, null)
             ) as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-        from {{ ref("int_powerschool__gradebook_assignments_scores") }} as s
-        left join
-            exceptions as e
-            on s.sectionsdcid = e.sections_dcid
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="e") }}
-        where e.include_row is null
-        group by s._dbt_source_relation, s.assignmentsectionid
+        from {{ ref("int_powerschool__gradebook_assignments_scores") }}
+        group by _dbt_source_relation, assignmentsectionid
     )
 
 select
@@ -88,17 +41,21 @@ select
     a.scoretype,
     a.totalpointvalue,
 
-    asg.n_students,
-    asg.n_late,
-    asg.n_exempt,
-    asg.n_missing,
-    asg.n_academic_dishonesty,
-    asg.n_null,
-    asg.n_is_null_missing,
-    asg.n_is_null_not_missing,
-    asg.n_expected,
-    asg.n_expected_scored,
-    asg.teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    if(e.include_row is null, asg.n_students, null) as n_students,
+    if(e.include_row is null, asg.n_late, null) as n_late,
+    if(e.include_row is null, asg.n_exempt, null) as n_exempt,
+    if(e.include_row is null, asg.n_missing, null) as n_missing,
+    if(e.include_row is null, asg.n_academic_dishonesty, null) as n_academic_dishonesty,
+    if(e.include_row is null, asg.n_null, null) as n_null,
+    if(e.include_row is null, asg.n_is_null_missing, null) as n_is_null_missing,
+    if(e.include_row is null, asg.n_is_null_not_missing, null) as n_is_null_not_missing,
+    if(e.include_row is null, asg.n_expected, null) as n_expected,
+    if(e.include_row is null, asg.n_expected_scored, null) as n_expected_scored,
+    if(
+        e.include_row is null,
+        asg.teacher_avg_score_for_assign_per_class_section_and_assign_id,
+        null
+    ) as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     if(
         sec.assignment_category_code = 'W' and a.totalpointvalue != 10, true, false
@@ -149,12 +106,15 @@ left join
     assignment_score_rollup as asg
     on a.assignmentsectionid = asg.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
+-- temporarily remove rows for assignmnent_rollup calcs during non-eoq times
 left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-    on sec.academic_year = e1.academic_year
-    and sec.region = e1.region
-    and sec.course_number = e1.course_number
-    and sec.is_quarter_end_date_range = e1.is_quarter_end_date_range
-    and e1.view_name = 'assignments_teacher'
-    and e1.is_quarter_end_date_range is not null
-where sec.scaffold_name = 'teacher_category_scaffold' and e1.include_row is null
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+    on sec.academic_year = e.academic_year
+    and sec.region = e.region
+    and sec.course_number = e.course_number
+    and sec.is_quarter_end_date_range = e.is_quarter_end_date_range
+    and e.view_name = 'assignments_teacher'
+    and e.cte is null
+    and e.course_number is not null
+    and e.is_quarter_end_date_range is not null
+where sec.scaffold_name = 'teacher_category_scaffold'

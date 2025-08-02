@@ -186,7 +186,7 @@ select
     ) as qt_comment_missing,
 
     if(
-        sec.region_school_level = 'MiamiES'
+        sec.region_school_level in ('CamdenES', 'NewarkES')
         and sec.is_quarter_end_date_range
         and ce.courses_credittype in ('HR', 'MATH', 'ENG', 'RHET')
         and qg.quarter_comment_value is null,
