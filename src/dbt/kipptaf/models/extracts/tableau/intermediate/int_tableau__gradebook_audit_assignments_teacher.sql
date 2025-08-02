@@ -136,7 +136,7 @@ select
         partition by
             sec._dbt_source_relation, sec.sectionid, sec.assignment_category_term
         order by sec.week_number_quarter asc
-    ) as teacher_running_total_assign_by_cat
+    ) as teacher_running_total_assign_by_cat,
 
 from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
 left join
