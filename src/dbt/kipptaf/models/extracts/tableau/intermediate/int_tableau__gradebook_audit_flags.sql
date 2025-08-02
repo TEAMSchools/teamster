@@ -149,6 +149,7 @@ with
             on r.region = f.region
             and r.school_level = f.school_level
             and r.quarter = f.code
+            and r.assignment_category_code = f.alt_code
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'student_course_category'
     )
@@ -222,6 +223,7 @@ select
     r.school_week_start_date_lead,
     r.week_number_academic_year,
     r.week_number_quarter,
+    r.is_current_week,
     r.quarter_course_percent_grade,
     r.quarter_course_grade_points,
     r.quarter_conduct,
@@ -276,13 +278,6 @@ select
     f.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between r.week_start_monday and r.week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
 
 from student_unpivot as r
 inner join
@@ -373,6 +368,7 @@ select
     school_week_start_date_lead,
     week_number_academic_year,
     week_number_quarter,
+    is_current_week,
     quarter_course_percent_grade,
     quarter_course_grade_points,
     quarter_conduct,
@@ -426,13 +422,6 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between week_start_monday and week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
 
 from student_course_category
 
@@ -506,6 +495,7 @@ select
     school_week_start_date_lead,
     week_number_academic_year,
     week_number_quarter,
+    is_current_week,
     quarter_course_percent_grade,
     quarter_course_grade_points,
     quarter_conduct,
@@ -559,13 +549,6 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between week_start_monday and week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
 
 from eoq_items
 
@@ -641,6 +624,7 @@ select
     school_week_start_date_lead,
     week_number_academic_year,
     week_number_quarter,
+    is_current_week,
     quarter_course_percent_grade,
     quarter_course_grade_points,
     quarter_conduct,
@@ -694,13 +678,6 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between week_start_monday and week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
 
 from eoq_items_conduct_code
 
@@ -783,6 +760,7 @@ select
     r.school_week_start_date_lead,
     r.week_number_academic_year,
     r.week_number_quarter,
+    r.is_current_week,
 
     null as quarter_course_percent_grade,
     null as quarter_course_grade_points,
@@ -841,13 +819,6 @@ select
     r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between r.week_start_monday and r.week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
 
 from teacher_unpivot_cca as r
 
@@ -929,6 +900,7 @@ select
     r.school_week_start_date_lead,
     r.week_number_academic_year,
     r.week_number_quarter,
+    r.is_current_week,
 
     null as quarter_course_percent_grade,
     null as quarter_course_grade_points,
@@ -987,12 +959,5 @@ select
     r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between r.week_start_monday and r.week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
 
 from teacher_unpivot_cc as r
