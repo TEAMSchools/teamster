@@ -234,28 +234,28 @@ select
 
     if(
         f.assignment_category_code = 'W'
-        and f.teacher_running_total_assign_by_cat < expectation,
+        and f.teacher_running_total_assign_by_cat < f.expectation,
         true,
         false
     ) as w_expected_assign_count_not_met,
 
     if(
         f.assignment_category_code = 'H'
-        and f.teacher_running_total_assign_by_cat < expectation,
+        and f.teacher_running_total_assign_by_cat < f.expectation,
         true,
         false
     ) as h_expected_assign_count_not_met,
 
     if(
         f.assignment_category_code = 'F'
-        and f.teacher_running_total_assign_by_cat < expectation,
+        and f.teacher_running_total_assign_by_cat < f.expectation,
         true,
         false
     ) as f_expected_assign_count_not_met,
 
     if(
         f.assignment_category_code = 'S'
-        and f.teacher_running_total_assign_by_cat < expectation,
+        and f.teacher_running_total_assign_by_cat < f.expectation,
         true,
         false
     ) as s_expected_assign_count_not_met,
