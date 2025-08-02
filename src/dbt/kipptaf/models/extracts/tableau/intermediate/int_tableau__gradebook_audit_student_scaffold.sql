@@ -134,6 +134,7 @@ select
     sec.school_week_start_date_lead,
     sec.week_number_academic_year,
     sec.week_number_quarter,
+    sec.is_current_week,
     sec.section_or_period,
 
     qg.quarter_course_percent_grade,
@@ -349,6 +350,7 @@ select
     sec.school_week_start_date_lead,
     sec.week_number_academic_year,
     sec.week_number_quarter,
+    sec.is_current_week,
     sec.section_or_period,
 
     qg.quarter_course_percent_grade,

@@ -246,7 +246,16 @@ with
             e1.include_row is null and e2.include_row is null and e3.include_row is null
     )
 
-select f.*,
+select
+    f.*,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between f.week_start_monday and f.week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
 from final as f
 /* temporarily remove rows from the entire gradebook audit dash when EOQ is false
    by region/school level and credit type */
