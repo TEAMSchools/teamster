@@ -1,4 +1,5 @@
 with
+    -- these exceptions will exclude aggregate calculations values for courses listed 
     exceptions as (
         select s._dbt_source_relation, s.sections_dcid, e.include_row,
         from {{ ref("base_powerschool__sections") }} as s
@@ -8,7 +9,7 @@ with
             and s.sections_schoolid = e.school_id
             and s.sections_course_number = e.course_number
             and e.view_name = 'assignments_teacher'
-            and e.cte = 'school_course_exceptions'
+            and e.cte = 'exceptions'
             and e.course_number is not null
             and e.is_quarter_end_date_range is null
 
@@ -22,7 +23,7 @@ with
             and s.sections_schoolid = e.school_id
             and s.courses_credittype = e.credit_type
             and e.view_name = 'assignments_teacher'
-            and e.cte = 'school_course_exceptions'
+            and e.cte = 'exceptions'
             and e.credit_type is not null
             and e.is_quarter_end_date_range is null
 
@@ -35,7 +36,7 @@ with
             on s.terms_academic_year = e.academic_year
             and s.sections_course_number = e.course_number
             and e.view_name = 'assignments_teacher'
-            and e.cte = 'school_course_exceptions'
+            and e.cte = 'exceptions'
             and e.course_number is not null
             and e.is_quarter_end_date_range is not null
     ),
@@ -152,19 +153,8 @@ left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
     on sec.academic_year = e1.academic_year
     and sec.region = e1.region
-    and sec.school_level = e1.school_level
     and sec.course_number = e1.course_number
+    and sec.is_quarter_end_date_range = e1.is_quarter_end_date_range
     and e1.view_name = 'assignments_teacher'
-    and e1.is_quarter_end_date_range is null
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-    on sec.academic_year = e2.academic_year
-    and sec.region = e2.region
-    and sec.course_number = e2.course_number
-    and sec.is_quarter_end_date_range = e2.is_quarter_end_date_range
-    and e2.view_name = 'assignments_teacher'
-    and e2.is_quarter_end_date_range is not null
-where
-    sec.scaffold_name = 'teacher_category_scaffold'
-    and e1.include_row is null
-    and e2.include_row is null
+    and e1.is_quarter_end_date_range is not null
+where sec.scaffold_name = 'teacher_category_scaffold' and e1.include_row is null
