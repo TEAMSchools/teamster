@@ -47,19 +47,6 @@ with
             and r.assignment_category_code = f.code
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'class_category_assignment'
-        /* these exceptions exist here because if they are placed upstream on
-        int_tableau__gradebook_audit_assignments_teacher, then we will be
-        incorrectly omitting flags for effort grade, conduct code, grade > 100, and
-        summative or formative grades missing for COCUR, RHET, SCI, and SOC */
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-            on r.academic_year = e.academic_year
-            and r.region = e.region
-            and r.school_level = e.school_level
-            and r.credit_type = e.credit_type
-            and e.view_name = 'audit_flags'
-            and e.cte = 'teacher_unpivot_cca'
-        where e.include_row is null
     ),
 
     teacher_unpivot_cc as (
@@ -115,38 +102,6 @@ with
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping in ('student_course', 'student')
             and f.audit_category != 'Conduct Code'
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-            on r.academic_year = e1.academic_year
-            and r.region = e1.region
-            and r.school_level = e1.school_level
-            and r.credit_type = e1.credit_type
-            and r.audit_flag_name = e1.audit_flag_name
-            and e1.view_name = 'audit_flags'
-            and e1.cte = 'eoq_items'
-            and e1.audit_flag_name = 'qt_comment_missing'
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-            on r.academic_year = e2.academic_year
-            and r.region = e2.region
-            and r.school_level = e2.school_level
-            and r.credit_type = e2.credit_type
-            and r.audit_flag_name = e2.audit_flag_name
-            and e2.view_name = 'audit_flags'
-            and e2.cte = 'eoq_items'
-            and e2.audit_flag_name
-            in ('qt_g1_g8_conduct_code_missing', 'qt_g1_g8_conduct_code_incorrect')
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e3
-            on r.academic_year = e3.academic_year
-            and r.region = e3.region
-            and r.course_number = e3.course_number
-            and r.audit_flag_name = e3.audit_flag_name
-            and e3.view_name = 'audit_flags'
-            and e3.cte = 'eoq_items'
-            and e3.course_number is not null
-        where
-            e1.include_row is null and e2.include_row is null and e3.include_row is null
     ),
 
     eoq_items_conduct_code as (
@@ -172,25 +127,7 @@ with
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'student_course'
             and f.audit_category = 'Conduct Code'
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-            on r.academic_year = e1.academic_year
-            and r.region = e1.region
-            and r.school_level = e1.school_level
-            and r.credit_type = e1.credit_type
-            and e1.view_name = 'audit_flags'
-            and e1.cte = 'eoq_items_conduct_code'
-            and e1.credit_type is not null
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-            on r.academic_year = e2.academic_year
-            and r.region = e2.region
-            and r.course_number = e2.course_number
-            and e2.view_name = 'audit_flags'
-            and e2.cte = 'eoq_items_conduct_code'
-            and e2.credit_type is null
-        where
-            r.school_level = 'ES' and e1.include_row is null and e2.include_row is null
+        where r.school_level = 'ES'
     ),
 
     /* w_grade_inflation, qt_effort_grade_missing, qt_formative_grade_missing,
@@ -200,62 +137,12 @@ with
 
         from
             {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
-                audit_flag_value for audit_flag_name in (qt_effort_grade_missing)
-            ) as r
-
-        inner join
-            {{ ref("stg_google_sheets__gradebook_flags") }} as f
-            on r.region = f.region
-            and r.school_level = f.school_level
-            and r.quarter = f.code
-            and r.audit_flag_name = f.audit_flag_name
-            and r.assignment_category_code = 'W'
-            and f.cte_grouping = 'student_course_category'
-
-        union all
-
-        select r.*, f.cte_grouping, f.audit_category, f.code_type,
-
-        from
-            {{ ref("int_tableau__gradebook_audit_student_scaffold") }}
-            unpivot (audit_flag_value for audit_flag_name in (w_grade_inflation)) as r
-
-        inner join
-            {{ ref("stg_google_sheets__gradebook_flags") }} as f
-            on r.region = f.region
-            and r.school_level = f.school_level
-            and r.quarter = f.code
-            and r.audit_flag_name = f.audit_flag_name
-            and r.assignment_category_code = 'W'
-            and f.cte_grouping = 'student_course_category'
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-            on r.academic_year = e1.academic_year
-            and r.region = e1.region
-            and r.school_level = e1.school_level
-            and r.credit_type = e1.credit_type
-            and r.audit_flag_name = e1.audit_flag_name
-            and e1.view_name = 'audit_flags'
-            and e1.cte = 'student_course_category'
-            and e1.credit_type is not null
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-            on r.academic_year = e2.academic_year
-            and r.region = e2.region
-            and r.course_number = e2.course_number
-            and r.audit_flag_name = e2.audit_flag_name
-            and e2.view_name = 'audit_flags'
-            and e2.cte = 'student_course_category'
-            and e2.credit_type is null
-        where e1.include_row is null and e2.include_row is null
-
-        union all
-
-        select r.*, f.cte_grouping, f.audit_category, f.code_type,
-
-        from
-            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
-                audit_flag_value for audit_flag_name in (qt_formative_grade_missing)
+                audit_flag_value for audit_flag_name in (
+                    qt_effort_grade_missing,
+                    w_grade_inflation,
+                    qt_formative_grade_missing,
+                    qt_summative_grade_missing
+                )
             ) as r
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
@@ -263,66 +150,7 @@ with
             and r.school_level = f.school_level
             and r.quarter = f.code
             and r.audit_flag_name = f.audit_flag_name
-            and r.assignment_category_code = 'F'
             and f.cte_grouping = 'student_course_category'
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-            on r.academic_year = e1.academic_year
-            and r.region = e1.region
-            and r.school_level = e1.school_level
-            and r.credit_type = e1.credit_type
-            and r.audit_flag_name = e1.audit_flag_name
-            and e1.view_name = 'audit_flags'
-            and e1.cte = 'student_course_category'
-            and e1.credit_type is not null
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-            on r.academic_year = e2.academic_year
-            and r.region = e2.region
-            and r.course_number = e2.course_number
-            and r.audit_flag_name = e2.audit_flag_name
-            and e2.view_name = 'audit_flags'
-            and e2.cte = 'student_course_category'
-            and e2.credit_type is null
-        where e1.include_row is null and e2.include_row is null
-
-        union all
-
-        select r.*, f.cte_grouping, f.audit_category, f.code_type,
-
-        from
-            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
-                audit_flag_value for audit_flag_name in (qt_summative_grade_missing)
-            ) as r
-
-        inner join
-            {{ ref("stg_google_sheets__gradebook_flags") }} as f
-            on r.region = f.region
-            and r.school_level = f.school_level
-            and r.quarter = f.code
-            and r.audit_flag_name = f.audit_flag_name
-            and r.assignment_category_code = 'S'
-            and f.cte_grouping = 'student_course_category'
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-            on r.academic_year = e1.academic_year
-            and r.region = e1.region
-            and r.school_level = e1.school_level
-            and r.credit_type = e1.credit_type
-            and r.audit_flag_name = e1.audit_flag_name
-            and e1.view_name = 'audit_flags'
-            and e1.cte = 'student_course_category'
-            and e1.credit_type is not null
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-            on r.academic_year = e2.academic_year
-            and r.region = e2.region
-            and r.course_number = e2.course_number
-            and r.audit_flag_name = e2.audit_flag_name
-            and e2.view_name = 'audit_flags'
-            and e2.cte = 'student_course_category'
-            and e2.credit_type is null
-        where e1.include_row is null and e2.include_row is null
     )
 
 -- this captures all flags from assignment_student

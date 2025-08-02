@@ -85,21 +85,10 @@ with
             on sec.academic_year = e1.academic_year
             and sec.region = e1.region
             and sec.school_level = e1.school_level
-            and sec.course_number = e1.course_number
+            and sec.credit_type = e1.credit_type
             and e1.view_name = 'categories_teacher'
-            and e1.credit_type is null
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-            on sec.academic_year = e2.academic_year
-            and sec.region = e2.region
-            and sec.school_level = e2.school_level
-            and sec.credit_type = e2.credit_type
-            and e2.view_name = 'categories_teacher'
-            and e2.credit_type is not null
-        where
-            sec.scaffold_name = 'teacher_category_scaffold'
-            and e1.include_row is null
-            and e2.include_row is null
+            and e1.credit_type is not null
+        where sec.scaffold_name = 'teacher_category_scaffold' and e1.include_row is null
     ),
 
     percent_graded as (
