@@ -67,7 +67,7 @@ with
             and sec.school_level = e1.school_level
             and sec.credit_type = e1.credit_type
             and e1.view_name = 'categories_teacher'
-            and e1.cte_name = 'assignemnts'
+            and e1.cte = 'assignments'
             and e1.credit_type is not null
         where sec.scaffold_name = 'teacher_category_scaffold' and e1.include_row is null
     ),
@@ -202,90 +202,104 @@ with
     )
 
 select
-    *,
+    f.*,
 
     if(
-        assignment_category_code = 'W' and percent_graded_for_quarter_week_class < .7,
+        f.assignment_category_code = 'W'
+        and f.percent_graded_for_quarter_week_class < .7,
         true,
         false
     ) as w_percent_graded_min_not_met,
 
     if(
-        assignment_category_code = 'H' and percent_graded_for_quarter_week_class < .7,
+        f.assignment_category_code = 'H'
+        and f.percent_graded_for_quarter_week_class < .7,
         true,
         false
     ) as h_percent_graded_min_not_met,
 
     if(
-        assignment_category_code = 'F' and percent_graded_for_quarter_week_class < .7,
+        f.assignment_category_code = 'F'
+        and f.percent_graded_for_quarter_week_class < .7,
         true,
         false
     ) as f_percent_graded_min_not_met,
 
     if(
-        assignment_category_code = 'S' and percent_graded_for_quarter_week_class < .7,
+        f.assignment_category_code = 'S'
+        and f.percent_graded_for_quarter_week_class < .7,
         true,
         false
     ) as s_percent_graded_min_not_met,
 
     if(
-        assignment_category_code = 'W'
-        and teacher_running_total_assign_by_cat < expectation,
+        f.assignment_category_code = 'W'
+        and f.teacher_running_total_assign_by_cat < expectation,
         true,
         false
     ) as w_expected_assign_count_not_met,
 
     if(
-        assignment_category_code = 'H'
-        and teacher_running_total_assign_by_cat < expectation,
+        f.assignment_category_code = 'H'
+        and f.teacher_running_total_assign_by_cat < expectation,
         true,
         false
     ) as h_expected_assign_count_not_met,
 
     if(
-        assignment_category_code = 'F'
-        and teacher_running_total_assign_by_cat < expectation,
+        f.assignment_category_code = 'F'
+        and f.teacher_running_total_assign_by_cat < expectation,
         true,
         false
     ) as f_expected_assign_count_not_met,
 
     if(
-        assignment_category_code = 'S'
-        and teacher_running_total_assign_by_cat < expectation,
+        f.assignment_category_code = 'S'
+        and f.teacher_running_total_assign_by_cat < expectation,
         true,
         false
     ) as s_expected_assign_count_not_met,
 
     if(
-        assignment_category_code = 'S'
-        and region_school_level != 'MiamiES'
-        and sum_totalpointvalue_section_quarter_category > 200,
+        f.assignment_category_code = 'S'
+        and f.region_school_level != 'MiamiES'
+        and f.sum_totalpointvalue_section_quarter_category > 200,
         true,
         false
     ) as qt_teacher_s_total_greater_200,
 
     if(
-        assignment_category_code = 'S'
-        and region_school_level != 'MiamiES'
-        and sum_totalpointvalue_section_quarter_category < 200,
+        f.assignment_category_code = 'S'
+        and f.region_school_level != 'MiamiES'
+        and f.sum_totalpointvalue_section_quarter_category < 200,
         true,
         false
     ) as qt_teacher_s_total_less_200,
 
     if(
-        assignment_category_code = 'S'
-        and region_school_level = 'MiamiES'
-        and sum_totalpointvalue_section_quarter_category > 100,
+        f.assignment_category_code = 'S'
+        and f.region_school_level = 'MiamiES'
+        and f.sum_totalpointvalue_section_quarter_category > 100,
         true,
         false
     ) as qt_teacher_s_total_greater_100,
 
     if(
-        assignment_category_code = 'S'
-        and region_school_level = 'MiamiES'
-        and sum_totalpointvalue_section_quarter_category < 100,
+        f.assignment_category_code = 'S'
+        and f.region_school_level = 'MiamiES'
+        and f.sum_totalpointvalue_section_quarter_category < 100,
         true,
         false
     ) as qt_teacher_s_total_less_100,
 
-from final
+from final as f
+left join
+    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+    on f.academic_year = e.academic_year
+    and f.region = e.region
+    and f.course_number = e.course_number
+    and f.is_quarter_end_date_range = e.is_quarter_end_date_range
+    and e.view_name = 'categories_teacher'
+    and e.cte is null
+    and e.is_quarter_end_date_range is not null
+where e.include_row is null
