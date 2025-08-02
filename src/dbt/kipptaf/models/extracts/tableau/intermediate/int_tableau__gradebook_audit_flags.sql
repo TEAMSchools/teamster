@@ -269,10 +269,8 @@ select
     null as total_expected_section_quarter_week_category,
     null as percent_graded_for_quarter_week_class,
     t.sum_totalpointvalue_section_quarter_category,
-    t.running_count_assignments_section_category_term
-    as teacher_running_total_assign_by_cat,
-    t.avg_expected_scored_percent
-    as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    t.teacher_running_total_assign_by_cat,
+    t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     f.audit_category,
     f.code_type,
@@ -812,8 +810,7 @@ select
     null as percent_graded_for_quarter_week_class,
     null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
-    r.avg_expected_scored_percent
-    as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    r.teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     r.audit_category,
     r.code_type,
@@ -949,10 +946,7 @@ select
     r.total_expected_section_quarter_week_category,
     r.percent_graded_for_quarter_week_class,
     r.sum_totalpointvalue_section_quarter_category,
-
-    r.running_count_assignments_section_category_term
-    as teacher_running_total_assign_by_cat,
-
+    r.teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     r.audit_category,
