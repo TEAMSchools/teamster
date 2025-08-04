@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: int_tableau__gradebook_audit_section_week_category_scaffold
+  - name: int_tableau__gradebook_audit_teacher_scaffold
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -40,6 +40,12 @@ models:
         data_type: int64
       - name: week_number_quarter
         data_type: int64
+      - name: hos
+        data_type: string
+      - name: school_leader
+        data_type: string
+      - name: school_leader_tableau_username
+        data_type: string
       - name: region_school_level
         data_type: string
       - name: academic_year_display
@@ -70,18 +76,6 @@ models:
         data_type: string
       - name: teacher_tableau_username
         data_type: string
-      - name: hos
-        data_type: string
-      - name: school_leader
-        data_type: string
-      - name: school_leader_tableau_username
-        data_type: string
-      - name: region_school_level
-        data_type: string
-      - name: is_quarter_end_date_range
-        data_type: boolean
-      - name: section_or_period
-        data_type: string
       - name: assignment_category_code
         data_type: string
       - name: assignment_category_name
@@ -92,3 +86,11 @@ models:
         data_type: int64
       - name: notes
         data_type: string
+      - name: scaffold_name
+        data_type: string
+      - name: is_quarter_end_date_range
+        data_type: boolean
+      - name: section_or_period
+        data_type: string
+      - name: is_current_week
+        data_type: boolean

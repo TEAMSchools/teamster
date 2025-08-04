@@ -6,21 +6,23 @@ models:
         enforced: true
       tags: google_sheet
     columns:
+      - name: Academic_Year
+        data_type: int64
       - name: Region
         data_type: string
       - name: School_Level
+        data_type: string
+      - name: Grade_Level
+        data_type: int64
+      - name: Code_Type
+        data_type: string
+      - name: Code
         data_type: string
       - name: Audit_Category
         data_type: string
       - name: Audit_Flag_Name
         data_type: string
-      - name: Grade_Level
-        data_type: int64
-      - name: Code
-        data_type: string
       - name: CTE_Grouping
         data_type: string
-      - name: Code_Type
+      - name: alt_code
         data_type: string
-      - name: Academic_Year
-        data_type: int64
