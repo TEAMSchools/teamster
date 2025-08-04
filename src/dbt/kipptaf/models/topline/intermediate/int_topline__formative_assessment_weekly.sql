@@ -1,15 +1,30 @@
 with
-    assessment_weeks as (
+    student_weeks as (
         select
             rr.powerschool_student_number,
             rr.academic_year,
+
+            cw.week_start_monday,
+            cw.week_end_sunday,
+        from {{ ref("int_assessments__response_rollup") }} as rr
+        inner join
+            {{ ref("int_powerschool__calendar_week") }} as cw
+            on rr.powerschool_school_id = cw.schoolid
+            and rr.academic_year = cw.academic_year
+        group by all
+    ),
+
+    assessment_weeks as (
+        select
+            sw.powerschool_student_number,
+            sw.academic_year,
+            sw.week_start_monday,
+            sw.week_end_sunday,
+
             rr.subject_area,
             rr.module_type,
             rr.title,
             rr.administered_at,
-
-            cw.week_start_monday,
-            cw.week_end_sunday,
 
             case
                 when rr.is_mastery then 1 when not rr.is_mastery then 0
@@ -19,15 +34,15 @@ with
                     rr.powerschool_student_number,
                     rr.academic_year,
                     rr.subject_area,
-                    cw.week_start_monday
-                order by cw.week_start_monday desc
+                    sw.week_start_monday
+                order by sw.week_start_monday desc
             ) as rn_week_latest,
-        from {{ ref("int_assessments__response_rollup") }} as rr
-        inner join
-            {{ ref("int_powerschool__calendar_week") }} as cw
-            on rr.academic_year = cw.academic_year
-            and rr.powerschool_school_id = cw.schoolid
-            and rr.administered_at between cw.week_start_monday and cw.week_end_sunday
+        from student_weeks as sw
+        left join
+            {{ ref("int_assessments__response_rollup") }} as rr
+            on sw.powerschool_student_number = rr.powerschool_school_id
+            and sw.academic_year = rr.academic_year
+            and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
         where
             (rr.response_type = 'overall' or rr.response_type is null)
             and rr.module_type in ('QA', 'MQQ')
