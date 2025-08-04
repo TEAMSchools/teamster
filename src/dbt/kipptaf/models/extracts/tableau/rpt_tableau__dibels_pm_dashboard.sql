@@ -79,8 +79,6 @@ select
 
     g.cumulative_growth_words as goal,
 
-    if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
-
     m.schedule_student_number,
     m.schedule_student_grade_level,
     m.teacherid,
@@ -118,6 +116,8 @@ select
     pm.met_pm_round_overall_criteria,
 
     'PM' as assessment_type,
+
+    if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
 
     if(pme.grade = 0, 'K', cast(pme.grade as string)) as expected_grade_level,
 
