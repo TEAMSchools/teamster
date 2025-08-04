@@ -49,7 +49,7 @@ with
             e.cohort,
 
             a.admin_season as expected_test,
-            cast(a.`round` as string) as expected_round,
+            cast(a.round_number as string) as expected_round,
             a.start_date,
             a.end_date,
             a.grade as expected_grade_level,
@@ -59,7 +59,7 @@ with
 
             g.cumulative_growth_words as goal,
 
-            concat(e.grade_level, a.admin_season, a.`round`) as goal_filter,
+            concat(e.grade_level, a.admin_season, a.round_number) as goal_filter,
 
             format_datetime('%B', a.start_date) as month_round,
 
@@ -92,7 +92,7 @@ with
             on a.academic_year = g.academic_year
             and a.region = g.region
             and a.admin_season = g.admin_season
-            and a.`round` = g.`round`
+            and a.round_number = g.round_number
             and a.grade = g.assessment_grade_int
             and a.expected_measure_standard = g.measure_standard
             and a.pm_goal_include is null

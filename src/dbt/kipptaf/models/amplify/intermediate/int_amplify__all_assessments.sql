@@ -6,7 +6,7 @@ with
             e.grade,
             e.assessment_type,
             e.admin_season,
-            e.`round`,
+            e.round_number,
             e.expected_measure_standard,
 
             e.matching_pm_season as matching_season,
@@ -53,7 +53,7 @@ with
             null as score_change,
 
             e.assessment_type,
-            e.`round`,
+            e.round_number,
             e.matching_season,
 
             row_number() over (
@@ -111,7 +111,7 @@ with
             null as score_change,
 
             e.assessment_type,
-            e.`round`,
+            e.round_number,
             e.matching_season,
 
             row_number() over (
@@ -162,12 +162,12 @@ with
             p.measure_standard_score_change,
 
             e.assessment_type,
-            e.`round`,
+            e.round_number,
 
             if(p.pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
 
             row_number() over (
-                partition by p.surrogate_key, p.measure, e.`round`
+                partition by p.surrogate_key, p.measure, e.round_number
                 order by p.measure_standard_score desc
             ) as rn_highest,
 
@@ -240,7 +240,7 @@ select
     s.assessment_grade,
     s.assessment_grade_int,
     s.period,
-    s.`round`,
+    s.round_number,
     s.matching_season,
     s.client_date,
     s.sync_date,
@@ -297,7 +297,7 @@ select
             s.region,
             s.assessment_grade,
             s.period,
-            s.`round`,
+            s.round_number,
             s.student_number
     ) as actual_row_count,
 
@@ -318,7 +318,7 @@ select
     s.assessment_grade,
     s.assessment_grade_int,
     s.period,
-    s.`round`,
+    s.round_number,
     s.matching_season,
     s.client_date,
     s.sync_date,
@@ -373,7 +373,7 @@ select
             s.region,
             s.assessment_grade,
             s.period,
-            s.`round`,
+            s.round_number,
             s.student_number
     ) as actual_row_count,
 
