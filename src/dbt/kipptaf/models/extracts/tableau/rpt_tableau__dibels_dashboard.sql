@@ -29,7 +29,7 @@ with
             a.test_code,
             a.month_round,
             a.grade as expected_grade_level,
-            a.grade_level_text,
+            a.grade_level_text as grade_level,
             a.expected_measure_name_code,
             a.expected_measure_name,
             a.expected_measure_standard,
