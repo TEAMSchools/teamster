@@ -1,73 +1,4 @@
 with
-    students as (
-        select
-            e._dbt_source_relation,
-            e.academic_year,
-            e.academic_year_display,
-            e.district,
-            e.state,
-            e.region,
-            e.schoolid,
-            e.school,
-            e.studentid,
-            e.student_number,
-            e.student_name,
-            e.grade_level as grade_level_int,
-            e.is_out_of_district,
-            e.gender,
-            e.ethnicity,
-            e.is_homeless,
-            e.iep_status,
-            e.is_504,
-            e.lep_status,
-            e.lunch_status,
-            e.gifted_and_talented,
-            e.enroll_status,
-            e.advisory,
-            e.cohort,
-
-            a.admin_season as expected_test,
-            cast(a.round_number as string) as expected_round,
-            a.month_round,
-            a.start_date,
-            a.end_date,
-            a.grade as expected_grade_level,
-            a.expected_measure_name_code,
-            a.expected_measure_name,
-            a.expected_measure_standard,
-            a.benchmark_goal as admin_benchmark,
-
-            g.cumulative_growth_words as goal,
-
-            if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
-
-        from {{ ref("int_extracts__student_enrollments") }} as e
-        inner join
-            {{ ref("int_google_sheets__dibels_pm_expectations") }} as a
-            on e.academic_year = a.academic_year
-            and e.region = a.region
-            and e.grade_level = a.grade
-            and a.pm_goal_include is null
-        inner join
-            {{ ref("stg_google_sheets__dibels_pm_goals") }} as g
-            on a.academic_year = g.academic_year
-            and a.region = g.region
-            and a.admin_season = g.admin_season
-            and a.round_number = g.round_number
-            and a.grade = g.assessment_grade_int
-            and a.expected_measure_standard = g.measure_standard
-            and a.pm_goal_include is null
-        inner join
-            {{ ref("int_amplify__all_assessments") }} as s
-            on e.academic_year = s.academic_year
-            and e.student_number = s.student_number
-            and e.grade_level = s.assessment_grade_int
-            and a.admin_season = s.matching_season
-            and s.measure_standard = 'Composite'
-            and s.overall_probe_eligible = 'Yes'
-        where not e.is_self_contained
-    ),
-
     schedules as (
         select
             m._dbt_source_relation,
@@ -94,161 +25,61 @@ with
         where
             m.rn_course_number_year = 1
             and not m.is_dropped_section
-            and m.cc_academic_year >= 2024
             and m.cc_section_number not like '%SC%'
             and m.courses_course_name in (
-                'ELA GrK', 'ELA K', 'ELA Gr1', 'ELA Gr2'
-            -- 'ELA Gr3',
-            -- 'ELA Gr4',
-            -- 'ELA Gr5',
-            -- 'ELA Gr6',
-            -- 'ELA Gr7',
-            -- 'ELA Gr8'
+                'ELA GrK',
+                'ELA K',
+                'ELA Gr1',
+                'ELA Gr2'
+                'ELA Gr3',
+                'ELA Gr4',
+                'ELA Gr5',
+                'ELA Gr6',
+                'ELA Gr7',
+                'ELA Gr8'
             )
-    ),
-
-    met_overall_goal_or_bm_modified as (
-        select
-            s.academic_year,
-            s.student_number,
-            s.grade_level,
-            s.expected_test,
-            s.expected_round,
-            s.expected_measure_standard,
-            s.goal,
-
-            a.measure_standard_score,
-
-            if(a.measure_standard_score >= s.goal, true, false) as met_overall_goal,
-
-            if(
-                a.measure_standard_score >= s.admin_benchmark, true, false
-            ) as met_admin_benchmark,
-
-        from students as s
-        left join
-            {{ ref("int_amplify__all_assessments") }} as a
-            on s.academic_year = a.academic_year
-            and s.student_number = a.student_number
-            and s.expected_test = a.period
-            and s.expected_measure_standard = a.measure_standard
-            and a.client_date between s.start_date and s.end_date
-            and a.assessment_type = 'PM'
-        where
-            s.goal_filter in (
-                '1BOY->MOY3',
-                '1BOY->MOY4',
-                '0BOY->MOY4',
-                '1MOY->EOY7',
-                '2MOY->EOY7',
-                '0MOY->EOY9'
-            )
-            and a.measure_standard_score is not null
-    ),
-
-    met_overall_goal_calculation_modified as (
-        select
-            academic_year,
-            student_number,
-            grade_level,
-            expected_test,
-            expected_round,
-
-            max(psf) as psf,
-            max(cls) as cls,
-            max(wrc) as wrc,
-            max(orf_acc) as orf_acc,
-            max(orf) as orf,
-
-            case
-                when
-                    grade_level = '1'
-                    and expected_round = '3'
-                    and (max(psf) = true or (max(cls) = true and max(wrc) = true))
-                then true
-                when
-                    grade_level = '1'
-                    and expected_round = '4'
-                    and (max(psf) = true or (max(cls) = true and max(wrc) = true))
-                then true
-                when
-                    grade_level = '1'
-                    and expected_round = '7'
-                    and (
-                        max(orf_acc) = true
-                        and max(orf) = true
-                        and max(cls) = true
-                        and max(wrc) = true
-                    )
-                then true
-                when
-                    grade_level = '2'
-                    and expected_round = '7'
-                    and (
-                        max(orf_acc) = true
-                        and max(orf) = true
-                        and max(cls) = true
-                        and max(wrc) = true
-                    )
-                then true
-                when
-                    grade_level = '0'
-                    and expected_round = '9'
-                    and (max(wrf) = true and max(wrc) = true)
-                then true
-                else false
-            end as met_overall_goal,
-
-        from
-            met_overall_goal_or_bm_modified pivot (
-                max(met_overall_goal)
-                for expected_measure_standard in (
-                    'Phonemic Awareness (PSF)' as psf,
-                    'Letter Sounds (NWF-CLS)' as cls,
-                    'Decoding (NWF-WRC)' as wrc,
-                    'Reading Accuracy (ORF-Accu)' as orf_acc,
-                    'Reading Fluency (ORF)' as orf,
-                    'Word Reading (WRF)' as wrf
-                )
-            ) as pvt
-        group by all
     )
 
 select
-    s._dbt_source_relation,
-    s.academic_year,
-    s.academic_year_display,
-    s.district,
-    s.region,
-    s.state,
-    s.schoolid,
-    s.school,
-    s.studentid,
-    s.student_number,
-    s.student_name,
-    s.grade_level,
-    s.is_out_of_district,
-    s.gender,
-    s.ethnicity,
-    s.enroll_status,
-    s.is_homeless,
-    s.is_504,
-    s.iep_status,
-    s.lep_status,
-    s.lunch_status,
-    s.gifted_and_talented,
-    s.advisory,
-    s.cohort,
-    s.expected_test,
-    s.expected_round,
-    s.start_date,
-    s.end_date,
-    s.month_round,
-    s.expected_measure_name_code,
-    s.expected_measure_name,
-    s.expected_measure_standard,
-    s.goal,
-    s.admin_benchmark,
+    e._dbt_source_relation,
+    e.academic_year,
+    e.academic_year_display,
+    e.district,
+    e.state,
+    e.region,
+    e.schoolid,
+    e.school,
+    e.studentid,
+    e.student_number,
+    e.student_name,
+    e.grade_level as grade_level_int,
+    e.is_out_of_district,
+    e.gender,
+    e.ethnicity,
+    e.is_homeless,
+    e.iep_status,
+    e.is_504,
+    e.lep_status,
+    e.lunch_status,
+    e.gifted_and_talented,
+    e.enroll_status,
+    e.advisory,
+    e.cohort,
+
+    pme.admin_season as expected_test,
+    cast(a.round_number as string) as expected_round,
+    pme.start_date,
+    pme.end_date,
+    pme.month_round,
+    pme.grade as expected_grade_level_int,
+    pme.expected_measure_name_code,
+    pme.expected_measure_name,
+    pme.expected_measure_standard,
+    pme.benchmark_goal as admin_benchmark,
+
+    g.cumulative_growth_words as goal,
+
+    if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
 
     m.schedule_student_number,
     m.schedule_student_grade_level,
@@ -280,104 +111,64 @@ select
     f.nj_student_tier,
     f.is_tutoring as tutoring_nj,
 
-    coalesce(a.assessment_type, 'PM') as assessment_type,
+    pm.met_measure_standard_goal,
+    pm.met_admin_benchmark_goal,
+    pm.met_measure_name_code_goal,
+    pm.met_pm_round_criteria,
+    pm.met_pm_round_overall_criteria,
 
-    if(
-        s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
-    ) as expected_grade_level,
+    'PM' as assessment_type,
 
-    if(
-        a.measure_standard_score is null,
-        null,
-        if(a.measure_standard_score >= s.goal, true, false)
-    ) as met_standard_goal,
+    if(pme.grade = 0, 'K', cast(pme.grade as string)) as expected_grade_level,
 
-    case
-        when
-            s.grade_level = '1'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round in ('3', '4')
-            and a.measure_standard_score is not null
-        then mod.met_overall_goal
-        when
-            s.grade_level = '1'
-            and s.expected_test = 'BOY->MOY'
-            and s.expected_round in ('3', '4')
-            and a.measure_standard_score is null
-        then null
-        when
-            s.grade_level = '1'
-            and s.expected_test = 'MOY->EOY'
-            and s.expected_round = '7'
-            and a.measure_standard_score is not null
-        then mod.met_overall_goal
-        when
-            s.grade_level = '1'
-            and s.expected_test = 'MOY->EOY'
-            and s.expected_round = '7'
-            and a.measure_standard_score is null
-        then null
-        when
-            s.grade_level = '2'
-            and s.expected_test = 'MOY->EOY'
-            and s.expected_round = '7'
-            and a.measure_standard_score is not null
-        then mod.met_overall_goal
-        when
-            s.grade_level = '2'
-            and s.expected_test = 'MOY->EOY'
-            and s.expected_round = '7'
-            and a.measure_standard_score is null
-        then null
-        when
-            s.grade_level = '0'
-            and s.expected_test = 'MOY->EOY'
-            and s.expected_round = '9'
-            and a.measure_standard_score is not null
-        then mod.met_overall_goal
-        when
-            s.grade_level = '0'
-            and s.expected_test = 'MOY->EOY'
-            and s.expected_round = '9'
-            and a.measure_standard_score is null
-        then null
-        when a.measure_standard_score is null
-        then null
-        when a.measure_standard_score >= s.goal
-        then true
-    end as met_overall_goal,
-
-    case
-        when a.measure_standard_score is null
-        then null
-        when a.measure_standard_score >= s.admin_benchmark
-        then true
-        else false
-    end as met_bm_goal,
-
-from students as s
+from {{ ref("int_extracts__student_enrollments") }} as e
+inner join
+    {{ ref("int_google_sheets__dibels_pm_expectations") }} as pme
+    on e.academic_year = pme.academic_year
+    and e.region = pme.region
+    and e.grade_level = pme.grade
+    and pme.pm_goal_include is null
+inner join
+    {{ ref("stg_google_sheets__dibels_pm_goals") }} as g
+    on pme.academic_year = g.academic_year
+    and pme.region = g.region
+    and pme.admin_season = g.admin_season
+    and pme.round_number = g.round_number
+    and pme.grade = g.assessment_grade_int
+    and pme.expected_measure_standard = g.measure_standard
+    and pme.pm_goal_include is null
+inner join
+    {{ ref("int_amplify__all_assessments") }} as s
+    on e.academic_year = s.academic_year
+    and e.student_number = s.student_number
+    and e.grade_level = s.assessment_grade_int
+    and pme.admin_season = s.matching_season
+    and s.measure_standard = 'Composite'
+    and s.overall_probe_eligible = 'Yes'
 left join
     schedules as m
-    on s.academic_year = m.cc_academic_year
-    and s.schoolid = m.cc_schoolid
-    and s.student_number = m.schedule_student_number
+    on e.academic_year = m.cc_academic_year
+    and e.schoolid = m.cc_schoolid
+    and e.student_number = m.schedule_student_number
 left join
     {{ ref("int_amplify__all_assessments") }} as a
     on s.academic_year = a.academic_year
     and s.student_number = a.student_number
-    and s.expected_test = a.period
-    and s.expected_measure_standard = a.measure_standard
-    and a.client_date between s.start_date and s.end_date
+    and s.matching_season = a.period
+    and s.measure_standard = a.measure_standard
+    and a.client_date between pme.start_date and pme.end_date
     and a.assessment_type = 'PM'
 left join
-    met_overall_goal_calculation_modified as mod
-    on s.academic_year = mod.academic_year
-    and s.student_number = mod.student_number
-    and s.expected_test = mod.expected_test
-    and s.expected_round = mod.expected_round
+    {{ ref("int_amplify__pm_met_criteria") }} as pm
+    on e.academic_year = pm.academic_year
+    and e.student_number = pm.student_number
+    and pme.admin_season = pm.admin_season
+    and pme.round_number = pm.round_number
+    and pme.expected_measure_standard = pm.measure_standard
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as f
-    on s.academic_year = f.academic_year
-    and s.student_number = f.student_number
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
+    on e.academic_year = f.academic_year
+    and e.student_number = f.student_number
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="f") }}
     and f.iready_subject = 'Reading'
+where not e.is_self_contained
