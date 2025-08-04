@@ -162,6 +162,7 @@ left join
     {{ ref("int_amplify__pm_met_criteria") }} as pm
     on e.academic_year = pm.academic_year
     and e.student_number = pm.student_number
+    and e.grade_level = pm.assessment_grade_int
     and pme.admin_season = pm.admin_season
     and pme.round_number = pm.round_number
     and pme.expected_measure_standard = pm.measure_standard
