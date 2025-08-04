@@ -119,7 +119,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_amplify__dibels_expected_assessments
+            sheet_range: src_google_sheets__dibels_expected_assessments
             skip_leading_rows: 1
         meta:
           dagster:
@@ -180,7 +180,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_amplify__dibels_measures
+            sheet_range: src_google_sheets__dibels_measures
             skip_leading_rows: 1
         meta:
           dagster:
@@ -207,7 +207,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_amplify__dibels_goals_wide
+            sheet_range: src_google_sheets__dibels_goals_wide
             skip_leading_rows: 1
         meta:
           dagster:
@@ -224,7 +224,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_amplify__dibels_goals_long
+            sheet_range: src_google_sheets__dibels_goals_long
             skip_leading_rows: 1
         meta:
           dagster:
