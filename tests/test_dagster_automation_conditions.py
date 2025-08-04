@@ -1,111 +1,106 @@
-from typing import AbstractSet
+import datetime
 
-from dagster._annotations import public
-from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
-from dagster._core.definitions.assets.graph.base_asset_graph import (
-    BaseAssetGraph,
-    BaseAssetNode,
-)
-from dagster._core.definitions.declarative_automation.automation_condition import (
+from dagster import (
     AutomationCondition,
-    AutomationResult,
+    DagsterInstance,
+    Definitions,
+    asset,
+    evaluate_automation_conditions,
+    materialize,
 )
-from dagster._core.definitions.declarative_automation.automation_context import (
-    AutomationContext,
-)
-from dagster._core.definitions.declarative_automation.operators.dep_operators import (
-    AnyDepsCondition,
-    DepsAutomationCondition,
-    EntityMatchesCondition,
-)
-from dagster_shared import check
 
 
-class DbtTableAnyDepsCondition(AnyDepsCondition):
-    def _get_dep_keys(
-        self, key: T_EntityKey, asset_graph: BaseAssetGraph[BaseAssetNode]
-    ) -> AbstractSet[AssetKey]:
-        dep_keys = set(
-            [
-                asset_key
-                for asset_key in asset_graph.get_ancestor_asset_keys(
-                    asset_key=check.inst(obj=key, ttype=AssetKey)
-                )
-                if asset_graph._asset_nodes_by_key[asset_key].metadata[
-                    "dagster-dbt/materialization_type"
-                ]
-                == "table"
-            ]
+def test_foo():
+    from teamster.libraries.dbt.dagster_dbt_translator import (
+        DbtTableAutomationCondition,
+    )
+
+    test_table_ac = (
+        DbtTableAutomationCondition.in_latest_time_window()
+        & (
+            DbtTableAutomationCondition.newly_missing()
+            | DbtTableAutomationCondition.code_version_changed()
+            | DbtTableAutomationCondition.any_deps_updated()
+        ).since(
+            DbtTableAutomationCondition.newly_requested()
+            | DbtTableAutomationCondition.newly_updated()
         )
+        & ~DbtTableAutomationCondition.any_deps_missing()
+        & ~DbtTableAutomationCondition.any_deps_in_progress()
+        & ~DbtTableAutomationCondition.in_progress()
+    )
 
-        if self.allow_selection is not None:
-            dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
-
-        if self.ignore_selection is not None:
-            dep_keys -= self.ignore_selection.resolve(asset_graph, allow_missing=True)
-
-        return dep_keys
-
-    async def evaluate(
-        self, context: AutomationContext[T_EntityKey]
-    ) -> AutomationResult[T_EntityKey]:
-        dep_results = []
-        true_subset = context.get_empty_subset()
-
-        for i, dep_key in enumerate(
-            sorted(self._get_dep_keys(context.key, context.asset_graph))
-        ):
-            dep_result = await context.for_child_condition(
-                child_condition=EntityMatchesCondition(
-                    key=dep_key, operand=self.operand
-                ),
-                # Prefer a non-indexed ID in case asset keys move around, but fall back
-                # to the indexed one for back-compat
-                child_indices=[None, i],
-                candidate_subset=context.candidate_subset,
-            ).evaluate_async()
-
-            dep_results.append(dep_result)
-            true_subset = true_subset.compute_union(dep_result.true_subset)
-
-        true_subset = context.candidate_subset.compute_intersection(true_subset)
-
-        return AutomationResult(
-            context, true_subset=true_subset, child_results=dep_results
+    test_view_ac = (
+        AutomationCondition.in_latest_time_window()
+        & (
+            AutomationCondition.newly_missing()
+            | AutomationCondition.code_version_changed()
+        ).since(
+            AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
         )
+        & ~AutomationCondition.any_deps_missing()
+        & ~AutomationCondition.any_deps_in_progress()
+        & ~AutomationCondition.in_progress()
+    )
 
+    @asset(
+        automation_condition=test_table_ac,
+        metadata={"dagster-dbt/materialization_type": "table"},
+    )
+    def upstream_table():
+        return
 
-class DbtTableAutomationCondition(AutomationCondition):
-    @public
-    @staticmethod
-    def any_deps_match(condition: "AutomationCondition") -> "DepsAutomationCondition":
-        """Returns an AutomationCondition that is true for a if at least one partition
-        of the any of the target's dependencies evaluate to True for the given
-        condition.
+    @asset(
+        deps=[upstream_table],
+        automation_condition=test_view_ac,
+        metadata={"dagster-dbt/materialization_type": "view"},
+    )
+    def intermediate_view():
+        return
 
-        Args:
-            condition (AutomationCondition): The AutomationCondition that will be
-            evaluated against this target's dependencies.
-        """
-        return DbtTableAnyDepsCondition(operand=condition)
+    @asset(
+        deps=[intermediate_view],
+        automation_condition=test_table_ac,
+        metadata={"dagster-dbt/materialization_type": "table"},
+    )
+    def downstream_table():
+        return
 
-    @public
-    @staticmethod
-    def any_deps_updated() -> "DepsAutomationCondition":
-        """Returns an AutomationCondition that is true if the target has at least one
-        dependency that has updated since the previous tick, or will be requested on
-        this tick.
+    instance = DagsterInstance.ephemeral()
 
-        Will ignore parent updates if the run that updated the parent also plans to
-        update the asset or check that this condition is applied to.
-        """
-        return DbtTableAutomationCondition.any_deps_match(
-            (
-                AutomationCondition.newly_updated()
-                # executed_with_root_target is fairly expensive on a per-partition
-                # basis, but newly_updated is bounded in the number of partitions that
-                # might be updated on a single tick
-                & ~AutomationCondition.executed_with_root_target()
-            ).with_label("newly_updated_without_root")
-            | AutomationCondition.will_be_requested()
-        ).with_label("any_deps_updated")
+    # On the first tick, request because assets are missing
+    eval_result_1 = evaluate_automation_conditions(
+        defs=[upstream_table, intermediate_view, downstream_table], instance=instance
+    )
+    assert eval_result_1.total_requested == 3
+
+    # materialize
+    materialization_result = materialize(
+        assets=[upstream_table, intermediate_view, downstream_table], instance=instance
+    )
+    assert materialization_result.success
+
+    updated_cursor = eval_result_1.cursor.with_updates(
+        evaluation_id=eval_result_1.cursor.evaluation_id + 1,
+        evaluation_timestamp=datetime.datetime.now().timestamp(),
+        newly_observe_requested_asset_keys=[
+            r.key
+            for r in eval_result_1.results
+            if r.true_subset.get_internal_bool_value()
+        ],
+        condition_cursors=[result.get_new_cursor() for result in eval_result_1.results],
+        asset_graph=Definitions(
+            assets=[upstream_table, intermediate_view, downstream_table]
+        ).resolve_asset_graph(),
+    )
+
+    # on second tick, only downstream_table requested
+    eval_result_2 = evaluate_automation_conditions(
+        defs=[upstream_table, intermediate_view, downstream_table],
+        instance=instance,
+        cursor=updated_cursor,
+    )
+
+    assert {
+        r.key for r in eval_result_2.results if r.true_subset.get_internal_bool_value()
+    } == {downstream_table.key}
