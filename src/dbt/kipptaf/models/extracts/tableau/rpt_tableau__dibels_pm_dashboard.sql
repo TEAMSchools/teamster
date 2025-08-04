@@ -4,21 +4,11 @@ with
             academic_year,
             student_number,
             assessment_grade_int,
-            pm_season,
-            max(pm_eligible) as pm_eligible,
+            matching_season as pm_season,
+            overall_probe_eligible as pm_eligible,
 
-        from
-            {{ ref("int_amplify__all_assessments") }} unpivot (
-                pm_eligible
-                for pm_season
-                in (boy_probe_eligible as 'BOY->MOY', moy_probe_eligible as 'MOY->EOY')
-            ) as upvt
-        where
-            assessment_type = 'Benchmark'
-            and assessment_grade_int <= 2
-            and academic_year >= 2024
-            and measure_standard = 'Composite'
-        group by all
+        from {{ ref("int_amplify__all_assessments") }}
+        where measure_standard = 'Composite' and overall_probe_eligible = 'Yes'
     ),
 
     students as (
@@ -50,6 +40,7 @@ with
 
             a.admin_season as expected_test,
             cast(a.round_number as string) as expected_round,
+            a.month_round,
             a.start_date,
             a.end_date,
             a.grade as expected_grade_level,
@@ -60,8 +51,6 @@ with
             g.cumulative_growth_words as goal,
 
             concat(e.grade_level, a.admin_season, a.round_number) as goal_filter,
-
-            format_datetime('%B', a.start_date) as month_round,
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
 
@@ -101,12 +90,7 @@ with
             on e.student_number = s.student_number
             and e.grade_level = s.assessment_grade_int
             and a.admin_season = s.pm_season
-            and s.pm_eligible = 'Yes'
-        where
-            not e.is_self_contained
-            and e.academic_year >= 2024
-            and e.grade_level <= 2
-            and e.region != 'Miami'
+        where not e.is_self_contained
     ),
 
     schedules as (
