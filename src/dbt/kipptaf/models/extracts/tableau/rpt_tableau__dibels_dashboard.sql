@@ -35,6 +35,7 @@ with
             a.expected_measure_standard,
 
             g.grade_goal as admin_benchmark,
+            g.grade_range_goal as admin_benchmark_grade_range,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
@@ -44,13 +45,11 @@ with
             and e.grade_level = a.grade
             and a.assessment_type = 'Benchmark'
         left join
-            {{ ref("int_assessments__academic_goals") }} as g
+            {{ ref("stg_google_sheets__dibels_foundation_goals") }} as g
             on a.academic_year = g.academic_year
             and a.region = g.region
             and a.grade = g.grade_level
-            and a.admin_season = g.state_assessment_code
-            and g.illuminate_subject_area = 'Early Literacy'
-            and e.schoolid = g.school_id
+            and a.admin_season = g.period
         where
             not e.is_self_contained
             and e.academic_year >= {{ var("current_academic_year") - 1 }}
