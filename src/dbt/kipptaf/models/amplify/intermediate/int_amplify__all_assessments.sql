@@ -10,6 +10,7 @@ with
             e.expected_measure_standard,
 
             e.matching_pm_season as matching_season,
+            e.month_round,
 
             t.start_date,
             t.end_date,
@@ -54,6 +55,7 @@ with
 
             e.assessment_type,
             e.round_number,
+            e.month_round,
             e.matching_season,
 
             row_number() over (
@@ -112,6 +114,7 @@ with
 
             e.assessment_type,
             e.round_number,
+            e.month_round,
             e.matching_season,
 
             row_number() over (
@@ -163,6 +166,7 @@ with
 
             e.assessment_type,
             e.round_number,
+            e.month_round,
 
             if(p.pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
 
@@ -241,6 +245,7 @@ select
     s.assessment_grade_int,
     s.period,
     s.round_number,
+    s.month_round,
     s.matching_season,
     s.client_date,
     s.sync_date,
@@ -319,6 +324,7 @@ select
     s.assessment_grade_int,
     s.period,
     s.round_number,
+    s.month_round,
     s.matching_season,
     s.client_date,
     s.sync_date,
