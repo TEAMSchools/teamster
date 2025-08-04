@@ -43,7 +43,7 @@ select
     e.region,
     e.grade,
     e.admin_season,
-    e.`round`,
+    e.round_number,
     e.min_pm_round,
     e.max_pm_round,
     e.expected_measure_name_code,
@@ -75,7 +75,7 @@ left join
     on t.academic_year = d.academic_year
     and t.region = d.region
     and t.name = d.term_name
-    and e.`round` = d.round_number
+    and e.round_number = d.round_number
 left join
     {{ ref("stg_google_sheets__dibels_goals_long") }} as g
     on e.expected_measure_standard = g.measure_standard
