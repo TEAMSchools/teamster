@@ -11,27 +11,35 @@ semantic_models:
     dimensions:
       - name: assignment_status
         type: categorical
+        expr: assignment_status
 
       - name: race_ethnicity_reporting
         type: categorical
+        expr: race_ethnicity_reporting
 
       - name: entity
         type: categorical
+        expr: home_business_unit_name
 
       - name: location
         type: categorical
+        expr: home_work_location_name
 
       - name: grade_band
         type: categorical
+        expr: home_work_location_grade_band
 
       - name: department
         type: categorical
+        expr: home_department_name
 
       - name: job_title
         type: categorical
+        expr: job_title
 
       - name: manager
         type: categorical
+        expr: reports_to_formatted_name
 
       - name: worker_original_hire_date
         type: time
@@ -42,6 +50,10 @@ semantic_models:
         type: time
         type_params:
           time_granularity: day
+
+      - name: is_teacher
+        type: categorical
+        expr: case when job_title in ('Teacher','Learning Specialist','Teacher in Residence','Teacher ESL', 'Teacher in Residence ESL', 'ESE Teacher') then true else false end
 
     measures:
       - name: staff_count
