@@ -44,8 +44,6 @@ models:
         data_type: string
       - name: hos
         data_type: string
-      - name: region_school_level
-        data_type: string
       - name: year_in_school
         data_type: int64
       - name: year_in_network
@@ -104,7 +102,13 @@ models:
         data_type: string
       - name: is_ap_course
         data_type: boolean
-      - name: tableau_username
+      - name: teacher_tableau_username
+        data_type: string
+      - name: school_leader
+        data_type: string
+      - name: school_leader_tableau_username
+        data_type: string
+      - name: region_school_level
         data_type: string
       - name: quarter
         data_type: string
@@ -132,36 +136,20 @@ models:
         data_type: int64
       - name: week_number_quarter
         data_type: int64
-      - name: quarter_course_percent_grade_that_matters
+      - name: is_current_week
+        data_type: boolean
+      - name: section_or_period
+        data_type: string
+      - name: quarter_course_percent_grade
         data_type: float64
-      - name: quarter_course_grade_points_that_matters
+      - name: quarter_course_grade_points
         data_type: float64
-      - name: quarter_citizenship
+      - name: quarter_conduct
         data_type: string
       - name: quarter_comment_value
         data_type: string
-      - name: section_or_period
+      - name: scaffold_name
         data_type: string
-      - name: qt_percent_grade_greater_100
-        data_type: boolean
-      - name: qt_grade_70_comment_missing
-        data_type: boolean
-      - name: qt_g1_g8_conduct_code_missing
-        data_type: boolean
-      - name: qt_g1_g8_conduct_code_incorrect
-        data_type: boolean
-      - name: qt_kg_conduct_code_missing
-        data_type: boolean
-      - name: qt_kg_conduct_code_not_hr
-        data_type: boolean
-      - name: qt_kg_conduct_code_incorrect
-        data_type: boolean
-      - name: qt_comment_missing
-        data_type: boolean
-      - name: qt_es_comment_missing
-        data_type: boolean
-      - name: qt_student_is_ada_80_plus_gpa_less_2
-        data_type: boolean
       - name: assignment_category_name
         data_type: string
       - name: assignment_category_code
@@ -176,9 +164,33 @@ models:
         data_type: float64
       - name: category_quarter_average_all_courses
         data_type: float64
+      - name: qt_student_is_ada_80_plus_gpa_less_2
+        data_type: boolean
+      - name: qt_percent_grade_greater_100
+        data_type: boolean
+      - name: qt_grade_70_comment_missing
+        data_type: boolean
+      - name: qt_comment_missing
+        data_type: boolean
+      - name: qt_es_comment_missing
+        data_type: boolean
+      - name: qt_g1_g8_conduct_code_missing
+        data_type: boolean
+      - name: qt_g1_g8_conduct_code_incorrect
+        data_type: boolean
+      - name: qt_kg_conduct_code_missing
+        data_type: boolean
+      - name: qt_kg_conduct_code_incorrect
+        data_type: boolean
+      - name: qt_kg_conduct_code_not_hr
+        data_type: boolean
       - name: w_grade_inflation
         data_type: boolean
       - name: qt_effort_grade_missing
+        data_type: boolean
+      - name: qt_formative_grade_missing
+        data_type: boolean
+      - name: qt_summative_grade_missing
         data_type: boolean
       - name: assignmentid
         data_type: int64
@@ -188,45 +200,59 @@ models:
         data_type: date
       - name: scoretype
         data_type: string
-      - name: totalpointvalue
-        data_type: float64
-      - name: category_name
-        data_type: string
       - name: scorepoints
         data_type: float64
-      - name: actualscoreentered
-        data_type: string
-      - name: is_late
-        data_type: int64
+      - name: totalpointvalue
+        data_type: float64
       - name: is_exempt
         data_type: int64
-      - name: is_missing
+      - name: is_expected_late
+        data_type: int64
+      - name: is_expected_missing
+        data_type: int64
+      - name: is_expected_zero
+        data_type: int64
+      - name: is_expected_academic_dishonesty
+        data_type: int64
+      - name: is_expected_null
         data_type: int64
       - name: score_entered
         data_type: float64
       - name: assign_final_score_percent
         data_type: float64
-      - name: assign_score_above_max
-        data_type: boolean
       - name: assign_expected_to_be_scored
-        data_type: boolean
-      - name: assign_scored
-        data_type: boolean
-      - name: assign_null_score
         data_type: boolean
       - name: assign_expected_with_score
         data_type: boolean
       - name: assign_exempt_with_score
         data_type: boolean
+      - name: assign_null_score
+        data_type: boolean
+      - name: assign_score_above_max
+        data_type: boolean
       - name: assign_w_score_less_5
+        data_type: boolean
+      - name: assign_h_score_less_5
         data_type: boolean
       - name: assign_f_score_less_5
         data_type: boolean
       - name: assign_w_missing_score_not_5
         data_type: boolean
+      - name: assign_h_missing_score_not_5
+        data_type: boolean
       - name: assign_f_missing_score_not_5
         data_type: boolean
+      - name: assign_w_missing_score_not_0
+        data_type: boolean
+      - name: assign_h_missing_score_not_0
+        data_type: boolean
+      - name: assign_f_missing_score_not_0
+        data_type: boolean
+      - name: assign_s_missing_score_not_0
+        data_type: boolean
       - name: assign_s_score_less_50p
+        data_type: boolean
+      - name: assign_s_hs_score_less_50p
         data_type: boolean
       - name: assign_s_ms_score_not_conversion_chart_options
         data_type: boolean

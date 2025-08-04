@@ -14,9 +14,11 @@ select
         when 'S'
         then 'Summative Mastery'
     end as assignment_category_name,
+
 from
     {{
         source(
             "google_sheets", "src_google_sheets__gradebook_expectations_assignments"
         )
     }} unpivot (expectation for assignment_category_code in (`W`, `H`, `F`, `S`))
+where expectation is not null
