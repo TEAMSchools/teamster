@@ -201,7 +201,6 @@ left join
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
-where s.year_grade_filter
 
 union all
 
