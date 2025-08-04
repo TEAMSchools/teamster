@@ -12,9 +12,15 @@ models:
         data_type: string
       - name: assessment_grade
         data_type: string
-      - name: ssessment_grade_int
+      - name: assessment_grade_int
         data_type: int64
       - name: period
+        data_type: string
+      - name: round_number
+        data_type: int64
+      - name: month_round
+        data_type: string
+      - name: matching_season
         data_type: string
       - name: client_date
         data_type: date
@@ -54,5 +60,13 @@ models:
         data_type: string
       - name: eoy_composite
         data_type: string
+      - name: benchmark_goal_season
+        data_type: string
       - name: aggregated_measure_standard_level
         data_type: string
+      - name: foundation_measure_standard_level
+        data_type: string
+      - name: overall_probe_eligible
+        data_type: string
+      - name: actual_row_count
+        data_type: int64
