@@ -32,22 +32,22 @@ with
             observations.*,
             max(
                 if(
-                    measurement_name like '%Teacher Moves Track%',
-                    measurement_dropdown_selection,
+                    observation_details.measurement_name like '%Teacher Moves Track%',
+                    observation_details.measurement_dropdown_selection,
                     null
                 )
             ) as teacher_moves_track,
             max(
                 if(
-                    measurement_name like '%Student Habits Track%',
-                    measurement_dropdown_selection,
+                    observation_details.measurement_name like '%Student Habits Track%',
+                    observation_details.measurement_dropdown_selection,
                     null
                 )
             ) as student_habits_track,
             max(
                 if(
-                    measurement_name like '%Number%',
-                    measurement_dropdown_selection,
+                    observation_details.measurement_name like '%Number%',
+                    observation_details.measurement_dropdown_selection,
                     null
                 )
             ) as number_of_kids,
@@ -74,7 +74,7 @@ with
 
             reporting_terms.type,
             reporting_terms.code,
-            reporting_terms.name as week,
+            reporting_terms.name as period,
             reporting_terms.academic_year,
             reporting_terms.is_current,
             reporting_terms.start_date,
@@ -141,9 +141,9 @@ with
 
             observation_pivot.observation_type_abbreviation,
             cast(null as string) as code,
-            cast(null as string) as week,
+            cast(null as string) as period,
             observation_pivot.academic_year,
-            false is_current,
+            false as is_current,
             cast(null as date) as start_date,
             cast(null as date) as end_date,
 
@@ -183,10 +183,10 @@ with
             and observation_pivot.observation_id is not null
     )
 
-select *
+select *,
 from current_year_tracking
 
 union all
 
-select *
+select *,
 from past_year_reporting
