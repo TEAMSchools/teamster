@@ -67,7 +67,6 @@ select
     e.cohort,
 
     pme.admin_season as expected_test,
-    cast(a.round_number as string) as expected_round,
     pme.start_date,
     pme.end_date,
     pme.month_round,
@@ -76,6 +75,7 @@ select
     pme.expected_measure_name,
     pme.expected_measure_standard,
     pme.benchmark_goal as admin_benchmark,
+    cast(pme.round_number as string) as expected_round,
 
     g.cumulative_growth_words as goal,
 
