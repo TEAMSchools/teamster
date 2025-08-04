@@ -29,20 +29,12 @@ with
             a.test_code,
             a.month_round,
             a.grade as expected_grade_level,
+            a.grade_level_text,
             a.expected_measure_name_code,
             a.expected_measure_name,
             a.expected_measure_standard,
 
             g.grade_goal as admin_benchmark,
-
-            if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
-
-            if(
-                e.academic_year = 2024
-                or (e.academic_year = 2023 and e.grade_level <= 2),
-                true,
-                false
-            ) as year_grade_filter,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
@@ -50,6 +42,7 @@ with
             on e.academic_year = a.academic_year
             and e.region = a.region
             and e.grade_level = a.grade
+            and a.assessment_type = 'Benchmark'
         left join
             {{ ref("int_assessments__academic_goals") }} as g
             on a.academic_year = g.academic_year
