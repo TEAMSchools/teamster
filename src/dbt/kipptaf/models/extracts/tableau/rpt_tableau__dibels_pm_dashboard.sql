@@ -1,16 +1,4 @@
 with
-    eligible_students as (
-        select
-            academic_year,
-            student_number,
-            assessment_grade_int,
-            matching_season as pm_season,
-            overall_probe_eligible as pm_eligible,
-
-        from {{ ref("int_amplify__all_assessments") }}
-        where measure_standard = 'Composite' and overall_probe_eligible = 'Yes'
-    ),
-
     students as (
         select
             e._dbt_source_relation,
@@ -45,29 +33,13 @@ with
             a.end_date,
             a.grade as expected_grade_level,
             a.expected_measure_name_code,
+            a.expected_measure_name,
             a.expected_measure_standard,
             a.benchmark_goal as admin_benchmark,
 
             g.cumulative_growth_words as goal,
 
-            concat(e.grade_level, a.admin_season, a.round_number) as goal_filter,
-
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
-
-            case
-                a.expected_measure_name_code
-                when 'LNF'
-                then 'Letter Names'
-                when 'PSF'
-                then 'Phonological Awareness'
-                when 'NWF'
-                then 'Nonsense Word Fluency'
-                when 'WRF'
-                then 'Word Reading Fluency'
-                when 'ORF'
-                then 'Oral Reading Fluency'
-                else a.expected_measure_name_code
-            end as expected_measure_name,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
@@ -86,10 +58,13 @@ with
             and a.expected_measure_standard = g.measure_standard
             and a.pm_goal_include is null
         inner join
-            eligible_students as s
-            on e.student_number = s.student_number
+            {{ ref("int_amplify__all_assessments") }} as s
+            on e.academic_year = s.academic_year
+            and e.student_number = s.student_number
             and e.grade_level = s.assessment_grade_int
-            and a.admin_season = s.pm_season
+            and a.admin_season = s.matching_season
+            and s.measure_standard = 'Composite'
+            and s.overall_probe_eligible = 'Yes'
         where not e.is_self_contained
     ),
 
