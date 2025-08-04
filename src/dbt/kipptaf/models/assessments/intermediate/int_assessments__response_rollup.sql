@@ -209,6 +209,7 @@ select
     ru.module_type,
     ru.module_code,
     ru.region,
+    ru.powerschool_school_id,
     ru.is_internal_assessment,
     ru.is_replacement,
     ru.response_type,
