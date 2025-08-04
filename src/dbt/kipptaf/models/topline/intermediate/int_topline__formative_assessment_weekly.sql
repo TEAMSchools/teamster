@@ -28,7 +28,9 @@ with
             on rr.academic_year = cw.academic_year
             and rr.powerschool_school_id = cw.schoolid
             and rr.administered_at between cw.week_start_monday and cw.week_end_sunday
-        where rr.response_type = 'overall' and rr.module_type in ('QA', 'MQQ')
+        where
+            (rr.response_type = 'overall' or rr.response_type is null)
+            and rr.module_type in ('QA', 'MQQ')
     )
 
 select
