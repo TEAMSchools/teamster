@@ -32,20 +32,20 @@ with
     )
 
 select
-    aw.powerschool_student_number,
-    aw.academic_year,
-    aw.subject_area,
-    aw.module_type,
-    aw.title,
-    aw.administered_at,
-    aw.week_start_monday,
-    aw.week_end_sunday,
-    aw.is_mastery_int,
+    powerschool_student_number,
+    academic_year,
+    subject_area,
+    module_type,
+    title,
+    administered_at,
+    week_start_monday,
+    week_end_sunday,
+    is_mastery_int,
 
     last_value(is_mastery_int ignore nulls) over (
         partition by powerschool_student_number, subject_area, academic_year
         order by week_start_monday
         rows between unbounded preceding and current row
     ) as mastery_as_of_week,
-from assessment_weeks as aw
+from assessment_weeks
 where rn_week_latest = 1
