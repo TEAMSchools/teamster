@@ -18,5 +18,7 @@ models:
         data_type: boolean
       - name: Exclude_from_Gradebook
         data_type: boolean
+      - name: Discipline
+        data_type: string
       - name: Duplicate_Audit
         data_type: int64
