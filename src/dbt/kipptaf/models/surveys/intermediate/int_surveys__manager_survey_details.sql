@@ -17,7 +17,7 @@ with
             safe_cast(
                 regexp_extract(fr.text_value, r'\((\d{6})\)') as integer
             ) as subject_df_employee_number,
-        from {{ ref("base_google_forms__form_responses") }} as fr
+        from {{ ref("int_google_forms__form_responses") }} as fr
         inner join
             {{ ref("stg_ldap__user_person") }} as up
             on fr.respondent_email = up.google_email
@@ -98,7 +98,7 @@ select
     lower(sr.reports_to_user_principal_name) as subject_manager_userprincipalname,
 from deduped_ri as ri
 inner join
-    {{ ref("base_google_forms__form_responses") }} as fr
+    {{ ref("int_google_forms__form_responses") }} as fr
     on ri.survey_id = fr.form_id
     and ri.survey_response_id = fr.response_id
     and fr.item_abbreviation
@@ -162,7 +162,8 @@ select
     lower(sr.reports_to_sam_account_name) as subject_manager_samaccountname,
     lower(sr.user_principal_name) as subject_userprincipalname,
     lower(sr.reports_to_user_principal_name) as subject_manager_userprincipalname,
-from {{ ref("stg_surveys__manager_survey_detail_archive") }} as sda
+
+from {{ source("surveys", "stg_surveys__manager_survey_detail_archive") }} as sda
 inner join
     {{ ref("stg_google_forms__form_items_extension") }} as fi
     on sda.question_shortname = fi.abbreviation

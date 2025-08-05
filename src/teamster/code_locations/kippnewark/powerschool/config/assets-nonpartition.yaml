@@ -9,7 +9,15 @@ assets:
   - asset_name: gen
   - asset_name: gpnode
   - asset_name: gpprogresssubject
+  - asset_name: gpprogresssubjectearned
+  - asset_name: gpprogresssubjectenrolled
+  - asset_name: gpprogresssubjectrequested
   - asset_name: gpprogresssubjectwaived
+  - asset_name: gpprogresssubjwaivedapplied
+  - asset_name: gpselectedcrs
+  - asset_name: gpselectedcrtype
+  - asset_name: gpselector
+  - asset_name: gptarget
   - asset_name: gpversion
   - asset_name: gradplan
   - asset_name: reenrollments
@@ -17,8 +25,6 @@ assets:
   - asset_name: studenttest
   - asset_name: test
   - asset_name: testscore
-  - asset_name: prefs
-    partition_column: transaction_date
   - asset_name: log
     select_columns:
       - dcid

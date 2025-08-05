@@ -21,8 +21,8 @@ with
         select
             {{ var("current_academic_year") - 1 }} as academic_year,
             'SSDS Reporting Period 2' as ssds_period,
-            date({{ var("current_academic_year") }} + 1, 1, 1) as period_start_date,
-            date({{ var("current_academic_year") }} + 1, 6, 30) as period_end_date,
+            date({{ var("current_academic_year") }}, 1, 1) as period_start_date,
+            date({{ var("current_academic_year") }}, 6, 30) as period_end_date,
     ),
 
     ms_grad_sub as (
@@ -186,6 +186,11 @@ select
     cf.ssds_incident_id,
     cf.referral_to_law_enforcement,
     cf.arrested_for_school_related_activity,
+    cf.final_approval,
+    cf.board_approval_date,
+    cf.hi_start_date,
+    cf.hi_end_date,
+    cf.hours_per_week,
 
     st.suspension_type,
 
@@ -197,8 +202,10 @@ select
 
     ms.ms_attended,
 
-    if(ats.type = 'Suspension Letter', ats.attachments, null) as attachments,
-    if(ats.type = 'Upload', ats.attachments, null) as attachments_uploaded,
+    ats.attachments,
+    atr.attachments as attachments_uploaded,
+
+    u.last_name || ', ' || u.first_name as hi_approver_name,
 
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
@@ -212,7 +219,7 @@ select
     concat(dli.create_last, ', ', dli.create_first) as entry_staff,
     concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
     case
-        when left(dli.category, 2) in ('SW', 'SS')
+        when left(dli.category, 2) in ('SW', 'SS') or left(dli.category, 3) = 'SSC'
         then 'Social Work'
         when left(dli.category, 2) = 'TX'
         then 'Non-Behavioral'
@@ -354,6 +361,10 @@ left join
     {{ ref("int_deanslist__incidents__custom_fields__pivot") }} as cf
     on dli.incident_id = cf.incident_id
     and {{ union_dataset_join_clause(left_alias="dli", right_alias="cf") }}
+left join
+    {{ ref("stg_deanslist__users") }} as u
+    on cast(cf.approver_name as int64) = u.dl_user_id
+    and {{ union_dataset_join_clause(left_alias="cf", right_alias="u") }}
 left join suspension_type as st on dlp.penalty_name = st.penalty_name
 left join
     {{ ref("int_powerschool__ada") }} as ada
@@ -384,6 +395,11 @@ left join
     on co.student_number = ms.student_number
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ms") }}
     and ms.rn = 1
-left join attachments as ats on dli.incident_id = ats.incident_id
+left join
+    attachments as ats
+    on dli.incident_id = ats.incident_id
+    and ats.type = 'Suspension Letter'
+left join
+    attachments as atr on dli.incident_id = atr.incident_id and atr.type = 'Upload'
 where
     co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99

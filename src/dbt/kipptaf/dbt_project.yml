@@ -27,25 +27,15 @@ vars:
   local_timezone: America/New_York
   cloud_storage_uri_base: gs://teamster-kipptaf/dagster/kipptaf
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
-  current_academic_year: 2024
-  current_fiscal_year: 2025
-  alchemer_survey_identifier_short_names:
-    - respondent_employee_number
-    - respondent_df_employee_number
-    - respondent_userprincipalname
-    - respondent_adp_associate_id
-    - subject_df_employee_number
-    - employee_number
-    - email
-    - employee_preferred_name
-    - salesforce_id
-    - is_manager
+  current_academic_year: 2025
+  current_fiscal_year: 2026
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
   kipptaf:
     act:
+      +enabled: false
       +schema: act
     adp:
       workforce_now:
@@ -85,10 +75,15 @@ models:
       +schema: assessments
       staging:
         +materialized: table
+      disabled:
+        +enabled: false
     collegeboard:
       +schema: collegeboard
       staging:
         +materialized: table
+      drive:
+        staging:
+          +materialized: table
     coupa:
       +schema: coupa
       api:
@@ -120,6 +115,8 @@ models:
       +schema: extracts
       tableau:
         +schema: tableau
+      disabled:
+        +enabled: false
     facebook:
       +enabled: false
     finance:
@@ -129,13 +126,11 @@ models:
     fldoe:
       +schema: fldoe
     google:
-      forms:
-        +schema: google_forms
+      appsheet:
+        +schema: google_appsheet
         +meta:
           dagster:
-            group: google_forms
-        staging:
-          +materialized: table
+            group: google_appsheet
       directory:
         +schema: google_directory
         +meta:
@@ -143,11 +138,27 @@ models:
             group: google_directory
         staging:
           +materialized: table
-      appsheet:
-        +schema: google_appsheet
+      forms:
+        +schema: google_forms
         +meta:
           dagster:
-            group: google_appsheet
+            group: google_forms
+        staging:
+          +materialized: table
+        drive:
+          staging:
+            +materialized: table
+      sheets:
+        +schema: google_sheets
+        +meta:
+          dagster:
+            group: google_sheets
+        staging:
+          +materialized: table
+        intermediate:
+          +materialized: table
+        disabled:
+          +enabled: false
     illuminate:
       +schema: illuminate
       dlt:
@@ -159,10 +170,6 @@ models:
       fivetran:
         +materialized: table
         +enabled: false
-        staging:
-          repositories:
-            archive:
-              +enabled: false
     instagram:
       +enabled: false
       business:
@@ -173,10 +180,21 @@ models:
       +schema: kippadb
       staging:
         +materialized: table
+      drive:
+        staging:
+          +materialized: table
+    knowbe4:
+      +schema: knowbe4
+      staging:
+        +materialized: table
     ldap:
       +schema: ldap
       staging:
         +materialized: table
+    marts:
+      +schema: marts
+    metrics:
+      +schema: metrics
     njdoe:
       +schema: njdoe
       staging:
@@ -185,16 +203,21 @@ models:
       +schema: overgrad
     pearson:
       +schema: pearson
+      drive:
+        staging:
+          +materialized: table
     people:
       +schema: people
       +materialized: table
-      base:
+      disabled:
         +enabled: false
     performance_management:
       +schema: performance_management
       +materialized: table
     powerschool:
       +schema: powerschool
+      disabled:
+        +enabled: false
     powerschool_enrollment:
       +schema: powerschool_enrollment
     renlearn:
@@ -207,20 +230,32 @@ models:
         +schema: schoolmint_grow
         staging:
           +materialized: table
+        disabled:
+          +enabled: false
     smartrecruiters:
       +schema: smartrecruiters
     students:
       +schema: students
+      disabled:
+        +enabled: false
     surveys:
       +schema: surveys
       +materialized: table
+      disabled:
+        +enabled: false
     tableau:
       +schema: tableau
       staging:
         +materialized: table
+      disabled:
+        +enabled: false
     titan:
       +schema: titan
+      disabled:
+        +enabled: false
     zendesk:
       +schema: zendesk
       staging:
         +materialized: table
+      disabled:
+        +enabled: false

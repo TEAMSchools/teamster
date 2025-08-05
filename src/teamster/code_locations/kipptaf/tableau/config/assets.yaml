@@ -12,7 +12,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__college_assessment_dashboard_historic]
     metadata:
       id: 286156c4-2f9e-4983-926b-63c9b11f44f4
-      # cron_schedule: 0 6 * * *
+      cron_schedule: 0 6 * * *
   - name: Data Quality Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__assessment_entry_audit]
@@ -25,7 +25,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__grants_timesheets]
     metadata:
       id: c7c821a4-a236-4da8-b41e-52b2fd62cbed
-      # cron_schedule: 0 * * * *
+      cron_schedule: 0 * * * *
   - name: Finance & Accounting Tools & Resources
     deps:
       - [kipptaf, tableau, rpt_tableau__adp_pension_and_benefits_enrollments]
@@ -36,11 +36,12 @@ assets:
       cron_schedule: 0 13 * * *
   - name: High School Early Warning Dashboard
     deps:
+      - [kipptaf, tableau, rpt_tableau__community_service]
       - [kipptaf, tableau, rpt_tableau__graduation_requirements]
       - [kipptaf, tableau, rpt_tableau__hs_early_warning_dashboard]
     metadata:
       id: 6333e047-e7a9-4d8f-a740-3df30f179d11
-      # cron_schedule: 0 6 * * *
+      cron_schedule: 0 6 * * *
   - name: KIPP Forward Data Suite
     deps:
       - [kipptaf, extracts, rpt_gsheets__kfwd_rem_roster]
@@ -148,7 +149,10 @@ assets:
       cron_schedule: 0 4 * * *
   - name: Gradebook Audit - Teacher Report
     deps:
+      - [kipptaf, tableau, rpt_tableau__assignment_checks]
       - [kipptaf, tableau, rpt_tableau__gradebook_audit]
+      - [kipptaf, tableau, rpt_tableau__gradebook_es_comments]
+      - [kipptaf, tableau, rpt_tableau__gradebook_ms_hs_comments]
       - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
     metadata:
       id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
@@ -161,8 +165,9 @@ assets:
       id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
       cron_schedule:
         - 0 1 * * *
-        - 0 18 * * *
+        - 40 14 * * 3
         - 0 16 * * 5
+        - 0 18 * * *
   - name: APM Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__iready_apm]
@@ -240,4 +245,10 @@ assets:
       - [kipptaf, tableau, rpt_tableau__survey_completion]
     metadata:
       id: b11542a2-6780-4feb-a1dd-534ffe724faf
-      # cron_schedule: 0 * * * *
+      cron_schedule: 0 * * * *
+  - name: Compliance Dashboard
+    deps:
+      - [kipptaf, tableau, rpt_tableau__nj_school_register]
+    metadata:
+      id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
+      cron_schedule: 0 5 * * *

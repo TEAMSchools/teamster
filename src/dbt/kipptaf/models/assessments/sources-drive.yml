@@ -6,29 +6,6 @@ sources:
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ project_name }}_assessments
     tables:
-      - name: src_assessments__ap_course_crosswalk
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1bMHQ2qaVdOcz4fDsl5CnWUBmVwl-JkDD_aj-sHfgn5I
-            sheet_range: src_assessments__ap_course_crosswalk
-            skip_leading_rows: 1
-        columns:
-          - name: powerschool_ap_course_name
-            data_type: string
-          - name: ap_course_name
-            data_type: string
-          - name: nj_ap_course_subject_code
-            data_type: string
-          - name: adb_test_subject
-            data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - assessments
-              - ap_course_crosswalk
       - name: src_assessments__course_subject_crosswalk
         external:
           options:
@@ -118,20 +95,6 @@ sources:
               - kipptaf
               - assessments
               - standard_domains
-      - name: src_assessments__state_test_comparison
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
-            sheet_range: src_assessments__state_test_comparison
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - assessments
-              - state_test_comparison
       - name: src_assessments__assessment_expectations
         external:
           options:
@@ -140,41 +103,44 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__assessment_expectations
             skip_leading_rows: 1
+        columns:
+          - name: Academic_Year
+            data_type: int64
+          - name: Region
+            data_type: string
+          - name: Assessment_Type
+            data_type: string
+          - name: Grade
+            data_type: int64
+          - name: Test_Type
+            data_type: string
+          - name: Scope
+            data_type: string
+          - name: Discipline
+            data_type: string
+          - name: Subject_Area
+            data_type: string
+          - name: Assessment_Subject_Area
+            data_type: string
+          - name: Test_Code
+            data_type: string
+          - name: Admin_Season
+            data_type: string
+          - name: Month_Round
+            data_type: string
+          - name: Illuminate_Subject
+            data_type: string
+          - name: iReady_Subject
+            data_type: string
+          - name: PS_Credit_Type
+            data_type: string
+          - name: Strategy
+            data_type: boolean
+          - name: Actual_Month_Round
+            data_type: string
         meta:
           dagster:
             asset_key:
               - kipptaf
               - assessments
               - assessment_expectations
-      - name: src_assessments__college_readiness_expected_tests
-        config:
-          enabled: false
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
-            sheet_range: src_assessments__college_readiness_expected_tests
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - assessments
-              - college_readiness_expected_tests
-      - name: src_assessments__internal_assessment_scopes
-        config:
-          enabled: false
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
-            sheet_range: src_assessments__internal_assessment_scopes
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - assessments
-              - internal_assessment_scopes

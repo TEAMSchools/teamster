@@ -40,6 +40,8 @@ sources:
               - surveys
               - scd_answer_crosswalk
       - name: src_surveys__manager_survey_detail_archive
+        config:
+          enabled: false
         external:
           options:
             format: CSV
@@ -53,6 +55,8 @@ sources:
               - surveys
               - manager_survey_detail_archive
       - name: src_surveys__staff_info_archive
+        config:
+          enabled: false
         external:
           options:
             format: CSV
@@ -66,6 +70,8 @@ sources:
               - surveys
               - staff_info_archive
       - name: src_surveys__cmo_engagement_regional_survey_detail_archive
+        config:
+          enabled: false
         external:
           options:
             format: CSV

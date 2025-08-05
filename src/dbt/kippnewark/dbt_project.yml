@@ -24,8 +24,8 @@ vars:
   local_timezone: America/New_York
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
   cloud_storage_uri_base: gs://teamster-kippnewark/dagster/kippnewark
-  current_academic_year: 2024
-  current_fiscal_year: 2025
+  current_academic_year: 2025
+  current_fiscal_year: 2026
   iready_schema: kippnj_iready
   renlearn_schema: kippnj_renlearn
 
@@ -39,6 +39,9 @@ models:
     +materialized: table
   edplan:
     +materialized: table
+    staging:
+      stg_edplan__njsmart_powerschool_archive:
+        +enabled: false
   iready:
     +materialized: table
   overgrad:
@@ -57,6 +60,8 @@ models:
   renlearn:
     +materialized: table
     staging:
+      stg_renlearn__accelerated_reader:
+        +enabled: false
       stg_renlearn__fast_star:
         +enabled: false
       stg_renlearn__star_dashboard_standards:
@@ -70,17 +75,13 @@ models:
         +enabled: false
 
 sources:
-  renlearn:
-    renlearn:
-      src_renlearn__star_skill_area:
+  edplan:
+    edplan:
+      src_edplan__njsmart_powerschool_archive:
         +enabled: false
-      src_renlearn__star_dashboard_standards:
-        +enabled: false
-      src_renlearn__fast_star:
-        +enabled: false
-  titan:
-    titan:
-      src_titan__income_form_data:
+  iready:
+    iready:
+      src_iready__diagnostic_and_instruction:
         +enabled: false
   powerschool:
     powerschool:
@@ -90,7 +91,17 @@ sources:
         +enabled: false
       src_powerschool__u_def_ext_students:
         +enabled: false
-  iready:
-    iready:
-      src_iready__diagnostic_and_instruction:
+  renlearn:
+    renlearn:
+      src_renlearn__accelerated_reader:
+        +enabled: false
+      src_renlearn__star_skill_area:
+        +enabled: false
+      src_renlearn__star_dashboard_standards:
+        +enabled: false
+      src_renlearn__fast_star:
+        +enabled: false
+  titan:
+    titan:
+      src_titan__income_form_data:
         +enabled: false

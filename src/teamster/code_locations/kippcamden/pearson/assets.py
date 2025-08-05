@@ -1,14 +1,17 @@
 from dagster import MultiPartitionsDefinition, StaticPartitionsDefinition
 
-from teamster.code_locations.kippcamden import CODE_LOCATION
+from teamster.code_locations.kippcamden import CODE_LOCATION, CURRENT_FISCAL_YEAR
 from teamster.code_locations.kippcamden.pearson.schema import (
     NJGPA_SCHEMA,
     NJSLA_SCHEMA,
-    NJSLA_SCIENCE_SCHEMA,
     PARCC_SCHEMA,
     STUDENT_LIST_REPORT_SCHEMA,
+    STUDENT_TEST_UPDATE_SCHEMA,
 )
-from teamster.libraries.sftp.assets import build_sftp_file_asset
+from teamster.libraries.sftp.assets import (
+    build_sftp_file_asset,
+    build_sftp_folder_asset,
+)
 
 ssh_resource_key = "ssh_couchdrop"
 remote_dir_regex_prefix = f"/data-team/{CODE_LOCATION}/pearson"
@@ -25,7 +28,12 @@ njgpa = build_sftp_file_asset(
     ssh_resource_key=ssh_resource_key,
     partitions_def=MultiPartitionsDefinition(
         {
-            "fiscal_year": StaticPartitionsDefinition(["23", "24"]),
+            "fiscal_year": StaticPartitionsDefinition(
+                [
+                    str(year)[-2:]
+                    for year in range(2023, CURRENT_FISCAL_YEAR.fiscal_year + 1)
+                ]
+            ),
             "administration": StaticPartitionsDefinition(["spr", "fbk"]),
         }
     ),
@@ -46,7 +54,10 @@ student_list_report = build_sftp_file_asset(
         {
             "test_type": StaticPartitionsDefinition(["njsla", "njgpa"]),
             "administration_fiscal_year": StaticPartitionsDefinition(
-                ["Spring2024", "Spring2023", "Spring2022"]
+                [
+                    f"Spring{year}"
+                    for year in range(2022, CURRENT_FISCAL_YEAR.fiscal_year + 1)
+                ]
             ),
         }
     ),
@@ -58,16 +69,20 @@ njsla = build_sftp_file_asset(
     remote_file_regex=r"pcspr(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+\.csv",
     avro_schema=NJSLA_SCHEMA,
     ssh_resource_key=ssh_resource_key,
-    partitions_def=StaticPartitionsDefinition(["19", "22", "23", "24"]),
+    partitions_def=StaticPartitionsDefinition(
+        [str(year)[-2:] for year in range(2019, CURRENT_FISCAL_YEAR.fiscal_year + 1)]
+    ),
 )
 
 njsla_science = build_sftp_file_asset(
     asset_key=[*key_prefix, "njsla_science"],
     remote_dir_regex=rf"{remote_dir_regex_prefix}/njsla_science",
     remote_file_regex=r"njs(?P<fiscal_year>\d+)_NJ-\d+_\w+\.csv",
-    avro_schema=NJSLA_SCIENCE_SCHEMA,
+    avro_schema=NJSLA_SCHEMA,
     ssh_resource_key=ssh_resource_key,
-    partitions_def=StaticPartitionsDefinition(["22", "23", "24"]),
+    partitions_def=StaticPartitionsDefinition(
+        [str(year)[-2:] for year in range(2022, CURRENT_FISCAL_YEAR.fiscal_year + 1)]
+    ),
 )
 
 parcc = build_sftp_file_asset(
@@ -79,10 +94,22 @@ parcc = build_sftp_file_asset(
     partitions_def=StaticPartitionsDefinition(["16", "17", "18"]),
 )
 
+student_test_update = build_sftp_folder_asset(
+    asset_key=[*key_prefix, "student_test_update"],
+    remote_dir_regex=rf"{remote_dir_regex_prefix}/student_test_update",
+    remote_file_regex=(
+        r"Student\sTest\sUpdate\sExport\s\d+-\d+-\d+T\d+_\d+_\d+\.\d+\+\d+"
+    ),
+    avro_schema=STUDENT_TEST_UPDATE_SCHEMA,
+    file_dtype=str,
+    ssh_resource_key=ssh_resource_key,
+)
+
 assets = [
     njgpa,
     njsla_science,
     njsla,
     parcc,
     student_list_report,
+    student_test_update,
 ]

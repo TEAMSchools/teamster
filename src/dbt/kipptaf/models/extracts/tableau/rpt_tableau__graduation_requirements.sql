@@ -27,16 +27,18 @@ with
             e.student_email as student_email_google,
             e.salesforce_id as kippadb_contact_id,
             e.ktc_cohort,
-            e.has_fafsa,
+
+            discipline,
 
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
             s.sections_section_number as section_number,
 
-            discipline,
+            if(e.met_fafsa_requirement, 'Yes', 'No') as has_fafsa,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
+        cross join unnest(['Math', 'ELA']) as discipline
         left join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
@@ -45,7 +47,6 @@ with
             and s.courses_course_name like 'College and Career%'
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
-        cross join unnest(['Math', 'ELA']) as discipline
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.region != 'Miami'

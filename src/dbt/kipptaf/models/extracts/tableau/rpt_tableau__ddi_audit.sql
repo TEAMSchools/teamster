@@ -1,9 +1,7 @@
 with
     grade_level as (
         select assessment_id, min(grade_level) as grade_level,
-        from
-            {# {{ ref("stg_illuminate__assessment_grade_levels") }} #}
-            {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }}
+        from {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }}
         group by assessment_id
     )
 
@@ -31,11 +29,9 @@ select
 from {{ ref("int_assessments__assessments") }} as a
 left join grade_level as g on a.assessment_id = g.assessment_id
 left join
-    {# {{ ref("stg_illuminate__assessment_standards") }} as st #}
     {{ ref("stg_illuminate__dna_assessments__assessment_standards") }} as st
     on a.assessment_id = st.assessment_id
 left join
-    {# {{ ref("stg_illuminate__standards") }} as s #}
     {{ ref("stg_illuminate__standards__standards") }} as s
     on st.standard_id = s.standard_id
 left join
@@ -86,11 +82,9 @@ select
 from {{ ref("int_assessments__assessments") }} as a
 left join grade_level as g on a.assessment_id = g.assessment_id
 left join
-    {# {{ ref("stg_illuminate__assessment_standards") }} as st #}
     {{ ref("stg_illuminate__dna_assessments__assessment_standards") }} as st
     on a.assessment_id = st.assessment_id
 left join
-    {# {{ ref("stg_illuminate__standards") }} as s #}
     {{ ref("stg_illuminate__standards__standards") }} as s
     on st.standard_id = s.standard_id
 left join

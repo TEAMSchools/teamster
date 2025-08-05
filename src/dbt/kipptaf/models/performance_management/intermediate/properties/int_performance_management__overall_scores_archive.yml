@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: int_performance_management__overall_scores_archive
+    config:
+      enabled: false
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: final_score
+        data_type: float64
+      - name: final_tier
+        data_type: int64

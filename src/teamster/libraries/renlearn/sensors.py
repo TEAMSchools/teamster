@@ -14,10 +14,10 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    _check,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -68,9 +68,7 @@ def build_renlearn_sftp_sensor(
 
             last_run = cursor.get(asset_identifier, 0)
 
-            partitions_def = _check.inst(
-                asset.partitions_def, MultiPartitionsDefinition
-            )
+            partitions_def = check.inst(asset.partitions_def, MultiPartitionsDefinition)
 
             subjects = partitions_def.get_partitions_def_for_dimension("subject")
             job_name = (
@@ -85,7 +83,7 @@ def build_renlearn_sftp_sensor(
                 if (
                     match is not None
                     and f.st_mtime > last_run
-                    and _check.not_none(value=f.st_size) > 0
+                    and check.not_none(value=f.st_size) > 0
                 ):
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                     for subject in subjects.get_partition_keys():
@@ -104,15 +102,19 @@ def build_renlearn_sftp_sensor(
 
                 cursor[asset_identifier] = now_timestamp
 
+        item_getter_key = itemgetter("job_name", "partition_key")
+
         for (job_name, partition_key), group in groupby(
-            iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
+            iterable=sorted(run_request_kwargs, key=item_getter_key),
+            key=item_getter_key,
         ):
+            foo = [g["asset_key"] for g in group]
             run_requests.append(
                 RunRequest(
                     run_key=f"{job_name}_{partition_key}_{now_timestamp}",
                     job_name=job_name,
                     partition_key=partition_key,
-                    asset_selection=[g["asset_key"] for g in group],
+                    asset_selection=foo,
                 )
             )
 

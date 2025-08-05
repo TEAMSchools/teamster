@@ -28,17 +28,12 @@ with
             a.admin_season as expected_test,
             a.test_code,
             a.month_round,
-
             a.grade as expected_grade_level,
-            regexp_extract(
-                a.assessment_subject_area, r'^[^_]*'
-            ) as expected_mclass_measure_name_code,
-            regexp_substr(
-                a.assessment_subject_area, r'_(.*?)_'
-            ) as expected_mclass_measure_name,
-            regexp_substr(
-                a.assessment_subject_area, r'[^_]+$'
-            ) as expected_mclass_measure_standard,
+            a.expected_measure_name_code,
+            a.expected_measure_name,
+            a.expected_measure_standard,
+
+            g.grade_goal as admin_benchmark,
 
             if(e.grade_level = 0, 'K', cast(e.grade_level as string)) as grade_level,
 
@@ -48,13 +43,21 @@ with
                 true,
                 false
             ) as year_grade_filter,
+
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("stg_assessments__assessment_expectations") }} as a
+            {{ ref("stg_google_sheets__dibels_expected_assessments") }} as a
             on e.academic_year = a.academic_year
             and e.region = a.region
             and e.grade_level = a.grade
-            and a.scope = 'DIBELS'
+        left join
+            {{ ref("int_assessments__academic_goals") }} as g
+            on a.academic_year = g.academic_year
+            and a.region = g.region
+            and a.grade = g.grade_level
+            and a.admin_season = g.state_assessment_code
+            and g.illuminate_subject_area = 'Early Literacy'
+            and e.schoolid = g.school_id
         where
             not e.is_self_contained
             and e.academic_year >= {{ var("current_academic_year") - 1 }}
@@ -79,6 +82,7 @@ with
             1 as scheduled,
 
             right(m.courses_course_name, 1) as schedule_student_grade_level,
+
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
             {{ ref("int_people__leadership_crosswalk") }} as hos
@@ -129,12 +133,11 @@ select
     s.cohort,
     s.expected_test,
     s.month_round,
-    s.expected_mclass_measure_name_code,
-    s.expected_mclass_measure_name,
-    s.expected_mclass_measure_standard,
-
+    s.expected_measure_name_code,
+    s.expected_measure_name,
+    s.expected_measure_standard,
     null as goal,
-    null as admin_benchmark,
+    s.admin_benchmark,
 
     m.schedule_student_number,
     m.schedule_student_grade_level,
@@ -146,19 +149,19 @@ select
     m.scheduled,
     m.hos,
 
-    a.mclass_student_number,
-    a.mclass_assessment_grade,
-    a.mclass_period,
-    a.mclass_client_date,
-    a.mclass_measure_name,
-    a.mclass_measure_name_code,
-    a.mclass_measure_standard,
-    a.mclass_measure_standard_score,
-    a.mclass_measure_standard_level,
-    a.mclass_measure_standard_level_int,
-    a.mclass_measure_percentile,
-    a.mclass_measure_semester_growth,
-    a.mclass_measure_year_growth,
+    a.student_number as mclass_student_number,
+    a.assessment_grade as mclass_assessment_grade,
+    a.period as mclass_period,
+    a.client_date as mclass_client_date,
+    a.measure_name as mclass_measure_name,
+    a.measure_name_code as mclass_measure_name_code,
+    a.measure_standard as mclass_measure_standard,
+    a.measure_standard_score as mclass_measure_standard_score,
+    a.measure_standard_level as mclass_measure_standard_level,
+    a.measure_standard_level_int as mclass_measure_standard_level_int,
+    a.measure_percentile as mclass_measure_percentile,
+    a.measure_semester_growth as mclass_measure_semester_growth,
+    a.measure_year_growth as mclass_measure_year_growth,
     a.boy_composite,
     a.moy_composite,
     a.eoy_composite,
@@ -180,6 +183,7 @@ select
     if(
         s.expected_grade_level = 0, 'K', cast(s.expected_grade_level as string)
     ) as expected_grade_level,
+
 from students as s
 left join
     schedules as m
@@ -188,10 +192,10 @@ left join
     and s.student_number = m.schedule_student_number
 left join
     {{ ref("int_amplify__all_assessments") }} as a
-    on s.academic_year = a.mclass_academic_year
-    and s.student_number = a.mclass_student_number
-    and s.expected_test = a.mclass_period
-    and s.expected_mclass_measure_standard = a.mclass_measure_standard
+    on s.academic_year = a.academic_year
+    and s.student_number = a.student_number
+    and s.expected_test = a.period
+    and s.expected_measure_standard = a.measure_standard
     and a.assessment_type = 'Benchmark'
 left join
     {{ ref("stg_reporting__terms") }} as t
@@ -236,9 +240,9 @@ select
     cohort,
     expected_test,
     month_round,
-    expected_mclass_measure_name_code,
-    expected_mclass_measure_name,
-    expected_mclass_measure_standard,
+    expected_measure_name_code,
+    expected_measure_name,
+    expected_measure_standard,
     goal,
     admin_benchmark,
     schedule_student_number,
@@ -250,19 +254,19 @@ select
     section_number,
     scheduled,
     hos,
-    mclass_student_number,
-    mclass_assessment_grade,
-    mclass_period,
-    mclass_client_date,
-    mclass_measure_name,
-    mclass_measure_name_code,
-    mclass_measure_standard,
-    mclass_measure_standard_score,
-    mclass_measure_standard_level,
-    mclass_measure_standard_level_int,
-    mclass_measure_percentile,
-    mclass_measure_semester_growth,
-    mclass_measure_year_growth,
+    student_number as mclass_student_number,
+    assessment_grade as mclass_assessment_grade,
+    period as mclass_period,
+    client_date as mclass_client_date,
+    measure_name as mclass_measure_name,
+    measure_name_code as mclass_measure_name_code,
+    measure_standard as mclass_measure_standard,
+    measure_standard_score as mclass_measure_standard_score,
+    measure_standard_level as mclass_measure_standard_level,
+    measure_standard_level_int as mclass_measure_standard_level_int,
+    measure_percentile as mclass_measure_percentile,
+    measure_semester_growth as mclass_measure_semester_growth,
+    measure_year_growth as mclass_measure_year_growth,
     boy_composite,
     moy_composite,
     eoy_composite,
@@ -276,4 +280,5 @@ select
     met_bm_goal,
     expected_round,
     expected_grade_level,
+
 from {{ ref("rpt_tableau__dibels_pm_dashboard") }}

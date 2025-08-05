@@ -1,0 +1,142 @@
+version: 2
+models:
+  - name: int_tableau__gradebook_audit_assignments_teacher
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: quarter
+        data_type: string
+      - name: semester
+        data_type: string
+      - name: quarter_start_date
+        data_type: date
+      - name: quarter_end_date
+        data_type: date
+      - name: is_current_term
+        data_type: boolean
+      - name: school
+        data_type: string
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: week_start_date
+        data_type: date
+      - name: week_end_date
+        data_type: date
+      - name: week_start_monday
+        data_type: date
+      - name: week_end_sunday
+        data_type: date
+      - name: school_week_start_date_lead
+        data_type: date
+      - name: week_number_academic_year
+        data_type: int64
+      - name: week_number_quarter
+        data_type: int64
+      - name: hos
+        data_type: string
+      - name: school_leader
+        data_type: string
+      - name: school_leader_tableau_username
+        data_type: string
+      - name: region_school_level
+        data_type: string
+      - name: academic_year_display
+        data_type: string
+      - name: quarter_end_date_insession
+        data_type: date
+      - name: sections_dcid
+        data_type: int64
+      - name: sectionid
+        data_type: int64
+      - name: section_number
+        data_type: string
+      - name: external_expression
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: credit_type
+        data_type: string
+      - name: exclude_from_gpa
+        data_type: int64
+      - name: is_ap_course
+        data_type: boolean
+      - name: teacher_number
+        data_type: string
+      - name: teacher_name
+        data_type: string
+      - name: teacher_tableau_username
+        data_type: string
+      - name: assignment_category_code
+        data_type: string
+      - name: assignment_category_name
+        data_type: string
+      - name: assignment_category_term
+        data_type: string
+      - name: expectation
+        data_type: int64
+      - name: notes
+        data_type: string
+      - name: scaffold_name
+        data_type: string
+      - name: is_quarter_end_date_range
+        data_type: boolean
+      - name: section_or_period
+        data_type: string
+      - name: is_current_week
+        data_type: boolean
+      - name: assignmentsectionid
+        data_type: int64
+      - name: assignmentid
+        data_type: int64
+      - name: assignment_name
+        data_type: string
+      - name: duedate
+        data_type: date
+      - name: scoretype
+        data_type: string
+      - name: totalpointvalue
+        data_type: float64
+      - name: n_students
+        data_type: int64
+      - name: n_late
+        data_type: int64
+      - name: n_exempt
+        data_type: int64
+      - name: n_missing
+        data_type: int64
+      - name: n_academic_dishonesty
+        data_type: int64
+      - name: n_null
+        data_type: int64
+      - name: n_is_null_missing
+        data_type: int64
+      - name: n_is_null_not_missing
+        data_type: int64
+      - name: n_expected
+        data_type: int64
+      - name: n_expected_scored
+        data_type: int64
+      - name: teacher_avg_score_for_assign_per_class_section_and_assign_id
+        data_type: float64
+      - name: w_assign_max_score_not_10
+        data_type: boolean
+      - name: f_assign_max_score_not_10
+        data_type: boolean
+      - name: h_assign_max_score_not_10
+        data_type: boolean
+      - name: s_max_score_greater_100
+        data_type: boolean
+      - name: sum_totalpointvalue_section_quarter_category
+        data_type: float64
+      - name: teacher_running_total_assign_by_cat
+        data_type: int64

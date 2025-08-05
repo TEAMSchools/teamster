@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: stg_assessments__qbls_power_standards
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Region
+        data_type: string
+      - name: Academic_Year
+        data_type: int64
+      - name: Term_Name
+        data_type: string
+      - name: Grade_Level
+        data_type: int64
+      - name: Illuminate_Subject_Area
+        data_type: string
+      - name: Parent_Standard
+        data_type: int64
+      - name: Standard_Code
+        data_type: string
+      - name: Is_Power_Standard
+        data_type: boolean
+      - name: QBL
+        data_type: string

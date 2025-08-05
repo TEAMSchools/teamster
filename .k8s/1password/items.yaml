@@ -330,7 +330,15 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-slack-api
+  name: op-outlook-pm
   namespace: dagster-cloud
 spec:
-  itemPath: vaults/Data Team/items/Slack API - Teamster
+  itemPath: vaults/Data Team/items/Outlook - Performance Management
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-knowbe4
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/KnowBe4 Reporting REST API

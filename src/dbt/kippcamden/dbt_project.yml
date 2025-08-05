@@ -24,8 +24,8 @@ vars:
   local_timezone: America/New_York
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
   cloud_storage_uri_base: gs://teamster-kippcamden/dagster/kippcamden
-  current_academic_year: 2024
-  current_fiscal_year: 2025
+  current_academic_year: 2025
+  current_fiscal_year: 2026
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
@@ -37,6 +37,9 @@ models:
     +materialized: table
   edplan:
     +materialized: table
+    staging:
+      stg_edplan__njsmart_powerschool_archive:
+        +enabled: false
   overgrad:
     +materialized: table
   pearson:
@@ -57,6 +60,10 @@ models:
         +enabled: false
 
 sources:
+  edplan:
+    edplan:
+      src_edplan__njsmart_powerschool_archive:
+        +enabled: false
   titan:
     titan:
       src_titan__income_form_data:

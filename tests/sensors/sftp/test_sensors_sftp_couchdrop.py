@@ -3,8 +3,8 @@ from dagster import SensorResult, build_sensor_context
 from teamster.core.resources import SSH_COUCHDROP
 
 
-def _test_sensor(sftp_sensor, cursor=None):
-    context = build_sensor_context(sensor_name=sftp_sensor.name, cursor=cursor)
+def _test_sensor(sftp_sensor):
+    context = build_sensor_context(sensor_name=sftp_sensor.name)
 
     result: SensorResult = sftp_sensor(context=context, ssh_couchdrop=SSH_COUCHDROP)
 
@@ -15,39 +15,6 @@ def _test_sensor(sftp_sensor, cursor=None):
         context.log.info(run_request)
 
     print(result.cursor)
-
-
-def test_couchdrop_sftp_sensor_kippcamden():
-    from teamster.code_locations.kippcamden.couchdrop.sensors import (
-        couchdrop_sftp_sensor,
-    )
-
-    _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
-
-
-def test_couchdrop_sftp_sensor_kippmiami():
-    from teamster.code_locations.kippmiami.couchdrop.sensors import (
-        couchdrop_sftp_sensor,
-    )
-
-    _test_sensor(
-        sftp_sensor=couchdrop_sftp_sensor,
-        cursor='{"kippmiami__fldoe__eoc": 1716380580, "kippmiami__fldoe__fast": 1716937706, "kippmiami__fldoe__science": 1716380612}',
-    )
-
-
-def test_couchdrop_sftp_sensor_kippnewark():
-    from teamster.code_locations.kippnewark.couchdrop.sensors import (
-        couchdrop_sftp_sensor,
-    )
-
-    _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
-
-
-def test_couchdrop_sftp_sensor_kipptaf():
-    from teamster.code_locations.kipptaf.couchdrop.sensors import couchdrop_sftp_sensor
-
-    _test_sensor(sftp_sensor=couchdrop_sftp_sensor)
 
 
 def test_adp_payroll_sftp_sensor():

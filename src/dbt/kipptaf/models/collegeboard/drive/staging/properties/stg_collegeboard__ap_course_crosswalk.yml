@@ -1,0 +1,16 @@
+version: 2
+models:
+  - name: stg_collegeboard__ap_course_crosswalk
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Data_Source
+        data_type: string
+      - name: Test_Name
+        data_type: string
+      - name: AP_Course_Name
+        data_type: string
+      - name: PS_AP_Course_Subject_Code
+        data_type: string

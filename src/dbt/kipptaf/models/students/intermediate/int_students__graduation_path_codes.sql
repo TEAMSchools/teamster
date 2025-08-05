@@ -1,3 +1,5 @@
+{{- config(materialized="table") -}}
+
 with
     students as (
         select
@@ -8,24 +10,24 @@ with
             e.state_studentnumber,
             e.salesforce_id,
             e.grade_level,
+            e.enroll_status,
             e.cohort,
             e.discipline,
             e.powerschool_credittype,
+            e.met_fafsa_requirement as has_fafsa,
 
             /* this is not their final code, but it is used to calculate their final 
             code */
             u.values_column as ps_grad_path_code,
 
             /* needed to join on transfer njgpa scores */
-            safe_cast(e.state_studentnumber as numeric) as state_studentnumber_int,
-
-            if(e.has_fafsa = 'Yes', true, false) as has_fafsa,
+            safe_cast(e.state_studentnumber as int) as state_studentnumber_int,
 
             /* this is the date we start holding 11th graders accountable to 
             fulfilling the NJGPA test requirement */
             if(
                 current_date('{{ var("local_timezone") }}')
-                < date({{ var("current_academic_year") + 1 }}, 05, 31),
+                < date({{ var("current_academic_year") + 1 }}, 06, 05),
                 false,
                 true
             ) as njgpa_season_11th,
@@ -38,6 +40,15 @@ with
                 false,
                 true
             ) as fafsa_season_12th,
+
+            case
+                when u.values_column in ('M', 'N')
+                then true
+                when u.values_column in ('O', 'P')
+                then false
+            end as pre_met_pathway_cutoff,
+
+            if(u.values_column = 'M', true, false) as pre_attempted_njgpa_subject,
 
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
         left join
@@ -53,14 +64,13 @@ with
         /* njgpa transfer scores */
         select
             s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
 
             x.testscalescore as scale_score,
             x.testcode as score_type,
             x.testcode as subject_area,
             x.test_name as pathway_option,
             x.discipline,
+
         from students as s
         inner join
             {{ ref("int_powerschool__state_assessments_transfer_scores") }} as x
@@ -72,13 +82,11 @@ with
         /* njgpa scores from file */
         select
             s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
+
             n.testscalescore as scale_score,
             n.testcode as score_type,
             n.testcode as subject_area,
             n.assessment_name as pathway_option,
-
             n.discipline,
 
         from students as s
@@ -90,99 +98,185 @@ with
 
         union all
 
-        /* act/sat scores */
+        /* act/sat/psat scores */
         select
-            s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
-            a.scale_score,
-            a.score_type,
-            a.subject_area,
-            a.scope as pathway_option,
+            student_number,
+            scale_score,
+            score_type,
+            subject_area,
+            scope as pathway_option,
 
-            if(a.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
+            if(course_discipline = 'ENG', 'ELA', 'Math') as discipline,
+        from {{ ref("int_assessments__college_assessment") }}
+        where
+            scope in ('ACT', 'SAT', 'PSAT10', 'PSAT NMSQT')
+            and course_discipline in ('MATH', 'ENG')
+            and score_type != 'act_english'
+    ),
 
-        from students as s
-        inner join
-            {{ ref("int_assessments__college_assessment") }} as a
-            on s.salesforce_id = a.salesforce_id
-            and s.powerschool_credittype = a.course_discipline
-            and a.scope in ('ACT', 'SAT')
-            and a.course_discipline in ('MATH', 'ENG')
-            and a.score_type not in ('act_english', 'act_science')
-
-        union all
-
-        /* psat scores */
+    attempted_subject_njgpa as (
+        /* calculating if the student attempted njgpa for the discipline */
         select
-            s.student_number,
-            s.state_studentnumber,
-            s.salesforce_id,
-            p.scale_score,
-            p.score_type,
-            p.subject_area,
-            p.scope as pathway_option,
+            student_number,
 
-            if(p.course_discipline = 'ENG', 'ELA', 'Math') as discipline,
-
-        from students as s
-        inner join
-            {{ ref("int_assessments__college_assessment") }} as p
-            on s.student_number = p.student_number
-            and s.powerschool_credittype = p.course_discipline
-            and p.scope in ('PSAT10', 'PSAT NMSQT')
-            and p.course_discipline in ('MATH', 'ENG')
+            max(ela) as attempted_njgpa_ela,
+            max(math) as attempted_njgpa_math,
+        from scores pivot (max(score_type) for discipline in ('ELA', 'Math'))
+        where pathway_option = 'NJGPA'
+        group by student_number
     ),
 
     lookup_table as (
         select
-            s.* except (state_studentnumber_int),
+            s._dbt_source_relation,
+            s.students_dcid,
+            s.studentid,
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            s.grade_level,
+            s.enroll_status,
+            s.cohort,
+            s.discipline,
+            s.powerschool_credittype,
+            s.ps_grad_path_code,
+            s.has_fafsa,
+            s.njgpa_season_11th,
+            s.fafsa_season_12th,
 
-            c.type as pathway_option,
-            c.subject as score_type,
-            c.code as pathway_code,
+            c.pathway_option,
+            c.score_type,
+            c.pathway_code,
             c.cutoff,
 
             p.scale_score,
             p.subject_area,
 
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
+
+            if(nj.attempted_njgpa_ela is not null, true, false) as attempted_njgpa_ela,
+
+            if(
+                nj.attempted_njgpa_math is not null, true, false
+            ) as attempted_njgpa_math,
+
         from students as s
+        left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         left join
-            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
+            {{ ref("stg_google_sheets__student_graduation_path_cutoffs") }} as c
             on s.cohort = c.cohort
             and s.discipline = c.discipline
-            and c.`domain` = 'Graduation Pathway'
         left join
             scores as p
-            on c.type = p.pathway_option
-            and c.subject = p.score_type
+            on c.pathway_option = p.pathway_option
+            and c.score_type = p.score_type
             and s.student_number = p.student_number
+        where
+            s.ps_grad_path_code is null
+            or s.ps_grad_path_code not in ('M', 'N', 'O', 'P')
+
+        union all
+
+        select
+            s._dbt_source_relation,
+            s.students_dcid,
+            s.studentid,
+            s.student_number,
+            s.state_studentnumber,
+            s.salesforce_id,
+            s.grade_level,
+            s.enroll_status,
+            s.cohort,
+            s.discipline,
+            s.powerschool_credittype,
+            s.ps_grad_path_code,
+            s.has_fafsa,
+            s.njgpa_season_11th,
+            s.fafsa_season_12th,
+
+            case
+                s.ps_grad_path_code
+                when 'M'
+                then 'DLM'
+                when 'N'
+                then 'Portfolio'
+                when 'O'
+                then 'No Pathway'
+                when 'P'
+                then 'Incomplete Credits'
+            end as pathway_option,
+
+            case
+                concat(s.discipline, s.ps_grad_path_code)
+                when 'MathM'
+                then 'dlm_math'
+                when 'ELAM'
+                then 'dlm_ela'
+                when 'MathN'
+                then 'portfolio_math'
+                when 'ELAN'
+                then 'portfolio_ela'
+                when 'MathO'
+                then 'no_pathway_math'
+                when 'ELAO'
+                then 'no_pathway_ela'
+                when 'MathP'
+                then 'incomplete_credits_math'
+                when 'ELAP'
+                then 'incomplete_credits_ela'
+            end as score_type,
+
+            s.ps_grad_path_code as pathway_code,
+
+            0 as cutoff,
+            0 as scale_score,
+            s.discipline as subject_area,
+
+            s.pre_met_pathway_cutoff as met_pathway_cutoff,
+
+            case
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
+                when nj.attempted_njgpa_ela is not null
+                then true
+            end as attempted_njgpa_ela,
+
+            case
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
+                when nj.attempted_njgpa_math is not null
+                then true
+            end as attempted_njgpa_math,
+
+        from students as s
+        left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
+        where s.ps_grad_path_code in ('M', 'N', 'O', 'P')
     ),
 
-    /* did the student ever meet the min reqs for college readiness for SAT? */
-    met_sat_subject_mins as (
-        select student_number, max(ela) as met_sat_ela, max(math) as met_sat_math,
-        from
-            lookup_table
-            pivot (max(met_pathway_cutoff) for discipline in ('ELA', 'Math'))
-        where score_type in ('sat_ebrw', 'sat_math')
-        group by all
-    ),
-
-    /* determining if any of the scores for the score_type (if it exists)
-    met the pathway option */
     unpivot_calcs as (
+        /* determining if any of the scores for the score_type (if it exists) met the 
+        pathway option */
         select
             _dbt_source_relation,
             student_number,
             discipline,
 
+            attempted_njgpa_ela,
+            attempted_njgpa_math,
+
             /* taking the njgpa at least once is a requirement to consider other 
             pathways */
-            if(max(met_njgpa) is not null, true, false) as njgpa_attempt,
+            case
+                when discipline = 'ELA' and attempted_njgpa_ela
+                then true
+                when discipline = 'Math' and attempted_njgpa_math
+                then true
+                else false
+            end as njgpa_attempt,
 
             /* collapse the unpivot */
+            max(met_dlm) as met_dlm,
+            max(met_portfolio) as met_portfolio,
             max(met_njgpa) as met_njgpa,
             max(met_act) as met_act,
             max(met_sat) as met_sat,
@@ -193,6 +287,8 @@ with
             lookup_table pivot (
                 max(met_pathway_cutoff)
                 for pathway_option in (
+                    'DLM' as met_dlm,
+                    'Portfolio' as met_portfolio,
                     'NJGPA' as met_njgpa,
                     'ACT' as met_act,
                     'SAT' as met_sat,
@@ -201,41 +297,103 @@ with
                 )
             )
         where scale_score is not null
-        group by all
+        group by
+            _dbt_source_relation,
+            student_number,
+            discipline,
+            attempted_njgpa_ela,
+            attempted_njgpa_math
     ),
 
-    /* calculating if the student met the discipline overall, regardless of how they 
-    did it, assuming they took the njgpa */
+    unpivot_calcs_ps_code as (
+        /* need the ps_grad_path_code to not lose null/null students */
+        select u.*, s.ps_grad_path_code
+        from unpivot_calcs as u
+        inner join
+            students as s
+            on u.student_number = s.student_number
+            and u.discipline = s.discipline
+    ),
+
     met_subject as (
+        /* calculating if the student met the discipline overall, regardless of how 
+        they  did it, assuming they took the njgpa */
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
-            unpivot_calcs pivot (
+            unpivot_calcs_ps_code pivot (
                 max(
-                    met_njgpa or met_act or met_sat or met_psat10 or met_psat_nmsqt
+                    met_dlm
+                    or met_portfolio
+                    or met_njgpa
+                    or met_act
+                    or met_sat
+                    or met_psat10
+                    or met_psat_nmsqt
                 ) for discipline
                 in ('ELA', 'Math')
             )
-        where njgpa_attempt
-        group by all
-    ),
+        where njgpa_attempt and ps_grad_path_code is null
+        group by student_number
 
-    /* calculating if the student attempted njgpa for the discipline */
-    attempted_subject_njgpa as (
-        select
-            student_number,
-            max(ela) as attempted_njgpa_ela,
-            max(math) as attempted_njgpa_math,
-        from unpivot_calcs pivot (max(njgpa_attempt) for discipline in ('ELA', 'Math'))
-        group by all
+        union all
+
+        select student_number, max(ela) as met_ela, max(math) as met_math,
+        from
+            unpivot_calcs_ps_code pivot (
+                max(
+                    met_dlm
+                    or met_portfolio
+                    or met_njgpa
+                    or met_act
+                    or met_sat
+                    or met_psat10
+                    or met_psat_nmsqt
+                ) for discipline
+                in ('ELA', 'Math')
+            )
+        where
+            njgpa_attempt and ps_grad_path_code is not null and ps_grad_path_code != 'M'
+        group by student_number
+
+        union all
+
+        select student_number, max(ela) as met_ela, max(math) as met_math,
+        from
+            unpivot_calcs_ps_code pivot (max(met_dlm) for discipline in ('ELA', 'Math'))
+        where ps_grad_path_code = 'M'
+        group by student_number
     ),
 
     roster as (
         select
-            l.*,
+            l._dbt_source_relation,
+            l.students_dcid,
+            l.studentid,
+            l.student_number,
+            l.state_studentnumber,
+            l.salesforce_id,
+            l.grade_level,
+            l.enroll_status,
+            l.cohort,
+            l.discipline,
+            l.powerschool_credittype,
+            l.ps_grad_path_code,
+            l.has_fafsa,
+            l.njgpa_season_11th,
+            l.fafsa_season_12th,
+            l.pathway_option,
+            l.score_type,
+            l.pathway_code,
+            l.cutoff,
+            l.scale_score,
+            l.subject_area,
+            l.met_pathway_cutoff,
 
-            coalesce(s.met_sat_ela) as met_sat_ela,
-            coalesce(s.met_sat_math) as met_sat_math,
+            coalesce(l.attempted_njgpa_ela, false) as attempted_njgpa_ela,
+            coalesce(l.attempted_njgpa_math, false) as attempted_njgpa_math,
 
+            coalesce(u.met_dlm, false) as met_dlm,
+            coalesce(u.met_portfolio, false) as met_portfolio,
             coalesce(u.njgpa_attempt, false) as njgpa_attempt,
             coalesce(u.met_njgpa, false) as met_njgpa,
             coalesce(u.met_act, false) as met_act,
@@ -243,253 +401,89 @@ with
             coalesce(u.met_psat10, false) as met_psat10,
             coalesce(u.met_psat_nmsqt, false) as met_psat_nmsqt,
 
-            coalesce(attempted_njgpa_ela, false) as attempted_njgpa_ela,
-            coalesce(attempted_njgpa_math, false) as attempted_njgpa_math,
-
             coalesce(m.met_ela, false) as met_ela,
             coalesce(m.met_math, false) as met_math,
 
             row_number() over (
                 partition by l.student_number, l.score_type order by l.scale_score desc
             ) as rn_highest,
-
         from lookup_table as l
         left join
             unpivot_calcs as u
             on l.student_number = u.student_number
             and l.discipline = u.discipline
-        left join met_sat_subject_mins as s on l.student_number = s.student_number
         left join attempted_subject_njgpa as n on l.student_number = n.student_number
         left join met_subject as m on l.student_number = m.student_number
     )
 
 select
-    *,
-
-    if(met_sat_ela and met_sat_math, true, false) as met_sat_subject_mins,
+    r.*,
 
     /* negative value means short; positive value means above min required */
-    if(scale_score is not null, scale_score - cutoff, null) as points_short,
+    if(r.scale_score is not null, r.scale_score - r.cutoff, null) as points_short,
 
     case
-        when grade_level != 12
-        then ps_grad_path_code
-        when ps_grad_path_code in ('M', 'N', 'O', 'P')
-        then ps_grad_path_code
-        when met_njgpa
+        when r.pathway_code in ('M', 'N', 'O', 'P')
+        then r.pathway_option
+        when r.pathway_code = 'S'
+        then r.subject_area
+        when r.pathway_code in ('E', 'D', 'J', 'K')
+        then concat(r.pathway_option, ' ', r.subject_area)
+        else 'No Data'
+    end as test_type,
+
+    case
+        when r.grade_level <= 10
+        then r.ps_grad_path_code
+        when r.ps_grad_path_code in ('M', 'N', 'O', 'P')
+        then r.ps_grad_path_code
+        when r.met_njgpa
         then 'S'
-        when njgpa_attempt and not met_njgpa and met_act
+        when r.njgpa_attempt and not r.met_njgpa and r.met_act
         then 'E'
-        when njgpa_attempt and not met_njgpa and not met_act and met_sat
+        when r.njgpa_attempt and not r.met_njgpa and not r.met_act and r.met_sat
         then 'D'
         when
-            njgpa_attempt
-            and not met_njgpa
-            and not met_act
-            and not met_sat
-            and met_psat10
+            r.njgpa_attempt
+            and not r.met_njgpa
+            and not r.met_act
+            and not r.met_sat
+            and r.met_psat10
         then 'J'
         when
-            njgpa_attempt
-            and not met_njgpa
-            and not met_act
-            and not met_sat
-            and not met_psat10
-            and met_psat_nmsqt
+            r.njgpa_attempt
+            and not r.met_njgpa
+            and not r.met_act
+            and not r.met_sat
+            and not r.met_psat10
+            and r.met_psat_nmsqt
         then 'K'
         else 'R'
     end as final_grad_path_code,
 
-    case
-        when grade_level <= 10
-        then 'Grad Eligible'
-        /* iep exempt or portfolio, non-12th grade */
-        when grade_level != 12 and ps_grad_path_code in ('M', 'N')
-        then 'Grad Eligible'
-
-        /* 11th graders before njgpa */
-        when grade_level = 11 and not njgpa_season_11th
-        then 'Grad Eligible'
-        /* 11th graders after njgpa without njgpa attempt */
-        when grade_level = 11 and njgpa_season_11th and not njgpa_attempt
-        then 'Not Grad Eligible. Missing NJGPA.'
-        /* 11th graders who tried njgpa and passed both */
-        when
-            grade_level = 11
-            and njgpa_season_11th
-            and njgpa_attempt
-            and met_ela
-            and met_math
-        then 'Grad Eligible'
-        /* 11th graders who tried njgpa and passed only ela */
-        when
-            grade_level = 11
-            and njgpa_season_11th
-            and njgpa_attempt
-            and met_ela
-            and not met_math
-        then 'ELA Eligible only'
-        /* 11th graders who tried njgpa and passed only math */
-        when
-            grade_level = 11
-            and njgpa_season_11th
-            and njgpa_attempt
-            and not met_ela
-            and met_math
-        then 'Math Eligible only'
-
-        /* 12th graders regardless of fafsa season with codes O or P */
-        when grade_level = 12 and ps_grad_path_code in ('O', 'P')
-        then 'Not Grad Eligible'
-        /* 12th graders before fafsa season with iep exempt or portfolio */
-        when
-            grade_level = 12
-            and not fafsa_season_12th
-            and ps_grad_path_code in ('M', 'N')
-        then 'Grad Eligible'
-        /* 12th graders after fafsa season with iep exempt or portfolio */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and not has_fafsa
-            and ps_grad_path_code in ('M', 'N')
-        then 'Not Grad Eligible. Missing FAFSA.'
-        /* 12th graders havent attempted njgpa */
-        when grade_level = 12 and not njgpa_attempt
-        then 'Not Grad Eligible. No NJGPA attempt.'
-
-        /* 12th graders before fafsa season. took njgpa and qualified with some
-        pathway */
-        when
-            grade_level = 12
-            and not fafsa_season_12th
-            and njgpa_attempt
-            and met_ela
-            and met_math
-        then 'Grad Eligible'
-        /* 12th graders before fafsa season. took njgpa and qualified with some pathway
-        ela only */
-        when
-            grade_level = 12
-            and not fafsa_season_12th
-            and njgpa_attempt
-            and met_ela
-            and not met_math
-        then 'ELA Eligible only'
-        /* 12th graders before fafsa season. took njgpa and qualified with some pathway
-        math only */
-        when
-            grade_level = 12
-            and not fafsa_season_12th
-            and njgpa_attempt
-            and not met_ela
-            and met_math
-        then 'Math Eligible only'
-        /* 12th graders before fafsa season. took njgpa but didnt qualify with any
-        pathway */
-        when
-            grade_level = 12
-            and not fafsa_season_12th
-            and njgpa_attempt
-            and not met_ela
-            and not met_math
-        then 'Not Grad Eligible. No pathway met.'
-        /* 12th grader after fafsa season, meets all requirements via some pathway */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and has_fafsa
-            and njgpa_attempt
-            and met_ela
-            and met_math
-        then 'Grad Eligible'
-        /* 12th grader after fafsa season, took NJGPA, ELA pathway met only somehow */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and has_fafsa
-            and njgpa_attempt
-            and met_ela
-            and not met_math
-        then 'ELA Eligible Only'
-        /* 12th grader after fafsa season, took NJGPA, math pathway met only somehow */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and has_fafsa
-            and njgpa_attempt
-            and not met_ela
-            and met_math
-        then 'Math Eligible Only'
-        /* 12th graders after fafsa season. took njgpa but didnt qualify with any
-        pathway */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and has_fafsa
-            and njgpa_attempt
-            and not met_ela
-            and not met_math
-        then 'Not Grad Eligible. No pathway met.'
-        /* 12th graders after fafsa season. took njgpa, met pathway, but missing
-        fafsa */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and not has_fafsa
-            and njgpa_attempt
-            and met_ela
-            and met_math
-        then 'Not Grad Eligible. Missing FAFSA.'
-        /* 12th graders after fafsa season. took njgpa, met ela pathway, but missing
-        fafsa */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and not has_fafsa
-            and njgpa_attempt
-            and met_ela
-            and not met_math
-        then 'ELA Eligible Only. Missing FAFSA.'
-        /* 12th graders after fafsa season. took njgpa, met math pathway, but missing 
-        fafsa */
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and not has_fafsa
-            and njgpa_attempt
-            and not met_ela
-            and met_math
-        then 'Math Eligible Only. Missing FAFSA.'
-        when
-            grade_level = 12
-            and fafsa_season_12th
-            and has_fafsa
-            and not njgpa_attempt
-            and met_ela
-            and met_math
-        then 'Not Grad Eligible. Has pathway, but needs NJGPA attempt.'
-
-        else 'New category. Need new logic.'
-    end as grad_eligibility,
-
-    case
-        when pathway_code = 'M'
-        then 'DLM'
-        when pathway_code = 'N'
-        then 'Portfolio'
-        when pathway_code = 'O'
-        then 'Met No Requirements'
-        when pathway_code = 'P'
-        then 'Incomplete Credits'
-        when pathway_code = 'S'
-        then subject_area
-        when pathway_code in ('E', 'D', 'J', 'K')
-        then concat(pathway_option, ' ', subject_area)
-        else 'No Data'
-    end as test_type,
+    coalesce(
+        case
+            when r.grade_level <= 10
+            then 'Grad Eligible'
+            when r.grade_level >= 11
+            then g.grad_eligibility
+        end,
+        'New category. Need new logic.'
+    ) as grad_eligibility,
 
     row_number() over (
-        partition by student_number, discipline order by pathway_option
+        partition by r.student_number, r.discipline order by r.pathway_option
     ) as rn_discipline_distinct,
-from roster
+
+from roster as r
+left join
+    {{ ref("stg_google_sheets__student_graduation_path_combos") }} as g
+    on r.grade_level = g.grade_level
+    and r.has_fafsa = g.has_fafsa
+    and r.njgpa_season_11th = g.njgpa_season_11th
+    and r.fafsa_season_12th = g.fafsa_season_12th
+    and r.attempted_njgpa_ela = g.attempted_njgpa_ela
+    and r.attempted_njgpa_math = g.attempted_njgpa_math
+    and r.met_ela = g.met_ela
+    and r.met_math = g.met_math
+where r.enroll_status = 0

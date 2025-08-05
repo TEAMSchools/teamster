@@ -21,8 +21,8 @@ env:
   DAGSTER_CLOUD_ORGANIZATION: ${{ vars.DAGSTER_ORGANIZATION_ID }}
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
   REGISTRY_IMAGE:
-    ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster/${{
-    inputs.code-location }}
+    ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID
+    }}/teamster/${{ inputs.code-location }}
   DAGSTER_CLOUD_YAML_PATH:
     src/teamster/code_locations/${{ inputs.code-location }}/dagster-cloud.yaml
   IMAGE_TAG: ${{ inputs.code-location }}-${{ github.sha }}-${{ github.run_id }}
@@ -129,7 +129,8 @@ jobs:
     needs:
       - prerun
       - build
-    if: needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
+    if:
+      needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
     steps:
       # https://github.com/actions/download-artifact
       - name: Download digests

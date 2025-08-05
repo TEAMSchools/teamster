@@ -1,0 +1,10 @@
+version: 2
+models:
+  - name: stg_egencia__travel_managers
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: employee_number
+        data_type: int64

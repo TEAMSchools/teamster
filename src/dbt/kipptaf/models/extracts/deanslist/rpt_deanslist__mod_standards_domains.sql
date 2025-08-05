@@ -1,16 +1,15 @@
 with
     progress_report_region as (
-        select assessment_id, progress_report_region,
-        from
-            {{ ref("stg_google_appsheet__illuminate_assessments_extension") }},
-            unnest(split(regions_progress_report, ' , ')) as progress_report_region
+        select iae.assessment_id, progress_report_region,
+        from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
+        cross join
+            unnest(split(iae.regions_progress_report, ' , ')) as progress_report_region
     ),
 
     report_card_region as (
-        select assessment_id, report_card_region,
-        from
-            {{ ref("stg_google_appsheet__illuminate_assessments_extension") }},
-            unnest(split(regions_report_card, ' , ')) as report_card_region
+        select iae.assessment_id, report_card_region,
+        from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
+        cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
     )
 
 select
@@ -25,6 +24,12 @@ select
 
     round(avg(ar.percent_correct), 0) as avg_percent_correct,
     case
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 90
+        then 'Exceeds Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 75
+        then 'Met Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 60
+        then 'Approaching Expectations'
         when round(avg(ar.percent_correct), 0) >= 85
         then 'Exceeds Expectations'
         when round(avg(ar.percent_correct), 0) >= 70
@@ -52,7 +57,8 @@ group by
     ar.academic_year,
     ar.powerschool_student_number,
     ar.subject_area,
-    ar.term_administered
+    ar.term_administered,
+    co.grade_level
 
 union all
 
@@ -68,6 +74,12 @@ select
 
     round(avg(ar.percent_correct), 0) as avg_percent_correct,
     case
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 90
+        then 'Exceeds Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 75
+        then 'Met Expectations'
+        when co.grade_level <= 2 and round(avg(ar.percent_correct), 0) >= 60
+        then 'Approaching Expectations'
         when round(avg(ar.percent_correct), 0) >= 85
         then 'Exceeds Expectations'
         when round(avg(ar.percent_correct), 0) >= 70
@@ -99,4 +111,5 @@ group by
     ar.powerschool_student_number,
     ar.subject_area,
     ar.term_administered,
-    sd.standard_domain
+    sd.standard_domain,
+    co.grade_level

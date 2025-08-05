@@ -10,7 +10,7 @@ echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.clou
 # update/install apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install bash-completion google-cloud-cli &&
+  sudo apt-get -y --no-install-recommends install bash-completion google-cloud-cli sshpass &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
@@ -34,26 +34,13 @@ op inject -f --in-file=.devcontainer/tpl/deanslist_api_key_map_yaml.tpl \
   sudo mv -f env/deanslist_api_key_map_yaml \
     /etc/secret-volume/deanslist_api_key_map_yaml
 
-op inject -f --in-file=.devcontainer/tpl/gcloud_dagster_service_account.json.tpl \
-  --out-file=env/gcloud_dagster_service_account.json &&
-  sudo mv -f env/gcloud_dagster_service_account.json \
-    /etc/secret-volume/gcloud_dagster_service_account.json
-
 op inject -f --in-file=.devcontainer/tpl/id_rsa_egencia.tpl \
   --out-file=env/id_rsa_egencia &&
   sudo mv -f env/id_rsa_egencia /etc/secret-volume/id_rsa_egencia
 
-op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
-  --out-file=env/dbt_cloud.yml &&
-  sudo mv -f env/dbt_cloud.yml /home/vscode/.dbt/dbt_cloud.yml
-
 op inject -f --in-file=.devcontainer/tpl/powerschool_ssh_password.txt.tpl \
   --out-file=env/powerschool_ssh_password.txt &&
   sudo mv -f env/powerschool_ssh_password.txt /etc/secret-volume/powerschool_ssh_password.txt
-
-# auth gcloud
-gcloud auth activate-service-account \
-  --key-file=/etc/secret-volume/gcloud_dagster_service_account.json
 
 # install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh || true
@@ -61,7 +48,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh || true
 # install dependencies
 uv tool install datamodel-code-generator
 uv tool install dagster-dg
-uv sync --frozen
+uv sync
 
 # prepare dbt projects
 uv run dagster-dbt project prepare-and-package \

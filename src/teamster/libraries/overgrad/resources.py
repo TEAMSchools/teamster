@@ -1,8 +1,9 @@
 import time
 
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
-from requests import Response, Session
+from requests import Session
 from requests.exceptions import HTTPError
 
 
@@ -17,7 +18,7 @@ class OvergradResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
         self._session.headers["ApiKey"] = self.api_key
 
     def _get_url(self, path, *args):
@@ -30,18 +31,17 @@ class OvergradResource(ConfigurableResource):
 
     # TODO: use tenacity exponential backoff
     def _request(self, method, url, **kwargs):
-        response = Response()
+        response = self._session.request(
+            method=method, url=url, timeout=self.request_timeout, **kwargs
+        )
 
         try:
-            response = self._session.request(
-                method=method, url=url, timeout=self.request_timeout, **kwargs
-            )
-
             response.raise_for_status()
 
             # Overgrad's API limits users to making 60 requests per minute
             # and 1000 requests per hour
-            time.sleep(60 / 60)
+            # NB: increased past 1 req/sec becase we still get 429 errors
+            time.sleep(1.25)
 
             return response
         except HTTPError as e:
@@ -54,7 +54,7 @@ class OvergradResource(ConfigurableResource):
 
         return self._request(method="GET", url=url, **kwargs)
 
-    def get_list(self, path, *args, **kwargs):
+    def list(self, path, *args, **kwargs):
         kwargs["params"] = {"limit": self.page_limit}
 
         page = 1

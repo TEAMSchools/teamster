@@ -6,31 +6,32 @@ authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
 license = { text = "GPL-3.0-or-later" }
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.13,<3.14"
 dependencies = [
-  "dagster>=1.10,<1.11",
+  "dagster>=1.11,<1.12",
   "dagster-airbyte",
   "dagster-cloud",
   "dagster-dbt",
   "dagster-dlt",
   "dagster-gcp",
   "dagster-k8s",
-  "dagster-slack",
   "dagster-ssh",
-  "dbt-bigquery>=1.9,<1.10",
+  "dbt-bigquery>=1.10,<1.11",
   "dbt-core",
   "beautifulsoup4>=4.12.2",
   "cramjam>=2.7.0",
+  "dlt>=1.10.0",
   "fastavro>=1.9.0",
   "gspread>=5.12.0",
   "ldap3>=2.9.1",
   "oracledb>=1.4.2",
-  "psycopg[binary,pool]>=3.2.3",
+  "psycopg[binary,pool]>=3.2.7",
   "py-avro-schema>=3.4.1",
   "pycryptodome>=3.21.0",
   "pypdf>=5.0.0",
   "python-dateutil>=2.9.0.post0",
   "scikit-learn>=1.4.0",
+  "sqlalchemy>=2.0.42",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
 ]

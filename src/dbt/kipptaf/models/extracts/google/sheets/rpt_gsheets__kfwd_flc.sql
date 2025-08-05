@@ -1,10 +1,13 @@
 with
     act_valid as (
-        select r.student_number, r.contact_id, count(adb.score_type) as act_count,
-        from {{ ref("int_kippadb__standardized_test_unpivot") }} as adb
-        left join {{ ref("int_kippadb__roster") }} as r on adb.contact = r.contact_id
-        where adb.score_type = 'act_composite'
-        group by r.student_number, r.contact_id
+        select
+            school_specific_id as student_number,
+            contact as contact_id,
+
+            count(score_type) as act_count,
+        from {{ ref("int_kippadb__standardized_test_unpivot") }}
+        where score_type = 'act_composite'
+        group by school_specific_id, contact
     ),
 
     early as (
@@ -24,6 +27,47 @@ with
             row_number() over (partition by applicant order by id asc) as rn_applicant,
         from {{ ref("base_kippadb__application") }}
         where matriculation_decision = 'Matriculated (Intent to Enroll)'
+    ),
+
+    dps_responses as (
+        select
+            respondent_email,
+            item_abbreviation,
+            text_value,
+            last_submitted_date_local,
+            max(last_submitted_date_local) over (
+                partition by respondent_email, item_abbreviation, text_value
+            )
+            = last_submitted_date_local as most_recent_submission,
+        from {{ ref("int_google_forms__form_responses") }}
+        where form_id = '1KD8HAfJNdaGNg2VJbxnJ5Wedf8wrPp1QnBYBEG2Elu4'
+    ),
+
+    dps_pivot as (
+        select
+            respondent_email,
+            last_submitted_date_local as dps_submit_date_most_recent,
+            desired_pathway as dps_desired_pathway,
+            secondary_pathway as dps_secondary_pathway,
+            interested_career_industry as dps_interested_career_industry,
+            additional_future_plans as dps_additional_future_plans,
+            kfwd_support as dps_kfwd_support,
+            dream_career as dps_dream_career,
+            row_number() over (
+                partition by respondent_email order by last_submitted_date_local desc
+            ) as rn_response,
+        from
+            dps_responses pivot (
+                max(text_value) for item_abbreviation in (
+                    'desired_pathway',
+                    'secondary_pathway',
+                    'interested_career_industry',
+                    'additional_future_plans',
+                    'kfwd_support',
+                    'dream_career'
+                )
+            )
+        where most_recent_submission
     )
 
 -- trunk-ignore(sqlfluff/ST06)
@@ -53,6 +97,8 @@ select
         then 'currently enrolled'
         when co.enroll_status = 2
         then 'transferred out'
+        when co.enroll_status = 3
+        then 'graduated'
     end as enroll_status,
 
     concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
@@ -104,6 +150,22 @@ select
 
     if(kt.overgrad_students_id is not null, 'Yes', 'No') as has_overgrad_account_yn,
     kt.overgrad_students_assigned_counselor_lastfirst as overgrad_counselor,
+
+    dps.dps_submit_date_most_recent,
+    dps.dps_desired_pathway,
+    dps.dps_secondary_pathway,
+    dps.dps_interested_career_industry,
+    dps.dps_additional_future_plans,
+    dps.dps_kfwd_support,
+    dps.dps_dream_career,
+
+    if(dps.dps_submit_date_most_recent is not null, 1, 0) as is_submitted_dps_int,
+
+    kt.contact_highest_sat_score as highest_sat_score,
+    kt.is_dlm,
+
+    coalesce(cn.as1, 0) as as1_complete,
+    coalesce(cn.bm, 0) as bm_complete,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
@@ -127,4 +189,5 @@ left join
     on co.studentid = gpa.studentid
     and co.schoolid = gpa.schoolid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+left join dps_pivot as dps on dps.respondent_email = co.student_email_google
 where co.rn_undergrad = 1 and co.grade_level != 99

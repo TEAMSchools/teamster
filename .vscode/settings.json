@@ -1,7 +1,6 @@
 {
   "diffEditor.experimental.showMoves": true,
   "diffEditor.ignoreTrimWhitespace": false,
-  "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
   "editor.renderControlCharacters": true,
@@ -56,5 +55,7 @@
     "UV_ENV_FILE": "/workspaces/teamster/env/.env",
     "UV_LINK_MODE": "copy",
     "UV_RESOLUTION": "highest"
-  }
+  },
+  "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
+  "dbt.prefixGenerateModel": "stg"
 }

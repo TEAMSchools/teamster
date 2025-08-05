@@ -1,7 +1,8 @@
 import json
 
 from bs4 import BeautifulSoup, Tag
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Response, Session, exceptions
 
@@ -16,20 +17,20 @@ class MClassResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
-        portal_redirect = self.get(path="reports/myReports")
+        portal_redirect = self.get(path="reports/DownloadYourData")
 
         soup = BeautifulSoup(markup=portal_redirect.text, features="html.parser")
 
-        kc_form_login = _check.inst(
-            obj=soup.find(name="form", id="kc-form-login"), ttype=Tag
+        amplify_login_form = check.inst(
+            obj=soup.find(name="form", id="amplify-login-form"), ttype=Tag
         )
 
         self._session.headers["Content-Type"] = "application/x-www-form-urlencoded"
         self._request(
             method="POST",
-            url=kc_form_login.attrs["action"],
+            url=amplify_login_form.attrs["action"],
             data={"username": self.username, "password": self.password},
         )
 

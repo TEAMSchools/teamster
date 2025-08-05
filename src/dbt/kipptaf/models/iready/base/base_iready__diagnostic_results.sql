@@ -29,6 +29,10 @@ with
             annual_stretch_growth_measure,
             overall_placement,
 
+            if(overall_relative_placement_int >= 4, true, false) as is_proficient,
+
+            if(`subject` = 'Reading', 'ELA', 'Math') as discipline,
+
             if(
                 percent_progress_to_annual_typical_growth_percent >= 100, true, false
             ) as is_met_typical,
@@ -78,6 +82,10 @@ with
                 partition by _dbt_source_relation, student_id, academic_year, `subject`
             ) as most_recent_rush_flag,
 
+            max(if(most_recent_diagnostic_ytd_y_n = 'Y', completion_date, null)) over (
+                partition by _dbt_source_relation, student_id, academic_year, `subject`
+            ) as most_recent_completion_date,
+
             row_number() over (
                 partition by _dbt_source_relation, student_id, academic_year, `subject`
                 order by completion_date desc
@@ -90,6 +98,7 @@ select
     dr.academic_year,
     dr.academic_year_int,
     dr.student_grade,
+    dr.discipline,
     dr.subject,
     dr.start_date,
     dr.completion_date,
@@ -108,6 +117,7 @@ select
     dr.percent_progress_to_annual_stretch_growth_percent,
     dr.is_met_typical,
     dr.is_met_stretch,
+    dr.is_proficient,
     dr.diagnostic_gain,
     dr.annual_typical_growth_measure,
     dr.annual_stretch_growth_measure,
@@ -118,6 +128,7 @@ select
     dr.most_recent_lexile_measure,
     dr.most_recent_lexile_range,
     dr.most_recent_rush_flag,
+    dr.most_recent_completion_date,
     dr.rn_subj_year,
 
     lc.region,

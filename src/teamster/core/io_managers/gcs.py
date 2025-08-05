@@ -4,8 +4,8 @@ from urllib.parse import urlparse
 import fastavro
 from dagster import Any, InputContext, MultiPartitionKey, OutputContext
 from dagster._utils.backoff import backoff
-from dagster._utils.cached_method import cached_method
 from dagster_gcp.gcs import GCSPickleIOManager, PickledObjectGCSIOManager
+from dagster_shared.utils.cached_method import cached_method
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud.storage import Bucket
 from upath import UPath
@@ -100,8 +100,8 @@ class AvroGCSIOManager(GCSUPathIOManager):
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
         blob = self.bucket_obj.blob(blob_name=str(path))
 
-        # trunk-ignore(pyright/reportCallIssue)
         with blob.open(mode="rb") as fo:
+            # trunk-ignore(pyright/reportArgumentType)
             reader = fastavro.reader(fo=fo)
 
             records = [record for record in reader]

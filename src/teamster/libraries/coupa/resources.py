@@ -1,4 +1,5 @@
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Response
@@ -19,10 +20,11 @@ class CoupaResource(ConfigurableResource):
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._service_root = f"https://{self.instance_url}"
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         # instantiate client
         self._session = OAuth2Session(
+            # trunk-ignore(pyright/reportArgumentType)
             client=BackendApplicationClient(client_id=self.client_id, scope=self.scope)
         )
 

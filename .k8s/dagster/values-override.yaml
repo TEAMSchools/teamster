@@ -89,10 +89,10 @@ workspace:
       resources:
         requests:
           cpu: 250m
-          memory: 0.5Gi
-        limits:
-          cpu: 500m
           memory: 1.0Gi
+        limits:
+          cpu: 750m
+          memory: 1.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
@@ -106,8 +106,8 @@ workspace:
   # Branch deployments servers have a default TTL of 24 hours
   # The max code servers defaults to 25, and only applies to servers with TTL.
   serverTTL:
-    fullDeployments:
-      enabled: true
-      ttlSeconds: 3600 # 1 hour
+    # fullDeployments:
+    #   enabled: true
+    #   ttlSeconds: 3600 # 1 hour
     branchDeployments:
       ttlSeconds: 300

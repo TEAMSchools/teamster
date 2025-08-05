@@ -1,3 +1,5 @@
+{% set invalid_lunch_status = ["", "NoD", "1", "2"] %}
+
 with
     union_relations as (
         {{
@@ -31,7 +33,7 @@ with
     )
 
 select
-    ar.* except (lep_status, lunch_status, spedlep),
+    ar.* except (lep_status, lunchstatus, spedlep),
 
     sr.mail as advisor_email,
     sr.work_cell as advisor_phone,
@@ -69,11 +71,23 @@ select
     njs.other_related_services_yn,
     njs.lepbegindate,
     njs.lependdate,
-    njs.gifted_and_talented,
 
     tpd.total_balance as lunch_balance,
 
+    adb.id as salesforce_contact_id,
+    adb.college_match_display_gpa as salesforce_contact_college_match_display_gpa,
+    adb.kipp_hs_class as salesforce_contact_kipp_hs_class,
+    adb.owner_id as salesforce_contact_owner_id,
+
+    adbu.name as salesfoce_contact_owner_name,
+
+    ill.student_id as illuminate_student_id,
+
+    coalesce(njs.gifted_and_talented, suf.gifted_and_talented) as gifted_and_talented,
+
     coalesce(njr.pid_504_tf, suf.is_504, false) as is_504,
+
+    coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
 
     if(ar.region = 'Miami' and fte.survey_2 is not null, true, false) as is_fldoe_fte_2,
     if(ar.region = 'Miami' and fte.survey_3 is not null, true, false) as is_fldoe_fte_3,
@@ -86,6 +100,8 @@ select
     if(
         ar.region = 'Miami', ar.spedlep, sped.special_education_code
     ) as special_education_code,
+
+    if(adb.latest_fafsa_date is null, 'No', 'Yes') as salesforce_contact_df_has_fafsa,
 
     coalesce(if(ar.region = 'Miami', ar.spedlep, sped.spedlep), 'No IEP') as spedlep,
 
@@ -102,19 +118,21 @@ select
     end as lep_status,
 
     case
+        when ar.lunchstatus in unnest({{ invalid_lunch_status }})
+        then null
         when ar.academic_year < {{ var("current_academic_year") }}
-        then ar.lunch_status
+        then ar.lunchstatus
         when ar.region = 'Miami'
-        then ar.lunch_status
+        then ar.lunchstatus
         when ar.rn_year = 1
         then coalesce(if(tpd.is_directly_certified, 'F', null), tpd.eligibility_name)
     end as lunch_status,
 
     case
         when ar.academic_year < {{ var("current_academic_year") }}
-        then ar.lunch_status
+        then ar.lunchstatus
         when ar.region = 'Miami'
-        then ar.lunch_status
+        then ar.lunchstatus
         when ar.rn_year = 1
         then
             case
@@ -125,6 +143,20 @@ select
                 else tpd.eligibility || ' - ' || tpd.eligibility_determination_reason
             end
     end as lunch_application_status,
+
+    case
+        when adb.college_match_display_gpa >= 3.50
+        then '3.50+'
+        when adb.college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when adb.college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when adb.college_match_display_gpa >= 2.00
+        then '2.00-2.49'
+        when adb.college_match_display_gpa < 2.00
+        then '<2.00'
+        else 'No GPA'
+    end as salesforce_contact_college_match_gpa_band,
 from with_region as ar
 left join
     {{ ref("int_people__staff_roster") }} as sr
@@ -160,3 +192,10 @@ left join
     on ar.state_studentnumber = fte.student_id
     and ar.academic_year = fte.academic_year
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="fte") }}
+left join
+    {{ ref("stg_kippadb__contact") }} as adb
+    on ar.student_number = adb.school_specific_id
+left join {{ ref("stg_kippadb__user") }} as adbu on adb.owner_id = adbu.id
+left join
+    {{ ref("stg_illuminate__public__students") }} as ill
+    on ar.student_number = ill.local_student_id

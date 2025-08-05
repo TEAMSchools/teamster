@@ -8,19 +8,16 @@ from dagster import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
-    _check,
     asset,
 )
-from numpy import nan
-from pandas import read_csv
+from dagster_shared import check
 from pypdf import PdfReader
-from slugify import slugify
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.core.utils.functions import regex_pattern_replace
+from teamster.core.utils.functions import file_to_records, regex_pattern_replace
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -42,32 +39,6 @@ def compose_regex(
         )
     else:
         return regexp
-
-
-def convert_file_to_dict(
-    local_filepath: str,
-    slugify_cols: bool,
-    slugify_replacements: list[list[str]] | None = None,
-    **read_csv_kwargs,
-):
-    if slugify_replacements is None:
-        slugify_replacements = []
-
-    df = read_csv(
-        filepath_or_buffer=local_filepath, low_memory=False, **read_csv_kwargs
-    )
-
-    df.replace({nan: None}, inplace=True)
-
-    if slugify_cols:
-        df.rename(
-            columns=lambda x: slugify(
-                text=x, separator="_", replacements=slugify_replacements
-            ),
-            inplace=True,
-        )
-
-    return df.to_dict(orient="records"), df.shape
 
 
 def extract_pdf_to_dict(stream: str, pdf_row_pattern: str):
@@ -96,7 +67,6 @@ def build_sftp_file_asset(
     exclude_dirs: list[str] | None = None,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
-    file_dtype: type | None = None,
     slugify_cols: bool = True,
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
@@ -133,11 +103,11 @@ def build_sftp_file_asset(
             partition_key = None
 
         if group_name == "iready":
-            partition_key = _check.inst(obj=partition_key, ttype=MultiPartitionKey)
+            partition_key = check.inst(obj=partition_key, ttype=MultiPartitionKey)
 
             academic_year_key, subject_key = partition_key.keys_by_dimension.values()
 
-            multi_partitions_def = _check.inst(
+            multi_partitions_def = check.inst(
                 obj=context.assets_def.partitions_def, ttype=MultiPartitionsDefinition
             )
 
@@ -214,23 +184,18 @@ def build_sftp_file_asset(
         elif remote_file_regex[-4:] == ".pdf":
             records, n_rows = extract_pdf_to_dict(
                 stream=local_filepath,
-                pdf_row_pattern=_check.not_none(value=pdf_row_pattern),
+                pdf_row_pattern=check.not_none(value=pdf_row_pattern),
             )
         else:
-            read_csv_kwargs: dict[str, object] = {
-                "sep": file_sep,
-                "encoding": file_encoding,
-            }
-
-            if file_dtype is not None:
-                read_csv_kwargs["dtype"] = file_dtype
-
-            records, (n_rows, _) = convert_file_to_dict(
-                local_filepath=local_filepath,
+            records = file_to_records(
+                file=local_filepath,
+                encoding=file_encoding,
+                delimiter=file_sep,
                 slugify_cols=slugify_cols,
                 slugify_replacements=slugify_replacements,
-                **read_csv_kwargs,
             )
+
+            n_rows = len(records)
 
             if n_rows == 0:
                 context.log.warning(msg="File contains 0 rows")
@@ -373,13 +338,15 @@ def build_sftp_archive_asset(
             context.log.warning(msg=f"File is empty: {local_filepath}")
             records, n_rows = ([{}], 0)
         else:
-            records, (n_rows, _) = convert_file_to_dict(
-                local_filepath=local_filepath,
-                sep=file_sep,
+            records = file_to_records(
+                file=local_filepath,
                 encoding=file_encoding,
+                delimiter=file_sep,
                 slugify_cols=slugify_cols,
                 slugify_replacements=slugify_replacements,
             )
+
+            n_rows = len(records)
 
             if n_rows == 0:
                 context.log.warning(msg="File contains 0 rows")
@@ -404,6 +371,7 @@ def build_sftp_folder_asset(
     slugify_cols: bool = True,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
+    file_dtype: type | None = None,
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
@@ -483,13 +451,15 @@ def build_sftp_folder_asset(
                 context.log.warning(msg=f"File is empty: {local_filepath}")
                 continue
 
-            records, (n_rows, _) = convert_file_to_dict(
-                local_filepath=local_filepath,
-                sep=file_sep,
+            records = file_to_records(
+                file=local_filepath,
                 encoding=file_encoding,
+                delimiter=file_sep,
                 slugify_cols=slugify_cols,
                 slugify_replacements=slugify_replacements,
             )
+
+            n_rows = len(records)
 
             if n_rows == 0:
                 context.log.warning(msg="File contains 0 rows")

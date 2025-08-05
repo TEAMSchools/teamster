@@ -36,7 +36,9 @@ with
             is_ap_course,
             teacher_number,
             teacher_name,
-            tableau_username,
+            teacher_tableau_username,
+            school_leader,
+            school_leader_tableau_username,
             assignmentid as teacher_assign_id,
             assignment_name as teacher_assign_name,
             duedate as teacher_assign_due_date,
@@ -47,6 +49,7 @@ with
             n_exempt,
             n_missing,
             n_null,
+            n_academic_dishonesty,
             n_is_null_missing,
             n_is_null_not_missing,
             n_expected,
@@ -63,6 +66,7 @@ with
             audit_flag_name,
 
             max(audit_flag_value) as audit_flag_value,
+
         from {{ ref("int_tableau__gradebook_audit_flags") }}
         group by all
     ),
@@ -107,21 +111,23 @@ with
             date_enrolled,
             category_quarter_percent_grade,
             category_quarter_average_all_courses,
-            quarter_course_percent_grade_that_matters,
-            quarter_course_grade_points_that_matters,
-            quarter_citizenship,
+            quarter_course_percent_grade,
+            quarter_course_grade_points,
+            quarter_conduct,
             quarter_comment_value,
             scorepoints as raw_score,
             score_entered,
             assign_final_score_percent,
             is_exempt,
-            is_late,
-            is_missing,
+            is_expected_late,
+            is_expected_missing,
+            is_expected_academic_dishonesty,
             audit_category,
             cte_grouping,
             code_type,
             audit_flag_name,
             audit_flag_value as flag_value,
+
         from {{ ref("int_tableau__gradebook_audit_flags") }}
         where audit_flag_value = 1
     )
@@ -158,18 +164,20 @@ select
     v.date_enrolled,
     v.category_quarter_percent_grade,
     v.category_quarter_average_all_courses,
-    v.quarter_course_percent_grade_that_matters,
-    v.quarter_course_grade_points_that_matters,
-    v.quarter_citizenship,
+    v.quarter_course_percent_grade,
+    v.quarter_course_grade_points,
+    v.quarter_conduct,
     v.quarter_comment_value,
     v.raw_score,
     v.score_entered,
     v.assign_final_score_percent,
     v.is_exempt,
-    v.is_late,
-    v.is_missing,
+    v.is_expected_late,
+    v.is_expected_missing,
+    v.is_expected_academic_dishonesty,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -225,18 +233,20 @@ select
     v.date_enrolled,
     v.category_quarter_percent_grade,
     v.category_quarter_average_all_courses,
-    v.quarter_course_percent_grade_that_matters,
-    v.quarter_course_grade_points_that_matters,
-    v.quarter_citizenship,
+    v.quarter_course_percent_grade,
+    v.quarter_course_grade_points,
+    v.quarter_conduct,
     v.quarter_comment_value,
     v.raw_score,
     v.score_entered,
     v.assign_final_score_percent,
     v.is_exempt,
-    v.is_late,
-    v.is_missing,
+    v.is_expected_late,
+    v.is_expected_missing,
+    v.is_expected_academic_dishonesty,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -290,18 +300,20 @@ select
     v.date_enrolled,
     v.category_quarter_percent_grade,
     v.category_quarter_average_all_courses,
-    v.quarter_course_percent_grade_that_matters,
-    v.quarter_course_grade_points_that_matters,
-    v.quarter_citizenship,
+    v.quarter_course_percent_grade,
+    v.quarter_course_grade_points,
+    v.quarter_conduct,
     v.quarter_comment_value,
     v.raw_score,
     v.score_entered,
     v.assign_final_score_percent,
     v.is_exempt,
-    v.is_late,
-    v.is_missing,
+    v.is_expected_late,
+    v.is_expected_missing,
+    v.is_expected_academic_dishonesty,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -355,18 +367,20 @@ select
     v.date_enrolled,
     v.category_quarter_percent_grade,
     v.category_quarter_average_all_courses,
-    v.quarter_course_percent_grade_that_matters,
-    v.quarter_course_grade_points_that_matters,
-    v.quarter_citizenship,
+    v.quarter_course_percent_grade,
+    v.quarter_course_grade_points,
+    v.quarter_conduct,
     v.quarter_comment_value,
     v.raw_score,
     v.score_entered,
     v.assign_final_score_percent,
     v.is_exempt,
-    v.is_late,
-    v.is_missing,
+    v.is_expected_late,
+    v.is_expected_missing,
+    v.is_expected_academic_dishonesty,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 left join
     valid_flags as v
@@ -422,18 +436,20 @@ select
     v.date_enrolled,
     v.category_quarter_percent_grade,
     v.category_quarter_average_all_courses,
-    v.quarter_course_percent_grade_that_matters,
-    v.quarter_course_grade_points_that_matters,
-    v.quarter_citizenship,
+    v.quarter_course_percent_grade,
+    v.quarter_course_grade_points,
+    v.quarter_conduct,
     v.quarter_comment_value,
     v.raw_score,
     v.score_entered,
     v.assign_final_score_percent,
     v.is_exempt,
-    v.is_late,
-    v.is_missing,
+    v.is_expected_late,
+    v.is_expected_missing,
+    v.is_expected_academic_dishonesty,
 
     coalesce(v.flag_value, 0) as flag_value,
+
 from teacher_aggs as t
 left join
     valid_flags as v

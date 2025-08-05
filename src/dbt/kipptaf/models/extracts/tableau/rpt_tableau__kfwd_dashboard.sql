@@ -163,21 +163,6 @@ with
         select 'AA' as matriculation_type, 'Public 2 yr' as application_account_type,
     ),
 
-    es_grad as (
-        select
-            student_number,
-            max(
-                if(
-                    grade_level = 4 and exitdate >= date(academic_year + 1, 6, 1),
-                    true,
-                    false
-                )
-            ) as is_es_grad,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where rn_year = 1
-        group by student_number
-    ),
-
     test_attempts as (
         select
             contact,
@@ -244,6 +229,7 @@ select
     c.contact_last_successful_advisor_contact as last_successful_advisor_contact_date,
     c.contact_last_outreach as last_outreach_date,
     c.student_number as powerschool_student_number,
+    c.is_dlm,
 
     ay.academic_year,
 
@@ -308,6 +294,7 @@ select
 
     apps.name as application_name,
     apps.account_type as application_account_type,
+    apps.account_name as application_school_name,
 
     ar.n_submitted,
     ar.n_accepted,
@@ -464,6 +451,7 @@ select
 
     c.contact_opt_out_national_contact,
     c.contact_opt_out_regional_contact,
+    c.entry_school,
 
     coalesce(ar.max_ecc_accepted, 0) as max_ecc_accepted,
 
@@ -517,7 +505,8 @@ select
     coalesce(ar.is_accepted_certificate, false) as is_accepted_cert,
     coalesce(ar.is_eof_applicant, false) as is_eof_applicant,
     coalesce(ar.is_matriculated, false) as is_matriculated,
-    coalesce(e.is_es_grad, false) as is_es_grad,
+
+    coalesce(c.is_es_grad, false) as is_es_grad,
 
     case
         when
@@ -610,6 +599,9 @@ select
     if(
         ei.ecc_pursuing_degree_type = "Bachelor's (4-year)", true, false
     ) as has_4yr_ecc_enrollment,
+
+    coalesce(ei.ecc_adjusted_6_year_minority_graduation_rate, 0) as urm_ecc_school,
+    c.contact_highest_sat_score as highest_sat_score,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -656,7 +648,6 @@ left join
     and b.rn_benchmark = 1
 left join persist_pivot as p on c.contact_id = p.sf_contact_id
 left join matriculation_type as m on apps.account_type = m.application_account_type
-left join es_grad as e on e.student_number = c.student_number
 left join
     {{ ref("stg_overgrad__students") }} as os on c.contact_id = os.external_student_id
 left join
