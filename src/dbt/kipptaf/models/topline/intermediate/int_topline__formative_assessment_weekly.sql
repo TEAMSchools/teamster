@@ -40,7 +40,7 @@ with
         from student_weeks as sw
         left join
             {{ ref("int_assessments__response_rollup") }} as rr
-            on sw.powerschool_student_number = rr.powerschool_school_id
+            on sw.powerschool_student_number = rr.powerschool_student_number
             and sw.academic_year = rr.academic_year
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
         where
