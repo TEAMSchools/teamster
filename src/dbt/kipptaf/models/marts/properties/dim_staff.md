@@ -34,7 +34,7 @@ Used to group staff by organizational structure and business unit.
 
 This is the physical location where the employee/teammate works. We have 19 active school locations with names like
 "KIPP TEAM Academy" and "KIPP Lanning Square Primary", and three administrative locations which begin with the word "Room"
-(Room 9 in Newark, Room 10 in Camden, and Room 11 in Miami), which is where the staff that serve multiple schools or the whole district/network work.
+(Room 9 for the entity TEAM Academy Charter School/Newark region, Room 10 for KIPP Cooper Norcross Academy/Camden region, and Room 11 for KIPP Miami/Miami region), which is where the staff that serve multiple schools or the whole district/network work.
 
 {% enddocs %}
 

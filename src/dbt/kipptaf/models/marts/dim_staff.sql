@@ -13,8 +13,14 @@ select
     assignment_status,
     race_ethnicity_reporting,
     if(
-        job_title
-        in ('Teacher', 'Teacher in Residence', 'ESE Teacher', 'Learning Specialist'),
+        job_title in (
+            'Teacher',
+            'Teacher in Residence',
+            'ESE Teacher',
+            'Learning Specialist',
+            'Teacher ESL',
+            'Teacher in Residence ESL'
+        ),
         true,
         false
     ) as is_teacher,
