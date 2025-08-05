@@ -88,7 +88,7 @@ Useful for measuring assignment duration or transitions.
 {% docs teammate_is_teacher %}
 A boolean field to note whether someone is in a role where they teach in the classroom.
 We tend to group certain roles as "teacher" although the official job title may vary. This indicator includes
-all teammates/employees in these roles: 'Teacher','Teacher in Residence','ESE Teacher', and 'Learning Specialist'.
+all teammates/employees in these roles: 'Teacher','Teacher in Residence','ESE Teacher', 'Teacher ESL', 'Teacher in Residence ESL' and 'Learning Specialist'.
 Used to count the number of teammates in classroom instructional roles.
 
 {% enddocs %}
