@@ -1,0 +1,18 @@
+directory_type = "workspace"
+
+[workspace]
+
+[[workspace.projects]]
+path = "projects/kipptaf"
+
+[[workspace.projects]]
+path = "projects/kippcamden"
+
+[[workspace.projects]]
+path = "projects/kippnewark"
+
+[[workspace.projects]]
+path = "projects/kippmiami"
+
+[[workspace.projects]]
+path = "components/foo"
