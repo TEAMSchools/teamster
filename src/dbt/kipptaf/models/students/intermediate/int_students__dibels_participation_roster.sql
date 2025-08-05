@@ -36,14 +36,14 @@ with
             e.grade,
             e.assessment_type,
             e.admin_season,
-            e.`round`,
+            e.round_number,
 
             t.start_date,
             t.end_date,
 
             count(*) over (
                 partition by
-                    e.academic_year, e.region, e.grade, e.admin_season, e.`round`
+                    e.academic_year, e.region, e.grade, e.admin_season, e.round_number
             ) as expected_row_count,
 
         from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
@@ -67,7 +67,7 @@ with
 
             e.assessment_type,
             e.admin_season,
-            e.`round`,
+            e.round_number,
             e.expected_row_count,
 
             true as enrollment_dates_account,
@@ -89,7 +89,7 @@ with
                     s.student_number,
                     s.grade_level,
                     e.admin_season,
-                    e.`round`
+                    e.round_number
             ) as rn,
 
         from students as s
@@ -107,7 +107,7 @@ with
             and s.student_number = a.student_number
             and s.grade_level = a.assessment_grade_int
             and e.admin_season = a.period
-            and e.`round` = a.`round`
+            and e.round_number = a.round_number
 
         union all
 
@@ -120,7 +120,7 @@ with
 
             e.assessment_type,
             e.admin_season,
-            e.`round`,
+            e.round_number,
             e.expected_row_count,
 
             true as enrollment_dates_account,
@@ -142,7 +142,7 @@ with
                     s.student_number,
                     s.grade_level,
                     e.admin_season,
-                    e.`round`
+                    e.round_number
             ) as rn,
 
         from students as s
@@ -162,7 +162,7 @@ with
             and s.grade_level = a.assessment_grade_int
             and s.boy_probe_eligible = a.boy_probe_eligible
             and e.admin_season = a.period
-            and e.`round` = a.`round`
+            and e.round_number = a.round_number
 
         union all
 
@@ -175,7 +175,7 @@ with
 
             e.assessment_type,
             e.admin_season,
-            e.`round`,
+            e.round_number,
             e.expected_row_count,
 
             true as enrollment_dates_account,
@@ -197,7 +197,7 @@ with
                     s.student_number,
                     s.grade_level,
                     e.admin_season,
-                    e.`round`
+                    e.round_number
             ) as rn,
 
         from students as s
@@ -217,7 +217,7 @@ with
             and s.grade_level = a.assessment_grade_int
             and s.moy_probe_eligible = a.moy_probe_eligible
             and e.admin_season = a.period
-            and e.`round` = a.`round`
+            and e.round_number = a.round_number
     ),
 
     roster_no_enrollment_dates as (
@@ -230,7 +230,7 @@ with
 
             e.assessment_type,
             e.admin_season,
-            e.`round`,
+            e.round_number,
             e.expected_row_count,
 
             false as enrollment_dates_account,
@@ -252,7 +252,7 @@ with
                     s.student_number,
                     s.grade_level,
                     e.admin_season,
-                    e.`round`
+                    e.round_number
             ) as rn,
 
         from students as s
@@ -269,7 +269,7 @@ with
             and s.student_number = a.student_number
             and s.grade_level = a.assessment_grade_int
             and e.admin_season = a.period
-            and e.`round` = a.`round`
+            and e.round_number = a.round_number
 
         union all
 
@@ -282,7 +282,7 @@ with
 
             e.assessment_type,
             e.admin_season,
-            e.`round`,
+            e.round_number,
             e.expected_row_count,
 
             false as enrollment_dates_account,
@@ -304,7 +304,7 @@ with
                     s.student_number,
                     s.grade_level,
                     e.admin_season,
-                    e.`round`
+                    e.round_number
             ) as rn,
 
         from students as s
@@ -323,7 +323,7 @@ with
             and s.grade_level = a.assessment_grade_int
             and s.boy_probe_eligible = a.boy_probe_eligible
             and e.admin_season = a.period
-            and e.`round` = a.`round`
+            and e.round_number = a.round_number
 
         union all
 
@@ -336,7 +336,7 @@ with
 
             e.assessment_type,
             e.admin_season,
-            e.`round`,
+            e.round_number,
             e.expected_row_count,
 
             false as enrollment_dates_account,
@@ -358,7 +358,7 @@ with
                     s.student_number,
                     s.grade_level,
                     e.admin_season,
-                    e.`round`
+                    e.round_number
             ) as rn,
 
         from students as s
@@ -377,7 +377,7 @@ with
             and s.grade_level = a.assessment_grade_int
             and s.moy_probe_eligible = a.moy_probe_eligible
             and e.admin_season = a.period
-            and e.`round` = a.`round`
+            and e.round_number = a.round_number
     )
 
 select
@@ -389,7 +389,7 @@ select
     enrollment_dates_account,
     assessment_type,
     admin_season,
-    `round`,
+    round_number,
     expected_row_count,
     actual_row_count,
     completed_test_round,
@@ -409,7 +409,7 @@ select
     enrollment_dates_account,
     assessment_type,
     admin_season,
-    `round`,
+    round_number,
     expected_row_count,
     actual_row_count,
     completed_test_round,

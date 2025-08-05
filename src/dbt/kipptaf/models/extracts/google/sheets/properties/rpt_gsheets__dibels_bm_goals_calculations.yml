@@ -1,0 +1,42 @@
+version: 2
+models:
+  - name: rpt_gsheets__dibels_bm_goals_calculations
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: assessment_grade
+        data_type: string
+      - name: assessment_grade_int
+        data_type: int64
+      - name: period
+        data_type: string
+      - name: benchmark_goal_season
+        data_type: string
+      - name: school
+        data_type: string
+      - name: grade_goal
+        data_type: float64
+      - name: grade_range_goal
+        data_type: float64
+      - name: n_admin_season_school_gl_all
+        data_type: float64
+      - name: n_admin_season_school_gl_at_above
+        data_type: int64
+      - name: n_admin_season_school_gl_bl_wb
+        data_type: int64
+      - name: n_admin_season_region_gl_all
+        data_type: float64
+      - name: n_admin_season_region_gl_at_above
+        data_type: int64
+      - name: n_admin_season_region_gl_bl_wb
+        data_type: int64
+      - name: n_admin_season_school_gl_at_above_expected
+        data_type: float64
+      - name: n_admin_season_region_gl_at_above_expected
+        data_type: float64
+      - name: n_admin_season_school_gl_at_above_gap
+        data_type: float64
+      - name: n_admin_season_region_gl_at_above_gap
+        data_type: float64
