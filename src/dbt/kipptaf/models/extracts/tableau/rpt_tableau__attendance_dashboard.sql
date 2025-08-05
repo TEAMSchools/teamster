@@ -106,8 +106,7 @@ with
             and {{ union_dataset_join_clause(left_alias="co", right_alias="ms") }}
             and ms.rn = 1
         where
-            ad.attendancevalue is not null
-            and ad.calendardate between date(
+            ad.calendardate between date(
                 ({{ var("current_academic_year") - 1 }}), 7, 1
             ) and current_date('{{ var("local_timezone") }}')
     )
