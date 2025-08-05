@@ -28,7 +28,7 @@ with
     ),
 
     grade_levels as (
-        select teachernumber, grade_level as grade_taught, academic_year
+        select teachernumber, grade_level as grade_taught, academic_year,
         from {{ ref("int_powerschool__teacher_grade_levels") }}
         where grade_level_rank = 1
     ),
@@ -124,8 +124,8 @@ with
             on observation_pivot.observation_id = observation_details.observation_id
         left join
             roster_current as roster_observer
-            on roster_observer.employee_number
-            = observation_pivot.observer_employee_number
+            on observation_pivot.observer_employee_number
+            = roster_observer.employee_number
         left join
             grade_levels
             on roster_history.powerschool_teacher_number = grade_levels.teachernumber
