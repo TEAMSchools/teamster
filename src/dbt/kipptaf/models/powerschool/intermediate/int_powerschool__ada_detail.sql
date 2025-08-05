@@ -47,4 +47,5 @@ inner join
     and mem.calendardate between cw.week_start_monday and cw.week_end_sunday
 where
     mem.membershipvalue = 1
+    and mem.attendancevalue is not null
     and mem.calendardate <= current_date('{{ var("local_timezone") }}')
