@@ -8,7 +8,7 @@ select
 
     t.academic_year,
     t.semester,
-    t.term as quarter,
+    t.term as `quarter`,
 
     cw.week_start_monday,
     cw.week_end_sunday,

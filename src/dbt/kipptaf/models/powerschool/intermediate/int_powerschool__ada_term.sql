@@ -5,7 +5,7 @@ with
             studentid,
             academic_year,
             semester,
-            quarter,
+            `quarter`,
 
             sum(is_present_weighted) as sum_attendance_value_term_weighted,
             sum(attendancevalue) as sum_attendance_value_term,
@@ -20,7 +20,7 @@ select
     _dbt_source_relation,
     studentid,
     academic_year,
-    quarter,
+    `quarter`,
     ada_term,
 
     round(
@@ -60,12 +60,12 @@ select
             (
                 sum(sum_attendance_value_term) over (
                     partition by _dbt_source_relation, studentid, academic_year
-                    order by quarter asc
+                    order by `quarter` asc
                 )
             ) / (
                 sum(count_attendance_value_term) over (
                     partition by _dbt_source_relation, studentid, academic_year
-                    order by quarter asc
+                    order by `quarter` asc
                 )
             )
         ),
@@ -77,12 +77,12 @@ select
             (
                 sum(sum_attendance_value_term_weighted) over (
                     partition by _dbt_source_relation, studentid, academic_year
-                    order by quarter asc
+                    order by `quarter` asc
                 )
             ) / (
                 sum(count_attendance_value_term) over (
                     partition by _dbt_source_relation, studentid, academic_year
-                    order by quarter asc
+                    order by `quarter` asc
                 )
             )
         ),
