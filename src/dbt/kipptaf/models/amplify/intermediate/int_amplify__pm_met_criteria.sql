@@ -7,7 +7,7 @@ with
             g.assessment_grade,
             g.assessment_grade_int,
             g.measure_standard,
-            g.`round`,
+            g.round_number,
             g.benchmark_goal,
             g.round_growth_words_goal,
             g.cumulative_growth_words,
@@ -16,6 +16,8 @@ with
             a.student_number,
             a.measure_name_code,
             a.measure_standard_score,
+            a.start_date,
+            a.end_date,
 
             p.completed_test_round,
 
@@ -34,7 +36,7 @@ with
             and g.region = a.region
             and g.assessment_grade_int = a.assessment_grade_int
             and g.admin_season = a.period
-            and g.`round` = a.`round`
+            and g.round_number = a.round_number
             and g.measure_standard = a.measure_standard
             and a.assessment_type = 'PM'
             and a.overall_probe_eligible = 'Yes'
@@ -45,7 +47,7 @@ with
             and a.student_number = p.student_number
             and a.assessment_grade_int = p.grade_level
             and a.period = p.admin_season
-            and a.`round` = p.`round`
+            and a.round_number = p.round_number
             and p.enrollment_dates_account
         where g.pm_goal_include is null
     ),
@@ -59,7 +61,7 @@ with
                     partition by
                         academic_year,
                         admin_season,
-                        `round`,
+                        round_number,
                         measure_name_code,
                         student_number
                 )
@@ -81,12 +83,12 @@ with
                 then
                     min(met_measure_name_code_goal) over (
                         partition by
-                            academic_year, admin_season, `round`, student_number
+                            academic_year, admin_season, round_number, student_number
                     )
                 else
                     max(met_measure_name_code_goal) over (
                         partition by
-                            academic_year, admin_season, `round`, student_number
+                            academic_year, admin_season, round_number, student_number
                     )
             end as met_pm_round_criteria,
 

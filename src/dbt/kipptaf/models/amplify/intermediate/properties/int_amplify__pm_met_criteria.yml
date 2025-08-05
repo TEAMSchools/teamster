@@ -1,0 +1,48 @@
+version: 2
+models:
+  - name: int_amplify__pm_met_criteria
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: admin_season
+        data_type: string
+      - name: assessment_grade
+        data_type: string
+      - name: assessment_grade_int
+        data_type: int64
+      - name: measure_standard
+        data_type: string
+      - name: round_number
+        data_type: int64
+      - name: benchmark_goal
+        data_type: int64
+      - name: round_growth_words_goal
+        data_type: int64
+      - name: cumulative_growth_words
+        data_type: int64
+      - name: pm_goal_criteria
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: measure_name_code
+        data_type: string
+      - name: measure_standard_score
+        data_type: float64
+      - name: start_date
+        data_type: date
+      - name: end_date
+        data_type: date
+      - name: completed_test_round
+        data_type: boolean
+      - name: met_measure_standard_goal
+        data_type: int64
+      - name: met_admin_benchmark_goal
+        data_type: int64
+      - name: met_measure_name_code_goal
+        data_type: int64
+      - name: met_pm_round_criteria
+        data_type: int64
+      - name: met_pm_round_overall_criteria
+        data_type: int64
