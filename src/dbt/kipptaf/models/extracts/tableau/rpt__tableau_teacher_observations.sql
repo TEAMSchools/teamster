@@ -99,6 +99,7 @@ with
             observation_details.strand_name,
             observation_details.measurement_name,
             observation_details.row_score,
+            observation_details.measurement_comments,
 
             roster_observer.formatted_name as observer_name,
 
@@ -172,6 +173,7 @@ with
             observation_details.strand_name,
             observation_details.measurement_name,
             observation_details.row_score,
+            observation_details.measurement_comments,
 
             roster_observer.formatted_name as observer_name,
 
