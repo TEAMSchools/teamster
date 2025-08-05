@@ -35,7 +35,6 @@ select
     e.expected_measure_name,
     e.expected_measure_standard,
     e.benchmark_goal as admin_benchmark,
-    cast(e.round_number as string) as expected_round,
 
     g.assessment_grade as grade_level,
     g.assessment_grade_int as expected_grade_level,
@@ -84,6 +83,8 @@ select
 
     f.nj_student_tier,
     f.is_tutoring as tutoring_nj,
+
+    cast(e.round_number as string) as expected_round,
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 
