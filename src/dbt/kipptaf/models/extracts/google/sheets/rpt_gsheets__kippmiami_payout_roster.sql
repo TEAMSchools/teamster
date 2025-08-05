@@ -317,9 +317,9 @@ with
         union all
 
         select
-            amp.mclass_academic_year as academic_year,
+            amp.academic_year,
             'DIBELS EOY composite' as measure,
-            cast(amp.mclass_assessment_grade_int as string) as grade_level,
+            cast(amp.assessment_grade_int as string) as grade_level,
             round(
                 avg(
                     case
@@ -335,13 +335,11 @@ with
         from {{ ref("int_amplify__all_assessments") }} as amp
         inner join
             {{ ref("stg_powerschool__students") }} as s
-            on amp.mclass_student_number = s.student_number
+            on amp.student_number = s.student_number
             and s.enroll_status = 0
             and regexp_extract(s._dbt_source_relation, r'(kipp\w+)_') = 'kippmiami'
-        where
-            amp.mclass_measure_standard = 'Composite'
-            and amp.mclass_academic_year = 2024
-        group by amp.mclass_academic_year, amp.mclass_assessment_grade_int
+        where amp.measure_standard = 'Composite' and amp.academic_year = 2024
+        group by amp.academic_year, amp.assessment_grade_int
 
         union all
 

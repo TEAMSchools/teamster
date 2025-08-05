@@ -24,8 +24,8 @@ vars:
   local_timezone: America/New_York
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
   cloud_storage_uri_base: gs://teamster-kippnewark/dagster/kippnewark
-  current_academic_year: 2024
-  current_fiscal_year: 2025
+  current_academic_year: 2025
+  current_fiscal_year: 2026
   iready_schema: kippnj_iready
   renlearn_schema: kippnj_renlearn
 
@@ -60,6 +60,8 @@ models:
   renlearn:
     +materialized: table
     staging:
+      stg_renlearn__accelerated_reader:
+        +enabled: false
       stg_renlearn__fast_star:
         +enabled: false
       stg_renlearn__star_dashboard_standards:
@@ -91,6 +93,8 @@ sources:
         +enabled: false
   renlearn:
     renlearn:
+      src_renlearn__accelerated_reader:
+        +enabled: false
       src_renlearn__star_skill_area:
         +enabled: false
       src_renlearn__star_dashboard_standards:

@@ -160,7 +160,12 @@ select
     dps.dps_dream_career,
 
     if(dps.dps_submit_date_most_recent is not null, 1, 0) as is_submitted_dps_int,
+
     kt.contact_highest_sat_score as highest_sat_score,
+    kt.is_dlm,
+
+    coalesce(cn.as1, 0) as as1_complete,
+    coalesce(cn.bm, 0) as bm_complete,
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number

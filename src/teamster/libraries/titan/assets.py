@@ -7,7 +7,7 @@ from teamster.libraries.sftp.assets import build_sftp_file_asset
 
 
 def build_titan_sftp_asset(
-    key: list[str],
+    asset_key: list[str],
     remote_file_regex: str,
     schema: dict,
     partition_start_date: str,
@@ -23,7 +23,7 @@ def build_titan_sftp_asset(
     ]
 
     return build_sftp_file_asset(
-        asset_key=key,
+        asset_key=asset_key,
         remote_dir_regex=r"\.",
         remote_file_regex=remote_file_regex,
         ssh_resource_key="ssh_titan",
