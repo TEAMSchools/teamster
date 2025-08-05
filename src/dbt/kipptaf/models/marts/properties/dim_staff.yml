@@ -1,7 +1,10 @@
 semantic_models:
   - name: dim_staff
     model: ref('dim_staff')
-    description: Staff roster dimension with job info
+    description:
+      Staff roster dimension with job titles, departments, demographics, and
+      employment status. Includes key fields for HR reporting, DEI analytics,
+      and workforce tracking.
 
     entities:
       - name: teammate
@@ -11,35 +14,49 @@ semantic_models:
     dimensions:
       - name: assignment_status
         type: categorical
+        description: '{{doc("teammate_assignment_status")}}'
 
       - name: race_ethnicity_reporting
         type: categorical
+        description: '{{doc("teammate_race_ethnicity_reporting")}}'
 
       - name: entity
         type: categorical
+        description: '{{doc("teammate_entity")}}'
 
       - name: location
         type: categorical
+        description: '{{doc("teammate_location")}}'
 
       - name: grade_band
         type: categorical
+        description: '{{doc("teammate_grade_band")}}'
 
       - name: department
         type: categorical
+        description: '{{doc("teammate_department")}}'
 
       - name: job_title
         type: categorical
+        description: '{{doc("teammate_job_title")}}'
 
       - name: manager
         type: categorical
+        description: '{{doc("teammate_manager")}}'
+
+      - name: is_teacher
+        type: categorical
+        description: '{{doc("teammate_is_teacher")}}'
 
       - name: worker_original_hire_date
         type: time
+        description: '{{doc("teammate_original_hire_date")}}'
         type_params:
           time_granularity: day
 
       - name: work_assignment_actual_start_date
         type: time
+        description: '{{doc("teammate_work_assignment_actual_start_date")}}'
         type_params:
           time_granularity: day
 
@@ -52,7 +69,10 @@ semantic_models:
 
 metrics:
   - name: staff_count
-    description: count of staff employee numbers
+    description:
+      A simple metric that counts unique employees based on their employee
+      number. Often used to measure workforce size by filters like location,
+      assignment status, or department.
     type: simple
     label: staff_count
     type_params:
