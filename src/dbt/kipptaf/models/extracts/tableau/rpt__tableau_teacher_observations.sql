@@ -27,6 +27,12 @@ with
         select *, from {{ ref("int_performance_management__observation_details") }}
     ),
 
+    grade_levels as (
+        select teachernumber, grade_level as grade_taught, academic_year
+        from {{ ref("int_powerschool__teacher_grade_levels") }}
+        where grade_level_rank = 1
+    ),
+
     observation_pivot as (
         select
             observations.*,
@@ -94,7 +100,9 @@ with
             observation_details.measurement_name,
             observation_details.row_score,
 
-            roster_history_manager.formatted_name as observer_name,
+            roster_observer.formatted_name as observer_name,
+
+            grade_levels.grade_taught,
 
             if(observation_pivot.observation_id is not null, 1, 0) as is_observed,
 
@@ -115,9 +123,13 @@ with
             observation_details
             on observation_pivot.observation_id = observation_details.observation_id
         left join
-            roster_history as roster_history_manager
-            on roster_history.employee_number
+            roster_current as roster_observer
+            on roster_observer.employee_number
             = observation_pivot.observer_employee_number
+        left join
+            grade_levels
+            on roster_history.powerschool_teacher_number = grade_levels.teachernumber
+            and observation_pivot.academic_year = grade_levels.academic_year
         where
             roster_history.primary_indicator
             and roster_history.assignment_status = 'Active'
@@ -163,7 +175,10 @@ with
 
             roster_observer.formatted_name as observer_name,
 
+            grade_levels.grade_taught,
+
             if(observation_pivot.observation_id is not null, 1, 0) as is_observed,
+
         from observation_pivot
         left join
             roster_history
@@ -178,6 +193,10 @@ with
             roster_current as roster_observer
             on observation_pivot.observer_employee_number
             = roster_observer.employee_number
+        left join
+            grade_levels
+            on roster_history.powerschool_teacher_number = grade_levels.teachernumber
+            and observation_pivot.academic_year = grade_levels.academic_year
         where
             observation_pivot.academic_year != {{ var("current_academic_year") }}
             and observation_pivot.observation_id is not null
