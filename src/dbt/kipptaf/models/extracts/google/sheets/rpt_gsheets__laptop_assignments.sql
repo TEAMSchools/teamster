@@ -6,6 +6,8 @@ select
     grade_level,
     advisory_name,
     advisor_lastfirst,
+    student_web_id as username,
+    student_email_google as email,
 
     if(enroll_status = 2, exitdate, null) as exitdate,
     case
