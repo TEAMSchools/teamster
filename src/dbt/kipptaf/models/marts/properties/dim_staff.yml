@@ -1,7 +1,10 @@
 semantic_models:
   - name: dim_staff
     model: ref('dim_staff')
-    description: Staff roster dimension with job titles, departments, demographics, and employment status. Includes key fields for HR reporting, DEI analytics, and workforce tracking.
+    description:
+      Staff roster dimension with job titles, departments, demographics, and
+      employment status. Includes key fields for HR reporting, DEI analytics,
+      and workforce tracking.
 
     entities:
       - name: teammate
@@ -66,7 +69,10 @@ semantic_models:
 
 metrics:
   - name: staff_count
-    description: A simple metric that counts unique employees based on their employee number. Often used to measure workforce size by filters like location, assignment status, or department.
+    description:
+      A simple metric that counts unique employees based on their employee
+      number. Often used to measure workforce size by filters like location,
+      assignment status, or department.
     type: simple
     label: staff_count
     type_params:
