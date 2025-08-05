@@ -19,39 +19,8 @@ with
             between date_sub(t.lockbox_date, interval 6 week) and t.lockbox_date
             and t.type = 'PMS'
             and (assignment_status = 'Leave' or assignment_status_lag = 'Leave')
-    ),
-
-    tracks as (
-        select
-            o.observation_id,
-            max(
-                if(
-                    od.measurement_name like '%Teacher Moves Track%',
-                    od.measurement_dropdown_selection,
-                    null
-                )
-            ) as teacher_moves_track,
-            max(
-                if(
-                    od.measurement_name like '%Student Habits Track%',
-                    od.measurement_dropdown_selection,
-                    null
-                )
-            ) as student_habits_track,
-            max(
-                if(
-                    od.measurement_name like '%Number%',
-                    od.measurement_dropdown_selection,
-                    null
-                )
-            ) as number_of_kids,
-        from {{ ref("int_performance_management__observations") }} as o
-        inner join
-            {{ ref("int_performance_management__observation_details") }} as od
-            on o.observation_id = od.observation_id
-        where o.observation_type_abbreviation = 'WT'
-        group by o.observation_id
     )
+
 /* tracking for current year */
 select
     srh.employee_number,
@@ -98,11 +67,6 @@ select
     od.measurement_name,
     od.overall_tier,
     od.observation_notes,
-    od.measurement_dropdown_selection,
-
-    tr.teacher_moves_track,
-    tr.student_habits_track,
-    tr.number_of_kids,
 
     sr.assignment_status as current_assignment_status,
     sr.formatted_name as teammate,
@@ -155,7 +119,7 @@ inner join
         or t.end_date
         between srh.work_assignment_actual_start_date and srh.effective_date_end
     )
-    and t.type in ('PMS', 'PMC', 'TR', 'O3', 'WT')
+    and t.type in ('PMS', 'PMC', 'TR')
     and t.academic_year = {{ var("current_academic_year") }}
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
@@ -166,7 +130,6 @@ left join
     on srh.employee_number = od.employee_number
     and t.type = od.observation_type_abbreviation
     and od.observed_at between t.start_date and t.end_date
-left join tracks as tr on od.observation_id = tr.observation_id
 left join
     {{ ref("int_people__staff_roster") }} as sr
     on srh.employee_number = sr.employee_number
@@ -237,11 +200,6 @@ select
     od.measurement_name,
     od.overall_tier,
     od.observation_notes,
-    od.measurement_dropdown_selection,
-
-    null as teacher_moves_track,
-    null as student_habits_track,
-    null as number_of_kids,
 
     sr.assignment_status as current_assignment_status,
     sr.formatted_name as teammate,
