@@ -38,7 +38,7 @@ models:
         data_type: boolean
       - name: PM_Goal_Criteria
         data_type: string
-      - name: Matching_PM_Season
+      - name: matching_pm_season
         data_type: string
       - name: assessment_type
         data_type: string
