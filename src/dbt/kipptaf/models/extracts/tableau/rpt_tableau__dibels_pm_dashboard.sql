@@ -30,7 +30,7 @@ with
                 'ELA GrK',
                 'ELA K',
                 'ELA Gr1',
-                'ELA Gr2'
+                'ELA Gr2',
                 'ELA Gr3',
                 'ELA Gr4',
                 'ELA Gr5',
