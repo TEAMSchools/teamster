@@ -24,4 +24,4 @@ where
     is_enrolled_y1
     and rn_year = 1
     and academic_year = {{ var("current_academic_year") }}
-order by lastfirst, grade_level
+order by lastfirst asc
