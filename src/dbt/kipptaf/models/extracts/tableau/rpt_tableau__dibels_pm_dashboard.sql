@@ -48,7 +48,6 @@ select
     g.cumulative_growth_words as goal,
 
     c.students_student_number as schedule_student_number,
-    right(c.courses_course_name, 1) as schedule_student_grade_level,
     c.cc_teacherid as teacherid,
     c.teacher_lastfirst as teacher_name,
     c.courses_course_name as course_name,
@@ -85,6 +84,8 @@ select
     f.is_tutoring as tutoring_nj,
 
     cast(e.round_number as string) as expected_round,
+
+    right(c.courses_course_name, 1) as schedule_student_grade_level,
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 
