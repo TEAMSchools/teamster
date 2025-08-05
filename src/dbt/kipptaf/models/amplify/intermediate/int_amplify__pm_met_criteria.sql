@@ -16,6 +16,8 @@ with
             a.student_number,
             a.measure_name_code,
             a.measure_standard_score,
+            a.start_date,
+            a.end_date,
 
             p.completed_test_round,
 

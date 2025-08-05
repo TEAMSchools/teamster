@@ -56,6 +56,8 @@ with
             e.assessment_type,
             e.round_number,
             e.month_round,
+            e.start_date,
+            e.end_date,
             e.matching_season,
 
             row_number() over (
@@ -115,6 +117,8 @@ with
             e.assessment_type,
             e.round_number,
             e.month_round,
+            e.start_date,
+            e.end_date,
             e.matching_season,
 
             row_number() over (
@@ -167,6 +171,8 @@ with
             e.assessment_type,
             e.round_number,
             e.month_round,
+            e.start_date,
+            e.end_date,
 
             if(p.pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
 
