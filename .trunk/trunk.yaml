@@ -29,7 +29,7 @@ lint:
     - sqlfmt@0.27.0
     - svgo@4.0.0
     - taplo@0.9.3
-    - trufflehog@3.90.2
+    - trufflehog@3.90.3
     - yamllint@1.37.1
   disabled:
     - black
