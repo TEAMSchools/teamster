@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("renlearn",
         "src_renlearn__star_dashboard_standards") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: assessment_id
         data_type: string
@@ -13,15 +15,15 @@ models:
       - name: completed_date_local
         data_type: string
       - name: domain_confidence_level
-        data_type: float64
+        data_type: int64
       - name: domain_group
         data_type: string
       - name: domain_mastery_level
-        data_type: float64
+        data_type: int64
       - name: domain_name
         data_type: string
       - name: domain_percent_mastery
-        data_type: float64
+        data_type: int64
       - name: launch_date
         data_type: string
       - name: renaissance_client_id

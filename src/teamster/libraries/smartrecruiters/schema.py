@@ -3,10 +3,10 @@ from pydantic import BaseModel
 
 class Application(BaseModel):
     application_custom_step: str | None = None
-    application_field_application_review_score: float | None = None
+    application_field_application_review_score: str | None = None
     application_field_job_title: str | None = None
-    application_field_phone_interview_score: float | None = None
-    application_field_resume_score: float | None = None
+    application_field_phone_interview_score: str | None = None
+    application_field_resume_score: str | None = None
     application_id: str | None = None
     application_reason_for_rejection: str | None = None
     application_reason_for_withdrawal: str | None = None
@@ -29,7 +29,7 @@ class Application(BaseModel):
     application_status_interview_phone_screen_complete_date: str | None = None
     application_status_interview_phone_screen_requested_date: str | None = None
     application_status: str | None = None
-    average_rating: float | None = None
+    average_rating: str | None = None
     candidate_email: str | None = None
     candidate_first_and_last_name: str | None = None
     candidate_first_name: str | None = None
@@ -47,15 +47,15 @@ class Application(BaseModel):
     source_subtype: str | None = None
     source_type: str | None = None
     source: str | None = None
-    time_in_application_state_in_review: float | None = None
-    time_in_application_state_interview: float | None = None
-    time_in_application_state_lead: float | None = None
-    time_in_application_state_new: float | None = None
-    time_in_application_state_offered: float | None = None
-    time_in_application_status_in_review_resume_review: float | None = None
-    time_in_application_status_interview_demo: float | None = None
-    time_in_application_status_interview_phone_screen_complete: float | None = None
-    time_in_application_status_interview_phone_screen_requested: float | None = None
+    time_in_application_state_in_review: str | None = None
+    time_in_application_state_interview: str | None = None
+    time_in_application_state_lead: str | None = None
+    time_in_application_state_new: str | None = None
+    time_in_application_state_offered: str | None = None
+    time_in_application_status_in_review_resume_review: str | None = None
+    time_in_application_status_interview_demo: str | None = None
+    time_in_application_status_interview_phone_screen_complete: str | None = None
+    time_in_application_status_interview_phone_screen_requested: str | None = None
 
 
 class Applicant(BaseModel):
@@ -116,7 +116,7 @@ class Rating(BaseModel):
     application_id: str | None = None
     candidate_id: str | None = None
     criteria_name: str | None = None
-    criteria_rating: int | None = None
+    criteria_rating: str | None = None
 
 
 class OfferedHired(BaseModel):

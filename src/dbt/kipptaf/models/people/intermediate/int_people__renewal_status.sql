@@ -74,11 +74,11 @@ left join
 left join
     {{ ref("int_performance_management__overall_scores") }} as p
     on c.employee_number = p.employee_number
-    and p.academic_year = y.academic_year
+    and y.academic_year = p.academic_year
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on c.powerschool_teacher_number = tgl.teachernumber
-    and tgl.academic_year = y.academic_year
+    and y.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 left join
     {{ ref("int_people__next_year_salary_projections") }} as sp

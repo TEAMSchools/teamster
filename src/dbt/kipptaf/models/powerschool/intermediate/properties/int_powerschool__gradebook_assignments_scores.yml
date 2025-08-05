@@ -1,0 +1,68 @@
+version: 2
+models:
+  - name: int_powerschool__gradebook_assignments_scores
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: assignmentsectionid
+        data_type: int64
+      - name: sectionsdcid
+        data_type: int64
+      - name: assignmentid
+        data_type: int64
+      - name: assignment_name
+        data_type: string
+      - name: duedate
+        data_type: date
+      - name: scoretype
+        data_type: string
+      - name: totalpointvalue
+        data_type: float64
+      - name: category_name
+        data_type: string
+      - name: category_code
+        data_type: string
+      - name: iscountedinfinalgrade
+        data_type: int64
+      - name: scorepoints
+        data_type: float64
+      - name: actualscoreentered
+        data_type: string
+      - name: students_dcid
+        data_type: int64
+      - name: school_level
+        data_type: string
+      - name: is_late
+        data_type: int64
+      - name: is_exempt
+        data_type: int64
+      - name: is_missing
+        data_type: int64
+      - name: is_expected
+        data_type: boolean
+      - name: score_entered
+        data_type: float64
+      - name: assign_final_score_percent
+        data_type: float64
+      - name: half_total_point_value
+        data_type: float64
+      - name: is_zero
+        data_type: int64
+      - name: is_academic_dishonesty
+        data_type: int64
+      - name: is_null
+        data_type: int64
+      - name: is_scored
+        data_type: int64
+      - name: is_expected_zero
+        data_type: int64
+      - name: is_expected_academic_dishonesty
+        data_type: int64
+      - name: is_expected_null
+        data_type: int64
+      - name: is_expected_late
+        data_type: int64
+      - name: is_expected_missing
+        data_type: int64
+      - name: is_expected_scored
+        data_type: boolean

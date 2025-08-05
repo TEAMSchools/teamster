@@ -18,6 +18,7 @@ with
     business_groups as (
         select
             user_id,
+
             string_agg(
                 content_group_name order by content_group_name asc
             ) as business_group_names,
@@ -36,8 +37,6 @@ with
             sr.home_department_name,
             sr.job_title,
             sr.home_work_location_name,
-            sr.worker_type_code,
-            sr.wf_mgr_pay_rule,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
             sr.sam_account_name,
@@ -56,9 +55,7 @@ with
                 day
             ) as days_terminated,
 
-            case
-                cu.purchasing_user when true then 'Yes' when false then 'No'
-            end as purchasing_user,
+            if(cu.purchasing_user, 'Yes', 'No') as purchasing_user,
         from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_coupa__users") }} as cu
@@ -72,7 +69,6 @@ with
             )
             >= '{{ var("current_academic_year") - 1 }}-07-01'
             and not regexp_contains(sr.worker_type_code, r'Part Time|Intern')
-            and (sr.wf_mgr_pay_rule != 'PT Hourly' or sr.wf_mgr_pay_rule is null)
 
         union all
 
@@ -86,8 +82,6 @@ with
             sr.home_department_name,
             sr.job_title,
             sr.home_work_location_name,
-            sr.worker_type_code,
-            sr.wf_mgr_pay_rule,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
             sr.sam_account_name,
@@ -107,7 +101,6 @@ with
             not sr.is_prestart
             and sr.assignment_status not in ('Terminated', 'Deceased')
             and not regexp_contains(sr.worker_type_code, r'Part Time|Intern')
-            and (sr.wf_mgr_pay_rule != 'PT Hourly' or sr.wf_mgr_pay_rule is null)
             and cu.employee_number is null
     ),
 
@@ -125,8 +118,6 @@ with
             au.home_work_location_name,
             au.home_department_name,
             au.job_title,
-            au.worker_type_code,
-            au.wf_mgr_pay_rule,
             au.sam_account_name,
             au.user_principal_name,
             au.mail,
@@ -144,9 +135,6 @@ with
             a.postal_code,
 
             case
-                /* no interns */
-                when au.worker_type_code like 'Intern%'
-                then 'inactive'
                 when au.uac_account_disable = 0
                 then 'active'
                 when au.days_terminated <= 7
@@ -222,15 +210,7 @@ select
     'No' as `Generate Password And Notify User`,
     'CoupaPay' as `Employee Payment Channel`,
 
-    case
-        when regexp_contains(sub.worker_type_code, r'Part Time|Intern')
-        then 'No'
-        when sub.wf_mgr_pay_rule = 'PT Hourly'
-        then 'No'
-        when sub.coupa_status = 'inactive'
-        then 'No'
-        else 'Yes'
-    end as `Expense User`,
+    if(sub.coupa_status = 'inactive', 'No', 'Yes') as `Expense User`,
 
     case
         when sub.coupa_status = 'inactive'

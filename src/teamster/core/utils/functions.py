@@ -1,9 +1,12 @@
+import csv
 import re
 from datetime import datetime, timezone
+from io import StringIO
 from typing import Mapping
 
 from dagster import MultiPartitionKey
 from dagster_shared import check
+from slugify import slugify
 
 from teamster.core.utils.classes import FiscalYear
 
@@ -88,3 +91,53 @@ def chunk(obj: list, size: int):
 
     for i in range(0, len(obj), size):
         yield obj[i : i + size]
+
+
+def dict_reader_to_records(
+    dict_reader: csv.DictReader,
+    slugify_cols: bool = True,
+    slugify_replacements: list[list[str]] | None = None,
+) -> list[dict[str, str]]:
+    if slugify_replacements is None:
+        slugify_replacements = []
+
+    if slugify_cols:
+        dict_reader.fieldnames = [
+            slugify(text=text, separator="_", replacements=slugify_replacements)
+            for text in check.not_none(value=dict_reader.fieldnames)
+        ]
+
+    records = [
+        {key: value for key, value in row.items() if value != ""} for row in dict_reader
+    ]
+
+    return records
+
+
+def csv_string_to_records(
+    csv_string: str,
+    slugify_cols: bool = True,
+    slugify_replacements: list[list[str]] | None = None,
+) -> list[dict[str, str]]:
+    return dict_reader_to_records(
+        dict_reader=csv.DictReader(f=StringIO(csv_string)),
+        slugify_cols=slugify_cols,
+        slugify_replacements=slugify_replacements,
+    )
+
+
+def file_to_records(
+    file: str,
+    encoding: str = "utf-8",
+    delimiter: str = ",",
+    slugify_cols: bool = True,
+    slugify_replacements: list[list[str]] | None = None,
+) -> list[dict[str, str]]:
+    with open(file=file, encoding=encoding, mode="r") as f:
+        records = dict_reader_to_records(
+            dict_reader=csv.DictReader(f=f, delimiter=delimiter),
+            slugify_cols=slugify_cols,
+            slugify_replacements=slugify_replacements,
+        )
+
+    return records
