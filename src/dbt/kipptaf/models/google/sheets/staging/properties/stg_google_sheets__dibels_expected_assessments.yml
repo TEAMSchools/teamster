@@ -30,7 +30,7 @@ models:
         data_type: string
       - name: iReady_Subject
         data_type: string
-      - name: PS_credit_Type
+      - name: PS_Credit_Type
         data_type: string
       - name: Assessment_Include
         data_type: boolean
