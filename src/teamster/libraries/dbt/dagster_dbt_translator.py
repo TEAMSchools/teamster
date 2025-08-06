@@ -38,17 +38,6 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
 
         return AssetKey(components).with_prefix(self.code_location)
 
-        # asset_key = super().get_asset_key(dbt_resource_props)
-
-        # dbt_meta = dbt_resource_props.get("config", {}).get(
-        #     "meta", {}
-        # ) or dbt_resource_props.get("meta", {})
-
-        # if dbt_meta.get("dagster", {}).get("asset_key", []):
-        #     return asset_key
-        # else:
-        #     return asset_key.with_prefix(self.code_location)
-
     def get_automation_condition(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> AutomationCondition | None:
