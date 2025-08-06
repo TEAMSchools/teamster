@@ -11,6 +11,7 @@ sources:
           dagster:
             group: pearson
             asset_key:
+              - kippnewark
               - pearson
               - stg_pearson__njgpa
       - name: stg_pearson__njsla
@@ -18,6 +19,7 @@ sources:
           dagster:
             group: pearson
             asset_key:
+              - kippnewark
               - pearson
               - stg_pearson__njsla
       - name: stg_pearson__njsla_science
@@ -25,6 +27,7 @@ sources:
           dagster:
             group: pearson
             asset_key:
+              - kippnewark
               - pearson
               - stg_pearson__njsla_science
       - name: stg_pearson__parcc
@@ -32,6 +35,7 @@ sources:
           dagster:
             group: pearson
             asset_key:
+              - kippnewark
               - pearson
               - stg_pearson__parcc
       - name: stg_pearson__student_list_report
@@ -39,5 +43,6 @@ sources:
           dagster:
             group: pearson
             asset_key:
+              - kippnewark
               - pearson
               - stg_pearson__student_list_report

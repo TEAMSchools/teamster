@@ -11,6 +11,7 @@ sources:
           dagster:
             group: renlearn
             asset_key:
+              - kippnewark
               - renlearn
               - stg_renlearn__accelerated_reader
       - name: stg_renlearn__star
@@ -18,5 +19,6 @@ sources:
           dagster:
             group: renlearn
             asset_key:
+              - kippnewark
               - renlearn
               - stg_renlearn__star
