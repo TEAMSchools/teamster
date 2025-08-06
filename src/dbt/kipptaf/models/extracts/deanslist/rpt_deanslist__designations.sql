@@ -48,14 +48,12 @@ with
             and co.yearid = gpa.yearid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
             and rt.name = gpa.term_name
-            and {{ union_dataset_join_clause(left_alias="rt", right_alias="gpa") }}
         left join
             {{ ref("int_powerschool__final_grades_rollup") }} as ps
             on co.studentid = ps.studentid
             and co.academic_year = ps.academic_year
             and {{ union_dataset_join_clause(left_alias="co", right_alias="ps") }}
             and rt.name = ps.storecode
-            and {{ union_dataset_join_clause(left_alias="rt", right_alias="ps") }}
     )
 
 select co.student_number, co.academic_year, sp.specprog_name as designation_name,
