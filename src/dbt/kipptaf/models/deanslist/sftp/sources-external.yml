@@ -20,7 +20,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - deanslist
               - reconcile_attendance
       - name: src_deanslist__reconcile_suspensions
@@ -37,6 +36,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - deanslist
               - reconcile_suspensions

@@ -17,7 +17,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - reporting
               - terms
         columns:
@@ -58,7 +57,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - reporting
               - gradebook_expectations
       - name: src_reporting__promo_status_cutoffs
@@ -72,7 +70,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - reporting
               - promo_status_cutoffs
       - name: src_reporting__gradebook_flags
@@ -86,7 +83,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - reporting
               - gradebook_flags
       - name: src_reporting__graduation_path_combos
@@ -100,6 +96,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - reporting
               - graduation_path_combos

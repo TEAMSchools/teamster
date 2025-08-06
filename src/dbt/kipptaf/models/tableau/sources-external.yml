@@ -22,7 +22,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - tableau
               - workbook
       - name: src_tableau__view_count_per_view
@@ -38,6 +37,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - tableau
               - view_count_per_view

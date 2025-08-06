@@ -22,6 +22,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - pearson
               - student_crosswalk

@@ -18,7 +18,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
               - employee_numbers_archive
       - name: src_people__location_crosswalk
@@ -32,7 +31,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
               - location_crosswalk
       - name: src_people__campus_crosswalk
@@ -46,7 +44,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
               - campus_crosswalk
       - name: src_people__powerschool_crosswalk
@@ -60,7 +57,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
               - powerschool_crosswalk
       - name: src_people__student_logins_archive
@@ -74,7 +70,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
               - student_logins_archive
       - name: src_people__staffing_model
@@ -88,7 +83,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
               - staffing_model
       - name: src_people__salary_scale
@@ -102,7 +96,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
               - salary_scale
       - name: src_people__miami_performance_criteria
@@ -116,7 +109,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
               - miami_performance_criteria
       - name: src_people__renewal_approvers
@@ -130,7 +122,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
               - renewal_approvers
       - name: src_people__renewal_letter_mapping
@@ -144,7 +135,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
               - renewal_letter_mapping
         columns:

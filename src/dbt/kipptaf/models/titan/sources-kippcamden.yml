@@ -11,6 +11,5 @@ sources:
           dagster:
             group: titan
             asset_key:
-              - kippcamden
               - titan
               - stg_titan__person_data

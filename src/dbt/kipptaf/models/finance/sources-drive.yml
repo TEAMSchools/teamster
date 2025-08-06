@@ -17,7 +17,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - finance
               - enrollment_targets
       - name: src_finance__payroll_code_mapping
@@ -31,6 +30,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - finance
               - payroll_code_mapping

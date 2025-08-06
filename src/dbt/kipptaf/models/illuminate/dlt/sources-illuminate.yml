@@ -9,7 +9,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - codes
@@ -19,7 +18,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - codes
@@ -32,7 +30,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_assessments
@@ -42,7 +39,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_assessments
@@ -52,7 +48,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_assessments
@@ -62,7 +57,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_assessments
@@ -72,7 +66,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_assessments
@@ -82,7 +75,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_assessments
@@ -92,7 +84,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_assessments
@@ -102,7 +93,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_assessments
@@ -112,7 +102,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_assessments
@@ -122,7 +111,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_assessments
@@ -132,7 +120,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_assessments
@@ -147,7 +134,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - national_assessments
@@ -157,7 +143,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - national_assessments
@@ -167,7 +152,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - national_assessments
@@ -180,7 +164,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - public
@@ -190,7 +173,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - public
@@ -200,7 +182,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - public
@@ -210,7 +191,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - public
@@ -223,7 +203,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - standards
@@ -236,7 +215,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_repositories
@@ -246,7 +224,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_repositories
@@ -257,7 +234,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - dlt
               - illuminate
               - dna_repositories

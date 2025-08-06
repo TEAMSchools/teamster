@@ -68,6 +68,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - njdoe
               - parcc

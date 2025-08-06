@@ -11,7 +11,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - groups
               - group_student_aff
@@ -20,7 +19,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - groups
               - groups

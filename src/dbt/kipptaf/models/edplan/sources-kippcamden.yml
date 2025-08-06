@@ -11,6 +11,5 @@ sources:
           dagster:
             group: edplan
             asset_key:
-              - kippcamden
               - edplan
               - int_edplan__njsmart_powerschool_union

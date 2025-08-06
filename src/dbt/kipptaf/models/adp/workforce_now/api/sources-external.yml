@@ -21,7 +21,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - adp
               - workforce_now
               - workers

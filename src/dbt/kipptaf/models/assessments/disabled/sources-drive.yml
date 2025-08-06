@@ -19,7 +19,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - assessments
               - college_readiness_expected_tests
       - name: src_assessments__internal_assessment_scopes
@@ -35,6 +34,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - assessments
               - internal_assessment_scopes

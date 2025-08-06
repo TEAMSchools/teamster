@@ -21,7 +21,6 @@ sources:
           dagster:
             group: collegeboard
             asset_key:
-              - kipptaf
               - collegeboard
               - psat
       - name: src_collegeboard__ap
@@ -39,6 +38,5 @@ sources:
           dagster:
             group: collegeboard
             asset_key:
-              - kipptaf
               - collegeboard
               - ap

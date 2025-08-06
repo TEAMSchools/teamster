@@ -23,7 +23,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - amplify
               - benchmark_student_summary
       - name: src_amplify__pm_student_summary
@@ -41,6 +40,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - amplify
               - pm_student_summary

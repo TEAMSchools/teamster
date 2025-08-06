@@ -17,7 +17,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google_forms
               - form_items_extension
         columns:

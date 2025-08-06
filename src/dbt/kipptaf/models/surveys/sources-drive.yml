@@ -17,7 +17,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - surveys
               - scd_question_crosswalk
         columns:
@@ -36,7 +35,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - surveys
               - scd_answer_crosswalk
       - name: src_surveys__manager_survey_detail_archive
@@ -51,7 +49,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - surveys
               - manager_survey_detail_archive
       - name: src_surveys__staff_info_archive
@@ -66,7 +63,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - surveys
               - staff_info_archive
       - name: src_surveys__cmo_engagement_regional_survey_detail_archive
@@ -81,7 +77,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - surveys
               - cmo_engagement_regional_survey_detail_archive
         columns:

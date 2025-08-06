@@ -20,7 +20,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google
               - forms
               - form
@@ -39,7 +38,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google
               - forms
               - responses

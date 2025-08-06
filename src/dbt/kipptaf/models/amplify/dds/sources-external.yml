@@ -21,7 +21,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - amplify
               - dibels
               - data_farming
@@ -42,7 +41,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - amplify
               - dibels
               - progress_export

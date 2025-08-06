@@ -11,7 +11,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate_xmin
               - dna_assessments
               - agg_student_responses
@@ -20,7 +19,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate_xmin
               - dna_assessments
               - agg_student_responses_group
@@ -29,7 +27,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate_xmin
               - dna_assessments
               - agg_student_responses_standard
@@ -38,7 +35,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate_xmin
               - dna_assessments
               - agg_students_assessments_scores
@@ -47,7 +43,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate_xmin
               - dna_assessments
               - students_assessments_archive
