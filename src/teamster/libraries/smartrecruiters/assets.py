@@ -1,6 +1,7 @@
 import time
 
 from dagster import AssetExecutionContext, AssetsDefinition, Output, asset
+from requests.exceptions import ConnectionError
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
@@ -38,7 +39,11 @@ def build_smartrecruiters_report_asset(
         report_file_status = report_execution_data["reportFileStatus"]
 
         while report_file_status != "COMPLETED":
-            report_files_data = smartrecruiters.get(endpoint=report_endpoint).json()
+            try:
+                report_files_data = smartrecruiters.get(endpoint=report_endpoint).json()
+            except ConnectionError:
+                time.sleep(1)
+                continue
 
             report_file_record = [
                 rf
