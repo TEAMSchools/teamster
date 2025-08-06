@@ -10,6 +10,7 @@ with
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
+
         from {{ ref("base_powerschool__student_enrollments") }}
         where school_level = 'MS'
     ),
@@ -23,6 +24,7 @@ with
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
+
         from {{ ref("base_powerschool__student_enrollments") }}
         where school_level = 'ES'
     ),
@@ -37,6 +39,7 @@ with
             row_number() over (
                 partition by a.student_school_id order by r.roster_id asc
             ) as rn_territory,
+
         from {{ ref("stg_deanslist__rosters") }} as r
         inner join
             {{ ref("stg_deanslist__roster_assignments") }} as a
@@ -145,6 +148,7 @@ select
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
 
     if(ada.ada_year_q1 >= 0.80, true, false) as ada_above_or_at_80,
@@ -179,12 +183,14 @@ select
     case
         e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
     end as race_ethnicity,
+
     case
         when e.school_level in ('ES', 'MS')
         then e.advisory_name
         when e.school_level = 'HS'
         then e.advisor_lastfirst
     end as advisory,
+
     case
         when e.region in ('Camden', 'Newark')
         then 'NJ'
@@ -192,6 +198,7 @@ select
         then 'FL'
     end as `state`,
 
+    -- year is hardcoded because this is when we started using this field
     case
         when
             e.academic_year >= 2024
@@ -201,6 +208,7 @@ select
         then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
         else 'No issues'
     end as fafsa_status_mismatch_category,
+
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     ms_grad_sub as m

@@ -31,13 +31,13 @@ dependencies = [
   "pypdf>=5.0.0",
   "python-dateutil>=2.9.0.post0",
   "scikit-learn>=1.4.0",
-  "sqlalchemy==2.0.40",
+  "sqlalchemy>=2.0.42",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
 ]
 
 [dependency-groups]
-dev = ["dagster-webserver", "faker>=37.3.0", "pytest>=8.3.4"]
+dev = ["dagster-webserver", "pytest>=8.3.4"]
 
 [build-system]
 requires = ["hatchling"]
