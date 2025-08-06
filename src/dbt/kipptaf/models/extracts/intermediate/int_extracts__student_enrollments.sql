@@ -1,4 +1,4 @@
-{{- config(materialized="table") -}}
+{{ config(materialized="table") }}
 
 with
     ms_grad_sub as (
@@ -65,8 +65,17 @@ with
 
 select
     e._dbt_source_relation,
-    e.academic_year,
+    e.studentid,
+    e.students_dcid,
+    e.student_number,
+    e.lastfirst as student_name,
+    e.last_name as student_last_name,
+    e.first_name as student_first_name,
+    e.middle_name as student_middle_name,
+    e.enroll_status,
+    e.cohort,
     e.yearid,
+    e.academic_year,
     e.entrydate,
     e.exitdate,
     e.region,
@@ -76,18 +85,10 @@ select
     e.school_abbreviation as school,
     e.grade_level,
     e.grade_level_prev,
-    e.studentid,
-    e.students_dcid,
-    e.student_number,
-    e.lastfirst as student_name,
-    e.last_name as student_last_name,
-    e.first_name as student_first_name,
-    e.middle_name as student_middle_name,
+    e.team,
     e.student_email_google as student_email,
     e.student_web_id,
     e.student_web_password,
-    e.enroll_status,
-    e.cohort,
     e.gender,
     e.ethnicity,
     e.dob,
@@ -124,8 +125,6 @@ select
     es.es_attended,
 
     mt.territory,
-
-    hr.sections_section_number as team,
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
@@ -198,10 +197,9 @@ select
         then 'FL'
     end as `state`,
 
-    -- year is hardcoded because this is when we started using this field
     case
         when
-            e.academic_year >= 2024
+            e.academic_year >= 2024  /* 1st year tracking this */
             and e.grade_level = 12
             and e.salesforce_contact_df_has_fafsa = 'Yes'
             and ovg.overgrad_fafsa_opt_out = 'Yes'
@@ -243,15 +241,6 @@ left join
     and e.academic_year = tut.academic_year
     and {{ union_dataset_join_clause(left_alias="e", right_alias="tut") }}
     and tut.specprog_name = 'Tutoring'
-left join
-    {{ ref("base_powerschool__course_enrollments") }} as hr
-    on e.student_number = hr.students_student_number
-    and e.yearid = hr.cc_yearid
-    and e.schoolid = hr.cc_schoolid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="hr") }}
-    and not hr.is_dropped_section
-    and hr.courses_credittype = 'HR'
-    and hr.rn_course_number_year = 1
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
