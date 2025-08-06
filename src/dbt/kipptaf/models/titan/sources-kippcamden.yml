@@ -10,6 +10,7 @@ sources:
         meta:
           dagster:
             group: titan
+            is_external: true
             asset_key:
               - kippcamden
               - titan

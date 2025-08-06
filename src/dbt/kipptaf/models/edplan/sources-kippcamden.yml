@@ -10,6 +10,7 @@ sources:
         meta:
           dagster:
             group: edplan
+            is_external: true
             asset_key:
               - kippcamden
               - edplan

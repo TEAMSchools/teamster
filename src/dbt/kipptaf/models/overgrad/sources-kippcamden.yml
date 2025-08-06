@@ -7,6 +7,7 @@ sources:
         meta:
           dagster:
             group: overgrad
+            is_external: true
             asset_key:
               - kippcamden
               - overgrad
@@ -15,6 +16,7 @@ sources:
         meta:
           dagster:
             group: overgrad
+            is_external: true
             asset_key:
               - kippcamden
               - overgrad
@@ -23,6 +25,7 @@ sources:
         meta:
           dagster:
             group: overgrad
+            is_external: true
             asset_key:
               - kippcamden
               - overgrad
@@ -31,6 +34,7 @@ sources:
         meta:
           dagster:
             group: overgrad
+            is_external: true
             asset_key:
               - kippcamden
               - overgrad
@@ -39,6 +43,7 @@ sources:
         meta:
           dagster:
             group: overgrad
+            is_external: true
             asset_key:
               - kippcamden
               - overgrad
@@ -47,6 +52,7 @@ sources:
         meta:
           dagster:
             group: overgrad
+            is_external: true
             asset_key:
               - kippcamden
               - overgrad
@@ -55,6 +61,7 @@ sources:
         meta:
           dagster:
             group: overgrad
+            is_external: true
             asset_key:
               - kippcamden
               - overgrad
@@ -63,6 +70,7 @@ sources:
         meta:
           dagster:
             group: overgrad
+            is_external: true
             asset_key:
               - kippcamden
               - overgrad
@@ -71,6 +79,7 @@ sources:
         meta:
           dagster:
             group: overgrad
+            is_external: true
             asset_key:
               - kippcamden
               - overgrad

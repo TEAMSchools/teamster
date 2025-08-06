@@ -10,6 +10,7 @@ sources:
         meta:
           dagster:
             group: renlearn
+            is_external: true
             asset_key:
               - kippnewark
               - renlearn
@@ -18,6 +19,7 @@ sources:
         meta:
           dagster:
             group: renlearn
+            is_external: true
             asset_key:
               - kippnewark
               - renlearn

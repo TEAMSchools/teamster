@@ -22,7 +22,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         asset_key_config = dagster_metadata.get("asset_key", [])
 
         if asset_key_config:
-            return AssetKey(asset_key_config).with_prefix(self.code_location)
+            if dagster_metadata.get("is_external", False):
+                return AssetKey(asset_key_config)
+            else:
+                return AssetKey(asset_key_config).with_prefix(self.code_location)
 
         if dbt_resource_props["resource_type"] == "source":
             components = [dbt_resource_props["source_name"], dbt_resource_props["name"]]

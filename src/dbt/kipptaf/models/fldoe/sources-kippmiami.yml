@@ -10,6 +10,7 @@ sources:
         meta:
           dagster:
             group: fldoe
+            is_external: true
             asset_key:
               - kippmiami
               - fldoe
@@ -18,6 +19,7 @@ sources:
         meta:
           dagster:
             group: fldoe
+            is_external: true
             asset_key:
               - kippmiami
               - fldoe
@@ -26,6 +28,7 @@ sources:
         meta:
           dagster:
             group: fldoe
+            is_external: true
             asset_key:
               - kippmiami
               - fldoe
@@ -34,6 +37,7 @@ sources:
         meta:
           dagster:
             group: fldoe
+            is_external: true
             asset_key:
               - kippmiami
               - fldoe
@@ -42,6 +46,7 @@ sources:
         meta:
           dagster:
             group: fldoe
+            is_external: true
             asset_key:
               - kippmiami
               - fldoe
@@ -50,6 +55,7 @@ sources:
         meta:
           dagster:
             group: fldoe
+            is_external: true
             asset_key:
               - kippmiami
               - fldoe
@@ -58,6 +64,7 @@ sources:
         meta:
           dagster:
             group: fldoe
+            is_external: true
             asset_key:
               - kippmiami
               - fldoe
