@@ -267,7 +267,8 @@ with
             co.special_education_code,
             co.region,
 
-            term_name,
+            rt.name as term_name,
+            rt.is_current,
 
             att.ada_term_running,
             att.n_absences_y1_running,
@@ -289,8 +290,6 @@ with
 
             f.fast_ela as fast_ela_level_recent,
             f.fast_math as fast_math_level_recent,
-
-            rt.is_current,
 
             case
                 when
@@ -489,18 +488,22 @@ with
                 else 'On-Track'
             end as academic_status,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name
+        inner join
+            {{ ref("stg_reporting__terms") }} as rt
+            on co.academic_year = rt.academic_year
+            and co.schoolid = rt.school_id
+            and rt.type = 'RT'
         left join
             attendance as att
             on co.studentid = att.studentid
             and co.yearid = att.yearid
-            and term_name = att.term_name
+            and rt.name = att.term_name
             and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
         left join
             credits as c
             on co.studentid = c.studentid
             and co.academic_year = c.academic_year
-            and term_name = c.storecode
+            and rt.name = c.storecode
             and {{ union_dataset_join_clause(left_alias="co", right_alias="c") }}
         left join
             iready as ir
@@ -533,12 +536,6 @@ with
             and {{ union_dataset_join_clause(left_alias="co", right_alias="fr") }}
             and co.academic_year = fr.academic_year
             and fr.rn_log = 1
-        left join
-            {{ ref("stg_reporting__terms") }} as rt
-            on co.academic_year = rt.academic_year
-            and co.schoolid = rt.school_id
-            and term_name = rt.name
-            and rt.type = 'RT'
         where co.rn_year = 1
     )
 
