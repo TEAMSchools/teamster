@@ -142,18 +142,18 @@ assets:
         - 0 16 * * *
   - name: Gradebook and GPA Dashboard
     deps:
+      - [kipptaf, tableau, rpt_tableau__assignment_checks]
       - [kipptaf, tableau, rpt_tableau__gradebook_audit]
       - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
+      - [kipptaf, tableau, rpt_tableau__gradebook_gpa_cumulative]
+      - [kipptaf, tableau, rpt_tableau__gradebook_es_comments]
+      - [kipptaf, tableau, rpt_tableau__gradebook_ms_hs_comments]
     metadata:
       id: 5046a976-ed0e-4c77-93fe-78b732cb5548
       cron_schedule: 0 4 * * *
   - name: Gradebook Audit - Teacher Report
     deps:
-      - [kipptaf, tableau, rpt_tableau__assignment_checks]
       - [kipptaf, tableau, rpt_tableau__gradebook_audit]
-      - [kipptaf, tableau, rpt_tableau__gradebook_es_comments]
-      - [kipptaf, tableau, rpt_tableau__gradebook_ms_hs_comments]
-      - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
     metadata:
       id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
       cron_schedule: 30 7 * * 2
