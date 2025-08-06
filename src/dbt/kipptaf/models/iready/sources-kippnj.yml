@@ -10,6 +10,7 @@ sources:
         meta:
           dagster:
             group: iready
+            is_external: true
             asset_key:
               - kippnewark
               - iready
@@ -18,6 +19,7 @@ sources:
         meta:
           dagster:
             group: iready
+            is_external: true
             asset_key:
               - kippnewark
               - iready
@@ -26,6 +28,7 @@ sources:
         meta:
           dagster:
             group: iready
+            is_external: true
             asset_key:
               - kippnewark
               - iready
@@ -34,6 +37,7 @@ sources:
         meta:
           dagster:
             group: iready
+            is_external: true
             asset_key:
               - kippnewark
               - iready

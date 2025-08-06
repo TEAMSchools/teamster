@@ -10,6 +10,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -18,6 +19,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -26,6 +28,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -34,6 +37,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -42,6 +46,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -50,6 +55,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -58,6 +64,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -66,6 +73,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -74,6 +82,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -82,6 +91,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -90,6 +100,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -98,6 +109,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -106,6 +118,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -114,6 +127,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -122,6 +136,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -130,6 +145,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -138,6 +154,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist
@@ -146,6 +163,7 @@ sources:
         meta:
           dagster:
             group: deanslist
+            is_external: true
             asset_key:
               - kippcamden
               - deanslist

@@ -10,6 +10,7 @@ sources:
         meta:
           dagster:
             group: renlearn
+            is_external: true
             asset_key:
               - kippmiami
               - renlearn
@@ -18,6 +19,7 @@ sources:
         meta:
           dagster:
             group: renlearn
+            is_external: true
             asset_key:
               - kippmiami
               - renlearn
@@ -26,6 +28,7 @@ sources:
         meta:
           dagster:
             group: renlearn
+            is_external: true
             asset_key:
               - kippmiami
               - renlearn
@@ -34,6 +37,7 @@ sources:
         meta:
           dagster:
             group: renlearn
+            is_external: true
             asset_key:
               - kippmiami
               - renlearn
@@ -42,6 +46,7 @@ sources:
         meta:
           dagster:
             group: renlearn
+            is_external: true
             asset_key:
               - kippmiami
               - renlearn
