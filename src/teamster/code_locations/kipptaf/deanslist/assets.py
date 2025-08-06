@@ -7,7 +7,7 @@ from teamster.libraries.sftp.assets import build_sftp_file_asset
 
 remote_dir_regex = r"reconcile_report_files"
 ssh_resource_key = "ssh_deanslist"
-key_prefix = [CODE_LOCATION, "deanslist"]
+key_prefix = [CODE_LOCATION, "deanslist", "sftp"]
 
 reconcile_attendance = build_sftp_file_asset(
     asset_key=[*key_prefix, "reconcile_attendance"],
