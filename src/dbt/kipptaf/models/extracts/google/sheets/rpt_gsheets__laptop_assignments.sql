@@ -6,7 +6,10 @@ select
     grade_level,
     advisory_name,
     advisor_lastfirst,
+    student_web_id as username,
+    student_email_google as email,
 
+    lastfirst || ' (' || student_number || ')' as dropdown_hash,
     if(enroll_status = 2, exitdate, null) as exitdate,
     case
         when enroll_status = 0
@@ -21,3 +24,4 @@ where
     is_enrolled_y1
     and rn_year = 1
     and academic_year = {{ var("current_academic_year") }}
+order by lastfirst asc

@@ -19,7 +19,7 @@ with
 
             if(grade = 0, 'K', safe_cast(grade as string)) as grade_level_text,
 
-            safe_cast(right(test_code, 1) as int64) as `round`,
+            safe_cast(right(test_code, 1) as int64) as round_number,
 
         from
             {{
@@ -32,12 +32,13 @@ with
 select
     *,
 
-    min(round) over (
-        partition by academic_year, region, admin_season, grade order by `round`
+    min(round_number) over (
+        partition by academic_year, region, admin_season, grade order by round_number
     ) as min_pm_round,
 
-    max(`round`) over (
-        partition by academic_year, region, admin_season, grade order by `round` desc
+    max(round_number) over (
+        partition by academic_year, region, admin_season, grade
+        order by round_number desc
     ) as max_pm_round,
 
 from modified
