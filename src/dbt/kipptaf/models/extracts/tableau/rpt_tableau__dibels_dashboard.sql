@@ -5,6 +5,7 @@ select
     s.district,
     s.state,
     s.region,
+    s.school_level,
     s.schoolid,
     s.school,
     s.studentid,
@@ -18,7 +19,7 @@ select
     s.iep_status,
     s.is_504,
     s.lep_status,
-    s.lunch_status,  -- 20
+    s.lunch_status,
     s.gifted_and_talented,
     s.enroll_status,
     s.advisory,
@@ -30,7 +31,7 @@ select
     a.month_round,
     a.grade as expected_grade_level_int,
     a.expected_measure_name_code,
-    a.expected_measure_name,  -- 30
+    a.expected_measure_name,
     a.expected_measure_standard,
 
     g.grade_goal as admin_benchmark,
@@ -151,6 +152,7 @@ select
     s.district,
     s.state,
     s.region,
+    s.school_level,
     s.schoolid,
     s.school,
     s.studentid,
