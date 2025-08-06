@@ -26,7 +26,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - egencia
               - traveler_groups
       - name: src_egencia__travel_managers
@@ -43,7 +42,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - egencia
               - travel_managers
       - name: src_egencia__traveler_group_exceptions
@@ -62,6 +60,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - egencia
               - traveler_group_exceptions

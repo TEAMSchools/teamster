@@ -11,7 +11,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - expressions
@@ -20,7 +19,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repositories
@@ -29,7 +27,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_grade_levels
@@ -39,7 +36,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - fields
@@ -48,7 +44,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_365
@@ -57,7 +52,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_413
@@ -67,7 +61,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_426
@@ -76,7 +69,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_427
@@ -85,7 +77,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_428
@@ -94,7 +85,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_429
@@ -103,7 +93,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_430
@@ -112,7 +101,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_431
@@ -121,7 +109,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_432
@@ -130,7 +117,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_433
@@ -139,7 +125,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_434
@@ -148,7 +133,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_435
@@ -157,7 +141,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_436
@@ -166,7 +149,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_437
@@ -175,7 +157,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_438
@@ -184,7 +165,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_439
@@ -193,7 +173,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_440
@@ -202,7 +181,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_441
@@ -211,7 +189,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_442
@@ -220,7 +197,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_443
@@ -229,7 +205,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_444
@@ -238,7 +213,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_445
@@ -247,7 +221,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_446
@@ -256,7 +229,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_447
@@ -265,7 +237,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_448
@@ -274,7 +245,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_449
@@ -283,7 +253,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_450
@@ -292,7 +261,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_451
@@ -301,7 +269,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_452
@@ -310,7 +277,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_453
@@ -319,7 +285,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_454
@@ -328,7 +293,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_455
@@ -337,7 +301,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_456
@@ -346,7 +309,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - dna_repositories
               - repository_457

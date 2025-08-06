@@ -22,7 +22,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - coupa
               - address_name_crosswalk
       - name: src_coupa__school_name_crosswalk
@@ -41,7 +40,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - coupa
               - school_name_crosswalk
       - name: src_coupa__school_name_lookup
@@ -64,7 +62,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - coupa
               - school_name_lookup
       - name: src_coupa__user_exceptions
@@ -87,7 +84,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - coupa
               - user_exceptions
       - name: src_coupa__intacct_program_lookup
@@ -101,7 +97,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - coupa
               - intacct_program_lookup
       - name: src_coupa__intacct_location_lookup
@@ -124,7 +119,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - coupa
               - intacct_location_lookup
       - name: src_coupa__intacct_fund_lookup
@@ -138,7 +132,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - coupa
               - intacct_fund_lookup
       - name: src_coupa__intacct_department_lookup
@@ -152,6 +145,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - coupa
               - intacct_department_lookup

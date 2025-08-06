@@ -8,7 +8,6 @@ sources:
           dagster:
             group: overgrad
             asset_key:
-              - kippnewark
               - overgrad
               - stg_overgrad__admissions
       - name: stg_overgrad__custom_fields
@@ -16,7 +15,6 @@ sources:
           dagster:
             group: overgrad
             asset_key:
-              - kippnewark
               - overgrad
               - stg_overgrad__custom_fields
       - name: stg_overgrad__followings
@@ -24,7 +22,6 @@ sources:
           dagster:
             group: overgrad
             asset_key:
-              - kippnewark
               - overgrad
               - stg_overgrad__followings
       - name: stg_overgrad__schools
@@ -32,7 +29,6 @@ sources:
           dagster:
             group: overgrad
             asset_key:
-              - kippnewark
               - overgrad
               - stg_overgrad__schools
       - name: stg_overgrad__students
@@ -40,7 +36,6 @@ sources:
           dagster:
             group: overgrad
             asset_key:
-              - kippnewark
               - overgrad
               - stg_overgrad__students
       - name: stg_overgrad__admissions__custom_field_values
@@ -48,7 +43,6 @@ sources:
           dagster:
             group: overgrad
             asset_key:
-              - kippnewark
               - overgrad
               - stg_overgrad__admissions__custom_field_values
       - name: stg_overgrad__custom_fields__custom_field_options
@@ -56,7 +50,6 @@ sources:
           dagster:
             group: overgrad
             asset_key:
-              - kippnewark
               - overgrad
               - stg_overgrad__custom_fields__custom_field_options
       - name: stg_overgrad__students__custom_field_values
@@ -64,7 +57,6 @@ sources:
           dagster:
             group: overgrad
             asset_key:
-              - kippnewark
               - overgrad
               - stg_overgrad__students__custom_field_values
       - name: int_overgrad__custom_fields_pivot
@@ -72,6 +64,5 @@ sources:
           dagster:
             group: overgrad
             asset_key:
-              - kippnewark
               - overgrad
               - int_overgrad__custom_fields_pivot

@@ -32,7 +32,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - crdc
               - sced_code_crosswalk
       - name: src_crdc__student_numbers
@@ -51,6 +50,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - crdc
               - student_numbers

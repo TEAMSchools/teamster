@@ -11,7 +11,6 @@ sources:
           dagster:
             group: titan
             asset_key:
-              - kippnewark
               - titan
               - stg_titan__person_data
       - name: stg_titan__income_form_data
@@ -21,6 +20,5 @@ sources:
           dagster:
             group: titan
             asset_key:
-              - kippnewark
               - titan
               - stg_titan__income_form_data

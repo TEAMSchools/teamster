@@ -23,7 +23,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - adp_workforce_manager
               - accrual_reporting_period_summary
       - name: src_adp_workforce_manager__time_details
@@ -43,6 +42,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - adp_workforce_manager
               - time_details

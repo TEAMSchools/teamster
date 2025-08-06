@@ -22,7 +22,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - collegeboard
               - sat_id_crosswalk
       - name: src_collegeboard__ap_id_crosswalk
@@ -41,7 +40,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - collegeboard
               - ap_id_crosswalk
       - name: src_collegeboard__ap_codes
@@ -62,7 +60,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - collegeboard
               - ap_codes
       - name: src_collegeboard__ap_course_crosswalk
@@ -85,6 +82,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - collegeboard
               - ap_course_crosswalk

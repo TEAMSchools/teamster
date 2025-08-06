@@ -17,7 +17,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - performance_management
               - leadership_development_metrics
       - name: src_performance_management__scores_overall_archive
@@ -32,7 +31,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - performance_management
               - scores_overall_archive
       - name: src_performance_management__scores_detail_archive
@@ -47,6 +45,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - performance_management
               - scores_detail_archive

@@ -20,7 +20,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - adp
               - workforce_now
               - additional_earnings_report
@@ -38,7 +37,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - adp
               - workforce_now
               - pension_and_benefits_enrollments
@@ -56,7 +54,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - adp
               - workforce_now
               - time_and_attendance
