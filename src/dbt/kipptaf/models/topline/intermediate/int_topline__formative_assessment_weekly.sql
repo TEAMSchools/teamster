@@ -1,12 +1,21 @@
 with
     subject_discipline_crosswalk as (
-        select illuminate_subject_area, discipline,
+        select distinct illuminate_subject_area, discipline,
         from {{ ref("stg_assessments__course_subject_crosswalk") }}
-        group by illuminate_subject_area, discipline
     ),
 
     responses_discipline as (
-        select rr.*, cx.discipline,
+        select
+            rr.powerschool_student_number,
+            rr.academic_year,
+            rr.response_type,
+            rr.subject_area,
+            rr.module_type,
+            rr.title,
+            rr.administered_at,
+            rr.is_mastery,
+
+            cx.discipline,
         from {{ ref("int_assessments__response_rollup") }} as rr
         inner join
             subject_discipline_crosswalk as cx
@@ -36,8 +45,7 @@ with
             and sw.academic_year = rr.academic_year
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
-        where
-            (rr.response_type = 'overall' or rr.response_type is null)
+            and rr.response_type = 'overall'
             and rr.module_type in ('QA', 'MQQ')
     )
 
