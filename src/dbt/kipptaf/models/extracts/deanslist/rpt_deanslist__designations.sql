@@ -4,7 +4,6 @@ with
             _dbt_source_relation,
             student_number,
             studentid,
-            grade_level,
             yearid,
             academic_year,
             schoolid,
