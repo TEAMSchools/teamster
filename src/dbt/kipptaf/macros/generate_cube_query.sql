@@ -114,6 +114,4 @@
             )
     {% endif %}
 
-    order by grouping_level
-
 {% endmacro %}
