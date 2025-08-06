@@ -7,6 +7,7 @@ with
             yearid,
             academic_year,
             schoolid,
+            grade_level,
             iep_status,
             is_504,
             lep_status,
