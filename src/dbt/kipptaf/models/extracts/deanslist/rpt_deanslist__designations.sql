@@ -7,7 +7,7 @@ with
             yearid,
             academic_year,
             schoolid,
-            spedlep,
+            iep_status,
             is_504,
             lep_status,
             ada,
@@ -20,7 +20,7 @@ with
             co.student_number,
             co.academic_year,
 
-            if(co.spedlep != 'No IEP', 'IEP', null) as is_iep,
+            if(co.iep_status = 'Has IEP', 'IEP', null) as is_iep,
             if(co.is_504, '504', null) as is_504,
             if(co.lep_status, 'LEP', null) as is_lep,
             if(co.ada <= 0.9, 'Chronic Absence', null) as is_chronic_absentee,
