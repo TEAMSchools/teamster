@@ -13,16 +13,41 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         super().__init__(settings)
 
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        asset_key = super().get_asset_key(dbt_resource_props)
-
         dbt_meta = dbt_resource_props.get("config", {}).get(
             "meta", {}
         ) or dbt_resource_props.get("meta", {})
 
-        if dbt_meta.get("dagster", {}).get("asset_key", []):
-            return asset_key
+        dagster_metadata = dbt_meta.get("dagster", {})
+
+        asset_key_config = dagster_metadata.get("asset_key", [])
+
+        if asset_key_config:
+            return AssetKey(asset_key_config).with_prefix(self.code_location)
+
+        if dbt_resource_props["resource_type"] == "source":
+            components = [dbt_resource_props["source_name"], dbt_resource_props["name"]]
+        elif dbt_resource_props.get("version"):
+            components = [dbt_resource_props["alias"]]
         else:
-            return asset_key.with_prefix(self.code_location)
+            configured_schema = dbt_resource_props["config"].get("schema")
+
+            if configured_schema is not None:
+                components = [configured_schema, dbt_resource_props["name"]]
+            else:
+                components = [dbt_resource_props["name"]]
+
+        return AssetKey(components)with_prefix(self.code_location)
+        
+        # asset_key = super().get_asset_key(dbt_resource_props)
+
+        # dbt_meta = dbt_resource_props.get("config", {}).get(
+        #     "meta", {}
+        # ) or dbt_resource_props.get("meta", {})
+
+        # if dbt_meta.get("dagster", {}).get("asset_key", []):
+        #     return asset_key
+        # else:
+        #     return asset_key.with_prefix(self.code_location)
 
     def get_automation_condition(
         self, dbt_resource_props: Mapping[str, Any]
