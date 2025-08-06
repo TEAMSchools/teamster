@@ -74,6 +74,12 @@ select
     b.moy_composite,
     b.eoy_composite,
 
+    r.enrollment_dates_account,
+    r.expected_row_count,
+    r.actual_row_count,
+    r.completed_test_round,
+    r.completed_test_round_int,
+
     null as met_measure_standard_goal,
     null as met_admin_benchmark_goal,
     null as met_measure_name_code_goal,
@@ -132,6 +138,13 @@ left join
     and a.admin_season = b.period
     and a.expected_measure_standard = b.measure_standard
     and s.student_number = b.student_number
+left join
+    {{ ref("int_students__dibels_participation_roster") }} as r
+    on a.academic_year = r.academic_year
+    and a.grade = r.grade_level
+    and a.admin_season = r.admin_season
+    and a.round_number = r.round_number
+    and s.student_number = r.student_number
 left join
     {{ ref("int_people__leadership_crosswalk") }} as h
     on s.schoolid = h.home_work_location_powerschool_school_id
@@ -221,6 +234,12 @@ select
     r.moy_composite,
     r.eoy_composite,
 
+    rs.enrollment_dates_account,
+    rs.expected_row_count,
+    rs.actual_row_count,
+    rs.completed_test_round,
+    rs.completed_test_round_int,
+
     pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
     pm.met_measure_name_code_goal,
@@ -290,6 +309,13 @@ left join
     and e.round_number = a.round_number
     and e.expected_measure_standard = a.measure_standard
     and s.student_number = a.student_number
+left join
+    {{ ref("int_students__dibels_participation_roster") }} as rs
+    on e.academic_year = rs.academic_year
+    and e.grade = rs.grade_level
+    and e.admin_season = rs.admin_season
+    and e.round_number = rs.round_number
+    and s.student_number = rs.student_number
 left join
     {{ ref("int_amplify__pm_met_criteria") }} as pm
     on e.academic_year = pm.academic_year
