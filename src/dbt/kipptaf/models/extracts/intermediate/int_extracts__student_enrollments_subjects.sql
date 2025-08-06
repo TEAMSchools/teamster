@@ -24,6 +24,7 @@ with
             case
                 iready_subject when 'Reading' then 'ELA' when 'Math' then 'Math'
             end as discipline,
+
         from unnest(['Reading', 'Math']) as iready_subject
     ),
 
@@ -34,6 +35,7 @@ with
             academic_year,
 
             if(specprog_name = 'Bucket 2 - ELA', 'Reading', 'Math') as iready_subject,
+
         from {{ ref("int_powerschool__spenrollments") }}
         where specprog_name in ('Bucket 2 - ELA', 'Bucket 2 - Math')
     ),
@@ -64,6 +66,7 @@ with
                 then 'At/Above'
             end as njsla_proficiency,
             if(testperformancelevel > 3, true, false) as is_proficient,
+
         from {{ ref("stg_pearson__njsla") }}
 
         union all
@@ -91,7 +94,9 @@ with
                 when achievement_level_int >= 3
                 then 'At/Above'
             end as proficiency,
+
             is_proficient,
+
         from {{ ref("int_fldoe__all_assessments") }}
         where
             scale_score is not null
@@ -101,6 +106,7 @@ with
 
     psat_bucket1 as (
         select powerschool_student_number, discipline, max(score) as max_score,
+
         from {{ ref("int_collegeboard__psat_unpivot") }} as pt
         where test_subject in ('EBRW', 'Math') and test_type != 'PSAT 8/9'
         group by powerschool_student_number, discipline
@@ -121,6 +127,7 @@ with
                 when overall_relative_placement_int > 3
                 then 'At/Above'
             end as iready_proficiency,
+
         from {{ ref("base_iready__diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
     ),
@@ -131,6 +138,7 @@ with
             academic_year_int as academic_year,
             `subject`,
             projected_is_proficient_typical as is_proficient,
+
         from {{ ref("base_iready__diagnostic_results") }}
         where
             test_round = 'BOY'
@@ -146,6 +154,7 @@ with
             `subject`,
 
             if(level_number_with_typical >= 4, true, false) as is_proficient,
+
         from {{ ref("base_iready__diagnostic_results") }}
         where
             test_round = 'BOY'
@@ -167,6 +176,7 @@ with
                 when 'mgela'
                 then 'Reading'
             end as iready_subject,
+
         from {{ ref("base_powerschool__course_enrollments") }}
         where
             courses_course_number = 'LOG300'
@@ -188,6 +198,7 @@ with
             row_number() over (
                 partition by student_number, academic_year order by client_date desc
             ) as rn_year,
+
         from {{ ref("int_amplify__all_assessments") }}
         where measure_standard = 'Composite'
     ),
@@ -205,6 +216,7 @@ with
             row_number() over (
                 partition by academic_year, student_number order by client_date desc
             ) as rn_benchmark,
+
         from {{ ref("int_amplify__all_assessments") }}
         where measure_standard = 'Composite'
     )
@@ -245,6 +257,8 @@ select
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
     ) as assessment_dashboard_join,
 
+    /* years are hardcoded here because of changes on how buckets are calculated from
+       one sy to the next */
     case
         when
             co.academic_year = 2023
@@ -279,6 +293,7 @@ select
         then true
         else false
     end as is_exempt_state_testing,
+
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as sj
 left join

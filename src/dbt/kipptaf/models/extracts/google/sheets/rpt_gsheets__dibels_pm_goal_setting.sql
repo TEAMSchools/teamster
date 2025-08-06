@@ -13,7 +13,7 @@ with
 
         from {{ ref("int_amplify__all_assessments") }}
         where
-            academic_year = 2024
+            academic_year = 2024  -- TODO: make academic year once BOY data is complete
             and measure_standard != 'Composite'
             and overall_probe_eligible = 'Yes'
             and period in ('BOY', 'MOY')
@@ -40,7 +40,7 @@ with
             a.starting_words,
 
             e.code,
-            e.`round`,
+            e.round_number,
             e.pm_round_days,
             e.pm_days,
             e.pm_goal_include,
@@ -52,9 +52,9 @@ with
                 (e.benchmark_goal + 3) - a.starting_words, 0
             ) as required_growth_words,
 
-            if(e.`round` = e.min_pm_round, true, false) as is_min_round,
+            if(e.round_number = e.min_pm_round, true, false) as is_min_round,
 
-            if(e.`round` = e.max_pm_round, true, false) as is_max_round,
+            if(e.round_number = e.max_pm_round, true, false) as is_max_round,
 
         from avg_scores as a
         inner join
@@ -77,7 +77,7 @@ with
             measure_standard,
             starting_words,
             code,
-            `round`,
+            round_number,
             pm_round_days,
             pm_days,
             pm_goal_include,
@@ -110,7 +110,7 @@ select
     assessment_grade_int,
     measure_standard,
     starting_words,
-    `round`,
+    round_number,
     pm_goal_include,
     pm_goal_criteria,
     pm_round_days,
@@ -135,7 +135,7 @@ select
                     academic_year,
                     region,
                     matching_season,
-                    `round`,
+                    round_number,
                     assessment_grade_int,
                     measure_standard
             )
