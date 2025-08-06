@@ -122,7 +122,11 @@ select
     cw.week_number_academic_year,
     cw.week_number_quarter,
 
-    sj.*,
+    sj.iready_subject,
+    sj.illuminate_subject_area,
+    sj.powerschool_credittype,
+    sj.grad_unpivot_subject,
+    sj.discipline,
 
     if(
         cw.week_start_monday between co.entrydate and co.exitdate, true, false
