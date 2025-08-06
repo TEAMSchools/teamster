@@ -170,7 +170,16 @@ def build_bigquery_query_sftp_asset(
 
     @asset(
         key=[code_location, "extracts", destination_name, asset_name],
-        deps=[AssetKey([code_location, "extracts", query_value["table"]["name"]])],
+        deps=[
+            AssetKey(
+                [
+                    code_location,
+                    "extracts",
+                    destination_name,
+                    query_value["table"]["name"],
+                ]
+            )
+        ],
         metadata={**query_config, **file_config},
         required_resource_keys={"gcs", "db_bigquery", f"ssh_{destination_name}"},
         partitions_def=partitions_def,

@@ -6,7 +6,7 @@ from teamster.code_locations.kipptaf.adp.workforce_now.sftp.schema import (
 )
 from teamster.libraries.sftp.assets import build_sftp_file_asset
 
-key_prefix = [CODE_LOCATION, "adp", "workforce_now"]
+key_prefix = [CODE_LOCATION, "adp", "workforce_now", "sftp"]
 asset_kwargs = {
     "remote_dir_regex": r"\.",
     "ssh_resource_key": "ssh_adp_workforce_now",

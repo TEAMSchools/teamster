@@ -5,21 +5,36 @@ from dagster import AssetKey, build_last_update_freshness_checks
 from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
 
 adp_wfn_asset_selection = [
-    AssetKey(["kipptaf", "people", "int_people__staff_roster"]),
-    AssetKey(["kipptaf", "people", "int_people__staff_roster_history"]),
-    AssetKey(["kipptaf", "people", "stg_people__employee_numbers"]),
-    AssetKey(["kipptaf", "adp_workforce_now", "stg_adp_workforce_now__workers"]),
+    AssetKey(["kipptaf", "people", "intermediate", "int_people__staff_roster"]),
+    AssetKey(["kipptaf", "people", "intermediate", "int_people__staff_roster_history"]),
+    AssetKey(["kipptaf", "people", "staging", "stg_people__employee_numbers"]),
     AssetKey(
         [
             "kipptaf",
-            "adp_workforce_now",
+            "adp",
+            "workforce_now",
+            "api",
+            "staging",
+            "stg_adp_workforce_now__workers",
+        ]
+    ),
+    AssetKey(
+        [
+            "kipptaf",
+            "adp",
+            "workforce_now",
+            "api",
+            "staging",
             "stg_adp_workforce_now__workers__work_assignments",
         ]
     ),
     AssetKey(
         [
             "kipptaf",
-            "adp_workforce_now",
+            "adp",
+            "workforce_now",
+            "api",
+            "staging",
             "stg_adp_workforce_now__workers__work_assignments__reports_to",
         ]
     ),

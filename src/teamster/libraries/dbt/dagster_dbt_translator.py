@@ -32,12 +32,12 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         elif dbt_resource_props.get("version"):
             components = [dbt_resource_props["alias"]]
         else:
-            configured_schema = dbt_resource_props["config"].get("schema")
-
-            if configured_schema is not None:
-                components = [configured_schema, dbt_resource_props["name"]]
-            else:
-                components = [dbt_resource_props["name"]]
+            components = dbt_resource_props["fqn"][1:]  # drop package name from key
+            # configured_schema = dbt_resource_props["config"].get("schema")
+            # if configured_schema is not None:
+            #     components = [configured_schema, dbt_resource_props["name"]]
+            # else:
+            #     components = [dbt_resource_props["name"]]
 
         return AssetKey(components).with_prefix(self.code_location)
 

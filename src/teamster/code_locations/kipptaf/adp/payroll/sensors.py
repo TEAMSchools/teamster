@@ -25,9 +25,22 @@ from teamster.libraries.ssh.resources import SSHResource
     target=[
         general_ledger_file.key,
         AssetKey(
-            [CODE_LOCATION, "adp_payroll", "stg_adp_payroll__general_ledger_file"]
+            [
+                CODE_LOCATION,
+                "adp",
+                "payroll",
+                "staging",
+                "stg_adp_payroll__general_ledger_file",
+            ]
         ),
-        AssetKey([CODE_LOCATION, "extracts", "rpt_gsheets__intacct_integration_file"]),
+        AssetKey(
+            [
+                CODE_LOCATION,
+                "extracts",
+                "couchdrop",
+                "rpt_gsheets__intacct_integration_file",
+            ]
+        ),
         AssetKey(
             [CODE_LOCATION, "extracts", "couchdrop", "adp_payroll_date_group_code_csv"]
         ),
