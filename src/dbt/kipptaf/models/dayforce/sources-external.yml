@@ -19,6 +19,7 @@ sources:
           dagster:
             asset_key:
               - dayforce
+              - source
               - employees
       - name: src_dayforce__employee_manager
         external:
@@ -34,6 +35,7 @@ sources:
           dagster:
             asset_key:
               - dayforce
+              - source
               - employee_manager
       - name: src_dayforce__employee_status
         external:
@@ -49,6 +51,7 @@ sources:
           dagster:
             asset_key:
               - dayforce
+              - source
               - employee_status
       - name: src_dayforce__employee_work_assignment
         external:
@@ -65,4 +68,5 @@ sources:
           dagster:
             asset_key:
               - dayforce
+              - source
               - employee_work_assignment

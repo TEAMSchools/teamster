@@ -19,6 +19,8 @@ snapshots:
           group: powerschool
           asset_key:
             - powerschool
+            - sis
+            - snapshot
             - snapshot_powerschool__gpa_cumulative
   - name: snapshot_powerschool__gpa_term
     relation: ref("int_powerschool__gpa_term_current")
@@ -40,4 +42,6 @@ snapshots:
           group: powerschool
           asset_key:
             - powerschool
+            - sis
+            - snapshot
             - snapshot_powerschool__gpa_term

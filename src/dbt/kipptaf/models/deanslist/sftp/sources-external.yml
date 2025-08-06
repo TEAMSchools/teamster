@@ -10,7 +10,7 @@ sources:
         external:
           location:
             "{{ var('cloud_storage_uri_base')
-            }}/deanslist/reconcile_attendance/*"
+            }}/deanslist/sftp/reconcile_attendance/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -21,12 +21,13 @@ sources:
           dagster:
             asset_key:
               - deanslist
+              - sftp
               - reconcile_attendance
       - name: src_deanslist__reconcile_suspensions
         external:
           location:
             "{{ var('cloud_storage_uri_base')
-            }}/deanslist/reconcile_suspensions/*"
+            }}/deanslist/sftp/reconcile_suspensions/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -37,4 +38,5 @@ sources:
           dagster:
             asset_key:
               - deanslist
+              - sftp
               - reconcile_suspensions

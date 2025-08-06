@@ -17,7 +17,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - google_forms
+              - google
+              - forms
               - form_items_extension
         columns:
           - name: form_id

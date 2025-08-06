@@ -15,4 +15,5 @@ snapshots:
           group: iready
           asset_key:
             - iready
+            - snapshot
             - snapshot_iready__instructional_usage_data

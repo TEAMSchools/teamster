@@ -2,6 +2,7 @@ version: 2
 models:
   - name: stg_adp_workforce_manager__accrual_reporting_period_summary
     config:
+      enabled: false
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{
         source("adp_workforce_manager",
