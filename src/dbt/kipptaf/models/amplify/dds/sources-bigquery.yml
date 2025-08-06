@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: amplify
+    schema: "{{ project_name }}_amplify"
+    tables:
+      - name: int_amplify__dibels_data_farming_unpivot
+        meta:
+          dagster:
+            asset_key:
+              - amplify
+              - dds
+              - source
+              - int_amplify__dibels_data_farming_unpivot

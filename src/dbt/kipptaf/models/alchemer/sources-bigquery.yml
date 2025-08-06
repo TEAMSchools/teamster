@@ -9,4 +9,5 @@ sources:
           dagster:
             asset_key:
               - alchemer
+              - source
               - base_alchemer__survey_results

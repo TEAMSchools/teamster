@@ -185,8 +185,9 @@ models:
           +materialized: table
     knowbe4:
       +schema: knowbe4
-      staging:
-        +materialized: table
+      training:
+        staging:
+          +materialized: table
     ldap:
       +schema: ldap
       staging:
@@ -215,11 +216,12 @@ models:
       +schema: performance_management
       +materialized: table
     powerschool:
-      +schema: powerschool
-      disabled:
-        +enabled: false
-    powerschool_enrollment:
-      +schema: powerschool_enrollment
+      sis:
+        +schema: powerschool
+        disabled:
+          +enabled: false
+      enrollment:
+        +schema: powerschool_enrollment
     renlearn:
       +schema: renlearn
     reporting:

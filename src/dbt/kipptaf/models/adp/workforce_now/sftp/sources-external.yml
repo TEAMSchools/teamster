@@ -10,7 +10,7 @@ sources:
         external:
           location:
             "{{ var('cloud_storage_uri_base')
-            }}/adp/workforce_now/additional_earnings_report/*"
+            }}/adp/workforce_now/sftp/additional_earnings_report/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -22,12 +22,13 @@ sources:
             asset_key:
               - adp
               - workforce_now
+              - sftp
               - additional_earnings_report
       - name: src_adp_workforce_now__pension_and_benefits_enrollments
         external:
           location:
             "{{ var('cloud_storage_uri_base')
-            }}/adp/workforce_now/pension_and_benefits_enrollments/*"
+            }}/adp/workforce_now/sftp/pension_and_benefits_enrollments/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -39,12 +40,13 @@ sources:
             asset_key:
               - adp
               - workforce_now
+              - sftp
               - pension_and_benefits_enrollments
       - name: src_adp_workforce_now__time_and_attendance
         external:
           location:
             "{{ var('cloud_storage_uri_base')
-            }}/adp/workforce_now/time_and_attendance/*"
+            }}/adp/workforce_now/sftp/time_and_attendance/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -56,6 +58,7 @@ sources:
             asset_key:
               - adp
               - workforce_now
+              - sftp
               - time_and_attendance
       - name: src_adp_workforce_now__comprehensive_benefits_report
         config:
@@ -63,7 +66,7 @@ sources:
         external:
           location:
             "{{ var('cloud_storage_uri_base')
-            }}/adp/workforce_now/comprehensive_benefits_report/*"
+            }}/adp/workforce_now/sftp/comprehensive_benefits_report/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -76,4 +79,5 @@ sources:
               - kipptaf
               - adp
               - workforce_now
+              - sftp
               - comprehensive_benefits_report

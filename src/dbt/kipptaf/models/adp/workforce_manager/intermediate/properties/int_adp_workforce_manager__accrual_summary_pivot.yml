@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: int_adp_workforce_manager__accrual_summary_pivot
+    config:
+      enabled: false
     columns:
       - name: worker_id
         data_type: string

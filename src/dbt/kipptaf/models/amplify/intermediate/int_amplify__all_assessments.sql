@@ -130,7 +130,7 @@ with
                 partition by df.academic_year, df.student_id order by df.`date`
             ) as rn_distinct,
 
-        from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as df
+        from {{ source("amplify", "int_amplify__dibels_data_farming_unpivot") }} as df
         inner join
             expected_tests as e
             on df.academic_year = e.academic_year
