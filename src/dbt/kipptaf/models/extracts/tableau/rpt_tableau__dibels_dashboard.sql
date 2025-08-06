@@ -144,6 +144,7 @@ left join
     and a.grade = r.grade_level
     and a.admin_season = r.admin_season
     and a.round_number = r.round_number
+    and r.enrollment_dates_account
     and s.student_number = r.student_number
 left join
     {{ ref("int_people__leadership_crosswalk") }} as h
@@ -315,6 +316,7 @@ left join
     and e.grade = rs.grade_level
     and e.admin_season = rs.admin_season
     and e.round_number = rs.round_number
+    and rs.enrollment_dates_account
     and s.student_number = rs.student_number
 left join
     {{ ref("int_amplify__pm_met_criteria") }} as pm
