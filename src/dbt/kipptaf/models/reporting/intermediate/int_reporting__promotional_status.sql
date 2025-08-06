@@ -67,37 +67,6 @@ with
         group by mem._dbt_source_relation, mem.yearid, mem.studentid, rt.name
     ),
 
-    fg_credits as (
-        select
-            _dbt_source_relation,
-            studentid,
-            academic_year,
-            schoolid,
-            storecode,
-
-            sum(potential_credit_hours) as enrolled_credit_hours,
-
-            sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) as n_failing,
-            sum(
-                if(
-                    y1_letter_grade_adjusted in ('F', 'F*')
-                    and credittype in ('ENG', 'MATH', 'SCI', 'SOC'),
-                    1,
-                    0
-                )
-            ) as n_failing_core,
-            sum(
-                if(
-                    {# TODO: exclude credits if current year Y1 is stored #}
-                    y1_letter_grade_adjusted not in ('F', 'F*'),
-                    potential_credit_hours,
-                    null
-                )
-            ) as projected_credits_y1_term,
-        from {{ ref("base_powerschool__final_grades") }}
-        group by _dbt_source_relation, studentid, academic_year, schoolid, storecode
-    ),
-
     credits as (
         select
             fg._dbt_source_relation,
@@ -111,7 +80,7 @@ with
 
             coalesce(fg.projected_credits_y1_term, 0)
             + coalesce(gc.earned_credits_cum, 0) as projected_credits_cum,
-        from fg_credits as fg
+        from {{ ref("int_powerschool__final_grades_rollup") }} as fg
         left join
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on fg.studentid = gc.studentid
