@@ -36,8 +36,8 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             else:
                 components = [dbt_resource_props["name"]]
 
-        return AssetKey(components)with_prefix(self.code_location)
-        
+        return AssetKey(components).with_prefix(self.code_location)
+
         # asset_key = super().get_asset_key(dbt_resource_props)
 
         # dbt_meta = dbt_resource_props.get("config", {}).get(
