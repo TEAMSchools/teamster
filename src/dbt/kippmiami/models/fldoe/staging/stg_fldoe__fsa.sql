@@ -1,13 +1,19 @@
 with
     fsa as (
         select
-            dis as district_id,
-            sch as school_id,
-            tgrade as test_grade,
-            schoolyear as school_year,
-            scoreflag as score_flag,
+            cast(dis as int) as district_id,
+            cast(sch as int) as school_id,
+            cast(tgrade as int) as test_grade,
+            cast(schoolyear as int) as school_year,
+            cast(scoreflag as int) as score_flag,
 
             'Spring' as season,
+
+            cast(nullif(trim(scoreflag_r), '') as int) as score_flag_r,
+            cast(nullif(trim(scalescore), '') as int) as scale_score,
+            cast(nullif(trim(performancelevel), '') as int) as performance_level,
+
+            cast(left(schoolyear, 2) as int) + 2000 as academic_year,
 
             nullif(trim(fleid), '') as fleid,
             nullif(trim(testname), '') as test_name,
@@ -28,21 +34,6 @@ with
             nullif(trim(earn_wd2_ptpos_wd2), '') as earn_wd2_ptpos_wd2,
             nullif(trim(earn_wd3_ptpos_wd3), '') as earn_wd3_ptpos_wd3,
             nullif(trim(scoreflag_w), '') as score_flag_w,
-
-            coalesce(
-                safe_cast(trim(scoreflag_r.string_value) as int), scoreflag_r.long_value
-            ) as score_flag_r,
-
-            coalesce(
-                safe_cast(trim(scalescore.string_value) as int), scalescore.long_value
-            ) as scale_score,
-
-            coalesce(
-                safe_cast(trim(performancelevel.string_value) as int),
-                performancelevel.long_value
-            ) as performance_level,
-
-            cast(left(cast(schoolyear as string), 2) as int) + 2000 as academic_year,
         from {{ source("fldoe", "src_fldoe__fsa") }}
     ),
 

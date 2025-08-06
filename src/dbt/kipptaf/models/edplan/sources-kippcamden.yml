@@ -6,22 +6,6 @@ sources:
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       kippcamden_edplan
     tables:
-      - name: stg_edplan__njsmart_powerschool
-        meta:
-          dagster:
-            group: edplan
-            asset_key:
-              - kippcamden
-              - edplan
-              - stg_edplan__njsmart_powerschool
-      - name: stg_edplan__njsmart_powerschool_archive
-        meta:
-          dagster:
-            group: edplan
-            asset_key:
-              - kippcamden
-              - edplan
-              - stg_edplan__njsmart_powerschool_archive
       - name: int_edplan__njsmart_powerschool_union
         meta:
           dagster:

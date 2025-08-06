@@ -96,3 +96,18 @@ def test_get_workers_meta():
     filepath.parent.mkdir(parents=True, exist_ok=True)
 
     json.dump(obj=data, fp=filepath.open(mode="w"))
+
+
+def test_get_talent_associate_memberships():
+    aoid = "G550F72Q44ZGT3QT"
+
+    adp_wfn = get_adp_wfn_resource()
+
+    data = adp_wfn.get(
+        endpoint=f"/talent/v2/associates/{aoid}/associate-memberships"
+    ).json()
+    filepath = pathlib.Path("env/test/adp/talent/associate-memberships.json")
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    json.dump(obj=data, fp=filepath.open(mode="w"))
