@@ -40,7 +40,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - SOURCE_NAME
               - SOURCE_TABLE_NAME
 ```

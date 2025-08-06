@@ -10,7 +10,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - iready
               - diagnostic_results
         external:
@@ -32,7 +31,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - iready
               - diagnostic_and_instruction
         external:
@@ -54,7 +52,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - iready
               - instructional_usage_data
         external:
@@ -76,7 +73,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - iready
               - personalized_instruction_by_lesson
         external:
@@ -98,7 +94,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - iready
               - instruction_by_lesson
         external:

@@ -21,7 +21,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - overgrad
               - admissions
       - name: src_overgrad__custom_fields
@@ -39,7 +38,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - overgrad
               - custom_fields
       - name: src_overgrad__followings
@@ -57,7 +55,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - overgrad
               - followings
       - name: src_overgrad__schools
@@ -74,7 +71,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - overgrad
               - schools
       - name: src_overgrad__students
@@ -92,6 +88,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - overgrad
               - students

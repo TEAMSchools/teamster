@@ -12,7 +12,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - edplan
               - njsmart_powerschool_archive
         external:

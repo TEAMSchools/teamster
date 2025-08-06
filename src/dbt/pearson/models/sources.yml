@@ -10,7 +10,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - pearson
               - njgpa
         external:
@@ -30,7 +29,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - pearson
               - njsla
         external:
@@ -50,7 +48,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - pearson
               - njsla_science
         external:
@@ -72,7 +69,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - pearson
               - parcc
         external:
@@ -92,7 +88,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - pearson
               - student_list_report
         external:
@@ -114,7 +109,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - pearson
               - student_test_update
         external:

@@ -10,7 +10,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - renlearn
               - accelerated_reader
         external:
@@ -32,7 +31,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - renlearn
               - star
         external:
@@ -52,7 +50,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - renlearn
               - star_skill_area
         external:
@@ -74,7 +71,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - renlearn
               - star_dashboard_standards
         external:
@@ -96,7 +92,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - renlearn
               - fast_star
         external:
