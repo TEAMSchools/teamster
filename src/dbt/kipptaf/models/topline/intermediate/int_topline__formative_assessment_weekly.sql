@@ -1,27 +1,27 @@
 with
-    student_weeks as (
-        select
-            rr.powerschool_student_number,
-            rr.academic_year,
+    subject_discipline_crosswalk as (
+        select illuminate_subject_area, discipline,
+        from {{ ref("stg_assessments__course_subject_crosswalk") }}
+        group by illuminate_subject_area, discipline
+    ),
 
-            cw.week_start_monday,
-            cw.week_end_sunday,
+    responses_discipline as (
+        select rr.*, cx.discipline,
         from {{ ref("int_assessments__response_rollup") }} as rr
         inner join
-            {{ ref("int_powerschool__calendar_week") }} as cw
-            on rr.powerschool_school_id = cw.schoolid
-            and rr.academic_year = cw.academic_year
-        group by all
+            subject_discipline_crosswalk as cx
+            on rr.subject_area = cx.illuminate_subject_area
     ),
 
     assessment_weeks as (
         select
-            sw.powerschool_student_number,
+            sw.student_number,
             sw.academic_year,
             sw.week_start_monday,
             sw.week_end_sunday,
 
             rr.subject_area,
+            rr.discipline,
             rr.module_type,
             rr.title,
             rr.administered_at,
@@ -37,11 +37,12 @@ with
                     sw.week_start_monday
                 order by sw.week_start_monday desc
             ) as rn_week_latest,
-        from student_weeks as sw
+        from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as sw
         left join
-            {{ ref("int_assessments__response_rollup") }} as rr
-            on sw.powerschool_student_number = rr.powerschool_student_number
+            responses_discipline as rr
+            on sw.student_number = rr.powerschool_student_number
             and sw.academic_year = rr.academic_year
+            and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
         where
             (rr.response_type = 'overall' or rr.response_type is null)
@@ -49,9 +50,10 @@ with
     )
 
 select
-    powerschool_student_number,
+    student_number,
     academic_year,
     subject_area,
+    discipline,
     module_type,
     title,
     administered_at,
@@ -60,7 +62,7 @@ select
     is_mastery_int,
 
     last_value(is_mastery_int ignore nulls) over (
-        partition by powerschool_student_number, subject_area, academic_year
+        partition by student_number, subject_area, academic_year
         order by week_start_monday
         rows between unbounded preceding and current row
     ) as mastery_as_of_week,
