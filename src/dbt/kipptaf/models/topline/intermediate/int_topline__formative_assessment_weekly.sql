@@ -29,14 +29,6 @@ with
             case
                 when rr.is_mastery then 1 when not rr.is_mastery then 0
             end as is_mastery_int,
-            row_number() over (
-                partition by
-                    rr.powerschool_student_number,
-                    rr.academic_year,
-                    rr.subject_area,
-                    sw.week_start_monday
-                order by sw.week_start_monday desc
-            ) as rn_week_latest,
         from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as sw
         left join
             responses_discipline as rr
@@ -67,4 +59,3 @@ select
         rows between unbounded preceding and current row
     ) as mastery_as_of_week,
 from assessment_weeks
-where rn_week_latest = 1
