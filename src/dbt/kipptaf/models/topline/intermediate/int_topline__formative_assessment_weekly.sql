@@ -62,7 +62,7 @@ select
     is_mastery_int,
 
     last_value(is_mastery_int ignore nulls) over (
-        partition by student_number, subject_area, academic_year
+        partition by student_number, discipline, academic_year
         order by week_start_monday
         rows between unbounded preceding and current row
     ) as mastery_as_of_week,
