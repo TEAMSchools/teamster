@@ -13,8 +13,8 @@ snapshots:
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
+          group: people
           asset_key:
-            - kipptaf
             - people
             - snapshot_people__employee_numbers
   - name: snapshot_people__student_logins
@@ -27,8 +27,8 @@ snapshots:
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
+          group: people
           asset_key:
-            - kipptaf
             - people
             - snapshot_people__student_logins
   - name: snapshot_people__staff_roster
@@ -41,7 +41,7 @@ snapshots:
       check_cols: all
       meta:
         dagster:
+          group: people
           asset_key:
-            - kipptaf
             - people
             - snapshot_people__staff_roster

@@ -4,7 +4,7 @@ from dagster import AssetSpec
 from dagster_shared import check
 
 
-def build_google_sheets_asset_spec(asset_key, uri, range_name):
+def build_google_sheets_asset_spec(asset_key: list[str], uri: str, range_name: str):
     match = check.not_none(
         value=re.match(
             pattern=r"https:/{2}docs\.google\.com/spreadsheets/d/([\w-]+)",
