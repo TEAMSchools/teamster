@@ -13,7 +13,7 @@ with
             ) as membership_day_number,
 
             row_number() over (
-                partition by studentid, yearid, attendancevalue
+                partition by studentid, yearid, cast(attendancevalue as string)
                 order by calendardate asc
             ) as rn_student_year_attendancevalue,
 
