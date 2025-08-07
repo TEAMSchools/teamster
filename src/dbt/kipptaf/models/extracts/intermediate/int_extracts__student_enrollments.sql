@@ -85,7 +85,7 @@ select
     e.school_abbreviation as school,
     e.grade_level,
     e.grade_level_prev,
-    e.team,
+    e.advisory_section_number as team,
     e.student_email_google as student_email,
     e.student_web_id,
     e.student_web_password,
