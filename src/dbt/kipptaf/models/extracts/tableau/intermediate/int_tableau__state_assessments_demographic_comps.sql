@@ -50,14 +50,17 @@ with
             ) as iep_status,
 
         from {{ ref("int_pearson__all_assessments") }}
-        where academic_year >= 2018 and testscalescore is not null and period = 'Spring'
+        where
+            testscalescore is not null and `period` = 'Spring' and academic_year >= 2018
 
         union all
 
         select
             _dbt_source_relation,
             academic_year,
+
             null as localstudentidentifier,
+
             student_id as state_id,
             assessment_name,
             is_proficient,
@@ -79,7 +82,9 @@ with
         select
             _dbt_source_relation,
             academic_year,
+
             null as localstudentidentifier,
+
             cast(state_student_identifier as string) as state_id,
 
             test_type as assessment_name,
@@ -121,7 +126,7 @@ with
             and academic_year = {{ var("current_academic_year") }}
     )
 
--- NJ scores
+/* NJ scores */
 select
     e.academic_year,
     e.region,
@@ -129,14 +134,9 @@ select
 
     a.district_state,
     a.assessment_name,
-
-    case
-        when a.test_code = 'ALG01'
-        then concat(a.test_code, '_', e.school_level)
-        else a.test_code
-    end as test_code,
-
-    if(a.is_proficient, 1, 0) as is_proficient_int,
+    a.aggregate_ethnicity,
+    a.ml_status,
+    a.iep_status,
 
     if(
         e.lunch_status in ('F', 'R'),
@@ -144,29 +144,34 @@ select
         'Non Economically Disadvantaged'
     ) as lunch_status,
 
-    a.aggregate_ethnicity,
-    a.ml_status,
-    a.iep_status,
+    if(a.is_proficient, 1, 0) as is_proficient_int,
+
+    case
+        when a.test_code = 'ALG01'
+        then concat(a.test_code, '_', e.school_level)
+        else a.test_code
+    end as test_code,
 
     case
         e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
     end as gender,
 
-from assessment_scores as a
+from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
-    {{ ref("int_extracts__student_enrollments") }} as e
-    on a.academic_year = e.academic_year
-    and a.localstudentidentifier = e.student_number
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+    assessment_scores as a
+    on e.academic_year = a.academic_year
+    and e.student_number = a.localstudentidentifier
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
     and a.results_type = 'Actual'
-    and a.academic_year >= {{ var("current_academic_year") - 7 }}
-    and e.rn_year = 1
+where
+    e.rn_year = 1
+    and e.academic_year >= {{ var("current_academic_year") - 7 }}
     and e.grade_level > 2
     and e.school_level != 'OD'
 
 union all
 
--- FL scores
+/* FL scores */
 select
     e.academic_year,
     e.region,
@@ -174,20 +179,6 @@ select
 
     a.district_state,
     a.assessment_name,
-
-    case
-        when a.test_code = 'ALG01'
-        then concat(a.test_code, '_', e.school_level)
-        else a.test_code
-    end as test_code,
-
-    if(a.is_proficient, 1, 0) as is_proficient_int,
-
-    if(
-        e.lunch_status in ('F', 'R'),
-        'Economically Disadvantaged',
-        'Non Economically Disadvantaged'
-    ) as lunch_status,
 
     case
         when e.race_ethnicity = 'B'
@@ -209,32 +200,45 @@ select
     end as aggregate_ethnicity,
 
     if(e.lep_status, 'ML', 'Not ML') as ml_status,
-
     if(
         e.iep_status = 'Has IEP',
         'Students With Disabilities',
         'Students Without Disabilities'
     ) as iep_status,
+    if(
+        e.lunch_status in ('F', 'R'),
+        'Economically Disadvantaged',
+        'Non Economically Disadvantaged'
+    ) as lunch_status,
+
+    if(a.is_proficient, 1, 0) as is_proficient_int,
+
+    case
+        when a.test_code = 'ALG01'
+        then concat(a.test_code, '_', e.school_level)
+        else a.test_code
+    end as test_code,
 
     case
         e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
     end as gender,
 
-from assessment_scores as a
+from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
-    {{ ref("int_extracts__student_enrollments") }} as e
-    on a.academic_year = e.academic_year
-    and a.state_id = e.state_studentnumber
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+    assessment_scores as a
+    on e.academic_year = a.academic_year
+    and e.state_studentnumber = a.state_id
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
     and a.results_type = 'Actual'
-    and a.academic_year >= {{ var("current_academic_year") - 7 }}
+where
+    e.region = 'Miami'
     and e.rn_year = 1
-    and e.region = 'Miami'
+    and e.academic_year >= {{ var("current_academic_year") - 7 }}
     and e.grade_level > 2
 
 union all
 
--- NJ prelim scores
+/* NJ prelim scores */
 select
     e.academic_year,
     e.region,
@@ -242,20 +246,6 @@ select
 
     a.district_state,
     a.assessment_name,
-
-    case
-        when a.test_code = 'ALG01'
-        then concat(a.test_code, '_', e.school_level)
-        else a.test_code
-    end as test_code,
-
-    if(a.is_proficient, 1, 0) as is_proficient_int,
-
-    if(
-        e.lunch_status in ('F', 'R'),
-        'Economically Disadvantaged',
-        'Non Economically Disadvantaged'
-    ) as lunch_status,
 
     case
         when e.race_ethnicity = 'B'
@@ -277,25 +267,38 @@ select
     end as aggregate_ethnicity,
 
     if(e.lep_status, 'ML', 'Not ML') as ml_status,
-
     if(
         e.iep_status = 'Has IEP',
         'Students With Disabilities',
         'Students Without Disabilities'
     ) as iep_status,
+    if(
+        e.lunch_status in ('F', 'R'),
+        'Economically Disadvantaged',
+        'Non Economically Disadvantaged'
+    ) as lunch_status,
+
+    if(a.is_proficient, 1, 0) as is_proficient_int,
+
+    case
+        when a.test_code = 'ALG01'
+        then concat(a.test_code, '_', e.school_level)
+        else a.test_code
+    end as test_code,
 
     case
         e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
     end as gender,
 
-from assessment_scores as a
+from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
-    {{ ref("int_extracts__student_enrollments") }} as e
-    on a.academic_year = e.academic_year
-    and a.state_id = e.state_studentnumber
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
-    and a.academic_year = {{ var("current_academic_year") }}
+    assessment_scores as a
+    on e.academic_year = a.academic_year
+    and e.state_studentnumber = a.state_id
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
     and a.results_type = 'Preliminary'
+where
+    e.academic_year = {{ var("current_academic_year") }}
     and e.rn_year = 1
     and e.grade_level > 2
     and e.school_level != 'OD'
