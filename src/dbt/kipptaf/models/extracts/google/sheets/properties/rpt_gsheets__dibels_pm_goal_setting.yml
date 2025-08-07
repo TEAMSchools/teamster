@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: rpt_gsheets__dibels_pm_goal_setting
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: admin_season
+        data_type: string
+      - name: assessment_grade
+        data_type: string
+      - name: assessment_grade_int
+        data_type: int64
+      - name: measure_standard
+        data_type: string
+      - name: starting_words
+        data_type: float64
+      - name: round_number
+        data_type: int64
+      - name: pm_goal_include
+        data_type: boolean
+      - name: pm_goal_criteria
+        data_type: string
+      - name: pm_round_days
+        data_type: int64
+      - name: benchmark_goal
+        data_type: float64
+      - name: required_growth_words
+        data_type: float64
+      - name: pm_days
+        data_type: int64
+      - name: daily_growth_rate
+        data_type: float64
+      - name: round_growth_words_goal
+        data_type: float64
+      - name: cumulative_growth_words
+        data_type: float64

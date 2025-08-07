@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("pearson",
         "src_pearson__njgpa") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: statestudentidentifier
         data_type: int64
@@ -25,11 +27,11 @@ models:
       - name: testcode
         data_type: string
       - name: testperformancelevel
-        data_type: float64
+        data_type: numeric
       - name: testscalescore
-        data_type: float64
+        data_type: numeric
       - name: testscorecomplete
-        data_type: float64
+        data_type: numeric
       - name: studentwithdisabilities
         data_type: string
       - name: englishlearnerel
@@ -59,15 +61,15 @@ models:
       - name: testadministrator
         data_type: int64
       - name: testcsemprobablerange
-        data_type: float64
+        data_type: numeric
       - name: testreadingcsem
-        data_type: float64
+        data_type: numeric
       - name: testreadingscalescore
-        data_type: float64
+        data_type: numeric
       - name: testwritingcsem
-        data_type: float64
+        data_type: numeric
       - name: testwritingscalescore
-        data_type: float64
+        data_type: numeric
       - name: discipline
         data_type: string
       - name: admin
@@ -77,4 +79,6 @@ models:
       - name: is_proficient
         data_type: boolean
       - name: testperformancelevel_text
+        data_type: string
+      - name: studenttestuuid
         data_type: string

@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("fldoe",
         "src_fldoe__eoc") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: test_name
         data_type: string
@@ -42,19 +44,19 @@ models:
         data_type: string
       - name: testing_location
         data_type: string
-      - name: 1_origins_and_purposes_of_law_and_government_performance
+      - name: origins_and_purposes_of_law_and_government_performance
         data_type: string
-      - name: 2_roles_rights_and_responsibilities_of_citizens_performance
+      - name: roles_rights_and_responsibilities_of_citizens_performance
         data_type: string
-      - name: 3_government_policies_and_political_processes_performance
+      - name: government_policies_and_political_processes_performance
         data_type: string
-      - name: 4_organization_and_function_of_government_performance
+      - name: organization_and_function_of_government_performance
         data_type: string
-      - name: 1_expressions_functions_and_data_analysis_performance
+      - name: expressions_functions_and_data_analysis_performance
         data_type: string
-      - name: 2_linear_relationships_performance
+      - name: linear_relationships_performance
         data_type: string
-      - name: 3_non_linear_relationships_performance
+      - name: non_linear_relationships_performance
         data_type: string
       - name: administration_window
         data_type: string
