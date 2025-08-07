@@ -2,7 +2,7 @@ select
     region,
     student_number,
     student_name,
-    school_abbreviation as school,
+    school,
     grade_level,
     advisory_name as team,
     spedlep as iep_status,
