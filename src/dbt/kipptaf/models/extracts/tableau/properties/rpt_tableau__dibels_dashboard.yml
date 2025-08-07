@@ -10,9 +10,11 @@ models:
         data_type: string
       - name: district
         data_type: string
+      - name: state
+        data_type: string
       - name: region
         data_type: string
-      - name: state
+      - name: school_level
         data_type: string
       - name: schoolid
         data_type: int64
@@ -24,50 +26,94 @@ models:
         data_type: int64
       - name: student_name
         data_type: string
-      - name: grade_level
-        data_type: string
+      - name: grade_level_int
+        data_type: int64
       - name: is_out_of_district
         data_type: boolean
       - name: gender
         data_type: string
       - name: ethnicity
         data_type: string
-      - name: enroll_status
-        data_type: int64
       - name: is_homeless
-        data_type: boolean
-      - name: is_504
         data_type: boolean
       - name: iep_status
         data_type: string
+      - name: is_504
+        data_type: boolean
       - name: lep_status
         data_type: boolean
       - name: lunch_status
         data_type: string
       - name: gifted_and_talented
         data_type: string
+      - name: enroll_status
+        data_type: int64
       - name: advisory
         data_type: string
       - name: cohort
         data_type: int64
+      - name: assessment_type
+        data_type: string
       - name: expected_test
         data_type: string
-      - name: month_round
+      - name: expected_month_round
         data_type: string
-      - name: expected_mclass_measure_name_code
-        data_type: string
-      - name: expected_mclass_measure_name
-        data_type: string
-      - name: expected_mclass_measure_standard
-        data_type: string
-      - name: goal
+      - name: expected_grade_level_int
         data_type: int64
-      - name: admin_benchmark
+      - name: expected_measure_name_code
+        data_type: string
+      - name: expected_measure_name
+        data_type: string
+      - name: expected_measure_standard
+        data_type: string
+      - name: admin_goal_season
+        data_type: string
+      - name: admin_goal
+        data_type: float64
+      - name: admin_goal_grade_range
+        data_type: float64
+      - name: n_admin_season_school_gl_all
+        data_type: float64
+      - name: n_admin_season_school_gl_at_above
+        data_type: int64
+      - name: n_admin_season_school_gl_bl_wb
+        data_type: int64
+      - name: n_admin_season_school_gl_at_above_expected
+        data_type: float64
+      - name: n_admin_season_school_gl_at_above_gap
+        data_type: float64
+      - name: n_admin_season_region_gl_all
+        data_type: float64
+      - name: n_admin_season_region_gl_at_above
+        data_type: int64
+      - name: n_admin_season_region_gl_bl_wb
+        data_type: int64
+      - name: n_admin_season_region_gl_at_above_expected
+        data_type: float64
+      - name: n_admin_season_region_gl_at_above_gap
+        data_type: float64
+      - name: grade_level
+        data_type: int64
+      - name: expected_grade_level
+        data_type: string
+      - name: average_starting_words
+        data_type: int64
+      - name: pm_round_days
+        data_type: int64
+      - name: pm_days
+        data_type: int64
+      - name: benchmark_goal
+        data_type: int64
+      - name: required_growth_words
+        data_type: int64
+      - name: daily_growth_rate
+        data_type: float64
+      - name: round_growth_words_goal
+        data_type: int64
+      - name: goal
         data_type: int64
       - name: schedule_student_number
         data_type: int64
-      - name: schedule_student_grade_level
-        data_type: string
       - name: teacherid
         data_type: int64
       - name: teacher_name
@@ -78,35 +124,35 @@ models:
         data_type: string
       - name: section_number
         data_type: string
-      - name: scheduled
-        data_type: int64
-      - name: hos
-        data_type: string
       - name: mclass_student_number
         data_type: int64
-      - name: mclass_assessment_grade
+      - name: assessment_grade
         data_type: string
-      - name: mclass_period
+      - name: period
         data_type: string
-      - name: mclass_client_date
+      - name: client_date
         data_type: date
-      - name: mclass_measure_name
+      - name: start_date
+        data_type: date
+      - name: end_date
+        data_type: date
+      - name: measure_name
         data_type: string
-      - name: mclass_measure_name_code
+      - name: measure_name_code
         data_type: string
-      - name: mclass_measure_standard
+      - name: measure_standard
         data_type: string
-      - name: mclass_measure_standard_score
+      - name: measure_standard_score
         data_type: float64
-      - name: mclass_measure_standard_level
+      - name: measure_standard_level
         data_type: string
-      - name: mclass_measure_standard_level_int
+      - name: measure_standard_level_int
         data_type: int64
-      - name: mclass_measure_percentile
+      - name: measure_percentile
         data_type: float64
-      - name: mclass_measure_semester_growth
+      - name: measure_semester_growth
         data_type: string
-      - name: mclass_measure_year_growth
+      - name: measure_year_growth
         data_type: string
       - name: boy_composite
         data_type: string
@@ -114,23 +160,35 @@ models:
         data_type: string
       - name: eoy_composite
         data_type: string
-      - name: start_date
-        data_type: date
-      - name: end_date
-        data_type: date
+      - name: enrollment_dates_account
+        data_type: boolean
+      - name: expected_row_count
+        data_type: int64
+      - name: actual_row_count
+        data_type: int64
+      - name: completed_test_round
+        data_type: boolean
+      - name: completed_test_round_int
+        data_type: int64
+      - name: met_measure_standard_goal
+        data_type: int64
+      - name: met_admin_benchmark_goal
+        data_type: int64
+      - name: met_measure_name_code_goal
+        data_type: int64
+      - name: met_pm_round_criteria
+        data_type: int64
+      - name: met_pm_round_overall_criteria
+        data_type: int64
+      - name: hos
+        data_type: string
       - name: nj_student_tier
         data_type: string
       - name: tutoring_nj
         data_type: boolean
-      - name: assessment_type
-        data_type: string
-      - name: met_standard_goal
-        data_type: boolean
-      - name: met_overall_goal
-        data_type: boolean
-      - name: met_bm_goal
-        data_type: boolean
       - name: expected_round
         data_type: string
-      - name: expected_grade_level
+      - name: schedule_student_grade_level
         data_type: string
+      - name: scheduled
+        data_type: int64
