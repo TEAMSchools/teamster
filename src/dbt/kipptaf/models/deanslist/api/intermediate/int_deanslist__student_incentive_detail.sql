@@ -8,7 +8,7 @@ with
             cast(left(t.academic_year_name, 4) as int64) as academic_year,
             extract(date from t.start_date_date) as start_date,
             extract(date from t.end_date_date) as end_date,
-        from {{ ref("stg_deanslist__terms") }} as t
+        from {{ ref("stg_deanslist__terms") }}
     ),
 
     behaviors as (

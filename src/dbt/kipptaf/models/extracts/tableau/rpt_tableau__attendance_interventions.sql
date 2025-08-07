@@ -17,7 +17,7 @@ select
     ai.commlog_type,
     ai.intervention_status,
     ai.intervention_status_required_int,
-from {{ ref("int_students__attendance_interventions") }} as ai
+from {{ ref("int_topline__attendance_interventions") }} as ai
 inner join
     {{ ref("int_extracts__student_enrollments") }} as co
     on ai.student_number = co.student_number
