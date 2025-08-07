@@ -1,28 +1,13 @@
 with
-    ms_grad_sub as (
-        select
-            _dbt_source_relation,
-            student_number,
-            school_abbreviation as ms_attended,
-            row_number() over (
-                partition by student_number order by exitdate desc
-            ) as rn,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where school_level = 'MS'
-    ),
-
     overall_filters as (
-        select distinct
+        select
             academic_year,
             student_number,
-            max(
-                case
-                    nj_student_tier when 'Bucket 1' then 1 when 'Bucket 2' then 2 else 0
-                end
-            ) over (partition by academic_year, student_number)
-            as nj_overall_student_tier,
+
+            max(nj_student_tier) as nj_overall_student_tier,
         from {{ ref("int_extracts__student_enrollments_subjects") }}
         where academic_year >= {{ var("current_academic_year") - 1 }}
+        group by academic_year, student_number
 
     ),
 
@@ -32,7 +17,7 @@ with
             ad.calendardate,
             ad.membershipvalue,
             ad.att_code,
-            ad.is_present,
+            ad.attendancevalue as is_present,
             ad.is_present_weighted,
             ad.is_absent,
             ad.is_tardy,
@@ -40,7 +25,7 @@ with
             ad.is_oss as is_oss_running,
             ad.is_iss as is_iss_running,
             ad.is_suspended as is_suspended_running,
-            ad.quarter as term,
+            ad.term,
 
             co.student_number,
             co.lastfirst,
@@ -59,54 +44,31 @@ with
             co.ethnicity,
             co.is_self_contained,
             co.year_in_network,
+            co.advisory_section_number as section_number,
+            co.advisor_lastfirst as teacher_name,
+            co.ms_attended,
 
-            enr.cc_section_number as section_number,
-            enr.teacher_lastfirst as teacher_name,
+            coalesce(co.is_counseling_services, 0) as is_counselingservices,
+            coalesce(co.is_student_athlete, 0) as is_studentathlete,
 
-            f.nj_overall_student_tier,
-
-            ms.ms_attended,
-
-            if(sp.studentid is not null, 1, 0) as is_counselingservices,
-            if(sa.studentid is not null, 1, 0) as is_studentathlete,
-        from {{ ref("int_powerschool__ada_detail") }} as ad
+            coalesce(
+                f.nj_overall_student_tier, 'Unbucketed'
+            ) as nj_overall_student_tier,
+        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ad
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
+            {{ ref("int_extracts__student_enrollments") }} as co
             on ad.studentid = co.studentid
             and ad.schoolid = co.schoolid
             and ad.calendardate between co.entrydate and co.exitdate
             and {{ union_dataset_join_clause(left_alias="ad", right_alias="co") }}
         left join
-            {{ ref("base_powerschool__course_enrollments") }} as enr
-            on co.studentid = enr.cc_studentid
-            and co.academic_year = enr.cc_academic_year
-            and co.schoolid = enr.cc_schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
-            and enr.cc_course_number = 'HR'
-            and enr.rn_course_number_year = 1
-        left join
-            {{ ref("int_powerschool__spenrollments") }} as sp
-            on ad.studentid = sp.studentid
-            and ad.calendardate between sp.enter_date and sp.exit_date
-            and {{ union_dataset_join_clause(left_alias="ad", right_alias="sp") }}
-            and sp.specprog_name = 'Counseling Services'
-        left join
-            {{ ref("int_powerschool__spenrollments") }} as sa
-            on ad.studentid = sa.studentid
-            and ad.calendardate between sa.enter_date and sa.exit_date
-            and {{ union_dataset_join_clause(left_alias="ad", right_alias="sa") }}
-            and sa.specprog_name = 'Student Athlete'
-        left join
             overall_filters as f
             on co.academic_year = f.academic_year
             and co.student_number = f.student_number
-        left join
-            ms_grad_sub as ms
-            on co.student_number = ms.student_number
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="ms") }}
-            and ms.rn = 1
         where
-            ad.calendardate between date(
+            ad.membershipvalue = 1
+            and ad.attendancevalue is not null
+            and ad.calendardate between date(
                 ({{ var("current_academic_year") - 1 }}), 7, 1
             ) and current_date('{{ var("local_timezone") }}')
     )
@@ -141,17 +103,15 @@ select
     is_studentathlete,
     term,
     ms_attended,
-    if(
-        nj_overall_student_tier = 0,
-        'Unbucketed',
-        concat('Bucket ', nj_overall_student_tier)
-    ) as nj_overall_student_tier,
+    nj_overall_student_tier,
+
     avg(is_present) over (
         partition by studentid, academic_year order by calendardate
     ) as ada_running,
     avg(pct_ontime_running) over (
         partition by student_number, academic_year order by calendardate
     ) as pct_ontime_running,
+
     max(is_oss_running) over (
         partition by student_number, academic_year order by calendardate
     ) as is_oss_running,
