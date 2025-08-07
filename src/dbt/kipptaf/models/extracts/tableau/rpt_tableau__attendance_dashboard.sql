@@ -12,18 +12,18 @@ with
     ),
 
     overall_filters as (
-        select distinct
+        select
             academic_year,
             student_number,
+
             max(
                 case
                     nj_student_tier when 'Bucket 1' then 1 when 'Bucket 2' then 2 else 0
                 end
-            ) over (partition by academic_year, student_number)
-            as nj_overall_student_tier,
+            ) as nj_overall_student_tier,
         from {{ ref("int_extracts__student_enrollments_subjects") }}
-        where academic_year >= {{ var("current_academic_year") - 1 }}
-
+        where rn_year = 1 and academic_year >= {{ var("current_academic_year") - 1 }}
+        group by academic_year, student_number
     ),
 
     attendance_dash as (

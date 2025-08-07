@@ -157,11 +157,12 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.localstudentidentifier = e.student_number
-    and a.academic_year >= {{ var("current_academic_year") - 7 }}
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
     and a.results_type = 'Actual'
+    and a.academic_year >= {{ var("current_academic_year") - 7 }}
+    and e.rn_year = 1
     and e.grade_level > 2
     and e.school_level != 'OD'
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
 
 union all
 
@@ -224,11 +225,12 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
-    and a.academic_year >= {{ var("current_academic_year") - 7 }}
-    and a.results_type = 'Actual'
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
-    and e.grade_level > 2
+    and a.results_type = 'Actual'
+    and a.academic_year >= {{ var("current_academic_year") - 7 }}
+    and e.rn_year = 1
     and e.region = 'Miami'
+    and e.grade_level > 2
 
 union all
 
@@ -291,8 +293,9 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
     and a.academic_year = {{ var("current_academic_year") }}
     and a.results_type = 'Preliminary'
+    and e.rn_year = 1
     and e.grade_level > 2
     and e.school_level != 'OD'
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}

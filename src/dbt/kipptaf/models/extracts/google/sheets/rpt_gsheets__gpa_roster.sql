@@ -37,6 +37,7 @@ with
             and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
         where
             co.academic_year = {{ var("current_academic_year") }}
+            and co.rn_year = 1
             and co.enroll_status = 0
             and co.grade_level >= 5
     )
