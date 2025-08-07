@@ -67,37 +67,6 @@ with
         group by mem._dbt_source_relation, mem.yearid, mem.studentid, rt.name
     ),
 
-    fg_credits as (
-        select
-            _dbt_source_relation,
-            studentid,
-            academic_year,
-            schoolid,
-            storecode,
-
-            sum(potential_credit_hours) as enrolled_credit_hours,
-
-            sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) as n_failing,
-            sum(
-                if(
-                    y1_letter_grade_adjusted in ('F', 'F*')
-                    and credittype in ('ENG', 'MATH', 'SCI', 'SOC'),
-                    1,
-                    0
-                )
-            ) as n_failing_core,
-            sum(
-                if(
-                    {# TODO: exclude credits if current year Y1 is stored #}
-                    y1_letter_grade_adjusted not in ('F', 'F*'),
-                    potential_credit_hours,
-                    null
-                )
-            ) as projected_credits_y1_term,
-        from {{ ref("base_powerschool__final_grades") }}
-        group by _dbt_source_relation, studentid, academic_year, schoolid, storecode
-    ),
-
     credits as (
         select
             fg._dbt_source_relation,
@@ -111,7 +80,7 @@ with
 
             coalesce(fg.projected_credits_y1_term, 0)
             + coalesce(gc.earned_credits_cum, 0) as projected_credits_cum,
-        from fg_credits as fg
+        from {{ ref("int_powerschool__final_grades_rollup") }} as fg
         left join
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on fg.studentid = gc.studentid
@@ -139,18 +108,17 @@ with
 
     mclass as (
         select
-            mclass_academic_year as academic_year,
-            mclass_student_number as student_number,
-            mclass_measure_standard_level,
-            mclass_measure_standard_level_int,
-            mclass_client_date,
+            academic_year,
+            student_number,
+            measure_standard_level,
+            measure_standard_level_int,
+            client_date,
 
             row_number() over (
-                partition by mclass_academic_year, mclass_student_number
-                order by mclass_client_date desc
+                partition by academic_year, student_number order by client_date desc
             ) as rn_composite,
         from {{ ref("int_amplify__all_assessments") }}
-        where assessment_type = 'Benchmark' and mclass_measure_name_code = 'Composite'
+        where assessment_type = 'Benchmark' and measure_name_code = 'Composite'
     ),
 
     star_results as (
@@ -268,7 +236,8 @@ with
             co.special_education_code,
             co.region,
 
-            term_name,
+            rt.name as term_name,
+            rt.is_current,
 
             att.ada_term_running,
             att.n_absences_y1_running,
@@ -282,8 +251,8 @@ with
             c.projected_credits_y1_term,
             c.projected_credits_cum,
 
-            m.mclass_measure_standard_level as dibels_composite_level_recent_str,
-            m.mclass_measure_standard_level_int as dibels_composite_level_recent,
+            m.measure_standard_level as dibels_composite_level_recent_str,
+            m.measure_standard_level_int as dibels_composite_level_recent,
 
             s.star_math_level as star_math_level_recent,
             s.star_ela_level as star_reading_level_recent,
@@ -435,7 +404,7 @@ with
                 when
                     co.region in ('Camden', 'Newark')
                     and co.grade_level <= 1
-                    and coalesce(m.mclass_measure_standard_level_int, 0) <= 1
+                    and coalesce(m.measure_standard_level_int, 0) <= 1
                 then 'Off-Track'
                 /* Gr2 NJ */
                 when
@@ -488,18 +457,22 @@ with
                 else 'On-Track'
             end as academic_status,
         from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term_name
+        inner join
+            {{ ref("stg_reporting__terms") }} as rt
+            on co.academic_year = rt.academic_year
+            and co.schoolid = rt.school_id
+            and rt.type = 'RT'
         left join
             attendance as att
             on co.studentid = att.studentid
             and co.yearid = att.yearid
-            and term_name = att.term_name
+            and rt.name = att.term_name
             and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
         left join
             credits as c
             on co.studentid = c.studentid
             and co.academic_year = c.academic_year
-            and term_name = c.storecode
+            and rt.name = c.storecode
             and {{ union_dataset_join_clause(left_alias="co", right_alias="c") }}
         left join
             iready as ir
@@ -539,6 +512,7 @@ select
     student_number,
     academic_year,
     term_name,
+    is_current,
     ada_term_running,
     n_absences_y1_running,
     n_absences_y1_running_non_susp,

@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("renlearn",
         "src_renlearn__fast_star") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: _dagster_partition_fiscal_year
         data_type: int64
@@ -17,10 +19,6 @@ models:
       - name: assess_status
         data_type: string
       - name: attempts_g3
-        data_type: record
-      - name: attempts_g3.string_value
-        data_type: string
-      - name: attempts_g3.long_value
         data_type: int64
       - name: cbt_flag
         data_type: string
@@ -37,7 +35,7 @@ models:
       - name: completed_date_local
         data_type: string
       - name: current_sgp
-        data_type: float64
+        data_type: int64
       - name: dbm_level
         data_type: int64
       - name: dbmc_nol
@@ -63,7 +61,7 @@ models:
       - name: enrolled
         data_type: string
       - name: est_orf
-        data_type: float64
+        data_type: string
       - name: eth_hisp
         data_type: string
       - name: exempted_absence
@@ -89,19 +87,11 @@ models:
       - name: gname
         data_type: string
       - name: grade_e
-        data_type: record
-      - name: grade_e.double_value
-        data_type: float64
-      - name: grade_e.string_value
         data_type: string
       - name: grade_p
-        data_type: float64
+        data_type: numeric
       - name: grade_t
-        data_type: record
-      - name: grade_t.string_value
         data_type: string
-      - name: grade_t.long_value
-        data_type: int64
       - name: irl
         data_type: string
       - name: last_name
@@ -121,7 +111,7 @@ models:
       - name: multi_race
         data_type: string
       - name: nce
-        data_type: float64
+        data_type: numeric
       - name: paper_accommodations
         data_type: string
       - name: passing_score_g3
@@ -213,19 +203,19 @@ models:
       - name: school_year_sd
         data_type: string
       - name: sem
-        data_type: float64
+        data_type: numeric
       - name: sgp_ff
-        data_type: float64
+        data_type: int64
       - name: sgp_fs
-        data_type: float64
+        data_type: int64
       - name: sgp_fw
-        data_type: float64
+        data_type: int64
       - name: sgp_sf
-        data_type: float64
+        data_type: int64
       - name: sgp_ss
-        data_type: float64
+        data_type: int64
       - name: sgp_ws
-        data_type: float64
+        data_type: int64
       - name: sid_sid
         data_type: int64
       - name: sw_ed
@@ -245,21 +235,21 @@ models:
       - name: tid
         data_type: int64
       - name: total_correct
-        data_type: float64
+        data_type: numeric
       - name: total_possible
-        data_type: float64
+        data_type: numeric
       - name: total_time
         data_type: int64
       - name: unified_score
         data_type: int64
       - name: zpd_lexile_lower
-        data_type: float64
+        data_type: string
       - name: zpd_lexile_upper
-        data_type: float64
+        data_type: string
       - name: zpd_lower
-        data_type: float64
+        data_type: string
       - name: zpd_upper
-        data_type: float64
+        data_type: string
       - name: sub_domain_ap
         data_type: int64
       - name: sub_domain_ap_skill_set_a

@@ -45,7 +45,10 @@ instruction_by_lesson = build_iready_sftp_asset(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"requests": {"cpu": "250m"}, "limits": {"cpu": "1000m"}}
+                "resources": {
+                    "requests": {"cpu": "250m", "memory": "0.5Gi"},
+                    "limits": {"cpu": "1000m", "memory": "3.0Gi"},
+                }
             }
         }
     },

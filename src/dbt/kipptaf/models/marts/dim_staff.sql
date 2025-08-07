@@ -12,4 +12,16 @@ select
     work_assignment_actual_start_date,
     assignment_status,
     race_ethnicity_reporting,
+    if(
+        job_title in (
+            'Teacher',
+            'Teacher in Residence',
+            'ESE Teacher',
+            'Learning Specialist',
+            'Teacher ESL',
+            'Teacher in Residence ESL'
+        ),
+        true,
+        false
+    ) as is_teacher,
 from staff_roster

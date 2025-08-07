@@ -5,9 +5,9 @@ select
     americanindianoralaskanative as american_indian_or_alaska_native,
     asian,
     assessmentid as assessment_id,
-    assessmentnumber as assessment_number,
     assessmentstatus as assessment_status,
     assessmenttype as assessment_type,
+    audio,
     birthdate as birth_date,
     blackorafricanamerican as black_or_african_american,
     classcode as class_code,
@@ -19,61 +19,40 @@ select
     coursename as course_name,
     courserenaissanceid as course_renaissance_id,
     coursesourcedid as course_sourced_id,
-    currentsgp as current_sgp,
+    currentgrade as current_grade,
     deactivationreason as deactivation_reason,
-    districtbenchmarkcategorylevel as district_benchmark_category_level,
     districtbenchmarkcategoryname as district_benchmark_category_name,
-    districtbenchmarkmaxpercentilerank as district_benchmark_max_percentile_rank,
-    districtbenchmarkminpercentilerank as district_benchmark_min_percentile_rank,
-    districtbenchmarknumberofcategorylevels
-    as district_benchmark_number_of_category_levels,
     districtbenchmarkproficient as district_benchmark_proficient,
     districtidentifier as district_identifier,
     districtname as district_name,
     districtrenaissanceid as district_renaissance_id,
     districtsourcedid as district_sourced_id,
     enrollmentstatus as enrollment_status,
-    estimatedoralreadingfluency as estimated_oral_reading_fluency,
     extratime as extra_time,
     gender,
-    grade3_assessmentattempts as grade3_assessment_attempts,
+    grade,
     grade3_passingscore as grade3_passing_score,
     grade3_passingstatus as grade3_passing_status,
-    gradeplacement as grade_placement,
+    gradeequivalent as grade_equivalent,
     groupid as group_id,
     grouporclassname as group_or_class_name,
     hispanicorlatino as hispanic_or_latino,
     instructionalreadinglevel as instructional_reading_level,
     launchdate as launch_date,
+    lexile,
     lexilerange as lexile_range,
     literacyclassification as literacy_classification,
     lowerlexilezoneofproximaldevelopment as lower_lexile_zone_of_proximal_development,
-    lowerzoneofproximaldevelopment as lower_zone_of_proximal_development,
     multirace as multi_race,
     nativehawaiianorotherpacificislander as native_hawaiian_or_other_pacific_islander,
-    normalcurveequivalent as normal_curve_equivalent,
     opengrowthscore as open_growth_score,
     partnershipforassessmentofreadinessforcollegeandcareers
     as partnership_for_assessment_of_readiness_for_college_and_careers,
-    percentilerank as percentile_rank,
     quantile,
-    raschscore as rasch_score,
-    renaissancebenchmarkcategorylevel as renaissance_benchmark_category_level,
-    renaissancebenchmarkcategorymaxpercentilerank
-    as renaissance_benchmark_category_max_percentile_rank,
-    renaissancebenchmarkcategoryminpercentilerank
-    as renaissance_benchmark_category_min_percentile_rank,
     renaissancebenchmarkcategoryname as renaissance_benchmark_category_name,
-    renaissanceclientid as renaissance_client_id,
     satbenchmarkcategory as sat_benchmark_category,
-    scaledscore as scaled_score,
-    schoolbenchmarkcategorylevel as school_benchmark_category_level,
     schoolbenchmarkcategoryname as school_benchmark_category_name,
-    schoolbenchmarkmaxpercentilerank as school_benchmark_max_percentile_rank,
-    schoolbenchmarkminpercentilerank as school_benchmark_min_percentile_rank,
-    schoolbenchmarknumberofcategorylevels as school_benchmark_number_of_category_levels,
     schoolbenchmarkproficient as school_benchmark_proficient,
-    schoolidentifier as school_identifier,
     schoolname as school_name,
     schoolrenaissanceid as school_renaissance_id,
     schoolsourcedid as school_sourced_id,
@@ -84,25 +63,15 @@ select
     screeningwindowenddate as screening_window_end_date,
     screeningwindowstartdate as screening_window_start_date,
     smarterbalancedassessmentconsortium as smarter_balanced_assessment_consortium,
-    standarderrorofmeasurement as standard_error_of_measurement,
     statebenchmarkassessmentname as state_benchmark_assessment_name,
-    statebenchmarkcategorylevel as state_benchmark_category_level,
     statebenchmarkcategoryname as state_benchmark_category_name,
-    statebenchmarkmaxscaledscore as state_benchmark_max_scaled_score,
-    statebenchmarkminscaledscore as state_benchmark_min_scaled_score,
-    statebenchmarknumberofcategorylevels as state_benchmark_number_of_category_levels,
     statebenchmarkproficient as state_benchmark_proficient,
-    studentemail.string_value as student_email,
+    studentemail as student_email,
     studentfirstname as student_first_name,
-    studentgrowthpercentilefallfall as student_growth_percentile_fall_fall,
-    studentgrowthpercentilefallspring as student_growth_percentile_fall_spring,
-    studentgrowthpercentilefallwinter as student_growth_percentile_fall_winter,
-    studentgrowthpercentilespringfall as student_growth_percentile_spring_fall,
-    studentgrowthpercentilespringspring as student_growth_percentile_spring_spring,
-    studentgrowthpercentilewinterspring as student_growth_percentile_winter_spring,
     studentlastname as student_last_name,
     studentmiddlename as student_middle_name,
     studentrenaissanceid as student_renaissance_id,
+    studentstateid as student_state_id,
     takenat as taken_at,
     takenatbyipaddress as taken_at_by_ip_address,
     teacherdisplayid as teacher_display_id,
@@ -114,52 +83,100 @@ select
     teacherrenaissanceid as teacher_renaissance_id,
     teachersourcedid as teacher_sourced_id,
     teacheruserid as teacher_user_id,
-    totalcorrect as total_correct,
-    totalpossible as total_possible,
-    unifiedscore as unified_score,
     upperlexilezoneofproximaldevelopment as upper_lexile_zone_of_proximal_development,
-    upperzoneofproximaldevelopment as upper_zone_of_proximal_development,
     white,
 
-    coalesce(audio.string_value, cast(audio.double_value as string)) as audio,
-    coalesce(
-        currentgrade.string_value, cast(currentgrade.long_value as string)
-    ) as current_grade,
-    coalesce(grade.string_value, cast(grade.long_value as string)) as grade,
-    coalesce(
-        gradeequivalent.string_value, cast(gradeequivalent.double_value as string)
-    ) as grade_equivalent,
-    coalesce(lexile.string_value, cast(lexile.long_value as string)) as lexile,
-    coalesce(
-        studentstateid.string_value, cast(studentstateid.double_value as string)
-    ) as student_state_id,
-
-    coalesce(
-        districtstateid.long_value, cast(districtstateid.double_value as int)
-    ) as district_state_id,
-    coalesce(
-        renaissancebenchmarkcategorynumberoflevels.long_value,
-        cast(renaissancebenchmarkcategorynumberoflevels.double_value as int)
+    cast(assessmentnumber as int) as assessment_number,
+    cast(
+        districtbenchmarkmaxpercentilerank as int
+    ) as district_benchmark_max_percentile_rank,
+    cast(
+        districtbenchmarkminpercentilerank as int
+    ) as district_benchmark_min_percentile_rank,
+    cast(
+        districtbenchmarknumberofcategorylevels as int
+    ) as district_benchmark_number_of_category_levels,
+    cast(districtbenchmarkcategorylevel as int) as district_benchmark_category_level,
+    cast(grade3_assessmentattempts as int) as grade3_assessment_attempts,
+    cast(percentilerank as int) as percentile_rank,
+    cast(renaissanceclientid as int) as renaissance_client_id,
+    cast(
+        renaissancebenchmarkcategorynumberoflevels as int
     ) as renaissance_benchmark_category_number_of_levels,
-    coalesce(
-        schoolstateid.long_value, cast(schoolstateid.double_value as int)
-    ) as school_state_id,
-    coalesce(
-        studentdisplayid.long_value, cast(studentdisplayid.double_value as int)
-    ) as student_display_id,
-    coalesce(
-        studentidentifier.long_value, cast(studentidentifier.double_value as int)
-    ) as student_identifier,
-    coalesce(
-        studentsourcedid.long_value, cast(studentsourcedid.double_value as int)
-    ) as student_sourced_id,
-    coalesce(
-        studentuserid.long_value, cast(studentuserid.double_value as int)
-    ) as student_user_id,
-    coalesce(
-        teacherstateid.long_value, cast(teacherstateid.double_value as int)
-    ) as teacher_state_id,
-    coalesce(
-        totaltimeinseconds.long_value, cast(totaltimeinseconds.double_value as int)
-    ) as total_time_in_seconds,
+    cast(scaledscore as int) as scaled_score,
+    cast(schoolbenchmarkcategorylevel as int) as school_benchmark_category_level,
+    cast(
+        schoolbenchmarkmaxpercentilerank as int
+    ) as school_benchmark_max_percentile_rank,
+    cast(
+        schoolbenchmarkminpercentilerank as int
+    ) as school_benchmark_min_percentile_rank,
+    cast(
+        schoolbenchmarknumberofcategorylevels as int
+    ) as school_benchmark_number_of_category_levels,
+    cast(schoolidentifier as int) as school_identifier,
+    cast(studentdisplayid as int) as student_display_id,
+    cast(studentidentifier as int) as student_identifier,
+    cast(studentsourcedid as int) as student_sourced_id,
+    cast(studentuserid as int) as student_user_id,
+    cast(unifiedscore as int) as unified_score,
+
+    cast(estimatedoralreadingfluency as numeric) as estimated_oral_reading_fluency,
+    cast(gradeplacement as numeric) as grade_placement,
+    cast(normalcurveequivalent as numeric) as normal_curve_equivalent,
+    cast(raschscore as numeric) as rasch_score,
+    cast(standarderrorofmeasurement as numeric) as standard_error_of_measurement,
+    cast(totalcorrect as numeric) as total_correct,
+    cast(totalpossible as numeric) as total_possible,
+    cast(
+        lowerzoneofproximaldevelopment as numeric
+    ) as lower_zone_of_proximal_development,
+    cast(
+        upperzoneofproximaldevelopment as numeric
+    ) as upper_zone_of_proximal_development,
+
+    cast(cast(districtstateid as numeric) as int) as district_state_id,
+    cast(cast(schoolstateid as numeric) as int) as school_state_id,
+    cast(cast(teacherstateid as numeric) as int) as teacher_state_id,
+    cast(cast(totaltimeinseconds as numeric) as int) as total_time_in_seconds,
+    cast(cast(currentsgp as numeric) as int) as current_sgp,
+    cast(
+        cast(renaissancebenchmarkcategorylevel as numeric) as int
+    ) as renaissance_benchmark_category_level,
+    cast(
+        cast(renaissancebenchmarkcategorymaxpercentilerank as numeric) as int
+    ) as renaissance_benchmark_category_max_percentile_rank,
+    cast(
+        cast(renaissancebenchmarkcategoryminpercentilerank as numeric) as int
+    ) as renaissance_benchmark_category_min_percentile_rank,
+    cast(
+        cast(studentgrowthpercentilefallfall as numeric) as int
+    ) as student_growth_percentile_fall_fall,
+    cast(
+        cast(studentgrowthpercentilefallspring as numeric) as int
+    ) as student_growth_percentile_fall_spring,
+    cast(
+        cast(studentgrowthpercentilefallwinter as numeric) as int
+    ) as student_growth_percentile_fall_winter,
+    cast(
+        cast(studentgrowthpercentilespringfall as numeric) as int
+    ) as student_growth_percentile_spring_fall,
+    cast(
+        cast(studentgrowthpercentilespringspring as numeric) as int
+    ) as student_growth_percentile_spring_spring,
+    cast(
+        cast(studentgrowthpercentilewinterspring as numeric) as int
+    ) as student_growth_percentile_winter_spring,
+    cast(
+        cast(statebenchmarkcategorylevel as numeric) as int
+    ) as state_benchmark_category_level,
+    cast(
+        cast(statebenchmarkmaxscaledscore as numeric) as int
+    ) as state_benchmark_max_scaled_score,
+    cast(
+        cast(statebenchmarkminscaledscore as numeric) as int
+    ) as state_benchmark_min_scaled_score,
+    cast(
+        cast(statebenchmarknumberofcategorylevels as numeric) as int
+    ) as state_benchmark_number_of_category_levels,
 from {{ source("renlearn", "src_renlearn__star") }}

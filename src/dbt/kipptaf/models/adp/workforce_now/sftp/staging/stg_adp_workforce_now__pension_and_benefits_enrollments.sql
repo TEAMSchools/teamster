@@ -1,4 +1,4 @@
-select *,
+select * except (employee_number), cast(employee_number as int) as employee_number,
 from
     {{
         source(

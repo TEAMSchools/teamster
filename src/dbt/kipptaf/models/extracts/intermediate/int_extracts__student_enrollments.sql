@@ -1,4 +1,4 @@
-{{- config(materialized="table") -}}
+{{ config(materialized="table") }}
 
 with
     ms_grad_sub as (
@@ -10,6 +10,7 @@ with
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
+
         from {{ ref("base_powerschool__student_enrollments") }}
         where school_level = 'MS'
     ),
@@ -23,6 +24,7 @@ with
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
+
         from {{ ref("base_powerschool__student_enrollments") }}
         where school_level = 'ES'
     ),
@@ -37,6 +39,7 @@ with
             row_number() over (
                 partition by a.student_school_id order by r.roster_id asc
             ) as rn_territory,
+
         from {{ ref("stg_deanslist__rosters") }} as r
         inner join
             {{ ref("stg_deanslist__roster_assignments") }} as a
@@ -62,8 +65,17 @@ with
 
 select
     e._dbt_source_relation,
-    e.academic_year,
+    e.studentid,
+    e.students_dcid,
+    e.student_number,
+    e.lastfirst as student_name,
+    e.last_name as student_last_name,
+    e.first_name as student_first_name,
+    e.middle_name as student_middle_name,
+    e.enroll_status,
+    e.cohort,
     e.yearid,
+    e.academic_year,
     e.entrydate,
     e.exitdate,
     e.region,
@@ -73,18 +85,10 @@ select
     e.school_abbreviation as school,
     e.grade_level,
     e.grade_level_prev,
-    e.studentid,
-    e.students_dcid,
-    e.student_number,
-    e.lastfirst as student_name,
-    e.last_name as student_last_name,
-    e.first_name as student_first_name,
-    e.middle_name as student_middle_name,
+    e.team,
     e.student_email_google as student_email,
     e.student_web_id,
     e.student_web_password,
-    e.enroll_status,
-    e.cohort,
     e.gender,
     e.ethnicity,
     e.dob,
@@ -122,8 +126,6 @@ select
 
     mt.territory,
 
-    hr.sections_section_number as team,
-
     hos.head_of_school_preferred_name_lastfirst as hos,
 
     ovg.overgrad_fafsa_opt_out,
@@ -145,6 +147,7 @@ select
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
 
     if(ada.ada_year_q1 >= 0.80, true, false) as ada_above_or_at_80,
@@ -179,12 +182,14 @@ select
     case
         e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
     end as race_ethnicity,
+
     case
         when e.school_level in ('ES', 'MS')
         then e.advisory_name
         when e.school_level = 'HS'
         then e.advisor_lastfirst
     end as advisory,
+
     case
         when e.region in ('Camden', 'Newark')
         then 'NJ'
@@ -194,13 +199,14 @@ select
 
     case
         when
-            e.academic_year >= 2024
+            e.academic_year >= 2024  /* 1st year tracking this */
             and e.grade_level = 12
             and e.salesforce_contact_df_has_fafsa = 'Yes'
             and ovg.overgrad_fafsa_opt_out = 'Yes'
         then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
         else 'No issues'
     end as fafsa_status_mismatch_category,
+
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     ms_grad_sub as m
@@ -235,15 +241,6 @@ left join
     and e.academic_year = tut.academic_year
     and {{ union_dataset_join_clause(left_alias="e", right_alias="tut") }}
     and tut.specprog_name = 'Tutoring'
-left join
-    {{ ref("base_powerschool__course_enrollments") }} as hr
-    on e.student_number = hr.students_student_number
-    and e.yearid = hr.cc_yearid
-    and e.schoolid = hr.cc_schoolid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="hr") }}
-    and not hr.is_dropped_section
-    and hr.courses_credittype = 'HR'
-    and hr.rn_course_number_year = 1
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
