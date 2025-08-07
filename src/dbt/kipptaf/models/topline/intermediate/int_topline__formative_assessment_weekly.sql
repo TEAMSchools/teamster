@@ -5,9 +5,9 @@ with
             sw.academic_year,
             sw.week_start_monday,
             sw.week_end_sunday,
+            sw.discipline,
 
             rr.subject_area,
-            rr.discipline,
             rr.module_type,
             rr.title,
             rr.administered_at,
@@ -20,7 +20,7 @@ with
             {{ ref("int_assessments__response_rollup") }} as rr
             on sw.student_number = rr.powerschool_student_number
             and sw.academic_year = rr.academic_year
-            and sw.discipline = rr.discipline
+            and sw.illuminate_subject_area = rr.subject_area
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
             and rr.response_type = 'overall'
             and rr.module_type in ('QA', 'MQQ')
