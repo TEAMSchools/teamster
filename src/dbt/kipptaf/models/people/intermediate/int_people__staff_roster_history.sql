@@ -327,6 +327,8 @@ select
 
     rtldap.google_email as reports_to_google_email,
 
+    pbe.plan_name as nj_pension_plan_name,
+
     coalesce(lc.location_grade_band, 'N/A') as home_work_location_grade_band,
 
     lower(ldap.sam_account_name) as sam_account_name,
@@ -386,3 +388,11 @@ left join
     {{ ref("stg_ldap__user_person") }} as rtldap
     on coalesce(w.reports_to_employee_number, rten.employee_number)
     = rtldap.employee_number
+left join
+    {{ ref("stg_adp_workforce_now__pension_and_benefits_enrollments") }} as pbe
+    on w.employee_number = pbe.employee_number
+    and pbe.plan_name in (
+        'NJ Pension - DCRP:Eligible Employees(Prudential Financial)',
+        'NJ Pension - PERS:Eligible Employees(NJ Pension)',
+        'NJ Pension - TPAF:Eligible Employees(NJ Pension)'
+    )
