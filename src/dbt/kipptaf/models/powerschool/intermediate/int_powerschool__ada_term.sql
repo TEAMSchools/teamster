@@ -65,7 +65,7 @@ select
             )
         ),
         3
-    ) as ada_quarter_running,
+    ) as ada_year_running,
 
     round(
         safe_divide(
@@ -79,5 +79,5 @@ select
             )
         ),
         3
-    ) as ada_weighted_quarter_running,
+    ) as ada_weighted_year_running,
 from ada_by_term
