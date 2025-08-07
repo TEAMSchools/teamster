@@ -203,7 +203,7 @@ select
     scf.lep_status,
     scf.is_homeless,
 
-    adv.sections_section_number as team,
+    adv.advisory_section_number,
     adv.advisory_name,
     adv.advisor_teachernumber,
     adv.advisor_lastfirst,
