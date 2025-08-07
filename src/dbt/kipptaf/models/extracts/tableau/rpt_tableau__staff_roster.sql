@@ -48,7 +48,6 @@ select
     b.path_to_education,
     b.level_of_education,
     b.base_remuneration_annual_rate_amount as base_salary,
-    b.nj_pension_plan_name,
 
     ye.years_at_kipp_total,
     ye.years_teaching_total,
