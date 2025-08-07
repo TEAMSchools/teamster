@@ -17,14 +17,14 @@ with
             ad.calendardate,
             ad.membershipvalue,
             ad.att_code,
-            ad.attendancevalue as is_present,
+            ad.attendancevalue,
             ad.is_present_weighted,
             ad.is_absent,
             ad.is_tardy,
-            ad.is_ontime as pct_ontime_running,
-            ad.is_oss as is_oss_running,
-            ad.is_iss as is_iss_running,
-            ad.is_suspended as is_suspended_running,
+            ad.is_ontime,
+            ad.is_oss,
+            ad.is_iss,
+            ad.is_suspended,
             ad.term,
 
             co.student_number,
@@ -33,23 +33,23 @@ with
             co.academic_year,
             co.region,
             co.school_level,
-            co.reporting_schoolid as schoolid,
+            co.reporting_schoolid,
             co.school,
             co.grade_level,
-            co.advisory_name as team,
-            co.spedlep as iep_status,
+            co.advisory_name,
+            co.advisory_section_number,
+            co.advisor_lastfirst,
+            co.spedlep,
             co.lep_status,
-            co.is_504 as c_504_status,
+            co.is_504,
             co.gender,
             co.ethnicity,
             co.is_self_contained,
             co.year_in_network,
-            co.team,
-            co.advisor_lastfirst,
             co.ms_attended,
 
-            coalesce(co.is_counseling_services, 0) as is_counselingservices,
-            coalesce(co.is_student_athlete, 0) as is_studentathlete,
+            coalesce(co.is_counseling_services, 0) as is_counseling_services,
+            coalesce(co.is_student_athlete, 0) as is_student_athlete,
 
             coalesce(
                 f.nj_overall_student_tier, 'Unbucketed'
@@ -77,7 +77,7 @@ select
     studentid,
     calendardate,
     membershipvalue,
-    is_present,
+    attendancevalue as is_present,
     is_absent,
     is_present_weighted as is_present_hs_alt,
     student_number,
@@ -86,39 +86,40 @@ select
     academic_year,
     region,
     school_level,
-    schoolid,
+    reporting_schoolid as schoolid,
     school as school_abbreviation,
     grade_level,
     team,
-    iep_status,
+    spedlep as iep_status,
     lep_status,
-    c_504_status,
+    is_504 as c_504_status,
     gender,
     ethnicity,
     is_self_contained,
-    team as section_number,
+    advisory_name as team,
+    advisory_section_number as section_number,
     advisor_lastfirst as teacher_name,
     att_code,
-    is_counselingservices,
-    is_studentathlete,
+    is_counseling_services as is_counselingservices,
+    is_student_athlete as is_studentathlete,
     term,
     ms_attended,
     nj_overall_student_tier,
 
-    avg(is_present) over (
+    avg(attendancevalue) over (
         partition by studentid, academic_year order by calendardate
     ) as ada_running,
-    avg(pct_ontime_running) over (
+    avg(is_ontime) over (
         partition by student_number, academic_year order by calendardate
     ) as pct_ontime_running,
 
-    max(is_oss_running) over (
+    max(is_oss) over (
         partition by student_number, academic_year order by calendardate
     ) as is_oss_running,
-    max(is_iss_running) over (
+    max(is_iss) over (
         partition by student_number, academic_year order by calendardate
     ) as is_iss_running,
-    max(is_suspended_running) over (
+    max(is_suspended) over (
         partition by student_number, academic_year order by calendardate
     ) as is_suspended_running,
 
