@@ -1,4 +1,4 @@
-{{- config(materialized="table") -}}
+{{ config(materialized="table") }}
 
 with
     subjects as (
@@ -221,7 +221,7 @@ with
         where measure_standard = 'Composite'
     )
 
--- current year and current year - 1 only to honor bucket calcs
+/* current year and current year - 1 only to honor bucket calcs */
 select
     co.*,
 
@@ -257,8 +257,8 @@ select
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
     ) as assessment_dashboard_join,
 
-    /* years are hardcoded here because of changes on how buckets are calculated from
-       one sy to the next */
+    /* years are hardcoded here because of changes on how buckets are calculated from 
+    one sy to the next */
     case
         when
             co.academic_year = 2023
@@ -311,7 +311,7 @@ left join
     and se.value_type = 'State Assessment Name'
 left join
     prev_yr_state_test as py
-    {# TODO: find records that only match on SID #}
+    /* TODO: find records that only match on SID */
     on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus
     and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
@@ -424,7 +424,7 @@ left join
     and se.value_type = 'State Assessment Name'
 left join
     prev_yr_state_test as py
-    {# TODO: find records that only match on SID #}
+    /* TODO: find records that only match on SID */
     on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus
     and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
