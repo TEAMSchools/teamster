@@ -36,6 +36,7 @@ left join
     {{ ref("int_deanslist__students__custom_fields__pivot") }} as c
     on co.student_number = safe_cast(c.student_school_id as int64)
 where
-    co.grade_level >= 9
+    co.academic_year = {{ var("current_academic_year") }}
+    and co.rn_year = 1
     and co.enroll_status = 0
-    and co.academic_year = {{ var("current_academic_year") }}
+    and co.grade_level >= 9

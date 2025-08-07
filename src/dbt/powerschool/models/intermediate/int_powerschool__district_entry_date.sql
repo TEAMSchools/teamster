@@ -6,6 +6,7 @@ with
             exitcode,
             entrydate,
             exitdate,
+
             lag(exitcode, 1) over (
                 partition by student_number order by entrydate asc
             ) as exitcode_prev,
@@ -19,6 +20,7 @@ select
     de.exitdate,
     de.entrycode,
     de.exitcode_prev,
+
     row_number() over (
         partition by de.studentid order by de.entrydate desc
     ) as rn_entry,

@@ -69,6 +69,7 @@ with
             and enr.cc_academic_year = f.academic_year
             and sec.courses_credittype = f.powerschool_credittype
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="f") }}
+            and f.rn_year = 1
         where
             not enr.is_dropped_course
             and not enr.is_dropped_section

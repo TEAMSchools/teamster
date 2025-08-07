@@ -267,6 +267,7 @@ left join
     on co.student_number = sf.student_number
     and co.academic_year = sf.academic_year
     and subj.iready_subject = sf.iready_subject
+    and sf.rn_year = 1
 where
     co.region = 'Miami'
     and co.is_enrolled_y1

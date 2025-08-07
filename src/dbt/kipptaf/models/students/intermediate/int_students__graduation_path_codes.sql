@@ -1,4 +1,4 @@
-{{- config(materialized="table") -}}
+{{ config(materialized="table") }}
 
 with
     students as (
@@ -57,7 +57,7 @@ with
             and e.discipline = u.discipline
             and {{ union_dataset_join_clause(left_alias="e", right_alias="u") }}
             and u.value_type = 'Graduation Pathway'
-        where e.region != 'Miami' and grade_level >= 8 and rn_undergrad = 1
+        where e.rn_undergrad = 1 and e.region != 'Miami' and e.grade_level >= 8
     ),
 
     scores as (
