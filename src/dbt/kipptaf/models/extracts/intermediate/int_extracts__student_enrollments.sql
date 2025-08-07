@@ -134,7 +134,7 @@ select
     ada.ada_semester_s1,
     ada.ada_year as ada,
 
-    adapy.ada_year_q1 as ada_year_prev,
+    adapy.ada_year as ada_year_prev,
 
     'KTAF' as district,
 
@@ -150,7 +150,7 @@ select
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
 
-    if(ada.ada_year_q1 >= 0.80, true, false) as ada_above_or_at_80,
+    if(ada.ada_year >= 0.80, true, false) as ada_above_or_at_80,
 
     if(
         e.salesforce_contact_df_has_fafsa = 'Yes' or ovg.overgrad_fafsa_opt_out = 'Yes',
