@@ -7,7 +7,8 @@ with
             yearid,
             academic_year,
             schoolid,
-            spedlep,
+            grade_level,
+            iep_status,
             is_504,
             lep_status,
             ada,
@@ -20,7 +21,7 @@ with
             co.student_number,
             co.academic_year,
 
-            if(co.spedlep != 'No IEP', 'IEP', null) as is_iep,
+            if(co.iep_status = 'Has IEP', 'IEP', null) as is_iep,
             if(co.is_504, '504', null) as is_504,
             if(co.lep_status, 'LEP', null) as is_lep,
             if(co.ada <= 0.9, 'Chronic Absence', null) as is_chronic_absentee,
@@ -48,14 +49,12 @@ with
             and co.yearid = gpa.yearid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
             and rt.name = gpa.term_name
-            and {{ union_dataset_join_clause(left_alias="rt", right_alias="gpa") }}
         left join
             {{ ref("int_powerschool__final_grades_rollup") }} as ps
             on co.studentid = ps.studentid
             and co.academic_year = ps.academic_year
             and {{ union_dataset_join_clause(left_alias="co", right_alias="ps") }}
             and rt.name = ps.storecode
-            and {{ union_dataset_join_clause(left_alias="rt", right_alias="ps") }}
     )
 
 select co.student_number, co.academic_year, sp.specprog_name as designation_name,
