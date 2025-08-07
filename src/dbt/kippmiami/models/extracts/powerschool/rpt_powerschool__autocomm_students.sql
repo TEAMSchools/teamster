@@ -1,10 +1,8 @@
 select
     student_number,
     student_web_id,
-    student_web_password,
     student_allowwebaccess,
     web_id,
-    web_password,
     allowwebaccess,
     team,
     track,
