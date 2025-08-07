@@ -23,7 +23,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - performance_management
               - outlier_detection
       - name: src_performance_management__observation_details_archive
@@ -43,6 +42,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - performance_management
               - observation_details

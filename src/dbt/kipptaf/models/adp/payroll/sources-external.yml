@@ -25,7 +25,6 @@ sources:
             automation_condition:
               enabled: false
             asset_key:
-              - kipptaf
               - adp
               - payroll
               - general_ledger_file

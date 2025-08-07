@@ -34,7 +34,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - assessments
               - course_subject_crosswalk
       - name: src_assessments__iready_crosswalk
@@ -48,7 +47,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - assessments
               - iready_crosswalk
       - name: src_assessments__academic_goals
@@ -62,7 +60,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - assessments
               - academic_goals
       - name: src_assessments__act_scale_score_key
@@ -76,7 +73,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - assessments
               - act_scale_score_key
       - name: src_assessments__qbls_power_standards
@@ -90,7 +86,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - assessments
               - qbls_power_standards
       - name: src_assessments__standard_domains
@@ -109,7 +104,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - assessments
               - standard_domains
       - name: src_assessments__assessment_expectations
@@ -158,6 +152,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - assessments
               - assessment_expectations

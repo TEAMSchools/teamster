@@ -19,7 +19,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - smartrecruiters
               - applicants
       - name: src_smartrecruiters__applications
@@ -35,6 +34,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - smartrecruiters
               - applications

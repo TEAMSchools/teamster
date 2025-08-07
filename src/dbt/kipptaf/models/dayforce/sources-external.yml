@@ -18,8 +18,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - dayforce
+              - source
               - employees
       - name: src_dayforce__employee_manager
         external:
@@ -34,8 +34,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - dayforce
+              - source
               - employee_manager
       - name: src_dayforce__employee_status
         external:
@@ -50,8 +50,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - dayforce
+              - source
               - employee_status
       - name: src_dayforce__employee_work_assignment
         external:
@@ -67,6 +67,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - dayforce
+              - source
               - employee_work_assignment

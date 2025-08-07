@@ -1,56 +1,71 @@
 assets:
   - name: Attrition Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__staff_attrition_details]
+      - [kipptaf, extracts, tableau, rpt_tableau__staff_attrition_details]
     metadata:
       id: 5bf99669-00bb-4906-b2b4-79f2976ac3a4
       cron_schedule: 0 7 * * *
   - name: College Admission Readiness Assessments Tracker (CARAT)
     deps:
-      - [kipptaf, tableau, rpt_tableau__ap_assessment_dashboard]
-      - [kipptaf, tableau, rpt_tableau__college_assessment_dashboard]
-      - [kipptaf, tableau, rpt_tableau__college_assessment_dashboard_historic]
+      - [kipptaf, extracts, tableau, rpt_tableau__ap_assessment_dashboard]
+      - [kipptaf, extracts, tableau, rpt_tableau__college_assessment_dashboard]
+      - [
+          kipptaf,
+          extracts,
+          tableau,
+          rpt_tableau__college_assessment_dashboard_historic,
+        ]
     metadata:
       id: 286156c4-2f9e-4983-926b-63c9b11f44f4
       cron_schedule: 0 6 * * *
   - name: Data Quality Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__assessment_entry_audit]
-      - [kipptaf, tableau, rpt_tableau__student_info_audit]
+      - [kipptaf, extracts, tableau, rpt_tableau__assessment_entry_audit]
+      - [kipptaf, extracts, tableau, rpt_tableau__student_info_audit]
     metadata:
       id: 8aff929f-9e6b-4fc9-833a-7edfab8500b6
       cron_schedule: 0 1 * * *
   - name: Federal Grants Timesheet Approval
     deps:
-      - [kipptaf, tableau, rpt_tableau__grants_timesheets]
+      - [kipptaf, extracts, tableau, rpt_tableau__grants_timesheets]
     metadata:
       id: c7c821a4-a236-4da8-b41e-52b2fd62cbed
       cron_schedule: 0 * * * *
   - name: Finance & Accounting Tools & Resources
     deps:
-      - [kipptaf, tableau, rpt_tableau__adp_pension_and_benefits_enrollments]
-      - [kipptaf, tableau, rpt_tableau__finance_accounting_people_model]
-      - [kipptaf, tableau, rpt_tableau__staff_attrition]
+      - [
+          kipptaf,
+          extracts,
+          tableau,
+          rpt_tableau__adp_pension_and_benefits_enrollments,
+        ]
+      - [
+          kipptaf,
+          extracts,
+          tableau,
+          rpt_tableau__finance_accounting_people_model,
+        ]
+      - [kipptaf, extracts, tableau, rpt_tableau__staff_attrition]
     metadata:
       id: c29963fb-8516-4148-b43f-cddc0f2b4093
       cron_schedule: 0 13 * * *
   - name: High School Early Warning Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__community_service]
-      - [kipptaf, tableau, rpt_tableau__graduation_requirements]
-      - [kipptaf, tableau, rpt_tableau__hs_early_warning_dashboard]
+      - [kipptaf, extracts, tableau, rpt_tableau__community_service]
+      - [kipptaf, extracts, tableau, rpt_tableau__graduation_requirements]
+      - [kipptaf, extracts, tableau, rpt_tableau__hs_early_warning_dashboard]
     metadata:
       id: 6333e047-e7a9-4d8f-a740-3df30f179d11
       cron_schedule: 0 6 * * *
   - name: KIPP Forward Data Suite
     deps:
-      - [kipptaf, extracts, rpt_gsheets__kfwd_rem_roster]
-      - [kipptaf, tableau, rpt_tableau__kfwd_career_launch_survey]
-      - [kipptaf, tableau, rpt_tableau__kfwd_contact_notes]
-      - [kipptaf, tableau, rpt_tableau__kfwd_dashboard]
-      - [kipptaf, tableau, rpt_tableau__kfwd_persistence]
-      - [kipptaf, tableau, rpt_tableau__kfwd_spi]
-      - [kipptaf, tableau, rpt_tableau__kfwd_verification]
+      - [kipptaf, extracts, google, sheets, rpt_gsheets__kfwd_rem_roster]
+      - [kipptaf, extracts, tableau, rpt_tableau__kfwd_career_launch_survey]
+      - [kipptaf, extracts, tableau, rpt_tableau__kfwd_contact_notes]
+      - [kipptaf, extracts, tableau, rpt_tableau__kfwd_dashboard]
+      - [kipptaf, extracts, tableau, rpt_tableau__kfwd_persistence]
+      - [kipptaf, extracts, tableau, rpt_tableau__kfwd_spi]
+      - [kipptaf, extracts, tableau, rpt_tableau__kfwd_verification]
     metadata:
       id: ad72c094-ad35-48f4-86a0-9d2e5b53f59a
       cron_schedule:
@@ -58,59 +73,64 @@ assets:
         - 0 17 * * *
   - name: NJ Certification Dashboard (Schools View)
     deps:
-      - [kipptaf, tableau, rpt_tableau__staff_roster]
+      - [kipptaf, extracts, tableau, rpt_tableau__staff_roster]
     metadata:
       id: ed2976ea-0b3c-4afb-a5d9-7e7e83227e3b
       cron_schedule: 0 8 * * *
   - name: Ops Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__ops_dashboard]
+      - [kipptaf, extracts, tableau, rpt_tableau__ops_dashboard]
     metadata:
       id: d4124f15-087a-4f27-8694-e47d2ce6ae9c
       cron_schedule: 0 * * * *
   - name: Staff Demographic Explorer
     deps:
-      - [kipptaf, tableau, rpt_tableau__staff_roster]
+      - [kipptaf, extracts, tableau, rpt_tableau__staff_roster]
     metadata:
       id: fc15566f-0bcf-453c-aaed-04fbee94d7d7
       cron_schedule: 0 11 * * 1
   - name: Staff Roster
     deps:
-      - [kipptaf, tableau, rpt_tableau__staff_roster]
+      - [kipptaf, extracts, tableau, rpt_tableau__staff_roster]
     metadata:
       id: 6e0915eb-9a46-4971-8e97-6e0749066b9f
       cron_schedule: 0 7 * * *
   - name: Teacher Attendance Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__staff_attendance]
+      - [kipptaf, extracts, tableau, rpt_tableau__staff_attendance]
     metadata:
       id: acedcb63-36e0-4232-953c-64cbd11b5149
       cron_schedule: 0 12 * * *
   - name: Zendesk Reporting
     deps:
-      - [kipptaf, tableau, rpt_tableau__zendesk_tickets]
+      - [kipptaf, extracts, tableau, rpt_tableau__zendesk_tickets]
     metadata:
       id: 7adabf6e-fa59-4d60-bca8-de3a67005a53
       cron_schedule: 0 6 * * *
   - name: Recent Job & Salary Changes
     deps:
-      - [kipptaf, tableau, rpt_tableau__staff_job_salary_audit]
+      - [kipptaf, extracts, tableau, rpt_tableau__staff_job_salary_audit]
     metadata:
       id: a571cf7d-9893-4f33-970d-46dd7a392c8e
       cron_schedule: 0 2 * * *
   - name: OKRTS Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__okrts_behavior]
-      - [kipptaf, tableau, rpt_tableau__okrts_referrals]
-      - [kipptaf, tableau, rpt_tableau__suspension_over_time]
+      - [kipptaf, extracts, tableau, rpt_tableau__okrts_behavior]
+      - [kipptaf, extracts, tableau, rpt_tableau__okrts_referrals]
+      - [kipptaf, extracts, tableau, rpt_tableau__suspension_over_time]
     metadata:
       id: 08d133d6-6e48-4218-ae6d-015f7a0abe13
       cron_schedule: 0 4 * * *
   - name: SchoolMint Grow Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
-      - [kipptaf, tableau, rpt_tableau__schoolmint_grow_goals]
-      - [kipptaf, tableau, rpt_tableau__teacher_observations]
+      - [
+          kipptaf,
+          extracts,
+          tableau,
+          rpt_tableau__schoolmint_grow_observation_details,
+        ]
+      - [kipptaf, extracts, tableau, rpt_tableau__schoolmint_grow_goals]
+      - [kipptaf, extracts, tableau, rpt_tableau__teacher_observations]
     metadata:
       id: b529ca04-3560-4cff-8898-fd0a65f3e994
       cron_schedule:
@@ -119,22 +139,27 @@ assets:
         - 15 16 * * *
   - name: Attendance Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__attendance_chronic_absenteeism_log]
-      - [kipptaf, tableau, rpt_tableau__attendance_comm_log]
-      - [kipptaf, tableau, rpt_tableau__attendance_dashboard]
+      - [
+          kipptaf,
+          extracts,
+          tableau,
+          rpt_tableau__attendance_chronic_absenteeism_log,
+        ]
+      - [kipptaf, extracts, tableau, rpt_tableau__attendance_comm_log]
+      - [kipptaf, extracts, tableau, rpt_tableau__attendance_dashboard]
     metadata:
       id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
       cron_schedule: 0 15 * * *
   - name: Early Literacy Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__dibels_dashboard]
-      - [kipptaf, tableau, rpt_tableau__sight_words_dashboard]
+      - [kipptaf, extracts, tableau, rpt_tableau__dibels_dashboard]
+      - [kipptaf, extracts, tableau, rpt_tableau__sight_words_dashboard]
     metadata:
       id: bef17623-af5e-4a18-9e05-7a8f4e6951bf
       cron_schedule: 0 5 * * *
   - name: Teacher Development Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__teacher_development]
+      - [kipptaf, extracts, tableau, rpt_tableau__teacher_development]
     metadata:
       id: 8977a813-36c8-48df-8a61-479f374ae78a
       cron_schedule:
@@ -143,25 +168,25 @@ assets:
         - 0 16 * * *
   - name: Gradebook and GPA Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__assignment_checks]
-      - [kipptaf, tableau, rpt_tableau__gradebook_audit]
-      - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
-      - [kipptaf, tableau, rpt_tableau__gradebook_gpa_cumulative]
-      - [kipptaf, tableau, rpt_tableau__gradebook_es_comments]
-      - [kipptaf, tableau, rpt_tableau__gradebook_ms_hs_comments]
+      - [kipptaf, extracts, tableau, rpt_tableau__assignment_checks]
+      - [kipptaf, extracts, tableau, rpt_tableau__gradebook_audit]
+      - [kipptaf, extracts, tableau, rpt_tableau__gradebook_gpa]
+      - [kipptaf, extracts, tableau, rpt_tableau__gradebook_gpa_cumulative]
+      - [kipptaf, extracts, tableau, rpt_tableau__gradebook_es_comments]
+      - [kipptaf, extracts, tableau, rpt_tableau__gradebook_ms_hs_comments]
     metadata:
       id: 5046a976-ed0e-4c77-93fe-78b732cb5548
       cron_schedule: 0 4 * * *
   - name: Gradebook Audit - Teacher Report
     deps:
-      - [kipptaf, tableau, rpt_tableau__gradebook_audit]
+      - [kipptaf, extracts, tableau, rpt_tableau__gradebook_audit]
     metadata:
       id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
       cron_schedule: 30 7 * * 2
   - name: DDI Suite
     deps:
-      - [kipptaf, tableau, rpt_tableau__assessment_dashboard]
-      - [kipptaf, tableau, rpt_tableau__ddi_dashboard]
+      - [kipptaf, extracts, tableau, rpt_tableau__assessment_dashboard]
+      - [kipptaf, extracts, tableau, rpt_tableau__ddi_dashboard]
     metadata:
       id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
       cron_schedule:
@@ -171,63 +196,68 @@ assets:
         - 0 18 * * *
   - name: APM Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__iready_apm]
+      - [kipptaf, extracts, tableau, rpt_tableau__iready_apm]
     metadata:
       id: eb91563d-760b-4f2d-b9f8-65437fe22242
       cron_schedule: 0 6 * * *
   - name: Newark Home Instruction Tracker
     deps:
-      - [kipptaf, tableau, rpt_tableau__approved_home_instruction]
-      - [kipptaf, tableau, rpt_tableau__home_instruction_queue]
+      - [kipptaf, extracts, tableau, rpt_tableau__approved_home_instruction]
+      - [kipptaf, extracts, tableau, rpt_tableau__home_instruction_queue]
     metadata:
       id: 2de24a25-5e9b-4fcd-8c07-307d0ea57660
       cron_schedule: 0 5 * * *
   - name: State Testing Accommodations Tracker
     deps:
-      - [kipptaf, tableau, rpt_tableau__state_testing_accomodations]
+      - [kipptaf, extracts, tableau, rpt_tableau__state_testing_accomodations]
     metadata:
       id: aca88e07-170f-4d1a-9a4f-a3816463ab27
       cron_schedule: 0 2 * * *
   - name: Promotional Status Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__promo_status]
+      - [kipptaf, extracts, tableau, rpt_tableau__promo_status]
     metadata:
       id: 5698ccc2-b952-4123-878b-48166b686b16
       cron_schedule: 0 1 * * *
   - name: Stipend and Bonus Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__stipend_and_bonus_app]
+      - [kipptaf, extracts, tableau, rpt_tableau__stipend_and_bonus_app]
     metadata:
       id: 35484db7-cd5b-4834-828a-5bfc645a09c6
   - name: Number of School Days Between Two Dates
     deps:
-      - [kipptaf, tableau, rpt_tableau__powerschool_calendar_day]
+      - [kipptaf, extracts, tableau, rpt_tableau__powerschool_calendar_day]
     metadata:
       id: fdd90889-8efb-4254-b892-bad96a7d131f
       cron_schedule: 0 20 * * 0
   - name: Content Team Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__teacher_development]
+      - [kipptaf, extracts, tableau, rpt_tableau__teacher_development]
     metadata:
       id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1
       cron_schedule: 0 6 * * *
   - name: Leadership Development
     deps:
-      - [kipptaf, tableau, rpt_tableau__leadership_development]
+      - [kipptaf, extracts, tableau, rpt_tableau__leadership_development]
     metadata:
       id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
       cron_schedule: 0 * * * *
   - name: KIPP Miami FAST & i-Ready Analysis
     deps:
-      - [kipptaf, tableau, rpt_tableau__miami_fast]
-      - [kipptaf, tableau, rpt_tableau__miami_k2_iready]
-      - [kipptaf, tableau, rpt_tableau__miami_k2_star]
+      - [kipptaf, extracts, tableau, rpt_tableau__miami_fast]
+      - [kipptaf, extracts, tableau, rpt_tableau__miami_k2_iready]
+      - [kipptaf, extracts, tableau, rpt_tableau__miami_k2_star]
     metadata:
       id: 9a4decae-3707-468f-8098-d3f625d770eb
       cron_schedule: 0 2 * * *
   - name: Coaching Conversation Tool
     deps:
-      - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
+      - [
+          kipptaf,
+          extracts,
+          tableau,
+          rpt_tableau__schoolmint_grow_observation_details,
+        ]
     metadata:
       id: db88d328-0d54-4dac-8003-6197841e1432
       cron_schedule:
@@ -236,20 +266,20 @@ assets:
         - 15 16 * * *
   - name: Recruitment Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__smartrecruiters]
+      - [kipptaf, extracts, tableau, rpt_tableau__smartrecruiters]
     metadata:
       id: 970826ab-8d1c-4468-9b84-62f6432a9642
       cron_schedule: 0 7 * * *
   - name: Survey Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__survey_responses]
-      - [kipptaf, tableau, rpt_tableau__survey_completion]
+      - [kipptaf, extracts, tableau, rpt_tableau__survey_responses]
+      - [kipptaf, extracts, tableau, rpt_tableau__survey_completion]
     metadata:
       id: b11542a2-6780-4feb-a1dd-534ffe724faf
       cron_schedule: 0 * * * *
   - name: Compliance Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__nj_school_register]
+      - [kipptaf, extracts, tableau, rpt_tableau__nj_school_register]
     metadata:
       id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
       cron_schedule: 0 5 * * *

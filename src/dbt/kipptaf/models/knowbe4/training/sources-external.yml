@@ -20,7 +20,6 @@ sources:
           dagster:
             group: knowbe4
             asset_key:
-              - kipptaf
               - knowbe4
               - training
               - enrollments

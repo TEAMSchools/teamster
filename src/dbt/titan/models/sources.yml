@@ -10,7 +10,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - titan
               - person_data
         external:
@@ -32,7 +31,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - titan
               - income_form_data
         external:

@@ -11,7 +11,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - national_assessments
               - psat_2023
@@ -20,7 +19,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - national_assessments
               - psat_2024
@@ -29,7 +27,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - national_assessments
               - psat89_2025
@@ -38,7 +35,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - national_assessments
               - aptest_2019
@@ -47,7 +43,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - national_assessments
               - aptest_2020
@@ -56,7 +51,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - national_assessments
               - aptest_2021
@@ -65,7 +59,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - national_assessments
               - aptest_2022
@@ -74,7 +67,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - national_assessments
               - aptest_2023
@@ -83,7 +75,6 @@ sources:
           dagster:
             group: illuminate
             asset_key:
-              - kipptaf
               - illuminate
               - national_assessments
               - aptest_2024

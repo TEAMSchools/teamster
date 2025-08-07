@@ -17,6 +17,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - kippadb
               - nsc_crosswalk

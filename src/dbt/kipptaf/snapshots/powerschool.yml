@@ -16,9 +16,11 @@ snapshots:
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
+          group: powerschool
           asset_key:
-            - kipptaf
             - powerschool
+            - sis
+            - snapshot
             - snapshot_powerschool__gpa_cumulative
   - name: snapshot_powerschool__gpa_term
     relation: ref("int_powerschool__gpa_term_current")
@@ -37,7 +39,9 @@ snapshots:
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
+          group: powerschool
           asset_key:
-            - kipptaf
             - powerschool
+            - sis
+            - snapshot
             - snapshot_powerschool__gpa_term

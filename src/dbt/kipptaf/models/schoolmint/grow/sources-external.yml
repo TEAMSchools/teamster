@@ -22,7 +22,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - rubrics
@@ -42,7 +41,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - schools
@@ -62,7 +60,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - users
@@ -82,7 +79,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - videos
@@ -104,7 +100,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_assignmentpresets
@@ -126,7 +121,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_courses
@@ -148,7 +142,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_grades
@@ -170,7 +163,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_measurementgroups
@@ -192,7 +184,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_observationtypes
@@ -214,7 +205,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_tags
@@ -236,7 +226,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_meetingtypes
@@ -256,7 +245,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - informals
@@ -276,7 +264,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - measurements
@@ -296,7 +283,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - meetings
@@ -316,7 +302,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - roles
@@ -336,7 +321,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - observations
@@ -356,7 +340,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - assignments
@@ -378,7 +361,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_eventtag1
@@ -400,7 +382,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_goaltypes
@@ -422,7 +403,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_rubrictag1
@@ -444,7 +424,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_schooltag1
@@ -466,7 +445,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_usertag1
@@ -488,7 +466,6 @@ sources:
           dagster:
             group: schoolmint
             asset_key:
-              - kipptaf
               - schoolmint
               - grow
               - generic_tags_usertypes

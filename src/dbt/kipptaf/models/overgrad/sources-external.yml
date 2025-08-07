@@ -19,6 +19,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - overgrad
               - universities

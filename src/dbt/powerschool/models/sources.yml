@@ -10,7 +10,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - assignmentscore
         external:
@@ -32,7 +31,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - attendance
         external:
@@ -54,7 +52,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - pgfinalgrades
         external:
@@ -76,7 +73,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - storedgrades
         external:
@@ -98,7 +94,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - assignmentcategoryassoc
         external:
@@ -120,7 +115,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - assignmentsection
         external:
@@ -142,7 +136,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - cc
         external:
@@ -159,7 +152,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - codeset
         external:
@@ -177,7 +169,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - courses
         external:
@@ -195,7 +186,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - districtteachercategory
         external:
@@ -213,7 +203,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - emailaddress
         external:
@@ -231,7 +220,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gradecalcformulaweight
         external:
@@ -249,7 +237,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gradecalcschoolassoc
         external:
@@ -267,7 +254,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gradecalculationtype
         external:
@@ -285,7 +271,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gradeformulaset
         external:
@@ -303,7 +288,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gradescaleitem
         external:
@@ -321,7 +305,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gradeschoolconfig
         external:
@@ -339,7 +322,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gradeschoolformulaassoc
         external:
@@ -357,7 +339,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gradesectionconfig
         external:
@@ -375,7 +356,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - originalcontactmap
         external:
@@ -393,7 +373,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - person
         external:
@@ -411,7 +390,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - personaddress
         external:
@@ -429,7 +407,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - personaddressassoc
         external:
@@ -447,7 +424,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - personemailaddressassoc
         external:
@@ -465,7 +441,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - personphonenumberassoc
         external:
@@ -483,7 +458,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - phonenumber
         external:
@@ -501,7 +475,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - prefs
         external:
@@ -519,7 +492,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - roledef
         external:
@@ -537,7 +509,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - s_nj_crs_x
         external:
@@ -555,7 +526,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - s_nj_ren_x
         external:
@@ -573,7 +543,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - s_nj_stu_x
         external:
@@ -591,7 +560,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - s_nj_usr_x
         external:
@@ -609,7 +577,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - schools
         external:
@@ -627,7 +594,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - schoolstaff
         external:
@@ -645,7 +611,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - sections
         external:
@@ -663,7 +628,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - sectionteacher
         external:
@@ -681,7 +645,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - studentcontactassoc
         external:
@@ -699,7 +662,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - studentcontactdetail
         external:
@@ -717,7 +679,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - studentcorefields
         external:
@@ -735,7 +696,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - studentrace
         external:
@@ -753,7 +713,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - students
         external:
@@ -771,7 +730,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - teachercategory
         external:
@@ -789,7 +747,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - termbins
         external:
@@ -807,7 +764,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - terms
         external:
@@ -825,7 +781,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - u_clg_et_stu
         external:
@@ -843,7 +798,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - u_clg_et_stu_alt
         external:
@@ -861,7 +815,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - u_def_ext_students
         external:
@@ -879,7 +832,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - u_studentsuserfields
         external:
@@ -897,7 +849,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - users
         external:
@@ -916,7 +867,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - attendance_code
         external:
@@ -934,7 +884,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - attendance_conversion_items
         external:
@@ -952,7 +901,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - bell_schedule
         external:
@@ -970,7 +918,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - calendar_day
         external:
@@ -988,7 +935,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - cycle_day
         external:
@@ -1006,7 +952,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - fte
         external:
@@ -1023,7 +968,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gen
         external:
@@ -1040,7 +984,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - log
         external:
@@ -1057,7 +1000,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - period
         external:
@@ -1075,7 +1017,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - reenrollments
         external:
@@ -1093,7 +1034,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - spenrollments
         external:
@@ -1111,7 +1051,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - test
         external:
@@ -1128,7 +1067,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - testscore
         external:
@@ -1146,7 +1084,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - studenttest
         external:
@@ -1164,7 +1101,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - studenttestscore
         external:
@@ -1182,7 +1118,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - sced_code_mapping
         external:
@@ -1200,7 +1135,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gradplan
         external:
@@ -1218,7 +1152,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - userscorefields
         external:
@@ -1236,7 +1169,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - u_storedgrades_de
         external:
@@ -1254,7 +1186,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpnode
         external:
@@ -1272,7 +1203,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpprogresssubject
         external:
@@ -1290,7 +1220,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpprogresssubjectearned
         external:
@@ -1308,7 +1237,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpprogresssubjectenrolled
         external:
@@ -1326,7 +1254,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpprogresssubjectrequested
         external:
@@ -1344,7 +1271,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpprogresssubjectwaived
         external:
@@ -1362,7 +1288,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpprogresssubjwaivedapplied
         external:
@@ -1380,7 +1305,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpselectedcrs
         external:
@@ -1398,7 +1322,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpselectedcrtype
         external:
@@ -1416,7 +1339,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpselector
         external:
@@ -1434,7 +1356,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gptarget
         external:
@@ -1452,7 +1373,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpversion
         external:
@@ -1470,7 +1390,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - gpstudentwaiver
         external:
@@ -1488,7 +1407,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - powerschool
               - s_stu_x
         external:

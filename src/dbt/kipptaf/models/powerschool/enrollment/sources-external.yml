@@ -23,7 +23,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - powerschool
               - enrollment
               - submission_records

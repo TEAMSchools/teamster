@@ -9,14 +9,14 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
+              - source
               - src_people__employee_numbers
       - name: src_people__student_logins
         identifier: stg_people__student_logins
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - people
+              - source
               - src_people__student_logins

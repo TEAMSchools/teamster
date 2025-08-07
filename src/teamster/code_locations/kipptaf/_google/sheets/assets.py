@@ -1,9 +1,10 @@
+from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf._dbt.assets import manifest
 from teamster.libraries.google.sheets.assets import build_google_sheets_asset_spec
 
 asset_specs = [
     build_google_sheets_asset_spec(
-        asset_key=source["meta"]["dagster"]["asset_key"],
+        asset_key=[CODE_LOCATION, *source["meta"]["dagster"]["asset_key"]],
         uri=source["external"]["options"]["uris"][0],
         range_name=source["external"]["options"]["sheet_range"],
     )

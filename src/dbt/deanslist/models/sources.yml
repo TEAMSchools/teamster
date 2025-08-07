@@ -9,7 +9,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - behavior
         external:
@@ -31,7 +30,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - comm_log
         external:
@@ -53,7 +51,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - followups
         external:
@@ -75,7 +72,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - homework
         external:
@@ -97,7 +93,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - incidents
         external:
@@ -119,7 +114,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - lists
         external:
@@ -139,7 +133,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - roster_assignments
         external:
@@ -161,7 +154,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - rosters
         external:
@@ -183,7 +175,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - terms
         external:
@@ -203,7 +194,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - users
         external:
@@ -223,7 +213,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - students
         external:
@@ -245,7 +234,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - "{{ project_name }}"
               - deanslist
               - dff_stats
         external:

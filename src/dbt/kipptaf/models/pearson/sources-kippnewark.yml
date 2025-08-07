@@ -10,6 +10,7 @@ sources:
         meta:
           dagster:
             group: pearson
+            is_external: true
             asset_key:
               - kippnewark
               - pearson
@@ -18,6 +19,7 @@ sources:
         meta:
           dagster:
             group: pearson
+            is_external: true
             asset_key:
               - kippnewark
               - pearson
@@ -26,6 +28,7 @@ sources:
         meta:
           dagster:
             group: pearson
+            is_external: true
             asset_key:
               - kippnewark
               - pearson
@@ -34,6 +37,7 @@ sources:
         meta:
           dagster:
             group: pearson
+            is_external: true
             asset_key:
               - kippnewark
               - pearson
@@ -42,6 +46,7 @@ sources:
         meta:
           dagster:
             group: pearson
+            is_external: true
             asset_key:
               - kippnewark
               - pearson

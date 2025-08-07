@@ -7,6 +7,7 @@ sources:
         meta:
           dagster:
             group: extracts
+            is_external: true
             asset_key:
               - kipptaf
               - extracts
@@ -15,6 +16,7 @@ sources:
         meta:
           dagster:
             group: extracts
+            is_external: true
             asset_key:
               - kipptaf
               - extracts
@@ -23,6 +25,7 @@ sources:
         meta:
           dagster:
             group: extracts
+            is_external: true
             asset_key:
               - kipptaf
               - extracts

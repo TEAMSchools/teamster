@@ -18,7 +18,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - ldap
               - user_person
       - name: src_ldap__group
@@ -33,6 +32,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - ldap
               - group

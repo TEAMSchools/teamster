@@ -17,8 +17,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - zendesk_org_lookup
         columns:
           - name: ADP_Business_Unit
@@ -40,8 +40,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - student_graduation_path_combos
       - name: src_google_sheets__student_graduation_path_cutoffs
         external:
@@ -54,8 +54,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - student_graduation_path_cutoffs
       - name: src_google_sheets__state_test_comparison
         external:
@@ -68,8 +68,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - state_test_comparison
       - name: src_google_sheets__state_test_comparison_demographics
         external:
@@ -82,8 +82,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - state_test_comparison_demographics
       - name: src_google_sheets__state_test_expected_assessments
         external:
@@ -96,8 +96,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - state_test_expected_assessments
       - name: src_google_sheets__dibels_df_student_xwalk
         external:
@@ -110,8 +110,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_df_student_xwalk
       - name: src_google_sheets__dibels_expected_assessments
         external:
@@ -124,8 +124,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_expected_assessments
         columns:
           - name: Academic_Year
@@ -171,8 +171,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_foundation_goals
       - name: src_google_sheets__dibels_measures
         external:
@@ -185,8 +185,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_measures
         columns:
           - name: grade_level
@@ -212,8 +212,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - disabled
               - dibels_goals_wide
       - name: src_google_sheets__dibels_goals_long
@@ -229,8 +229,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_goals_long
       - name: src_google_sheets__dibels_pm_goals
         config:
@@ -245,8 +245,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_pm_goals
       - name: src_google_sheets__dibels_bm_goals
         config:
@@ -261,8 +261,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_bm_goals
       - name: src_google_sheets__gradebook_expectations_assignments
         config:
@@ -277,8 +277,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - gradebook_expectations_assignments
       - name: src_google_sheets__gradebook_flags
         config:
@@ -293,8 +293,8 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - gradebook_flags
       - name: src_google_sheets__gradebook_exceptions
         config:
@@ -309,6 +309,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - gradebook_exceptions

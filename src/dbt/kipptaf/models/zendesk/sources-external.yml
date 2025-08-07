@@ -25,6 +25,5 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - zendesk
               - ticket_metrics_archive

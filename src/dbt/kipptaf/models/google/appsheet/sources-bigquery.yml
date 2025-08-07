@@ -8,7 +8,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google
               - appsheet
               - illuminate_assessments_extension
@@ -17,7 +16,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google
               - appsheet
               - src_leadership_development__active_users
@@ -26,7 +24,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google
               - appsheet
               - src_leadership_development__output
@@ -34,7 +31,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google
               - appsheet
               - src_seat_tracker__log_archive
@@ -42,7 +38,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google
               - appsheet
               - src_seat_tracker__seats
@@ -50,7 +45,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google
               - appsheet
               - src_teacher_development__observation_archive
@@ -58,7 +52,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google
               - appsheet
               - src_teacher_development__observation_details_archive
@@ -66,7 +59,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google
               - appsheet
               - src_stipend_bonus_app__output
@@ -74,7 +66,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - google
               - appsheet
               - src_seat_tracker__people

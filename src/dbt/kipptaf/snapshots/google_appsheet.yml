@@ -11,9 +11,9 @@ snapshots:
         dagster:
           group: google_appsheet
           asset_key:
-            - kipptaf
             - google
             - appsheet
+            - snapshot
             - snapshot_leadership_development__output
   - name: snapshot_seat_tracker__seats
     relation: ref("stg_seat_tracker__seats")
@@ -27,9 +27,9 @@ snapshots:
         dagster:
           group: google_appsheet
           asset_key:
-            - kipptaf
             - google
             - appsheet
+            - snapshot
             - snapshot_seat_tracker__seats
   - name: snapshot_stipend_and_bonus__output
     relation: ref("stg_stipend_and_bonus__output")
@@ -43,7 +43,7 @@ snapshots:
         dagster:
           group: google_appsheet
           asset_key:
-            - kipptaf
             - google
             - appsheet
+            - snapshot
             - snapshot_stipend_and_bonus__output

@@ -8,6 +8,6 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - alchemer
+              - source
               - base_alchemer__survey_results

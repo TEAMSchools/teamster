@@ -8,13 +8,13 @@ sources:
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - performance_management
+              - source
               - stg_performance_management__observation_details_archive
       - name: int_performance_management__overall_scores_archive
         meta:
           dagster:
             asset_key:
-              - kipptaf
               - performance_management
+              - source
               - int_performance_management__overall_scores_archive
