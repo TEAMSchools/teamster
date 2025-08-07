@@ -31,6 +31,7 @@ with
             rr.module_type,
             rr.title,
             rr.administered_at,
+            rr.is_mastery_int,
 
             last_value(rr.is_mastery_int ignore nulls) over (
                 partition by sw.student_number, sw.discipline, sw.academic_year
