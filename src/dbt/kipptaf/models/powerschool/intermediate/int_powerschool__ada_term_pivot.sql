@@ -25,6 +25,6 @@ from
         max(ada_term) as ada_term,
         max(ada_semester) as ada_semester,
         max(ada_year) as ada_year,
-        max(ada_quarter_running) as ada_year_running for quarter
+        max(ada_quarter_running) as ada_year_running for term
         in ('Q1', 'Q2', 'Q3', 'Q4')
     )
