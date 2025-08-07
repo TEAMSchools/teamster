@@ -131,7 +131,7 @@ with
             and enr.schoolid = gty.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
             and gty.is_current
-        where not enr.is_out_of_district and enr.enroll_status != -1
+        where enr.rn_year = 1 and not enr.is_out_of_district and enr.enroll_status != -1
     ),
 
     course_enrollments as (
@@ -162,6 +162,7 @@ with
             and m.cc_academic_year = f.academic_year
             and m.courses_credittype = f.powerschool_credittype
             and {{ union_dataset_join_clause(left_alias="m", right_alias="f") }}
+            and f.rn_year = 1
         where
             m.rn_course_number_year = 1
             and m.cc_sectionid > 0

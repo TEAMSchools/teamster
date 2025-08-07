@@ -93,4 +93,4 @@ select
     null as `64 Prior School`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments") }}
-where academic_year = {{ current_school_year(var("local_timezone")) }}
+where academic_year = {{ current_school_year(var("local_timezone")) }} and rn_year = 1

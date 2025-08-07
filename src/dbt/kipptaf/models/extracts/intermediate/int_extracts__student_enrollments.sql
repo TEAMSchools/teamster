@@ -113,6 +113,7 @@ select
     e.year_in_school,
     e.year_in_network,
     e.boy_status,
+    e.rn_year,
     e.rn_undergrad,
     e.rn_all,
     e.code_location,
@@ -262,4 +263,4 @@ left join
     on e.studentid = adapy.studentid
     and e.academic_year = (adapy.academic_year + 1)
     and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
-where e.rn_year = 1 and e.schoolid != 999999
+where e.grade_level != 99

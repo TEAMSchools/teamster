@@ -6,7 +6,7 @@ with
 
             max(nj_student_tier) as nj_overall_student_tier,
         from {{ ref("int_extracts__student_enrollments_subjects") }}
-        where academic_year >= {{ var("current_academic_year") - 1 }}
+        where rn_year = 1 and academic_year >= {{ var("current_academic_year") - 1 }}
         group by academic_year, student_number
 
     ),

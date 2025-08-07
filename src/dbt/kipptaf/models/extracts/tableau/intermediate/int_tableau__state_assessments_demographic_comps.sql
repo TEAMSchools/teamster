@@ -164,7 +164,8 @@ inner join
     and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
     and a.results_type = 'Actual'
 where
-    e.academic_year >= {{ var("current_academic_year") - 7 }}
+    e.rn_year = 1
+    and e.academic_year >= {{ var("current_academic_year") - 7 }}
     and e.grade_level > 2
     and e.school_level != 'OD'
 
@@ -231,6 +232,7 @@ inner join
     and a.results_type = 'Actual'
 where
     e.region = 'Miami'
+    and e.rn_year = 1
     and e.academic_year >= {{ var("current_academic_year") - 7 }}
     and e.grade_level > 2
 
@@ -297,5 +299,6 @@ inner join
     and a.results_type = 'Preliminary'
 where
     e.academic_year = {{ var("current_academic_year") }}
+    and e.rn_year = 1
     and e.grade_level > 2
     and e.school_level != 'OD'

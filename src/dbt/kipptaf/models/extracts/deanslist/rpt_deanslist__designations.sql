@@ -13,7 +13,7 @@ with
             lep_status,
             ada,
         from {{ ref("int_extracts__student_enrollments") }}
-        where academic_year = {{ var("current_academic_year") }}
+        where academic_year = {{ var("current_academic_year") }} and rn_year = 1
     ),
 
     designation as (

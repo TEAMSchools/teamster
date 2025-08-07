@@ -23,10 +23,11 @@ with
 
         from {{ ref("int_extracts__student_enrollments_subjects") }}
         where
-            enroll_status != -1
+            discipline = 'ELA'
+            and rn_year = 1
+            and enroll_status != -1
             and grade_level <= 8
-            and academic_year >= 2023
-            and discipline = 'ELA'
+            and academic_year >= 2023  /* TODO: document */
     ),
 
     expected_tests as (
