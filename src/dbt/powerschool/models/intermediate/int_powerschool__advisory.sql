@@ -29,7 +29,7 @@ select
     studentid,
     yearid,
     schoolid,
-    sections_section_number,
+    sections_section_number as advisory_section_number,
     teachernumber as advisor_teachernumber,
     teacher_lastfirst as advisor_lastfirst,
 

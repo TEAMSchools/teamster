@@ -28,14 +28,26 @@ select
     'Benchmark' as assessment_type,
 
     a.admin_season as expected_test,
-    a.month_round,
+    a.month_round as expected_month_round,
     a.grade as expected_grade_level_int,
     a.expected_measure_name_code,
     a.expected_measure_name,
     a.expected_measure_standard,
 
-    g.grade_goal as admin_benchmark,
-    g.grade_range_goal as admin_benchmark_grade_range,
+    -- foundation benchmark tests goals
+    g.benchmark_goal_season as admin_goal_season,
+    g.grade_goal as admin_goal,
+    g.grade_range_goal as admin_goal_grade_range,
+    g.n_admin_season_school_gl_all,
+    g.n_admin_season_school_gl_at_above,
+    g.n_admin_season_school_gl_bl_wb,
+    g.n_admin_season_school_gl_at_above_expected,
+    g.n_admin_season_school_gl_at_above_gap,
+    g.n_admin_season_region_gl_all,
+    g.n_admin_season_region_gl_at_above,
+    g.n_admin_season_region_gl_bl_wb,
+    g.n_admin_season_region_gl_at_above_expected,
+    g.n_admin_season_region_gl_at_above_gap,
 
     a.grade as grade_level,
     a.grade_level_text as expected_grade_level,
@@ -106,11 +118,12 @@ inner join
     and a.assessment_type = 'Benchmark'
     and a.assessment_include is null
 left join
-    {{ ref("stg_google_sheets__dibels_foundation_goals") }} as g
+    {{ ref("rpt_gsheets__dibels_bm_goals_calculations") }} as g
     on a.academic_year = g.academic_year
     and a.region = g.region
-    and a.grade = g.grade_level
+    and a.grade = g.assessment_grade_int
     and a.admin_season = g.period
+    and s.school = g.school
 left join
     {{ ref("base_powerschool__course_enrollments") }} as c
     on s.academic_year = c.cc_academic_year
@@ -190,14 +203,27 @@ select
     'PM' as assessment_type,
 
     e.admin_season as expected_test,
-    e.month_round,
+    e.month_round as expected_month_round,
     e.grade as expected_grade_level_int,
     e.expected_measure_name_code,
     e.expected_measure_name,
     e.expected_measure_standard,
-    e.benchmark_goal as admin_benchmark,
-    null as admin_benchmark_grade_range,
 
+    null as admin_goal_season,
+    null as admin_goal,
+    null as admin_goal_grade_range,
+    null as n_admin_season_school_gl_all,
+    null as n_admin_season_school_gl_at_above,
+    null as n_admin_season_school_gl_bl_wb,
+    null as n_admin_season_school_gl_at_above_expected,
+    null as n_admin_season_school_gl_at_above_gap,
+    null as n_admin_season_region_gl_all,
+    null as n_admin_season_region_gl_at_above,
+    null as n_admin_season_region_gl_bl_wb,
+    null as n_admin_season_region_gl_at_above_expected,
+    null as n_admin_season_region_gl_at_above_gap,
+
+    -- pm round goals: measure standard growth progress
     g.assessment_grade_int as grade_level,
     g.assessment_grade as expected_grade_level,
     g.starting_words as average_starting_words,
@@ -242,6 +268,7 @@ select
     rs.completed_test_round,
     rs.completed_test_round_int,
 
+    -- met pm goal calcs for the student
     pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
     pm.met_measure_name_code_goal,
