@@ -30,66 +30,52 @@ select
     round(ada_term, 3) as ada_term,
 
     round(
-        (
-            (
-                sum(sum_attendance_value_term) over (
-                    partition by
-                        _dbt_source_relation, studentid, academic_year, semester
-                )
-            ) / (
-                sum(count_attendance_value_term) over (
-                    partition by
-                        _dbt_source_relation, studentid, academic_year, semester
-                )
+        safe_divide(
+            sum(sum_attendance_value_term) over (
+                partition by _dbt_source_relation, studentid, academic_year, semester
+            ),
+            sum(count_attendance_value_term) over (
+                partition by _dbt_source_relation, studentid, academic_year, semester
             )
         ),
         3
     ) as ada_semester,
 
     round(
-        (
-            (
-                sum(sum_attendance_value_term) over (
-                    partition by _dbt_source_relation, studentid, academic_year
-                )
-            ) / (
-                sum(count_attendance_value_term) over (
-                    partition by _dbt_source_relation, studentid, academic_year
-                )
+        safe_divide(
+            sum(sum_attendance_value_term) over (
+                partition by _dbt_source_relation, studentid, academic_year
+            ),
+            sum(count_attendance_value_term) over (
+                partition by _dbt_source_relation, studentid, academic_year
             )
         ),
         3
     ) as ada_year,
 
     round(
-        (
-            (
-                sum(sum_attendance_value_term) over (
-                    partition by _dbt_source_relation, studentid, academic_year
-                    order by term asc
-                )
-            ) / (
-                sum(count_attendance_value_term) over (
-                    partition by _dbt_source_relation, studentid, academic_year
-                    order by term asc
-                )
+        safe_divide(
+            sum(sum_attendance_value_term) over (
+                partition by _dbt_source_relation, studentid, academic_year
+                order by term asc
+            ),
+            sum(count_attendance_value_term) over (
+                partition by _dbt_source_relation, studentid, academic_year
+                order by term asc
             )
         ),
         3
     ) as ada_quarter_running,
 
     round(
-        (
-            (
-                sum(sum_attendance_value_weighted_term) over (
-                    partition by _dbt_source_relation, studentid, academic_year
-                    order by term asc
-                )
-            ) / (
-                sum(count_attendance_value_term) over (
-                    partition by _dbt_source_relation, studentid, academic_year
-                    order by term asc
-                )
+        safe_divide(
+            sum(sum_attendance_value_weighted_term) over (
+                partition by _dbt_source_relation, studentid, academic_year
+                order by term asc
+            ),
+            sum(count_attendance_value_term) over (
+                partition by _dbt_source_relation, studentid, academic_year
+                order by term asc
             )
         ),
         3
