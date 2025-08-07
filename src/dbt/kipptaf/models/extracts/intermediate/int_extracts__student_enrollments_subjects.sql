@@ -406,6 +406,7 @@ select
         then true
         else false
     end as is_exempt_state_testing,
+
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as sj
 left join

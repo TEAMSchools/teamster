@@ -28,6 +28,7 @@ select
 from {{ ref("int_extracts__student_enrollments") }}
 where
     academic_year = {{ current_school_year(var("local_timezone")) }}
+    and rn_year = 1
     and gifted_and_talented = 'Y'
 
 union all
@@ -60,7 +61,10 @@ select
     null as `15 Site ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments") }}
-where academic_year = {{ current_school_year(var("local_timezone")) }} and lep_status
+where
+    academic_year = {{ current_school_year(var("local_timezone")) }}
+    and rn_year = 1
+    and lep_status
 
 union all
 
@@ -106,4 +110,4 @@ select
     null as `15 Site ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments_subjects") }}
-where academic_year = {{ current_school_year(var("local_timezone")) }}
+where academic_year = {{ current_school_year(var("local_timezone")) }} and rn_year = 1
