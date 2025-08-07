@@ -34,6 +34,7 @@ select
     a.expected_measure_name,
     a.expected_measure_standard,
 
+    g.grade_range,
     g.grade_goal as admin_benchmark,
     g.grade_range_goal as admin_benchmark_grade_range,
 
@@ -111,6 +112,7 @@ left join
     and a.region = g.region
     and a.grade = g.grade_level
     and a.admin_season = g.period
+    and g.grade_goal_type = 'At/Above'
 left join
     {{ ref("base_powerschool__course_enrollments") }} as c
     on s.academic_year = c.cc_academic_year
@@ -194,6 +196,7 @@ select
     e.expected_measure_name_code,
     e.expected_measure_name,
     e.expected_measure_standard,
+    nulll as grade_range,
     e.benchmark_goal as admin_benchmark,
     null as admin_benchmark_grade_range,
 
