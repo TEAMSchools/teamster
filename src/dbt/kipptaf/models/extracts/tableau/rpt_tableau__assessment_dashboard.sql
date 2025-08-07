@@ -141,3 +141,4 @@ left join
     on d.student_number = sf.student_number
     and d.academic_year = sf.academic_year
     and d.filter_join = sf.assessment_dashboard_join
+    and sf.rn_year = 1

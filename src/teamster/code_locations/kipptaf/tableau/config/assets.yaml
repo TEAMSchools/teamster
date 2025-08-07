@@ -130,6 +130,7 @@ assets:
           rpt_tableau__schoolmint_grow_observation_details,
         ]
       - [kipptaf, extracts, tableau, rpt_tableau__schoolmint_grow_goals]
+      - [kipptaf, extracts, tableau, rpt_tableau__teacher_observations]
     metadata:
       id: b529ca04-3560-4cff-8898-fd0a65f3e994
       cron_schedule:

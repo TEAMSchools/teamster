@@ -14,6 +14,23 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__course_subject_crosswalk
             skip_leading_rows: 1
+        columns:
+          - name: PowerSchool_Course_Number
+            data_type: string
+          - name: PowerSchool_Course_Name
+            data_type: string
+          - name: Illuminate_Subject_Area
+            data_type: string
+          - name: Is_Foundations
+            data_type: boolean
+          - name: Is_Advanced_Math
+            data_type: boolean
+          - name: Exclude_from_Gradebook
+            data_type: boolean
+          - name: Discipline
+            data_type: string
+          - name: Duplicate_Audit
+            data_type: int64
         meta:
           dagster:
             asset_key:

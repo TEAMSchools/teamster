@@ -30,6 +30,4 @@ select
     null as `16 Enrollment Entry Code`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments") }}
-where
-    academic_year = {{ current_school_year(var("local_timezone")) }}
-    and grade_level != 99
+where academic_year = {{ current_school_year(var("local_timezone")) }} and rn_year = 1

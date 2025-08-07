@@ -5,6 +5,7 @@ select
     s.district,
     s.state,
     s.region,
+    s.school_level,
     s.schoolid,
     s.school,
     s.studentid,
@@ -18,7 +19,7 @@ select
     s.iep_status,
     s.is_504,
     s.lep_status,
-    s.lunch_status,  -- 20
+    s.lunch_status,
     s.gifted_and_talented,
     s.enroll_status,
     s.advisory,
@@ -27,14 +28,26 @@ select
     'Benchmark' as assessment_type,
 
     a.admin_season as expected_test,
-    a.month_round,
+    a.month_round as expected_month_round,
     a.grade as expected_grade_level_int,
     a.expected_measure_name_code,
-    a.expected_measure_name,  -- 30
+    a.expected_measure_name,
     a.expected_measure_standard,
 
-    g.grade_goal as admin_benchmark,
-    g.grade_range_goal as admin_benchmark_grade_range,
+    -- foundation benchmark tests goals
+    g.benchmark_goal_season as admin_goal_season,
+    g.grade_goal as admin_goal,
+    g.grade_range_goal as admin_goal_grade_range,
+    g.n_admin_season_school_gl_all,
+    g.n_admin_season_school_gl_at_above,
+    g.n_admin_season_school_gl_bl_wb,
+    g.n_admin_season_school_gl_at_above_expected,
+    g.n_admin_season_school_gl_at_above_gap,
+    g.n_admin_season_region_gl_all,
+    g.n_admin_season_region_gl_at_above,
+    g.n_admin_season_region_gl_bl_wb,
+    g.n_admin_season_region_gl_at_above_expected,
+    g.n_admin_season_region_gl_at_above_gap,
 
     a.grade as grade_level,
     a.grade_level_text as expected_grade_level,
@@ -73,6 +86,12 @@ select
     b.moy_composite,
     b.eoy_composite,
 
+    r.enrollment_dates_account,
+    r.expected_row_count,
+    r.actual_row_count,
+    r.completed_test_round,
+    r.completed_test_round_int,
+
     null as met_measure_standard_goal,
     null as met_admin_benchmark_goal,
     null as met_measure_name_code_goal,
@@ -99,11 +118,12 @@ inner join
     and a.assessment_type = 'Benchmark'
     and a.assessment_include is null
 left join
-    {{ ref("stg_google_sheets__dibels_foundation_goals") }} as g
+    {{ ref("rpt_gsheets__dibels_bm_goals_calculations") }} as g
     on a.academic_year = g.academic_year
     and a.region = g.region
-    and a.grade = g.grade_level
+    and a.grade = g.assessment_grade_int
     and a.admin_season = g.period
+    and s.school = g.school
 left join
     {{ ref("base_powerschool__course_enrollments") }} as c
     on s.academic_year = c.cc_academic_year
@@ -132,6 +152,14 @@ left join
     and a.expected_measure_standard = b.measure_standard
     and s.student_number = b.student_number
 left join
+    {{ ref("int_students__dibels_participation_roster") }} as r
+    on a.academic_year = r.academic_year
+    and a.grade = r.grade_level
+    and a.admin_season = r.admin_season
+    and a.round_number = r.round_number
+    and r.enrollment_dates_account
+    and s.student_number = r.student_number
+left join
     {{ ref("int_people__leadership_crosswalk") }} as h
     on s.schoolid = h.home_work_location_powerschool_school_id
 left join
@@ -140,7 +168,8 @@ left join
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
-where not s.is_self_contained
+    and f.rn_year = 1
+where s.rn_year = 1 and not s.is_self_contained
 
 union all
 
@@ -151,6 +180,7 @@ select
     s.district,
     s.state,
     s.region,
+    s.school_level,
     s.schoolid,
     s.school,
     s.studentid,
@@ -173,14 +203,27 @@ select
     'PM' as assessment_type,
 
     e.admin_season as expected_test,
-    e.month_round,
+    e.month_round as expected_month_round,
     e.grade as expected_grade_level_int,
     e.expected_measure_name_code,
     e.expected_measure_name,
     e.expected_measure_standard,
-    e.benchmark_goal as admin_benchmark,
-    null as admin_benchmark_grade_range,
 
+    null as admin_goal_season,
+    null as admin_goal,
+    null as admin_goal_grade_range,
+    null as n_admin_season_school_gl_all,
+    null as n_admin_season_school_gl_at_above,
+    null as n_admin_season_school_gl_bl_wb,
+    null as n_admin_season_school_gl_at_above_expected,
+    null as n_admin_season_school_gl_at_above_gap,
+    null as n_admin_season_region_gl_all,
+    null as n_admin_season_region_gl_at_above,
+    null as n_admin_season_region_gl_bl_wb,
+    null as n_admin_season_region_gl_at_above_expected,
+    null as n_admin_season_region_gl_at_above_gap,
+
+    -- pm round goals: measure standard growth progress
     g.assessment_grade_int as grade_level,
     g.assessment_grade as expected_grade_level,
     g.starting_words as average_starting_words,
@@ -219,6 +262,13 @@ select
     r.moy_composite,
     r.eoy_composite,
 
+    rs.enrollment_dates_account,
+    rs.expected_row_count,
+    rs.actual_row_count,
+    rs.completed_test_round,
+    rs.completed_test_round_int,
+
+    -- met pm goal calcs for the student
     pm.met_measure_standard_goal,
     pm.met_admin_benchmark_goal,
     pm.met_measure_name_code_goal,
@@ -289,6 +339,14 @@ left join
     and e.expected_measure_standard = a.measure_standard
     and s.student_number = a.student_number
 left join
+    {{ ref("int_students__dibels_participation_roster") }} as rs
+    on e.academic_year = rs.academic_year
+    and e.grade = rs.grade_level
+    and e.admin_season = rs.admin_season
+    and e.round_number = rs.round_number
+    and rs.enrollment_dates_account
+    and s.student_number = rs.student_number
+left join
     {{ ref("int_amplify__pm_met_criteria") }} as pm
     on e.academic_year = pm.academic_year
     and e.grade = pm.assessment_grade_int
@@ -305,4 +363,5 @@ left join
     and s.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
-where not s.is_self_contained
+    and f.rn_year = 1
+where s.rn_year = 1 and not s.is_self_contained
