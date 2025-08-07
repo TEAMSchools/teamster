@@ -131,8 +131,8 @@ select
     ovg.overgrad_fafsa_opt_out,
 
     ada.ada_term_q1,
-    ada.ada_semester_q1 as ada_semester_s1,
-    ada.ada_year_q1 as ada,
+    ada.ada_semester_s1,
+    ada.ada_year as ada,
 
     adapy.ada_year_q1 as ada_year_prev,
 
