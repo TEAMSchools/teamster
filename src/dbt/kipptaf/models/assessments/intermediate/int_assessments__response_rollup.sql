@@ -191,6 +191,7 @@ with
             academic_year,
             scope,
             subject_area,
+            discipline,
             module_type,
             module_code,
             region,

@@ -1,7 +1,7 @@
 select
     region,
     student_number,
-    lastfirst as student_name,
+    student_name,
     school_abbreviation as school,
     grade_level,
     advisory_name as team,
