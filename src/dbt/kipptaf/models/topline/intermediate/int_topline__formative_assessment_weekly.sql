@@ -1,27 +1,4 @@
 with
-    subject_discipline_crosswalk as (
-        select distinct illuminate_subject_area, discipline,
-        from {{ ref("stg_assessments__course_subject_crosswalk") }}
-    ),
-
-    responses_discipline as (
-        select
-            rr.powerschool_student_number,
-            rr.academic_year,
-            rr.response_type,
-            rr.subject_area,
-            rr.module_type,
-            rr.title,
-            rr.administered_at,
-            rr.is_mastery,
-
-            cx.discipline,
-        from {{ ref("int_assessments__response_rollup") }} as rr
-        inner join
-            subject_discipline_crosswalk as cx
-            on rr.subject_area = cx.illuminate_subject_area
-    ),
-
     assessment_weeks as (
         select
             sw.student_number,
@@ -40,7 +17,7 @@ with
             end as is_mastery_int,
         from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as sw
         left join
-            responses_discipline as rr
+            {{ ref("int_assessments__response_rollup") }} as rr
             on sw.student_number = rr.powerschool_student_number
             and sw.academic_year = rr.academic_year
             and sw.discipline = rr.discipline
@@ -63,7 +40,6 @@ select
 
     last_value(is_mastery_int ignore nulls) over (
         partition by student_number, discipline, academic_year
-        order by week_start_monday
-        rows between unbounded preceding and current row
+        order by week_start_monday asc
     ) as mastery_as_of_week,
 from assessment_weeks
