@@ -26,6 +26,9 @@ class PensionBenefitsEnrollments(BaseModel):
     coverage_level: str | None = None
     effective_date: str | None = None
     employee_number: str | None = None
+    enrollment_end_date: str | None = None
+    enrollment_start_date: str | None = None
+    enrollment_status: str | None = None
     plan_name: str | None = None
     plan_type: str | None = None
     position_id: str | None = None
