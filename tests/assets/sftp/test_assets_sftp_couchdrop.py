@@ -189,3 +189,19 @@ def test_collegeboard_ap_kipptaf():
     from teamster.code_locations.kipptaf.collegeboard.assets import ap
 
     _test_asset(asset=ap)
+
+
+def test_amplify_mclass_benchmark_student_summary_kipptaf():
+    from teamster.code_locations.kipptaf.amplify.mclass.sftp.assets import (
+        benchmark_student_summary,
+    )
+
+    _test_asset(asset=benchmark_student_summary)
+
+
+def test_amplify_mclass_pm_student_summary_kipptaf():
+    from teamster.code_locations.kipptaf.amplify.mclass.sftp.assets import (
+        pm_student_summary,
+    )
+
+    _test_asset(asset=pm_student_summary)

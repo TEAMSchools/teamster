@@ -1,0 +1,111 @@
+version: 2
+models:
+  - name: stg_amplify__mclass__sftp__pm_student_summary
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: column_name
+        data_type: string
+      - name: school_year
+        data_type: string
+      - name: state
+        data_type: string
+      - name: multi_district_organization_name
+        data_type: string
+      - name: reporting_group_name
+        data_type: string
+      - name: district_name
+        data_type: string
+      - name: district_primary_id
+        data_type: string
+      - name: school_name
+        data_type: string
+      - name: school_primary_id
+        data_type: string
+      - name: student_last_name
+        data_type: string
+      - name: student_first_name
+        data_type: string
+      - name: student_primary_id
+        data_type: string
+      - name: enrollment_teacher_name
+        data_type: string
+      - name: enrollment_teacher_staff_id
+        data_type: string
+      - name: enrollment_class_name
+        data_type: string
+      - name: enrollment_class_id
+        data_type: string
+      - name: enrollment_grade
+        data_type: string
+      - name: assessing_teacher_name
+        data_type: string
+      - name: assessing_teacher_staff_id
+        data_type: string
+      - name: assessment_class_name
+        data_type: string
+      - name: assessment_class_id
+        data_type: string
+      - name: assessment
+        data_type: string
+      - name: assessment_edition
+        data_type: string
+      - name: assessment_grade
+        data_type: string
+      - name: pm_period
+        data_type: string
+      - name: device_date
+        data_type: string
+      - name: sync_date
+        data_type: string
+      - name: measure
+        data_type: string
+      - name: probe_number
+        data_type: string
+      - name: total_number_of_probes
+        data_type: string
+      - name: score
+        data_type: string
+      - name: date_of_birth
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: race
+        data_type: string
+      - name: hispanic_or_latino_ethnicity
+        data_type: string
+      - name: special_education
+        data_type: string
+      - name: disability
+        data_type: string
+      - name: specific_disability
+        data_type: string
+      - name: section_504
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: economically_disadvantaged
+        data_type: string
+      - name: meal_status
+        data_type: string
+      - name: title_i
+        data_type: string
+      - name: migrant
+        data_type: string
+      - name: ell_status
+        data_type: string
+      - name: home_language
+        data_type: string
+      - name: secondary_student_id
+        data_type: string
+      - name: additional_student_id
+        data_type: string
+      - name: _dagster_partition_fiscal_year
+        data_type: int64
+      - name: _dagster_partition_date
+        data_type: date
+      - name: _dagster_partition_hour
+        data_type: int64
+      - name: _dagster_partition_minute
+        data_type: int64
