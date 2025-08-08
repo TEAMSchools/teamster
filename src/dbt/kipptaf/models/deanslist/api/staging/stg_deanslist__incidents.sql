@@ -15,7 +15,6 @@ with
         select
             *,
 
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as source_project,
             regexp_extract(category, r'^(.*?)\s*-\s*') as category_tier,
 
             {{
@@ -39,14 +38,22 @@ select
             )
         then 'Non-Behavioral'
         when
-            (category_tier in ('T1', 'Tier 1') and source_project != 'kippmiami')
-            or (category_tier in ('T4', 'T3') and source_project = 'kippmiami')
+            (
+                category_tier in ('T1', 'Tier 1')
+                and _dbt_source_relation not like '%kippmiami%'
+            )
+            or (
+                category_tier in ('T4', 'T3') and _dbt_source_project like '%kippmiami%'
+            )
         then 'Low'
         when category_tier in ('T2', 'Tier 2')
         then 'Middle'
         when
-            (category_tier in ('T3', 'Tier 3') and source_project != 'kippmiami')
-            or (category_tier = 'T1' and source_project = 'kippmiami')
+            (
+                category_tier in ('T3', 'Tier 3')
+                and _dbt_source_relation not like '%kippmiami%'
+            )
+            or (category_tier = 'T1' and _dbt_source_project like '%kippmiami%')
         then 'High'
         when category is null
         then null
