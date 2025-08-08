@@ -106,5 +106,5 @@ select
         ),
         3
     ) as ada_weighted_year_running,
-    
+
 from ada_by_term
