@@ -4,8 +4,8 @@ select
     t.term_type as incentive_type,
     t.academic_year,
     t.term_name,
-    t.start_date,
-    t.end_date,
+    t.start_date_date as `start_date`,
+    t.end_date_date as end_date,
     t.school_id,
 
     max(b.behavior) as behavior,
@@ -22,8 +22,8 @@ group by
     t.term_type,
     t.academic_year,
     t.term_name,
-    t.start_date,
-    t.end_date,
+    t.start_date_date,
+    t.end_date_date,
     t.school_id
 
 union all
@@ -34,8 +34,8 @@ select
     t.term_type as incentive_type,
     t.academic_year,
     t.term_name,
-    t.start_date,
-    t.end_date,
+    t.start_date_date as `start_date`,
+    t.end_date_date as end_date,
     t.school_id,
 
     max(b.behavior) as behavior,
@@ -52,8 +52,8 @@ group by
     t.term_type,
     t.academic_year,
     t.term_name,
-    t.start_date,
-    t.end_date,
+    t.start_date_date,
+    t.end_date_date,
     t.school_id
 
 union all
@@ -64,8 +64,8 @@ select
     t.term_type as incentive_type,
     t.academic_year,
     t.term_name,
-    t.start_date,
-    t.end_date,
+    t.start_date_date as `start_date`,
+    t.end_date_date as end_date,
     t.school_id,
 
     max(b.behavior) as behavior,
@@ -82,6 +82,6 @@ group by
     t.term_type,
     t.academic_year,
     t.term_name,
-    t.start_date,
-    t.end_date,
+    t.start_date_date,
+    t.end_date_date,
     t.school_id
