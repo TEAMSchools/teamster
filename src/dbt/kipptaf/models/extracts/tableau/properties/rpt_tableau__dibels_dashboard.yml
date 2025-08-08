@@ -160,6 +160,10 @@ models:
         data_type: string
       - name: eoy_composite
         data_type: string
+      - name: aggregated_measure_standard_level
+        data_type: string
+      - name: foundation_measure_standard_level
+        data_type: string
       - name: enrollment_dates_account
         data_type: boolean
       - name: expected_row_count
