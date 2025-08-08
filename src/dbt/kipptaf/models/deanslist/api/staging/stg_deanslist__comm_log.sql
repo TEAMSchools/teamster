@@ -14,7 +14,7 @@ with
 select
     *,
 
-    cast(call_date_time as date) as call_date_time_date,
+    cast(call_date_time as date) as call_date,
 
     {{
         date_to_fiscal_year(
