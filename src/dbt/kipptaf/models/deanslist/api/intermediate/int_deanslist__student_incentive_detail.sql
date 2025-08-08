@@ -14,7 +14,7 @@ inner join
     {{ ref("stg_deanslist__terms") }} as t
     on b.academic_year = t.academic_year
     and b.dl_school_id = t.school_id
-    and b.behavior_date between t.start_date and t.end_date
+    and b.behavior_date between t.start_date_date and t.end_date_date
     and t.term_type = 'Quarters'
 where b.behavior = 'Earned Quarterly Incentive'
 group by
@@ -44,7 +44,7 @@ inner join
     {{ ref("stg_deanslist__terms") }} as t
     on b.academic_year = t.academic_year
     and b.dl_school_id = t.school_id
-    and b.behavior_date between t.start_date and t.end_date
+    and b.behavior_date between t.start_date_date and t.end_date_date
     and t.term_type = 'Months'
 where b.behavior = 'Earned Monthly Incentive'
 group by
@@ -74,7 +74,7 @@ inner join
     {{ ref("stg_deanslist__terms") }} as t
     on b.academic_year = t.academic_year
     and b.dl_school_id = t.school_id
-    and b.behavior_date between t.start_date and t.end_date
+    and b.behavior_date between t.start_date_date and t.end_date_date
     and t.term_type = 'Weeks'
 where b.behavior = 'Earned Weekly Incentive'
 group by
