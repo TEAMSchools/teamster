@@ -2,9 +2,6 @@ version: 2
 
 sources:
   - name: kippnewark_deanslist
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      kippnewark_deanslist
     tables:
       - name: stg_deanslist__behavior
         meta:

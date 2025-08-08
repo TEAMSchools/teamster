@@ -3,12 +3,12 @@ with
         select student_number, is_retained_year,
         from {{ ref("int_extracts__student_enrollments") }}
         where
-            -- submission is always for the previous school year, but retention is
-            -- tracked only on the submission year + 1 (current academic year)
+            /* submission is always for the previous school year, but retention is 
+            tracked only on the submission year + 1 (current academic year) */
             academic_year = {{ var("current_academic_year") }}
-            and grade_level != 99
+            and rn_year = 1
             and is_retained_year
-            -- miami does their own submission
+            /* miami does their own submission */
             and region != 'Miami'
     ),
 
@@ -95,10 +95,10 @@ with
             and lep.lep_tf = 1
             and lep.liep_parent_refusal_date is not null
         where
-            -- submission is always for the previous school year
+            /* submission is always for the previous school year */
             e.academic_year = {{ var("current_academic_year") - 1 }}
-            and e.grade_level != 99
-            -- miami does their own submission
+            and e.rn_year = 1
+            /* miami does their own submission */
             and e.region != 'Miami'
     ),
 

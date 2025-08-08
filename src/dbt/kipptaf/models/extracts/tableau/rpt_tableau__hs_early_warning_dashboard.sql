@@ -10,8 +10,8 @@ with
         from {{ ref("stg_deanslist__incidents") }} as ics
         inner join
             {{ ref("stg_deanslist__incidents__penalties") }} as ips
-            on ips.incident_id = ics.incident_id
-            and ips._dbt_source_relation = ics._dbt_source_relation
+            on ics.incident_id = ips.incident_id
+            and ics._dbt_source_relation = ips._dbt_source_relation
         where ips.is_suspension
         group by
             ics.student_school_id, ics.create_ts_academic_year, ics._dbt_source_relation
@@ -116,5 +116,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sus") }}
 where
     co.academic_year = {{ var("current_academic_year") }}
+    and co.rn_year = 1
     and co.is_enrolled_recent
     and co.school_level = 'HS'

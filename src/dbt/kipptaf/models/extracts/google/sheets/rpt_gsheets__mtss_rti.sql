@@ -61,6 +61,17 @@ with
 
             g.gpa_y1 as gpa_y1_current,
 
+            coalesce(ir.reading, 'No Data') as most_recent_iready_reading_current,
+            coalesce(ir.math, 'No Data') as most_recent_iready_math_current,
+
+            coalesce(
+                dr.measure_standard_level, 'No Data'
+            ) as most_recent_dibels_composite_current,
+
+            coalesce(sr.days_suspended_oss, 0) as days_suspended_oss_current,
+            coalesce(sr.days_suspended_all, 0) as days_suspended_all_current,
+            coalesce(sr.referral_count_all, 0) as referral_count_current,
+
             case
                 when co.enroll_status = 0
                 then 'Currently Enrolled'
@@ -71,12 +82,11 @@ with
                 when co.enroll_status = -1
                 then 'Pre-Enrolled'
             end as enrollment_status,
+
             lag(co.ada, 1) over (
                 partition by co.student_number order by co.academic_year asc
             ) as ada_prev_year,
 
-            coalesce(ir.reading, 'No Data') as most_recent_iready_reading_current,
-            coalesce(ir.math, 'No Data') as most_recent_iready_math_current,
             lag(coalesce(ir.reading, 'No Data'), 1) over (
                 partition by co.student_number order by co.academic_year asc
             ) as most_recent_iready_reading_prev_year,
@@ -84,9 +94,6 @@ with
                 partition by co.student_number order by co.academic_year asc
             ) as most_recent_iready_math_prev_year,
 
-            coalesce(
-                dr.measure_standard_level, 'No Data'
-            ) as most_recent_dibels_composite_current,
             lag(coalesce(dr.measure_standard_level, 'No Data'), 1) over (
                 partition by co.student_number order by co.academic_year asc
             ) as most_recent_dibels_composite_prev_year,
@@ -95,15 +102,12 @@ with
                 partition by co.student_number order by co.academic_year asc
             ) as gpa_y1_prev_year,
 
-            coalesce(sr.days_suspended_oss, 0) as days_suspended_oss_current,
-            coalesce(sr.days_suspended_all, 0) as days_suspended_all_current,
             lag(coalesce(sr.days_suspended_oss, 0), 1) over (
                 partition by co.student_number order by co.academic_year asc
             ) as days_suspended_oss_prev_year,
             lag(coalesce(sr.days_suspended_all, 0), 1) over (
                 partition by co.student_number order by co.academic_year asc
             ) as days_suspended_all_prev_year,
-            coalesce(sr.referral_count_all, 0) as referral_count_current,
             lag(coalesce(sr.referral_count_all, 0), 1) over (
                 partition by co.student_number order by co.academic_year asc
             ) as referral_count_prev_year,
@@ -128,6 +132,7 @@ with
             on co.student_number = sr.student_school_id
             and co.academic_year = sr.create_ts_academic_year
             and sr.term = 'Y1'
+        where co.rn_year = 1
     )
 
 select *,
