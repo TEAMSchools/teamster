@@ -76,8 +76,9 @@ with
 select
     s._dbt_source_relation,
     s.student_number,
+    s.schoolid,
+    s.academic_year,
 
-    ada.academic_year,
     ada.days_absent_unexcused,
 
     sc.commlog_reason,
@@ -109,10 +110,11 @@ select
             and c.commlog_reason is not null
         then 1
     end as intervention_status_required_int,
-from {{ ref("stg_powerschool__students") }} as s
+from {{ ref("int_extracts__student_enrollments") }} as s
 inner join
     {{ ref("int_powerschool__ada") }} as ada
-    on s.id = ada.studentid
+    on s.studentid = ada.studentid
+    and s.yearid = ada.yearid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ada") }}
 inner join
     intervention_scaffold as sc
