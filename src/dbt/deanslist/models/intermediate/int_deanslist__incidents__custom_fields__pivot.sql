@@ -1,7 +1,7 @@
 with
     pivot_source as (
         select incident_id, `value`, field_name,
-        from {{ ref("stg_deanslist__incidents__custom_fields") }}
+        from {{ ref("int_deanslist__incidents__custom_fields") }}
     )
 
 select *,

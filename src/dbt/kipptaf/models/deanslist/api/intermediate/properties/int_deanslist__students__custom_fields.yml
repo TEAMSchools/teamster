@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_deanslist__students__custom_fields
+  - name: int_deanslist__students__custom_fields
     columns:
       - name: _dbt_source_relation
         data_type: string

@@ -1,7 +1,7 @@
 with
     pivot_source as (
         select student_school_id, field_name, `value` as field_value,
-        from {{ ref("stg_deanslist__students__custom_fields") }}
+        from {{ ref("stg_deanslist__students") }}
     )
 
 select *,
