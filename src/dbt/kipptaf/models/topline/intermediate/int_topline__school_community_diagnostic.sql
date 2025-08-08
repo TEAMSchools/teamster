@@ -2,8 +2,8 @@ select
     se.student_number,
     se.academic_year,
     se.schoolid,
-    
-    round(avg(ac.response_int), 1) as average_rating
+
+    round(avg(ac.response_int), 1) as average_rating,
 from {{ ref("int_surveys__survey_responses") }} as sr
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as se
