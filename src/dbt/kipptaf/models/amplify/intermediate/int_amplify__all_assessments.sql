@@ -222,9 +222,11 @@ with
             s.academic_year,
             s.student_number,
 
-            c.boy,
-            c.moy,
-            c.eoy,
+            /* this coalesce ensures students without a composite row are not left
+               null for these fields */
+            coalesce(c.boy, 'No data') as boy,
+            coalesce(c.moy, 'No data') as moy,
+            coalesce(c.eoy, 'No data') as eoy,
 
             if(
                 c.boy in ('Below Benchmark', 'Well Below Benchmark'), 'Yes', 'No'
