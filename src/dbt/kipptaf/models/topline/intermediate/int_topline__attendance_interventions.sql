@@ -71,7 +71,7 @@ with
     )
 
 select
-    sc.code_location,
+    sc._dbt_source_project,
     sc.commlog_reason,
     sc.absence_threshold,
 
