@@ -9,14 +9,47 @@ with
                 ]
             )
         }}
+    ),
+
+    transformations as (
+        select
+            *,
+
+            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as source_project,
+            regexp_extract(category, r'^(.*?)\s*-\s*') as category_tier,
+
+            {{
+                date_to_fiscal_year(
+                    date_field="create_ts_date", start_month=7, year_source="start"
+                )
+            }} as create_ts_academic_year,
+        from union_relations
     )
 
 select
     *,
 
-    {{
-        date_to_fiscal_year(
-            date_field="create_ts_date", start_month=7, year_source="start"
-        )
-    }} as create_ts_academic_year,
-from union_relations
+    case
+        when category_tier in ('SW', 'SS', 'SSC')
+        then 'Social Work'
+        when
+            (
+                category_tier = 'TX'
+                or category in ('School Clinic', 'Incident Report/Accident Report')
+            )
+        then 'Non-Behavioral'
+        when
+            (category_tier in ('T1', 'Tier 1') and source_project != 'kippmiami')
+            or (category_tier in ('T4', 'T3') and source_project = 'kippmiami')
+        then 'Low'
+        when category_tier in ('T2', 'Tier 2')
+        then 'Middle'
+        when
+            (category_tier in ('T3', 'Tier 3') and source_project != 'kippmiami')
+            or (category_tier = 'T1' and source_project = 'kippmiami')
+        then 'High'
+        when category is null
+        then null
+        else 'Other'
+    end as referral_tier,
+from transformations
