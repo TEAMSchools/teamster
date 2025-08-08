@@ -8,9 +8,11 @@ columns:
     data_type: int64
   - name: yearid
     data_type: int64
+  - name: schoolid
+    data_type: int64
   - name: student_number
     data_type: int64
-  - name: studentsdcid
+  - name: students_dcid
     data_type: int64
   - name: studentid
     data_type: int64
@@ -20,29 +22,39 @@ columns:
     data_type: int64
   - name: dob
     data_type: date
-  - name: age_eligible
-    data_type: boolean
-  - name: is_first_time_ninth
-    data_type: boolean
-  - name: cy_q1_ada
-    data_type: numeric
-  - name: cy_s1_ada
-    data_type: numeric
-  - name: py_y1_ada
-    data_type: numeric
+  - name: cy_unweighted_term_q1
+    data_type: float64
+  - name: cy_weighted_term_q1
+    data_type: float64
+  - name: cy_unweighted_s1_ada
+    data_type: float64
+  - name: cy_weighted_s1_ada
+    data_type: float64
+  - name: py_y1_unweighted_ada
+    data_type: float64
+  - name: py_y1_weighted_ada
+    data_type: float64
   - name: cy_q1_gpa
-    data_type: numeric
+    data_type: float64
   - name: cy_s1_gpa
-    data_type: numeric
+    data_type: float64
   - name: py_y1_gpa
-    data_type: numeric
+    data_type: float64
+  - name: py_credits
+    data_type: float64
   - name: met_py_credits
     data_type: boolean
   - name: met_cy_credits
     data_type: boolean
-  - name: quarter
+  - name: is_first_time_ninth
+    data_type: boolean
+  - name: is_age_eligible
+    data_type: boolean
+  - name: q1_ae_status
     data_type: string
-  - name: eligibility
+  - name: q2_ae_status
     data_type: string
-  - name: season
+  - name: q3_ae_status
+    data_type: string
+  - name: q4_ae_status
     data_type: string

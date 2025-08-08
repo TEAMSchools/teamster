@@ -5,22 +5,24 @@ models:
       - name: _dbt_source_relation
         data_type: string
       - name: studentid
-        data_type: integer
+        data_type: int64
       - name: academic_year
-        data_type: integer
-      - name: yearid
-        data_type: integer
-      - name: semester
-        data_type: string
+        data_type: int64
       - name: term
         data_type: string
-      - name: running_ada_year_term
-        data_type: float
       - name: ada_term
-        data_type: float
+        data_type: float64
       - name: ada_semester
-        data_type: float
+        data_type: float64
       - name: ada_year
-        data_type: float
-      - name: rn
-        data_type: integer
+        data_type: float64
+      - name: ada_year_running
+        data_type: float64
+      - name: ada_weighted_term
+        data_type: float64
+      - name: ada_weighted_semester
+        data_type: float64
+      - name: ada_weighted_year
+        data_type: float64
+      - name: ada_weighted_year_running
+        data_type: float64
