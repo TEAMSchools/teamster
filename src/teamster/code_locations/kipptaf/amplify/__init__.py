@@ -4,11 +4,11 @@ assets = [
     *mclass.assets,
 ]
 
-schedules = [
-    *mclass.schedules,
-]
+# schedules = [
+#     *mclass.schedules,
+# ]
 
 __all__ = [
     "assets",
-    "schedules",
+    # "schedules",
 ]
