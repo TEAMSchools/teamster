@@ -6,12 +6,19 @@ with
             yearid + 1990 as academic_year,
             schoolid,
             week_start_monday,
+            week_end_sunday,
 
             sum(attendancevalue) as weekly_attendance_value,
             sum(membershipvalue) as weekly_membership_value
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
         where attendancevalue is not null
-        group by _dbt_source_relation, studentid, yearid, schoolid, week_start_monday
+        group by
+            _dbt_source_relation,
+            studentid,
+            yearid,
+            schoolid,
+            week_start_monday,
+            week_end_sunday
     )
 
 select
@@ -20,6 +27,7 @@ select
     schoolid,
     academic_year,
     week_start_monday,
+    week_end_sunday,
 
     sum(weekly_attendance_value) over (
         partition by studentid, academic_year, schoolid order by week_start_monday
@@ -27,12 +35,17 @@ select
     sum(weekly_membership_value) over (
         partition by studentid, academic_year, schoolid order by week_start_monday
     ) as membershipvalue_running,
-    safe_divide(
-        sum(weekly_attendance_value) over (
-            partition by studentid, academic_year, schoolid order by week_start_monday
+    round(
+        safe_divide(
+            sum(weekly_attendance_value) over (
+                partition by studentid, academic_year, schoolid
+                order by week_start_monday
+            ),
+            sum(weekly_membership_value) over (
+                partition by studentid, academic_year, schoolid
+                order by week_start_monday
+            )
         ),
-        sum(weekly_membership_value) over (
-            partition by studentid, academic_year, schoolid order by week_start_monday
-        )
+        3
     ) as ada_running
 from agg_weeks
