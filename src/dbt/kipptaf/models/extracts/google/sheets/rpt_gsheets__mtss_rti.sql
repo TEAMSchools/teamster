@@ -27,10 +27,7 @@ with
         select
             academic_year,
             student_number,
-            client_date,
             measure_standard_level,
-
-            'Reading' as iready_subject,
 
             row_number() over (
                 partition by academic_year, student_number order by client_date desc
