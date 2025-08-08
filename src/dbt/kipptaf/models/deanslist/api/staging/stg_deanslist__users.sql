@@ -12,5 +12,5 @@ with
     )
 
 -- trunk-ignore(sqlfluff/AM04)
-select *, concat(u.first_name, ' ', u.last_name) as user_name,
+select *, concat(first_name, ' ', last_name) as user_name,
 from union_relations
