@@ -92,6 +92,7 @@ left join
     on se.academic_year = f.academic_year
     and se.student_number = f.student_number
     and {{ union_dataset_join_clause(left_alias="se", right_alias="f") }}
+    and f.rn_year = 1
 left join
     {{ ref("stg_powerschool__s_stu_x") }} as pfs
     on se.students_dcid = pfs.studentsdcid

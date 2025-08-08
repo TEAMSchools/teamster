@@ -49,6 +49,7 @@ with
             and not s.is_dropped_section
         where
             e.academic_year = {{ var("current_academic_year") }}
+            and e.rn_year = 1
             and e.region != 'Miami'
             and e.schoolid != 999999
             and e.cohort between ({{ var("current_academic_year") - 1 }}) and (

@@ -6,6 +6,7 @@ models:
           combination_of_columns:
             - student_number
             - academic_year
+            - entrydate
             - iready_subject
           config:
             severity: warn

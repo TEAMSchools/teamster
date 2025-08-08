@@ -65,6 +65,7 @@ with
             ce.powerschool_school_id,
             ce.cc_dateenrolled,
             ce.cc_dateleft,
+            ce.discipline,
         from grade_scaffold as a
         inner join
             {{ ref("int_illuminate__student_session_aff") }} as ssa
@@ -106,6 +107,7 @@ with
             ce.powerschool_school_id,
             ce.cc_dateenrolled,
             ce.cc_dateleft,
+            ce.discipline,
         from assessment_region_scaffold as a
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
@@ -147,6 +149,7 @@ select
     ia.scope,
     ia.module_type,
     ia.module_code,
+    ia.discipline,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -182,6 +185,8 @@ select
     a.scope,
     a.module_type,
     a.module_code,
+
+    null as discipline,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -228,6 +233,8 @@ select
     a.scope,
     a.module_type,
     a.module_code,
+
+    null as discipline,
 
     sa.student_assessment_id,
     sa.date_taken,

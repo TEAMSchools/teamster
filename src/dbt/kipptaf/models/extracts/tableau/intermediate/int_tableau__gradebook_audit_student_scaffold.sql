@@ -275,6 +275,7 @@ left join
     and qg.grades_type = 'last_year'
 where
     s.academic_year = {{ var("current_academic_year") - 1 }}
+    and s.rn_year = 1
     and s.enroll_status = 0
     and not s.is_out_of_district
 
@@ -460,5 +461,6 @@ left join
     and ge.assignment_category_term = cg.storecode
 where
     s.academic_year = {{ var("current_academic_year") - 1 }}
+    and s.rn_year = 1
     and s.enroll_status = 0
     and not s.is_out_of_district

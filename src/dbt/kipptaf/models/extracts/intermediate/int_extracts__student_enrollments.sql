@@ -81,11 +81,14 @@ select
     e.region,
     e.school_level,
     e.schoolid,
+    e.reporting_schoolid,
     e.school_name,
     e.school_abbreviation as school,
     e.grade_level,
     e.grade_level_prev,
+    e.advisory_name,
     e.advisory_section_number as team,
+    e.advisor_lastfirst,
     e.student_email_google as student_email,
     e.student_web_id,
     e.student_web_password,
@@ -93,6 +96,7 @@ select
     e.ethnicity,
     e.dob,
     e.lunch_status,
+    e.spedlep,
     e.special_education_code,
     e.lep_status,
     e.gifted_and_talented,
@@ -109,6 +113,7 @@ select
     e.year_in_school,
     e.year_in_network,
     e.boy_status,
+    e.rn_year,
     e.rn_undergrad,
     e.rn_all,
     e.code_location,
@@ -131,10 +136,10 @@ select
     ovg.overgrad_fafsa_opt_out,
 
     ada.ada_term_q1,
-    ada.ada_semester_q1 as ada_semester_s1,
-    ada.ada_year_q1 as ada,
+    ada.ada_semester_s1,
+    ada.ada_year as ada,
 
-    adapy.ada_year_q1 as ada_year_prev,
+    adapy.ada_year as ada_year_prev,
 
     'KTAF' as district,
 
@@ -150,7 +155,7 @@ select
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
 
-    if(ada.ada_year_q1 >= 0.80, true, false) as ada_above_or_at_80,
+    if(ada.ada_year >= 0.80, true, false) as ada_above_or_at_80,
 
     if(
         e.salesforce_contact_df_has_fafsa = 'Yes' or ovg.overgrad_fafsa_opt_out = 'Yes',
@@ -258,4 +263,4 @@ left join
     on e.studentid = adapy.studentid
     and e.academic_year = (adapy.academic_year + 1)
     and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
-where e.rn_year = 1 and e.schoolid != 999999
+where e.grade_level != 99
