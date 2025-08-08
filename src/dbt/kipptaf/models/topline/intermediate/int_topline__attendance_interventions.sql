@@ -55,13 +55,13 @@ with
             c.topic as commlog_topic,
             c.call_status as commlog_status,
             c.call_type as commlog_type,
-            c.call_date_time_date,
+            c.call_date,
 
             u.user_name,
 
             row_number() over (
                 partition by c.student_school_id, c.reason, c.academic_year
-                order by c.call_date_time_date desc
+                order by c.call_date desc
             ) as rn_commlog_reason,
         from {{ ref("stg_deanslist__comm_log") }} as c
         inner join
@@ -83,7 +83,7 @@ select
     c.user_name as commlog_staff_name,
     c.commlog_notes,
     c.commlog_topic,
-    c.call_date_time_date as commlog_date,
+    c.call_date as commlog_date,
     c.commlog_status,
     c.commlog_type,
 
