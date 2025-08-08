@@ -43,7 +43,8 @@ select
                 and _dbt_source_relation not like '%kippmiami%'
             )
             or (
-                category_tier in ('T4', 'T3') and _dbt_source_project like '%kippmiami%'
+                category_tier in ('T4', 'T3')
+                and _dbt_source_relation like '%kippmiami%'
             )
         then 'Low'
         when category_tier in ('T2', 'Tier 2')
@@ -53,7 +54,7 @@ select
                 category_tier in ('T3', 'Tier 3')
                 and _dbt_source_relation not like '%kippmiami%'
             )
-            or (category_tier = 'T1' and _dbt_source_project like '%kippmiami%')
+            or (category_tier = 'T1' and _dbt_source_relation like '%kippmiami%')
         then 'High'
         when category is null
         then null
