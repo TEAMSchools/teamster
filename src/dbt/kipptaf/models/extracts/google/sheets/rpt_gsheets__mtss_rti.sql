@@ -4,7 +4,8 @@ with
             student_id,
             academic_year_int,
 
-            lower(subject) as subject,
+            lower(`subject`) as `subject`,
+
             concat(
                 most_recent_overall_relative_placement,
                 ' (',
@@ -19,7 +20,7 @@ with
         select student_id, academic_year_int, reading, math,
         from
             iready_long
-            pivot (max(iready_most_recent) for subject in ('reading', 'math'))
+            pivot (max(iready_most_recent) for `subject` in ('reading', 'math'))
     ),
 
     dibels_recent as (
@@ -36,13 +37,7 @@ with
             ) as rn_benchmark,
         from {{ ref("int_amplify__all_assessments") }}
         where measure_standard = 'Composite'
-    ),
-
-    gpa as (
-        select studentid, _dbt_source_relation, schoolid, yearid, gpa_y1,
-        from {{ ref("int_powerschool__gpa_term") }}
-        where is_current
-    ),
+    )
 
 select
     co.academic_year,
@@ -121,11 +116,12 @@ left join
     and co.academic_year = dr.academic_year
     and dr.rn_benchmark = 1
 left join
-    gpa as g
+    {{ ref("int_powerschool__gpa_term") }} as g
     on co.studentid = g.studentid
     and co.schoolid = g.schoolid
     and co.yearid = g.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="g") }}
+    and g.is_current
 left join
     {{ ref("int_deanslist__referral_suspension_rollup") }} as sr
     on co.student_number = sr.student_school_id

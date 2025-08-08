@@ -3,9 +3,9 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippnewark_deanslist", model.name),
-                    source("kippcamden_deanslist", model.name),
-                    source("kippmiami_deanslist", model.name),
+                    source("kippnewark_deanslist", "stg_deanslist__terms"),
+                    source("kippcamden_deanslist", "stg_deanslist__terms"),
+                    source("kippmiami_deanslist", "stg_deanslist__terms"),
                 ]
             )
         }}
@@ -13,7 +13,7 @@ with
 
 -- trunk-ignore(sqlfluff/AM04)
 select
-    * except (start_date_date end_date_date),
+    * except (start_date_date, end_date_date),
 
     start_date_date as start_date_datetime,
     end_date_date as end_date_datetime,
