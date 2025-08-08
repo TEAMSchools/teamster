@@ -17,10 +17,9 @@ select
     ai.commlog_type,
     ai.intervention_status,
     ai.intervention_status_required_int,
-from {{ ref("int_topline__attendance_interventions") }} as ai
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
-    {{ ref("int_extracts__student_enrollments") }} as co
-    on ai.student_number = co.student_number
-    and ai.academic_year = co.academic_year
-    and co.enroll_status = 0
-where co.academic_year = {{ var("current_academic_year") }}
+    {{ ref("int_topline__attendance_interventions") }} as ai
+    on co.student_number = ai.student_number
+    and co.academic_year = ai.academic_year
+where co.academic_year = {{ var("current_academic_year") }} and co.enroll_status = 0
