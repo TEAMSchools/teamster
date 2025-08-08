@@ -1,7 +1,7 @@
 with
     intervention_scaffold as (
         select
-            'kippmiami' as _dbt_source_project,
+            'kippmiami_deanslist' as _dbt_source_relation,
 
             commlog_reason,
 
@@ -24,7 +24,7 @@ with
         union all
 
         select
-            _dbt_source_project,
+            _dbt_source_relation,
             commlog_reason,
 
             safe_cast(
@@ -42,7 +42,10 @@ with
                     'Chronic Absence: 40'
                 ]
             ) as commlog_reason
-        cross join unnest(['kippnewark', 'kippcamden']) as _dbt_source_project
+        cross join
+            unnest(
+                ['kippnewark_deanslist', 'kippcamden_deanslist']
+            ) as _dbt_source_relation
     ),
 
     commlog as (
@@ -71,14 +74,14 @@ with
     )
 
 select
-    sc._dbt_source_project,
-    sc.commlog_reason,
-    sc.absence_threshold,
-
+    ada._dbt_source_relation,
     ada.days_absent_unexcused,
     ada.academic_year,
 
     s.student_number,
+
+    sc.commlog_reason,
+    sc.absence_threshold,
 
     c.user_name as commlog_staff_name,
     c.commlog_notes,
@@ -106,18 +109,18 @@ select
             and c.commlog_reason is not null
         then 1
     end as intervention_status_required_int,
-from intervention_scaffold as sc
-inner join
-    {{ ref("int_powerschool__ada") }} as ada
-    on sc._dbt_source_project = ada._dbt_source_project
+from {{ ref("int_powerschool__ada") }} as ada
 inner join
     {{ ref("stg_powerschool__students") }} as s
     on ada.studentid = s.id
     and {{ union_dataset_join_clause(left_alias="ada", right_alias="s") }}
+inner join
+    intervention_scaffold as sc
+    on {{ union_dataset_join_clause(left_alias="ada", right_alias="sc") }}
+    and ada.days_absent_unexcused >= sc.absence_threshold
 left join
     commlog as c
     on s.student_number = c.student_number
     and ada.academic_year = c.academic_year
     and sc.commlog_reason = c.commlog_reason
     and c.rn_commlog_reason = 1
-where ada.days_absent_unexcused >= sc.absence_threshold

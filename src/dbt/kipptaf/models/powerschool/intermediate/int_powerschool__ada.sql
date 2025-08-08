@@ -12,10 +12,5 @@ with
     )
 
 -- trunk-ignore(sqlfluff/AM04)
-select
-    *,
-
-    yearid + 1990 as academic_year,
-
-    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
+select *, yearid + 1990 as academic_year
 from union_relations
