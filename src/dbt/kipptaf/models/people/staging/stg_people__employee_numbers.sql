@@ -7,23 +7,11 @@
         incremental_strategy="merge",
         unique_key="adp_associate_id",
         merge_update_columns=["adp_associate_id"],
+        full_refresh=false,
     )
 }}
 
-{% if execute %}
-    {% if flags.FULL_REFRESH %}
-        {{
-            exceptions.raise_compiler_error(
-                (
-                    "Full refresh is not allowed for this model. "
-                    "Exclude it from the run via the argument '--exclude model_name'."
-                )
-            )
-        }}
-    {% endif %}
-{% endif %}
-
-{% if env_var("DBT_CLOUD_ENVIRONMENT_TYPE", "") == "dev" %}
+{% if env_var("DBT_CLOUD_ENVIRONMENT_TYPE", "") in ["dev", "staging"] %}
     select employee_number, adp_associate_id, adp_associate_id_legacy, is_active,
     from {{ source("people", "src_people__employee_numbers") }}
     where is_active
