@@ -1,7 +1,112 @@
-from typing import Any, Mapping
+from typing import AbstractSet, Any, Mapping
 
 from dagster import AssetKey, AssetSelection, AutomationCondition
+from dagster._annotations import public
+from dagster._core.definitions.asset_key import T_EntityKey
+from dagster._core.definitions.assets.graph.base_asset_graph import (
+    BaseAssetGraph,
+    BaseAssetNode,
+)
+from dagster._core.definitions.declarative_automation.operators.dep_operators import (
+    AnyDepsCondition,
+    DepsAutomationCondition,
+)
 from dagster_dbt import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from dagster_shared import check
+
+
+class DbtTableAnyDepsCondition(AnyDepsCondition):
+    def _get_dep_keys(
+        self, key: T_EntityKey, asset_graph: BaseAssetGraph[BaseAssetNode]
+    ) -> AbstractSet[AssetKey]:
+        dep_keys = asset_graph.get_ancestor_asset_keys(
+            asset_key=check.inst(obj=key, ttype=AssetKey)
+        )
+
+        if self.allow_selection is not None:
+            dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
+
+        if self.ignore_selection is not None:
+            dep_keys -= self.ignore_selection.resolve(asset_graph, allow_missing=True)
+
+        return dep_keys
+
+
+class DbtTableAutomationCondition(AutomationCondition):
+    @public
+    @staticmethod
+    def any_deps_match(condition: "AutomationCondition") -> "DepsAutomationCondition":
+        return DbtTableAnyDepsCondition(operand=condition)
+
+    @public
+    @staticmethod
+    def any_deps_updated() -> "DepsAutomationCondition":
+        return DbtTableAutomationCondition.any_deps_match(
+            (
+                DbtTableAutomationCondition.newly_updated()
+                & ~DbtTableAutomationCondition.executed_with_root_target()
+            ).with_label("newly_updated_without_root")
+            | DbtTableAutomationCondition.will_be_requested()
+        ).with_label("any_deps_updated")
+
+
+def get_view_automation_condition(selection):
+    """forked from AutomationCondition.eager()
+    - add code_version_changed()
+    - add ignore external assets
+    - replace since_last_handled() to allow initial_evaluation()
+    - remove any_deps_updated()
+    """
+
+    return (
+        AutomationCondition.in_latest_time_window()
+        & (
+            AutomationCondition.newly_missing()
+            | AutomationCondition.code_version_changed()
+        ).since(
+            AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+        )
+        & ~AutomationCondition.any_deps_missing().ignore(
+            selection
+            | (
+                AssetSelection.all(include_sources=True)
+                - AssetSelection.all(include_sources=False)
+            )
+        )
+        & ~AutomationCondition.any_deps_in_progress().ignore(selection)
+        & ~AutomationCondition.in_progress()
+    )
+
+
+def get_table_automation_condition(selection):
+    """forked from AutomationCondition.eager()
+    - add code_version_changed()
+    - add ignore external assets
+    - replace since_last_handled() to allow initial_evaluation()
+    - add ignore on any_deps_updated()
+    """
+
+    return (
+        DbtTableAutomationCondition.in_latest_time_window()
+        & (
+            DbtTableAutomationCondition.newly_missing()
+            | DbtTableAutomationCondition.code_version_changed()
+            | DbtTableAutomationCondition.any_deps_updated().ignore(selection)
+        )
+        # .since(
+        #     DbtTableAutomationCondition.newly_requested()
+        #     | DbtTableAutomationCondition.newly_updated()
+        # )
+        # & ~DbtTableAutomationCondition.any_deps_missing().ignore(
+        #     selection
+        #     | (
+        #         AssetSelection.all(include_sources=True)
+        #         - AssetSelection.all(include_sources=False)
+        #     )
+        # )
+        # & ~DbtTableAutomationCondition.any_deps_in_progress().ignore(selection)
+        # & ~DbtTableAutomationCondition.in_progress()
+    )
 
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
@@ -42,60 +147,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         elif (
             dbt_resource_props["resource_type"] == "model"
             and dbt_resource_props["config"]["materialized"] == "view"
-            and dbt_resource_props["name"][:3] == "rpt"
         ):
-            """forked from AutomationCondition.eager()
-            - add code_version_changed()
-            - add ignore external assets
-            - replace since_last_handled() to allow initial_evaluation()
-            - remove any_deps_updated()
-            """
-            return (
-                AutomationCondition.in_latest_time_window()
-                & (
-                    AutomationCondition.newly_missing()
-                    | AutomationCondition.code_version_changed()
-                ).since(
-                    AutomationCondition.newly_requested()
-                    | AutomationCondition.newly_updated()
-                )
-                & ~AutomationCondition.any_deps_missing().ignore(
-                    ignore_selection
-                    | (
-                        AssetSelection.all(include_sources=True)
-                        - AssetSelection.all(include_sources=False)
-                    )
-                )
-                & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
-                & ~AutomationCondition.in_progress()
-            )
+            return get_view_automation_condition(ignore_selection)
         else:
-            """forked from AutomationCondition.eager()
-            - add code_version_changed()
-            - add ignore external assets
-            - replace since_last_handled() to allow initial_evaluation()
-            - add ignore on any_deps_updated()
-            """
-            return (
-                AutomationCondition.in_latest_time_window()
-                & (
-                    AutomationCondition.newly_missing()
-                    | AutomationCondition.any_deps_updated().ignore(ignore_selection)
-                    | AutomationCondition.code_version_changed()
-                ).since(
-                    AutomationCondition.newly_requested()
-                    | AutomationCondition.newly_updated()
-                )
-                & ~AutomationCondition.any_deps_missing().ignore(
-                    ignore_selection
-                    | (
-                        AssetSelection.all(include_sources=True)
-                        - AssetSelection.all(include_sources=False)
-                    )
-                )
-                & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
-                & ~AutomationCondition.in_progress()
-            )
+            return get_table_automation_condition(ignore_selection)
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         group = super().get_group_name(dbt_resource_props)
