@@ -34,7 +34,7 @@ select
     round(
         coalesce(ada_year_q4, ada_year_q3, ada_year_q2, ada_year_q1), 3
     ) as ada_weighted_year,
-    
+
 from
     {{ ref("int_powerschool__ada_term") }} pivot (
         max(ada_term) as ada_term,
