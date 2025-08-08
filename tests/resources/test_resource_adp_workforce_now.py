@@ -3,11 +3,12 @@ import pathlib
 
 from dagster import build_resources
 
-from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 
 
 def get_adp_wfn_resource() -> AdpWorkforceNowResource:
+    from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
+
     with build_resources(
         resources={"adp_wfn": ADP_WORKFORCE_NOW_RESOURCE}
     ) as resources:
@@ -91,6 +92,21 @@ def test_get_workers_meta():
 
     data = adp_wfn.get(endpoint="hr/v2/workers/meta").json()
     filepath = pathlib.Path("env/test/adp/workers/meta.json")
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    json.dump(obj=data, fp=filepath.open(mode="w"))
+
+
+def test_get_talent_associate_memberships():
+    aoid = "G550F72Q44ZGT3QT"
+
+    adp_wfn = get_adp_wfn_resource()
+
+    data = adp_wfn.get(
+        endpoint=f"/talent/v2/associates/{aoid}/associate-memberships"
+    ).json()
+    filepath = pathlib.Path("env/test/adp/talent/associate-memberships.json")
 
     filepath.parent.mkdir(parents=True, exist_ok=True)
 

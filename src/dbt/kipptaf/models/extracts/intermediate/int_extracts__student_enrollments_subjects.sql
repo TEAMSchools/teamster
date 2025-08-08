@@ -1,4 +1,4 @@
-{{- config(materialized="table") -}}
+{{ config(materialized="table") }}
 
 with
     subjects as (
@@ -24,6 +24,7 @@ with
             case
                 iready_subject when 'Reading' then 'ELA' when 'Math' then 'Math'
             end as discipline,
+
         from unnest(['Reading', 'Math']) as iready_subject
     ),
 
@@ -34,6 +35,7 @@ with
             academic_year,
 
             if(specprog_name = 'Bucket 2 - ELA', 'Reading', 'Math') as iready_subject,
+
         from {{ ref("int_powerschool__spenrollments") }}
         where specprog_name in ('Bucket 2 - ELA', 'Bucket 2 - Math')
     ),
@@ -64,6 +66,7 @@ with
                 then 'At/Above'
             end as njsla_proficiency,
             if(testperformancelevel > 3, true, false) as is_proficient,
+
         from {{ ref("stg_pearson__njsla") }}
 
         union all
@@ -91,7 +94,9 @@ with
                 when achievement_level_int >= 3
                 then 'At/Above'
             end as proficiency,
+
             is_proficient,
+
         from {{ ref("int_fldoe__all_assessments") }}
         where
             scale_score is not null
@@ -101,9 +106,10 @@ with
 
     psat_bucket1 as (
         select powerschool_student_number, discipline, max(score) as max_score,
+
         from {{ ref("int_collegeboard__psat_unpivot") }} as pt
         where test_subject in ('EBRW', 'Math') and test_type != 'PSAT 8/9'
-        group by all
+        group by powerschool_student_number, discipline
     ),
 
     prev_yr_iready as (
@@ -121,6 +127,7 @@ with
                 when overall_relative_placement_int > 3
                 then 'At/Above'
             end as iready_proficiency,
+
         from {{ ref("base_iready__diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
     ),
@@ -131,6 +138,7 @@ with
             academic_year_int as academic_year,
             `subject`,
             projected_is_proficient_typical as is_proficient,
+
         from {{ ref("base_iready__diagnostic_results") }}
         where
             test_round = 'BOY'
@@ -146,6 +154,7 @@ with
             `subject`,
 
             if(level_number_with_typical >= 4, true, false) as is_proficient,
+
         from {{ ref("base_iready__diagnostic_results") }}
         where
             test_round = 'BOY'
@@ -167,6 +176,7 @@ with
                 when 'mgela'
                 then 'Reading'
             end as iready_subject,
+
         from {{ ref("base_powerschool__course_enrollments") }}
         where
             courses_course_number = 'LOG300'
@@ -177,8 +187,8 @@ with
 
     dibels as (
         select
-            mclass_student_number,
-            mclass_academic_year,
+            student_number,
+            academic_year,
             boy_composite,
             moy_composite,
             eoy_composite,
@@ -186,32 +196,32 @@ with
             'Reading' as iready_subject,
 
             row_number() over (
-                partition by mclass_student_number, mclass_academic_year
-                order by mclass_client_date desc
+                partition by student_number, academic_year order by client_date desc
             ) as rn_year,
+
         from {{ ref("int_amplify__all_assessments") }}
-        where mclass_measure_standard = 'Composite'
+        where measure_standard = 'Composite'
     ),
 
     dibels_recent as (
         select
-            mclass_academic_year,
-            mclass_student_number,
-            mclass_client_date,
-            mclass_measure_standard_level,
-            mclass_measure_standard_level_int,
+            academic_year,
+            student_number,
+            client_date,
+            measure_standard_level,
+            measure_standard_level_int,
 
             'Reading' as iready_subject,
 
             row_number() over (
-                partition by mclass_academic_year, mclass_student_number
-                order by mclass_client_date desc
+                partition by academic_year, student_number order by client_date desc
             ) as rn_benchmark,
+
         from {{ ref("int_amplify__all_assessments") }}
-        where mclass_measure_standard = 'Composite'
+        where measure_standard = 'Composite'
     )
 
--- current year and current year - 1 only to honor bucket calcs
+/* current year and current year - 1 only to honor bucket calcs */
 select
     co.*,
 
@@ -223,7 +233,7 @@ select
 
     a.is_iep_eligible as is_grad_iep_exempt,
 
-    dr.mclass_measure_standard_level_int as dibels_most_recent_composite_int,
+    dr.measure_standard_level_int as dibels_most_recent_composite_int,
 
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
@@ -234,7 +244,7 @@ select
     coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
 
     coalesce(
-        dr.mclass_measure_standard_level, 'No Composite Score Available'
+        dr.measure_standard_level, 'No Composite Score Available'
     ) as dibels_most_recent_composite,
 
     if(ie.student_number is not null, true, false) as is_exempt_iready,
@@ -247,6 +257,8 @@ select
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
     ) as assessment_dashboard_join,
 
+    /* years are hardcoded here because of changes on how buckets are calculated from 
+    one sy to the next */
     case
         when
             co.academic_year = 2023
@@ -281,6 +293,7 @@ select
         then true
         else false
     end as is_exempt_state_testing,
+
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -298,7 +311,7 @@ left join
     and se.value_type = 'State Assessment Name'
 left join
     prev_yr_state_test as py
-    {# TODO: find records that only match on SID #}
+    /* TODO: find records that only match on SID */
     on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus
     and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
@@ -310,14 +323,14 @@ left join
     and sj.iready_subject = pr.subject
 left join
     dibels as db
-    on co.student_number = db.mclass_student_number
-    and co.academic_year = db.mclass_academic_year
+    on co.student_number = db.student_number
+    and co.academic_year = db.academic_year
     and sj.iready_subject = db.iready_subject
     and db.rn_year = 1
 left join
     dibels_recent as dr
-    on co.student_number = dr.mclass_student_number
-    and co.academic_year = dr.mclass_academic_year
+    on co.student_number = dr.student_number
+    and co.academic_year = dr.academic_year
     and sj.iready_subject = dr.iready_subject
     and dr.rn_benchmark = 1
 left join
@@ -393,6 +406,7 @@ select
         then true
         else false
     end as is_exempt_state_testing,
+
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -410,7 +424,7 @@ left join
     and se.value_type = 'State Assessment Name'
 left join
     prev_yr_state_test as py
-    {# TODO: find records that only match on SID #}
+    /* TODO: find records that only match on SID */
     on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus
     and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
@@ -422,8 +436,8 @@ left join
     and sj.iready_subject = pr.subject
 left join
     dibels as db
-    on co.student_number = db.mclass_student_number
-    and co.academic_year = db.mclass_academic_year
+    on co.student_number = db.student_number
+    and co.academic_year = db.academic_year
     and sj.iready_subject = db.iready_subject
     and db.rn_year = 1
 left join

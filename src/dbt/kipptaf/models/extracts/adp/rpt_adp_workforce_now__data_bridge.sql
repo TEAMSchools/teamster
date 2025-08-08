@@ -1,95 +1,90 @@
 with
     staff_roster as (
         select
-            sr.position_id,
-            sr.employee_number,
-            sr.mail,
-            sr.reports_to_position_id,
+            worker_id,
+            position_id,
+            worker_original_hire_date,
+            employee_number,
+            mail as work_email,
+            badge_id as adp__badge,
+            work_email as adp__work_email,
+            custom_field__employee_number as adp__employee_number,
+            time_service_supervisor_position_id
+            as adp__time_service_supervisor_position_id,
+            time_and_attendance_indicator as adp__time_and_attendance_indicator,
+            worker_time_profile__time_zone_code
+            as adp__worker_time_profile__time_zone_code,
 
-            sr.custom_field__employee_number as adp__custom_field__employee_number,
-            sr.work_email as adp__work_email,
-            sr.badge_id as adp__badge,
-            sr.time_service_supervisor_position_id as adp__supervisor_id,
-
-            tna.supervisor_flag as adp__supervisor_flag,
-            tna.pay_class,
-
-            '000' || sr.employee_number as badge,
-
-            if(
-                sr.position_id in (
-                    select rt.reports_to_position_id,
-                    from {{ ref("int_people__staff_roster") }} as rt
-                    where rt.reports_to_position_id is not null
-                ),
-                'Y',
-                'N'
-            ) as supervisor_flag,
-        from {{ ref("int_people__staff_roster") }} as sr
-        inner join
-            {{ ref("stg_adp_workforce_now__time_and_attendance") }} as tna
-            on sr.position_id = tna.position_id
+            '000' || employee_number as badge,
+        from {{ ref("int_people__staff_roster") }}
         where
-            sr.assignment_status not in ('Terminated', 'Deceased')
-            and not sr.is_prestart
+            primary_indicator
+            and employee_number is not null
+            and mail is not null
+            and worker_status_code = 'Active'
+            and time_and_attendance_indicator
     ),
 
-    surrogate_keys as (
+    with_key as (
         select
             *,
 
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "employee_number",
-                        "mail",
-                        "badge",
-                        "reports_to_position_id",
-                        "supervisor_flag",
-                    ]
-                )
-            }} as source_surrogate_key,
+            {{ dbt_utils.generate_surrogate_key(["work_email", "badge"]) }}
+            as source_surrogate_key,
 
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "adp__custom_field__employee_number",
-                        "adp__work_email",
-                        "adp__badge",
-                        "adp__supervisor_id",
-                        "adp__supervisor_flag",
-                    ]
-                )
-            }} as destination_surrogate_key,
+            {{ dbt_utils.generate_surrogate_key(["adp__work_email", "adp__badge"]) }}
+            as destination_surrogate_key,
         from staff_roster
     )
 
+-- trunk-ignore(sqlfluff/ST06)
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
-    position_id as `Position ID`,
+    wk.worker_id as `Employee ID`,
+    wk.position_id as `Position ID`,
 
     /* required to be after ID */
-    format_date(
-        '%m/%d/%Y', current_date('{{ var("local_timezone") }}')
-    ) as `Change Effective On`,
+    format_date('%m/%d/%Y', wk.worker_original_hire_date) as `Change Effective On`,
 
-    /* communication */
-    mail as `Work E-mail`,
+    /* personal information */
+    wk.work_email as `Work E-Mail`,
     'W' as `E-Mail to Use For Notification`,
 
     /* custom fields */
     'Employment Custom Fields' as `CDF Category`,
     'Employee Number' as `CDF Label`,
-    employee_number as `CDF Value`,
+    wk.employee_number as `CDF Value`,
 
-    /* essential time */
-    badge as `Badge`,
-    reports_to_position_id as `Supervisorid`,
-    supervisor_flag as `Supervisorflag`,
-    pay_class as `Payclass`,
-    'EST' as `TimeZone`,
-    'Y' as `Position Uses Time`,
-    'Y' as `Transfertopayroll`,
+    /* time & attendance */
+    if(wk.adp__time_and_attendance_indicator, 'Y', 'N') as `Position Uses Time`,
+    if(wk.adp__time_and_attendance_indicator, wk.badge, null) as `Badge`,
+    if(
+        wk.adp__time_and_attendance_indicator,
+        wk.adp__time_service_supervisor_position_id,
+        null
+    ) as `Supervisorid`,
+    if(
+        wk.adp__time_and_attendance_indicator,
+        wk.adp__worker_time_profile__time_zone_code,
+        null
+    ) as `TimeZone`,
+    if(
+        wk.adp__time_and_attendance_indicator, tna.transfer_to_payroll, null
+    ) as `Transfertopayroll`,
+    if(wk.adp__time_and_attendance_indicator, tna.pay_class, null) as `Payclass`,
+    if(
+        wk.adp__time_and_attendance_indicator, tna.supervisor_flag, null
+    ) as `Supervisorflag`,
+
+    /* audit */
+    wk.adp__badge,
+    wk.adp__work_email,
+    wk.adp__employee_number,
 -- trunk-ignore-end(sqlfluff/RF05)
-from surrogate_keys
-where source_surrogate_key != destination_surrogate_key
+from with_key as wk
+inner join
+    {{ ref("stg_adp_workforce_now__time_and_attendance") }} as tna
+    on wk.position_id = tna.position_id
+where
+    wk.source_surrogate_key != wk.destination_surrogate_key
+    or wk.adp__employee_number is null

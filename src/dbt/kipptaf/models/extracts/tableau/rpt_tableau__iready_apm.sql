@@ -171,6 +171,7 @@ left join
     on co.student_number = f.student_number
     and co.academic_year = f.academic_year
     and subj = f.iready_subject
+    and f.rn_year = 1
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
     on co.schoolid = lc.home_work_location_powerschool_school_id
@@ -190,6 +191,7 @@ left join
     on co.academic_year = it.cc_academic_year
     and co.student_number = it.students_student_number
 where
-    co.academic_year >= {{ var("current_academic_year") - 1 }}
+    co.rn_year = 1
     and co.enroll_status = 0
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}
     and co.grade_level <= 8

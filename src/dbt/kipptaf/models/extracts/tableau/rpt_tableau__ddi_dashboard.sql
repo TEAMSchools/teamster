@@ -171,6 +171,7 @@ with
             on co.student_number = sf.student_number
             and co.academic_year = sf.academic_year
             and cc.courses_credittype = sf.powerschool_credittype
+            and sf.rn_year = 1
         left join
             {{ ref("base_powerschool__course_enrollments") }} as hr
             on co.studentid = hr.cc_studentid
@@ -185,7 +186,7 @@ with
             on co.schoolid = lc.home_work_location_powerschool_school_id
         where
             co.enroll_status = 0
-            and co.academic_year = {{ var("current_academic_year") }}
+            and co.academic_year >= {{ var("current_academic_year") - 2 }}
             and not co.is_out_of_district
             {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
@@ -310,6 +311,7 @@ left join
     on co.student_number = sf.student_number
     and co.academic_year = sf.academic_year
     and co.subject_area = sf.illuminate_subject_area
+    and sf.rn_year = 1
 left join
     {{ ref("stg_assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year
@@ -417,6 +419,7 @@ left join
     on co.student_number = sf.student_number
     and co.academic_year = sf.academic_year
     and co.course_credittype = sf.assessment_dashboard_join
+    and sf.rn_year = 1
 left join
     {{ ref("stg_assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year
@@ -567,4 +570,4 @@ left join
     and w.week_start_monday = m.week_start_monday
 where
     o.observation_type_abbreviation = 'WT'
-    and w.academic_year = {{ var("current_academic_year") }}
+    and w.academic_year = {{ var("current_academic_year") - 1 }}

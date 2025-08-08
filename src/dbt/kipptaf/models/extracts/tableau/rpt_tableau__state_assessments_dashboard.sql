@@ -184,15 +184,10 @@ with
         select
             _dbt_source_relation,
             academic_year,
-            null as localstudentidentifier,
+            local_student_identifier as localstudentidentifier,
             cast(state_student_identifier as string) as state_id,
 
-            if(
-                test_name
-                in ('ELA Graduation Proficiency', 'Mathematics Graduation Proficiency'),
-                'NJGPA',
-                'NJSLA'
-            ) as assessment_name,
+            test_type as assessment_name,
 
             case
                 when test_name like '%Mathematics%'
@@ -236,8 +231,8 @@ with
             null as test_grade,
 
             'Preliminary' as results_type,
-            'Spring' as `admin`,
-            'Spring' as season,
+            administration as `admin`,
+            administration as season,
 
             case
                 when test_name like '%Mathematics%'
@@ -266,6 +261,7 @@ with
         where
             state_student_identifier is not null
             and administration = 'Spring'
+            and test_type = 'NJSLA'
             and academic_year = {{ var("current_academic_year") }}
     )
 
@@ -321,6 +317,7 @@ select
     g.school_goal,
     g.region_goal,
     g.organization_goal,
+    g.assessment_band_goal,
 
     sf.nj_student_tier,
     sf.is_tutoring as tutoring_nj,
@@ -342,10 +339,11 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.localstudentidentifier = e.student_number
-    and a.academic_year >= {{ var("current_academic_year") - 7 }}
-    and a.results_type = 'Actual'
-    and e.grade_level > 2
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+    and a.results_type = 'Actual'
+    and a.academic_year >= {{ var("current_academic_year") - 7 }}
+    and e.rn_year = 1
+    and e.grade_level > 2
 left join
     state_comps as c
     on a.academic_year = c.academic_year
@@ -370,12 +368,14 @@ left join
     and a.discipline = sf.discipline
     and a.localstudentidentifier = sf.student_number
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf") }}
+    and sf.rn_year = 1
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
     on a.academic_year = sf2.academic_year - 1
     and a.discipline = sf2.discipline
     and a.localstudentidentifier = sf2.student_number
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
+    and sf2.rn_year = 1
 
 union all
 
@@ -431,6 +431,7 @@ select
     g.school_goal,
     g.region_goal,
     g.organization_goal,
+    g.assessment_band_goal,
 
     sf.nj_student_tier,
     sf.is_tutoring as tutoring_nj,
@@ -452,11 +453,12 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
-    and a.academic_year >= {{ var("current_academic_year") - 7 }}
-    and a.results_type = 'Actual'
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
-    and e.grade_level > 2
+    and a.results_type = 'Actual'
+    and a.academic_year >= {{ var("current_academic_year") - 7 }}
     and e.region = 'Miami'
+    and e.rn_year = 1
+    and e.grade_level > 2
 left join
     state_comps as c
     on a.academic_year = c.academic_year
@@ -481,13 +483,15 @@ left join
     and a.discipline = sf.discipline
     and a.state_id = sf.state_studentnumber
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf") }}
+    and sf.rn_year = 1
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
     on a.academic_year = sf2.academic_year - 1
     and a.discipline = sf2.discipline
     and a.state_id = sf2.state_studentnumber
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
-    /*
+    and sf2.rn_year = 1
+
 union all
 
 -- NJ prelim scores
@@ -515,7 +519,7 @@ select
     e.lep_status,
     e.is_504,
     e.iep_status,
-    
+
     a.assessment_name,
     a.discipline,
     a.subject,
@@ -542,6 +546,7 @@ select
     g.school_goal,
     g.region_goal,
     g.organization_goal,
+    g.assessment_band_goal,
 
     sf.nj_student_tier,
     sf.is_tutoring as tutoring_nj,
@@ -563,10 +568,11 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
     and a.academic_year = {{ var("current_academic_year") }}
     and a.results_type = 'Preliminary'
+    and e.rn_year = 1
     and e.grade_level > 2
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
 left join
     state_comps as c
     on a.academic_year = c.academic_year
@@ -591,10 +597,11 @@ left join
     and a.discipline = sf.discipline
     and a.localstudentidentifier = sf.student_number
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf") }}
+    and sf.rn_year = 1
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
     on a.academic_year = sf2.academic_year - 1
     and a.discipline = sf2.discipline
     and a.localstudentidentifier = sf2.student_number
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}*/
-    
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
+    and sf2.rn_year = 1

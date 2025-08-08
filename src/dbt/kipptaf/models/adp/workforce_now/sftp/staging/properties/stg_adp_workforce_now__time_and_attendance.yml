@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: stg_adp_workforce_now__time_and_attendance
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("adp_workforce_now",
+        "src_adp_workforce_now__time_and_attendance") | replace("`", "") }}')
+      contract:
+        enforced: true
+    columns:
+      - name: position_id
+        data_type: string
+      - name: badge
+        data_type: string
+      - name: pay_class
+        data_type: string
+      - name: supervisor_id
+        data_type: string
+      - name: supervisor_flag
+        data_type: string
+      - name: transfer_to_payroll
+        data_type: string

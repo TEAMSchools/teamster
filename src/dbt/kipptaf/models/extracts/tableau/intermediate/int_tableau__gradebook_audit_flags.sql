@@ -2,7 +2,7 @@
 
 with
     student_unpivot as (
-        select *, 'assignment_student' as cte_grouping,
+        select u.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
             {{ ref("int_tableau__gradebook_audit_assignments_student") }} unpivot (
@@ -11,17 +11,53 @@ with
                     assign_score_above_max,
                     assign_exempt_with_score,
                     assign_w_score_less_5,
+                    assign_h_score_less_5,
                     assign_f_score_less_5,
                     assign_w_missing_score_not_5,
                     assign_f_missing_score_not_5,
+                    assign_h_missing_score_not_5,
+                    assign_w_missing_score_not_0,
+                    assign_f_missing_score_not_0,
+                    assign_h_missing_score_not_0,
+                    assign_s_missing_score_not_0,
                     assign_s_score_less_50p,
+                    assign_s_hs_score_less_50p,
                     assign_s_ms_score_not_conversion_chart_options,
                     assign_s_hs_score_not_conversion_chart_options
                 )
-            )
-        where
-            region_school_level_credit_type
-            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI', 'MiamiESSOC')
+            ) as u
+        inner join
+            {{ ref("stg_google_sheets__gradebook_flags") }} as f
+            on u.academic_year = f.academic_year
+            and u.region = f.region
+            and u.school_level = f.school_level
+            and u.assignment_category_code = f.code
+            and u.audit_flag_name = f.audit_flag_name
+            and f.cte_grouping = 'assignment_student'
+        -- temporarily remove flags during non-eoq times
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            on u.academic_year = e1.academic_year
+            and u.region = e1.region
+            and u.course_number = e1.course_number
+            and u.audit_flag_name = e1.audit_flag_name
+            and u.is_quarter_end_date_range = e1.is_quarter_end_date_range
+            and e1.view_name = 'audit_flags'
+            and e1.cte = 'student_unpivot'
+            and e1.is_quarter_end_date_range is not null
+        -- temporarily remove flags during non-eoq times
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            on u.academic_year = e2.academic_year
+            and u.region = e2.region
+            and u.course_number = e2.course_number
+            and u.assignment_category_code = e2.gradebook_category
+            and u.audit_flag_name = e2.audit_flag_name
+            and u.is_quarter_end_date_range = e2.is_quarter_end_date_range
+            and e2.view_name = 'audit_flags'
+            and e2.cte = 'student_unpivot'
+            and e2.is_quarter_end_date_range is not null
+        where e1.include_row is null and e2.include_row is null
     ),
 
     teacher_unpivot_cca as (
@@ -31,20 +67,40 @@ with
             {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     w_assign_max_score_not_10,
+                    h_assign_max_score_not_10,
                     f_assign_max_score_not_10,
                     s_max_score_greater_100
                 )
             ) as r
         inner join
-            {{ ref("stg_reporting__gradebook_flags") }} as f
+            {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on r.region = f.region
             and r.school_level = f.school_level
             and r.assignment_category_code = f.code
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'class_category_assignment'
-        where
-            r.region_school_level_credit_type
-            not in ('MiamiESCOCUR', 'MiamiESRHET', 'MiamiESSCI', 'MiamiESSOC')
+        -- permanently remove flags
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            on r.academic_year = e1.academic_year
+            and r.region = e1.region
+            and r.school_level = e1.school_level
+            and r.credit_type = e1.credit_type
+            and e1.view_name = 'audit_flags'
+            and e1.cte = 'teacher_unpivot_cca'
+            and e1.is_quarter_end_date_range is null
+        -- temporarily remove flags
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            on r.academic_year = e2.academic_year
+            and r.region = e2.region
+            and r.course_number = e2.course_number
+            and r.audit_flag_name = e2.audit_flag_name
+            and r.is_quarter_end_date_range = e2.is_quarter_end_date_range
+            and e2.view_name = 'audit_flags'
+            and e2.cte = 'teacher_unpivot_cca'
+            and e2.is_quarter_end_date_range is not null
+        where e1.include_row is null and e2.include_row is null
     ),
 
     teacher_unpivot_cc as (
@@ -58,15 +114,17 @@ with
                     qt_teacher_s_total_greater_100,
                     qt_teacher_s_total_less_100,
                     w_expected_assign_count_not_met,
+                    h_expected_assign_count_not_met,
                     f_expected_assign_count_not_met,
                     s_expected_assign_count_not_met,
                     w_percent_graded_min_not_met,
+                    h_percent_graded_min_not_met,
                     f_percent_graded_min_not_met,
                     s_percent_graded_min_not_met
                 )
             ) as r
         inner join
-            {{ ref("stg_reporting__gradebook_flags") }} as f
+            {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on r.region = f.region
             and r.school_level = f.school_level
             and r.assignment_category_code = f.code
@@ -79,8 +137,7 @@ with
             r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_comment_missing,
                     qt_es_comment_missing,
@@ -92,36 +149,25 @@ with
                 )
             ) as r
         inner join
-            {{ ref("stg_reporting__gradebook_flags") }} as f
+            {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on r.region = f.region
             and r.school_level = f.school_level
             and r.quarter = f.code
             and r.audit_flag_name = f.audit_flag_name
+            and r.scaffold_name = 'student_scaffold'
             and f.cte_grouping in ('student_course', 'student')
             and f.audit_category != 'Conduct Code'
-        where
-            concat(r.region_school_level_credit_type, r.audit_flag_name) not in (
-                'MiamiESCOCURqt_comment_missing',
-                'MiamiESRHETqt_comment_missing',
-                'MiamiESSCIqt_comment_missing'
-            )
-            and concat(r.region_school_level_credit_type, r.audit_flag_name) not in (
-                'MiamiESSOCqt_comment_missing',
-                'MiamiESSOCqt_g1_g8_conduct_code_missing',
-                'MiamiESSOCqt_g1_g8_conduct_code_incorrect'
-            )
-            and concat(
-                r.region_school_level,
-                r.course_number,
-                r.audit_flag_name
-            ) not in (
-                'MiamiESWRI01133G4qt_comment_missing',
-                'MiamiESWRI01134G5qt_comment_missing',
-                'MiamiESWRI01133G4qt_g1_g8_conduct_code_missing',
-                'MiamiESWRI01134G5qt_g1_g8_conduct_code_missing',
-                'MiamiESWRI01133G4qt_g1_g8_conduct_code_incorrect',
-                'MiamiESWRI01134G5qt_g1_g8_conduct_code_incorrectg'
-            )
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            on r.academic_year = e1.academic_year
+            and r.region = e1.region
+            and r.school_level = e1.school_level
+            and r.credit_type = e1.credit_type
+            and r.audit_flag_name = e1.audit_flag_name
+            and e1.view_name = 'audit_flags'
+            and e1.cte = 'eoq_items'
+            and e1.credit_type is not null
+        where e1.include_row is null
     ),
 
     eoq_items_conduct_code as (
@@ -129,8 +175,7 @@ with
             r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
-            unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_kg_conduct_code_missing,
                     qt_kg_conduct_code_incorrect,
@@ -140,19 +185,39 @@ with
                 )
             ) as r
         inner join
-            {{ ref("stg_reporting__gradebook_flags") }} as f
+            {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on r.region = f.region
             and r.school_level = f.school_level
             and r.quarter = f.code
             and r.grade_level = f.grade_level
             and r.audit_flag_name = f.audit_flag_name
+            and r.scaffold_name = 'student_scaffold'
             and f.cte_grouping = 'student_course'
             and f.audit_category = 'Conduct Code'
+        -- permanently remove flags by credit type
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            on r.academic_year = e1.academic_year
+            and r.region = e1.region
+            and r.school_level = e1.school_level
+            and r.credit_type = e1.credit_type
+            and r.audit_flag_name = e1.audit_flag_name
+            and e1.view_name = 'audit_flags'
+            and e1.cte = 'eoq_items_conduct_code'
+            and e1.credit_type is not null
+        -- permanently remove flags by course number
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            on r.academic_year = e2.academic_year
+            and r.region = e2.region
+            and r.school_level = e2.school_level
+            and r.course_number = e2.course_number
+            and r.audit_flag_name = e2.audit_flag_name
+            and e2.view_name = 'audit_flags'
+            and e2.cte = 'eoq_items_conduct_code'
+            and e2.credit_type is null
         where
-            r.school_level = 'ES'
-            and r.region_school_level_credit_type != 'MiamiESSOC'
-            and concat(r.region_school_level, r.course_number)
-            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
+            r.school_level = 'ES' and e1.include_row is null and e2.include_row is null
     ),
 
     /* w_grade_inflation, qt_effort_grade_missing, qt_formative_grade_missing,
@@ -161,101 +226,35 @@ with
         select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
+                audit_flag_value for audit_flag_name in (
+                    qt_effort_grade_missing,
+                    w_grade_inflation,
+                    qt_formative_grade_missing,
+                    qt_summative_grade_missing
                 )
-            }}
-            unpivot (
-                audit_flag_value for audit_flag_name in (qt_effort_grade_missing)
-            ) as r
-
-        inner join
-            {{ ref("stg_reporting__gradebook_flags") }} as f
-            on r.region = f.region
-            and r.school_level = f.school_level
-            and r.quarter = f.code
-            and r.audit_flag_name = f.audit_flag_name
-            and r.assignment_category_code = 'W'
-            and f.cte_grouping = 'student_course_category'
-
-        union all
-
-        select r.*, f.cte_grouping, f.audit_category, f.code_type,
-
-        from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
-                )
-            }}
-            unpivot (audit_flag_value for audit_flag_name in (w_grade_inflation)) as r
-
-        inner join
-            {{ ref("stg_reporting__gradebook_flags") }} as f
-            on r.region = f.region
-            and r.school_level = f.school_level
-            and r.quarter = f.code
-            and r.audit_flag_name = f.audit_flag_name
-            and r.assignment_category_code = 'W'
-            and f.cte_grouping = 'student_course_category'
-        where
-            r.region_school_level_credit_type != 'MiamiESSOC'
-            and concat(r.region_school_level, r.course_number)
-            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
-
-        union all
-
-        select r.*, f.cte_grouping, f.audit_category, f.code_type,
-
-        from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
-                )
-            }}
-            unpivot (
-                audit_flag_value for audit_flag_name in (qt_formative_grade_missing)
             ) as r
         inner join
-            {{ ref("stg_reporting__gradebook_flags") }} as f
+            {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on r.region = f.region
             and r.school_level = f.school_level
             and r.quarter = f.code
+            and r.assignment_category_code = f.alt_code
             and r.audit_flag_name = f.audit_flag_name
-            and r.assignment_category_code = 'F'
+            and r.scaffold_name = 'student_category_scaffold'
             and f.cte_grouping = 'student_course_category'
-        where
-            r.region_school_level_credit_type != 'MiamiESSOC'
-            and concat(r.region_school_level, r.course_number)
-            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
-
-        union all
-
-        select r.*, f.cte_grouping, f.audit_category, f.code_type,
-
-        from
-            {{
-                ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
-                )
-            }}
-            unpivot (
-                audit_flag_value for audit_flag_name in (qt_summative_grade_missing)
-            ) as r
-
-        inner join
-            {{ ref("stg_reporting__gradebook_flags") }} as f
-            on r.region = f.region
-            and r.school_level = f.school_level
-            and r.quarter = f.code
-            and r.audit_flag_name = f.audit_flag_name
-            and r.assignment_category_code = 'S'
-            and f.cte_grouping = 'student_course_category'
-        where
-            r.region_school_level_credit_type != 'MiamiESSOC'
-            and concat(r.region_school_level, r.course_number)
-            not in ('MiamiESWRI01133G4', 'MiamiESWRI01134G5')
+        -- temporarily remove flags
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+            on r.academic_year = e.academic_year
+            and r.region = e.region
+            and r.course_number = e.course_number
+            and r.audit_flag_name = e.audit_flag_name
+            and r.is_quarter_end_date_range = e.is_quarter_end_date_range
+            and e.view_name = 'audit_flags'
+            and e.cte = 'student_course_category'
+            and e.is_quarter_end_date_range is not null
+        where e.include_row is null
     )
 
 -- this captures all flags from assignment_student
@@ -311,7 +310,9 @@ select
     r.teacher_number,
     r.teacher_name,
     r.is_ap_course,
-    r.tableau_username,
+    r.teacher_tableau_username,
+    r.school_leader,
+    r.school_leader_tableau_username,
     r.quarter,
     r.semester,
     r.quarter_start_date,
@@ -325,9 +326,10 @@ select
     r.school_week_start_date_lead,
     r.week_number_academic_year,
     r.week_number_quarter,
-    r.quarter_course_percent_grade_that_matters,
-    r.quarter_course_grade_points_that_matters,
-    r.quarter_citizenship,
+    r.is_current_week,
+    r.quarter_course_percent_grade,
+    r.quarter_course_grade_points,
+    r.quarter_conduct,
     r.quarter_comment_value,
     r.section_or_period,
     r.assignment_category_name,
@@ -342,16 +344,15 @@ select
     r.duedate,
     r.scoretype,
     r.totalpointvalue,
-    r.category_name,
     r.scorepoints,
-    r.actualscoreentered,
-    r.is_late,
+    r.is_expected_late,
     r.is_exempt,
-    r.is_missing,
+    r.is_expected_missing,
+    r.is_expected_zero,
+    r.is_expected_academic_dishonesty,
     r.score_entered,
     r.assign_final_score_percent,
     r.assign_expected_to_be_scored,
-    r.assign_scored,
     r.assign_expected_with_score,
 
     r.cte_grouping,
@@ -361,6 +362,7 @@ select
     t.n_late,
     t.n_exempt,
     t.n_missing,
+    t.n_academic_dishonesty,
     t.n_null,
     t.n_is_null_missing,
     t.n_is_null_not_missing,
@@ -370,31 +372,15 @@ select
     null as total_expected_section_quarter_week_category,
     null as percent_graded_for_quarter_week_class,
     t.sum_totalpointvalue_section_quarter_category,
-    t.running_count_assignments_section_category_term
-    as teacher_running_total_assign_by_cat,
-    t.avg_expected_scored_percent
-    as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    t.teacher_running_total_assign_by_cat,
+    t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
-    f.audit_category,
-    f.code_type,
+    r.audit_category,
+    r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
 
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between r.week_start_monday and r.week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
-
 from student_unpivot as r
-inner join
-    {{ ref("stg_reporting__gradebook_flags") }} as f
-    on r.region = f.region
-    and r.school_level = f.school_level
-    and r.assignment_category_code = f.code
-    and r.audit_flag_name = f.audit_flag_name
-    and f.cte_grouping = 'assignment_student'
 left join
     {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as t
     on r.region = t.region
@@ -460,7 +446,9 @@ select
     teacher_number,
     teacher_name,
     is_ap_course,
-    tableau_username,
+    teacher_tableau_username,
+    school_leader,
+    school_leader_tableau_username,
     quarter,
     semester,
     quarter_start_date,
@@ -474,9 +462,10 @@ select
     school_week_start_date_lead,
     week_number_academic_year,
     week_number_quarter,
-    quarter_course_percent_grade_that_matters,
-    quarter_course_grade_points_that_matters,
-    quarter_citizenship,
+    is_current_week,
+    quarter_course_percent_grade,
+    quarter_course_grade_points,
+    quarter_conduct,
     quarter_comment_value,
     section_or_period,
     assignment_category_name,
@@ -492,16 +481,15 @@ select
     null as duedate,
     null as scoretype,
     null as totalpointvalue,
-    null as category_name,
     null as scorepoints,
-    null as actualscoreentered,
-    null as is_late,
+    null as is_expected_late,
     null as is_exempt,
-    null as is_missing,
+    null as is_expected_missing,
+    null as is_expected_zero,
+    null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
-    null as assign_scored,
     null as assign_expected_with_score,
 
     cte_grouping,
@@ -511,6 +499,7 @@ select
     null as n_late,
     null as n_exempt,
     null as n_missing,
+    null as n_academic_dishonesty,
     null as n_null,
     null as n_is_null_missing,
     null as n_is_null_not_missing,
@@ -527,13 +516,6 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between week_start_monday and week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
 
 from student_course_category
 
@@ -591,7 +573,9 @@ select
     teacher_number,
     teacher_name,
     is_ap_course,
-    tableau_username,
+    teacher_tableau_username,
+    school_leader,
+    school_leader_tableau_username,
     quarter,
     semester,
     quarter_start_date,
@@ -605,9 +589,10 @@ select
     school_week_start_date_lead,
     week_number_academic_year,
     week_number_quarter,
-    quarter_course_percent_grade_that_matters,
-    quarter_course_grade_points_that_matters,
-    quarter_citizenship,
+    is_current_week,
+    quarter_course_percent_grade,
+    quarter_course_grade_points,
+    quarter_conduct,
     quarter_comment_value,
     section_or_period,
 
@@ -623,16 +608,15 @@ select
     null as duedate,
     null as scoretype,
     null as totalpointvalue,
-    null as category_name,
     null as scorepoints,
-    null as actualscoreentered,
-    null as is_late,
+    null as is_expected_late,
     null as is_exempt,
-    null as is_missing,
+    null as is_expected_missing,
+    null as is_expected_zero,
+    null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
-    null as assign_scored,
     null as assign_expected_with_score,
 
     cte_grouping,
@@ -642,6 +626,7 @@ select
     null as n_late,
     null as n_exempt,
     null as n_missing,
+    null as n_academic_dishonesty,
     null as n_null,
     null as n_is_null_missing,
     null as n_is_null_not_missing,
@@ -658,13 +643,6 @@ select
     code_type,
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between week_start_monday and week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
 
 from eoq_items
 
@@ -724,7 +702,9 @@ select
     teacher_number,
     teacher_name,
     is_ap_course,
-    tableau_username,
+    teacher_tableau_username,
+    school_leader,
+    school_leader_tableau_username,
     quarter,
     semester,
     quarter_start_date,
@@ -738,9 +718,10 @@ select
     school_week_start_date_lead,
     week_number_academic_year,
     week_number_quarter,
-    quarter_course_percent_grade_that_matters,
-    quarter_course_grade_points_that_matters,
-    quarter_citizenship,
+    is_current_week,
+    quarter_course_percent_grade,
+    quarter_course_grade_points,
+    quarter_conduct,
     quarter_comment_value,
     section_or_period,
 
@@ -756,16 +737,15 @@ select
     null as duedate,
     null as scoretype,
     null as totalpointvalue,
-    null as category_name,
     null as scorepoints,
-    null as actualscoreentered,
-    null as is_late,
+    null as expected_,
     null as is_exempt,
-    null as is_missing,
+    null as is_expected_missing,
+    null as is_expected_zero,
+    null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
-    null as assign_scored,
     null as assign_expected_with_score,
 
     cte_grouping,
@@ -775,6 +755,7 @@ select
     null as n_late,
     null as n_exempt,
     null as n_missing,
+    null as n_academic_dishonesty,
     null as n_null,
     null as n_is_null_missing,
     null as n_is_null_not_missing,
@@ -792,18 +773,11 @@ select
 
     if(audit_flag_value, 1, 0) as audit_flag_value,
 
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between week_start_monday and week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
-
 from eoq_items_conduct_code
 
 union all
--- this captures 'class_category_assignment': f_assign_max_score_not_10,
--- w_assign_max_score_not_10, s_max_score_greater_100
+/* this captures 'class_category_assignment': w_assign_max_score_not_10,
+   f_assign_max_score_not_10, h_assign_max_score_not_10, s_max_score_greater_100 */
 select
     r._dbt_source_relation,
     r.academic_year,
@@ -864,7 +838,9 @@ select
     r.teacher_number,
     r.teacher_name,
     r.is_ap_course,
-    r.tableau_username,
+    r.teacher_tableau_username,
+    r.school_leader,
+    r.school_leader_tableau_username,
     r.quarter,
     r.semester,
     r.quarter_start_date,
@@ -878,10 +854,11 @@ select
     r.school_week_start_date_lead,
     r.week_number_academic_year,
     r.week_number_quarter,
+    r.is_current_week,
 
-    null as quarter_course_percent_grade_that_matters,
-    null as quarter_course_grade_points_that_matters,
-    null as quarter_citizenship,
+    null as quarter_course_percent_grade,
+    null as quarter_course_grade_points,
+    null as quarter_conduct,
     null as quarter_comment_value,
 
     r.section_or_period,
@@ -900,16 +877,15 @@ select
     r.scoretype,
     r.totalpointvalue,
 
-    null as category_name,
     null as scorepoints,
-    null as actualscoreentered,
-    null as is_late,
+    null as is_expected_late,
     null as is_exempt,
-    null as is_missing,
+    null as is_expected_missing,
+    null as is_expected_zero,
+    null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
-    null as assign_scored,
     null as assign_expected_with_score,
 
     r.cte_grouping,
@@ -919,6 +895,7 @@ select
     r.n_late,
     r.n_exempt,
     r.n_missing,
+    r.n_academic_dishonesty,
     r.n_null,
     r.n_is_null_missing,
     r.n_is_null_not_missing,
@@ -929,20 +906,12 @@ select
     null as percent_graded_for_quarter_week_class,
     null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
-    r.avg_expected_scored_percent
-    as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    r.teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     r.audit_category,
     r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between r.week_start_monday and r.week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
 
 from teacher_unpivot_cca as r
 
@@ -1008,7 +977,9 @@ select
     r.teacher_number,
     r.teacher_name,
     r.is_ap_course,
-    r.tableau_username,
+    r.teacher_tableau_username,
+    r.school_leader,
+    r.school_leader_tableau_username,
     r.quarter,
     r.semester,
     r.quarter_start_date,
@@ -1022,10 +993,11 @@ select
     r.school_week_start_date_lead,
     r.week_number_academic_year,
     r.week_number_quarter,
+    r.is_current_week,
 
-    null as quarter_course_percent_grade_that_matters,
-    null as quarter_course_grade_points_that_matters,
-    null as quarter_citizenship,
+    null as quarter_course_percent_grade,
+    null as quarter_course_grade_points,
+    null as quarter_conduct,
     null as quarter_comment_value,
 
     r.section_or_period,
@@ -1042,16 +1014,15 @@ select
     null as duedate,
     null as scoretype,
     null as totalpointvalue,
-    null as category_name,
     null as scorepoints,
-    null as actualscoreentered,
-    null as is_late,
+    null as is_expected_late,
     null as is_exempt,
-    null as is_missing,
+    null as is_expected_missing,
+    null as is_expected_zero,
+    null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
     null as assign_expected_to_be_scored,
-    null as assign_scored,
     null as assign_expected_with_score,
 
     r.cte_grouping,
@@ -1061,6 +1032,7 @@ select
     null as n_late,
     null as n_exempt,
     null as n_missing,
+    null as n_academic_dishonesty,
     null as n_null,
     null as n_is_null_missing,
     null as n_is_null_not_missing,
@@ -1070,22 +1042,12 @@ select
     r.total_expected_section_quarter_week_category,
     r.percent_graded_for_quarter_week_class,
     r.sum_totalpointvalue_section_quarter_category,
-
-    r.running_count_assignments_section_category_term
-    as teacher_running_total_assign_by_cat,
-
+    r.teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     r.audit_category,
     r.code_type,
 
     if(r.audit_flag_value, 1, 0) as audit_flag_value,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between r.week_start_monday and r.week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
 
 from teacher_unpivot_cc as r

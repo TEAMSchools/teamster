@@ -1,10 +1,12 @@
 version: 2
 models:
   - name: stg_fldoe__fast
-    # config:
-    #   pre_hook:
-    #     CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("fldoe",
-    #     "src_fldoe__fast") | replace("`", "") }}')
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("fldoe",
+        "src_fldoe__fast") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: student_id
         data_type: string

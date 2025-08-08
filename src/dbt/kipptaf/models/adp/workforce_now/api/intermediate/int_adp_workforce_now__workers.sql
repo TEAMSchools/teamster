@@ -49,6 +49,8 @@ select
     wa.benefits_eligibility_class__group_code__name,
     wa.worker_time_profile__badge_id,
     wa.worker_time_profile__time_service_supervisor__position_id,
+    wa.worker_time_profile__time_and_attendance_indicator,
+    wa.worker_time_profile__time_zone_code,
 
     com.communication__personal_cell__formatted_number,
     com.communication__personal_email__email_uri,
@@ -64,15 +66,6 @@ select
     cf.received_sign_on_bonus,
     cf.remote_work_status,
     cf.teacher_prep_program,
-    {# TODO: drop WFM cols #}
-    cf.wf_mgr_accrual_profile,
-    cf.wf_mgr_badge_number,
-    cf.wf_mgr_ee_type,
-    cf.wf_mgr_home_hyperfind,
-    cf.wf_mgr_loa_return_date,
-    cf.wf_mgr_loa,
-    cf.wf_mgr_pay_rule,
-    cf.wf_mgr_trigger,
 
     ou.organizational_unit__assigned__business_unit__code_value,
     ou.organizational_unit__assigned__business_unit__name,
@@ -89,26 +82,6 @@ select
     rtw.person__family_name_1
     || ', '
     || rtw.person__given_name as reports_to_formatted_name,
-
-    {# TODO: drop WFM cols #}
-    {{
-        dbt_utils.generate_surrogate_key(
-            field_list=[
-                "wa.assignment_status__status_code__name",
-                "wa.base_remuneration__annual_rate_amount__amount_value",
-                "wa.home_work_location__name_code__name",
-                "wa.job_title",
-                "ou.organizational_unit__assigned__business_unit__name",
-                "ou.organizational_unit__assigned__department__name",
-                "rt.reports_to_worker_id__id_value",
-                "wa.wage_law_coverage__coverage_code__name",
-                "cf.wf_mgr_accrual_profile",
-                "cf.wf_mgr_badge_number",
-                "cf.wf_mgr_ee_type",
-                "cf.wf_mgr_pay_rule",
-            ]
-        )
-    }} as wf_mgr_trigger_new,
 
     lag(wa.assignment_status__status_code__name, 1) over (
         partition by w.associate_oid order by wa.assignment_status__effective_date asc

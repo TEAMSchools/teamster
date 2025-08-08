@@ -6,7 +6,7 @@ authors = [
   { name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com" },
 ]
 license = { text = "GPL-3.0-or-later" }
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.13,<3.14"
 dependencies = [
   "dagster>=1.11,<1.12",
   "dagster-airbyte",
@@ -16,7 +16,7 @@ dependencies = [
   "dagster-gcp",
   "dagster-k8s",
   "dagster-ssh",
-  "dbt-bigquery>=1.9,<1.10",
+  "dbt-bigquery>=1.10,<1.11",
   "dbt-core",
   "beautifulsoup4>=4.12.2",
   "cramjam>=2.7.0",
@@ -31,13 +31,13 @@ dependencies = [
   "pypdf>=5.0.0",
   "python-dateutil>=2.9.0.post0",
   "scikit-learn>=1.4.0",
-  "sqlalchemy==2.0.40",
+  "sqlalchemy>=2.0.42",
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
 ]
 
 [dependency-groups]
-dev = ["dagster-webserver", "faker>=37.3.0", "pytest>=8.3.4"]
+dev = ["dagster-webserver", "pytest>=8.3.4"]
 
 [build-system]
 requires = ["hatchling"]

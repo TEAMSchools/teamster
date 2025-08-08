@@ -40,6 +40,12 @@ models:
         data_type: int64
       - name: week_number_quarter
         data_type: int64
+      - name: hos
+        data_type: string
+      - name: school_leader
+        data_type: string
+      - name: school_leader_tableau_username
+        data_type: string
       - name: region_school_level
         data_type: string
       - name: academic_year_display
@@ -68,13 +74,7 @@ models:
         data_type: string
       - name: teacher_name
         data_type: string
-      - name: tableau_username
-        data_type: string
-      - name: hos
-        data_type: string
-      - name: is_quarter_end_date_range
-        data_type: boolean
-      - name: section_or_period
+      - name: teacher_tableau_username
         data_type: string
       - name: assignment_category_code
         data_type: string
@@ -86,6 +86,14 @@ models:
         data_type: int64
       - name: notes
         data_type: string
+      - name: scaffold_name
+        data_type: string
+      - name: is_quarter_end_date_range
+        data_type: boolean
+      - name: section_or_period
+        data_type: string
+      - name: is_current_week
+        data_type: boolean
       - name: assignmentsectionid
         data_type: int64
       - name: assignmentid
@@ -106,6 +114,8 @@ models:
         data_type: int64
       - name: n_missing
         data_type: int64
+      - name: n_academic_dishonesty
+        data_type: int64
       - name: n_null
         data_type: int64
       - name: n_is_null_missing
@@ -116,15 +126,17 @@ models:
         data_type: int64
       - name: n_expected_scored
         data_type: int64
-      - name: avg_expected_scored_percent
+      - name: teacher_avg_score_for_assign_per_class_section_and_assign_id
         data_type: float64
       - name: w_assign_max_score_not_10
         data_type: boolean
       - name: f_assign_max_score_not_10
         data_type: boolean
+      - name: h_assign_max_score_not_10
+        data_type: boolean
       - name: s_max_score_greater_100
         data_type: boolean
-      - name: running_count_assignments_section_category_term
-        data_type: int64
       - name: sum_totalpointvalue_section_quarter_category
         data_type: float64
+      - name: teacher_running_total_assign_by_cat
+        data_type: int64

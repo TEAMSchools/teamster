@@ -6,6 +6,7 @@ models:
           combination_of_columns:
             - student_number
             - academic_year
+            - entrydate
           config:
             severity: warn
             store_failures: true
