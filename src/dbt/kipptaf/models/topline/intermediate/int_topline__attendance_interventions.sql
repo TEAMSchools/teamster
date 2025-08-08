@@ -74,11 +74,11 @@ with
     )
 
 select
-    ada._dbt_source_relation,
-    ada.days_absent_unexcused,
-    ada.academic_year,
-
+    s._dbt_source_relation,
     s.student_number,
+
+    ada.academic_year,
+    ada.days_absent_unexcused,
 
     sc.commlog_reason,
     sc.absence_threshold,
@@ -109,11 +109,11 @@ select
             and c.commlog_reason is not null
         then 1
     end as intervention_status_required_int,
-from {{ ref("int_powerschool__ada") }} as ada
+from {{ ref("stg_powerschool__students") }} as s
 inner join
-    {{ ref("stg_powerschool__students") }} as s
-    on ada.studentid = s.id
-    and {{ union_dataset_join_clause(left_alias="ada", right_alias="s") }}
+    {{ ref("int_powerschool__ada") }} as ada
+    on s.id = ada.studentid
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="ada") }}
 inner join
     intervention_scaffold as sc
     on {{ union_dataset_join_clause(left_alias="ada", right_alias="sc") }}
@@ -121,6 +121,9 @@ inner join
 left join
     commlog as c
     on s.student_number = c.student_number
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
     and ada.academic_year = c.academic_year
+    and {{ union_dataset_join_clause(left_alias="ada", right_alias="c") }}
     and sc.commlog_reason = c.commlog_reason
+    and {{ union_dataset_join_clause(left_alias="sc", right_alias="c") }}
     and c.rn_commlog_reason = 1
