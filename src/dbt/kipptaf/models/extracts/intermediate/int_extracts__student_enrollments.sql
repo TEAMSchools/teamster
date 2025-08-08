@@ -135,11 +135,15 @@ select
 
     ovg.overgrad_fafsa_opt_out,
 
-    ada.ada_term_q1,
-    ada.ada_semester_s1,
-    ada.ada_year as ada,
+    ada.ada_term_q1 as ada_unweighted_term_q1,
+    ada.ada_semester_s1 as ada_unweighted_semester_s1,
+    ada.ada_year as unweighted_ada,
+    ada.ada_weighted_term_q1,
+    ada.ada_weighted_semester_s1,
+    ada.ada_weighted_year as weighted_ada,
 
-    adapy.ada_year as ada_year_prev,
+    adapy.ada_year as ada_unweighted_year_prev,
+    adapy.ada_weighted_year as ada_weighted_year_prev,
 
     'KTAF' as district,
 
@@ -150,6 +154,13 @@ select
     cast(e.academic_year as string)
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
+
+    -- hardcoded year due to weighted ada starting on SY2025-26 for HS only
+    if(
+        e.school_level = 'HS' and e.academic_year >= 2025,
+        ada.ada_weighted_year,
+        ada.ada_year
+    ) as ada_year,
 
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
