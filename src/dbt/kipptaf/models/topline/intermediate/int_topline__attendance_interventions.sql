@@ -1,10 +1,12 @@
 with
     intervention_scaffold as (
         select
-            'kippmiami' as code_location,
+            'kippmiami' as _dbt_source_project,
+
             commlog_reason,
+
             safe_cast(
-                regexp_extract(commlog_reason, r'(\d+)') as int64
+                regexp_extract(commlog_reason, r'(\d+)') as int
             ) as absence_threshold,
         from
             unnest(
@@ -22,10 +24,11 @@ with
         union all
 
         select
-            code_location,
+            _dbt_source_project,
             commlog_reason,
+
             safe_cast(
-                regexp_extract(commlog_reason, r'(\d+)') as int64
+                regexp_extract(commlog_reason, r'(\d+)') as int
             ) as absence_threshold,
         from
             unnest(
@@ -39,53 +42,32 @@ with
                     'Chronic Absence: 40'
                 ]
             ) as commlog_reason
-        cross join unnest(['kippnewark', 'kippcamden']) as code_location
+        cross join unnest(['kippnewark', 'kippcamden']) as _dbt_source_project
     ),
 
-    ada_calc as (
+    commlog as (
         select
-            _dbt_source_relation,
-            studentid,
-            days_absent_unexcused,
-
-            yearid + 1990 as academic_year,
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
-        from {{ ref("int_powerschool__ada") }}
-    ),
-
-    commlog_raw as (
-        select
+            c._dbt_source_relation,
             c.student_school_id as student_number,
+            c.academic_year,
             c.reason as commlog_reason,
             c.response as commlog_notes,
             c.topic as commlog_topic,
             c.call_status as commlog_status,
             c.call_type as commlog_type,
-            c._dbt_source_relation,
+            c.call_date_time_date,
 
-            {{
-                date_to_fiscal_year(
-                    date_field="c.call_date_time", start_month=7, year_source="start"
-                )
-            }} as academic_year,
-            safe_cast(c.call_date_time as date) as commlog_date,
-            concat(u.first_name, ' ', u.last_name) as commlog_staff_name,
+            u.user_name,
+
+            row_number() over (
+                partition by c.student_school_id, c.reason, c.academic_year
+                order by c.call_date_time_date desc
+            ) as rn_commlog_reason,
         from {{ ref("stg_deanslist__comm_log") }} as c
         inner join
             {{ ref("stg_deanslist__users") }} as u
             on c.user_id = u.dl_user_id
             and {{ union_dataset_join_clause(left_alias="c", right_alias="u") }}
-    ),
-
-    commlog as (
-        select
-            *,
-
-            row_number() over (
-                partition by student_number, commlog_reason, academic_year
-                order by commlog_date desc
-            ) as rn_commlog_reason,
-        from commlog_raw
     )
 
 select
@@ -98,14 +80,13 @@ select
 
     s.student_number,
 
-    c.commlog_staff_name,
+    c.user_name as commlog_staff_name,
     c.commlog_notes,
     c.commlog_topic,
-    c.commlog_date,
+    c.call_date_time_date as commlog_date,
     c.commlog_status,
     c.commlog_type,
 
-    /* CASE statement used here instead of IF in order to maintain NULLs */
     case
         when c.commlog_reason is not null
         then 'Complete'
@@ -114,6 +95,7 @@ select
             and c.commlog_reason is null
         then 'Missing'
     end as intervention_status,
+
     case
         when
             ada.days_absent_unexcused >= sc.absence_threshold
@@ -125,7 +107,9 @@ select
         then 1
     end as intervention_status_required_int,
 from intervention_scaffold as sc
-inner join ada_calc as ada on sc.code_location = ada.code_location
+inner join
+    {{ ref("int_powerschool__ada") }} as ada
+    on sc._dbt_source_project = ada._dbt_source_project
 inner join
     {{ ref("stg_powerschool__students") }} as s
     on ada.studentid = s.id

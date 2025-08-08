@@ -3,9 +3,9 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippnewark_deanslist", model.name),
-                    source("kippcamden_deanslist", model.name),
-                    source("kippmiami_deanslist", model.name),
+                    source("kippnewark_deanslist", "stg_deanslist__behavior"),
+                    source("kippcamden_deanslist", "stg_deanslist__behavior"),
+                    source("kippmiami_deanslist", "stg_deanslist__behavior"),
                 ]
             )
         }}
