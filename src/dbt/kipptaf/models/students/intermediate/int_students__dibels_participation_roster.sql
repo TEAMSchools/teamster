@@ -27,7 +27,6 @@ with
             and rn_year = 1
             and enroll_status != -1
             and grade_level <= 8
-            and rn_year = 1
     ),
 
     expected_tests as (
