@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: int_extracts__student_enrollments_subjects
+  - name: int_extracts__student_enrollments_subjects_weeks
     columns:
       - name: _dbt_source_relation
         data_type: string
