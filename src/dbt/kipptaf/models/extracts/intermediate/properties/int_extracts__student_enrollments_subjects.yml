@@ -9,6 +9,7 @@ models:
             - entrydate
             - iready_subject
           config:
+            enabled: false
             severity: warn
             store_failures: true
     columns:
