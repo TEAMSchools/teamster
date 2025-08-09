@@ -5,7 +5,7 @@ from teamster.core.asset_checks import (
     check_avro_schema_valid,
 )
 from teamster.core.utils.functions import csv_string_to_records
-from teamster.libraries.amplify.mclass.resources import MClassResource
+from teamster.libraries.amplify.mclass.api.resources import MClassResource
 
 
 def build_mclass_asset(asset_key, dyd_payload, partitions_def, schema):
