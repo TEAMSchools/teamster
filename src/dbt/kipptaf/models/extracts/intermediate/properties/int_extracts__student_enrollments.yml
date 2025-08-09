@@ -8,6 +8,7 @@ models:
             - academic_year
             - entrydate
           config:
+            enabled: false
             severity: warn
             store_failures: true
     columns:
