@@ -6,6 +6,7 @@ with
             enr.cc_studentid,
             enr.cc_yearid,
             enr.cc_academic_year,
+            enr.cc_schoolid,
             enr.cc_sectionid,
             enr.cc_course_number,
             enr.cc_dateenrolled,
@@ -56,6 +57,7 @@ with
             enr.cc_studentid,
             enr.cc_yearid,
             enr.cc_academic_year,
+            enr.cc_schoolid,
             enr.cc_course_number,
             enr.cc_sectionid,
             enr.sections_dcid,
@@ -128,6 +130,7 @@ with
 select
     enr.students_student_number as student_number,
     enr.cc_academic_year as academic_year,
+    enr.cc_schoolid as schoolid,
     enr.cc_course_number as course_number,
     enr.cc_sectionid as sectionid,
     enr.sections_dcid,
