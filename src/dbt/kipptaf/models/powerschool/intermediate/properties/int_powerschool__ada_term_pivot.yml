@@ -1,6 +1,15 @@
 version: 2
 models:
   - name: int_powerschool__ada_term_pivot
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - _dbt_source_relation
+            - studentid
+            - academic_year
+          config:
+            severity: warn
+            store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
