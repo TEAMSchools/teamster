@@ -1,7 +1,7 @@
 select
     r.contact_id,
     r.lastfirst as student_name,
-    r.contact_kipp_hs_class as cohort,
+    r.ktc_cohort as cohort,
     r.contact_advising_provider as advising_provider,
     r.contact_owner_name,
     r.contact_current_kipp_student as current_kipp_student,
@@ -54,13 +54,13 @@ select
     case
         when
             e.status in ('Attending', 'Graduated')
-            and r.contact_kipp_hs_class
+            and r.ktc_cohort
             between {{ var("current_academic_year") - 5 }}
             and {{ var("current_academic_year") }}
         then true
         when
             e.status not in ('Attending', 'Graduated')
-            and r.contact_kipp_hs_class
+            and r.ktc_cohort
             between {{ var("current_academic_year") - 5 }}
             and {{ var("current_academic_year") }}
         then false
@@ -69,19 +69,19 @@ select
     case
         when
             e.school = ei.ecc_account_id
-            and r.contact_kipp_hs_class <= {{ var("current_academic_year") - 4 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
             and e.status = 'Graduated'
-            and e.actual_end_date <= date(r.contact_kipp_hs_class + 4, 08, 31)
+            and e.actual_end_date <= date(r.ktc_cohort + 4, 08, 31)
         then 1
         when
             e.school = ei.ecc_account_id
-            and r.contact_kipp_hs_class <= {{ var("current_academic_year") - 4 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
             and e.status = 'Graduated'
-            and e.actual_end_date > date(r.contact_kipp_hs_class + 4, 08, 31)
+            and e.actual_end_date > date(r.ktc_cohort + 4, 08, 31)
         then 0
         when
             e.school = ei.ecc_account_id
-            and r.contact_kipp_hs_class <= {{ var("current_academic_year") - 4 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
             and e.status != 'Graduated'
             and e.actual_end_date is not null
         then 0
@@ -90,19 +90,19 @@ select
     case
         when
             e.school = ei.ecc_account_id
-            and r.contact_kipp_hs_class <= {{ var("current_academic_year") - 6 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 6 }}
             and e.status = 'Graduated'
-            and e.actual_end_date <= date(r.contact_kipp_hs_class + 6, 08, 31)
+            and e.actual_end_date <= date(r.ktc_cohort + 6, 08, 31)
         then 1
         when
             e.school = ei.ecc_account_id
-            and r.contact_kipp_hs_class <= {{ var("current_academic_year") - 6 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 6 }}
             and e.status = 'Graduated'
-            and e.actual_end_date > date(r.contact_kipp_hs_class + 6, 08, 31)
+            and e.actual_end_date > date(r.ktc_cohort + 6, 08, 31)
         then 0
         when
             e.school = ei.ecc_account_id
-            and r.contact_kipp_hs_class <= {{ var("current_academic_year") - 6 }}
+            and r.ktc_cohort <= {{ var("current_academic_year") - 6 }}
             and e.status != 'Graduated'
             and e.actual_end_date is not null
         then 0
@@ -110,11 +110,11 @@ select
 
     case
         when
-            r.contact_kipp_hs_class <= {{ var("current_academic_year") - 4 }}
+            r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
             and e.status = 'Graduated'
         then 1
         when
-            r.contact_kipp_hs_class <= {{ var("current_academic_year") - 4 }}
+            r.ktc_cohort <= {{ var("current_academic_year") - 4 }}
             and e.status != 'Graduated'
         then 0
     end as is_grad_ever_any,
@@ -131,7 +131,7 @@ select
         when r.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
-from {{ ref("base_kippadb__contact") }} as r
+from {{ ref("int_kippadb__roster") }} as r
 inner join
     {{ ref("stg_kippadb__enrollment") }} as e
     on r.contact_id = e.student
@@ -144,7 +144,7 @@ union all
 select
     r.contact_id,
     r.lastfirst as student_name,
-    r.contact_kipp_hs_class as cohort,
+    r.ktc_cohort as cohort,
     r.contact_advising_provider as advising_provider,
     r.contact_owner_name,
     r.contact_current_kipp_student as current_kipp_student,

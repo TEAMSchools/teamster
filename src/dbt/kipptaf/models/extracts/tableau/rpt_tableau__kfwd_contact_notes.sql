@@ -40,7 +40,7 @@ select
     sw.date as referral_date,
 
     if(cn.status = 'Successful' and cn.type = 'School Visit', 1, 0) as school_visit,
-from {{ ref("base_kippadb__contact") }} as ktc
+from {{ ref("int_kippadb__roster") }} as ktc
 inner join {{ ref("stg_kippadb__contact_note") }} as cn on ktc.contact_id = cn.contact
 left join
     sw_referral as sw
