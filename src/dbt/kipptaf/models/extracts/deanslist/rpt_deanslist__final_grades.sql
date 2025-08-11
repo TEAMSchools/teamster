@@ -244,6 +244,7 @@ left join
     {{ ref("int_powerschool__category_grades_pivot") }} as cat
     on enr.cc_studentid = cat.studentid
     and enr.cc_yearid = cat.yearid
+    and enr.schoolid = cat.schoolid
     and enr.term_code = cat.reporting_term
     and enr.cc_course_number = cat.course_number
     and {{ union_dataset_join_clause(left_alias="enr", right_alias="cat") }}
@@ -251,6 +252,7 @@ left join
     {{ ref("int_powerschool__category_grades_pivot") }} as kctz
     on enr.cc_studentid = kctz.studentid
     and enr.cc_yearid = kctz.yearid
+    and enr.schoolid = cat.schoolid
     and enr.term_name = kctz.reporting_term
     and {{ union_dataset_join_clause(left_alias="enr", right_alias="kctz") }}
     and kctz.course_number = 'HR'
