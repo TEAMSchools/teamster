@@ -101,8 +101,9 @@ with
             on s.academic_year = e.academic_year
             and s.region = e.region
             and s.grade_level = e.grade
+            and s.entrydate >= e.start_date
+            and s.exitdate >= e.end_date
             and e.assessment_type = 'Benchmark'
-            and e.start_date between s.entrydate and s.exitdate
         left join
             {{ ref("int_amplify__all_assessments") }} as a
             on s.academic_year = a.academic_year
@@ -159,7 +160,8 @@ with
             and s.grade_level = e.grade
             and s.boy_probe_eligible = 'Yes'
             and e.admin_season = 'BOY->MOY'
-            and e.start_date between s.entrydate and s.exitdate
+            and s.entrydate >= e.start_date
+            and s.exitdate >= e.end_date
         left join
             {{ ref("int_amplify__all_assessments") }} as a
             on s.academic_year = a.academic_year
@@ -217,7 +219,8 @@ with
             and s.grade_level = e.grade
             and s.moy_probe_eligible = 'Yes'
             and e.admin_season = 'MOY->EOY'
-            and e.start_date between s.entrydate and s.exitdate
+            and s.entrydate >= e.start_date
+            and s.exitdate >= e.end_date
         left join
             {{ ref("int_amplify__all_assessments") }} as a
             on s.academic_year = a.academic_year
