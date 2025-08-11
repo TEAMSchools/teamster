@@ -1,0 +1,63 @@
+version: 2
+models:
+  - name: int_powerschool__ada_term_pivot
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - _dbt_source_relation
+            - studentid
+            - academic_year
+          config:
+            severity: warn
+            store_failures: true
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: studentid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: ada_term_q1
+        data_type: float64
+      - name: ada_term_q2
+        data_type: float64
+      - name: ada_term_q3
+        data_type: float64
+      - name: ada_term_q4
+        data_type: float64
+      - name: ada_weighted_term_q1
+        data_type: float64
+      - name: ada_weighted_term_q2
+        data_type: float64
+      - name: ada_weighted_term_q3
+        data_type: float64
+      - name: ada_weighted_term_q4
+        data_type: float64
+      - name: ada_year_running_q1
+        data_type: float64
+      - name: ada_year_running_q2
+        data_type: float64
+      - name: ada_year_running_q3
+        data_type: float64
+      - name: ada_year_running_q4
+        data_type: float64
+      - name: ada_weighted_year_running_q1
+        data_type: float64
+      - name: ada_weighted_year_running_q2
+        data_type: float64
+      - name: ada_weighted_year_running_q3
+        data_type: float64
+      - name: ada_weighted_year_running_q4
+        data_type: float64
+      - name: ada_semester_s1
+        data_type: float64
+      - name: ada_semester_s2
+        data_type: float64
+      - name: ada_year
+        data_type: float64
+      - name: ada_weighted_semester_s1
+        data_type: float64
+      - name: ada_weighted_semester_s2
+        data_type: float64
+      - name: ada_weighted_year
+        data_type: float64
