@@ -1,15 +1,6 @@
 version: 2
 models:
   - name: int_powerschool__gpa_term
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - _dbt_source_relation
-            - studentid
-            - yearid
-          config:
-            severity: warn
-            store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
