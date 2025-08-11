@@ -1,14 +1,24 @@
 with
     assignment_score_rollup as (
         select
-            _dbt_source_relation,
-            assignmentsectionid,
+            s._dbt_source_relation,
+            s.assignmentsectionid,
 
-            countif(is_expected) as n_expected,
-            countif(is_expected_scored) as n_expected_scored,
+            countif(s.is_expected) as n_expected,
+            countif(s.is_expected_scored) as n_expected_scored,
 
-        from {{ ref("int_powerschool__gradebook_assignments_scores") }}
-        group by _dbt_source_relation, assignmentsectionid
+        from {{ ref("int_powerschool__gradebook_assignments_scores") }} as s
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            on s.academic_year = e1.academic_year
+            and s.region = e1.region
+            and s.school_level = e1.school_level
+            and s.credit_type = e1.credit_type
+            and e1.view_name = 'categories_teacher'
+            and e1.cte = 'assignment_score_rollup'
+            and e1.credit_type is not null
+        where e1.include_row is null
+        group by s._dbt_source_relation, s.assignmentsectionid
     ),
 
     assignments as (
@@ -60,16 +70,7 @@ with
             assignment_score_rollup as asg
             on a.assignmentsectionid = asg.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-            on sec.academic_year = e1.academic_year
-            and sec.region = e1.region
-            and sec.school_level = e1.school_level
-            and sec.credit_type = e1.credit_type
-            and e1.view_name = 'categories_teacher'
-            and e1.cte = 'assignments'
-            and e1.credit_type is not null
-        where sec.scaffold_name = 'teacher_category_scaffold' and e1.include_row is null
+        where sec.scaffold_name = 'teacher_category_scaffold'
     ),
 
     percent_graded as (
