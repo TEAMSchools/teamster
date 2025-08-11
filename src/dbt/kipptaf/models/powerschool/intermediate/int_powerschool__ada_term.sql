@@ -67,6 +67,32 @@ select
         3
     ) as ada_year_running,
 
+    round(sum_attendance_value_weighted_term, 3) as ada_weighted_term,
+
+    round(
+        safe_divide(
+            sum(sum_attendance_value_weighted_term) over (
+                partition by _dbt_source_relation, studentid, academic_year, semester
+            ),
+            sum(count_attendance_value_term) over (
+                partition by _dbt_source_relation, studentid, academic_year, semester
+            )
+        ),
+        3
+    ) as ada_weighted_semester,
+
+    round(
+        safe_divide(
+            sum(sum_attendance_value_weighted_term) over (
+                partition by _dbt_source_relation, studentid, academic_year
+            ),
+            sum(count_attendance_value_term) over (
+                partition by _dbt_source_relation, studentid, academic_year
+            )
+        ),
+        3
+    ) as ada_weighted_year,
+
     round(
         safe_divide(
             sum(sum_attendance_value_weighted_term) over (
@@ -80,4 +106,5 @@ select
         ),
         3
     ) as ada_weighted_year_running,
+
 from ada_by_term
