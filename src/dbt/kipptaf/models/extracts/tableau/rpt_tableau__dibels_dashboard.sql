@@ -35,22 +35,23 @@ select
     a.expected_measure_standard,
 
     -- foundation benchmark tests goals
-    g.benchmark_goal_season as admin_goal_season,
-    g.grade_goal as admin_goal,
-    g.grade_range_goal as admin_goal_grade_range,
-    g.n_admin_season_school_gl_all,
-    g.n_admin_season_school_gl_at_above,
-    g.n_admin_season_school_gl_bl_wb,
-    g.n_admin_season_school_gl_at_above_expected,
-    g.n_admin_season_school_gl_at_above_gap,
-    g.n_admin_season_region_gl_all,
-    g.n_admin_season_region_gl_at_above,
-    g.n_admin_season_region_gl_bl_wb,
-    g.n_admin_season_region_gl_at_above_expected,
-    g.n_admin_season_region_gl_at_above_gap,
+    a.benchmark_goal_season as admin_goal_season,
+    a.grade_goal as admin_goal,
+    a.grade_range_goal as admin_goal_grade_range,
+    a.n_admin_season_school_gl_all,
+    a.n_admin_season_school_gl_at_above,
+    a.n_admin_season_school_gl_bl_wb,
+    a.n_admin_season_school_gl_at_above_expected,
+    a.n_admin_season_school_gl_at_above_gap,
+    a.n_admin_season_region_gl_all,
+    a.n_admin_season_region_gl_at_above,
+    a.n_admin_season_region_gl_bl_wb,
+    a.n_admin_season_region_gl_at_above_expected,
+    a.n_admin_season_region_gl_at_above_gap,
 
     a.grade as grade_level,
     a.grade_level_text as expected_grade_level,
+
     null as average_starting_words,
     null as pm_round_days,
     null as pm_days,
@@ -119,13 +120,6 @@ inner join
     and s.grade_level = a.grade
     and a.assessment_type = 'Benchmark'
     and a.assessment_include is null
-left join
-    {{ ref("rpt_gsheets__dibels_bm_goals_calculations") }} as g
-    on a.academic_year = g.academic_year
-    and a.region = g.region
-    and a.grade = g.assessment_grade_int
-    and a.admin_season = g.period
-    and s.school = g.school
 left join
     {{ ref("base_powerschool__course_enrollments") }} as c
     on s.academic_year = c.cc_academic_year
