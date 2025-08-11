@@ -35,7 +35,7 @@ select
     kipp_ms_graduate__c as kipp_ms_graduate,
     kipp_region_name__c as kipp_region_name,
     last_outreach__c as last_outreach_date,
-    last_successful_advisor_contact__c as successful_advisor_contact_date,
+    last_successful_advisor_contact__c as last_successful_advisor_contact_date,
     last_successful_contact__c as last_successful_contact_date,
     latest_fafsa_date__c as latest_fafsa_date,
     latest_resume__c as latest_resume_date,
