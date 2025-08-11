@@ -155,29 +155,16 @@ select
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
-    -- hardcoding because ada calcs changed on sy25-26 for hs only
-    case
-        when
-            e.school_level = 'HS'
-            and e.academic_year >= 2025
-            and ada.ada_weighted_year >= 0.80
-        then true
-        when e.school_level = 'HS' and e.academic_year <= 2024 and ada.ada_year >= 0.80
-        then true
-        when ada.ada_year >= 0.80
-        then true
-    end as ada_above_or_at_80,
+    if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
-    -- hardcoded year due to weighted ada starting on SY2025-26 for HS only
+    if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
+
+    /* starting SY26, HS uses weighted ADA */
     if(
         e.school_level = 'HS' and e.academic_year >= 2025,
         ada.ada_weighted_year,
         ada.ada_year
     ) as `ada`,
-
-    if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
-
-    if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
 
     if(
         e.salesforce_contact_df_has_fafsa = 'Yes' or ovg.overgrad_fafsa_opt_out = 'Yes',
@@ -223,6 +210,19 @@ select
         when e.region = 'Miami'
         then 'FL'
     end as `state`,
+
+    case
+        /* starting SY26, HS uses weighted ADA */
+        when
+            e.school_level = 'HS'
+            and e.academic_year >= 2025
+            and ada.ada_weighted_year >= 0.80
+        then true
+        when e.school_level = 'HS' and e.academic_year <= 2024 and ada.ada_year >= 0.80
+        then true
+        when ada.ada_year >= 0.80
+        then true
+    end as ada_above_or_at_80,
 
     case
         when
