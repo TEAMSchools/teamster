@@ -19,7 +19,7 @@ select
     e2.date_last_verified as enrollment_2_date_last_verified,
     e2.nsc_verified as enrollment_2_nsc_verified,
 
-    r.ktc_cohort as cohort,
+    r.contact_kipp_hs_class as cohort,
     r.contact_owner_name,
     r.contact_advising_provider,
 from {{ ref("stg_kippadb__enrollment") }} as e1
@@ -36,5 +36,5 @@ inner join
         between e1.start_date and coalesce(e1.actual_end_date, date('9999-12-31'))
     )
     and e2.status != 'Did Not Enroll'
-inner join {{ ref("int_kippadb__roster") }} as r on e1.student = r.contact_id
+inner join {{ ref("base_kippadb__contact") }} as r on e1.student = r.contact_id
 where e1.status != 'Did Not Enroll'
