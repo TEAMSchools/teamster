@@ -168,7 +168,7 @@ from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
 left join {{ ref("stg_kippadb__enrollment") }} as e on ei.cur_enrollment_id = e.id
-left join rem_subject as rs on rs.contact = r.contact_id and rs.rn_note = 1
-left join rem_handoff as rh on rh.contact = r.contact_id and rh.rn_note = 1
-left join transcript_data as gpa on gpa.student = r.contact_id and gpa.rn_transcript = 1
+left join rem_subject as rs on r.contact_id = rs.contact and rs.rn_note = 1
+left join rem_handoff as rh on r.contact_id = rh.contact and rh.rn_note = 1
+left join transcript_data as gpa on r.contact_id = gpa.student and gpa.rn_transcript = 1
 where r.contact_has_hs_graduated_enrollment = 'HS Graduate'

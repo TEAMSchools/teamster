@@ -24,7 +24,6 @@ select
 
     ktc.id as salesforce_id,
 
-    null as reporting_term,
     gt.term_name,
     gt.semester,
     gt.is_current as is_curterm,
@@ -55,6 +54,8 @@ select
     gc.potential_credits_cum,
     gc.core_cumulative_y1_gpa,
     gc.cumulative_y1_gpa_projected_s1_unweighted,
+
+    null as reporting_term,
 from {{ ref("base_powerschool__student_enrollments") }} as sr
 left join
     {{ ref("stg_kippadb__contact") }} as ktc

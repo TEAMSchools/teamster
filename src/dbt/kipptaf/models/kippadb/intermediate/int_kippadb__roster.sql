@@ -20,9 +20,8 @@ with
             {{ ref("stg_powerschool__schools") }} as s
             on co.entry_schoolid = s.school_number
             and {{ union_dataset_join_clause(left_alias="co", right_alias="s") }}
-
         where co.rn_year = 1
-        group by all
+        group by co.student_number, s.abbreviation
     ),
 
     dlm as (
@@ -153,7 +152,7 @@ with
             {{ ref("int_overgrad__custom_fields_pivot") }} as cf
             on os.id = cf.id
             and cf._dbt_source_model = 'stg_overgrad__students'
-        left join es_grad as e on e.student_number = se.student_number
+        left join es_grad as e on se.student_number = e.student_number
         left join dlm as d on e.student_number = d.student_number
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
