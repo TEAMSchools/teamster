@@ -1,4 +1,4 @@
-{% set categories = ["f", "s", "w", "e"] %}
+{% set categories = ["f", "s", "w", "e", "h"] %}
 {% set terms = ["cur", "rt1", "rt2", "rt3", "rt4"] %}
 
 with
