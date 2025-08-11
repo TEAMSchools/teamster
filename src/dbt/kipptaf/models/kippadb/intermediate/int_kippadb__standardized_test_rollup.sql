@@ -4,7 +4,14 @@ with
     tests as (
         select school_specific_id, test_type, test_subject, score,
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
-        where test_type in ('SAT', 'ACT') and rn_highest = 1
+        where
+            rn_highest = 1
+            and test_type in ('SAT', 'ACT')
+            and score_type not in (
+                'sat_critical_reading_pre_2016',
+                'sat_math_pre_2016',
+                'sat_writing_pre_2016'
+            )
     )
 
 select school_specific_id, test_type, test_subject, score,
