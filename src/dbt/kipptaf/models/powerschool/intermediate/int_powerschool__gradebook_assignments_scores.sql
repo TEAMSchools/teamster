@@ -16,13 +16,17 @@ with
             s.scorepoints,
             s.actualscoreentered,
 
+            e.cc_academic_year as academic_year,
             e.students_dcid,
+            e.courses_credittype as credit_type,
 
             d.school_level,
 
             coalesce(s.islate, 0) as is_late,
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
+
+            initcap(regexp_extract(a._dbt_source_relation, r'kipp(\w+)')) as region,
 
             case
                 when coalesce(s.isexempt, 0) = 1
