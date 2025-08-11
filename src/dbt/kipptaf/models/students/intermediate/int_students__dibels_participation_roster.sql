@@ -102,7 +102,10 @@ with
             and s.region = e.region
             and s.grade_level = e.grade
             and e.assessment_type = 'Benchmark'
-            and e.start_date between s.entrydate and s.exitdate
+            and (
+                e.start_date between s.entrydate and s.exitdate
+                or e.end_date between s.entrydate and s.exitdate
+            )
         left join
             {{ ref("int_amplify__all_assessments") }} as a
             on s.academic_year = a.academic_year
@@ -157,9 +160,11 @@ with
             on s.academic_year = e.academic_year
             and s.region = e.region
             and s.grade_level = e.grade
-            and s.boy_probe_eligible = 'Yes'
+            and (
+                e.start_date between s.entrydate and s.exitdate
+                or e.end_date between s.entrydate and s.exitdate
+            )
             and e.admin_season = 'BOY->MOY'
-            and e.start_date between s.entrydate and s.exitdate
         left join
             {{ ref("int_amplify__all_assessments") }} as a
             on s.academic_year = a.academic_year
@@ -169,6 +174,7 @@ with
             and s.boy_probe_eligible = a.boy_probe_eligible
             and e.admin_season = a.period
             and e.round_number = a.round_number
+        where s.boy_probe_eligible = 'Yes'
 
         union all
 
@@ -215,9 +221,11 @@ with
             on s.academic_year = e.academic_year
             and s.region = e.region
             and s.grade_level = e.grade
-            and s.moy_probe_eligible = 'Yes'
+            and (
+                e.start_date between s.entrydate and s.exitdate
+                or e.end_date between s.entrydate and s.exitdate
+            )
             and e.admin_season = 'MOY->EOY'
-            and s.entrydate between e.start_date and e.end_date
         left join
             {{ ref("int_amplify__all_assessments") }} as a
             on s.academic_year = a.academic_year
@@ -227,6 +235,7 @@ with
             and s.moy_probe_eligible = a.moy_probe_eligible
             and e.admin_season = a.period
             and e.round_number = a.round_number
+        where s.moy_probe_eligible = 'Yes'
     ),
 
     roster_no_enrollment_dates as (
