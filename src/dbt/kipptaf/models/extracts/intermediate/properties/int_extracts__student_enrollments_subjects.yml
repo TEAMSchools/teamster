@@ -15,26 +15,6 @@ models:
     columns:
       - name: _dbt_source_relation
         data_type: string
-      - name: academic_year
-        data_type: int64
-      - name: yearid
-        data_type: int64
-      - name: entrydate
-        data_type: date
-      - name: exitdate
-        data_type: date
-      - name: region
-        data_type: string
-      - name: school_level
-        data_type: string
-      - name: schoolid
-        data_type: int64
-      - name: school_name
-        data_type: string
-      - name: school
-        data_type: string
-      - name: grade_level
-        data_type: int64
       - name: studentid
         data_type: int64
       - name: students_dcid
@@ -47,12 +27,48 @@ models:
         data_type: string
       - name: student_first_name
         data_type: string
-      - name: student_email
+      - name: student_middle_name
         data_type: string
       - name: enroll_status
         data_type: int64
       - name: cohort
         data_type: int64
+      - name: yearid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: entrydate
+        data_type: date
+      - name: exitdate
+        data_type: date
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: reporting_schoolid
+        data_type: int64
+      - name: school_name
+        data_type: string
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: grade_level_prev
+        data_type: int64
+      - name: advisory_name
+        data_type: string
+      - name: team
+        data_type: string
+      - name: advisor_lastfirst
+        data_type: string
+      - name: student_email
+        data_type: string
+      - name: student_web_id
+        data_type: string
+      - name: student_web_password
+        data_type: string
       - name: gender
         data_type: string
       - name: ethnicity
@@ -60,6 +76,8 @@ models:
       - name: dob
         data_type: date
       - name: lunch_status
+        data_type: string
+      - name: spedlep
         data_type: string
       - name: special_education_code
         data_type: string
@@ -85,34 +103,62 @@ models:
         data_type: boolean
       - name: is_retained_ever
         data_type: boolean
+      - name: is_fldoe_fte_all
+        data_type: boolean
       - name: year_in_school
         data_type: int64
       - name: year_in_network
         data_type: int64
       - name: boy_status
         data_type: string
+      - name: rn_year
+        data_type: int64
       - name: rn_undergrad
+        data_type: int64
+      - name: rn_all
         data_type: int64
       - name: code_location
         data_type: string
-      - name: ms_attended
-        data_type: string
-      - name: territory
-        data_type: string
       - name: salesforce_id
-        data_type: string
-      - name: ktc_cohort
-        data_type: int64
-      - name: contact_owner_name
         data_type: string
       - name: has_fafsa
         data_type: string
       - name: college_match_gpa
         data_type: numeric
-      - name: team
+      - name: college_match_gpa_bands
+        data_type: string
+      - name: contact_owner_name
+        data_type: string
+      - name: ktc_cohort
+        data_type: int64
+      - name: illuminate_student_id
+        data_type: int64
+      - name: ms_attended
+        data_type: string
+      - name: es_attended
+        data_type: string
+      - name: territory
         data_type: string
       - name: hos
         data_type: string
+      - name: overgrad_fafsa_opt_out
+        data_type: string
+      - name: ada_unweighted_term_q1
+        data_type: float64
+      - name: ada_unweighted_semester_s1
+        data_type: float64
+      - name: unweighted_ada
+        data_type: float64
+      - name: ada_weighted_term_q1
+        data_type: float64
+      - name: ada_weighted_semester_s1
+        data_type: float64
+      - name: weighted_ada
+        data_type: float64
+      - name: ada_unweighted_year_prev
+        data_type: float64
+      - name: ada_weighted_year_prev
+        data_type: float64
       - name: district
         data_type: string
       - name: region_school_level
@@ -121,19 +167,21 @@ models:
         data_type: string
       - name: academic_year_display
         data_type: string
+      - name: ada_above_or_at_80
+        data_type: boolean
       - name: ada
         data_type: float64
-      - name: state_studentnumber
-        data_type: string
       - name: iep_status
         data_type: string
+      - name: state_studentnumber
+        data_type: string
+      - name: met_fafsa_requirement
+        data_type: boolean
       - name: is_counseling_services
         data_type: int64
       - name: is_student_athlete
         data_type: int64
       - name: is_tutoring
-        data_type: boolean
-      - name: ada_above_or_at_80
         data_type: boolean
       - name: race_ethnicity
         data_type: string
@@ -141,7 +189,7 @@ models:
         data_type: string
       - name: state
         data_type: string
-      - name: college_match_gpa_bands
+      - name: fafsa_status_mismatch_category
         data_type: string
       - name: iready_subject
         data_type: string
@@ -155,6 +203,8 @@ models:
         data_type: string
       - name: is_grad_iep_exempt
         data_type: boolean
+      - name: dibels_most_recent_composite_int
+        data_type: int64
       - name: state_test_proficiency
         data_type: string
       - name: iready_proficiency_eoy
