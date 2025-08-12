@@ -35,6 +35,7 @@ with
 
 select
     sr.id as studentid,
+    sr.student_number,
     sr.schoolid,
     sr.entrydate,
     sr.entrycode,
