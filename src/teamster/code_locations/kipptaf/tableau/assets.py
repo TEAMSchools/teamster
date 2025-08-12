@@ -11,6 +11,7 @@ from dagster import (
     config_from_files,
 )
 from dagster_gcp import BigQueryResource
+from tableauserverclient import Filter, RequestOptions
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.tableau.schema import VIEW_COUNT_PER_VIEW_SCHEMA
@@ -75,8 +76,10 @@ def teacher_gradebook_email_group_update(
     """
     get matching Tableau users
     """
+    context.log.debug("Getting all Tableau users...")
     tableau_users = tableau.get_all(endpoint=tableau._server.users, pagesize=1000)
 
+    context.log.debug("Matching Tableau users to queried users...")
     for qu in query_users:
         tableau_user_match = [
             tu.id
@@ -97,6 +100,34 @@ def teacher_gradebook_email_group_update(
     """
     sync group membership
     """
+    for region in ["Camden", "Miami", "Newark"]:
+        req_options = RequestOptions()
+
+        req_options.filter.add(
+            Filter(
+                field=RequestOptions.Field.Name,
+                operator=RequestOptions.Operator.Equals,
+                value=f"Teacher Gradebook Email - {region}",
+            )
+        )
+        groups, _ = tableau._server.groups.get(req_options=req_options)
+
+        group_item = groups[0]
+        context.log.debug(f"Syncing {group_item.name}")
+
+        tableau._server.groups.populate_users(group_item=group_item)
+
+        context.log.debug(f"Removing all users from {group_item.name}...")
+        tableau._server.groups.remove_users(
+            group_item=group_item, users=[u.id for u in group_item.users]
+        )
+
+        context.log.debug(f"Adding users to {group_item.name}...")
+        tableau._server.groups.add_users(
+            group_item=group_item, users=[qu["id"] for qu in query_users]
+        )
+
+        print()
 
     yield Output(value=None)
     yield AssetCheckResult(
