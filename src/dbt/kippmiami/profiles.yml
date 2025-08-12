@@ -3,6 +3,7 @@ kippmiami:
   outputs:
     kippmiami:
       type: bigquery
+      schema: kippmiami
+      threads: 40
       method: oauth
       project: teamster-332318
-      schema: kippmiami

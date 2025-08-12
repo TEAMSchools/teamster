@@ -1,6 +1,14 @@
 version: 2
 models:
   - name: int_fldoe__fte_pivot
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - student_id
+            - academic_year
+          config:
+            severity: warn
+            store_failures: true
     columns:
       - name: student_id
         data_type: string
