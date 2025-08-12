@@ -133,6 +133,7 @@ select
 
     lc.region,
     lc.abbreviation as school_abbreviation,
+    lc.powerschool_school_id as schoolid,
 
     cwo.sublevel_name as projected_sublevel,
     cwo.sublevel_number as projected_sublevel_number,
