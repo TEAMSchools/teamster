@@ -1,6 +1,15 @@
 version: 2
 models:
   - name: int_edplan__njsmart_powerschool_union
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - student_number
+            - academic_year
+            - rn_student_year_desc
+          config:
+            severity: warn
+            store_failures: true
     columns:
       - name: row_hash
         data_type: string
