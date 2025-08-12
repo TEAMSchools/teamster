@@ -1,5 +1,6 @@
 select
     ev.studentid,
+    ev.student_number,
     ev.schoolid,
     ev.track as student_track,
     ev.fteid,
