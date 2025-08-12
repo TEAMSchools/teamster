@@ -16,5 +16,18 @@ with
     )
 
 -- trunk-ignore(sqlfluff/AM04)
-select *, initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+select
+    *,
+
+    initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+    case
+        when regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippcamden'
+        then 'KIPP Cooper Norcross Academy'
+        when regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami'
+        then 'KIPP Miami'
+        when regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippnewark'
+        then 'TEAM Academy Charter School'
+        when regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kipppaterson'
+        then 'KIPP Paterson'
+    end as region_expanded,
 from union_relations
