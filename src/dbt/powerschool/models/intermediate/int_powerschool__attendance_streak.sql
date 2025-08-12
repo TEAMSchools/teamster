@@ -2,9 +2,12 @@ with
     att_mem as (
         select
             studentid,
+            student_number,
             yearid,
             calendardate,
             attendancevalue,
+
+            '{{ project_name }}' as project_name,
 
             coalesce(att_code, 'P') as att_code,
 
@@ -27,6 +30,7 @@ with
     streaks_long as (
         select
             studentid,
+            student_number,
             yearid,
             calendardate,
             att_code,
@@ -34,31 +38,36 @@ with
             membership_day_number,
             rn_student_year_code,
 
-            concat(
-                studentid,
-                '_',
-                yearid,
-                '_',
-                att_code,
-                '_',
-                (membership_day_number - rn_student_year_code)
-            ) as code_streak_id,
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "project_name",
+                        "studentid",
+                        "yearid",
+                        "att_code",
+                        "(membership_day_number - rn_student_year_code)",
+                    ]
+                )
+            }} as code_streak_id,
 
-            concat(
-                studentid,
-                '_',
-                yearid,
-                '_',
-                attendancevalue,
-                '_',
-                (membership_day_number - rn_student_year_attendancevalue)
-            ) as att_streak_id,
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "project_name",
+                        "studentid",
+                        "yearid",
+                        "attendancevalue",
+                        "(membership_day_number - rn_student_year_attendancevalue)",
+                    ]
+                )
+            }} as att_streak_id,
         from att_mem
     ),
 
     streaks_agg as (
         select
             studentid,
+            student_number,
             yearid,
             att_code,
             code_streak_id as streak_id,
@@ -67,25 +76,24 @@ with
             max(calendardate) as streak_end_date,
             count(calendardate) as streak_length_membership,
         from streaks_long
-        group by studentid, yearid, att_code, code_streak_id
+        group by studentid, student_number, yearid, att_code, code_streak_id
 
         union all
 
         select
             studentid,
+            student_number,
             yearid,
 
-            safe_cast(attendancevalue as string) as att_code,
+            cast(attendancevalue as string) as att_code,
 
             att_streak_id as streak_id,
 
             min(calendardate) as streak_start_date,
-
             max(calendardate) as streak_end_date,
-
             count(calendardate) as streak_length_membership,
         from streaks_long
-        group by studentid, yearid, attendancevalue, att_streak_id
+        group by studentid, student_number, yearid, attendancevalue, att_streak_id
     )
 
 select
