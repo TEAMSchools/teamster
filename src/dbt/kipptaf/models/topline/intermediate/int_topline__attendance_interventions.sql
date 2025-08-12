@@ -89,25 +89,8 @@ select
     c.commlog_status,
     c.commlog_type,
 
-    case
-        when c.commlog_reason is not null
-        then 'Complete'
-        when
-            ada.days_absent_unexcused >= sc.absence_threshold
-            and c.commlog_reason is null
-        then 'Missing'
-    end as intervention_status,
-
-    case
-        when
-            ada.days_absent_unexcused >= sc.absence_threshold
-            and c.commlog_reason is null
-        then 0
-        when
-            ada.days_absent_unexcused >= sc.absence_threshold
-            and c.commlog_reason is not null
-        then 1
-    end as intervention_status_required_int,
+    if(c.commlog_reason is not null, 'Complete', 'Missing') as intervention_status,
+    if(c.commlog_reason is not null, 1, 0) as intervention_status_required_int,
 from {{ ref("int_powerschool__ada") }} as ada
 inner join
     intervention_scaffold as sc
