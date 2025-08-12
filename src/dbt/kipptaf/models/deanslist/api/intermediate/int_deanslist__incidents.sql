@@ -9,38 +9,32 @@ with
                 ]
             )
         }}
-    ),
-
-    transformations as (
-        -- trunk-ignore(sqlfluff/AM04)
-        select *, regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as source_project,
-        from union_relations
     )
 
+-- trunk-ignore(sqlfluff/AM04)
 select
     *,
 
     case
         when category_tier in ('SW', 'SS', 'SSC')
         then 'Social Work'
-        when
-            (
-                category_tier = 'TX'
-                or category in ('School Clinic', 'Incident Report/Accident Report')
-            )
+        when category_tier = 'TX'
         then 'Non-Behavioral'
-        when
-            (category_tier in ('T1', 'Tier 1') and source_project != 'kippmiami')
-            or (category_tier in ('T4', 'T3') and source_project = 'kippmiami')
+        when category in ('School Clinic', 'Incident Report/Accident Report')
+        then 'Non-Behavioral'
+        /* Miami-only */
+        when category_tier in ('T4', 'T3') and _dbt_source_relation like '%kippmiami%'
+        then 'Low'
+        when category_tier = 'T1' and _dbt_source_relation like '%kippmiami%'
+        then 'High'
+        /* all other regions */
+        when category_tier in ('T1', 'Tier 1')
         then 'Low'
         when category_tier in ('T2', 'Tier 2')
         then 'Middle'
-        when
-            (category_tier in ('T3', 'Tier 3') and source_project != 'kippmiami')
-            or (category_tier = 'T1' and source_project = 'kippmiami')
+        when category_tier in ('T3', 'Tier 3')
         then 'High'
-        when category is null
-        then null
-        else 'Other'
+        when category is not null
+        then 'Other'
     end as referral_tier,
-from transformations
+from union_relations

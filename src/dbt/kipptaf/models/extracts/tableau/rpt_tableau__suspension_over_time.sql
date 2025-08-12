@@ -29,21 +29,18 @@ with
             i.student_school_id as student_number,
             i.create_ts_academic_year as academic_year,
 
-            min(p.start_date) as first_suspension_date,
+            min(i.start_date) as first_suspension_date,
 
             min(
-                if(s.suspension_type = 'ISS', p.start_date, null)
+                if(s.suspension_type = 'ISS', i.start_date, null)
             ) as first_suspension_date_iss,
+
             min(
-                if(s.suspension_type = 'OSS', p.start_date, null)
+                if(s.suspension_type = 'OSS', i.start_date, null)
             ) as first_suspension_date_oss,
-        from {{ ref("stg_deanslist__incidents") }} as i
-        inner join
-            {{ ref("int_deanslist__incidents__penalties") }} as p
-            on i.incident_id = p.incident_id
-            and {{ union_dataset_join_clause(left_alias="i", right_alias="p") }}
-            and p.is_suspension
-        inner join suspension_type as s on p.penalty_name = s.penalty_name
+        from {{ ref("int_deanslist__incidents__penalties") }} as i
+        inner join suspension_type as s on i.penalty_name = s.penalty_name
+        where i.is_suspension
         group by i._dbt_source_relation, i.student_school_id, i.create_ts_academic_year
     ),
 
@@ -51,19 +48,14 @@ with
         select
             i.create_ts_academic_year as academic_year,
             i.student_school_id as student_number,
+            i.incident_penalty_id,
+            i.end_date,
+            i.num_days,
 
             s.suspension_type,
-
-            p.incident_penalty_id,
-            p.end_date,
-            p.num_days,
-        from {{ ref("stg_deanslist__incidents") }} as i
-        inner join
-            {{ ref("int_deanslist__incidents__penalties") }} as p
-            on i.incident_id = p.incident_id
-            and {{ union_dataset_join_clause(left_alias="i", right_alias="p") }}
-            and p.is_suspension
-        inner join suspension_type as s on p.penalty_name = s.penalty_name
+        from {{ ref("int_deanslist__incidents__penalties") }} as i
+        inner join suspension_type as s on i.penalty_name = s.penalty_name
+        where i.is_suspension
     )
 
 select
