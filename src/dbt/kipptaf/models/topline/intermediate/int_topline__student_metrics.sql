@@ -68,40 +68,40 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="mu") }}
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
 
-union all
+-- union all
 
-select
-    co.academic_year,
-    co.region,
-    co.school_level,
-    co.schoolid,
-    co.school,
-    co.student_number,
-    co.state_studentnumber,
-    co.student_name,
-    co.grade_level,
-    co.gender,
-    co.ethnicity,
-    co.iep_status,
-    co.is_504,
-    co.lep_status,
-    co.gifted_and_talented,
-    co.entrydate,
-    co.exitdate,
-    co.enroll_status,
+-- select
+--     co.academic_year,
+--     co.region,
+--     co.school_level,
+--     co.schoolid,
+--     co.school,
+--     co.student_number,
+--     co.state_studentnumber,
+--     co.student_name,
+--     co.grade_level,
+--     co.gender,
+--     co.ethnicity,
+--     co.iep_status,
+--     co.is_504,
+--     co.lep_status,
+--     co.gifted_and_talented,
+--     co.entrydate,
+--     co.exitdate,
+--     co.enroll_status,
 
-    mu.metric_name,
-    mu.term_type,
-    mu.term_name,
-    mu.term_start,
-    mu.term_end,
-    mu.numerator,
-    mu.denominator,
-    mu.metric_value,
-from {{ ref("int_extracts__student_enrollments") }} as co
-left join
-    metrics_union_sn as mu
-    on co.student_number = mu.student_number
-    and co.schoolid = mu.schoolid
-    and co.academic_year = mu.academic_year
-where co.academic_year >= {{ var("current_academic_year") - 1 }}
+--     mu.metric_name,
+--     mu.term_type,
+--     mu.term_name,
+--     mu.term_start,
+--     mu.term_end,
+--     mu.numerator,
+--     mu.denominator,
+--     mu.metric_value,
+-- from {{ ref("int_extracts__student_enrollments") }} as co
+-- left join
+--     metrics_union_sn as mu
+--     on co.student_number = mu.student_number
+--     and co.schoolid = mu.schoolid
+--     and co.academic_year = mu.academic_year
+-- where co.academic_year >= {{ var("current_academic_year") - 1 }}
