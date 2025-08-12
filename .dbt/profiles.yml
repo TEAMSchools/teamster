@@ -54,14 +54,15 @@ kipptaf:
   outputs:
     kipptaf:
       type: bigquery
+      schema: z_dev_kipptaf
+      threads: 40
       method: oauth
       project: teamster-332318
-      schema: z_dev_kipptaf
     prod:
       type: bigquery
+      schema: kipptaf
       method: oauth
       project: teamster-332318
-      schema: kipptaf
 
 integration_tests:
   target: integration_tests

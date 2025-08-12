@@ -13,7 +13,7 @@ select
     if(
         cw.week_start_monday between co.entrydate and co.exitdate, true, false
     ) as is_enrolled_week,
-from {{ ref("int_extracts__student_enrollments_subjects") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as cw
     on co.academic_year = cw.academic_year

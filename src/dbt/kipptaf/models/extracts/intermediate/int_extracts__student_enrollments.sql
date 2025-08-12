@@ -135,11 +135,15 @@ select
 
     ovg.overgrad_fafsa_opt_out,
 
-    ada.ada_term_q1,
-    ada.ada_semester_s1,
-    ada.ada_year as ada,
+    ada.ada_term_q1 as ada_unweighted_term_q1,
+    ada.ada_semester_s1 as ada_unweighted_semester_s1,
+    ada.ada_year as unweighted_ada,
+    ada.ada_weighted_term_q1,
+    ada.ada_weighted_semester_s1,
+    ada.ada_weighted_year as weighted_ada,
 
-    adapy.ada_year as ada_year_prev,
+    adapy.ada_year as ada_unweighted_year_prev,
+    adapy.ada_weighted_year as ada_weighted_year_prev,
 
     'KTAF' as district,
 
@@ -155,7 +159,12 @@ select
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
 
-    if(ada.ada_year >= 0.80, true, false) as ada_above_or_at_80,
+    /* starting SY26, HS uses weighted ADA */
+    if(
+        e.school_level = 'HS' and e.academic_year >= 2025,
+        ada.ada_weighted_year,
+        ada.ada_year
+    ) as `ada`,
 
     if(
         e.salesforce_contact_df_has_fafsa = 'Yes' or ovg.overgrad_fafsa_opt_out = 'Yes',
@@ -201,6 +210,19 @@ select
         when e.region = 'Miami'
         then 'FL'
     end as `state`,
+
+    case
+        /* starting SY26, HS uses weighted ADA */
+        when
+            e.school_level = 'HS'
+            and e.academic_year >= 2025
+            and ada.ada_weighted_year >= 0.80
+        then true
+        when e.school_level = 'HS' and e.academic_year <= 2024 and ada.ada_year >= 0.80
+        then true
+        when ada.ada_year >= 0.80
+        then true
+    end as ada_above_or_at_80,
 
     case
         when

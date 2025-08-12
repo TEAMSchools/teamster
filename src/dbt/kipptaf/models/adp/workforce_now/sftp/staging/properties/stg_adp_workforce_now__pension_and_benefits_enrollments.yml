@@ -22,3 +22,9 @@ models:
         data_type: string
       - name: effective_date
         data_type: string
+      - name: enrollment_end_date
+        data_type: string
+      - name: enrollment_start_date
+        data_type: string
+      - name: enrollment_status
+        data_type: string
