@@ -43,6 +43,7 @@ select
     co.gender,
     co.is_retained_year,
     co.enroll_status,
+    co.advisory_name as homeroom,
 
     att.att_date,
     att.att_comment,
@@ -67,33 +68,29 @@ select
     if(
         co.school_level = 'HS', co.advisor_lastfirst, cast(co.grade_level as string)
     ) as drill_down,
+
     if(
         cl.commlog_reason is not null and cl.commlog_reason not like 'Att: Unknown%',
         true,
         false
     ) as is_successful,
-    if(co.school_level = 'HS', co.advisor_lastfirst, cc.section_number) as homeroom,
+
     row_number() over (
         partition by co.studentid, att.att_date order by cl.commlog_datetime desc
     ) as rn_date,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("stg_powerschool__attendance") }} as att
     on co.studentid = att.studentid
     and att.att_date between co.entrydate and co.exitdate
     and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
     and att.att_mode_code = 'ATT_ModeDaily'
+    and att.att_date <= current_date('{{ var("local_timezone") }}')
 inner join
     {{ ref("stg_powerschool__attendance_code") }} as ac
     on att.attendance_codeid = ac.id
     and {{ union_dataset_join_clause(left_alias="att", right_alias="ac") }}
     and ac.att_code like 'A%'
-left join
-    {{ ref("stg_powerschool__cc") }} as cc
-    on att.studentid = cc.studentid
-    and att.att_date between cc.dateenrolled and cc.dateleft
-    and {{ union_dataset_join_clause(left_alias="att", right_alias="cc") }}
-    and cc.course_number = 'HR'
 left join
     commlog as cl
     on co.student_number = cl.student_school_id
@@ -109,6 +106,4 @@ left join
     on co.schoolid = rt.school_id
     and att.att_date between rt.start_date and rt.end_date
     and rt.type = 'RT'
-where
-    co.academic_year = {{ var("current_academic_year") }}
-    and att.att_date <= current_date('{{ var("local_timezone") }}')
+where co.academic_year = {{ var("current_academic_year") }}

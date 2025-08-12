@@ -74,9 +74,8 @@ with
     )
 
 select
-    s._dbt_source_relation,
-    s.student_number,
-
+    ada._dbt_source_relation,
+    ada.student_number,
     ada.academic_year,
     ada.days_absent_unexcused,
 
@@ -109,19 +108,14 @@ select
             and c.commlog_reason is not null
         then 1
     end as intervention_status_required_int,
-from {{ ref("stg_powerschool__students") }} as s
-inner join
-    {{ ref("int_powerschool__ada") }} as ada
-    on s.id = ada.studentid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="ada") }}
+from {{ ref("int_powerschool__ada") }} as ada
 inner join
     intervention_scaffold as sc
     on {{ union_dataset_join_clause(left_alias="ada", right_alias="sc") }}
     and ada.days_absent_unexcused >= sc.absence_threshold
 left join
     commlog as c
-    on s.student_number = c.student_number
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
+    on ada.student_number = c.student_number
     and ada.academic_year = c.academic_year
     and {{ union_dataset_join_clause(left_alias="ada", right_alias="c") }}
     and sc.commlog_reason = c.commlog_reason

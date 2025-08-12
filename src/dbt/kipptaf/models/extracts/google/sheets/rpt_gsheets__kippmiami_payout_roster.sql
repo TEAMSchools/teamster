@@ -75,15 +75,9 @@ with
 
             cast(co.grade_level as string) as grade_level,
 
-            round(avg(ada.ada), 2) as criteria,
-        from {{ ref("int_powerschool__ada") }} as ada
-        inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
-            on ada.studentid = co.studentid
-            and ada.yearid = co.yearid
-            and co.region = 'Miami'
-            and co.grade_level != 99
-            and co.rn_year = 1
+            round(avg(co.unweighted_ada), 2) as criteria,
+        from {{ ref("int_extracts__student_enrollments") }} as co
+        where co.region = 'Miami' and co.rn_year = 1
         group by co.academic_year, co.grade_level
 
         union all
@@ -95,32 +89,22 @@ with
 
             co.school_name as grade_level,
 
-            round(avg(ada.ada), 2) as criteria,
-        from {{ ref("int_powerschool__ada") }} as ada
-        inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
-            on ada.studentid = co.studentid
-            and ada.yearid = co.yearid
-            and co.region = 'Miami'
-            and co.grade_level != 99
-            and co.rn_year = 1
+            round(avg(co.unweighted_ada), 2) as criteria,
+        from {{ ref("int_extracts__student_enrollments") }} as co
+        where co.region = 'Miami' and co.rn_year = 1
         group by co.academic_year, co.school_name
 
         union all
 
         select
             co.academic_year,
+
             'ada' as measure,
             'region' as grade_level,
-            round(avg(ada.ada), 2) as criteria,
-        from {{ ref("int_powerschool__ada") }} as ada
-        inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
-            on ada.studentid = co.studentid
-            and ada.yearid = co.yearid
-            and co.region = 'Miami'
-            and co.grade_level != 99
-            and co.rn_year = 1
+
+            round(avg(co.unweighted_ada), 2) as criteria,
+        from {{ ref("int_extracts__student_enrollments") }} as co
+        where co.region = 'Miami' and co.rn_year = 1
         group by co.academic_year
 
         union all
@@ -130,20 +114,23 @@ with
             'fte2 enrollment' as measure,
             'region' as grade_level,
             sum(if(is_fldoe_fte_2, 1, 0)) as criteria,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where region = 'Miami' and rn_year = 1 and grade_level != 99
+        from {{ ref("int_extracts__student_enrollments") }}
+        where region = 'Miami' and rn_year = 1
         group by academic_year
 
         union all
 
         select
             academic_year,
+
             if(
                 assessment_subject = 'Science',
                 'Science proficiency',
                 concat(assessment_name, ' ', assessment_subject, ' proficiency')
             ) as measure,
+
             cast(assessment_grade as string) as grade_level,
+
             round(avg(if(is_proficient, 1, 0)), 2) as criteria,
         from {{ ref("int_fldoe__all_assessments") }}
         where administration_window = 'PM3'
@@ -153,8 +140,11 @@ with
 
         select
             fl.academic_year,
+
             concat('FAST ', fl.assessment_subject, ' proficiency') as measure,
+
             gs.school as grade_level,
+
             round(avg(if(fl.is_proficient, 1, 0)), 2) as criteria,
         from {{ ref("int_fldoe__all_assessments") }} as fl
         inner join school_grade_cw as gs on fl.assessment_grade = gs.grade_level
@@ -165,8 +155,11 @@ with
 
         select
             fl.academic_year,
+
             concat('FAST ', fl.assessment_subject, ' disparity') as measure,
+
             'region' as grade_level,
+
             1 - round(
                 avg(
                     case
@@ -187,7 +180,7 @@ with
             ) as criteria,
         from {{ ref("int_fldoe__all_assessments") }} as fl
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
+            {{ ref("int_extracts__student_enrollments") }} as co
             on fl.academic_year = co.academic_year
             and fl.student_id = co.fleid
             and co.rn_year = 1
@@ -198,8 +191,11 @@ with
 
         select
             fl.academic_year,
+
             concat(fl.assessment_subject, ' growth') as measure,
+
             fl.assessment_grade as grade_level,
+
             round(
                 avg(
                     case
@@ -234,8 +230,11 @@ with
 
         select
             fl.academic_year,
+
             concat(fl.assessment_subject, ' growth - IEP') as measure,
+
             co.school_abbreviation as grade_level,
+
             round(
                 avg(
                     case
@@ -258,17 +257,17 @@ with
                 2
             ) as criteria,
         from {{ ref("int_fldoe__all_assessments") }} as fl
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as co
+            on fl.academic_year = co.academic_year
+            and fl.student_id = co.fleid
+            and co.spedlep like 'SPED%'
+            and co.rn_year = 1
         left join
             {{ ref("int_assessments__fast_previous_year") }} as py
             on fl.student_id = py.student_id
             and fl.assessment_subject = py.assessment_subject
             and fl.academic_year = py.academic_year
-        inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
-            on fl.academic_year = co.academic_year
-            and fl.student_id = co.fleid
-            and co.spedlep like 'SPED%'
-            and co.rn_year = 1
         where fl.assessment_name = 'FAST' and fl.administration_window = 'PM3'
         group by fl.academic_year, fl.assessment_subject, co.school_abbreviation
 
@@ -276,8 +275,11 @@ with
 
         select
             fl.academic_year,
+
             concat(fl.assessment_subject, ' growth - IEP') as measure,
+
             'region' as grade_level,
+
             round(
                 avg(
                     case
@@ -306,7 +308,7 @@ with
             and fl.assessment_subject = py.assessment_subject
             and fl.academic_year = py.academic_year
         inner join
-            {{ ref("base_powerschool__student_enrollments") }} as co
+            {{ ref("int_extracts__student_enrollments") }} as co
             on fl.academic_year = co.academic_year
             and fl.student_id = co.fleid
             and co.spedlep like 'SPED%'
@@ -318,8 +320,11 @@ with
 
         select
             amp.academic_year,
+
             'DIBELS EOY composite' as measure,
+
             cast(amp.assessment_grade_int as string) as grade_level,
+
             round(
                 avg(
                     case
@@ -345,12 +350,15 @@ with
 
         select
             co.academic_year,
+
             'Grade 3 promotion' as measure,
+
             cast(co.grade_level as string) as grade_level,
+
             round(
                 avg(if(co.is_retained_year or fl.achievement_level_int > 1, 1, 0)), 2
             ) as criteria,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         left join
             {{ ref("int_fldoe__all_assessments") }} as fl
             on co.fleid = fl.student_id
@@ -396,6 +404,10 @@ with
             grade_level,
             grouped_measure,
 
+            max(payout_potential) as payout_potential,
+            min(is_met_criteria) as is_met_criteria,
+            string_agg(measure, ', ') as measures,
+
             string_agg(
                 format(
                     '%s: %.2f/%.2f (%s)',
@@ -406,9 +418,6 @@ with
                 ),
                 '; '
             ) as criteria_summary,
-            string_agg(measure, ', ') as measures,
-            max(payout_potential) as payout_potential,
-            min(is_met_criteria) as is_met_criteria,
         from criteria_eval
         group by academic_year, `group`, grade_level, grouped_measure
     )
@@ -421,5 +430,6 @@ select
     measures,
     grouped_measure,
     payout_potential,
+
     if(is_met_criteria, payout_potential, 0) as payout_actual,
 from criteria_grouped

@@ -11,26 +11,26 @@ with
             fteid,
             membershipshare,
             track,
-
-            -1 as programid,
+            student_number,
         from {{ ref("stg_powerschool__students") }}
 
         union distinct
 
         select
-            studentid,
-            schoolid,
-            entrydate,
-            entrycode,
-            exitdate,
-            exitcode,
-            grade_level,
-            fteid,
-            membershipshare,
-            track,
+            r.studentid,
+            r.schoolid,
+            r.entrydate,
+            r.entrycode,
+            r.exitdate,
+            r.exitcode,
+            r.grade_level,
+            r.fteid,
+            r.membershipshare,
+            r.track,
 
-            -1 as programid,
-        from {{ ref("stg_powerschool__reenrollments") }}
+            s.student_number,
+        from {{ ref("stg_powerschool__reenrollments") }} as r
+        inner join {{ ref("stg_powerschool__students") }} as s on r.studentid = s.id
     )
 
 select
@@ -41,12 +41,13 @@ select
     sr.exitdate,
     sr.exitcode,
     sr.grade_level,
-    sr.programid,
     sr.fteid,
     sr.membershipshare,
     sr.track,
 
     t.yearid,
+
+    -1 as programid,
 
     coalesce(f.dflt_att_mode_code, '-1') as dflt_att_mode_code,
     coalesce(f.dflt_conversion_mode_code, '-1') as dflt_conversion_mode_code,

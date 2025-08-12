@@ -1,5 +1,6 @@
 select
     studentid,
+    student_number,
     yearid,
 
     sum(membershipvalue) as days_in_membership,
@@ -10,4 +11,4 @@ select
 from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
 where
     membershipvalue = 1 and calendardate <= current_date('{{ var("local_timezone") }}')
-group by yearid, studentid
+group by yearid, studentid, student_number
