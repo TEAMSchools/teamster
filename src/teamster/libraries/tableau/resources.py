@@ -1,7 +1,7 @@
 from dagster import ConfigurableResource, InitResourceContext
 from pydantic import PrivateAttr
-from tableauserverclient.models.tableau_auth import PersonalAccessTokenAuth
-from tableauserverclient.server.server import Server
+from tableauserverclient import Pager, PersonalAccessTokenAuth, RequestOptions, Server
+from tableauserverclient.server.pager import CallableEndpoint, Endpoint
 
 
 class TableauServerResource(ConfigurableResource):
@@ -25,5 +25,7 @@ class TableauServerResource(ConfigurableResource):
             )
         )
 
-    # def teardown_after_execution(self, context: InitResourceContext) -> None:
-    #     self._server.auth.sign_out()
+    def get_all(self, endpoint: CallableEndpoint | Endpoint, pagesize: int = 100):
+        return list(
+            Pager(endpoint=endpoint, request_opts=RequestOptions(pagesize=pagesize))
+        )
