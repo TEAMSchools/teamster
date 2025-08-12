@@ -74,7 +74,8 @@ with
             ) as r
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
-            on r.region = f.region
+            on r.academic_year = f.academic_year
+            and r.region = f.region
             and r.school_level = f.school_level
             and r.assignment_category_code = f.code
             and r.audit_flag_name = f.audit_flag_name
@@ -125,7 +126,8 @@ with
             ) as r
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
-            on r.region = f.region
+            on r.academic_year = f.academic_year
+            and r.region = f.region
             and r.school_level = f.school_level
             and r.assignment_category_code = f.code
             and r.audit_flag_name = f.audit_flag_name
@@ -150,7 +152,8 @@ with
             ) as r
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
-            on r.region = f.region
+            on r.academic_year = f.academic_year
+            and r.region = f.region
             and r.school_level = f.school_level
             and r.quarter = f.code
             and r.audit_flag_name = f.audit_flag_name
@@ -186,7 +189,8 @@ with
             ) as r
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
-            on r.region = f.region
+            on r.academic_year = f.academic_year
+            and r.region = f.region
             and r.school_level = f.school_level
             and r.quarter = f.code
             and r.grade_level = f.grade_level
@@ -236,7 +240,8 @@ with
             ) as r
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
-            on r.region = f.region
+            on r.academic_year = f.academic_year
+            and r.region = f.region
             and r.school_level = f.school_level
             and r.quarter = f.code
             and r.assignment_category_code = f.alt_code
