@@ -1,6 +1,13 @@
 version: 2
 models:
   - name: stg_illuminate__public__students
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - local_student_id
+          config:
+            severity: warn
+            store_failures: true
     columns:
       - name: student_id
         data_type: int64
