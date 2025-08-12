@@ -202,6 +202,10 @@ with
             tr.excludefromgpa,
             tr.is_transfer_grade,
 
+            cast(tr.academic_year as string)
+            || '-'
+            || right(cast(tr.academic_year + 1 as string), 2) as academic_year_display,
+
             if(tr.is_transfer_grade, 'Transfer', tr.credit_type) as credit_type,
 
             if(
@@ -332,7 +336,7 @@ with
         where
             yearid = {{ var("current_academic_year") - 1990 }}
             and not is_dropped_section
-            and storecode_type not in ('Q', 'H')
+            and storecode_type not in ('Q')
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
     )
 
@@ -486,9 +490,10 @@ where s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
 union all
 
 select
-    e1._dbt_source_relation,
-    e1.academic_year,
-    e1.academic_year_display,
+    y1h._dbt_source_relation,
+    y1h.academic_year,
+    y1h.academic_year_display,
+
     e1.region,
     e1.school_level,
     e1.schoolid,
@@ -496,7 +501,9 @@ select
     e1.studentid,
     e1.student_number,
     e1.student_name,
-    e1.grade_level,
+
+    y1h.grade_level as grade_level,
+
     e1.salesforce_id,
     e1.ktc_cohort,
     e1.enroll_status,
@@ -521,7 +528,7 @@ select
     e1.is_504,
     e1.is_counseling_services,
     e1.is_student_athlete,
-    e1.ada,
+    e1.`ada`,
     e1.ada_above_or_at_80,
 
     e1.`quarter`,
@@ -602,7 +609,7 @@ inner join
     student_roster as e1
     on y1h.studentid = e1.studentid
     and y1h.schoolid = e1.schoolid
-    and y1h.storecode = e1.`quarter`
     and {{ union_dataset_join_clause(left_alias="y1h", right_alias="e1") }}
     and e1.year_in_school = 1
+    and e1.quarter = 'Y1'
 where y1h.is_transfer_grade and not y1h.is_enrollment_matched
