@@ -624,10 +624,12 @@ left join
     and y1h.schoolid = co.schoolid
     and {{ union_dataset_join_clause(left_alias="y1h", right_alias="co") }}
     and y1h.academic_year = co.academic_year
+    and co.quarter = 'Y1'
 left join
     student_roster as e1
     on y1h.studentid = e1.studentid
     and y1h.schoolid = e1.schoolid
     and {{ union_dataset_join_clause(left_alias="y1h", right_alias="e1") }}
     and e1.year_in_school = 1
+    and e1.quarter = 'Y1'
 where y1h.is_transfer_grade and not y1h.is_enrollment_matched
