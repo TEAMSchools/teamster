@@ -202,6 +202,10 @@ with
             tr.excludefromgpa,
             tr.is_transfer_grade,
 
+            cast(tr.academic_year as string)
+            || '-'
+            || right(cast(tr.academic_year + 1 as string), 2) as academic_year_display,
+
             if(tr.is_transfer_grade, 'Transfer', tr.credit_type) as credit_type,
 
             if(
@@ -486,9 +490,10 @@ where s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
 union all
 
 select
-    e1._dbt_source_relation,
-    e1.academic_year,
-    e1.academic_year_display,
+    y1h._dbt_source_relation,
+    y1h.academic_year,
+    y1h.academic_year_display,
+
     e1.region,
     e1.school_level,
     e1.schoolid,
@@ -598,11 +603,16 @@ select
     null as section_or_period,
 
 from y1_historical as y1h
-inner join
+left join
+    student_roster as co
+    on y1h.studentid = co.studentid
+    and y1h.schoolid = co.schoolid
+    and {{ union_dataset_join_clause(left_alias="y1h", right_alias="co") }}
+    and y1h.academic_year = co.academic_year
+left join
     student_roster as e1
     on y1h.studentid = e1.studentid
     and y1h.schoolid = e1.schoolid
-    and y1h.storecode = e1.`quarter`
     and {{ union_dataset_join_clause(left_alias="y1h", right_alias="e1") }}
     and e1.year_in_school = 1
 where y1h.is_transfer_grade and not y1h.is_enrollment_matched
