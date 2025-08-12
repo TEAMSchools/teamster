@@ -3,13 +3,13 @@ with
         select
             _dbt_source_relation,
             studentid,
-            yearid + 1990 as academic_year,
             schoolid,
             week_start_monday,
             week_end_sunday,
 
+            yearid + 1990 as academic_year,
             sum(attendancevalue) as weekly_attendance_value,
-            sum(membershipvalue) as weekly_membership_value
+            sum(membershipvalue) as weekly_membership_value,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
         where attendancevalue is not null
         group by
@@ -47,5 +47,5 @@ select
             )
         ),
         3
-    ) as ada_running
+    ) as ada_running,
 from agg_weeks
