@@ -1,12 +1,19 @@
-{% set ref_cc = ref("stg_powerschool__cc") %}
-{% set ref_sections = ref("base_powerschool__sections") %}
-
 with
     sub as (
         select
-            {{ dbt_utils.star(from=ref_cc, relation_alias="cc", prefix="cc_") }},
+            {{
+                dbt_utils.star(
+                    from=ref("stg_powerschool__cc"),
+                    relation_alias="cc",
+                    prefix="cc_",
+                )
+            }},
 
-            {{ dbt_utils.star(from=ref_sections, relation_alias="sec") }},
+            {{
+                dbt_utils.star(
+                    from=ref("base_powerschool__sections"), relation_alias="sec"
+                )
+            }},
 
             s.dcid as students_dcid,
             s.student_number as students_student_number,
@@ -21,8 +28,10 @@ with
                 then true
                 else false
             end as is_dropped_section,
-        from {{ ref_cc }} as cc
-        inner join {{ ref_sections }} as sec on cc.abs_sectionid = sec.sections_id
+        from {{ ref("stg_powerschool__cc") }} as cc
+        inner join
+            {{ ref("base_powerschool__sections") }} as sec
+            on cc.abs_sectionid = sec.sections_id
         inner join {{ ref("stg_powerschool__students") }} as s on cc.studentid = s.id
         left join
             {{ ref("int_powerschool__calendar_rollup") }} as cr

@@ -1,40 +1,42 @@
 with
     ssds_period as (
         select
-            {{ var("current_academic_year") }} as academic_year,
             'SSDS Reporting Period 1' as ssds_period,
+
+            {{ var("current_academic_year") }} as academic_year,
+
             date({{ var("current_academic_year") }}, 9, 1) as period_start_date,
             date({{ var("current_academic_year") }}, 12, 31) as period_end_date,
+
         union all
+
         select
-            {{ var("current_academic_year") - 1 }} as academic_year,
             'SSDS Reporting Period 1' as ssds_period,
+
+            {{ var("current_academic_year") - 1 }} as academic_year,
+
             date({{ var("current_academic_year") - 1 }}, 9, 1) as period_start_date,
             date({{ var("current_academic_year") - 1 }}, 12, 31) as period_end_date,
+
         union all
+
         select
-            {{ var("current_academic_year") }} as academic_year,
             'SSDS Reporting Period 2' as ssds_period,
+
+            {{ var("current_academic_year") }} as academic_year,
+
             date({{ var("current_academic_year") }} + 1, 1, 1) as period_start_date,
             date({{ var("current_academic_year") }} + 1, 6, 30) as period_end_date,
+
         union all
+
         select
-            {{ var("current_academic_year") - 1 }} as academic_year,
             'SSDS Reporting Period 2' as ssds_period,
+
+            {{ var("current_academic_year") - 1 }} as academic_year,
+
             date({{ var("current_academic_year") }}, 1, 1) as period_start_date,
             date({{ var("current_academic_year") }}, 6, 30) as period_end_date,
-    ),
-
-    ms_grad_sub as (
-        select
-            _dbt_source_relation,
-            student_number,
-            school_abbreviation as ms_attended,
-            row_number() over (
-                partition by student_number order by exitdate desc
-            ) as rn,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where school_level = 'MS'
     ),
 
     suspension_type as (
@@ -111,10 +113,12 @@ with
 
     attachments as (
         select
-            'Suspension Letter' as type,
             incident_id,
+
+            'Suspension Letter' as incident_type,
+
             string_agg(
-                concat(entity_name, ' (', date(file_posted_at__date), ')'), '; '
+                concat(entity_name, ' (', cast(file_posted_at__date as date), ')'), '; '
             ) as attachments,
         from {{ ref("stg_deanslist__incidents__attachments") }}
         where
@@ -124,18 +128,22 @@ with
                 'OSS Long-Term Suspension',
                 'OSS Suspended Next Day'
             )
-        group by all
+        group by incident_id
 
         union all
+
         select
-            'Upload' as type,
             incident_id,
+
+            'Upload' as incident_type,
+
             string_agg(
-                concat(public_filename, ' (', date(file_posted_at__date), ')'), '; '
+                concat(public_filename, ' (', cast(file_posted_at__date as date), ')'),
+                '; '
             ) as attachments,
         from {{ ref("stg_deanslist__incidents__attachments") }}
         where attachment_type = 'UPLOAD'
-        group by all
+        group by incident_id
     )
 
 select
@@ -155,9 +163,9 @@ select
     co.lunch_status,
     co.is_retained_year,
     co.rn_year,
-
-    hr.sections_section_number as homeroom_section,
-    hr.teacher_lastfirst as homeroom_teacher_name,
+    co.ms_attended,
+    co.team as homeroom_section,
+    co.advisor_lastfirst as homeroom_teacher_name,
 
     w.week_start_monday,
     w.week_end_sunday,
@@ -200,14 +208,17 @@ select
 
     ar.att_discrepancy_count,
 
-    ms.ms_attended,
-
     ats.attachments,
     atr.attachments as attachments_uploaded,
 
-    u.last_name || ', ' || u.first_name as hi_approver_name,
+    concat(u.last_name, ', ', u.first_name) as hi_approver_name,
 
-    if(sr.incident_id is not null, true, false) as is_discrepant_incident,
+    concat(dli.create_last, ', ', dli.create_first) as entry_staff,
+    concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
+
+    coalesce(s.ssds_period, 'Outside SSDS Period') as ssds_period,
+
+    round(ada.ada, 2) as ada,
 
     if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
@@ -216,8 +227,12 @@ select
         co.is_self_contained, 'Self-contained', 'Not self-contained'
     ) as self_contained_status,
 
-    concat(dli.create_last, ', ', dli.create_first) as entry_staff,
-    concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
+    if(sr.incident_id is not null, true, false) as is_discrepant_incident,
+
+    if(tr.student_school_id is not null, true, false) as is_tier3_4,
+
+    if(round(ada.ada, 2) <= 0.90, true, false) as is_chronically_absent,
+
     case
         when left(dli.category, 2) in ('SW', 'SS') or left(dli.category, 3) = 'SSC'
         then 'Social Work'
@@ -236,9 +251,6 @@ select
         else 'Other'
     end as referral_tier,
 
-    round(ada.ada, 2) as ada,
-    if(round(ada.ada, 2) <= 0.90, true, false) as is_chronically_absent,
-
     count(distinct co.student_number) over (
         partition by w.week_start_monday, co.school_abbreviation
     ) as school_enrollment_by_week,
@@ -254,6 +266,11 @@ select
     max(if(st.suspension_type = 'ISS', 1, 0)) over (
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_iss_int,
+
+    row_number() over (
+        partition by co.academic_year, co.student_number
+        order by w.week_start_monday asc
+    ) as rn_student_year,
 
     if(
         sum(if(dlp.is_suspension, 1, 0)) over (
@@ -309,15 +326,6 @@ select
         0
     ) as is_suspended_y1_iss_2plus_int,
 
-    if(tr.student_school_id is not null, true, false) as is_tier3_4,
-
-    coalesce(s.ssds_period, 'Outside SSDS Period') as ssds_period,
-
-    row_number() over (
-        partition by co.academic_year, co.student_number
-        order by w.week_start_monday asc
-    ) as rn_student_year,
-
     if(
         dli.incident_id is null,
         null,
@@ -326,16 +334,7 @@ select
             order by dlp.is_suspension desc
         )
     ) as rn_incident,
-from {{ ref("base_powerschool__student_enrollments") }} as co
-left join
-    {{ ref("base_powerschool__course_enrollments") }} as hr
-    on co.studentid = hr.cc_studentid
-    and co.yearid = hr.cc_yearid
-    and co.schoolid = hr.cc_schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-    and hr.cc_course_number = 'HR'
-    and hr.rn_course_number_year = 1
-    and not hr.is_dropped_section
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as w
     on co.academic_year = w.academic_year
@@ -391,15 +390,11 @@ left join
     and co.schoolid = sr.schoolid
     and sr.rn_incident = 1
 left join
-    ms_grad_sub as ms
-    on co.student_number = ms.student_number
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ms") }}
-    and ms.rn = 1
-left join
     attachments as ats
     on dli.incident_id = ats.incident_id
-    and ats.type = 'Suspension Letter'
+    and ats.incident_type = 'Suspension Letter'
 left join
-    attachments as atr on dli.incident_id = atr.incident_id and atr.type = 'Upload'
-where
-    co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99
+    attachments as atr
+    on dli.incident_id = atr.incident_id
+    and atr.incident_type = 'Upload'
+where co.academic_year >= {{ var("current_academic_year") - 1 }}
