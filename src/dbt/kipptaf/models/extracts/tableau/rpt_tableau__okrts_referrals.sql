@@ -116,7 +116,7 @@ with
             string_agg(
                 concat(entity_name, ' (', date(file_posted_at__date), ')'), '; '
             ) as attachments,
-        from {{ ref("stg_deanslist__incidents__attachments") }}
+        from {{ ref("int_deanslist__incidents__attachments") }}
         where
             entity_name in (
                 'KIPP Miami Suspension Letter',
@@ -133,7 +133,7 @@ with
             string_agg(
                 concat(public_filename, ' (', date(file_posted_at__date), ')'), '; '
             ) as attachments,
-        from {{ ref("stg_deanslist__incidents__attachments") }}
+        from {{ ref("int_deanslist__incidents__attachments") }}
         where attachment_type = 'UPLOAD'
         group by all
     )
@@ -326,16 +326,7 @@ select
             order by dlp.is_suspension desc
         )
     ) as rn_incident,
-from {{ ref("base_powerschool__student_enrollments") }} as co
-left join
-    {{ ref("base_powerschool__course_enrollments") }} as hr
-    on co.studentid = hr.cc_studentid
-    and co.yearid = hr.cc_yearid
-    and co.schoolid = hr.cc_schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-    and hr.cc_course_number = 'HR'
-    and hr.rn_course_number_year = 1
-    and not hr.is_dropped_section
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as w
     on co.academic_year = w.academic_year
@@ -343,7 +334,7 @@ inner join
     and w.week_end_sunday between co.entrydate and co.exitdate
     and {{ union_dataset_join_clause(left_alias="co", right_alias="w") }}
 left join
-    {{ ref("stg_deanslist__incidents") }} as dli
+    {{ ref("int_deanslist__incidents__penalties") }} as dli
     on co.student_number = dli.student_school_id
     and co.academic_year = dli.create_ts_academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
@@ -353,14 +344,6 @@ left join
 left join
     ssds_period as s
     on dli.create_ts_date between s.period_start_date and s.period_end_date
-left join
-    {{ ref("stg_deanslist__incidents__penalties") }} as dlp
-    on dli.incident_id = dlp.incident_id
-    and {{ union_dataset_join_clause(left_alias="dli", right_alias="dlp") }}
-left join
-    {{ ref("int_deanslist__incidents__custom_fields__pivot") }} as cf
-    on dli.incident_id = cf.incident_id
-    and {{ union_dataset_join_clause(left_alias="dli", right_alias="cf") }}
 left join
     {{ ref("stg_deanslist__users") }} as u
     on cast(cf.approver_name as int64) = u.dl_user_id
@@ -401,5 +384,4 @@ left join
     and ats.type = 'Suspension Letter'
 left join
     attachments as atr on dli.incident_id = atr.incident_id and atr.type = 'Upload'
-where
-    co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99
+where co.academic_year >= {{ var("current_academic_year") - 1 }}

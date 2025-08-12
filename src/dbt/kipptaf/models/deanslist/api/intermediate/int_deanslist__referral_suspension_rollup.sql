@@ -73,7 +73,7 @@ select
         if(dlp.is_suspension and st.suspension_type = 'ISS', dlp.num_days, null)
     ) as days_suspended_iss,
 
-from {{ ref("stg_deanslist__incidents__penalties") }} as dlp
+from {{ ref("int_deanslist__incidents__penalties") }} as dlp
 inner join suspension_type as st on dlp.penalty_name = st.penalty_name
 inner join
     {{ ref("stg_people__location_crosswalk") }} as lc
@@ -138,7 +138,7 @@ select
     count(
         distinct if(dlp.referral_tier = 'low', dlp.incident_id, null)
     ) as referral_count_low,
-from {{ ref("stg_deanslist__incidents__penalties") }} as dlp
+from {{ ref("int_deanslist__incidents__penalties") }} as dlp
 left join suspension_type as st on dlp.penalty_name = st.penalty_name
 where dlp.referral_tier not in ('Non-Behavioral', 'Social Work')
 group by dlp.student_school_id, dlp.create_ts_academic_year

@@ -39,7 +39,7 @@ with
             ) as first_suspension_date_oss,
         from {{ ref("stg_deanslist__incidents") }} as i
         inner join
-            {{ ref("stg_deanslist__incidents__penalties") }} as p
+            {{ ref("int_deanslist__incidents__penalties") }} as p
             on i.incident_id = p.incident_id
             and {{ union_dataset_join_clause(left_alias="i", right_alias="p") }}
             and p.is_suspension
@@ -59,7 +59,7 @@ with
             p.num_days,
         from {{ ref("stg_deanslist__incidents") }} as i
         inner join
-            {{ ref("stg_deanslist__incidents__penalties") }} as p
+            {{ ref("int_deanslist__incidents__penalties") }} as p
             on i.incident_id = p.incident_id
             and {{ union_dataset_join_clause(left_alias="i", right_alias="p") }}
             and p.is_suspension
