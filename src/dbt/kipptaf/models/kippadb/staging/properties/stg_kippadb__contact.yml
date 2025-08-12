@@ -2,6 +2,13 @@ version: 2
 models:
   - name: stg_kippadb__contact
     columns:
+      - name: school_specific_id
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                where: school_specific_id is not null
+                store_failures: true
       - name: id
         data_type: string
       - name: name
@@ -562,10 +569,3 @@ models:
         data_type: numeric
       - name: kipp_hs_class
         data_type: int64
-      - name: school_specific_id
-        data_type: int64
-        data_tests:
-          - unique:
-              config:
-                where: school_specific_id is not null
-                store_failures: true
