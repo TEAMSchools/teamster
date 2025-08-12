@@ -83,54 +83,6 @@ sources:
               - kippnewark
               - deanslist
               - stg_deanslist__users
-      - name: stg_deanslist__incidents__penalties
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippnewark
-              - deanslist
-              - stg_deanslist__incidents__penalties
-      - name: stg_deanslist__incidents__actions
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippnewark
-              - deanslist
-              - stg_deanslist__incidents__actions
-      - name: stg_deanslist__incidents__custom_fields
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippnewark
-              - deanslist
-              - stg_deanslist__incidents__custom_fields
-      - name: int_deanslist__incidents__custom_fields__pivot
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippnewark
-              - deanslist
-              - int_deanslist__incidents__custom_fields__pivot
-      - name: stg_deanslist__students__custom_fields
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippnewark
-              - deanslist
-              - stg_deanslist__students__custom_fields
-      - name: int_deanslist__students__custom_fields__pivot
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippnewark
-              - deanslist
-              - int_deanslist__students__custom_fields__pivot
       - name: stg_deanslist__dff_stats
         meta:
           dagster:
@@ -139,11 +91,67 @@ sources:
               - kippnewark
               - deanslist
               - stg_deanslist__dff_stats
-      - name: stg_deanslist__incidents__attachments
+      - name: int_deanslist__incidents__penalties
         meta:
           dagster:
             group: deanslist
             asset_key:
               - kippnewark
               - deanslist
-              - stg_deanslist__incidents__attachments
+              - int_deanslist__incidents__penalties
+      - name: int_deanslist__incidents__actions
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippnewark
+              - deanslist
+              - int_deanslist__incidents__actions
+      - name: int_deanslist__incidents__custom_fields
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippnewark
+              - deanslist
+              - int_deanslist__incidents__custom_fields
+      - name: int_deanslist__incidents__custom_fields__pivot
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippnewark
+              - deanslist
+              - int_deanslist__incidents__custom_fields__pivot
+      - name: int_deanslist__students__custom_fields
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippnewark
+              - deanslist
+              - int_deanslist__students__custom_fields
+      - name: int_deanslist__students__custom_fields__pivot
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippnewark
+              - deanslist
+              - int_deanslist__students__custom_fields__pivot
+      - name: int_deanslist__incidents__attachments
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippnewark
+              - deanslist
+              - int_deanslist__incidents__attachments
+      - name: int_deanslist__incidents
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippnewark
+              - deanslist
+              - int_deanslist__incidents

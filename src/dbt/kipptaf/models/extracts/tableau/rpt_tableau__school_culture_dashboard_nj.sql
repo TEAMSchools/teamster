@@ -81,21 +81,13 @@ select
             )
         )
     ) as week_of,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 left join
-    {{ ref("stg_deanslist__incidents") }} as dli
+    {{ ref("int_deanslist__incidents__penalties") }} as dlp
     on co.student_number = dli.student_school_id
     and co.academic_year = dli.create_ts_academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
     and dli.is_active
-left join
-    {{ ref("stg_deanslist__incidents__penalties") }} as dlp
-    on dli.incident_id = dlp.incident_id
-    and {{ union_dataset_join_clause(left_alias="dli", right_alias="dlp") }}
-left join
-    {{ ref("int_deanslist__incidents__custom_fields__pivot") }} as cf
-    on dli.incident_id = cf.incident_id
-    and {{ union_dataset_join_clause(left_alias="dli", right_alias="cf") }}
 left join
     {{ ref("stg_reporting__terms") }} as d
     on co.schoolid = d.school_id
@@ -109,5 +101,4 @@ left join
 where
     co.rn_year = 1
     and co.region in ('Newark', 'Camden')
-    and co.grade_level != 99
     and co.academic_year >= ({{ var("current_academic_year") - 1 }})
