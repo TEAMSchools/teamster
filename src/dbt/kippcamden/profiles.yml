@@ -3,6 +3,7 @@ kippcamden:
   outputs:
     kippcamden:
       type: bigquery
+      schema: kippcamden
+      threads: 40
       method: oauth
       project: teamster-332318
-      schema: kippcamden

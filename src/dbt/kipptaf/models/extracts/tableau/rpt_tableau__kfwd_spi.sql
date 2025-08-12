@@ -48,6 +48,9 @@ select
     if(e.status = 'Graduated', true, false) as is_graduated,
     if(e.id = ei.ecc_enrollment_id, true, false) as is_ecc_enrollment,
     if(e.id = ei.ugrad_enrollment_id, true, false) as is_ugrad_enrollment,
+
+    if(ei.ecc_account_name = ei.ugrad_account_name, 1, 0) as is_same_school,
+
     case
         when
             e.status in ('Attending', 'Graduated')
@@ -62,8 +65,6 @@ select
             and {{ var("current_academic_year") }}
         then false
     end as is_continuing_completing,
-
-    if(ei.ecc_account_name = ei.ugrad_account_name, 1, 0) as is_same_school,
 
     case
         when
@@ -154,6 +155,7 @@ select
 
     a.application_status as `status`,
     a.intended_degree_type as pursuing_degree_type,
+
     safe_cast(a.created_date as date) as `start_date`,
 
     null as actual_end_date,
@@ -195,8 +197,8 @@ select
     false as is_graduated,
     null as is_ecc_enrollment,
     null as is_ugrad_enrollment,
-    null as is_continuing_completing,
     null as is_same_school,
+    null as is_continuing_completing,
     null as is_4yr_grad_int,
     null as is_6yr_grad_int,
     null as is_grad_ever_any,

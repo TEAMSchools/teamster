@@ -3,6 +3,7 @@ kipptaf:
   outputs:
     kipptaf:
       type: bigquery
+      schema: kipptaf
+      threads: 40
       method: oauth
       project: teamster-332318
-      schema: kipptaf
