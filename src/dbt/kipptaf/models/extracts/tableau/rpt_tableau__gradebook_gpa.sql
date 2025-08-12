@@ -494,76 +494,61 @@ select
     y1h.academic_year,
     y1h.academic_year_display,
 
-    coalesce(co.region, e1.region) as region,
-    coalesce(co.school_level, e1.school_level) as school_level,
-    coalesce(co.schoolid, e1.schoolid) as schoolid,
-    coalesce(co.school, e1.school) as school,
-    coalesce(co.studentid, e1.studentid) as studentid,
-    coalesce(co.student_number, e1.student_number) as student_number,
-    coalesce(co.student_name, e1.student_name) as student_name,
-    coalesce(co.grade_level, e1.grade_level) as grade_level,
-    coalesce(co.salesforce_id, e1.salesforce_id) as salesforce_id,
-    coalesce(co.ktc_cohort, e1.ktc_cohort) as ktc_cohort,
-    coalesce(co.enroll_status, e1.enroll_status) as enroll_status,
-    coalesce(co.cohort, e1.cohort) as cohort,
-    coalesce(co.gender, e1.gender) as gender,
-    coalesce(co.ethnicity, e1.ethnicity) as ethnicity,
-    coalesce(co.advisory, e1.advisory) as advisory,
-    coalesce(co.hos, e1.hos) as hos,
-    coalesce(co.school_leader, e1.school_leader) as school_leader,
-    coalesce(
-        co.school_leader_tableau_username, e1.school_leader_tableau_username
-    ) as school_leader_tableau_username,
-    coalesce(co.year_in_school, e1.year_in_school) as year_in_school,
-    coalesce(co.year_in_network, e1.year_in_network) as year_in_network,
-    coalesce(co.rn_undergrad, e1.rn_undergrad) as rn_undergrad,
-    coalesce(co.is_out_of_district, e1.is_out_of_district) as is_out_of_district,
-    coalesce(co.is_pathways, e1.is_pathways) as is_pathways,
-    coalesce(co.is_retained_year, e1.is_retained_year) as is_retained_year,
-    coalesce(co.is_retained_ever, e1.is_retained_ever) as is_retained_ever,
-    coalesce(co.lunch_status, e1.lunch_status) as lunch_status,
-    coalesce(co.gifted_and_talented, e1.gifted_and_talented) as gifted_and_talented,
-    coalesce(co.iep_status, e1.iep_status) as iep_status,
-    coalesce(co.lep_status, e1.lep_status) as lep_status,
-    coalesce(co.is_504, e1.is_504) as is_504,
-    coalesce(
-        co.is_counseling_services, e1.is_counseling_services
-    ) as is_counseling_services,
-    coalesce(co.is_student_athlete, e1.is_student_athlete) as is_student_athlete,
-    coalesce(co.`ada`, e1.`ada`) as `ada`,
-    coalesce(co.ada_above_or_at_80, e1.ada_above_or_at_80) as ada_above_or_at_80,
-    coalesce(co.`quarter`, e1.`quarter`) as `quarter`,
-    coalesce(co.semester, e1.semester) as semester,
-    coalesce(co.quarter_start_date, e1.quarter_start_date) as quarter_start_date,
-    coalesce(co.quarter_end_date, e1.quarter_end_date) as quarter_end_date,
-    coalesce(co.cal_quarter_end_date, e1.cal_quarter_end_date) as cal_quarter_end_date,
-    coalesce(co.is_current_quarter, e1.is_current_quarter) as is_current_quarter,
-    coalesce(co.gpa_for_quarter, e1.gpa_for_quarter) as gpa_for_quarter,
-    coalesce(co.gpa_semester, e1.gpa_semester) as gpa_semester,
-    coalesce(co.gpa_y1, e1.gpa_y1) as gpa_y1,
-    coalesce(co.gpa_y1_unweighted, e1.gpa_y1_unweighted) as gpa_y1_unweighted,
-    coalesce(
-        co.gpa_total_credit_hours, e1.gpa_total_credit_hours
-    ) as gpa_total_credit_hours,
-    coalesce(co.gpa_n_failing_y1, e1.gpa_n_failing_y1) as gpa_n_failing_y1,
+    e1.region,
+    e1.school_level,
+    e1.schoolid,
+    e1.school,
+    e1.studentid,
+    e1.student_number,
+    e1.student_name,
+    e1.grade_level,
+    e1.salesforce_id,
+    e1.ktc_cohort,
+    e1.enroll_status,
+    e1.cohort,
+    e1.gender,
+    e1.ethnicity,
+    e1.advisory,
+    e1.hos,
+    e1.school_leader,
+    e1.school_leader_tableau_username,
+    e1.year_in_school,
+    e1.year_in_network,
+    e1.rn_undergrad,
+    e1.is_out_of_district,
+    e1.is_pathways,
+    e1.is_retained_year,
+    e1.is_retained_ever,
+    e1.lunch_status,
+    e1.gifted_and_talented,
+    e1.iep_status,
+    e1.lep_status,
+    e1.is_504,
+    e1.is_counseling_services,
+    e1.is_student_athlete,
+    e1.`ada`,
+    e1.ada_above_or_at_80,
 
-    coalesce(co.cumulative_y1_gpa, e1.cumulative_y1_gpa) as cumulative_y1_gpa,
-    coalesce(
-        co.cumulative_y1_gpa_unweighted, e1.cumulative_y1_gpa_unweighted
-    ) as cumulative_y1_gpa_unweighted,
-    coalesce(
-        co.cumulative_y1_gpa_projected, e1.cumulative_y1_gpa_projected
-    ) as cumulative_y1_gpa_projected,
-    coalesce(
-        co.cumulative_y1_gpa_projected_s1, e1.cumulative_y1_gpa_projected_s1
-    ) as cumulative_y1_gpa_projected_s1,
-    coalesce(
-        co.cumulative_y1_gpa_projected_s1_unweighted,
-        e1.cumulative_y1_gpa_projected_s1_unweighted
-    ) as cumulative_y1_gpa_projected_s1_unweighted,
-    coalesce(
-        co.core_cumulative_y1_gpa, e1.core_cumulative_y1_gpa
-    ) as core_cumulative_y1_gpa,
+    e1.`quarter`,
+    e1.semester,
+    e1.quarter_start_date,
+    e1.quarter_end_date,
+    e1.cal_quarter_end_date,
+    e1.is_current_quarter,
+
+    e1.gpa_for_quarter,
+    e1.gpa_semester,
+    e1.gpa_y1,
+    e1.gpa_y1_unweighted,
+    e1.gpa_total_credit_hours,
+    e1.gpa_n_failing_y1,
+
+    e1.cumulative_y1_gpa,
+    e1.cumulative_y1_gpa_unweighted,
+    e1.cumulative_y1_gpa_projected,
+    e1.cumulative_y1_gpa_projected_s1,
+    e1.cumulative_y1_gpa_projected_s1_unweighted,
+    e1.core_cumulative_y1_gpa,
 
     null as sectionid,
     null as sections_dcid,
@@ -618,14 +603,7 @@ select
     null as section_or_period,
 
 from y1_historical as y1h
-left join
-    student_roster as co
-    on y1h.studentid = co.studentid
-    and y1h.schoolid = co.schoolid
-    and {{ union_dataset_join_clause(left_alias="y1h", right_alias="co") }}
-    and y1h.academic_year = co.academic_year
-    and co.quarter = 'Y1'
-left join
+inner join
     student_roster as e1
     on y1h.studentid = e1.studentid
     and y1h.schoolid = e1.schoolid
