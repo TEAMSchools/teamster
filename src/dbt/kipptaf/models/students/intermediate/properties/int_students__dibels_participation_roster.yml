@@ -1,6 +1,17 @@
 version: 2
 models:
   - name: int_students__dibels_participation_roster
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - academic_year
+            - student_number
+            - admin_season
+            - round_number
+            - completed_test_round
+          config:
+            severity: warn
+            store_failures: true
     columns:
       - name: academic_year
         data_type: int64

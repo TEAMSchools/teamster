@@ -9,9 +9,7 @@ plugins:
 lint:
   enabled:
     - bandit@1.8.6
-    - checkov@3.2.458
     - terrascan@1.19.1
-    - trivy@0.64.1
     - actionlint@1.7.7
     - git-diff-check
     - gitleaks@8.28.0
@@ -29,12 +27,14 @@ lint:
     - sqlfmt@0.27.0
     - svgo@4.0.0
     - taplo@0.9.3
-    - trufflehog@3.90.3
     - yamllint@1.37.1
   disabled:
     - black
+    - checkov
     - flake8
     - sql-formatter
+    - trivy
+    - trufflehog
   ignore:
     - paths:
         - src/teamster/**

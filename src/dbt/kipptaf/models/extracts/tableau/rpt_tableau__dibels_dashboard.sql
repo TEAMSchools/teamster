@@ -85,6 +85,8 @@ select
     b.boy_composite,
     b.moy_composite,
     b.eoy_composite,
+    b.aggregated_measure_standard_level,
+    b.foundation_measure_standard_level,
 
     r.enrollment_dates_account,
     r.expected_row_count,
@@ -261,6 +263,8 @@ select
     r.boy_composite,
     r.moy_composite,
     r.eoy_composite,
+    null as aggregated_measure_standard_level,
+    null as foundation_measure_standard_level,
 
     rs.enrollment_dates_account,
     rs.expected_row_count,
