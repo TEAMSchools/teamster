@@ -501,7 +501,9 @@ select
     e1.studentid,
     e1.student_number,
     e1.student_name,
-    e1.grade_level,
+
+    y1h.grade_level as grade_level,
+
     e1.salesforce_id,
     e1.ktc_cohort,
     e1.enroll_status,
