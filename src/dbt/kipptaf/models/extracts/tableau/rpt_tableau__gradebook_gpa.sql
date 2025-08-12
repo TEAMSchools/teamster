@@ -332,7 +332,7 @@ with
         where
             yearid = {{ var("current_academic_year") - 1990 }}
             and not is_dropped_section
-            and storecode_type not in ('Q', 'H')
+            and storecode_type not in ('Q')
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
     )
 
