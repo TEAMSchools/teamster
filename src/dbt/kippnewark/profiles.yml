@@ -3,6 +3,7 @@ kippnewark:
   outputs:
     kippnewark:
       type: bigquery
+      schema: kippnewark
+      threads: 40
       method: oauth
       project: teamster-332318
-      schema: kippnewark
