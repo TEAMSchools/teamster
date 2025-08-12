@@ -44,4 +44,4 @@ inner join
     gpa_cumulative as gpa
     on cw.schoolid = gpa.schoolid
     and cw.week_start_monday between gpa.dbt_valid_from_date and gpa.dbt_valid_to_date
-    and rn_date = 1
+    and gpa.rn_date = 1
