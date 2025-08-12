@@ -5,6 +5,7 @@ with
             studentid,
             schoolid,
             cumulative_y1_gpa_projected_unweighted,
+            dbt_valid_to,
             dbt_valid_from,
 
             date(dbt_valid_from) as dbt_valid_from_date,
@@ -13,35 +14,33 @@ with
     ),
 
     gpa_cumulative as (
-        select
-            _dbt_source_relation,
-            studentid,
-            schoolid,
-            cumulative_y1_gpa_projected_unweighted,
-            dbt_valid_from_date,
-            dbt_valid_to_date,
-
-            row_number() over (
-                partition by
-                    _dbt_source_relation, studentid, schoolid, dbt_valid_from_date
-                order by dbt_valid_from desc
-            ) as rn_date,
-        from gpa_cumulative_date
+        {{
+            dbt_utils.deduplicate(
+                relation="gpa_cumulative_date",
+                partition_by="_dbt_source_relation, studentid, schoolid, dbt_valid_from_date",
+                order_by="dbt_valid_to desc",
+            )
+        }}
     )
 
 select
-    gpa._dbt_source_relation,
-    gpa.studentid,
-    gpa.schoolid,
-    gpa.cumulative_y1_gpa_projected_unweighted,
+    co.student_number,
+    co.schoolid,
+    co.academic_year,
+    co.week_start_monday,
+    co.week_end_sunday,
+    co.week_number_academic_year,
 
-    cw.academic_year,
-    cw.week_start_monday,
-    cw.week_end_sunday,
-    cw.week_number_academic_year,
-from {{ ref("int_powerschool__calendar_week") }} as cw
-inner join
+    gpa.cumulative_y1_gpa_projected_unweighted,
+from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
+left join
     gpa_cumulative as gpa
-    on cw.schoolid = gpa.schoolid
-    and cw.week_start_monday between gpa.dbt_valid_from_date and gpa.dbt_valid_to_date
-    and gpa.rn_date = 1
+    on co.studentid = gpa.studentid
+    and co.schoolid = gpa.schoolid
+    and co.week_start_monday between gpa.dbt_valid_from_date and gpa.dbt_valid_to_date
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+where
+    co.discipline = 'ELA'
+    and co.is_enrolled_week
+    and co.school_level not in ('ES', 'OD')
+    and co.grade_level != 99
