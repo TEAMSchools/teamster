@@ -13,6 +13,7 @@ with
                 )
             ) as date_day
     ),
+
     date_spline as (
         select
             cw.week_start_monday,
@@ -45,7 +46,7 @@ select
         else 0
     end as is_attrition,
 from {{ ref("int_people__staff_attrition_details") }} as sad
-join
+inner join
     date_spline as ds
     on sad.academic_year = ds.attrition_year
     and (
