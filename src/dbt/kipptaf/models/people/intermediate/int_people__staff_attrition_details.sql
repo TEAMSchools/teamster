@@ -133,8 +133,8 @@ with
             and srh.assignment_status in ('Terminated', 'Deceased')
         left join
             active_next_year as an
-            on  dc.academic_year = an.academic_year
-            and srh.employee_number = an.employee_number 
+            on dc.academic_year = an.academic_year
+            and srh.employee_number = an.employee_number
         /* removing duplicate rows - entity changers + rehires have ongoing term rows*/
         where an.employee_number is null
     ),
