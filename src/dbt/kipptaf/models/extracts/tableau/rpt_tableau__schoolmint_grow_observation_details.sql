@@ -69,7 +69,7 @@ with
             sr.assignment_status as current_assignment_status,
             sr.formatted_name as teammate,
             sr.sam_account_name,
-            sr.reports_to_sam_account_name,
+            sr.reports_to_sam_account_name as report_to_sam_account_name,
 
             sro.formatted_name as observer_name,
 
@@ -204,7 +204,7 @@ with
             sr.assignment_status as current_assignment_status,
             sr.formatted_name as teammate,
             sr.sam_account_name,
-            sr.reports_to_sam_account_name,
+            sr.reports_to_sam_account_name as report_to_sam_account_name,
 
             sro.formatted_name as observer_name,
 
