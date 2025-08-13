@@ -70,8 +70,6 @@ with
             e.round_number,
             e.expected_row_count,
 
-            true as enrollment_dates_account,
-
             coalesce(a.actual_row_count, 0) as actual_row_count,
 
             case
@@ -128,8 +126,6 @@ with
             e.admin_season,
             e.round_number,
             e.expected_row_count,
-
-            true as enrollment_dates_account,
 
             coalesce(a.actual_row_count, 0) as actual_row_count,
 
@@ -190,8 +186,6 @@ with
             e.round_number,
             e.expected_row_count,
 
-            true as enrollment_dates_account,
-
             coalesce(a.actual_row_count, 0) as actual_row_count,
 
             case
@@ -244,7 +238,6 @@ select
     student_number,
     grade_level,
     enroll_status,
-    enrollment_dates_account,
     assessment_type,
     admin_season,
     round_number,
