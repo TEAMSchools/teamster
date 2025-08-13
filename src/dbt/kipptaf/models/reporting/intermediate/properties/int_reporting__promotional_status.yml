@@ -48,3 +48,5 @@ models:
         data_type: string
       - name: overall_status
         data_type: string
+      - name: city
+        data_type: string
