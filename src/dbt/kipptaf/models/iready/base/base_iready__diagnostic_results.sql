@@ -94,6 +94,7 @@ with
     )
 
 select
+    dr._dbt_source_relation,
     dr.student_id,
     dr.academic_year,
     dr.academic_year_int,
