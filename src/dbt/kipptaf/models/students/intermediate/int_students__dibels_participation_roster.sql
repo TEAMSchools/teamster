@@ -25,7 +25,7 @@ with
         where
             discipline = 'ELA'
             and rn_year = 1
-            and enroll_status >= 0
+            and enroll_status in (0, 2, 3)
             and grade_level <= 8
     ),
 
