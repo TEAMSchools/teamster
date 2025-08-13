@@ -21,8 +21,8 @@ select
     week_start_monday as term_name,
     week_start_monday as term_start,
     week_end_sunday as term_end,
-    attendancevalue_running as numerator,
-    membershipvalue_running as denominator,
+    attendance_value_sum_running as numerator,
+    membership_value_sum_running as denominator,
     ada_running as metric_value,
 
     'ADA Running' as metric_name,
