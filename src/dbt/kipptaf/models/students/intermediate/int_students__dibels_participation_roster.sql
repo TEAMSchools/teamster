@@ -130,9 +130,9 @@ with
 
             coalesce(a.actual_row_count, 0) as actual_row_count,
 
-            case
-                when e.expected_row_count = a.actual_row_count then true else false
-            end as completed_test_round,
+            if(
+                e.expected_row_count = a.actual_row_count, true, false
+            ) as completed_test_round,
 
             row_number() over (
                 partition by
@@ -182,9 +182,9 @@ with
 
             coalesce(a.actual_row_count, 0) as actual_row_count,
 
-            case
-                when e.expected_row_count = a.actual_row_count then true else false
-            end as completed_test_round,
+            if(
+                e.expected_row_count = a.actual_row_count, true, false
+            ) as completed_test_round,
 
             row_number() over (
                 partition by
