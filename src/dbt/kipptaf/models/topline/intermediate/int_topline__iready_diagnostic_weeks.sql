@@ -15,7 +15,7 @@ cross join unnest(['Reading', 'Math']) as subj
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on cw.academic_year = rt.academic_year
-    and cw.region_expanded = rt.region
+    and cw.region = rt.city
     and cw.week_start_monday between rt.start_date and rt.end_date
     and rt.type = 'IREX'
 left join
