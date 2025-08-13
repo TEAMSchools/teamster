@@ -1,4 +1,19 @@
 with
+
+    roster as (select *, from {{ ref("rpt_appsheet__leadership_development_roster") }}),
+
+    active_users as (
+        select *, from {{ ref("stg_leadership_development__active_users") }}
+    ),
+
+    leader_pm_participants as (
+        select
+            roster.employee_number,
+            coalesce(active_users.active_override, roster.active) as active,
+        from roster
+        left join active_users on roster.employee_number = active_users.employee_number
+    ),
+
     pivot as (
         select
             o.employee_number,
@@ -86,7 +101,7 @@ select
     p.column_name,
     p.column_value,
 
-    a.app_selection_active,
+    l.active,
 
     m.metric_id,
     m.region,
@@ -125,9 +140,7 @@ select
         else 0
     end as round_completion_manager,
 from pivot as p
-left join
-    {{ ref("stg_leadership_development__active_users") }} as a
-    on p.employee_number = a.employee_number
+left join leader_pm_participants as l on p.employee_number = l.employee_number
 left join
     self_completion as c
     on p.employee_number = c.employee_number
@@ -141,4 +154,4 @@ left join
 left join metrics_lookup as m on p.metric_id = m.metric_id
 left join
     {{ ref("int_people__staff_roster") }} as r on p.employee_number = r.employee_number
-where a.app_selection_active
+where l.active
