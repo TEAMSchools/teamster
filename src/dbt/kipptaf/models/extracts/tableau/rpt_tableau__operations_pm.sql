@@ -83,7 +83,7 @@ with
         left join
             responses_pivoted
             on assigned_reviews.employee_number = responses_pivoted.form_employee_number
-            and assigned_reviews.name = responses_pivoted.walkthrough_round
+            and assigned_reviews.reporting_term = responses_pivoted.walkthrough_round
         left join schools on assigned_reviews.home_work_location_name = schools.name
         left join
             full_roster on responses_pivoted.respondent_email = full_roster.google_email
