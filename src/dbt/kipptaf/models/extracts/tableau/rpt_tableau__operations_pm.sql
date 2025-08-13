@@ -9,7 +9,11 @@ with
     terms as (select *, from {{ ref("stg_reporting__terms") }}),
 
     assigned_reviews as (
-        select ops_pm_roster.*, terms.code, terms.name, terms.academic_year,
+        select
+            ops_pm_roster.*,
+            terms.code,
+            terms.name as reporting_term,
+            terms.academic_year,
         from ops_pm_roster
         inner join terms on terms.type = 'OPS'
     ),
