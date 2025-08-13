@@ -34,3 +34,5 @@ models:
         data_type: date
       - name: is_current
         data_type: boolean
+      - name: city
+        data_type: string
