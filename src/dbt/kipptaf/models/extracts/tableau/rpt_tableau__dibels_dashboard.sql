@@ -117,6 +117,10 @@ inner join
     and s.region = a.region
     and s.grade_level = a.grade
     and a.assessment_type = 'Benchmark'
+    and (
+        a.start_date between s.entrydate and s.exitdate
+        or a.end_date between s.entrydate and s.exitdate
+    )
     and a.assessment_include is null
 left join
     {{ ref("rpt_gsheets__dibels_bm_goals_calculations") }} as g
@@ -293,6 +297,10 @@ inner join
     on s.academic_year = e.academic_year
     and s.region = e.region
     and s.grade_level = e.grade
+    and (
+        e.start_date between s.entrydate and s.exitdate
+        or e.end_date between s.entrydate and s.exitdate
+    )
     and e.pm_goal_include is null
 inner join
     {{ ref("stg_google_sheets__dibels_pm_goals") }} as g

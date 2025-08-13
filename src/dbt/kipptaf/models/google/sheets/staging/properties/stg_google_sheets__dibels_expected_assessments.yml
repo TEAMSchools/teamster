@@ -56,3 +56,7 @@ models:
         data_type: int64
       - name: max_pm_round
         data_type: int64
+      - name: start_date
+        data_type: date
+      - name: end_date
+        data_type: date
