@@ -3,6 +3,8 @@ select
     student_number,
     yearid,
 
+    yearid + 1990 as academic_year,
+
     sum(membershipvalue) as days_in_membership,
     sum(attendancevalue) as days_present,
     sum(abs(attendancevalue - 1)) as days_absent_unexcused,
