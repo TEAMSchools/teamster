@@ -171,7 +171,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
     and f.rn_year = 1
-where s.rn_year = 1 and not s.is_self_contained
+where s.rn_year = 1 and not s.is_self_contained and s.enroll_status >= 0
 
 union all
 
@@ -368,4 +368,4 @@ left join
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
     and f.rn_year = 1
-where s.rn_year = 1 and not s.is_self_contained
+where s.rn_year = 1 and not s.is_self_contained and s.enroll_status >= 0
