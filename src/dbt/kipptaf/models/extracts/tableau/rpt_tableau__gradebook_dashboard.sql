@@ -19,7 +19,7 @@ with
             cohort,
             gender,
             year_in_school,
-            is_tutoring as tutoring_nj
+            is_tutoring as tutoring_nj,
             is_counseling_services as is_counselingservices,
             is_student_athlete as is_studentathlete,
             unweighted_ada as ada,
