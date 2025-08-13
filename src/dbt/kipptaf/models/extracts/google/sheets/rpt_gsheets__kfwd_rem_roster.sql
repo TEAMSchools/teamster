@@ -42,11 +42,10 @@ select
     r.ktc_cohort,
     r.contact_owner_name,
     r.contact_college_match_display_gpa,
-
-    c.contact_last_outreach as last_outreach_date,
-    c.contact_last_successful_contact as last_successful_contact_date,
-    c.contact_last_successful_advisor_contact as last_successful_advisor_contact_date,
-    c.contact_latest_fafsa_date as latest_fafsa_date,
+    r.contact_last_outreach as last_outreach_date,
+    r.contact_last_successful_contact as last_successful_contact_date,
+    r.contact_last_successful_advisor_contact as last_successful_advisor_contact_date,
+    r.contact_latest_fafsa_date as latest_fafsa_date,
 
     ei.cur_status as `status`,
     ei.cur_actual_end_date as actual_end_date,
@@ -67,7 +66,7 @@ select
     if(
         date_diff(
             current_date('{{ var("local_timezone") }}'),
-            c.contact_last_successful_contact,
+            r.contact_last_successful_contact,
             day
         )
         > 30,
@@ -77,7 +76,7 @@ select
 
     if(
         date_diff(
-            current_date('{{ var("local_timezone") }}'), c.contact_last_outreach, day
+            current_date('{{ var("local_timezone") }}'), r.contact_last_outreach, day
         )
         > 30,
         'Last Outreach > 30 days',
@@ -85,7 +84,7 @@ select
     ) as last_outreach_status,
 
     date_diff(
-        rh.rem_handoff_date, c.contact_last_successful_contact, day
+        rh.rem_handoff_date, r.contact_last_successful_contact, day
     ) as rem_contact_days_since_handoff,
 
     r.contact_kipp_hs_graduate as is_kipp_hs_grad,
@@ -165,10 +164,9 @@ select
     as most_recent_college_enrollment_status,
     r.contact_currently_enrolled_school as currently_enrolled_school,
 from {{ ref("int_kippadb__roster") }} as r
-left join {{ ref("base_kippadb__contact") }} as c on r.contact_id = c.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
 left join {{ ref("stg_kippadb__enrollment") }} as e on ei.cur_enrollment_id = e.id
-left join rem_subject as rs on rs.contact = r.contact_id and rs.rn_note = 1
-left join rem_handoff as rh on rh.contact = r.contact_id and rh.rn_note = 1
-left join transcript_data as gpa on gpa.student = r.contact_id and gpa.rn_transcript = 1
+left join rem_subject as rs on r.contact_id = rs.contact and rs.rn_note = 1
+left join rem_handoff as rh on r.contact_id = rh.contact and rh.rn_note = 1
+left join transcript_data as gpa on r.contact_id = gpa.student and gpa.rn_transcript = 1
 where r.contact_has_hs_graduated_enrollment = 'HS Graduate'

@@ -253,6 +253,8 @@ models:
       +schema: titan
       disabled:
         +enabled: false
+    topline:
+      +schema: topline
     zendesk:
       +schema: zendesk
       staging:

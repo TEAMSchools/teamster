@@ -1,0 +1,19 @@
+snapshots:
+  - name: snapshot_kippadb__standardized_test_rollup
+    relation: ref("int_kippadb__standardized_test_rollup")
+    config:
+      schema: kippadb
+      strategy: check
+      unique_key:
+        - school_specific_id
+        - test_type
+        - test_subject
+      check_cols:
+        - score
+      dbt_valid_to_current: "'9999-12-31'"
+      meta:
+        dagster:
+          asset_key:
+            - kipptaf
+            - kippadb
+            - snapshot_kippadb__standardized_test_rollup

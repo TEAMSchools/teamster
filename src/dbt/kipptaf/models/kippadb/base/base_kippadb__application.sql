@@ -114,6 +114,7 @@ with
 
 select
     *,
+
     if(is_early_action or is_early_decision, true, false) as is_early_action_decision,
     if(is_submitted and is_2yr_college, true, false) as is_submitted_aa,
     if(is_submitted and is_4yr_college, true, false) as is_submitted_ba,
@@ -123,6 +124,7 @@ select
     if(
         is_submitted and is_certificate and is_accepted, true, false
     ) as is_accepted_certificate,
+
     row_number() over (
         partition by applicant, school
         order by is_matriculated desc, is_accepted desc, is_submitted desc

@@ -17,8 +17,8 @@ with
 
         from {{ ref("int_powerschool__category_grades") }}
         where
-            -- change 1991 to 1990 when ready
-            yearid = {{ var("current_academic_year") - 1991 }}
+            -- change 1991 to 1990 when ready, for cy
+            yearid = {{ var("current_academic_year") - 1990 }}
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
     ),
 
@@ -271,10 +271,10 @@ left join
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
     and sec.quarter = qg.storecode
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="qg") }}
-    -- and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
-    and qg.grades_type = 'last_year'
+    and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    and qg.grades_type = 'current_year'
 where
-    s.academic_year = {{ var("current_academic_year") - 1 }}
+    s.academic_year = {{ var("current_academic_year") }}
     and s.rn_year = 1
     and s.enroll_status = 0
     and not s.is_out_of_district
@@ -450,8 +450,8 @@ left join
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
     and sec.quarter = qg.storecode
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="qg") }}
-    -- and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
-    and qg.grades_type = 'last_year'
+    and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    and qg.grades_type = 'current_year'
 left join
     category_grades as cg
     on ce.terms_yearid = cg.yearid
@@ -460,7 +460,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="cg") }}
     and ge.assignment_category_term = cg.storecode
 where
-    s.academic_year = {{ var("current_academic_year") - 1 }}
+    s.academic_year = {{ var("current_academic_year") }}
     and s.rn_year = 1
     and s.enroll_status = 0
     and not s.is_out_of_district

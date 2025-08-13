@@ -42,5 +42,5 @@ inner join
     {{ ref("stg_powerschool__students") }} as s on ktc.student_number = s.student_number
 inner join
     {{ ref("stg_deanslist__comm_log") }} as c
-    on c.student_school_id = ktc.student_number
+    on ktc.student_number = c.student_school_id
     and regexp_contains(c.reason, r'^KF:')

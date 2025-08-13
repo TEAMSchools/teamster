@@ -1,16 +1,6 @@
 version: 2
 models:
-  - name: int_extracts__student_enrollments
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - student_number
-            - academic_year
-            - entrydate
-          config:
-            enabled: false
-            severity: warn
-            store_failures: true
+  - name: int_extracts__student_enrollments_subjects_weeks
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -190,10 +180,59 @@ models:
         data_type: string
       - name: fafsa_status_mismatch_category
         data_type: string
-        data_tests:
-          - accepted_values:
-              values:
-                - No issues
-              config:
-                severity: warn
-                store_failures: true
+      - name: iready_subject
+        data_type: string
+      - name: illuminate_subject_area
+        data_type: string
+      - name: powerschool_credittype
+        data_type: string
+      - name: grad_unpivot_subject
+        data_type: string
+      - name: discipline
+        data_type: string
+      - name: is_grad_iep_exempt
+        data_type: boolean
+      - name: dibels_most_recent_composite_int
+        data_type: int64
+      - name: state_test_proficiency
+        data_type: string
+      - name: iready_proficiency_eoy
+        data_type: string
+      - name: dibels_boy_composite
+        data_type: string
+      - name: dibels_moy_composite
+        data_type: string
+      - name: dibels_eoy_composite
+        data_type: string
+      - name: dibels_most_recent_composite
+        data_type: string
+      - name: is_exempt_iready
+        data_type: boolean
+      - name: bucket_two
+        data_type: boolean
+      - name: bucket_one
+        data_type: string
+      - name: assessment_dashboard_join
+        data_type: string
+      - name: nj_student_tier
+        data_type: string
+      - name: is_exempt_state_testing
+        data_type: boolean
+      - name: week_start_monday
+        data_type: date
+      - name: week_end_sunday
+        data_type: date
+      - name: quarter
+        data_type: string
+      - name: semester
+        data_type: string
+      - name: school_week_start_date
+        data_type: date
+      - name: school_week_end_date
+        data_type: date
+      - name: week_number_academic_year
+        data_type: int64
+      - name: week_number_quarter
+        data_type: int64
+      - name: is_enrolled_week
+        data_type: boolean
