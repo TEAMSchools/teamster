@@ -88,7 +88,6 @@ select
     b.aggregated_measure_standard_level,
     b.foundation_measure_standard_level,
 
-    r.enrollment_dates_account,
     r.expected_row_count,
     r.actual_row_count,
     r.completed_test_round,
@@ -265,7 +264,6 @@ select
     null as aggregated_measure_standard_level,
     null as foundation_measure_standard_level,
 
-    rs.enrollment_dates_account,
     rs.expected_row_count,
     rs.actual_row_count,
     rs.completed_test_round,
