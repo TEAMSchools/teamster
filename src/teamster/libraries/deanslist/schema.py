@@ -320,6 +320,7 @@ class RosterAssignment(BaseModel):
 
 class Roster(BaseModel):
     Active: str | None = None
+    AttScanVisible: str | None = None
     CollectHW: str | None = None
     CourseNumber: str | None = None
     GradeLevels: str | None = None

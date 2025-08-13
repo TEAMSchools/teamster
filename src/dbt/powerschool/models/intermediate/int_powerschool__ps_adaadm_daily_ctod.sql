@@ -18,6 +18,7 @@ with
 
 select
     mv.studentid,
+    mv.student_number,
     mv.schoolid,
     mv.calendardate,
     mv.fteid,
