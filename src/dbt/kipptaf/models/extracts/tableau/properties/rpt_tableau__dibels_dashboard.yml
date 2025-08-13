@@ -6,8 +6,8 @@ models:
           combination_of_columns:
             - academic_year
             - student_number
-            - admin_season
-            - round_number
+            - expected_test
+            - expected_round_number
             - expected_measure_standard
           config:
             severity: warn
