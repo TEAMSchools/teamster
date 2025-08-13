@@ -131,15 +131,7 @@ with
             coalesce(a.actual_row_count, 0) as actual_row_count,
 
             case
-                when e.expected_row_count = a.actual_row_count
-                then true
-                when e.admin_season = 'BOY' and a.boy_composite != 'No Data'
-                then true
-                when e.admin_season = 'MOY' and a.moy_composite != 'No Data'
-                then true
-                when e.admin_season = 'EOY' and a.eoy_composite != 'No Data'
-                then true
-                else false
+                when e.expected_row_count = a.actual_row_count then true else false
             end as completed_test_round,
 
             row_number() over (
@@ -191,15 +183,7 @@ with
             coalesce(a.actual_row_count, 0) as actual_row_count,
 
             case
-                when e.expected_row_count = a.actual_row_count
-                then true
-                when e.admin_season = 'BOY' and a.boy_composite != 'No Data'
-                then true
-                when e.admin_season = 'MOY' and a.moy_composite != 'No Data'
-                then true
-                when e.admin_season = 'EOY' and a.eoy_composite != 'No Data'
-                then true
-                else false
+                when e.expected_row_count = a.actual_row_count then true else false
             end as completed_test_round,
 
             row_number() over (
