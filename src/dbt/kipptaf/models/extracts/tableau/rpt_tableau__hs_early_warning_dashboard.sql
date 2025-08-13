@@ -42,6 +42,7 @@ select
     co.year_in_network,
     co.code_location as `db_name`,
     co.boy_status,
+    co.unweighted_ada as ada,
 
     dt.name as term_name,
     dt.code as reporting_term,
@@ -70,8 +71,6 @@ select
     gpc.earned_credits_cum,
     gpc.earned_credits_cum_projected,
     gpc.potential_credits_cum,
-
-    att.`ada`,
 
     sus.suspension_count,
     sus.suspension_days,
@@ -104,11 +103,6 @@ left join
     on co.studentid = gpc.studentid
     and co.schoolid = gpc.schoolid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpc") }}
-left join
-    {{ ref("int_powerschool__ada") }} as att
-    on co.studentid = att.studentid
-    and co.yearid = att.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
 left join
     suspension as sus
     on co.student_number = sus.student_school_id
