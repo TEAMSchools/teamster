@@ -31,30 +31,21 @@ with
 
     expected_tests as (
         select
-            e.academic_year,
-            e.region,
-            e.grade,
-            e.assessment_type,
-            e.admin_season,
-            e.round_number,
-
-            t.start_date,
-            t.end_date,
+            academic_year,
+            region,
+            grade,
+            assessment_type,
+            admin_season,
+            round_number,
+            start_date,
+            end_date,
 
             count(*) over (
-                partition by
-                    e.academic_year, e.region, e.grade, e.admin_season, e.round_number
+                partition by academic_year, region, grade, admin_season, round_number
             ) as expected_row_count,
 
-        from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
-        inner join
-            {{ ref("stg_reporting__terms") }} as t
-            on e.academic_year = t.academic_year
-            and e.region = t.region
-            and e.admin_season = t.name
-            and e.test_code = t.code
-            and t.type = 'LIT'
-        where e.assessment_include is null and e.pm_goal_include is null
+        from {{ ref("stg_google_sheets__dibels_expected_assessments") }}
+        where assessment_include is null and pm_goal_include is null
     ),
 
     roster_enrollment_dates as (
