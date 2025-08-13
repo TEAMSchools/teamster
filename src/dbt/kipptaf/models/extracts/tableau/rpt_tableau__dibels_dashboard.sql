@@ -28,6 +28,7 @@ select
     'Benchmark' as assessment_type,
 
     a.admin_season as expected_test,
+    a.round_number as expected_round_number,
     a.month_round as expected_month_round,
     a.grade as expected_grade_level_int,
     a.expected_measure_name_code,
@@ -207,6 +208,7 @@ select
     'PM' as assessment_type,
 
     e.admin_season as expected_test,
+    e.round_number as expected_round_number,
     e.month_round as expected_month_round,
     e.grade as expected_grade_level_int,
     e.expected_measure_name_code,
