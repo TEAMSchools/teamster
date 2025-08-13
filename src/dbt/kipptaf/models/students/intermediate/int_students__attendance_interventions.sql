@@ -75,8 +75,8 @@ select
 
     u.user_name as commlog_staff_name,
 
-    if(c.commlog_reason is not null, 'Complete', 'Missing') as intervention_status,
-    if(c.commlog_reason is not null, 1, 0) as intervention_status_required_int,
+    if(c.reason is not null, 'Complete', 'Missing') as intervention_status,
+    if(c.reason is not null, 1, 0) as intervention_status_required_int,
 from {{ ref("int_powerschool__ada") }} as ada
 inner join
     intervention_scaffold as sc
@@ -84,7 +84,7 @@ inner join
     and ada.days_absent_unexcused >= sc.absence_threshold
 left join
     comm_log as c
-    on ada.student_number = c.student_number
+    on ada.student_number = c.student_school_id
     and ada.academic_year = c.academic_year
     and {{ union_dataset_join_clause(left_alias="ada", right_alias="c") }}
     and sc.commlog_reason = c.reason
