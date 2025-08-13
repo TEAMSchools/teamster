@@ -9,13 +9,15 @@ with
     terms as (select *, from {{ ref("stg_reporting__terms") }}),
 
     assigned_reviews as (
-        select * from ops_pm_roster inner join terms on terms.type = 'OPS'
+        select ops_pm_roster.*, terms.code, terms.name, terms.academic_year,
+        from ops_pm_roster
+        inner join terms on terms.type = 'OPS'
     ),
 
     form_responses as (
         select *,
         from {{ ref("int_google_forms__form_responses") }}
-        -- filtering for Operations EKG Form
+        -- filtering for Operations Teammate PM Form
         where
             form_id = '1oPcgOeaNS7DNaG2wa9JnfkWfxfxp7eOuj3XnXJoe-vE'
             and text_value is not null
