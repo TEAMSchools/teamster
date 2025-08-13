@@ -32,6 +32,9 @@ with
 select
     m.*,
 
+    t.start_date,
+    t.end_date,
+
     min(m.round_number) over (
         partition by m.academic_year, m.region, m.admin_season, m.grade
         order by m.round_number
@@ -41,9 +44,6 @@ select
         partition by m.academic_year, m.region, m.admin_season, m.grade
         order by m.round_number desc
     ) as max_pm_round,
-
-    t.start_date,
-    t.end_date,
 
 from modified as m
 left join
