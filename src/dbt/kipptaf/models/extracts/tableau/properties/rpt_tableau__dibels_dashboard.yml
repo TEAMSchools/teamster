@@ -1,6 +1,17 @@
 version: 2
 models:
   - name: rpt_tableau__dibels_dashboard
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - academic_year
+            - student_number
+            - admin_season
+            - round_number
+            - expected_measure_standard
+          config:
+            severity: warn
+            store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
