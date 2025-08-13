@@ -31,12 +31,12 @@ with
 
 select
     co.student_number,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.academic_year,
     co.region,
     co.school_level,
     co.reporting_schoolid,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.grade_level,
     co.advisory_name as team,
     co.spedlep as iep_status,

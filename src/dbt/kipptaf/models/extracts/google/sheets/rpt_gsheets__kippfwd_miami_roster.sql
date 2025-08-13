@@ -2,10 +2,11 @@ with
     fast_concat as (
         select
             _dbt_source_relation,
-            academic_year,
             student_id,
             assessment_subject,
             assessment_grade,
+
+            academic_year + 1 as academic_year_next,
 
             concat(achievement_level, ' (', scale_score, ')') as fast_score,
         from {{ ref("stg_fldoe__fast") }}
@@ -13,7 +14,8 @@ with
     ),
 
     fast_pivot as (
-        select _dbt_source_relation, student_id, academic_year, fast_ela, fast_math,
+        select
+            _dbt_source_relation, student_id, academic_year_next, fast_ela, fast_math,
         from
             fast_concat pivot (
                 max(fast_score) for assessment_subject
@@ -23,7 +25,7 @@ with
 
 select
     co.academic_year,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.advisor_lastfirst,
     co.student_number as ps_id,
     co.state_studentnumber as mdcps_id,
@@ -49,8 +51,8 @@ select
 from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     fast_pivot as fp
-    on co.fleid = fp.student_id
-    and co.academic_year = (fp.academic_year + 1)
+    on co.state_studentnumber = fp.student_id
+    and co.academic_year = fp.academic_year_next
     and {{ union_dataset_join_clause(left_alias="co", right_alias="fp") }}
 left join
     {{ ref("int_powerschool__gpa_cumulative") }} as gpa

@@ -182,7 +182,7 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
             on fl.academic_year = co.academic_year
-            and fl.student_id = co.fleid
+            and fl.student_id = co.state_studentnumber
             and co.rn_year = 1
         where fl.administration_window = 'PM3' and fl.assessment_name = 'FAST'
         group by fl.academic_year, fl.assessment_subject
@@ -233,7 +233,7 @@ with
 
             concat(fl.assessment_subject, ' growth - IEP') as measure,
 
-            co.school_abbreviation as grade_level,
+            co.school as grade_level,
 
             round(
                 avg(
@@ -260,7 +260,7 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
             on fl.academic_year = co.academic_year
-            and fl.student_id = co.fleid
+            and fl.student_id = co.state_studentnumber
             and co.spedlep like 'SPED%'
             and co.rn_year = 1
         left join
@@ -269,7 +269,7 @@ with
             and fl.assessment_subject = py.assessment_subject
             and fl.academic_year = py.academic_year
         where fl.assessment_name = 'FAST' and fl.administration_window = 'PM3'
-        group by fl.academic_year, fl.assessment_subject, co.school_abbreviation
+        group by fl.academic_year, fl.assessment_subject, co.school
 
         union all
 
@@ -310,7 +310,7 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
             on fl.academic_year = co.academic_year
-            and fl.student_id = co.fleid
+            and fl.student_id = co.state_studentnumber
             and co.spedlep like 'SPED%'
             and co.rn_year = 1
         where fl.assessment_name = 'FAST' and fl.administration_window = 'PM3'
@@ -361,7 +361,7 @@ with
         from {{ ref("int_extracts__student_enrollments") }} as co
         left join
             {{ ref("int_fldoe__all_assessments") }} as fl
-            on co.fleid = fl.student_id
+            on co.state_studentnumber = fl.student_id
             and co.academic_year = fl.academic_year
             and fl.assessment_name = 'FAST'
             and fl.assessment_subject = 'English Language Arts'
