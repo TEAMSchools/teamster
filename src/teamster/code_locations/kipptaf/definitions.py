@@ -83,7 +83,6 @@ defs = Definitions(
         *_google.schedules,
         *adp.schedules,
         *airbyte.schedules,
-        # *amplify.schedules,
         *coupa.schedules,
         *extracts.schedules,
         *knowbe4.schedules,
