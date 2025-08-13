@@ -18,6 +18,8 @@ select
     exitdate,
     enroll_status,
 
+    null as `subject`,
+
     week_start_monday as term_name,
     week_start_monday as term_start,
     week_end_sunday as term_end,
@@ -51,6 +53,7 @@ select
     exitdate,
     enroll_status,
 
+    iready_subject as `subject`,
     week_start_monday as term_name,
     week_start_monday as term_start,
     week_end_sunday as term_end,
@@ -86,6 +89,7 @@ select
     exitdate,
     enroll_status,
 
+    iready_subject as `subject`,
     week_start_monday as term_name,
     week_start_monday as term_start,
     week_end_sunday as term_end,
