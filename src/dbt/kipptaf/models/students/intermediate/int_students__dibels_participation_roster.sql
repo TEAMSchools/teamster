@@ -25,7 +25,7 @@ with
         where
             discipline = 'ELA'
             and rn_year = 1
-            and enroll_status != -1
+            and enroll_status >= 0
             and grade_level <= 8
     ),
 
@@ -81,6 +81,7 @@ with
                 then true
                 when e.admin_season = 'EOY' and a.eoy_composite != 'No Data'
                 then true
+                else false
             end as completed_test_round,
 
             row_number() over (
@@ -138,6 +139,7 @@ with
                 then true
                 when e.admin_season = 'EOY' and a.eoy_composite != 'No Data'
                 then true
+                else false
             end as completed_test_round,
 
             row_number() over (
@@ -197,6 +199,7 @@ with
                 then true
                 when e.admin_season = 'EOY' and a.eoy_composite != 'No Data'
                 then true
+                else false
             end as completed_test_round,
 
             row_number() over (
