@@ -8,8 +8,6 @@ models:
       contract:
         enforced: true
     columns:
-      - name: column_name
-        data_type: string
       - name: school_year
         data_type: string
       - name: state
