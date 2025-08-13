@@ -124,6 +124,15 @@ select
     e.salesfoce_contact_owner_name as contact_owner_name,
     e.ktc_cohort,
     e.illuminate_student_id,
+    e.contact_1_name,
+    e.contact_1_phone_home,
+    e.contact_1_phone_mobile,
+    e.contact_1_email_current,
+    e.contact_2_name,
+    e.contact_2_phone_home,
+    e.contact_2_phone_mobile,
+    e.contact_2_email_current,
+    e.is_fldoe_fte_2,
 
     m.ms_attended,
 
