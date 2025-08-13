@@ -148,10 +148,10 @@ with
 
 select
     co.student_number,
-    co.lastfirst as student_name,
+    co.student_name,
     co.academic_year,
     co.schoolid,
-    co.school_abbreviation as school,
+    co.school,
     co.school_name,
     co.region,
     co.grade_level,
@@ -252,7 +252,7 @@ select
     end as referral_tier,
 
     count(distinct co.student_number) over (
-        partition by w.week_start_monday, co.school_abbreviation
+        partition by w.week_start_monday, co.schoolid
     ) as school_enrollment_by_week,
 
     max(if(dlp.is_suspension, 1, 0)) over (
