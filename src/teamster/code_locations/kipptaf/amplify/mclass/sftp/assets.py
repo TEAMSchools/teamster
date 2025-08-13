@@ -1,31 +1,34 @@
-from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from dagster import StaticPartitionsDefinition
+
+from teamster.code_locations.kipptaf import CODE_LOCATION, CURRENT_FISCAL_YEAR
 from teamster.code_locations.kipptaf.amplify.mclass.sftp.schema import (
     BENCHMARK_STUDENT_SUMMARY_SCHEMA,
     PM_STUDENT_SUMMARY_SCHEMA,
 )
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.sftp.assets import build_sftp_file_asset
 
-partitions_def = FiscalYearPartitionsDefinition(
-    start_date="2025-07-01", timezone=str(LOCAL_TIMEZONE), start_month=7
+partitions_def = StaticPartitionsDefinition(
+    [f"{year - 1}-{year}" for year in range(2026, CURRENT_FISCAL_YEAR.fiscal_year + 1)]
 )
 
 benchmark_student_summary = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "amplify", "mclass", "sftp", "benchmark_student_summary"],
-    remote_dir_regex=r"/data-team/kipptaf/amplify",  # TODO: update for prod
-    remote_file_regex=r"UAR_ new DYD columns - D8 BM Sample File.csv",  # TODO: update for prod
-    ssh_resource_key="ssh_couchdrop",  # TODO: update for prod
+    remote_dir_regex=r"bm",
+    remote_file_regex=r"dibels8_BM_(?P<school_year>[\d-]+)[-\w]+\.csv",
+    ssh_resource_key="ssh_amplify",
     avro_schema=BENCHMARK_STUDENT_SUMMARY_SCHEMA,
     partitions_def=partitions_def,
+    ignore_multiple_matches=True,
 )
 
 pm_student_summary = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "amplify", "mclass", "sftp", "pm_student_summary"],
-    remote_dir_regex=r"/data-team/kipptaf/amplify",  # TODO: update for prod
-    remote_file_regex=r"UAR_ new DYD columns - D8 PM Sample File.csv",  # TODO: update for prod
-    ssh_resource_key="ssh_couchdrop",  # TODO: update for prod
+    remote_dir_regex=r"pm",
+    remote_file_regex=r"dibels8_PM_(?P<school_year>[\d-]+)[-\w]+\.csv",
+    ssh_resource_key="ssh_amplify",
     avro_schema=PM_STUDENT_SUMMARY_SCHEMA,
     partitions_def=partitions_def,
+    ignore_multiple_matches=True,
 )
 
 assets = [

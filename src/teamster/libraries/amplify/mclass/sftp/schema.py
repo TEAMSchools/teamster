@@ -2,7 +2,6 @@ from pydantic import BaseModel
 
 
 class PMStudentSummary(BaseModel):
-    column_name: str | None = None  # TODO: delete before prod
     school_year: str | None = None
     state: str | None = None
     multi_district_organization_name: str | None = None
@@ -53,7 +52,6 @@ class PMStudentSummary(BaseModel):
 
 
 class BenchmarkStudentSummary(BaseModel):
-    column_name: str | None = None  # TODO: delete before prod
     school_year: str | None = None
     state: str | None = None
     multi_district_organization_name: str | None = None
