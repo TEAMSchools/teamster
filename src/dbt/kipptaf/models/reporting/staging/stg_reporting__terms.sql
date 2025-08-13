@@ -1,5 +1,5 @@
 select
-    * except (region),
+    *,
 
     case
         when region in ('Newark', 'TEAM Academy Charter School')
