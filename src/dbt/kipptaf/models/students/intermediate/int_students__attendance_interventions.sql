@@ -75,6 +75,8 @@ select
 
     u.user_name as commlog_staff_name,
 
+    lc.powerschool_school_id as schoolid,
+
     if(c.reason is not null, 'Complete', 'Missing') as intervention_status,
     if(c.reason is not null, 1, 0) as intervention_status_required_int,
 from {{ ref("int_powerschool__ada") }} as ada
@@ -93,3 +95,6 @@ left join
     {{ ref("stg_deanslist__users") }} as u
     on c.user_id = u.dl_user_id
     and {{ union_dataset_join_clause(left_alias="c", right_alias="u") }}
+left join
+    {{ ref("stg_people__location_crosswalk") }} as lc
+    on c.dl_school_id = lc.deanslist_school_id
