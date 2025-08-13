@@ -10,6 +10,7 @@ with
     )
 
 select
+    _dagster_partition_school as dl_school_id,
     isdraft as is_draft,
 
     /* repeated records */
