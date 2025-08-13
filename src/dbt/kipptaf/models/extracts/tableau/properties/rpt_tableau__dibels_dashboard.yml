@@ -164,8 +164,6 @@ models:
         data_type: string
       - name: foundation_measure_standard_level
         data_type: string
-      - name: enrollment_dates_account
-        data_type: boolean
       - name: expected_row_count
         data_type: int64
       - name: actual_row_count
