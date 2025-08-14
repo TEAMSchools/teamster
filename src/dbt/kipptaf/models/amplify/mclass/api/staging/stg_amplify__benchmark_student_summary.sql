@@ -4,16 +4,31 @@ with
             * except (
                 client_date,
                 composite_score,
+                correct_responses_maze_score,
                 decoding_nwf_wrc_score,
+                error_rate_orf_score,
+                incorrect_responses_maze_score,
                 letter_names_lnf_score,
                 letter_sounds_nwf_cls_score,
                 phonemic_awareness_psf_score,
+                primary_id_student_id_district_id,
+                primary_id_student_number,
+                ran_score,
                 reading_accuracy_orf_accu_score,
                 reading_comprehension_maze_score,
                 reading_fluency_orf_score,
+                spelling_score,
+                student_id_district_id,
+                student_primary_id,
                 sync_date,
+                vocabulary_score,
                 word_reading_wrf_score
             ),
+
+            cast(
+                primary_id_student_id_district_id as int
+            ) as primary_id_student_id_district_id,
+            cast(student_primary_id as int) as student_primary_id,
 
             /* score */
             cast(decoding_nwf_wrc_score as numeric) as decoding_nwf_wrc_score,
@@ -22,6 +37,7 @@ with
             cast(
                 phonemic_awareness_psf_score as numeric
             ) as phonemic_awareness_psf_score,
+            cast(ran_score as numeric) as ran_score,
             cast(
                 reading_accuracy_orf_accu_score as numeric
             ) as reading_accuracy_orf_accu_score,
@@ -31,9 +47,25 @@ with
             cast(reading_fluency_orf_score as numeric) as reading_fluency_orf_score,
             cast(word_reading_wrf_score as numeric) as word_reading_wrf_score,
             cast(composite_score as numeric) as composite_score,
+            cast(
+                correct_responses_maze_score as numeric
+            ) as correct_responses_maze_score,
+            cast(error_rate_orf_score as numeric) as error_rate_orf_score,
+            cast(
+                incorrect_responses_maze_score as numeric
+            ) as incorrect_responses_maze_score,
+            cast(spelling_score as numeric) as spelling_score,
+            cast(vocabulary_score as numeric) as vocabulary_score,
 
             cast(client_date as date) as client_date,
             cast(sync_date as date) as sync_date,
+
+            cast(
+                cast(student_id_district_id as numeric) as int
+            ) as student_id_district_id,
+            cast(
+                cast(primary_id_student_number as numeric) as int
+            ) as primary_id_student_number,
 
             cast(left(school_year, 4) as int) as academic_year,
 
@@ -49,7 +81,6 @@ with
             }} as surrogate_key,
 
         from {{ source("amplify", "src_amplify__benchmark_student_summary") }}
-
     ),
 
     transformations as (
