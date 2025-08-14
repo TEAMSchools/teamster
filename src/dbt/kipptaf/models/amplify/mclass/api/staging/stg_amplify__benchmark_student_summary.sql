@@ -2,59 +2,33 @@ with
     benchmark_student_summary as (
         select
             * except (
-                assessment_grade,
                 client_date,
-                composite_level,
-                composite_national_norm_percentile,
                 composite_score,
-                composite_semester_growth,
-                composite_year_growth,
-                decoding_nwf_wrc_level,
-                decoding_nwf_wrc_national_norm_percentile,
+                correct_responses_maze_score,
                 decoding_nwf_wrc_score,
-                decoding_nwf_wrc_semester_growth,
-                decoding_nwf_wrc_year_growth,
-                enrollment_grade,
-                letter_names_lnf_level,
-                letter_names_lnf_national_norm_percentile,
+                error_rate_orf_score,
+                incorrect_responses_maze_score,
                 letter_names_lnf_score,
-                letter_names_lnf_semester_growth,
-                letter_names_lnf_year_growth,
-                letter_sounds_nwf_cls_level,
-                letter_sounds_nwf_cls_national_norm_percentile,
                 letter_sounds_nwf_cls_score,
-                letter_sounds_nwf_cls_semester_growth,
-                letter_sounds_nwf_cls_year_growth,
-                official_teacher_staff_id,
-                phonemic_awareness_psf_level,
-                phonemic_awareness_psf_national_norm_percentile,
                 phonemic_awareness_psf_score,
-                phonemic_awareness_psf_semester_growth,
-                phonemic_awareness_psf_year_growth,
-                reading_accuracy_orf_accu_level,
-                reading_accuracy_orf_accu_national_norm_percentile,
+                primary_id_student_id_district_id,
+                primary_id_student_number,
+                ran_score,
                 reading_accuracy_orf_accu_score,
-                reading_accuracy_orf_accu_semester_growth,
-                reading_accuracy_orf_accu_year_growth,
-                reading_comprehension_maze_level,
-                reading_comprehension_maze_national_norm_percentile,
                 reading_comprehension_maze_score,
-                reading_comprehension_maze_semester_growth,
-                reading_comprehension_maze_year_growth,
-                reading_fluency_orf_level,
-                reading_fluency_orf_national_norm_percentile,
                 reading_fluency_orf_score,
-                reading_fluency_orf_semester_growth,
-                reading_fluency_orf_year_growth,
+                spelling_score,
+                student_id_district_id,
+                student_primary_id,
                 sync_date,
-                word_reading_wrf_level,
-                word_reading_wrf_national_norm_percentile,
-                word_reading_wrf_score,
-                word_reading_wrf_semester_growth,
-                word_reading_wrf_year_growth
+                vocabulary_score,
+                word_reading_wrf_score
             ),
 
-            cast(left(school_year, 4) as int) as academic_year,
+            cast(
+                primary_id_student_id_district_id as int
+            ) as primary_id_student_id_district_id,
+            cast(student_primary_id as int) as student_primary_id,
 
             /* score */
             cast(decoding_nwf_wrc_score as numeric) as decoding_nwf_wrc_score,
@@ -63,6 +37,7 @@ with
             cast(
                 phonemic_awareness_psf_score as numeric
             ) as phonemic_awareness_psf_score,
+            cast(ran_score as numeric) as ran_score,
             cast(
                 reading_accuracy_orf_accu_score as numeric
             ) as reading_accuracy_orf_accu_score,
@@ -71,152 +46,44 @@ with
             ) as reading_comprehension_maze_score,
             cast(reading_fluency_orf_score as numeric) as reading_fluency_orf_score,
             cast(word_reading_wrf_score as numeric) as word_reading_wrf_score,
+            cast(composite_score as numeric) as composite_score,
+            cast(
+                correct_responses_maze_score as numeric
+            ) as correct_responses_maze_score,
+            cast(error_rate_orf_score as numeric) as error_rate_orf_score,
+            cast(
+                incorrect_responses_maze_score as numeric
+            ) as incorrect_responses_maze_score,
+            cast(spelling_score as numeric) as spelling_score,
+            cast(vocabulary_score as numeric) as vocabulary_score,
 
-            /* level */
-            cast(composite_level as string) as composite_level,
-            cast(decoding_nwf_wrc_level as string) as decoding_nwf_wrc_level,
-            cast(letter_names_lnf_level as string) as letter_names_lnf_level,
-            cast(letter_sounds_nwf_cls_level as string) as letter_sounds_nwf_cls_level,
-            cast(
-                phonemic_awareness_psf_level as string
-            ) as phonemic_awareness_psf_level,
-            cast(
-                reading_accuracy_orf_accu_level as string
-            ) as reading_accuracy_orf_accu_level,
-            cast(
-                reading_comprehension_maze_level as string
-            ) as reading_comprehension_maze_level,
-            cast(reading_fluency_orf_level as string) as reading_fluency_orf_level,
-            cast(word_reading_wrf_level as string) as word_reading_wrf_level,
+            cast(client_date as date) as client_date,
+            cast(sync_date as date) as sync_date,
 
-            /* semester growth */
-            cast(composite_semester_growth as string) as composite_semester_growth,
             cast(
-                decoding_nwf_wrc_semester_growth as string
-            ) as decoding_nwf_wrc_semester_growth,
+                cast(student_id_district_id as numeric) as int
+            ) as student_id_district_id,
             cast(
-                letter_names_lnf_semester_growth as string
-            ) as letter_names_lnf_semester_growth,
-            cast(
-                letter_sounds_nwf_cls_semester_growth as string
-            ) as letter_sounds_nwf_cls_semester_growth,
-            cast(
-                phonemic_awareness_psf_semester_growth as string
-            ) as phonemic_awareness_psf_semester_growth,
-            cast(
-                reading_accuracy_orf_accu_semester_growth as string
-            ) as reading_accuracy_orf_accu_semester_growth,
-            cast(
-                reading_comprehension_maze_semester_growth as string
-            ) as reading_comprehension_maze_semester_growth,
-            cast(
-                reading_fluency_orf_semester_growth as string
-            ) as reading_fluency_orf_semester_growth,
-            cast(
-                word_reading_wrf_semester_growth as string
-            ) as word_reading_wrf_semester_growth,
+                cast(primary_id_student_number as numeric) as int
+            ) as primary_id_student_number,
 
-            /* year growth */
-            cast(composite_year_growth as string) as composite_year_growth,
-            cast(
-                decoding_nwf_wrc_year_growth as string
-            ) as decoding_nwf_wrc_year_growth,
-            cast(
-                letter_names_lnf_year_growth as string
-            ) as letter_names_lnf_year_growth,
-            cast(
-                letter_sounds_nwf_cls_year_growth as string
-            ) as letter_sounds_nwf_cls_year_growth,
-            cast(
-                phonemic_awareness_psf_year_growth as string
-            ) as phonemic_awareness_psf_year_growth,
-            cast(
-                reading_accuracy_orf_accu_year_growth as string
-            ) as reading_accuracy_orf_accu_year_growth,
-            cast(
-                reading_comprehension_maze_year_growth as string
-            ) as reading_comprehension_maze_year_growth,
-            cast(
-                reading_fluency_orf_year_growth as string
-            ) as reading_fluency_orf_year_growth,
-            cast(
-                word_reading_wrf_year_growth as string
-            ) as word_reading_wrf_year_growth,
+            cast(left(school_year, 4) as int) as academic_year,
 
-            /* national norm percentile */
-            cast(
-                composite_national_norm_percentile as string
-            ) as composite_national_norm_percentile,
-            cast(
-                reading_comprehension_maze_national_norm_percentile as string
-            ) as reading_comprehension_maze_national_norm_percentile,
-            cast(
-                decoding_nwf_wrc_national_norm_percentile as string
-            ) as decoding_nwf_wrc_national_norm_percentile,
-            cast(
-                letter_sounds_nwf_cls_national_norm_percentile as string
-            ) as letter_sounds_nwf_cls_national_norm_percentile,
-            cast(
-                word_reading_wrf_national_norm_percentile as string
-            ) as word_reading_wrf_national_norm_percentile,
-
-            date(client_date) as client_date,
-            date(sync_date) as sync_date,
-
-            coalesce(
-                assessment_grade.string_value,
-                cast(assessment_grade.long_value as string)
-            ) as assessment_grade,
-
-            coalesce(
-                enrollment_grade.string_value,
-                cast(enrollment_grade.long_value as string)
-            ) as enrollment_grade,
-
-            coalesce(
-                official_teacher_staff_id.string_value,
-                cast(official_teacher_staff_id.long_value as string),
-                cast(official_teacher_staff_id.double_value as string)
-            ) as official_teacher_staff_id,
-
-            coalesce(
-                cast(composite_score.double_value as numeric),
-                cast(composite_score.long_value as numeric)
-            ) as composite_score,
-
-            coalesce(
-                reading_accuracy_orf_accu_national_norm_percentile.string_value,
-                cast(
-                    reading_accuracy_orf_accu_national_norm_percentile.double_value
-                    as string
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "student_primary_id",
+                        "school_year",
+                        "benchmark_period",
+                        "assessment_grade",
+                    ]
                 )
-            ) as reading_accuracy_orf_accu_national_norm_percentile,
-
-            coalesce(
-                reading_fluency_orf_national_norm_percentile.string_value,
-                cast(
-                    reading_fluency_orf_national_norm_percentile.double_value as string
-                )
-            ) as reading_fluency_orf_national_norm_percentile,
-
-            coalesce(
-                letter_names_lnf_national_norm_percentile.string_value,
-                cast(letter_names_lnf_national_norm_percentile.double_value as string)
-            ) as letter_names_lnf_national_norm_percentile,
-
-            coalesce(
-                phonemic_awareness_psf_national_norm_percentile.string_value,
-                cast(
-                    phonemic_awareness_psf_national_norm_percentile.double_value
-                    as string
-                )
-            ) as phonemic_awareness_psf_national_norm_percentile,
+            }} as surrogate_key,
 
         from {{ source("amplify", "src_amplify__benchmark_student_summary") }}
-
     ),
 
-    discontinued as (
+    transformations as (
         select
             * except (
                 composite_level,
@@ -427,17 +294,6 @@ with
                 enrollment_grade = 'K', 0, safe_cast(enrollment_grade as int)
             ) as enrollment_grade_int,
 
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "student_primary_id",
-                        "school_year",
-                        "benchmark_period",
-                        "assessment_grade",
-                    ]
-                )
-            }} as surrogate_key,
-
         from benchmark_student_summary
     )
 
@@ -446,7 +302,8 @@ select
 
     x.abbreviation as school,
     x.powerschool_school_id as schoolid,
+
     initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
 
-from discontinued as d
+from transformations as d
 left join {{ ref("stg_people__location_crosswalk") }} as x on d.school_name = x.name
