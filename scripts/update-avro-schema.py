@@ -109,15 +109,15 @@ def kippnewark_renlearn_star():
     )
 
 
-def kippnewark_renlearn_accelerated_reader():
-    from teamster.code_locations.kippnewark.renlearn.schema import (
-        ACCELERATED_READER_SCHEMA,
-    )
+# def kippnewark_renlearn_accelerated_reader():
+#     from teamster.code_locations.kippnewark.renlearn.schema import (
+#         ACCELERATED_READER_SCHEMA,
+#     )
 
-    rewrite_blobs(
-        asset_key=["kippnewark", "renlearn", "accelerated_reader"],
-        schema=parse_schema(ACCELERATED_READER_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "renlearn", "accelerated_reader"],
+#         schema=parse_schema(ACCELERATED_READER_SCHEMA),
+#     )
 
 
 def kippnewark_edplan_njsmart_powerschool():
@@ -398,15 +398,15 @@ def kippmiami_iready_instructional_usage_data():
     )
 
 
-def kippmiami_renlearn_accelerated_reader():
-    from teamster.code_locations.kippmiami.renlearn.schema import (
-        ACCELERATED_READER_SCHEMA,
-    )
+# def kippmiami_renlearn_accelerated_reader():
+#     from teamster.code_locations.kippmiami.renlearn.schema import (
+#         ACCELERATED_READER_SCHEMA,
+#     )
 
-    rewrite_blobs(
-        asset_key=["kippmiami", "renlearn", "accelerated_reader"],
-        schema=parse_schema(ACCELERATED_READER_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "renlearn", "accelerated_reader"],
+#         schema=parse_schema(ACCELERATED_READER_SCHEMA),
+#     )
 
 
 def kippmiami_renlearn_star():
@@ -544,6 +544,17 @@ def kipptaf_tableau_view_count_per_view():
         asset_key=["kipptaf", "tableau", "view_count_per_view"],
         schema=parse_schema(VIEW_COUNT_PER_VIEW_SCHEMA),
     )
+
+
+# def kipptaf_amplify_pm_student_summary():
+#     from teamster.code_locations.kipptaf.amplify.mclass.api.schema import (
+#         PM_STUDENT_SUMMARY_SCHEMA,
+#     )
+
+#     rewrite_blobs(
+#         asset_key=["kipptaf", "amplify", "pm_student_summary"],
+#         schema=parse_schema(PM_STUDENT_SUMMARY_SCHEMA),
+#     )
 
 
 def main(fn):
