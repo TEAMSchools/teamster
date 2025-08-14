@@ -4,20 +4,35 @@ with
             * except (
                 client_date,
                 primary_id_student_id_district_id,
+                primary_id_student_number,
+                probe_number,
                 score_change,
                 score,
-                sync_date
+                student_id_district_id,
+                student_primary_id,
+                sync_date,
+                total_number_of_probes
             ),
 
             cast(
                 primary_id_student_id_district_id as int
             ) as primary_id_student_id_district_id,
+            cast(probe_number as int) as probe_number,
+            cast(student_primary_id as int) as student_primary_id,
+            cast(total_number_of_probes as int) as total_number_of_probes,
 
             cast(score as numeric) as measure_standard_score,
             cast(score_change as numeric) as measure_standard_score_change,
 
             cast(client_date as date) as client_date,
             cast(sync_date as date) as sync_date,
+
+            cast(
+                cast(primary_id_student_number as numeric) as int
+            ) as primary_id_student_number,
+            cast(
+                cast(student_id_district_id as numeric) as int
+            ) as student_id_district_id,
 
             cast(left(school_year, 4) as int) as academic_year,
 
@@ -32,7 +47,7 @@ with
 
             {{
                 dbt_utils.generate_surrogate_key(
-                    ["student_primary_id", "school_year", "pm_period"]
+                    ["student_primary_id", "school_year", "pm_period", "measure"]
                 )
             }} as surrogate_key,
 

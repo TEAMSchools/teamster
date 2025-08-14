@@ -557,6 +557,17 @@ def kipptaf_tableau_view_count_per_view():
 #     )
 
 
+# def kipptaf_amplify_benchmark_student_summary():
+#     from teamster.code_locations.kipptaf.amplify.mclass.api.schema import (
+#         BENCHMARK_STUDENT_SUMMARY_SCHEMA,
+#     )
+
+#     rewrite_blobs(
+#         asset_key=["kipptaf", "amplify", "benchmark_student_summary"],
+#         schema=parse_schema(BENCHMARK_STUDENT_SUMMARY_SCHEMA),
+#     )
+
+
 def main(fn):
     globals()[fn]()
 
