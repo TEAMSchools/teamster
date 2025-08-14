@@ -1,48 +1,42 @@
-dev:
-  target: dev
-  outputs:
-    dev:
-      type: bigquery
-      method: oauth
-      project: teamster-332318
-      schema: z_dev
-
 kippnewark:
   target: kippnewark
   outputs:
     kippnewark:
       type: bigquery
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kippnewark
+      threads: 40
       method: oauth
       project: teamster-332318
-      schema: z_dev_kippnewark
     prod:
       type: bigquery
+      schema: kippnewark
       method: oauth
       project: teamster-332318
-      schema: kippnewark
 
 kippcamden:
   target: kippcamden
   outputs:
     kippcamden:
       type: bigquery
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kippcamden
+      threads: 40
       method: oauth
       project: teamster-332318
-      schema: z_dev_kippcamden
     prod:
       type: bigquery
+      schema: kippcamden
       method: oauth
       project: teamster-332318
-      schema: kippcamden
 
 kippmiami:
   target: kippmiami
   outputs:
     kippmiami:
       type: bigquery
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kippmiami
+      threads: 40
       method: oauth
       project: teamster-332318
-      schema: z_dev_kippmiami
     prod:
       type: bigquery
       method: oauth
@@ -54,7 +48,7 @@ kipptaf:
   outputs:
     kipptaf:
       type: bigquery
-      schema: z_dev_kipptaf
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kipptaf
       threads: 40
       method: oauth
       project: teamster-332318
@@ -69,6 +63,7 @@ integration_tests:
   outputs:
     integration_tests:
       type: bigquery
+      schema: zz_dev
+      threads: 40
       method: oauth
       project: teamster-332318
-      schema: z_dev
