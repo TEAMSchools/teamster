@@ -48,7 +48,6 @@ with
             and a.assessment_grade_int = p.grade_level
             and a.period = p.admin_season
             and a.round_number = p.round_number
-            and p.enrollment_dates_account
         where g.pm_goal_include is null
     ),
 
