@@ -1,32 +1,4 @@
 with
-    expected_tests as (
-        select
-            e.academic_year,
-            e.region,
-            e.grade,
-            e.assessment_type,
-            e.admin_season,
-            e.round_number,
-            e.expected_measure_standard,
-
-            e.matching_pm_season as matching_season,
-            e.month_round,
-
-            t.start_date,
-            t.end_date,
-
-        from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
-        inner join
-            {{ ref("stg_reporting__terms") }} as t
-            on e.academic_year = t.academic_year
-            and e.region = t.region
-            and e.admin_season = t.name
-            and e.test_code = t.code
-            and t.type = 'LIT'
-        -- removes rows for assessment strategies that were deprecated midyear
-        where e.assessment_include is null and e.pm_goal_include is null
-    ),
-
     assessments_scores as (
         -- benchmark scores
         select
@@ -58,7 +30,7 @@ with
             e.month_round,
             e.start_date,
             e.end_date,
-            e.matching_season,
+            e.matching_pm_season as matching_season,
 
             row_number() over (
                 partition by u.surrogate_key, u.measure_standard
@@ -75,12 +47,14 @@ with
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
         inner join
-            expected_tests as e
+            {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
             on bss.academic_year = e.academic_year
             and bss.region = e.region
             and bss.assessment_grade_int = e.grade
             and bss.benchmark_period = e.admin_season
             and u.measure_standard = e.expected_measure_standard
+            and e.assessment_include is null
+            and e.pm_goal_include is null
 
         where
             bss.enrollment_grade = bss.assessment_grade
@@ -119,7 +93,7 @@ with
             e.month_round,
             e.start_date,
             e.end_date,
-            e.matching_season,
+            e.matching_pm_season as matching_season,
 
             row_number() over (
                 partition by df.surrogate_key, df.measure_standard
@@ -132,12 +106,14 @@ with
 
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as df
         inner join
-            expected_tests as e
+            {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
             on df.academic_year = e.academic_year
             and df.region = e.region
             and df.assessment_grade_int = e.grade
             and df.period = e.admin_season
             and df.measure_standard = e.expected_measure_standard
+            and e.assessment_include is null
+            and e.pm_goal_include is null
 
         union all
 
@@ -188,13 +164,15 @@ with
 
         from {{ ref("stg_amplify__pm_student_summary") }} as p
         inner join
-            expected_tests as e
+            {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
             on p.academic_year = e.academic_year
             and p.region = e.region
             and p.assessment_grade_int = e.grade
             and p.measure = e.expected_measure_standard
             and p.pm_period = e.admin_season
             and p.client_date between e.start_date and e.end_date
+            and e.assessment_include is null
+            and e.pm_goal_include is null
         where p.enrollment_grade = p.assessment_grade and p.assessment_grade is not null
     ),
 
