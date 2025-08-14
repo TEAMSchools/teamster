@@ -221,11 +221,13 @@ with
         where measure_standard = 'Composite'
     ),
 
-    sipss as (
+    sipps as (
         select
             _dbt_source_relation,
             students_student_number as student_number,
             cc_academic_year as academic_year,
+
+            courses_credittype as credit_type,
 
             true as is_sipps,
 
@@ -375,6 +377,7 @@ left join
     sipps as sip
     on co.student_number = sip.student_number
     and co.academic_year = sip.academic_year
+    and sj.powerschool_credittype = sip.credit_type
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sip") }}
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
 
