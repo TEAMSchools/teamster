@@ -153,7 +153,7 @@ with
             if(p.pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
 
             row_number() over (
-                partition by p.surrogate_key, p.measure, e.round_number
+                partition by p.surrogate_key, e.round_number
                 order by p.measure_standard_score desc
             ) as rn_highest,
 
