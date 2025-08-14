@@ -11,6 +11,7 @@ with
             bss.client_date,
             bss.sync_date,
 
+            u.surrogate_key,
             u.measure_name,
             u.measure_name_code,
             u.measure_standard,
@@ -31,16 +32,6 @@ with
             e.start_date,
             e.end_date,
             e.matching_pm_season as matching_season,
-
-            row_number() over (
-                partition by u.surrogate_key, u.measure_standard
-                order by u.measure_standard_level_int desc
-            ) as rn_highest,
-
-            row_number() over (
-                partition by bss.academic_year, bss.student_primary_id
-                order by bss.client_date
-            ) as rn_distinct,
 
         from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
         inner join
@@ -74,6 +65,7 @@ with
             df.`date` as client_date,
             df.`date` as sync_date,
 
+            df.surrogate_key,
             df.measure_name,
             df.measure_name_code,
             df.measure_standard,
@@ -94,15 +86,6 @@ with
             e.start_date,
             e.end_date,
             e.matching_pm_season as matching_season,
-
-            row_number() over (
-                partition by df.surrogate_key, df.measure_standard
-                order by df.measure_standard_level_int desc
-            ) as rn_highest,
-
-            row_number() over (
-                partition by df.academic_year, df.student_id order by df.`date`
-            ) as rn_distinct,
 
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as df
         inner join
@@ -127,6 +110,7 @@ with
             p.pm_period as period,
             p.client_date,
             p.sync_date,
+            p.surrogate_key,
             p.measure_name,
             p.measure_name_code,
             p.measure as measure_standard,
@@ -152,16 +136,6 @@ with
 
             if(p.pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
 
-            row_number() over (
-                partition by p.surrogate_key, p.measure, e.round_number
-                order by p.measure_standard_score desc
-            ) as rn_highest,
-
-            row_number() over (
-                partition by p.academic_year, p.student_primary_id
-                order by p.client_date
-            ) as rn_distinct,
-
         from {{ ref("stg_amplify__pm_student_summary") }} as p
         inner join
             {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
@@ -176,9 +150,25 @@ with
         where p.enrollment_grade = p.assessment_grade and p.assessment_grade is not null
     ),
 
+    max_score as (
+        select
+            *,
+
+            row_number() over (
+                partition by surrogate_key, measure_standard
+                order by measure_standard_level_int desc
+            ) as rn_highest,
+
+            row_number() over (
+                partition by academic_year, student_number order by client_date
+            ) as rn_distinct,
+
+        from assessments_scores
+    ),
+
     composite_only as (
         select academic_year, student_number, period, measure_standard_level,
-        from assessments_scores
+        from max_score
         where measure_standard = 'Composite' and rn_highest = 1
     ),
 
@@ -214,7 +204,7 @@ with
                 c.moy in ('Below Benchmark', 'Well Below Benchmark'), 'Yes', 'No'
             ) as moy_probe_eligible,
 
-        from assessments_scores as s
+        from max_score as s
         left join
             overall_composite_by_window as c
             on s.academic_year = c.academic_year
@@ -294,7 +284,7 @@ select
             s.student_number
     ) as actual_row_count,
 
-from assessments_scores as s
+from max_score as s
 left join
     probe_eligible_tag as p
     on s.academic_year = p.academic_year
@@ -373,7 +363,7 @@ select
             s.student_number
     ) as actual_row_count,
 
-from assessments_scores as s
+from max_score as s
 left join
     probe_eligible_tag as p
     on s.academic_year = p.academic_year
