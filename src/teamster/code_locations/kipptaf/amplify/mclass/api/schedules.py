@@ -1,4 +1,4 @@
-from dagster import (
+"""from dagster import (
     RunRequest,
     ScheduleEvaluationContext,
     define_asset_job,
@@ -10,7 +10,7 @@ from teamster.code_locations.kipptaf import (
     CURRENT_FISCAL_YEAR,
     LOCAL_TIMEZONE,
 )
-from teamster.code_locations.kipptaf.amplify.mclass.assets import assets
+from teamster.code_locations.kipptaf.amplify.mclass.api.assets import assets
 
 mclass_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}__amplify__mclass_asset_job", selection=assets
@@ -30,3 +30,4 @@ def mclass_asset_job_schedule(context: ScheduleEvaluationContext):
 schedules = [
     mclass_asset_job_schedule,
 ]
+"""
