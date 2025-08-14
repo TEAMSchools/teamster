@@ -135,6 +135,7 @@ left join
     and s.schoolid = c.cc_schoolid
     and s.student_number = c.students_student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
+    and c.rn_course_number_year = 1
     and not c.is_dropped_section
     and c.cc_section_number not like '%SC%'
     and c.courses_course_name in (
@@ -172,10 +173,7 @@ left join
     and s.rn_year = f.rn_year
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
-where
-    not s.is_self_contained
-    and s.enroll_status in (0, 2, 3)
-    and c.rn_course_number_year = 1
+where not s.is_self_contained and s.enroll_status in (0, 2, 3)
 
 union all
 
@@ -327,6 +325,7 @@ left join
     and s.schoolid = c.cc_schoolid
     and s.student_number = c.students_student_number
     and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
+    and c.rn_course_number_year = 1
     and not c.is_dropped_section
     and c.cc_section_number not like '%SC%'
     and c.courses_course_name in (
@@ -373,7 +372,4 @@ left join
     and s.rn_year = f.rn_year
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
-where
-    not s.is_self_contained
-    and s.enroll_status in (0, 2, 3)
-    and c.rn_course_number_year = 1
+where not s.is_self_contained and s.enroll_status in (0, 2, 3)
