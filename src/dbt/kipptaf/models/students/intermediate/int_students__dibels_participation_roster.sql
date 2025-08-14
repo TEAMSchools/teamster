@@ -22,11 +22,7 @@ with
             ) as moy_probe_eligible,
 
         from {{ ref("int_extracts__student_enrollments_subjects") }}
-        where
-            discipline = 'ELA'
-            and rn_year = 1
-            and enroll_status in (0, 2, 3)
-            and grade_level <= 8
+        where discipline = 'ELA' and enroll_status in (0, 2, 3) and grade_level <= 8
     ),
 
     expected_tests as (
