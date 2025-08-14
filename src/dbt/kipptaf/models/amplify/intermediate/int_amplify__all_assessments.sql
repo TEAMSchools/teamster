@@ -7,7 +7,7 @@ with
             bss.student_primary_id as student_number,
             bss.assessment_grade,
             bss.assessment_grade_int,
-            bss.benchmark_period as period,
+            bss.benchmark_period as `period`,
             bss.client_date,
             bss.sync_date,
 
@@ -46,7 +46,6 @@ with
             and u.measure_standard = e.expected_measure_standard
             and e.assessment_include is null
             and e.pm_goal_include is null
-
         where
             bss.enrollment_grade = bss.assessment_grade
             and bss.assessment_grade is not null
@@ -74,8 +73,8 @@ with
             df.measure_standard_level_int,
             df.measure_percentile,
 
-            cast(null as string) as measure_semester_growth,
-            cast(null as string) as measure_year_growth,
+            null as measure_semester_growth,
+            null as measure_year_growth,
             null as probe_number,
             null as total_number_of_probes,
             null as score_change,
@@ -107,7 +106,7 @@ with
             p.student_primary_id as student_number,
             p.assessment_grade,
             p.assessment_grade_int,
-            p.pm_period as period,
+            p.pm_period as `period`,
             p.client_date,
             p.sync_date,
             p.surrogate_key,
@@ -167,7 +166,7 @@ with
     ),
 
     composite_only as (
-        select academic_year, student_number, period, measure_standard_level,
+        select academic_year, student_number, `period`, measure_standard_level,
         from max_score
         where measure_standard = 'Composite' and rn_highest = 1
     ),
@@ -181,8 +180,9 @@ with
             coalesce(p.moy, 'No data') as moy,
             coalesce(p.eoy, 'No data') as eoy,
         from
-            composite_only
-            pivot (max(measure_standard_level) for period in ('BOY', 'MOY', 'EOY')) as p
+            composite_only pivot (
+                max(measure_standard_level) for `period` in ('BOY', 'MOY', 'EOY')
+            ) as p
     ),
 
     probe_eligible_tag as (
