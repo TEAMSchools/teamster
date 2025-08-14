@@ -170,6 +170,7 @@ left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as f
     on s.academic_year = f.academic_year
     and s.student_number = f.student_number
+    and s.rn_year = f.rn_year
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
 where not s.is_self_contained and s.enroll_status in (0, 2, 3)
@@ -368,6 +369,7 @@ left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as f
     on s.academic_year = f.academic_year
     and s.student_number = f.student_number
+    and s.rn_year = f.rn_year
     and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
     and f.iready_subject = 'Reading'
 where not s.is_self_contained and s.enroll_status in (0, 2, 3)
