@@ -28,7 +28,6 @@ select
     'Benchmark' as assessment_type,
 
     a.admin_season as expected_test,
-    a.round_number as expected_round_number,
     a.month_round as expected_month_round,
     a.grade as expected_grade_level_int,
     a.expected_measure_name_code,
@@ -105,7 +104,7 @@ select
     f.nj_student_tier,
     f.is_tutoring as tutoring_nj,
 
-    cast(a.round_number as string) as expected_round,
+    cast(a.round_number as string) as expected_round_number,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
@@ -208,7 +207,6 @@ select
     'PM' as assessment_type,
 
     e.admin_season as expected_test,
-    e.round_number as expected_round_number,
     e.month_round as expected_month_round,
     e.grade as expected_grade_level_int,
     e.expected_measure_name_code,
@@ -287,7 +285,7 @@ select
     f.nj_student_tier,
     f.is_tutoring as tutoring_nj,
 
-    cast(e.round_number as string) as expected_round,
+    cast(e.round_number as string) as expected_round_number,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
