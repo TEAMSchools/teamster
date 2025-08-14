@@ -20,7 +20,7 @@ with
     ),
 
     grow_users as (
-        select user_id, internal_id_int from {{ ref("stg_schoolmint_grow__users") }}
+        select user_id, internal_id_int, from {{ ref("stg_schoolmint_grow__users") }}
     ),
 
     microgoals as (
@@ -28,7 +28,7 @@ with
         from {{ ref("stg_schoolmint_grow__assignments") }}
     ),
 
-    calendar as (select * from {{ ref("int_powerschool__calendar_week") }}),
+    calendar as (select *, from {{ ref("int_powerschool__calendar_week") }}),
 
     final as (
         select
@@ -36,7 +36,7 @@ with
             teachers.school_id,
             calendar.week_start_monday,
             calendar.week_end_sunday,
-            count(distinct(microgoals.assignment_id)) as microgoals_assigned,
+            count(distinct microgoals.assignment_id) as microgoals_assigned,
         from teachers
         left join grow_users on teachers.employee_number = grow_users.internal_id_int
         left join microgoals on grow_users.user_id = microgoals.user_id
