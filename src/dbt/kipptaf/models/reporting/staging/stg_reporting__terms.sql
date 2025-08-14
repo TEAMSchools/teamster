@@ -2,6 +2,17 @@ select
     *,
 
     case
+        when region in ('Newark', 'TEAM Academy Charter School')
+        then 'Newark'
+        when region in ('Camden', 'KIPP Cooper Norcross Academy')
+        then 'Camden'
+        when region in ('KIPP Miami', 'Miami')
+        then 'Miami'
+        when region in ('KIPP Paterson')
+        then 'Paterson'
+    end as city,
+
+    case
         when
             current_date('{{ var("local_timezone") }}')
             between `start_date` and end_date
