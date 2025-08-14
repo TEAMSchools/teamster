@@ -22,39 +22,26 @@ with
             ) as moy_probe_eligible,
 
         from {{ ref("int_extracts__student_enrollments_subjects") }}
-        where
-            discipline = 'ELA'
-            and rn_year = 1
-            and enroll_status != -1
-            and grade_level <= 8
+        where discipline = 'ELA' and enroll_status in (0, 2, 3) and grade_level <= 8
     ),
 
     expected_tests as (
         select
-            e.academic_year,
-            e.region,
-            e.grade,
-            e.assessment_type,
-            e.admin_season,
-            e.round_number,
-
-            t.start_date,
-            t.end_date,
+            academic_year,
+            region,
+            grade,
+            assessment_type,
+            admin_season,
+            round_number,
+            start_date,
+            end_date,
 
             count(*) over (
-                partition by
-                    e.academic_year, e.region, e.grade, e.admin_season, e.round_number
+                partition by academic_year, region, grade, admin_season, round_number
             ) as expected_row_count,
 
-        from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
-        inner join
-            {{ ref("stg_reporting__terms") }} as t
-            on e.academic_year = t.academic_year
-            and e.region = t.region
-            and e.admin_season = t.name
-            and e.test_code = t.code
-            and t.type = 'LIT'
-        where e.assessment_include is null and e.pm_goal_include is null
+        from {{ ref("stg_google_sheets__dibels_expected_assessments") }}
+        where assessment_include is null and pm_goal_include is null
     ),
 
     roster_enrollment_dates as (
@@ -70,8 +57,6 @@ with
             e.round_number,
             e.expected_row_count,
 
-            true as enrollment_dates_account,
-
             coalesce(a.actual_row_count, 0) as actual_row_count,
 
             case
@@ -83,6 +68,7 @@ with
                 then true
                 when e.admin_season = 'EOY' and a.eoy_composite != 'No Data'
                 then true
+                else false
             end as completed_test_round,
 
             row_number() over (
@@ -129,20 +115,11 @@ with
             e.round_number,
             e.expected_row_count,
 
-            true as enrollment_dates_account,
-
             coalesce(a.actual_row_count, 0) as actual_row_count,
 
-            case
-                when e.expected_row_count = a.actual_row_count
-                then true
-                when e.admin_season = 'BOY' and a.boy_composite != 'No Data'
-                then true
-                when e.admin_season = 'MOY' and a.moy_composite != 'No Data'
-                then true
-                when e.admin_season = 'EOY' and a.eoy_composite != 'No Data'
-                then true
-            end as completed_test_round,
+            if(
+                e.expected_row_count = a.actual_row_count, true, false
+            ) as completed_test_round,
 
             row_number() over (
                 partition by
@@ -190,20 +167,11 @@ with
             e.round_number,
             e.expected_row_count,
 
-            true as enrollment_dates_account,
-
             coalesce(a.actual_row_count, 0) as actual_row_count,
 
-            case
-                when e.expected_row_count = a.actual_row_count
-                then true
-                when e.admin_season = 'BOY' and a.boy_composite != 'No Data'
-                then true
-                when e.admin_season = 'MOY' and a.moy_composite != 'No Data'
-                then true
-                when e.admin_season = 'EOY' and a.eoy_composite != 'No Data'
-                then true
-            end as completed_test_round,
+            if(
+                e.expected_row_count = a.actual_row_count, true, false
+            ) as completed_test_round,
 
             row_number() over (
                 partition by
@@ -244,7 +212,6 @@ select
     student_number,
     grade_level,
     enroll_status,
-    enrollment_dates_account,
     assessment_type,
     admin_season,
     round_number,
