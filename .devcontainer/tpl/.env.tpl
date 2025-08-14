@@ -16,6 +16,9 @@ AMPLIFY_DDS_PASSWORD=op://Data Team/DIBELS Data System/password_confirm
 AMPLIFY_DDS_USERNAME=op://Data Team/DIBELS Data System/username
 AMPLIFY_PASSWORD=op://Data Team/Amplify Service Account/password
 AMPLIFY_USERNAME=op://Data Team/Amplify Service Account/username
+AMPLIFY_SFTP_HOST=op://Data Team/Amplify SFTP/URL
+AMPLIFY_SFTP_PASSWORD=op://Data Team/Amplify SFTP/password
+AMPLIFY_SFTP_USERNAME=op://Data Team/Amplify SFTP/username
 CLEVER_SFTP_HOST=op://Data Team/Clever SFTP - Uploads/host
 CLEVER_SFTP_PASSWORD=op://Data Team/Clever SFTP - Uploads/password
 CLEVER_SFTP_USERNAME=op://Data Team/Clever SFTP - Uploads/username
@@ -148,4 +151,4 @@ ZENDESK_EMAIL=op://Data Team/Zendesk API/email
 ZENDESK_SUBDOMAIN=op://Data Team/Zendesk API/subdomain
 ZENDESK_TOKEN=op://Data Team/Zendesk API/token
 # breaks uv env read
-LDAP_USER=op://Data Team/Active Directory Service Account/username
+# LDAP_USER=op://Data Team/Active Directory Service Account/username

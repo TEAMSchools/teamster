@@ -109,6 +109,21 @@ locations:
                   secretKeyRef:
                     name: op-amplify-service-account
                     key: username
+              - name: AMPLIFY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp
+                    key: URL
+              - name: AMPLIFY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp
+                    key: password
+              - name: AMPLIFY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp
+                    key: username
               - name: AMPLIFY_DDS_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -501,6 +516,21 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-amplify-service-account
+                    key: username
+              - name: AMPLIFY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp
+                    key: URL
+              - name: AMPLIFY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp
+                    key: password
+              - name: AMPLIFY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp
                     key: username
               - name: AMPLIFY_DDS_PASSWORD
                 valueFrom:

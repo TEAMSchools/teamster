@@ -11,7 +11,6 @@ with
             spedlep,
             special_education_code,
             special_education,
-            rn_row_year_asc,
             nj_se_consenttoimplementdate,
             nj_se_delayreason,
             nj_se_earlyintervention,
@@ -44,9 +43,6 @@ with
             spedlep,
             special_education_code,
             special_education,
-
-            1 as rn_row_year_asc,
-
             nj_se_consenttoimplementdate,
             nj_se_delayreason,
 
@@ -80,7 +76,6 @@ select
     spedlep,
     special_education_code,
     special_education,
-    rn_row_year_asc,
     nj_se_consenttoimplementdate,
     nj_se_delayreason,
     nj_se_earlyintervention,
