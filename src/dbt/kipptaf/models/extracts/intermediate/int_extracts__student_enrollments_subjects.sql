@@ -219,6 +219,21 @@ with
 
         from {{ ref("int_amplify__all_assessments") }}
         where measure_standard = 'Composite'
+    ),
+
+    sipss as (
+        select
+            _dbt_source_relation,
+            students_student_number as student_number,
+            cc_academic_year as academic_year,
+
+            true as is_sipps,
+
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where
+            courses_course_number = 'SEM01099G1'
+            and rn_course_number_year = 1
+            and not is_dropped_section
     )
 
 /* current year and current year - 1 only to honor bucket calcs */
@@ -232,6 +247,8 @@ select
     sj.discipline,
 
     a.is_iep_eligible as is_grad_iep_exempt,
+
+    sip.is_sipps,
 
     dr.measure_standard_level_int as dibels_most_recent_composite_int,
 
@@ -354,6 +371,11 @@ left join
     psat_bucket1 as ps
     on co.student_number = ps.powerschool_student_number
     and sj.discipline = ps.discipline
+left join
+    sipps as sip
+    on co.student_number = sip.student_number
+    and co.academic_year = sip.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="sip") }}
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
 
 union all
@@ -369,6 +391,8 @@ select
     sj.discipline,
 
     a.is_iep_eligible as is_grad_iep_exempt,
+
+    null as is_sipps,
 
     null as dibels_most_recent_composite_int,
 
