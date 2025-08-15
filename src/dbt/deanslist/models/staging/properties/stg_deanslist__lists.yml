@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
         "src_deanslist__lists") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: is_dated
         data_type: boolean

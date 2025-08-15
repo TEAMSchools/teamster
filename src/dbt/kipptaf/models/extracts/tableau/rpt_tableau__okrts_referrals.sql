@@ -211,7 +211,7 @@ select
     ats.attachments,
     atr.attachments as attachments_uploaded,
 
-    concat(u.last_name, ', ', u.first_name) as hi_approver_name,
+    u.lastfirst as hi_approver_name,
 
     concat(dli.create_last, ', ', dli.create_first) as entry_staff,
     concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
@@ -354,7 +354,7 @@ left join
     on dli.create_ts_date between s.period_start_date and s.period_end_date
 left join
     {{ ref("stg_deanslist__users") }} as u
-    on cast(cf.approver_name as int64) = u.dl_user_id
+    on cf.approver_name = u.dl_user_id_str
     and {{ union_dataset_join_clause(left_alias="cf", right_alias="u") }}
 left join suspension_type as st on dlp.penalty_name = st.penalty_name
 left join

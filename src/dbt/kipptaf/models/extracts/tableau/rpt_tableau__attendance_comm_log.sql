@@ -11,12 +11,12 @@ with
             c.call_type as commlog_type,
             c.call_status as commlog_status,
 
+            u.full_name as commlog_staff_name,
+
             f.init_notes as followup_init_notes,
             f.followup_notes as followup_close_notes,
             f.outstanding,
-
-            concat(u.first_name, ' ', u.last_name) as commlog_staff_name,
-            concat(f.c_first, ' ', f.c_last) as followup_staff_name,
+            f.c_first_last as followup_staff_name,
         from {{ ref("stg_deanslist__comm_log") }} as c
         inner join
             {{ ref("stg_deanslist__users") }} as u
