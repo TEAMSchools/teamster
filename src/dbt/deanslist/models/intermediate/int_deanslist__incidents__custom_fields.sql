@@ -4,6 +4,10 @@ select
     cf.numvalue as num_value,
     cf.selectedoptions as selected_options,
 
+    cast(nullif(cf.customfieldid, '') as int) as custom_field_id,
+    cast(nullif(cf.sourceid, '') as int) as source_id,
+    cast(nullif(cf.minuserlevel, '') as int) as min_user_level,
+
     nullif(cf.fieldcategory, '') as field_category,
     nullif(cf.fieldkey, '') as field_key,
     nullif(cf.fieldname, '') as field_name,
@@ -15,10 +19,6 @@ select
     nullif(cf.options, '') as `options`,
     nullif(cf.value, '') as `value`,
     nullif(cf.stringvalue, '') as string_value,
-
-    safe_cast(nullif(cf.customfieldid, '') as int) as custom_field_id,
-    safe_cast(nullif(cf.sourceid, '') as int) as source_id,
-    safe_cast(nullif(cf.minuserlevel, '') as int) as min_user_level,
 
     if(nullif(cf.isfrontend, '') = 'Y', true, false) as is_front_end,
     if(nullif(cf.isrequired, '') = 'Y', true, false) as is_required,

@@ -64,12 +64,9 @@ with
     ),
 
     intervention_rosters as (
-        select ra.student_school_id,
-        from {{ ref("stg_deanslist__roster_assignments") }} as ra
-        inner join
-            {{ ref("stg_deanslist__rosters") }} as r
-            on ra.dl_roster_id = r.roster_id
-            and r.roster_name = 'Tier 3/Tier 4 Intervention'
+        select student_school_id,
+        from {{ ref("int_deanslist__roster_assignments") }}
+        where roster_name = 'Tier 3/Tier 4 Intervention'
     ),
 
     att_reconciliation_rollup as (
