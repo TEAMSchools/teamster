@@ -386,5 +386,7 @@ left join
     on dli.incident_id = ats.incident_id
     and ats.incident_type = 'Suspension Letter'
 left join
-    attachments as atr on dli.incident_id = atr.incident_id and atr.type = 'Upload'
+    attachments as atr
+    on dli.incident_id = atr.incident_id
+    and atr.incident_type = 'Upload'
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
