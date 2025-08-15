@@ -8,6 +8,12 @@ models:
       contract:
         enforced: true
     columns:
+      - name: incident_id
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: hearing_flag
         data_type: boolean
       - name: is_active
@@ -230,8 +236,6 @@ models:
         data_type: string
       - name: update_title
         data_type: string
-      - name: incident_id
-        data_type: int64
       - name: category_id
         data_type: int64
       - name: create_staff_school_id

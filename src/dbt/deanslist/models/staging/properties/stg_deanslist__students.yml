@@ -8,10 +8,14 @@ models:
       contract:
         enforced: true
     columns:
-      - name: school_id
-        data_type: int64
       - name: student_id
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: school_id
+        data_type: int64
       - name: student_school_id
         data_type: string
       - name: num_value
