@@ -5,6 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("amplify",
         "src_amplify__benchmark_student_summary") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: account_name
         data_type: string
@@ -59,7 +61,7 @@ models:
       - name: official_teacher_name
         data_type: string
       - name: primary_id_student_number
-        data_type: float64
+        data_type: int64
       - name: race
         data_type: string
       - name: reporting_class_id
@@ -83,7 +85,7 @@ models:
       - name: student_first_name
         data_type: string
       - name: student_id_district_id
-        data_type: float64
+        data_type: int64
       - name: student_id_state_id
         data_type: string
       - name: student_last_name
@@ -95,49 +97,37 @@ models:
       - name: title_1
         data_type: string
       - name: assessing_teacher_staff_id
-        data_type: record
-      - name: assessing_teacher_staff_id.string_value
         data_type: string
-      - name: assessing_teacher_staff_id.double_value
-        data_type: float64
       - name: primary_id_student_id_district_id
-        data_type: record
-      - name: primary_id_student_id_district_id.long_value
         data_type: int64
-      - name: primary_id_student_id_district_id.double_value
-        data_type: float64
       - name: primary_school_id
-        data_type: record
-      - name: primary_school_id.string_value
         data_type: string
-      - name: primary_school_id.long_value
-        data_type: int64
       - name: administration_type
         data_type: string
       - name: benchmark_period
         data_type: string
       - name: correct_responses_maze_score
-        data_type: float64
+        data_type: numeric
       - name: dibels_composite_score_lexile
         data_type: string
       - name: error_rate_orf_score
-        data_type: float64
+        data_type: numeric
       - name: incorrect_responses_maze_score
-        data_type: float64
+        data_type: numeric
       - name: ran_level
         data_type: string
       - name: ran_score
-        data_type: float64
+        data_type: numeric
       - name: risk_indicator_level
         data_type: string
       - name: spelling_level
         data_type: string
       - name: spelling_score
-        data_type: float64
+        data_type: numeric
       - name: vocabulary_level
         data_type: string
       - name: vocabulary_score
-        data_type: float64
+        data_type: numeric
       - name: _dagster_partition_fiscal_year
         data_type: int64
       - name: _dagster_partition_date
@@ -290,3 +280,9 @@ models:
         data_type: int64
       - name: surrogate_key
         data_type: string
+      - name: region
+        data_type: string
+      - name: school
+        data_type: string
+      - name: schoolid
+        data_type: int64
