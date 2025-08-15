@@ -14,7 +14,7 @@ with
             ) as date_day
     ),
 
-    date_spline as (
+    date_spine as (
         select
             cw.week_start_monday,
             cw.week_end_sunday,
@@ -40,14 +40,14 @@ select
     ds.week_end_sunday,
     case
         when sad.termination_date is null
-        then sad.is_attrition
+        then 1 - sad.is_attrition
         when sad.termination_date < ds.week_end_sunday
-        then sad.is_attrition
-        else 0
-    end as is_attrition,
+        then 1 - sad.is_attrition
+        else 1
+    end as is_retention,
 from {{ ref("int_people__staff_attrition_details") }} as sad
 inner join
-    date_spline as ds
+    date_spine as ds
     on sad.academic_year = ds.attrition_year
     and (
         (sad.ps_school_id = ds.schoolid)
