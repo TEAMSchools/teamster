@@ -35,7 +35,7 @@ with
 select
     sad.employee_number,
     sad.business_unit_home_name as entity
-    sad.home_work_location_name as location, --change to actual location
+    sad.home_work_location_name as location,
     sad.home_work_location_grade_band as grade_band
     sad.department_home_name as department,
     sad.job_title,
