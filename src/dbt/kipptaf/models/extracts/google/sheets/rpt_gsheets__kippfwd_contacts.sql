@@ -39,6 +39,6 @@ select
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_kippadb__roster") }} as ktc
 inner join
-    {{ ref("stg_deanslist__comm_log") }} as c
+    {{ ref("int_deanslist__comm_log") }} as c
     on ktc.student_number = c.student_school_id
     and regexp_contains(c.reason, r'^KF:')

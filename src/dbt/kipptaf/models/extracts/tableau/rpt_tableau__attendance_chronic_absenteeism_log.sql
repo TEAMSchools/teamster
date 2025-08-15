@@ -1,22 +1,4 @@
 with
-    commlog as (
-        select
-            c._dbt_source_relation,
-            c.student_school_id,
-            c.reason as commlog_reason,
-            c.response as commlog_notes,
-            c.topic as commlog_topic,
-            c.academic_year,
-
-            u.full_name as commlog_staff_name,
-        from {{ ref("stg_deanslist__comm_log") }} as c
-        inner join
-            {{ ref("stg_deanslist__users") }} as u
-            on c.user_id = u.dl_user_id
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="u") }}
-        where c.reason like 'Chronic%'
-    ),
-
     abs_count as (
         select
             co.student_number,
@@ -64,10 +46,10 @@ select
     ac.advisor_lastfirst as team,
     ac.n_absences,
 
-    cl.commlog_staff_name,
-    cl.commlog_reason,
-    cl.commlog_notes,
-    cl.commlog_topic,
+    cl.user_full_name as commlog_staff_name,
+    cl.reason as commlog_reason,
+    cl.response as commlog_notes,
+    cl.topic as commlog_topic,
 
     null as followup_staff_name,
     null as followup_init_notes,
@@ -76,6 +58,8 @@ select
     null as homeroom,
 from abs_count as ac
 left join
-    commlog as cl
+    {{ ref("int_deanslist__comm_log") }} as cl
     on ac.student_number = cl.student_school_id
     and ac.academic_year = cl.academic_year
+    and {{ union_dataset_join_clause(left_alias="ac", right_alias="cl") }}
+    and cl.reason like 'Chronic%'

@@ -30,8 +30,7 @@ select
     dli.board_approval_date,
     dli.hi_start_date,
     dli.hi_end_date,
-
-    u.full_name as approver_name,
+    dli.approver_full_name as approver_name,
 
     concat(dli.create_first, ' ', dli.create_last) as referring_teacher_name,
     concat(dli.update_first, ' ', dli.update_last) as reviewed_by,
@@ -49,8 +48,4 @@ inner join
     on co.schoolid = d.school_id
     and dli.create_ts_date between d.start_date and d.end_date
     and d.type = 'RT'
-left join
-    {{ ref("stg_deanslist__users") }} as u
-    on dli.approver_name = u.dl_user_id_str
-    and {{ union_dataset_join_clause(left_alias="dli", right_alias="cf") }}
 where co.academic_year = {{ var("current_academic_year") }} co.rn_year = 1

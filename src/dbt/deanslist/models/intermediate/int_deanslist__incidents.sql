@@ -1,6 +1,9 @@
 select
     i.*,
 
+    u.full_name as approver_full_name,
+    u.lastfirst as approver_lastfirst,
+
     cfp.* except (incident_id),
 
     case
@@ -26,6 +29,7 @@ select
         then 'Other'
     end as referral_tier,
 from {{ ref("stg_deanslist__incidents") }} as i
+left join {{ ref("stg_deanslist__users") }} as u on i.approver_name = u.dl_user_id_str
 left join
     {{ ref("int_deanslist__incidents__custom_fields__pivot") }} as cfp
     on i.incident_id = cfp.incident_id

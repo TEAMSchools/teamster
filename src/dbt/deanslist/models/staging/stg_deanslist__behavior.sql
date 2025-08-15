@@ -11,6 +11,21 @@ with
 
     transformations as (
         select
+            cast(nullif(dlsaid, '') as int) as dl_said,
+            cast(nullif(behaviorid, '') as int) as behavior_id,
+            cast(nullif(dlorganizationid, '') as int) as dl_organization_id,
+            cast(nullif(dlschoolid, '') as int) as dl_school_id,
+            cast(nullif(dlstudentid, '') as int) as dl_student_id,
+            cast(nullif(dluserid, '') as int) as dl_user_id,
+            cast(nullif(rosterid, '') as int) as roster_id,
+            cast(nullif(secondarystudentid, '') as int) as secondary_student_id,
+            cast(nullif(sourceid, '') as int) as source_id,
+            cast(nullif(staffschoolid, '') as int) as staff_school_id,
+            cast(nullif(studentschoolid, '') as int) as student_school_id,
+            cast(nullif(behaviordate, '') as date) as behavior_date,
+            cast(nullif(dl_lastupdate, '') as datetime) as dl_last_update,
+            cast(nullif(pointvalue, '') as int) as point_value,
+
             nullif(assignment, '') as `assignment`,
             nullif(behavior, '') as behavior,
             nullif(behaviorcategory, '') as behavior_category,
@@ -27,21 +42,6 @@ with
             nullif(studentmiddlename, '') as student_middle_name,
             nullif(studentlastname, '') as student_last_name,
             nullif(`weight`, '') as `weight`,
-
-            safe_cast(nullif(dlsaid, '') as int) as dl_said,
-            safe_cast(nullif(behaviorid, '') as int) as behavior_id,
-            safe_cast(nullif(dlorganizationid, '') as int) as dl_organization_id,
-            safe_cast(nullif(dlschoolid, '') as int) as dl_school_id,
-            safe_cast(nullif(dlstudentid, '') as int) as dl_student_id,
-            safe_cast(nullif(dluserid, '') as int) as dl_user_id,
-            safe_cast(nullif(rosterid, '') as int) as roster_id,
-            safe_cast(nullif(secondarystudentid, '') as int) as secondary_student_id,
-            safe_cast(nullif(sourceid, '') as int) as source_id,
-            safe_cast(nullif(staffschoolid, '') as int) as staff_school_id,
-            safe_cast(nullif(studentschoolid, '') as int) as student_school_id,
-            safe_cast(nullif(behaviordate, '') as date) as behavior_date,
-            safe_cast(nullif(dl_lastupdate, '') as datetime) as dl_last_update,
-            safe_cast(nullif(pointvalue, '') as int) as point_value,
         from deduplicate
         where not is_deleted or is_deleted is null
     )

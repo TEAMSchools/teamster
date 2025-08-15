@@ -39,36 +39,6 @@ with
             date({{ var("current_academic_year") }}, 6, 30) as period_end_date,
     ),
 
-    suspension_type as (
-        select penalty_name, 'ISS' as suspension_type,
-        from
-            unnest(
-                [
-                    'In School Suspension',
-                    'KM: In-School Suspension',
-                    'KNJ: In-School Suspension'
-                ]
-            ) as penalty_name
-
-        union all
-
-        select penalty_name, 'OSS' as suspension_type,
-        from
-            unnest(
-                [
-                    'Out of School Suspension',
-                    'KM: Out-of-School Suspension',
-                    'KNJ: Out-of-School Suspension'
-                ]
-            ) as penalty_name
-    ),
-
-    intervention_rosters as (
-        select student_school_id,
-        from {{ ref("int_deanslist__roster_assignments") }}
-        where roster_name = 'Tier 3/Tier 4 Intervention'
-    ),
-
     att_reconciliation_rollup as (
         select
             ra.student_id as student_number,
@@ -163,6 +133,7 @@ select
     co.ms_attended,
     co.team as homeroom_section,
     co.advisor_lastfirst as homeroom_teacher_name,
+    co.unweighted_ada as ada,
 
     w.week_start_monday,
     w.week_end_sunday,
@@ -176,26 +147,27 @@ select
     dli.reported_details,
     dli.admin_summary,
     dli.infraction as incident_type,
-
-    dlp.incident_penalty_id,
-    dlp.num_days,
-    dlp.is_suspension,
-    dlp.penalty_name,
-    dlp.start_date,
-    dlp.end_date,
-
-    cf.nj_state_reporting,
-    cf.restraint_used,
-    cf.restraint_duration,
-    cf.restraint_type,
-    cf.ssds_incident_id,
-    cf.referral_to_law_enforcement,
-    cf.arrested_for_school_related_activity,
-    cf.final_approval,
-    cf.board_approval_date,
-    cf.hi_start_date,
-    cf.hi_end_date,
-    cf.hours_per_week,
+    dli.lastfirst as hi_approver_name,
+    dli.nj_state_reporting,
+    dli.restraint_used,
+    dli.restraint_duration,
+    dli.restraint_type,
+    dli.ssds_incident_id,
+    dli.referral_to_law_enforcement,
+    dli.arrested_for_school_related_activity,
+    dli.final_approval,
+    dli.board_approval_date,
+    dli.hi_start_date,
+    dli.hi_end_date,
+    dli.hours_per_week,
+    dli.incident_penalty_id,
+    dli.num_days,
+    dli.is_suspension,
+    dli.penalty_name,
+    dli.start_date,
+    dli.end_date,
+    dli.create_last_first as entry_staff,
+    dli.update_last_first as last_update_staff,
 
     st.suspension_type,
 
@@ -208,14 +180,7 @@ select
     ats.attachments,
     atr.attachments as attachments_uploaded,
 
-    u.lastfirst as hi_approver_name,
-
-    concat(dli.create_last, ', ', dli.create_first) as entry_staff,
-    concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
-
     coalesce(s.ssds_period, 'Outside SSDS Period') as ssds_period,
-
-    round(ada.ada, 2) as ada,
 
     if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
@@ -223,12 +188,11 @@ select
     if(
         co.is_self_contained, 'Self-contained', 'Not self-contained'
     ) as self_contained_status,
+    if(co.unweighted_ada <= 0.90, true, false) as is_chronically_absent,
 
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
 
     if(tr.student_school_id is not null, true, false) as is_tier3_4,
-
-    if(round(ada.ada, 2) <= 0.90, true, false) as is_chronically_absent,
 
     case
         when left(dli.category, 2) in ('SW', 'SS') or left(dli.category, 3) = 'SSC'
@@ -252,7 +216,7 @@ select
         partition by w.week_start_monday, co.schoolid
     ) as school_enrollment_by_week,
 
-    max(if(dlp.is_suspension, 1, 0)) over (
+    max(if(dli.is_suspension, 1, 0)) over (
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_int,
 
@@ -270,7 +234,7 @@ select
     ) as rn_student_year,
 
     if(
-        sum(if(dlp.is_suspension, 1, 0)) over (
+        sum(if(dli.is_suspension, 1, 0)) over (
             partition by co.academic_year, co.student_number
         )
         = 1,
@@ -297,7 +261,7 @@ select
     ) as is_suspended_y1_iss_one_int,
 
     if(
-        sum(if(dlp.is_suspension, 1, 0)) over (
+        sum(if(dli.is_suspension, 1, 0)) over (
             partition by co.academic_year, co.student_number
         )
         > 1,
@@ -328,7 +292,7 @@ select
         null,
         row_number() over (
             partition by co.academic_year, co.student_number, dli.incident_id
-            order by dlp.is_suspension desc
+            order by dli.is_suspension desc
         )
     ) as rn_incident,
 from {{ ref("int_extracts__student_enrollments") }} as co
@@ -349,23 +313,17 @@ left join
 left join
     ssds_period as s
     on dli.create_ts_date between s.period_start_date and s.period_end_date
-left join
-    {{ ref("stg_deanslist__users") }} as u
-    on cf.approver_name = u.dl_user_id_str
-    and {{ union_dataset_join_clause(left_alias="cf", right_alias="u") }}
-left join suspension_type as st on dlp.penalty_name = st.penalty_name
-left join
-    {{ ref("int_powerschool__ada") }} as ada
-    on co.studentid = ada.studentid
-    and co.yearid = ada.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
+left join suspension_type as st on dli.penalty_name = st.penalty_name
 left join
     {{ ref("int_powerschool__gpa_term") }} as gpa
     on co.studentid = gpa.studentid
     and co.yearid = gpa.yearid
     and gpa.is_current
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
-left join intervention_rosters as tr on co.student_number = tr.student_school_id
+left join
+    {{ ref("int_deanslist__roster_assignments") }} as tr
+    on co.student_number = tr.student_school_id
+    and tr.roster_name = 'Tier 3/Tier 4 Intervention'
 left join
     att_reconciliation_rollup as ar
     on co.student_number = ar.student_number
@@ -375,8 +333,8 @@ left join
 left join
     suspension_reconciliation_rollup as sr
     on co.student_number = sr.student_number
-    and dlp.incident_id = sr.incident_id
     and co.schoolid = sr.schoolid
+    and dli.incident_id = sr.incident_id
     and sr.rn_incident = 1
 left join
     attachments as ats
