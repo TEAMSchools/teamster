@@ -29,8 +29,7 @@ with
     ),
 
     denom as (
-        select distinct
-            d.academic_year, d.attrition_date, d.effective_date, srh.employee_number,
+        select d.academic_year, d.attrition_date, d.effective_date, srh.employee_number,
         from {{ ref("int_people__staff_roster_history") }} as srh
         inner join
             dates as d
@@ -337,7 +336,7 @@ with
         from ly_combined
     )
 
-select distinct
+select distinct  -- not having distinct here leads to having ~10k additional duplicate records
     l.academic_year,
     l.employee_number,
     l.is_attrition,
