@@ -1,5 +1,19 @@
 with
-    roster as (select *, from {{ ref("int_people__staff_roster_history") }}),
+    roster as (
+        select
+            *,
+            {{
+                date_to_fiscal_year(
+                    date_field="effective_date_start",
+                    start_month=7,
+                    year_source="start",
+                )
+            }} as academic_year,
+        from {{ ref("int_people__staff_roster_history") }}
+
+    ),
+
+    grade_levels as (select * from {{ ref("int_powerschool__teacher_grade_levels") }}),
 
     final as (
         select
@@ -7,8 +21,9 @@ with
                 dbt_utils.generate_surrogate_key(
                     ["employee_number", "effective_date_start"]
                 )
-            }} as employee_key,
+            }} as teammate_history_key,
             roster.*,
+            grade_levels.grade_level as grade_taught,
             if(
                 primary_indicator and (is_current_record or is_prestart), true, false
             ) as current_roster,
@@ -26,6 +41,11 @@ with
             ) as is_teacher,
 
         from roster
+        left join
+            grade_levels
+            on roster.powerschool_teacher_number = grade_levels.teachernumber
+            and roster.academic_year = grade_levels.academic_year
+            and grade_levels.grade_level_rank = 1
     )
 
 select *
