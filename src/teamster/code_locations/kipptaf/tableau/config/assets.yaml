@@ -130,7 +130,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__dibels_dashboard]
       - [kipptaf, tableau, rpt_tableau__sight_words_dashboard]
     metadata:
-      id: bef17623-af5e-4a18-9e05-7a8f4e6951bf
+      id: 72b16a4a-b3a9-47e5-bdff-ae641d9ee9e6
       cron_schedule: 0 5 * * *
   - name: Teacher Development Dashboard
     deps:
