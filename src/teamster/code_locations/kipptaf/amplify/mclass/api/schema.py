@@ -1,8 +1,8 @@
-import json
+"""import json
 
 import py_avro_schema
 
-from teamster.libraries.amplify.mclass.schema import (
+from teamster.libraries.amplify.mclass.api.schema import (
     BenchmarkStudentSummary,
     PMStudentSummary,
 )
@@ -16,3 +16,4 @@ BENCHMARK_STUDENT_SUMMARY_SCHEMA = json.loads(
 PM_STUDENT_SUMMARY_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=PMStudentSummary, options=pas_options)
 )
+"""

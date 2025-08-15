@@ -6,10 +6,22 @@ with
 
     schools as (select *, from {{ ref("stg_people__location_crosswalk") }}),
 
+    terms as (select *, from {{ ref("stg_reporting__terms") }}),
+
+    assigned_reviews as (
+        select
+            ops_pm_roster.*,
+            terms.code,
+            terms.name as reporting_term,
+            terms.academic_year,
+        from ops_pm_roster
+        inner join terms on terms.type = 'OPS'
+    ),
+
     form_responses as (
         select *,
         from {{ ref("int_google_forms__form_responses") }}
-        -- filtering for Operations EKG Form
+        -- filtering for Operations Teammate PM Form
         where
             form_id = '1oPcgOeaNS7DNaG2wa9JnfkWfxfxp7eOuj3XnXJoe-vE'
             and text_value is not null
@@ -59,7 +71,7 @@ with
 
     final as (
         select
-            ops_pm_roster.*,
+            assigned_reviews.*,
             responses_pivoted.*,
             schools.abbreviation,
             schools.region,
@@ -67,11 +79,12 @@ with
             full_roster.formatted_name as respondent_name,
             full_roster.job_title as respondent_job_title,
             if(responses_pivoted.form_employee_number is null, 0, 1) as completion,
-        from ops_pm_roster
+        from assigned_reviews
         left join
             responses_pivoted
-            on ops_pm_roster.employee_number = responses_pivoted.form_employee_number
-        left join schools on ops_pm_roster.home_work_location_name = schools.name
+            on assigned_reviews.employee_number = responses_pivoted.form_employee_number
+            and assigned_reviews.reporting_term = responses_pivoted.walkthrough_round
+        left join schools on assigned_reviews.home_work_location_name = schools.name
         left join
             full_roster on responses_pivoted.respondent_email = full_roster.google_email
 
