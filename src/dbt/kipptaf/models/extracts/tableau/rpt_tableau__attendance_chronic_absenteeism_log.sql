@@ -18,8 +18,17 @@ with
     ),
 
     abs_count as (
-        select co.student_number, co.academic_year, count(att.att_date) as n_absences,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        select
+            co.student_number,
+            co.student_name,
+            co.region,
+            co.reporting_schoolid,
+            co.school,
+            co.grade_level,
+            co.advisor_lastfirst as team,
+
+            count(att.att_date) as n_absences,
+        from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("stg_powerschool__attendance") }} as att
             on co.studentid = att.studentid
@@ -31,19 +40,28 @@ with
             on att.attendance_codeid = ac.id
             and {{ union_dataset_join_clause(left_alias="att", right_alias="ac") }}
             and ac.att_code like 'A%'  -- change to exclude AE
-        where co.rn_year = 1
-        group by co.student_number, co.academic_year
+        where
+            co.academic_year = {{ var("current_academic_year") }}
+            and co.rn_year = 1
+            and co.enroll_status = 0
+        group by
+            co.student_number,
+            co.student_name,
+            co.region,
+            co.reporting_schoolid,
+            co.school,
+            co.grade_level,
+            co.advisor_lastfirst
     )
 
 select
-    co.student_number,
-    co.lastfirst,
-    co.region,
-    co.reporting_schoolid,
-    co.school_abbreviation,
-    co.grade_level,
-    co.advisor_lastfirst as team,
-
+    ac.student_number,
+    ac.student_name as lastfirst,
+    ac.region,
+    ac.reporting_schoolid,
+    ac.school as school_abbreviation,
+    ac.grade_level,
+    ac.advisor_lastfirst as team,
     ac.n_absences,
 
     cl.commlog_staff_name,
@@ -56,16 +74,8 @@ select
     null as followup_close_notes,
     null as followup_outstanding,
     null as homeroom,
-from {{ ref("base_powerschool__student_enrollments") }} as co
-inner join
-    abs_count as ac
-    on co.student_number = ac.student_number
-    and co.academic_year = ac.academic_year
+from abs_count as ac
 left join
     commlog as cl
-    on co.student_number = cl.student_school_id
-    and co.academic_year = cl.academic_year
-where
-    co.academic_year = {{ var("current_academic_year") }}
-    and co.rn_year = 1
-    and co.enroll_status = 0
+    on ac.student_number = cl.student_school_id
+    and ac.academic_year = cl.academic_year

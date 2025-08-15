@@ -1,13 +1,13 @@
 with
     commlog as (
         select
+            c._dbt_source_relation,
             c.student_school_id,
             c.reason as commlog_reason,
             c.response as commlog_notes,
             c.topic as commlog_topic,
             c.call_date_time as commlog_datetime,
-            c.call_date_time as commlog_date,
-            c._dbt_source_relation,
+            c.call_date as commlog_date,
             c.call_type as commlog_type,
             c.call_status as commlog_status,
 
