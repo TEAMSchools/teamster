@@ -6,14 +6,9 @@ with
             c.reason as commlog_reason,
             c.response as commlog_notes,
             c.topic as commlog_topic,
+            c.academic_year,
 
-            concat(u.first_name, ' ', u.last_name) as commlog_staff_name,
-
-            {{
-                date_to_fiscal_year(
-                    date_field="call_date_time", start_month=7, year_source="start"
-                )
-            }} as academic_year,
+            u.full_name as commlog_staff_name,
         from {{ ref("stg_deanslist__comm_log") }} as c
         inner join
             {{ ref("stg_deanslist__users") }} as u
@@ -64,8 +59,8 @@ select
 from {{ ref("base_powerschool__student_enrollments") }} as co
 inner join
     abs_count as ac
-    on ac.student_number = co.student_number
-    and ac.academic_year = co.academic_year
+    on co.student_number = ac.student_number
+    and co.academic_year = ac.academic_year
 left join
     commlog as cl
     on co.student_number = cl.student_school_id

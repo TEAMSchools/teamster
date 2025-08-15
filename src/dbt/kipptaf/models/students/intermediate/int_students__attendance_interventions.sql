@@ -73,7 +73,7 @@ select
     c.call_status as commlog_status,
     c.call_type as commlog_type,
 
-    u.user_name as commlog_staff_name,
+    u.full_name as commlog_staff_name,
 
     lc.powerschool_school_id as schoolid,
 

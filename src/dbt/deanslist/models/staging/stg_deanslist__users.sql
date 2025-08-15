@@ -24,7 +24,8 @@ with
 select
     *,
 
-    cast(u.dl_user_id as string) as dl_user_id_str,
+    cast(dl_user_id as string) as dl_user_id_str,
 
-    concat(u.first_name, ' ', u.last_name) as full_name,
+    concat(first_name, ' ', last_name) as full_name,
+    concat(last_name, ', ', first_name) as lastfirst,
 from users
