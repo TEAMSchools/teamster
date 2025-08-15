@@ -34,19 +34,41 @@ with
 
 select
     sad.employee_number,
-    sad.ps_school_id, --change to actual location
-    -- add others here
+    sad.business_unit_home_name as entity
+    sad.home_work_location_name as location, --change to actual location
+    sad.home_work_location_grade_band as grade_band
+    sad.department_home_name as department,
+    sad.job_title,
+    sad.report_to_preferred_name_lastfirst as manager,
+    sad.original_hire_date as worker_original_hire_date,
+    sad.assignment_status,
+    sad.termination_date as worker_termination_date,
+    sad.year_at_kipp,
+    sad.race_ethnicity_reporting,
+    sad.gender_identity,
     ds.academic_year,
     ds.week_start_monday,
     ds.week_end_sunday,
+    if(
+        sad.job_title in (
+            'Teacher',
+            'Teacher in Residence',
+            'ESE Teacher',
+            'Learning Specialist',
+            'Teacher ESL',
+            'Teacher in Residence ESL'
+        ),
+        true,
+        false
+    ) as is_teacher
     case
         when sad.termination_date is null
-        then 1 - sad.is_attrition
+        then sad.is_attrition
         when sad.termination_date < ds.week_end_sunday
-        then 1 - sad.is_attrition
-        else 1
-    end as is_retention,
-from {{ ref("int_people__staff_attrition_details") }} as sad
+        then sad.is_attrition
+        else 0
+    end as is_attrition,
+from {{ ref("rpt_tableau__staff_attrition_details") }} as sad -- change to {{ ref("int_people__staff_attrition_details") }}  when it's ready
 inner join
     date_spine as ds
     on sad.academic_year = ds.attrition_year
