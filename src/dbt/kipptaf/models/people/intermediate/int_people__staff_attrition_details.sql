@@ -336,7 +336,7 @@ with
         from ly_combined
     )
 
-select distinct  -- not having distinct here leads to having ~10k additional duplicate records
+select distinct  --w/o distinct we get ~10k additional duplicate records
     l.academic_year,
     l.employee_number,
     l.is_attrition,
