@@ -102,6 +102,9 @@ with
 select
     *,
 
+    concat(create_last, ', ', create_first) as create_lastfirst,
+    concat(update_last, ', ', update_first) as update_lastfirst,
+
     regexp_extract(category, r'^(.*?)\s*-\s*') as category_tier,
 
     {{

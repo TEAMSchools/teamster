@@ -1,61 +1,22 @@
 with
-    suspension_type as (
-        select penalty_name, 'ISS' as suspension_type,
-        from
-            unnest(
-                [
-                    'In School Suspension',
-                    'KM: In-School Suspension',
-                    'KNJ: In-School Suspension'
-                ]
-            ) as penalty_name
-
-        union all
-
-        select penalty_name, 'OSS' as suspension_type,
-        from
-            unnest(
-                [
-                    'Out of School Suspension',
-                    'KM: Out-of-School Suspension',
-                    'KNJ: Out-of-School Suspension'
-                ]
-            ) as penalty_name
-    ),
-
     suspension_dates as (
         select
-            i._dbt_source_relation,
-            i.student_school_id as student_number,
-            i.create_ts_academic_year as academic_year,
+            _dbt_source_relation,
+            student_school_id as student_number,
+            create_ts_academic_year as academic_year,
 
-            min(i.start_date) as first_suspension_date,
+            min(`start_date`) as first_suspension_date,
 
             min(
-                if(s.suspension_type = 'ISS', i.start_date, null)
+                if(suspension_type = 'ISS', `start_date`, null)
             ) as first_suspension_date_iss,
 
             min(
-                if(s.suspension_type = 'OSS', i.start_date, null)
+                if(suspension_type = 'OSS', `start_date`, null)
             ) as first_suspension_date_oss,
-        from {{ ref("int_deanslist__incidents__penalties") }} as i
-        inner join suspension_type as s on i.penalty_name = s.penalty_name
-        where i.is_suspension
-        group by i._dbt_source_relation, i.student_school_id, i.create_ts_academic_year
-    ),
-
-    susp_days as (
-        select
-            i.create_ts_academic_year as academic_year,
-            i.student_school_id as student_number,
-            i.incident_penalty_id,
-            i.end_date,
-            i.num_days,
-
-            s.suspension_type,
-        from {{ ref("int_deanslist__incidents__penalties") }} as i
-        inner join suspension_type as s on i.penalty_name = s.penalty_name
-        where i.is_suspension
+        from {{ ref("int_deanslist__incidents__penalties") }}
+        where is_suspension
+        group by _dbt_source_relation, student_school_id, create_ts_academic_year
     )
 
 select
@@ -64,7 +25,7 @@ select
     co.academic_year,
     co.region,
     co.school_level,
-    co.school_abbreviation as school,
+    co.school,
     co.grade_level,
     co.advisory_name as team,
     co.entrydate,
@@ -96,16 +57,19 @@ select
     sum(sd.num_days) over (
         partition by co.student_number, co.academic_year order by date_day asc
     ) as total_suspended_days_running,
+
     sum(if(sd.suspension_type = 'OSS', sd.num_days, null)) over (
         partition by co.student_number, co.academic_year order by date_day asc
     ) as oss_suspended_days_running,
+
     sum(if(sd.suspension_type = 'ISS', sd.num_days, null)) over (
         partition by co.student_number, co.academic_year order by date_day asc
     ) as iss_suspended_days_running,
+
     count(sd.incident_penalty_id) over (
         partition by co.student_number, co.academic_year order by date_day asc
     ) as total_suspension_incidents_running,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     unnest(
         generate_date_array(
@@ -120,17 +84,15 @@ left join
     and co.academic_year = s.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="s") }}
 left join
-    susp_days as sd
-    on co.student_number = sd.student_number
-    and co.academic_year = sd.academic_year
+    {{ ref("int_deanslist__incidents__penalties") }} as sd
+    on co.student_number = sd.student_school_id
+    and co.academic_year = sd.create_ts_academic_year
     and date_day = sd.end_date
+    and sd.is_suspension
 left join
     {{ ref("stg_reporting__terms") }} as rt
     on date_day between rt.start_date and rt.end_date
     and co.schoolid = rt.school_id
     and co.academic_year = rt.academic_year
     and rt.type = 'RT'
-where
-    co.rn_year = 1
-    and co.academic_year >= {{ var("current_academic_year") - 1 }}
-    and co.grade_level != 99
+where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}

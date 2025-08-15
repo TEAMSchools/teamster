@@ -11,14 +11,14 @@ sources:
               - kippnewark
               - deanslist
               - stg_deanslist__behavior
-      - name: stg_deanslist__comm_log
+      - name: int_deanslist__comm_log
         meta:
           dagster:
             group: deanslist
             asset_key:
               - kippnewark
               - deanslist
-              - stg_deanslist__comm_log
+              - int_deanslist__comm_log
       - name: stg_deanslist__followups
         meta:
           dagster:
@@ -60,6 +60,8 @@ sources:
               - deanslist
               - stg_deanslist__terms
       - name: stg_deanslist__users
+        config:
+          enabled: false
         meta:
           dagster:
             group: deanslist

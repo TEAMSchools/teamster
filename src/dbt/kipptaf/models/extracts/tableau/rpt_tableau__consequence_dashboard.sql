@@ -58,15 +58,14 @@ select
     dli.perceived_motivation as `Perceived Motivation`,
     dli.restraint_used as `Restraint Used`,
     dli.ssds_incident_id as `SSDS Incident ID`,
+    dli.create_last_first as created_staff,
+    dli.update_last_first as last_update_staff,
 
     d.name as term,
 
     att.days_suspended_att,
 
     'Referral' as dl_category,
-
-    concat(dli.create_last, ', ', dli.create_first) as created_staff,
-    concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
 from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     {{ ref("int_deanslist__incidents__penalties") }} as dli

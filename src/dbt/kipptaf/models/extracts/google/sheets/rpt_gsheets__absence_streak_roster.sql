@@ -25,7 +25,7 @@ inner join
     and st.yearid = co.yearid
     and {{ union_dataset_join_clause(left_alias="st", right_alias="co") }}
 left join
-    {{ ref("stg_deanslist__comm_log") }} as c
+    {{ ref("int_deanslist__comm_log") }} as c
     on co.student_number = c.student_school_id
     and c.call_date between st.streak_start_date and st.streak_end_date
     and {{ union_dataset_join_clause(left_alias="co", right_alias="c") }}
