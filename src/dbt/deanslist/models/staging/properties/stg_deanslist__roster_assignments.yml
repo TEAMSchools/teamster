@@ -9,9 +9,10 @@ models:
         enforced: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - dl_roster_id
-            - dl_student_id
+          arguments:
+            combination_of_columns:
+              - dl_roster_id
+              - dl_student_id
           config:
             store_failures: true
     columns:
@@ -34,7 +35,7 @@ models:
       - name: dl_student_id
         data_type: int64
       - name: integration_id
-        data_type: int64
+        data_type: string
       - name: secondary_integration_id
         data_type: int64
       - name: secondary_student_id

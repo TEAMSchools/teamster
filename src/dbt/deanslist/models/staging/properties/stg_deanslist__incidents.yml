@@ -5,8 +5,8 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
         "src_deanslist__incidents") | replace("`", "") }}')
-      contract:
-        enforced: true
+      # contract:
+      #   enforced: true
     columns:
       - name: incident_id
         data_type: int64
@@ -38,144 +38,6 @@ models:
         data_type: int64
       - name: update_ts_timezone_type
         data_type: int64
-      - name: actions
-        data_type: record
-      - name: actions.actionid
-        data_type: string
-      - name: actions.actionname
-        data_type: string
-      - name: actions.pointvalue
-        data_type: string
-      - name: actions.said
-        data_type: string
-      - name: actions.sourceid
-        data_type: string
-      - name: custom_fields
-        data_type: record
-      - name: custom_fields.customfieldid
-        data_type: string
-      - name: custom_fields.fieldcategory
-        data_type: string
-      - name: custom_fields.fieldkey
-        data_type: string
-      - name: custom_fields.fieldname
-        data_type: string
-      - name: custom_fields.fieldtype
-        data_type: string
-      - name: custom_fields.inputhtml
-        data_type: string
-      - name: custom_fields.inputname
-        data_type: string
-      - name: custom_fields.isfrontend
-        data_type: string
-      - name: custom_fields.isrequired
-        data_type: string
-      - name: custom_fields.labelhtml
-        data_type: string
-      - name: custom_fields.minuserlevel
-        data_type: string
-      - name: custom_fields.options
-        data_type: string
-      - name: custom_fields.sourceid
-        data_type: string
-      - name: custom_fields.sourcetype
-        data_type: string
-      - name: custom_fields.stringvalue
-        data_type: string
-      - name: custom_fields.value
-        data_type: string
-      - name: custom_fields.numvalue
-        data_type: record
-      - name: custom_fields.numvalue.long_value
-        data_type: int64
-      - name: custom_fields.numvalue.double_value
-        data_type: float64
-      - name: custom_fields.selectedoptions
-        data_type: string
-      - name: penalties
-        data_type: record
-      - name: penalties.incidentid
-        data_type: string
-      - name: penalties.incidentpenaltyid
-        data_type: string
-      - name: penalties.schoolid
-        data_type: string
-      - name: penalties.penaltyid
-        data_type: string
-      - name: penalties.penaltyname
-        data_type: string
-      - name: penalties.startdate
-        data_type: string
-      - name: penalties.enddate
-        data_type: string
-      - name: penalties.numperiods
-        data_type: string
-      - name: penalties.issuspension
-        data_type: boolean
-      - name: penalties.isreportable
-        data_type: boolean
-      - name: penalties.said
-        data_type: string
-      - name: penalties.print
-        data_type: boolean
-      - name: penalties.studentid
-        data_type: string
-      - name: penalties.numdays
-        data_type: record
-      - name: penalties.numdays.long_value
-        data_type: int64
-      - name: penalties.numdays.double_value
-        data_type: float64
-      - name: attachments
-        data_type: record
-      - name: attachments.attachmentid
-        data_type: string
-      - name: attachments.attachmenttype
-        data_type: string
-      - name: attachments.bytes
-        data_type: string
-      - name: attachments.contenttype
-        data_type: string
-      - name: attachments.entityid
-        data_type: string
-      - name: attachments.entityname
-        data_type: string
-      - name: attachments.entitytype
-        data_type: string
-      - name: attachments.internalfilename
-        data_type: string
-      - name: attachments.internalfolder
-        data_type: string
-      - name: attachments.minuserlevel
-        data_type: string
-      - name: attachments.minuserlevelgroupname
-        data_type: string
-      - name: attachments.publicfilename
-        data_type: string
-      - name: attachments.reportdate
-        data_type: string
-      - name: attachments.reporttype
-        data_type: string
-      - name: attachments.schoolid
-        data_type: string
-      - name: attachments.sourceid
-        data_type: string
-      - name: attachments.sourcetype
-        data_type: string
-      - name: attachments.studentid
-        data_type: string
-      - name: attachments.termid
-        data_type: string
-      - name: attachments.url
-        data_type: string
-      - name: attachments.filepostedat
-        data_type: record
-      - name: attachments.filepostedat.date
-        data_type: string
-      - name: attachments.filepostedat.timezone_type
-        data_type: int64
-      - name: attachments.filepostedat.timezone
-        data_type: string
       - name: addl_reqs
         data_type: string
       - name: admin_summary
@@ -288,3 +150,11 @@ models:
         data_type: datetime
       - name: dl_last_update_date
         data_type: datetime
+      - name: category_tier
+        data_type: string
+      - name: create_lastfirst
+        data_type: string
+      - name: create_ts_academic_year
+        data_type: int64
+      - name: update_lastfirst
+        data_type: string

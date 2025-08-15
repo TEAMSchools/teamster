@@ -3,13 +3,14 @@ models:
   - name: rpt_tableau__dibels_dashboard
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - academic_year
-            - student_number
-            - grade_level_int
-            - expected_test
-            - expected_round_number
-            - expected_measure_standard
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - grade_level_int
+              - expected_test
+              - expected_round_number
+              - expected_measure_standard
           config:
             severity: warn
             store_failures: true

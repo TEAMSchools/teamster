@@ -1,8 +1,9 @@
 select
+    integrationid as integration_id,
+
     cast(nullif(dlrosterid, '') as int) as dl_roster_id,
     cast(nullif(dlschoolid, '') as int) as dl_school_id,
     cast(nullif(dlstudentid, '') as int) as dl_student_id,
-    cast(nullif(integrationid, '') as int) as integration_id,
     cast(nullif(secondaryintegrationid, '') as int) as secondary_integration_id,
     cast(nullif(secondarystudentid, '') as int) as secondary_student_id,
     cast(nullif(studentschoolid, '') as int) as student_school_id,

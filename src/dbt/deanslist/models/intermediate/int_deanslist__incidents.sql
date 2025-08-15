@@ -29,7 +29,7 @@ select
         then 'Other'
     end as referral_tier,
 from {{ ref("stg_deanslist__incidents") }} as i
-left join {{ ref("stg_deanslist__users") }} as u on i.approver_name = u.dl_user_id_str
+left join {{ ref("stg_deanslist__users") }} as u on i.approver_name = u.dl_user_id
 left join
     {{ ref("int_deanslist__incidents__custom_fields__pivot") }} as cfp
     on i.incident_id = cfp.incident_id
