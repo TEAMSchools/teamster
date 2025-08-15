@@ -7,6 +7,13 @@ models:
         "src_deanslist__roster_assignments") | replace("`", "") }}')
       contract:
         enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - dl_roster_id
+            - dl_student_id
+          config:
+            store_failures: true
     columns:
       - name: first_name
         data_type: string

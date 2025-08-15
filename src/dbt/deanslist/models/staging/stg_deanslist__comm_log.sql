@@ -3,7 +3,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation=source("deanslist", "src_deanslist__comm_log"),
-                partition_by="RecordID",
+                partition_by="recordid",
                 order_by="_file_name desc",
             )
         }}
