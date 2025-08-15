@@ -262,7 +262,7 @@ with
             state_student_identifier is not null
             and administration = 'Spring'
             and test_type = 'NJSLA'
-            and academic_year = {{ var("current_academic_year") }}
+            and academic_year = {{ var("current_academic_year") - 1 }}
     )
 
 -- NJ scores
