@@ -6,6 +6,7 @@ models:
           combination_of_columns:
             - academic_year
             - student_number
+            - grade_level_int
             - expected_test
             - expected_round_number
             - expected_measure_standard
