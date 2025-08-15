@@ -16,8 +16,8 @@ from dagster_shared import check
 from dateutil.relativedelta import relativedelta
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
-from teamster.libraries.powerschool.sis.utils import get_query_text
+from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.odbc.utils import get_query_text
 from teamster.libraries.ssh.resources import SSHResource
 
 

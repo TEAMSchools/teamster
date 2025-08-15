@@ -7,7 +7,7 @@ from oracledb import Connection, ConnectParams, Cursor, connect, defaults
 from pydantic import PrivateAttr
 from sqlalchemy import Select, TextClause
 
-from teamster.libraries.powerschool.sis.schema import ORACLE_AVRO_SCHEMA_TYPES
+from teamster.libraries.powerschool.sis.odbc.schema import ORACLE_AVRO_SCHEMA_TYPES
 
 
 class PowerSchoolODBCResource(ConfigurableResource):
