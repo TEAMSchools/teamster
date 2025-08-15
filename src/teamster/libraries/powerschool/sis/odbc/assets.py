@@ -17,7 +17,7 @@ from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 
 

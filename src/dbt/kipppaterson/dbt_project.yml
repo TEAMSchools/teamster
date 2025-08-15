@@ -1,0 +1,45 @@
+name: kipppaterson
+version: 1.0.0
+config-version: 2
+
+profile: kipppaterson
+
+model-paths: [models]
+analysis-paths: [analyses]
+test-paths: [tests]
+seed-paths: [seeds]
+macro-paths: [macros]
+snapshot-paths: [snapshots]
+
+target-path: target
+clean-targets:
+  - target
+  - dbt_packages
+
+vars:
+  local_timezone: America/New_York
+  bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
+  cloud_storage_uri_base: gs://teamster-kipppaterson/dagster/kipppaterson
+  current_academic_year: 2025
+  current_fiscal_year: 2026
+
+models:
+  powerschool:
+    +materialized: table
+    staging:
+      stg_powerschool__period:
+        +enabled: false
+      stg_powerschool__sced_code_mapping:
+        +enabled: false
+      stg_powerschool__u_def_ext_students:
+        +enabled: false
+
+sources:
+  powerschool:
+    powerschool:
+      src_powerschool__period:
+        +enabled: false
+      src_powerschool__sced_code_mapping:
+        +enabled: false
+      src_powerschool__u_def_ext_students:
+        +enabled: false
