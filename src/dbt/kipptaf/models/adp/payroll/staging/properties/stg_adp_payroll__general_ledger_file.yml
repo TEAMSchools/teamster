@@ -54,7 +54,7 @@ models:
       - name: gl_entry_class_id
         data_type: int64
       - name: gl_entry_project_id
-        data_type: int64
+        data_type: string
       - name: job_title
         data_type: int64
       - name: location_id
