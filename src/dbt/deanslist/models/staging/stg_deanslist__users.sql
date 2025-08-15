@@ -1,12 +1,13 @@
 with
     users as (
         select
+            dluserid as dl_user_id,
+
             cast(nullif(accountid, '') as int) as account_id,
             cast(nullif(dlschoolid, '') as int) as dl_school_id,
-            cast(nullif(dluserid, '') as int) as dl_user_id,
-            cast(nullif(userschoolid, '') as int) as user_school_id,
             cast(nullif(userstateid, '') as int) as user_state_id,
 
+            nullif(userschoolid, '') as user_school_id,
             nullif(active, '') as active,
             nullif(email, '') as email,
             nullif(firstname, '') as first_name,
@@ -21,9 +22,7 @@ with
     )
 
 select
-    *,
-
-    cast(dl_user_id as string) as dl_user_id_str,
+    * except (active),
 
     concat(first_name, ' ', last_name) as full_name,
     concat(last_name, ', ', first_name) as lastfirst,

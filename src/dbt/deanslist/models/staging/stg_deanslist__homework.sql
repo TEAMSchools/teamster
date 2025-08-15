@@ -19,11 +19,11 @@ select
     cast(nullif(pointvalue, '') as int) as point_value,
     cast(nullif(rosterid, '') as int) as roster_id,
     cast(nullif(secondarystudentid, '') as int) as secondary_student_id,
-    cast(nullif(staffschoolid, '') as int) as staff_school_id,
     cast(nullif(studentschoolid, '') as int) as student_school_id,
     cast(nullif(behaviordate, '') as date) as behavior_date,
     cast(nullif(dl_lastupdate, '') as datetime) as dl_last_update,
 
+    nullif(staffschoolid, '') as staff_school_id,
     nullif(assignment, '') as `assignment`,
     nullif(behavior, '') as behavior,
     nullif(behaviorcategory, '') as behavior_category,

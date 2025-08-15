@@ -3,9 +3,10 @@ models:
   - name: int_people__staff_roster
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - employee_number
-            - powerschool_teacher_number
+          arguments:
+            combination_of_columns:
+              - employee_number
+              - powerschool_teacher_number
           config:
             severity: warn
             store_failures: true

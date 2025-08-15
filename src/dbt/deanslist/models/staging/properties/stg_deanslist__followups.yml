@@ -80,3 +80,5 @@ models:
         data_type: datetime
       - name: close_ts
         data_type: datetime
+      - name: c_first_last
+        data_type: string
