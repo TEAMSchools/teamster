@@ -75,6 +75,7 @@ select
     f.state_test_proficiency,
     f.nj_student_tier,
     f.is_exempt_iready,
+    f.is_sipps,
     f.territory,
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
@@ -108,8 +109,8 @@ inner join
 cross join unnest(['Reading', 'Math']) as subj
 left join
     {{ ref("stg_reporting__terms") }} as rt
-    on co.academic_year = rt.academic_year
-    and co.region = rt.region
+    on w.academic_year = rt.academic_year
+    and w.region = rt.region
     and rt.type = 'IREX'
     and w.week_start_monday between rt.start_date and rt.end_date
 left join
