@@ -189,6 +189,7 @@ with
             tr.schoolid,
             tr.schoolname,
             tr.grade_level,
+            tr.course_number,
             tr.course_name,
             tr.sectionid,
             tr.teacher_name,
@@ -200,25 +201,10 @@ with
             tr.potentialcrhrs as y1_course_final_potential_credit_hours,
             tr.gpa_points as y1_course_final_grade_points,
             tr.excludefromgpa,
-            tr.is_transfer_grade,
 
             cast(tr.academic_year as string)
             || '-'
             || right(cast(tr.academic_year + 1 as string), 2) as academic_year_display,
-
-            if(tr.is_transfer_grade, 'Transfer', tr.credit_type) as credit_type,
-
-            if(
-                tr.is_transfer_grade,
-                concat(
-                    'T',
-                    upper(regexp_extract(tr._dbt_source_relation, r'(kipp\w+)_')),
-                    tr.dcid
-                ),
-                tr.course_number
-            ) as course_number,
-
-            if(co.student_number is not null, true, false) as is_enrollment_matched,
 
         from {{ ref("stg_powerschool__storedgrades") }} as tr
         left join
@@ -486,130 +472,3 @@ left join
     and ce.sectionid = c.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="c") }}
 where s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
-
-union all
-
-select
-    y1h._dbt_source_relation,
-    y1h.academic_year,
-    y1h.academic_year_display,
-
-    e1.region,
-    e1.school_level,
-    e1.schoolid,
-    e1.school,
-    e1.studentid,
-    e1.student_number,
-    e1.student_name,
-
-    y1h.grade_level as grade_level,
-
-    e1.salesforce_id,
-    e1.ktc_cohort,
-    e1.enroll_status,
-    e1.cohort,
-    e1.gender,
-    e1.ethnicity,
-    e1.advisory,
-    e1.hos,
-    e1.school_leader,
-    e1.school_leader_tableau_username,
-    e1.year_in_school,
-    e1.year_in_network,
-    e1.rn_undergrad,
-    e1.is_out_of_district,
-    e1.is_pathways,
-    e1.is_retained_year,
-    e1.is_retained_ever,
-    e1.lunch_status,
-    e1.gifted_and_talented,
-    e1.iep_status,
-    e1.lep_status,
-    e1.is_504,
-    e1.is_counseling_services,
-    e1.is_student_athlete,
-    e1.`ada`,
-    e1.ada_above_or_at_80,
-
-    e1.`quarter`,
-    e1.semester,
-    e1.quarter_start_date,
-    e1.quarter_end_date,
-    e1.cal_quarter_end_date,
-    e1.is_current_quarter,
-
-    e1.gpa_for_quarter,
-    e1.gpa_semester,
-    e1.gpa_y1,
-    e1.gpa_y1_unweighted,
-    e1.gpa_total_credit_hours,
-    e1.gpa_n_failing_y1,
-
-    e1.cumulative_y1_gpa,
-    e1.cumulative_y1_gpa_unweighted,
-    e1.cumulative_y1_gpa_projected,
-    e1.cumulative_y1_gpa_projected_s1,
-    e1.cumulative_y1_gpa_projected_s1_unweighted,
-    e1.core_cumulative_y1_gpa,
-
-    null as sectionid,
-    null as sections_dcid,
-    null as section_number,
-    null as external_expression,
-    null as date_enrolled,
-
-    y1h.credit_type,
-    y1h.course_number,
-    y1h.course_name,
-    y1h.excludefromgpa as exclude_from_gpa,
-
-    null as teacher_number,
-
-    y1h.teacher_name,
-
-    null as tutoring_nj,
-    null as nj_student_tier,
-    null as teacher_tableau_username,
-
-    y1h.y1_course_final_percent_grade_adjusted,
-    y1h.y1_course_final_letter_grade_adjusted,
-    y1h.y1_course_final_earned_credits,
-    y1h.y1_course_final_potential_credit_hours,
-    y1h.y1_course_final_grade_points,
-
-    null as quarter_course_percent_grade,
-    null as quarter_course_letter_grade,
-    null as quarter_course_grade_points,
-    null as y1_course_in_progress_percent_grade_adjusted,
-    null as y1_course_in_progress_letter_grade_adjusted,
-    null as y1_course_in_progress_grade_points,
-    null as y1_course_in_progress_grade_points_unweighted,
-
-    null as need_60,
-    null as need_70,
-    null as need_80,
-    null as need_90,
-
-    null as quarter_citizenship,
-    null as quarter_comment_value,
-
-    null as category_name_code,
-    null as category_quarter_code,
-    null as category_quarter_percent_grade,
-    null as category_y1_percent_grade_running,
-    null as category_y1_percent_grade_current,
-    null as category_quarter_average_all_courses,
-
-    'Transfer' as roster_type,
-
-    null as section_or_period,
-
-from y1_historical as y1h
-inner join
-    student_roster as e1
-    on y1h.studentid = e1.studentid
-    and y1h.schoolid = e1.schoolid
-    and {{ union_dataset_join_clause(left_alias="y1h", right_alias="e1") }}
-    and e1.year_in_school = 1
-    and e1.quarter = 'Y1'
-where y1h.is_transfer_grade and not y1h.is_enrollment_matched
