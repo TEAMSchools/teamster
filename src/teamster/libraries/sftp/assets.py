@@ -65,6 +65,7 @@ def build_sftp_file_asset(
     group_name: str | None = None,
     pdf_row_pattern: str | None = None,
     exclude_dirs: list[str] | None = None,
+    ignore_multiple_matches: bool = False,
     file_sep: str = ",",
     file_encoding: str = "utf-8",
     slugify_cols: bool = True,
@@ -142,6 +143,8 @@ def build_sftp_file_asset(
             remote_dir=remote_dir_regex_composed, exclude_dirs=exclude_dirs
         )
 
+        files.sort(key=lambda x: x[0].st_mtime or 0, reverse=True)
+
         file_matches = [
             path
             for _, path in files
@@ -161,8 +164,8 @@ def build_sftp_file_asset(
 
             context.log.error(msg=msg)
             raise FileNotFoundError(msg)
-        # exit if multiple matches
-        elif len(file_matches) > 1:
+        # exit if unexpected multiple matches
+        elif not ignore_multiple_matches and len(file_matches) > 1:
             msg = (
                 f"Found multiple files matching: {remote_dir_regex_composed}/"
                 f"{remote_file_regex_composed}\n{file_matches}"
