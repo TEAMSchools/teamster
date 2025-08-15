@@ -5,14 +5,20 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
         "src_deanslist__terms") | replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
+      - name: term_id
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: stored_grades
         data_type: boolean
       - name: start_date_timezone_type
         data_type: int64
       - name: end_date_timezone_type
-        data_type: int64
-      - name: term_id
         data_type: int64
       - name: academic_year_id
         data_type: int64
@@ -41,6 +47,12 @@ models:
       - name: end_date_timezone
         data_type: string
       - name: start_date_date
-        data_type: datetime
+        data_type: date
       - name: end_date_date
+        data_type: date
+      - name: academic_year
+        data_type: int64
+      - name: end_date_datetime
+        data_type: datetime
+      - name: start_date_datetime
         data_type: datetime

@@ -51,6 +51,7 @@ with
             se.zip as powerschool_zip,
             se.is_504 as powerschool_is_504,
             se.lep_status,
+            se.dob,
 
             c.* except (contact_current_kipp_student, contact_lastfirst),
 

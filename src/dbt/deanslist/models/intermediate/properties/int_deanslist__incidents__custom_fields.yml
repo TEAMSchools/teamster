@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_deanslist__incidents__custom_fields
+  - name: int_deanslist__incidents__custom_fields
     columns:
       - name: incident_id
         data_type: int64

@@ -31,20 +31,16 @@ with
 
     mia_territory as (
         select
-            r._dbt_source_relation,
-            r.roster_name as territory,
-
-            a.student_school_id,
+            _dbt_source_relation,
+            roster_name as territory,
+            student_school_id,
 
             row_number() over (
-                partition by a.student_school_id order by r.roster_id asc
+                partition by student_school_id order by roster_id asc
             ) as rn_territory,
 
-        from {{ ref("stg_deanslist__rosters") }} as r
-        inner join
-            {{ ref("stg_deanslist__roster_assignments") }} as a
-            on r.roster_id = a.dl_roster_id
-        where r.school_id = 472 and r.roster_type = 'House' and r.active = 'Y'
+        from {{ ref("int_deanslist__roster_assignments") }}
+        where school_id = 472 and roster_type = 'House' and active = 'Y'
     ),
 
     overgrad_fafsa as (

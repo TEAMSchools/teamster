@@ -1,4 +1,13 @@
 select
+    cast(nullif(rosterid, '') as int) as roster_id,
+    cast(nullif(masterid, '') as int) as master_id,
+    cast(nullif(rostertypeid, '') as int) as roster_type_id,
+    cast(nullif(rtifocusid, '') as int) as rti_focus_id,
+    cast(nullif(schoolid, '') as int) as school_id,
+    cast(nullif(screensetid, '') as int) as screen_set_id,
+    cast(nullif(secondaryintegrationid, '') as int) as secondary_integration_id,
+    cast(nullif(subjectid, '') as int) as subject_id,
+
     nullif(active, '') as active,
     nullif(collecthw, '') as collect_hw,
     nullif(coursenumber, '') as course_number,
@@ -22,13 +31,4 @@ select
     nullif(subjectname, '') as subject_name,
     nullif(takeattendance, '') as take_attendance,
     nullif(takeclassattendance, '') as take_class_attendance,
-
-    safe_cast(nullif(rosterid, '') as int) as roster_id,
-    safe_cast(nullif(masterid, '') as int) as master_id,
-    safe_cast(nullif(rostertypeid, '') as int) as roster_type_id,
-    safe_cast(nullif(rtifocusid, '') as int) as rti_focus_id,
-    safe_cast(nullif(schoolid, '') as int) as school_id,
-    safe_cast(nullif(screensetid, '') as int) as screen_set_id,
-    safe_cast(nullif(secondaryintegrationid, '') as int) as secondary_integration_id,
-    safe_cast(nullif(subjectid, '') as int) as subject_id,
 from {{ source("deanslist", "src_deanslist__rosters") }}

@@ -1,27 +1,22 @@
 with
     commlog as (
         select
+            c._dbt_source_relation,
             c.student_school_id,
             c.reason as commlog_reason,
             c.response as commlog_notes,
             c.topic as commlog_topic,
             c.call_date_time as commlog_datetime,
-            c.call_date_time as commlog_date,
-            c._dbt_source_relation,
+            c.call_date as commlog_date,
             c.call_type as commlog_type,
             c.call_status as commlog_status,
+            c.user_full_name as commlog_staff_name,
 
             f.init_notes as followup_init_notes,
             f.followup_notes as followup_close_notes,
             f.outstanding,
-
-            concat(u.first_name, ' ', u.last_name) as commlog_staff_name,
-            concat(f.c_first, ' ', f.c_last) as followup_staff_name,
-        from {{ ref("stg_deanslist__comm_log") }} as c
-        inner join
-            {{ ref("stg_deanslist__users") }} as u
-            on c.user_id = u.dl_user_id
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="u") }}
+            f.c_first_last as followup_staff_name,
+        from {{ ref("int_deanslist__comm_log") }} as c
         left join
             {{ ref("stg_deanslist__followups") }} as f
             on c.record_id = f.source_id

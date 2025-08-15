@@ -9,9 +9,10 @@ models:
         enforced: true
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - person_identifier
-            - academic_year
+          arguments:
+            combination_of_columns:
+              - person_identifier
+              - academic_year
           config:
             severity: warn
             store_failures: true

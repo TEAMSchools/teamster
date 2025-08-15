@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_deanslist__incidents__attachments
+  - name: int_deanslist__incidents__attachments
     columns:
       - name: incident_id
         data_type: int64

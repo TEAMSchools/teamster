@@ -51,7 +51,7 @@ with
     comm_log as (
         {{
             dbt_utils.deduplicate(
-                relation=ref("stg_deanslist__comm_log"),
+                relation=ref("int_deanslist__comm_log"),
                 partition_by="student_school_id, academic_year, reason",
                 order_by="call_date desc",
             )
@@ -72,8 +72,7 @@ select
     c.call_date as commlog_date,
     c.call_status as commlog_status,
     c.call_type as commlog_type,
-
-    u.user_name as commlog_staff_name,
+    c.user_full_name as commlog_staff_name,
 
     lc.powerschool_school_id as schoolid,
 
@@ -91,10 +90,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="ada", right_alias="c") }}
     and sc.commlog_reason = c.reason
     and {{ union_dataset_join_clause(left_alias="sc", right_alias="c") }}
-left join
-    {{ ref("stg_deanslist__users") }} as u
-    on c.user_id = u.dl_user_id
-    and {{ union_dataset_join_clause(left_alias="c", right_alias="u") }}
 left join
     {{ ref("stg_people__location_crosswalk") }} as lc
     on c.dl_school_id = lc.deanslist_school_id

@@ -8,14 +8,13 @@ with
             behavior_date,
             behavior_category,
             point_value,
-
-            concat(staff_last_name, ', ', staff_first_name) as entry_staff,
+            staff_full_name as entry_staff,
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
             case
                 when
-                    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') = 'kippmiami'
+                    _dbt_source_relation like '%kippmiami%'
                     and behavior_category != 'Earned Incentives'
                 then regexp_extract(behavior_category, r'([\w\s]+) \(')
                 when behavior like '%(%)'
@@ -128,7 +127,18 @@ with
             sum(point_value) as total_points,
             count(distinct dl_said) as behavior_count,
         from behavior_week
-        group by all
+        group by
+            _dbt_source_relation,
+            student_school_id,
+            behavior,
+            behavior_category,
+            category_type,
+            academic_year,
+            term,
+            week_start_monday,
+            week_end_sunday,
+            days_in_session,
+            entry_staff
     )
 
 select
@@ -146,6 +156,8 @@ select
     co.lunch_status,
     co.is_retained_year,
     co.rn_year,
+    co.team as homeroom_section,
+    co.advisor_lastfirst as homeroom_teacher_name,
 
     cw.quarter as term,
     cw.week_start_monday,
@@ -158,8 +170,7 @@ select
     b.total_points,
     b.behavior_count,
 
-    hr.sections_section_number as homeroom_section,
-    hr.teacher_lastfirst as homeroom_teacher_name,
+    extract(month from cw.week_start_monday) as behavior_month,
 
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
     if(co.is_504, 'Has 504', 'No 504') as status_504,
@@ -168,12 +179,10 @@ select
         co.is_self_contained, 'Self-contained', 'Not self-contained'
     ) as self_contained_status,
 
-    extract(month from cw.week_start_monday) as behavior_month,
-
     count(distinct co.student_number) over (
         partition by co.schoolid, cw.week_start_monday
     ) as school_enrollment_by_week,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as cw
     on co.schoolid = cw.schoolid
@@ -186,14 +195,4 @@ left join
     and co.academic_year = b.academic_year
     and cw.week_start_monday = b.week_start_monday
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
-left join
-    {{ ref("base_powerschool__course_enrollments") }} as hr
-    on co.studentid = hr.cc_studentid
-    and co.yearid = hr.cc_yearid
-    and co.schoolid = hr.cc_schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-    and hr.cc_course_number = 'HR'
-    and hr.rn_course_number_year = 1
-    and not hr.is_dropped_section
-where
-    co.academic_year >= {{ var("current_academic_year") - 1 }} and co.grade_level != 99
+where co.academic_year >= {{ var("current_academic_year") - 1 }}
