@@ -9,6 +9,6 @@ models:
       - name: old_project_id_alt_nj
         data_type: string
       - name: project_id
-        data_type: int64
+        data_type: string
       - name: project_name
         data_type: string
