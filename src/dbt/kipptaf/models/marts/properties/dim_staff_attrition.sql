@@ -68,7 +68,8 @@ select
         then sad.is_attrition
         else 0
     end as is_attrition,
-from {{ ref("rpt_tableau__staff_attrition_details") }} as sad -- change to {{ ref("int_people__staff_attrition_details") }}  when it's ready
+from {{ ref("rpt_tableau__staff_attrition_details") }} as sad 
+/* change to {{ ref("int_people__staff_attrition_details") }}  when it's ready*/
 inner join
     date_spine as ds
     on sad.academic_year = ds.attrition_year
