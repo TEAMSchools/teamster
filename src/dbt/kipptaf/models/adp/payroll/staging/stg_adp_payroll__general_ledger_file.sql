@@ -10,6 +10,7 @@ select
     memo,
     position_id,
     sourceentity as source_entity,
+    glentry_projectid as gl_entry_project_id,
 
     cast(line_no as int) as line_no,
     cast(reference_no as int) as reference_no,
@@ -20,7 +21,6 @@ select
     cast(cast(dept_id as numeric) as int) as dept_id,
     cast(cast(file_number as numeric) as int) as file_number,
     cast(cast(glentry_classid as numeric) as int) as gl_entry_class_id,
-    cast(cast(glentry_projectid as numeric) as int) as gl_entry_project_id,
     cast(cast(job_title as numeric) as int) as job_title,
 
     cast(
