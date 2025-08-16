@@ -29,7 +29,7 @@ select
 
     'ADA Running' as metric_name,
     'Week' as term_type,
-from {{ ref("int_topline__ada_weekly_running") }}
+from {{ ref("int_topline__ada_running_weekly") }}
 
 union all
 
@@ -65,7 +65,7 @@ select
 
     'i-Ready Lessons Passed' as metric_name,
     'Week' as term_type,
-from {{ ref("int_topline__iready_lessons_weeks") }}
+from {{ ref("int_topline__iready_lessons_weekly") }}
 
 union all
 
@@ -101,4 +101,4 @@ select
 
     'i-Ready Diagnostic Proficient' as metric_name,
     'Week' as term_type,
-from {{ ref("int_topline__iready_diagnostic_weeks") }}
+from {{ ref("int_topline__iready_diagnostic_weekly") }}
