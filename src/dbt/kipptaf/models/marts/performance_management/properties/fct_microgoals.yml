@@ -1,0 +1,105 @@
+semantic_models:
+  - name: microgoals
+    model: ref('fct_microgoals')
+    description: List of microgoals assigned the Grow platform, at the grain of one row per employee per assignment. Microgoals can also be called "lookfors".
+
+    entities:
+      - name: assignment
+        type: primary
+        expr: assignment_id
+      - name: teammate
+        type: foreign
+        expr: employee_number
+
+    dimensions:
+      - name: assignment_id
+        type: categorical
+        description: Unique identifier for the goal assignment record.
+      - name: creator_name
+        type: categorical
+        description: Name of the person who assigned the goal, typically the teammate's coach or manager.
+      - name: goal_name
+        type: categorical
+        description: Name of the microgoal or lookfor.
+      - name: strand_name
+        type: categorical
+        description: Subcategory of buckets, made up of microgoals and lookfors.
+      - name: bucket_name
+        type: categorical
+        description: Largest grouping of microgoals, encompassing strands.
+      - name: microgoal_date
+        type: time
+        expr: created_date_local
+        description: Date the microgoal assignment was created.
+        type_params:
+          time_granularity: day
+      - name: week_start_monday
+        type: time
+        expr: week_start_monday
+        description: the starting date of the week in which a microgoal was assigned
+        type_params:
+          time_granularity: week
+      - name: week_end_sunday
+        type: time
+        expr: week_end_sunday
+        description: the ending date of the week in which a microgoal was assigned
+        type_params:
+          time_granularity: week
+
+    measures:
+      - name: microgoal_assignments
+        description: the count of individual microgoal or lookfor assignments made
+        agg: count_distinct
+        expr: assignment_id
+        agg_time_dimension: microgoal_date
+      - name: microgoals_used
+        description: the count of how many times an individual microgoal or lookfor was assigned
+        agg: count_distinct
+        expr: goal_name
+        agg_time_dimension: microgoal_date
+      - name: count_teachers
+        description: number of teachers on staff in active status
+        agg: count_distinct
+        expr: employee_number
+        agg_time_dimension: week_end_sunday
+
+metrics:
+  - name: microgoal_assignments
+    description: The distinct count of assignment ids
+    type: simple
+    label: microgoal_assignments
+    type_params:
+      measure:
+        name: microgoal_assignments
+  - name: microgoals_used
+    description: The number of times a certain microgoal or lookfor was assigned
+    type: simple
+    label: microgoals_used
+    type_params:
+      measure:
+        name: microgoals_used
+  - name: count_teachers
+    description: The distinct number of teachers active at the time
+    type: simple
+    label: count_teachers
+    type_params:
+      measure:
+        name: count_teachers
+  - name: teachers_with_microgoals
+    description: The distinct number of teachers with at least one microgoal assignment
+    type: simple
+    label: teachers_with_microgoals
+    type_params:
+      measure:
+        name: count_teachers
+    filter: |
+      {{ Dimension('teammates__current_roster') }} = 'true'
+  - name: percent_teachers_with_microgoal
+    description: The number of teachers who have been assigned a microgoal
+    type: ratio
+    label: percent_teachers_with_microgoal
+    type_params:
+      numerator:
+        name: teachers_with_microgoals
+      denominator:
+        name: count_teachers

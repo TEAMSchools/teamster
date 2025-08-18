@@ -2,6 +2,7 @@ with
     roster as (
         select
             *,
+            {# creating field to join to PowerSchool grade levels #}
             {{
                 date_to_fiscal_year(
                     date_field="effective_date_start",
