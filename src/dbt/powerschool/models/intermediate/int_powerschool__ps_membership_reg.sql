@@ -6,8 +6,6 @@ select
     ev.fteid,
     ev.dflt_att_mode_code,
     ev.dflt_conversion_mode_code,
-    ev.att_calccntpresentabsent,
-    ev.att_intervalduration,
     ev.grade_level,
     ev.yearid,
 
