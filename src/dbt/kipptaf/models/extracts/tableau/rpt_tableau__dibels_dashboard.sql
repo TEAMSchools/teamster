@@ -24,6 +24,9 @@ select
     s.enroll_status,
     s.advisory,
     s.cohort,
+    s.hos,
+    s.nj_student_tier,
+    s.is_tutoring as tutoring_nj,
 
     'Benchmark' as assessment_type,
 
@@ -51,6 +54,7 @@ select
 
     a.grade as grade_level,
     a.grade_level_text as expected_grade_level,
+
     null as average_starting_words,
     null as pm_round_days,
     null as pm_days,
@@ -99,28 +103,23 @@ select
     null as met_pm_round_criteria,
     null as met_pm_round_overall_criteria,
 
-    h.head_of_school_preferred_name_lastfirst as hos,
-
-    f.nj_student_tier,
-    f.is_tutoring as tutoring_nj,
-
     cast(a.round_number as string) as expected_round_number,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 
-from {{ ref("int_extracts__student_enrollments") }} as s
+from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
     {{ ref("stg_google_sheets__dibels_expected_assessments") }} as a
     on s.academic_year = a.academic_year
     and s.region = a.region
     and s.grade_level = a.grade
-    and a.assessment_type = 'Benchmark'
     and (
         a.start_date between s.entrydate and s.exitdate
         or a.end_date between s.entrydate and s.exitdate
     )
+    and a.assessment_type = 'Benchmark'
     and a.assessment_include is null
 left join
     {{ ref("rpt_gsheets__dibels_bm_goals_calculations") }} as g
@@ -163,16 +162,10 @@ left join
     and a.admin_season = r.admin_season
     and a.round_number = r.round_number
     and s.student_number = r.student_number
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as h
-    on s.schoolid = h.home_work_location_powerschool_school_id
-left join
-    {{ ref("int_extracts__student_enrollments_subjects") }} as f
-    on s.academic_year = f.academic_year
-    and s.student_number = f.student_number
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
-    and f.iready_subject = 'Reading'
-where not s.is_self_contained and s.enroll_status in (0, 2, 3)
+where
+    s.iready_subject = 'Reading'
+    and not s.is_self_contained
+    and s.enroll_status in (0, 2, 3)
 
 union all
 
@@ -202,6 +195,9 @@ select
     s.enroll_status,
     s.advisory,
     s.cohort,
+    s.hos,
+    s.nj_student_tier,
+    s.is_tutoring as tutoring_nj,
 
     'PM' as assessment_type,
 
@@ -264,6 +260,7 @@ select
     r.boy_composite,
     r.moy_composite,
     r.eoy_composite,
+
     null as aggregated_measure_standard_level,
     null as foundation_measure_standard_level,
 
@@ -279,18 +276,13 @@ select
     pm.met_pm_round_criteria,
     pm.met_pm_round_overall_criteria,
 
-    h.head_of_school_preferred_name_lastfirst as hos,
-
-    f.nj_student_tier,
-    f.is_tutoring as tutoring_nj,
-
     cast(e.round_number as string) as expected_round_number,
 
     right(c.courses_course_name, 1) as schedule_student_grade_level,
 
     if(c.students_student_number = s.student_number, 1, 0) as scheduled,
 
-from {{ ref("int_extracts__student_enrollments") }} as s
+from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
     {{ ref("int_google_sheets__dibels_pm_expectations") }} as e
     on s.academic_year = e.academic_year
@@ -361,13 +353,7 @@ left join
     and e.round_number = pm.round_number
     and e.expected_measure_standard = pm.measure_standard
     and s.student_number = pm.student_number
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as h
-    on s.schoolid = h.home_work_location_powerschool_school_id
-left join
-    {{ ref("int_extracts__student_enrollments_subjects") }} as f
-    on s.academic_year = f.academic_year
-    and s.student_number = f.student_number
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="f") }}
-    and f.iready_subject = 'Reading'
-where not s.is_self_contained and s.enroll_status in (0, 2, 3)
+where
+    s.iready_subject = 'Reading'
+    and not s.is_self_contained
+    and s.enroll_status in (0, 2, 3)
