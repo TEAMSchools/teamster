@@ -108,7 +108,7 @@ select
         when is_first_time_ninth
         then 'Eligible'
         when not met_py_credits
-        then 'Ineligble - Credits'
+        then 'Ineligible - Credits'
         when met_py_credits and py_y1_gpa < 2.2
         then 'Ineligible - GPA'
         when met_py_credits and py_y1_unweighted_ada >= 0.9 and py_y1_gpa >= 2.5
@@ -131,7 +131,7 @@ select
         when not is_age_eligible
         then 'Ineligible - Age'
         when not met_py_credits and not is_first_time_ninth
-        then 'Ineligble - Credits'
+        then 'Ineligible - Credits'
         when cy_q1_gpa < 2.2 and (met_py_credits or is_first_time_ninth)
         then 'Ineligible - GPA'
         when
@@ -160,7 +160,7 @@ select
         when not is_age_eligible
         then 'Ineligible - Age'
         when not met_cy_credits
-        then 'Ineligble - Credits'
+        then 'Ineligible - Credits'
         when met_cy_credits and cy_s1_gpa < 2.2
         then 'Ineligible - GPA'
         when met_cy_credits and cy_weighted_s1_ada >= 0.9 and cy_s1_gpa >= 2.5
@@ -183,7 +183,7 @@ select
         when not is_age_eligible
         then 'Ineligible - Age'
         when not met_cy_credits
-        then 'Ineligble - Credits'
+        then 'Ineligible - Credits'
         when met_cy_credits and cy_s1_gpa < 2.2
         then 'Ineligible - GPA'
         when met_cy_credits and cy_weighted_s1_ada >= 0.9 and cy_s1_gpa >= 2.5
