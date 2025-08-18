@@ -1,0 +1,21 @@
+snapshots:
+  - name: snapshot_students__attendance_interventions_rollup
+    relation: ref("int_students__attendance_interventions_rollup")
+    config:
+      schema: students
+      strategy: check
+      unique_key:
+        - student_number
+        - academic_year
+        - schoolid
+      check_cols:
+        - successful_call_count
+        - total_anticipated_calls
+        - pct_interventions_complete
+      dbt_valid_to_current: "'9999-12-31'"
+      meta:
+        dagster:
+          asset_key:
+            - kipptaf
+            - students
+            - snapshot_students__attendance_interventions_rollup
