@@ -1,7 +1,6 @@
 select
     i.incident_id,
 
-    cf.numvalue as num_value,
     cf.selectedoptions as selected_options,
 
     cast(nullif(cf.customfieldid, '') as int) as custom_field_id,
@@ -19,6 +18,10 @@ select
     nullif(cf.options, '') as `options`,
     nullif(cf.value, '') as `value`,
     nullif(cf.stringvalue, '') as string_value,
+
+    coalesce(
+        cf.numvalue.double_value, cast(cf.numvalue.long_value as numeric)
+    ) as num_value,
 
     if(nullif(cf.isfrontend, '') = 'Y', true, false) as is_front_end,
     if(nullif(cf.isrequired, '') = 'Y', true, false) as is_required,
