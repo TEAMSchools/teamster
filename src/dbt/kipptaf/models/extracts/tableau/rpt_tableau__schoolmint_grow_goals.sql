@@ -59,5 +59,12 @@ left join
     and rt.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 where
-    (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
+    srh.job_title in (
+        'Teacher',
+        'Teacher in Residence',
+        'ESE Teacher',
+        'Learning Specialist',
+        'Teacher ESL',
+        'Teacher in Residence ESL'
+    )
     and srh.assignment_status = 'Active'
