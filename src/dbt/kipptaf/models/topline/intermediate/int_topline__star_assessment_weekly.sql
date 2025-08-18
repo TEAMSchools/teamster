@@ -39,4 +39,4 @@ inner join
     and cw.discipline = s.star_discipline
     and rt.name = s.screening_period_window_name
     and s.rn_subj_round = 1
-where cw.region = 'Miami'
+where cw.region = 'Miami' and cw.grade_level < 3
