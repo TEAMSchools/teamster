@@ -45,13 +45,12 @@ with
             on teachers.school_id = calendar.schoolid
             and microgoals.created_date_local
             between calendar.week_start_monday and calendar.week_end_sunday
-        group by all
+        group by
+            teachers.employee_number,
+            teachers.school_id,
+            calendar.week_start_monday,
+            calendar.week_end_sunday
     )
 
-select
-    employee_number,
-    school_id,
-    week_start_monday,
-    week_end_sunday,
-    coalesce(microgoals_assigned, 0) as microgoals_assigned,
+select *
 from final
