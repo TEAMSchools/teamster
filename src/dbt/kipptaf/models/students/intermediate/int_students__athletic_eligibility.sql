@@ -68,7 +68,7 @@ with
 
             if(
                 date_diff(date({{ var("current_academic_year") }}, 09, 01), e.dob, year)
-                >= 19,
+                > 19,
                 false,
                 true
             ) as is_age_eligible,
