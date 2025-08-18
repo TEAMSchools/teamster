@@ -1,7 +1,7 @@
 version: 2
 models:
   - name: int_powerschool__category_grades_pivot
-    tests:
+    data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -11,7 +11,6 @@ models:
               - reporting_term
               - course_number
           config:
-            severity: warn
             store_failures: true
     columns:
       - name: studentid

@@ -1,13 +1,15 @@
 with
     abs_count as (
         select
+            co._dbt_source_relation,
             co.student_number,
             co.student_name,
+            co.academic_year,
             co.region,
             co.reporting_schoolid,
             co.school,
             co.grade_level,
-            co.advisor_lastfirst as team,
+            co.advisor_lastfirst,
 
             count(att.att_date) as n_absences,
         from {{ ref("int_extracts__student_enrollments") }} as co
@@ -27,8 +29,10 @@ with
             and co.rn_year = 1
             and co.enroll_status = 0
         group by
+            co._dbt_source_relation,
             co.student_number,
             co.student_name,
+            co.academic_year,
             co.region,
             co.reporting_schoolid,
             co.school,

@@ -14,12 +14,12 @@ with
 select
     co.student_number,
     co.state_studentnumber,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.academic_year,
     co.reporting_schoolid,
     co.schoolid,
     co.school_name,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.grade_level,
     co.advisory_name as team,
     co.advisor_lastfirst as advisor_name,
@@ -58,8 +58,8 @@ select
     dli.perceived_motivation as `Perceived Motivation`,
     dli.restraint_used as `Restraint Used`,
     dli.ssds_incident_id as `SSDS Incident ID`,
-    dli.create_last_first as created_staff,
-    dli.update_last_first as last_update_staff,
+    dli.create_lastfirst as created_staff,
+    dli.update_lastfirst as last_update_staff,
 
     d.name as term,
 
@@ -82,4 +82,4 @@ left join
     on co.studentid = att.studentid
     and co.academic_year = att.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
-where co.rn_year = 1 and co.academic_year >= ({{ var("current_academic_year") - 1 }})
+where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}

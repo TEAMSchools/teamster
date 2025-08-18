@@ -8,7 +8,6 @@ models:
               - student_id
               - academic_year
           config:
-            severity: warn
             store_failures: true
     columns:
       - name: student_id
