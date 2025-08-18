@@ -7,6 +7,7 @@ with
 
             count(ips.incident_penalty_id) as suspension_count,
             sum(ips.num_days) as suspension_days,
+
         from {{ ref("stg_deanslist__incidents") }} as ics
         inner join
             {{ ref("stg_deanslist__incidents__penalties") }} as ips
@@ -42,7 +43,7 @@ select
     co.year_in_network,
     co.code_location as `db_name`,
     co.boy_status,
-    co.unweighted_ada as ada,
+    co.`ada`,
 
     dt.name as term_name,
     dt.code as reporting_term,
@@ -74,6 +75,7 @@ select
 
     sus.suspension_count,
     sus.suspension_days,
+
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("stg_reporting__terms") }} as dt
