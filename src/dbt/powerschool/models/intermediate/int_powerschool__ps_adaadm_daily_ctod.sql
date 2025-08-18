@@ -18,6 +18,7 @@ with
 
 select
     mv.studentid,
+    mv.student_number,
     mv.schoolid,
     mv.calendardate,
     mv.fteid,
@@ -28,6 +29,8 @@ select
     mv.student_track,
 
     tac.yearid,
+
+    ada_0.att_code,
 
     if(ada_0.id is not null, 0, aci_real.attendance_value)
     * mv.ontrack as attendancevalue,

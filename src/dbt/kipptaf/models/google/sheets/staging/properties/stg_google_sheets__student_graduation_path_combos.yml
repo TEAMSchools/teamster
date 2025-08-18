@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: stg_google_sheets__student_graduation_path_combos
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: grade_level
+        data_type: int64
+      - name: has_fafsa
+        data_type: boolean
+      - name: njgpa_season_11th
+        data_type: boolean
+      - name: fafsa_season_12th
+        data_type: boolean
+      - name: attempted_njgpa_ela
+        data_type: boolean
+      - name: attempted_njgpa_math
+        data_type: boolean
+      - name: met_ela
+        data_type: boolean
+      - name: met_math
+        data_type: boolean
+      - name: grad_eligibility
+        data_type: string

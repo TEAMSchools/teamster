@@ -1,0 +1,38 @@
+version: 2
+models:
+  - name: stg_pearson__student_list_report
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("pearson",
+        "src_pearson__student_list_report") | replace("`", "") }}')
+      contract:
+        enforced: true
+    columns:
+      - name: state_student_identifier
+        data_type: int64
+      - name: last_or_surname
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: date_of_birth
+        data_type: string
+      - name: scale_score
+        data_type: int64
+      - name: performance_level
+        data_type: string
+      - name: test_name
+        data_type: string
+      - name: testing_school
+        data_type: string
+      - name: accountable_school
+        data_type: string
+      - name: local_student_identifier
+        data_type: int64
+      - name: test_type
+        data_type: string
+      - name: administration
+        data_type: string
+      - name: fiscal_year
+        data_type: int64
+      - name: academic_year
+        data_type: int64

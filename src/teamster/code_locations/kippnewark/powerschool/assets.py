@@ -30,6 +30,17 @@ powerschool_table_assets_no_partition = [
     for a in config_from_files([(f"{config_dir}/assets-nonpartition.yaml")])["assets"]
 ]
 
+powerschool_table_assets_nightly = [
+    build_powerschool_table_asset(
+        code_location=CODE_LOCATION,
+        table_name=a["asset_name"],
+        partition_column=a["partition_column"],
+        select_columns=a.get("select_columns"),
+        op_tags=a.get("op_tags"),
+    )
+    for a in config_from_files([(f"{config_dir}/assets-nightly.yaml")])["assets"]
+]
+
 powerschool_table_assets_transaction_date = [
     build_powerschool_table_asset(
         code_location=CODE_LOCATION,
@@ -77,8 +88,9 @@ powerschool_table_assets_gradebook_monthly = [
 
 assets = [
     *powerschool_table_assets_full,
-    *powerschool_table_assets_no_partition,
-    *powerschool_table_assets_transaction_date,
     *powerschool_table_assets_gradebook_full,
     *powerschool_table_assets_gradebook_monthly,
+    *powerschool_table_assets_nightly,
+    *powerschool_table_assets_no_partition,
+    *powerschool_table_assets_transaction_date,
 ]

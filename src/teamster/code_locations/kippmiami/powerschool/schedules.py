@@ -1,9 +1,10 @@
-from dagster import MAX_RUNTIME_SECONDS_TAG, ScheduleDefinition, define_asset_job
+from dagster import MAX_RUNTIME_SECONDS_TAG, ScheduleDefinition
 
 from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kippmiami.powerschool.assets import (
     powerschool_table_assets_gradebook_full,
     powerschool_table_assets_gradebook_monthly,
+    powerschool_table_assets_nightly,
     powerschool_table_assets_no_partition,
 )
 from teamster.libraries.powerschool.sis.schedules import (
@@ -21,10 +22,8 @@ powerschool_sis_asset_gradebook_schedule = build_powerschool_sis_asset_schedule(
 )
 
 powerschool_sis_asset_no_partition_job_schedule = ScheduleDefinition(
-    job=define_asset_job(
-        name=f"{CODE_LOCATION}__powerschool__sis__assets_no_partition_job",
-        selection=powerschool_table_assets_no_partition,
-    ),
+    name=f"{CODE_LOCATION}__powerschool__sis__assets_no_partition_job_schedule",
+    target=[*powerschool_table_assets_nightly, *powerschool_table_assets_no_partition],
     cron_schedule="0 0 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
     tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 10)},

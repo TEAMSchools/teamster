@@ -9,7 +9,7 @@ with
             case
                 when
                     answer
-                    = 'I am committed to my school community/team and, if offered a renewal contract, definitely returning; the Recruitment Team should NOT hire for my position.'
+                    = 'I am committed to my school community/team and, if offered a renewal contract, definitely returning; the Talent Acquisition Team should NOT hire for my position.'
                 then 'Returning'
                 when
                     answer
@@ -17,7 +17,7 @@ with
                 then 'Interested in Transfer'
                 when
                     answer
-                    = 'I am not returning but want to ensure my kids have an outstanding TEAMmate next year; the Recruitment Team should definitely hire for my position.'
+                    = 'I am not returning but want to ensure my kids have an outstanding TEAMmate next year; the Talent Acquisition Team should definitely hire for my position.'
                 then 'Not Returning'
                 when
                     answer
@@ -95,13 +95,13 @@ select
         when sr.home_department_name in ('Data')
         then 7
         when
-            sr.home_department_name = 'Recruitment'
+            sr.home_department_name = 'Talent Acquisition'
             and contains_substr(sr.job_title, 'Director')
         then 7
         /* see your state/region, edit everything, (intentionally blank below)*/
         /* see everything, edit teammate and seat status fields (recruiters)*/
         when
-            sr.home_department_name = 'Recruitment'
+            sr.home_department_name = 'Talent Acquisition'
             and (
                 contains_substr(sr.job_title, 'Recruiter')
                 or contains_substr(sr.job_title, 'Manager')

@@ -17,7 +17,7 @@ diagnostic_results = build_iready_sftp_asset(
     remote_file_regex=r"diagnostic_results_(?P<subject>ela|math)(_CONFIDENTIAL)?\.csv",
     avro_schema=DIAGNOSTIC_RESULTS_SCHEMA,
     start_fiscal_year=2021,
-    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+    end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
 instructional_usage_data = build_iready_sftp_asset(
@@ -28,7 +28,7 @@ instructional_usage_data = build_iready_sftp_asset(
     ),
     avro_schema=INSTRUCTIONAL_USAGE_DATA_SCHEMA,
     start_fiscal_year=2023,
-    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+    end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
 instruction_by_lesson = build_iready_sftp_asset(
@@ -40,7 +40,7 @@ instruction_by_lesson = build_iready_sftp_asset(
     ),
     avro_schema=PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
     start_fiscal_year=2023,
-    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+    end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
 instruction_by_lesson_pro = build_iready_sftp_asset(
@@ -51,7 +51,7 @@ instruction_by_lesson_pro = build_iready_sftp_asset(
     ),
     avro_schema=INSTRUCTION_BY_LESSON_SCHEMA,
     start_fiscal_year=2025,
-    current_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+    end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
 diagnostic_and_instruction = build_iready_sftp_asset(
@@ -62,7 +62,7 @@ diagnostic_and_instruction = build_iready_sftp_asset(
     ),
     avro_schema=DIAGNOSTIC_AND_INSTRUCTION_SCHEMA,
     start_fiscal_year=2022,
-    current_fiscal_year=2024,
+    end_fiscal_year=2024,
 )
 
 assets = [

@@ -10,7 +10,6 @@ from dagster import (
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf._google.forms.assets import form, responses
 from teamster.core.resources import GOOGLE_FORMS_RESOURCE, get_io_manager_gcs_avro
 
 
@@ -60,6 +59,8 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
 
 
 def test_asset_google_forms_form():
+    from teamster.code_locations.kipptaf._google.forms.assets import form
+
     _test_asset(
         # trunk-ignore(pyright/reportArgumentType)
         asset=form,
@@ -69,6 +70,8 @@ def test_asset_google_forms_form():
 
 
 def test_asset_google_forms_responses():
+    from teamster.code_locations.kipptaf._google.forms.assets import responses
+
     _test_asset(
         # trunk-ignore(pyright/reportArgumentType)
         asset=responses,

@@ -7,11 +7,12 @@ with
 
             count(ips.incident_penalty_id) as suspension_count,
             sum(ips.num_days) as suspension_days,
+
         from {{ ref("stg_deanslist__incidents") }} as ics
         inner join
             {{ ref("stg_deanslist__incidents__penalties") }} as ips
-            on ips.incident_id = ics.incident_id
-            and ips._dbt_source_relation = ics._dbt_source_relation
+            on ics.incident_id = ips.incident_id
+            and ics._dbt_source_relation = ips._dbt_source_relation
         where ips.is_suspension
         group by
             ics.student_school_id, ics.create_ts_academic_year, ics._dbt_source_relation
@@ -42,6 +43,7 @@ select
     co.year_in_network,
     co.code_location as `db_name`,
     co.boy_status,
+    co.`ada`,
 
     dt.name as term_name,
     dt.code as reporting_term,
@@ -71,10 +73,9 @@ select
     gpc.earned_credits_cum_projected,
     gpc.potential_credits_cum,
 
-    att.`ada`,
-
     sus.suspension_count,
     sus.suspension_days,
+
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("stg_reporting__terms") }} as dt
@@ -105,16 +106,12 @@ left join
     and co.schoolid = gpc.schoolid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpc") }}
 left join
-    {{ ref("int_powerschool__ada") }} as att
-    on co.studentid = att.studentid
-    and co.yearid = att.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
-left join
     suspension as sus
     on co.student_number = sus.student_school_id
     and co.academic_year = sus.create_ts_academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sus") }}
 where
     co.academic_year = {{ var("current_academic_year") }}
+    and co.rn_year = 1
     and co.is_enrolled_recent
     and co.school_level = 'HS'

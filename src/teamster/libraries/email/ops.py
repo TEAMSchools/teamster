@@ -2,6 +2,7 @@ from pathlib import Path
 
 from dagster import Config, OpExecutionContext, op
 
+from teamster.core.utils.functions import chunk
 from teamster.libraries.email.resources import EmailResource
 
 
@@ -9,12 +10,6 @@ class SendEmailOpConfig(Config):
     subject: str
     text_body: str
     template_path: str | None = None
-
-
-def chunk(obj: list, size: int):
-    """Yield successive chunks from list object."""
-    for i in range(0, len(obj), size):
-        yield obj[i : i + size]
 
 
 @op

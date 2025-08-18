@@ -60,6 +60,7 @@ with
             and t.strategy
         where
             e.academic_year = {{ var("current_academic_year") }}
+            and e.rn_year = 1
             and e.school_level = 'HS'
     ),
 
@@ -92,6 +93,7 @@ with
         where
             e.school_level = 'HS'
             and e.academic_year = {{ var("current_academic_year") }}
+            and e.rn_year = 1
     ),
 
     custom_scores as (
@@ -138,7 +140,7 @@ with
             and t.assessment_subject_area = o.score_type
             and t.actual_month_round = o.test_month
             and e.student_number = o.student_number
-        where e.school_level = 'HS' and t.subject_area != 'Science'
+        where e.rn_year = 1 and e.school_level = 'HS' and t.subject_area != 'Science'
     )
 
 select

@@ -6,6 +6,7 @@ with
             enr.cc_studentid,
             enr.cc_yearid,
             enr.cc_academic_year,
+            enr.cc_schoolid,
             enr.cc_sectionid,
             enr.cc_course_number,
             enr.cc_dateenrolled,
@@ -20,8 +21,6 @@ with
 
             rt.name as term_name,
             rt.code as term_code,
-
-            {{ extract_code_location("enr") }} as code_location,
 
             coalesce(enr.cc_currentabsences, 0) as currentabsences,
             coalesce(enr.cc_currenttardies, 0) as currenttardies,
@@ -58,6 +57,7 @@ with
             enr.cc_studentid,
             enr.cc_yearid,
             enr.cc_academic_year,
+            enr.cc_schoolid,
             enr.cc_course_number,
             enr.cc_sectionid,
             enr.sections_dcid,
@@ -77,6 +77,36 @@ with
             fg.term_percent_grade_adjusted_rt4,
             fg.y1_percent_grade_adjusted,
 
+            if(
+                enr._dbt_source_relation like '%miami%' and enr.grade_level = 0,
+                fg.term_letter_grade_rt1,
+                fg.term_letter_grade_adjusted_rt1
+            ) as term_letter_grade_adjusted_rt1,
+
+            if(
+                enr._dbt_source_relation like '%miami%' and enr.grade_level = 0,
+                fg.term_letter_grade_rt2,
+                fg.term_letter_grade_adjusted_rt2
+            ) as term_letter_grade_adjusted_rt2,
+
+            if(
+                enr._dbt_source_relation like '%miami%' and enr.grade_level = 0,
+                fg.term_letter_grade_rt3,
+                fg.term_letter_grade_adjusted_rt3
+            ) as term_letter_grade_adjusted_rt3,
+
+            if(
+                enr._dbt_source_relation like '%miami%' and enr.grade_level = 0,
+                fg.term_letter_grade_rt4,
+                fg.term_letter_grade_adjusted_rt4
+            ) as term_letter_grade_adjusted_rt4,
+
+            if(
+                enr._dbt_source_relation like '%miami%' and enr.grade_level = 0,
+                fg.y1_letter_grade,
+                fg.y1_letter_grade_adjusted
+            ) as y1_letter_grade,
+
             round(
                 coalesce(
                     lead(fg.need_60, 1) over (
@@ -87,32 +117,6 @@ with
                 ),
                 0
             ) as need_60,
-
-            if(
-                enr.code_location = 'kippmiami' and enr.grade_level = 0,
-                fg.term_letter_grade_rt1,
-                fg.term_letter_grade_adjusted_rt1
-            ) as term_letter_grade_adjusted_rt1,
-            if(
-                enr.code_location = 'kippmiami' and enr.grade_level = 0,
-                fg.term_letter_grade_rt2,
-                fg.term_letter_grade_adjusted_rt2
-            ) as term_letter_grade_adjusted_rt2,
-            if(
-                enr.code_location = 'kippmiami' and enr.grade_level = 0,
-                fg.term_letter_grade_rt3,
-                fg.term_letter_grade_adjusted_rt3
-            ) as term_letter_grade_adjusted_rt3,
-            if(
-                enr.code_location = 'kippmiami' and enr.grade_level = 0,
-                fg.term_letter_grade_rt4,
-                fg.term_letter_grade_adjusted_rt4
-            ) as term_letter_grade_adjusted_rt4,
-            if(
-                enr.code_location = 'kippmiami' and enr.grade_level = 0,
-                fg.y1_letter_grade,
-                fg.y1_letter_grade_adjusted
-            ) as y1_letter_grade,
         from enr_deduplicate as enr
         left join
             {{ ref("int_powerschool__final_grades_pivot") }} as fg
@@ -142,80 +146,20 @@ select
     cat.f_cur as f_term,
     cat.s_cur as s_term,
     cat.w_cur as w_term,
+    cat.h_cur as h_term,
     cat.w_rt1,
     cat.w_rt2,
     cat.w_rt3,
     cat.w_rt4,
+    cat.h_rt1,
+    cat.h_rt2,
+    cat.h_rt3,
+    cat.h_rt4,
 
     comm.comment_value,
 
     null as e1_pct,
     null as e2_pct,
-
-    max(enr.term_percent_grade_adjusted_rt1) over (
-        partition by
-            enr._dbt_source_relation,
-            enr.cc_studentid,
-            enr.cc_yearid,
-            enr.cc_course_number
-        order by enr.term_name asc
-    ) as `Q1_pct`,
-    max(enr.term_letter_grade_adjusted_rt1) over (
-        partition by
-            enr._dbt_source_relation,
-            enr.cc_studentid,
-            enr.cc_yearid,
-            enr.cc_course_number
-        order by enr.term_name asc
-    ) as `Q1_letter`,
-    max(enr.term_percent_grade_adjusted_rt2) over (
-        partition by
-            enr._dbt_source_relation,
-            enr.cc_studentid,
-            enr.cc_yearid,
-            enr.cc_course_number
-        order by enr.term_name asc
-    ) as `Q2_pct`,
-    max(enr.term_letter_grade_adjusted_rt2) over (
-        partition by
-            enr._dbt_source_relation,
-            enr.cc_studentid,
-            enr.cc_yearid,
-            enr.cc_course_number
-        order by enr.term_name asc
-    ) as `Q2_letter`,
-    max(enr.term_percent_grade_adjusted_rt3) over (
-        partition by
-            enr._dbt_source_relation,
-            enr.cc_studentid,
-            enr.cc_yearid,
-            enr.cc_course_number
-        order by enr.term_name asc
-    ) as `Q3_pct`,
-    max(enr.term_letter_grade_adjusted_rt3) over (
-        partition by
-            enr._dbt_source_relation,
-            enr.cc_studentid,
-            enr.cc_yearid,
-            enr.cc_course_number
-        order by enr.term_name asc
-    ) as `Q3_letter`,
-    max(enr.term_percent_grade_adjusted_rt4) over (
-        partition by
-            enr._dbt_source_relation,
-            enr.cc_studentid,
-            enr.cc_yearid,
-            enr.cc_course_number
-        order by enr.term_name asc
-    ) as `Q4_pct`,
-    max(enr.term_letter_grade_adjusted_rt4) over (
-        partition by
-            enr._dbt_source_relation,
-            enr.cc_studentid,
-            enr.cc_yearid,
-            enr.cc_course_number
-        order by enr.term_name asc
-    ) as `Q4_letter`,
 
     coalesce(sgy1.percent, enr.y1_percent_grade_adjusted) as y1_pct,
     coalesce(sgy1.grade, enr.y1_letter_grade) as y1_letter,
@@ -225,18 +169,92 @@ select
     coalesce(kctz.ctz_rt2, cat.ctz_rt2) as ctz_rt2,
     coalesce(kctz.ctz_rt3, cat.ctz_rt3) as ctz_rt3,
     coalesce(kctz.ctz_rt4, cat.ctz_rt4) as ctz_rt4,
+
+    max(enr.term_percent_grade_adjusted_rt1) over (
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
+        order by enr.term_name asc
+    ) as `Q1_pct`,
+
+    max(enr.term_letter_grade_adjusted_rt1) over (
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
+        order by enr.term_name asc
+    ) as `Q1_letter`,
+
+    max(enr.term_percent_grade_adjusted_rt2) over (
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
+        order by enr.term_name asc
+    ) as `Q2_pct`,
+
+    max(enr.term_letter_grade_adjusted_rt2) over (
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
+        order by enr.term_name asc
+    ) as `Q2_letter`,
+
+    max(enr.term_percent_grade_adjusted_rt3) over (
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
+        order by enr.term_name asc
+    ) as `Q3_pct`,
+
+    max(enr.term_letter_grade_adjusted_rt3) over (
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
+        order by enr.term_name asc
+    ) as `Q3_letter`,
+
+    max(enr.term_percent_grade_adjusted_rt4) over (
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
+        order by enr.term_name asc
+    ) as `Q4_pct`,
+
+    max(enr.term_letter_grade_adjusted_rt4) over (
+        partition by
+            enr._dbt_source_relation,
+            enr.cc_studentid,
+            enr.cc_yearid,
+            enr.cc_course_number
+        order by enr.term_name asc
+    ) as `Q4_letter`,
 from enr_fg as enr
 left join
     {{ ref("int_powerschool__category_grades_pivot") }} as cat
     on enr.cc_studentid = cat.studentid
     and enr.cc_yearid = cat.yearid
-    and enr.cc_course_number = cat.course_number
+    and enr.cc_schoolid = cat.schoolid
     and enr.term_code = cat.reporting_term
+    and enr.cc_course_number = cat.course_number
     and {{ union_dataset_join_clause(left_alias="enr", right_alias="cat") }}
 left join
     {{ ref("int_powerschool__category_grades_pivot") }} as kctz
     on enr.cc_studentid = kctz.studentid
     and enr.cc_yearid = kctz.yearid
+    and enr.cc_schoolid = cat.schoolid
     and enr.term_name = kctz.reporting_term
     and {{ union_dataset_join_clause(left_alias="enr", right_alias="kctz") }}
     and kctz.course_number = 'HR'

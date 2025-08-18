@@ -2,14 +2,15 @@ from dagster import TextMetadataValue, materialize
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf.coupa.assets import assets as COUPA_ASSETS
-from teamster.code_locations.kipptaf.resources import COUPA_RESOURCE
 from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(selection):
+    from teamster.code_locations.kipptaf.coupa.assets import assets
+    from teamster.code_locations.kipptaf.resources import COUPA_RESOURCE
+
     result = materialize(
-        assets=COUPA_ASSETS,
+        assets=assets,
         selection=selection,
         resources={
             "io_manager_gcs_avro": get_io_manager_gcs_avro(

@@ -2,33 +2,19 @@ from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudWorkspace
 from dagster_shared import check
 
-from teamster.libraries.adp.workforce_manager.resources import (
-    AdpWorkforceManagerResource,
-)
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
-from teamster.libraries.amplify.dibels.resources import DibelsDataSystemResource
-from teamster.libraries.amplify.mclass.resources import MClassResource
 from teamster.libraries.coupa.resources import CoupaResource
 from teamster.libraries.email.resources import EmailResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.ldap.resources import LdapResource
+from teamster.libraries.level_data.grow.resources import GrowResource
 from teamster.libraries.powerschool.enrollment.resources import (
     PowerSchoolEnrollmentResource,
 )
-from teamster.libraries.schoolmint.grow.resources import SchoolMintGrowResource
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.tableau.resources import TableauServerResource
-
-ADP_WORKFORCE_MANAGER_RESOURCE = AdpWorkforceManagerResource(
-    subdomain=EnvVar("ADP_WFM_SUBDOMAIN"),
-    app_key=EnvVar("ADP_WFM_APP_KEY"),
-    client_id=EnvVar("ADP_WFM_CLIENT_ID"),
-    client_secret=EnvVar("ADP_WFM_CLIENT_SECRET"),
-    username=EnvVar("ADP_WFM_USERNAME"),
-    password=EnvVar("ADP_WFM_PASSWORD"),
-)
 
 ADP_WORKFORCE_NOW_RESOURCE = AdpWorkforceNowResource(
     client_id=EnvVar("ADP_WFN_CLIENT_ID"),
@@ -49,10 +35,6 @@ COUPA_RESOURCE = CoupaResource(
     client_id=EnvVar("COUPA_API_CLIENT_ID"),
     client_secret=EnvVar("COUPA_API_CLIENT_SECRET"),
     scope=["core.common.read", "core.user.read"],
-)
-
-DIBELS_DATA_SYSTEM_RESOURCE = DibelsDataSystemResource(
-    username=EnvVar("AMPLIFY_DDS_USERNAME"), password=EnvVar("AMPLIFY_DDS_PASSWORD")
 )
 
 OUTLOOK_RESOURCE = EmailResource(
@@ -79,17 +61,11 @@ LDAP_RESOURCE = LdapResource(
     password=EnvVar("LDAP_PASSWORD"),
 )
 
-MCLASS_RESOURCE = MClassResource(
-    username=EnvVar("AMPLIFY_USERNAME"),
-    password=EnvVar("AMPLIFY_PASSWORD"),
-    request_timeout=(60 * 10),
-)
-
 POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(
     api_key=EnvVar("PS_ENROLLMENT_API_KEY"), page_size=1000
 )
 
-SCHOOLMINT_GROW_RESOURCE = SchoolMintGrowResource(
+GROW_RESOURCE = GrowResource(
     client_id=EnvVar("SCHOOLMINT_GROW_CLIENT_ID"),
     client_secret=EnvVar("SCHOOLMINT_GROW_CLIENT_SECRET"),
     district_id=EnvVar("SCHOOLMINT_GROW_DISTRICT_ID"),
@@ -110,6 +86,13 @@ TABLEAU_SERVER_RESOURCE = TableauServerResource(
 """
 SSH resources
 """
+
+SSH_RESOURCE_AMPLIFY = SSHResource(
+    remote_host=EnvVar("AMPLIFY_SFTP_HOST"),
+    remote_port=22,
+    username=EnvVar("AMPLIFY_SFTP_USERNAME"),
+    password=EnvVar("AMPLIFY_SFTP_PASSWORD"),
+)
 
 SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
     remote_host=EnvVar("ADP_SFTP_HOST_IP"),

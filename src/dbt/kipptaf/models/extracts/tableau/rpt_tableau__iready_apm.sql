@@ -1,32 +1,4 @@
 with
-    expanded_terms as (
-        select
-            academic_year,
-            `name`,
-            `start_date`,
-
-            case
-                region
-                when 'KIPP Miami'
-                then 'Miami'
-                when 'TEAM Academy Charter School'
-                then 'Newark'
-                when 'KIPP Cooper Norcross Academy'
-                then 'Camden'
-            end as region,
-
-            /* end_date contains test window end date this needs continuous dates */
-            coalesce(
-                lead(`start_date`, 1) over (
-                    partition by academic_year, region order by code asc
-                )
-                - 1,
-                '{{ var("current_fiscal_year") }}-06-30'
-            ) as end_date,
-        from {{ ref("stg_reporting__terms") }}
-        where type = 'IR'
-    ),
-
     iready_teacher as (
         select
             cc_academic_year,
@@ -103,6 +75,7 @@ select
     f.state_test_proficiency,
     f.nj_student_tier,
     f.is_exempt_iready,
+    f.is_sipps,
     f.territory,
 
     lc.head_of_school_preferred_name_lastfirst as head_of_school,
@@ -125,6 +98,7 @@ select
 
     dr.mid_on_grade_level_scale_score
     - dr.overall_scale_score as scale_pts_to_mid_on_grade_level,
+
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as w
@@ -134,9 +108,10 @@ inner join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="w") }}
 cross join unnest(['Reading', 'Math']) as subj
 left join
-    expanded_terms as rt
-    on co.academic_year = rt.academic_year
-    and co.region = rt.region
+    {{ ref("stg_reporting__terms") }} as rt
+    on w.academic_year = rt.academic_year
+    and w.region = rt.region
+    and rt.type = 'IREX'
     and w.week_start_monday between rt.start_date and rt.end_date
 left join
     {{ ref("int_iready__instruction_by_lesson_union") }} as il
@@ -171,6 +146,7 @@ left join
     on co.student_number = f.student_number
     and co.academic_year = f.academic_year
     and subj = f.iready_subject
+    and f.rn_year = 1
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
     on co.schoolid = lc.home_work_location_powerschool_school_id
@@ -190,6 +166,7 @@ left join
     on co.academic_year = it.cc_academic_year
     and co.student_number = it.students_student_number
 where
-    co.academic_year >= {{ var("current_academic_year") - 1 }}
+    co.rn_year = 1
     and co.enroll_status = 0
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}
     and co.grade_level <= 8

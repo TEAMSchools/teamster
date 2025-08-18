@@ -59,6 +59,11 @@ select
     *,
 
     case
-        high_grade when 12 then 'HS' when 8 then 'MS' when 4 then 'ES'
+        when high_grade = 12
+        then 'HS'
+        when high_grade = 8
+        then 'MS'
+        when high_grade in (4, 5)
+        then 'ES'
     end as school_level,
 from transformations

@@ -1,15 +1,13 @@
 import time
-from io import StringIO
 
 from dagster import AssetExecutionContext, AssetsDefinition, Output, asset
-from numpy import nan
-from pandas import read_csv
-from slugify import slugify
+from requests.exceptions import ConnectionError
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
+from teamster.core.utils.functions import csv_string_to_records
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 
 
@@ -41,7 +39,11 @@ def build_smartrecruiters_report_asset(
         report_file_status = report_execution_data["reportFileStatus"]
 
         while report_file_status != "COMPLETED":
-            report_files_data = smartrecruiters.get(endpoint=report_endpoint).json()
+            try:
+                report_files_data = smartrecruiters.get(endpoint=report_endpoint).json()
+            except ConnectionError:
+                time.sleep(1)
+                continue
 
             report_file_record = [
                 rf
@@ -63,16 +65,9 @@ def build_smartrecruiters_report_asset(
             endpoint=f"{report_endpoint}/recent/data"
         ).text
 
-        df = read_csv(filepath_or_buffer=StringIO(report_file_text), low_memory=False)
+        records = csv_string_to_records(csv_string=report_file_text)
 
-        df.replace({nan: None}, inplace=True)
-        df.rename(columns=lambda x: slugify(text=x, separator="_"), inplace=True)
-        # context.log.debug(df.dtypes)
-
-        records = df.to_dict(orient="records")
-
-        yield Output(value=(records, schema), metadata={"records": df.shape[0]})
-
+        yield Output(value=(records, schema), metadata={"records": len(records)})
         yield check_avro_schema_valid(
             asset_key=context.asset_key, records=records, schema=schema
         )

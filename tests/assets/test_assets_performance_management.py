@@ -6,14 +6,9 @@ from dagster import (
     TextMetadataValue,
     materialize,
 )
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf.performance_management.assets import (
-    outlier_detection,
-)
 from teamster.core.resources import BIGQUERY_RESOURCE, get_io_manager_gcs_avro
 
 
@@ -57,4 +52,8 @@ def _test_asset(asset: AssetsDefinition, partition_key: str | None = None):
 
 
 def test_outlier_detection():
+    from teamster.code_locations.kipptaf.performance_management.assets import (
+        outlier_detection,
+    )
+
     _test_asset(asset=outlier_detection, partition_key="2024|PM1")

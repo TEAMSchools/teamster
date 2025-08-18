@@ -1,0 +1,24 @@
+version: 2
+models:
+  - name: int_adp_workforce_now__workers__custom_fields__pivot
+    columns:
+      - name: associate_oid
+        data_type: string
+      - name: received_sign_on_bonus
+        data_type: boolean
+      - name: miami_aces_number
+        data_type: string
+      - name: nj_pension_number
+        data_type: string
+      - name: preferred_race_ethnicity
+        data_type: string
+      - name: remote_work_status
+        data_type: string
+      - name: teacher_prep_program
+        data_type: string
+      - name: life_experience_in_communities_we_serve
+        data_type: string
+      - name: professional_experience_in_communities_we_serve
+        data_type: string
+      - name: employee_number
+        data_type: int64

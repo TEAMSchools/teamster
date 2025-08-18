@@ -2,9 +2,6 @@ version: 2
 
 sources:
   - name: kippmiami_renlearn
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      kippmiami_renlearn
     tables:
       - name: stg_renlearn__accelerated_reader
         meta:

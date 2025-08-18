@@ -29,6 +29,10 @@ with
             annual_stretch_growth_measure,
             overall_placement,
 
+            if(overall_relative_placement_int >= 4, true, false) as is_proficient,
+
+            if(`subject` = 'Reading', 'ELA', 'Math') as discipline,
+
             if(
                 percent_progress_to_annual_typical_growth_percent >= 100, true, false
             ) as is_met_typical,
@@ -90,10 +94,12 @@ with
     )
 
 select
+    dr._dbt_source_relation,
     dr.student_id,
     dr.academic_year,
     dr.academic_year_int,
     dr.student_grade,
+    dr.discipline,
     dr.subject,
     dr.start_date,
     dr.completion_date,
@@ -112,6 +118,7 @@ select
     dr.percent_progress_to_annual_stretch_growth_percent,
     dr.is_met_typical,
     dr.is_met_stretch,
+    dr.is_proficient,
     dr.diagnostic_gain,
     dr.annual_typical_growth_measure,
     dr.annual_stretch_growth_measure,
@@ -127,6 +134,7 @@ select
 
     lc.region,
     lc.abbreviation as school_abbreviation,
+    lc.powerschool_school_id as schoolid,
 
     cwo.sublevel_name as projected_sublevel,
     cwo.sublevel_number as projected_sublevel_number,

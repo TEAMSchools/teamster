@@ -1,40 +1,40 @@
 version: 0.1
 cli:
-  version: 1.24.0
+  version: 1.25.0
 plugins:
   sources:
     - id: trunk
-      ref: v1.7.0
+      ref: v1.7.1
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - bandit@1.8.3
-    - checkov@3.2.436
+    - bandit@1.8.6
     - terrascan@1.19.1
-    - trivy@0.63.0
     - actionlint@1.7.7
     - git-diff-check
-    - gitleaks@8.27.0
+    - gitleaks@8.28.0
     - hadolint@2.12.1-beta
     - isort@6.0.1
     - markdownlint@0.45.0
-    - osv-scanner@2.0.2
+    - osv-scanner@2.0.3
     - oxipng@9.1.5
-    - prettier@3.5.3
-    - pyright@1.1.401
-    - ruff@0.11.12
+    - prettier@3.6.2
+    - pyright@1.1.403
+    - ruff@0.12.7
     - shellcheck@0.10.0
     - shfmt@3.6.0
-    - sqlfluff@3.4.0
-    - sqlfmt@0.26.0
-    - svgo@3.3.2
+    - sqlfluff@3.4.2
+    - sqlfmt@0.27.0
+    - svgo@4.0.0
     - taplo@0.9.3
-    - trufflehog@3.88.35
     - yamllint@1.37.1
   disabled:
     - black
+    - checkov
     - flake8
     - sql-formatter
+    - trivy
+    - trufflehog
   ignore:
     - paths:
         - src/teamster/**

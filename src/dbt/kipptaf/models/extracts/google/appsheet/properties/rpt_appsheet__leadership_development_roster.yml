@@ -1,0 +1,34 @@
+version: 2
+models:
+  - name: rpt_appsheet__leadership_development_roster
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: formatted_name
+        data_type: string
+      - name: location
+        data_type: string
+      - name: entity
+        data_type: string
+      - name: department
+        data_type: string
+      - name: status
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: mail
+        data_type: string
+      - name: reports_to_mail
+        data_type: string
+      - name: google_email
+        data_type: string
+      - name: reports_to_google_email
+        data_type: string
+      - name: active
+        data_type: boolean
+      - name: route
+        data_type: string
+      - name: default_include
+        data_type: boolean
+      - name: permission_level
+        data_type: int64

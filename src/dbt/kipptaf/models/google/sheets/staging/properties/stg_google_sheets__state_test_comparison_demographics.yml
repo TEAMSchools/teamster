@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: stg_google_sheets__state_test_comparison_demographics
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Academic_Year
+        data_type: int64
+      - name: Test_Name
+        data_type: string
+      - name: Test_Code
+        data_type: string
+      - name: Region
+        data_type: string
+      - name: Comparison_Entity
+        data_type: string
+      - name: Comparison_Demographic_Group
+        data_type: string
+      - name: Comparison_Demographic_Subgroup
+        data_type: string
+      - name: Percent_Proficient
+        data_type: float64
+      - name: Total_Students
+        data_type: int64

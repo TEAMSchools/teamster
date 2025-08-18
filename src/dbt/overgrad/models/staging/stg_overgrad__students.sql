@@ -1,3 +1,14 @@
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("overgrad", "src_overgrad__students"),
+                partition_by="id",
+                order_by="id desc",
+            )
+        }}
+    )
+
 select
     id,
     external_student_id,
@@ -51,4 +62,4 @@ select
     academics.highest_psat_nmsqt as academics__highest_psat_nmsqt,
     academics.highest_psat_10 as academics__highest_psat_10,
     academics.highest_psat_8_9 as academics__highest_psat_8_9,
-from {{ source("overgrad", "src_overgrad__students") }}
+from deduplicate

@@ -1,0 +1,32 @@
+version: 2
+models:
+  - name: stg_google_sheets__dibels_goals_wide
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns:
+      - name: Lookup
+        data_type: string
+      - name: Year
+        data_type: int64
+      - name: Measure_Standard
+        data_type: string
+      - name: Grade
+        data_type: string
+      - name: Admin_Season
+        data_type: string
+      - name: Grade_Level_Standard
+        data_type: int64
+      - name: Above_Benchmark_Lower_Threshold
+        data_type: int64
+      - name: Below_Benchmark_Lower_Threshold
+        data_type: int64
+      - name: Well_Below_Benchmark_Lower_Threshold
+        data_type: int64
+      - name: Next_Grade_Level_Standard
+        data_type: int64
+      - name: BM_Period_Sort_Order
+        data_type: int64
+      - name: Grade_Level_Sort_Order
+        data_type: int64

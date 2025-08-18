@@ -1,0 +1,47 @@
+snapshots:
+  - name: snapshot_people__employee_numbers
+    relation: ref("stg_people__employee_numbers")
+    config:
+      schema: people
+      strategy: check
+      unique_key:
+        - employee_number
+        - coalesce(adp_associate_id, '')
+        - coalesce(adp_associate_id_legacy, '')
+        - is_active
+      check_cols: all
+      dbt_valid_to_current: "'9999-12-31'"
+      meta:
+        dagster:
+          asset_key:
+            - kipptaf
+            - people
+            - snapshot_people__employee_numbers
+  - name: snapshot_people__student_logins
+    relation: ref("stg_people__student_logins")
+    config:
+      schema: people
+      strategy: check
+      unique_key: student_number
+      check_cols: all
+      dbt_valid_to_current: "'9999-12-31'"
+      meta:
+        dagster:
+          asset_key:
+            - kipptaf
+            - people
+            - snapshot_people__student_logins
+  - name: snapshot_people__staff_roster
+    relation: ref("int_people__staff_roster")
+    config:
+      enabled: false
+      schema: people
+      unique_key: item_id
+      strategy: check
+      check_cols: all
+      meta:
+        dagster:
+          asset_key:
+            - kipptaf
+            - people
+            - snapshot_people__staff_roster

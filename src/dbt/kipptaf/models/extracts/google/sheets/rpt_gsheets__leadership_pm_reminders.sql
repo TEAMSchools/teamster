@@ -18,11 +18,10 @@ left join
     {{ ref("stg_leadership_development__active_users") }} as a
     on l.employee_number = safe_cast(a.employee_number as int)
 where
-    l.academic_year = 2024
+    l.academic_year = {{ var("current_academic_year") }}
     and (l.round_completion_self = 0 or l.round_completion_manager = 0)
     and l.active_assignment
-    and a.active_title
-    and not a.special_case
+    and a.app_selection_active
     and sr.assignment_status in ('Active', 'Leave')
 group by
     l.preferred_name_lastfirst,

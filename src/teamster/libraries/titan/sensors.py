@@ -1,19 +1,14 @@
 import json
 import re
-from collections import defaultdict
 from datetime import datetime
-from itertools import groupby
-from operator import itemgetter
 from zoneinfo import ZoneInfo
 
 from dagster import (
-    AssetKey,
     AssetsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
-    define_asset_job,
     sensor,
 )
 from dagster_shared import check
@@ -29,50 +24,27 @@ def build_titan_sftp_sensor(
     minimum_interval_seconds: int | None = None,
     exclude_dirs: list | None = None,
 ):
-    base_job_name = f"{code_location}_titan_sftp_asset_job"
-
     if exclude_dirs is None:
         exclude_dirs = []
 
-    keys_by_partitions_def = defaultdict(set[AssetKey])
-
-    for assets_def in asset_selection:
-        keys_by_partitions_def[assets_def.partitions_def].add(assets_def.key)
-
-    jobs = [
-        define_asset_job(
-            name=(
-                f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
-            ),
-            selection=list(keys),
-        )
-        for partitions_def, keys in keys_by_partitions_def.items()
-    ]
-
     @sensor(
-        name=f"{base_job_name}_sensor",
-        jobs=jobs,
+        name=f"{code_location}__titan__sftp_asset_sensor",
+        target=asset_selection,
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, ssh_titan: SSHResource):
         now_timestamp = datetime.now(timezone).timestamp()
 
-        run_request_kwargs = []
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
         try:
             files = ssh_titan.listdir_attr_r(exclude_dirs=exclude_dirs)
         except SSHException as e:
-            # mute error
-            if "No existing session" in e.args:
-                return SkipReason(str(e))
-            else:
-                raise e
+            return SkipReason(str(e))
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()
-            partitions_def = check.not_none(value=a.partitions_def)
             context.log.info(asset_identifier)
 
             last_run = cursor.get(asset_identifier, 0)
@@ -89,33 +61,20 @@ def build_titan_sftp_sensor(
                     and check.not_none(value=f.st_size) > 0
                 ):
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                    run_request_kwargs.append(
-                        {
-                            "asset_key": a.key,
-                            "job_name": (
-                                f"{base_job_name}_"
-                                f"{partitions_def.get_serializable_unique_identifier()}"
+                    partition_key = match.group(1)
+
+                    run_requests.append(
+                        RunRequest(
+                            run_key=(
+                                f"{a.key.to_python_identifier()}_{partition_key}_"
+                                f"{now_timestamp}"
                             ),
-                            "partition_key": match.group(1),
-                        }
+                            asset_selection=[a.key],
+                            partition_key=partition_key,
+                        )
                     )
 
-                cursor[asset_identifier] = now_timestamp
-
-        item_getter_key = itemgetter("job_name", "partition_key")
-
-        for (job_name, partition_key), group in groupby(
-            iterable=sorted(run_request_kwargs, key=item_getter_key),
-            key=item_getter_key,
-        ):
-            run_requests.append(
-                RunRequest(
-                    run_key=f"{job_name}_{partition_key}_{now_timestamp}",
-                    job_name=job_name,
-                    partition_key=partition_key,
-                    asset_selection=[g["asset_key"] for g in group],
-                )
-            )
+                    cursor[asset_identifier] = now_timestamp
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

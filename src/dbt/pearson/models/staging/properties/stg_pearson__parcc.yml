@@ -1,0 +1,464 @@
+version: 2
+models:
+  - name: stg_pearson__parcc
+    config:
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("pearson",
+        "src_pearson__parcc") | replace("`", "") }}')
+      contract:
+        enforced: true
+    columns:
+      - name: accountabledistrictcode
+        data_type: int64
+      - name: accountabledistrictname
+        data_type: string
+      - name: accountableorganizationaltype
+        data_type: int64
+      - name: accountableschoolcode
+        data_type: int64
+      - name: accountableschoolname
+        data_type: string
+      - name: administrationdirectionsclarifiedinstudentsnativelanguage
+        data_type: string
+      - name: administrationdirectionsreadaloudinstudentsnativelanguage
+        data_type: string
+      - name: alternaterepresentationpapertest
+        data_type: string
+      - name: americanindianoralaskanative
+        data_type: string
+      - name: answermasking
+        data_type: string
+      - name: answersrecordedintestbook
+        data_type: string
+      - name: answersrecordedintestbooklet
+        data_type: string
+      - name: asian
+        data_type: string
+      - name: aslvideo
+        data_type: string
+      - name: assessmentgrade
+        data_type: string
+      - name: assessmentyear
+        data_type: string
+      - name: assistivetechnologynonscreenreader
+        data_type: string
+      - name: assistivetechnologyscreenreader
+        data_type: string
+      - name: attemptcreatedate
+        data_type: string
+      - name: batteryformid
+        data_type: string
+      - name: birthdate
+        data_type: string
+      - name: blackorafricanamerican
+        data_type: string
+      - name: brailleresponse
+        data_type: string
+      - name: braillewithtactilegraphics
+        data_type: string
+      - name: calculationdeviceandmathematicstools
+        data_type: string
+      - name: classname
+        data_type: string
+      - name: closedcaptioningforela
+        data_type: string
+      - name: closedcaptioningforelal
+        data_type: string
+      - name: colorcontrast
+        data_type: numeric
+      - name: datefirstenrolledinusschool
+        data_type: string
+      - name: economicdisadvantagestatus
+        data_type: string
+      - name: elaccommodation
+        data_type: string
+      - name: elaconstructedresponse
+        data_type: numeric
+      - name: elalconstructedresponse
+        data_type: numeric
+      - name: elalselectedresponseortechnologyenhanceditems
+        data_type: numeric
+      - name: elaselectedresponseortechnologyenhanceditems
+        data_type: numeric
+      - name: electronicbrailleresponse
+        data_type: string
+      - name: elexemptfromtakingela
+        data_type: string
+      - name: elexemptfromtakingelal
+        data_type: string
+      - name: emergencyaccommodation
+        data_type: numeric
+      - name: englishlearneraccommodatedresponses
+        data_type: numeric
+      - name: englishlearnerel
+        data_type: string
+      - name: extendedtime
+        data_type: string
+      - name: federalraceethnicity
+        data_type: int64
+      - name: firsthighschoolmathassessment
+        data_type: string
+      - name: firstname
+        data_type: string
+      - name: formeriep
+        data_type: string
+      - name: frequentbreaks
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: giftedandtalented
+        data_type: string
+      - name: gradelevelwhenassessed
+        data_type: int64
+      - name: hispanicorlatinoethnicity
+        data_type: string
+      - name: home_language
+        data_type: string
+      - name: homeless
+        data_type: string
+      - name: humanreaderorhumansigner
+        data_type: numeric
+      - name: humansignerfortestdirections
+        data_type: string
+      - name: iepexemptfrompassing
+        data_type: string
+      - name: languagecode
+        data_type: string
+      - name: largeprint
+        data_type: string
+      - name: lastorsurname
+        data_type: string
+      - name: localstudentidentifier
+        data_type: numeric
+      - name: mathematicsresponse
+        data_type: numeric
+      - name: mathematicsresponseel
+        data_type: numeric
+      - name: mathematicsscienceaccommodatedresponse
+        data_type: numeric
+      - name: middlename
+        data_type: string
+      - name: migrantstatus
+        data_type: string
+      - name: monitortestresponse
+        data_type: string
+      - name: multipletestregistration
+        data_type: string
+      - name: nativehawaiianorotherpacificislander
+        data_type: string
+      - name: njelstatus
+        data_type: string
+      - name: njnotattemptflag
+        data_type: string
+      - name: nottestedcode
+        data_type: string
+      - name: nottestedreason
+        data_type: numeric
+      - name: onlineformid
+        data_type: string
+      - name: onlinepcr1
+        data_type: string
+      - name: onlinepcr2
+        data_type: string
+      - name: paperattemptcreatedate
+        data_type: string
+      - name: paperformid
+        data_type: string
+      - name: paperpcr1
+        data_type: numeric
+      - name: paperpcr2
+        data_type: numeric
+      - name: papersection1numberofattempteditems
+        data_type: numeric
+      - name: papersection1totaltestitems
+        data_type: numeric
+      - name: papersection2numberofattempteditems
+        data_type: numeric
+      - name: papersection2totaltestitems
+        data_type: numeric
+      - name: papersection3numberofattempteditems
+        data_type: numeric
+      - name: papersection3totaltestitems
+        data_type: numeric
+      - name: papersection4numberofattempteditems
+        data_type: numeric
+      - name: papersection4totaltestitems
+        data_type: numeric
+      - name: paperunit1totaltestitems
+        data_type: string
+      - name: parccstudentidentifier
+        data_type: string
+      - name: percentofitemsattempted
+        data_type: string
+      - name: period
+        data_type: string
+      - name: primarydisabilitytype
+        data_type: string
+      - name: refreshablebrailledisplay
+        data_type: string
+      - name: refreshablebrailledisplayforelal
+        data_type: string
+      - name: reportsuppressionaction
+        data_type: string
+      - name: reportsuppressioncode
+        data_type: string
+      - name: responsibleaccountabledistrictcode
+        data_type: int64
+      - name: responsibleaccountableschoolcode
+        data_type: int64
+      - name: responsibledistrictcode
+        data_type: int64
+      - name: responsibledistrictname
+        data_type: string
+      - name: responsibleorganizationaltype
+        data_type: int64
+      - name: responsibleorganizationcodetype
+        data_type: int64
+      - name: responsibleschoolcode
+        data_type: int64
+      - name: responsibleschoolname
+        data_type: string
+      - name: retest
+        data_type: string
+      - name: rosterflag
+        data_type: string
+      - name: separatealternatelocation
+        data_type: string
+      - name: sex
+        data_type: string
+      - name: smallgrouptesting
+        data_type: string
+      - name: smalltestinggroup
+        data_type: string
+      - name: spanishtransadaptation
+        data_type: string
+      - name: spanishtransadaptationofthemathematicsassessment
+        data_type: string
+      - name: specialeducationplacement
+        data_type: numeric
+      - name: specializedequipmentorfurniture
+        data_type: string
+      - name: specifiedareaorsetting
+        data_type: string
+      - name: speechtotextandwordprediction
+        data_type: string
+      - name: stateabbreviation
+        data_type: string
+      - name: statefield1
+        data_type: string
+      - name: statefield10
+        data_type: string
+      - name: statefield11
+        data_type: string
+      - name: statefield12
+        data_type: string
+      - name: statefield13
+        data_type: string
+      - name: statefield14
+        data_type: string
+      - name: statefield15
+        data_type: string
+      - name: statefield2
+        data_type: string
+      - name: statefield3
+        data_type: string
+      - name: statefield4
+        data_type: string
+      - name: statefield5
+        data_type: string
+      - name: statefield7
+        data_type: numeric
+      - name: statefield8
+        data_type: numeric
+      - name: statestudentidentifier
+        data_type: int64
+      - name: studentassessmentidentifier
+        data_type: string
+      - name: studentreadsassessmentaloudtoself
+        data_type: string
+      - name: studentreadsassessmentaloudtothemselves
+        data_type: string
+      - name: studenttestuuid
+        data_type: string
+      - name: studentunit1testuuid
+        data_type: string
+      - name: studentunit2testuuid
+        data_type: string
+      - name: studentunit3testuuid
+        data_type: string
+      - name: studentunit4testuuid
+        data_type: string
+      - name: studentuuid
+        data_type: string
+      - name: studentwithdisabilities
+        data_type: string
+      - name: subclaim1category
+        data_type: numeric
+      - name: subclaim1categoryifnotattempted
+        data_type: string
+      - name: subclaim2category
+        data_type: numeric
+      - name: subclaim2categoryifnotattempted
+        data_type: string
+      - name: subclaim3category
+        data_type: numeric
+      - name: subclaim3categoryifnotattempted
+        data_type: string
+      - name: subclaim4category
+        data_type: numeric
+      - name: subclaim4categoryifnotattempted
+        data_type: string
+      - name: subclaim5category
+        data_type: numeric
+      - name: subclaim5categoryifnotattempted
+        data_type: string
+      - name: subclaim6category
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: summativeflag
+        data_type: string
+      - name: testadministration
+        data_type: string
+      - name: testattemptednessflag
+        data_type: string
+      - name: testcode
+        data_type: string
+      - name: testcsemprobablerange
+        data_type: numeric
+      - name: testcsemprobablerangeifnotattempted
+        data_type: string
+      - name: testingdistrictcode
+        data_type: int64
+      - name: testingdistrictname
+        data_type: string
+      - name: testingorganizationaltype
+        data_type: int64
+      - name: testingschoolcode
+        data_type: int64
+      - name: testingschoolname
+        data_type: string
+      - name: testperformancelevel
+        data_type: int64
+      - name: testperformancelevelifnotattempted
+        data_type: string
+      - name: testreadingcsem
+        data_type: numeric
+      - name: testreadingcsemifnotattempted
+        data_type: string
+      - name: testreadingscalescore
+        data_type: numeric
+      - name: testreadingscalescoreifnotattempted
+        data_type: string
+      - name: testscalescore
+        data_type: numeric
+      - name: testscalescoreifnotattempted
+        data_type: string
+      - name: testscorecomplete
+        data_type: numeric
+      - name: teststatus
+        data_type: string
+      - name: testwritingcsem
+        data_type: numeric
+      - name: testwritingcsemifnotattempted
+        data_type: string
+      - name: testwritingscalescore
+        data_type: numeric
+      - name: testwritingscalescoreifnotattempted
+        data_type: string
+      - name: texttospeech
+        data_type: numeric
+      - name: timeofday
+        data_type: string
+      - name: titleiiilimitedenglishproficientparticipationstatus
+        data_type: string
+      - name: totaltestitems
+        data_type: numeric
+      - name: totaltestitemsattempted
+        data_type: numeric
+      - name: translationofthemathematicsassessment
+        data_type: string
+      - name: twoormoreraces
+        data_type: string
+      - name: uniqueaccommodation
+        data_type: string
+      - name: unit1formid
+        data_type: string
+      - name: unit1numberofattempteditems
+        data_type: numeric
+      - name: unit1onlinetestenddatetime
+        data_type: string
+      - name: unit1onlineteststartdatetime
+        data_type: string
+      - name: unit1totaltestitems
+        data_type: numeric
+      - name: unit2formid
+        data_type: string
+      - name: unit2numberofattempteditems
+        data_type: numeric
+      - name: unit2onlinetestenddatetime
+        data_type: string
+      - name: unit2onlineteststartdatetime
+        data_type: string
+      - name: unit2totaltestitems
+        data_type: numeric
+      - name: unit3formid
+        data_type: string
+      - name: unit3numberofattempteditems
+        data_type: numeric
+      - name: unit3onlinetestenddatetime
+        data_type: string
+      - name: unit3onlineteststartdatetime
+        data_type: string
+      - name: unit3totaltestitems
+        data_type: numeric
+      - name: unit4formid
+        data_type: string
+      - name: unit4numberofattempteditems
+        data_type: numeric
+      - name: unit4onlinetestenddatetime
+        data_type: string
+      - name: unit4onlineteststartdatetime
+        data_type: string
+      - name: unit4totaltestitems
+        data_type: numeric
+      - name: voidscorecode
+        data_type: string
+      - name: voidscorereason
+        data_type: numeric
+      - name: white
+        data_type: string
+      - name: wordprediction
+        data_type: string
+      - name: wordpredictionforelal
+        data_type: string
+      - name: wordtoworddictionaryenglishnativelanguage
+        data_type: string
+      - name: _dagster_partition_key
+        data_type: int64
+      - name: assessment_name
+        data_type: string
+      - name: staffmemberidentifier
+        data_type: string
+      - name: testadministrator
+        data_type: string
+      - name: statefield6
+        data_type: string
+      - name: statefield9
+        data_type: string
+      - name: shipreportschoolcode
+        data_type: int64
+      - name: shipreportdistrictcode
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: test_grade
+        data_type: int64
+      - name: discipline
+        data_type: string
+      - name: is_proficient
+        data_type: boolean
+      - name: testperformancelevel_text
+        data_type: string
+      - name: is_bl_fb
+        data_type: boolean

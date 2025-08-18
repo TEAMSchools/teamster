@@ -2,9 +2,6 @@ version: 2
 
 sources:
   - name: kippmiami_iready
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      kippmiami_iready
     tables:
       - name: stg_iready__diagnostic_results
         meta:

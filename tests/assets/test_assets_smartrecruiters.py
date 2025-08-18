@@ -2,15 +2,12 @@ from dagster import materialize
 from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf.resources import SMARTRECRUITERS_RESOURCE
-from teamster.code_locations.kipptaf.smartrecruiters.assets import (
-    applicants,
-    applications,
-)
 from teamster.core.resources import get_io_manager_gcs_avro
 
 
 def _test_asset(asset):
+    from teamster.code_locations.kipptaf.resources import SMARTRECRUITERS_RESOURCE
+
     result = materialize(
         assets=[asset],
         resources={
@@ -43,8 +40,12 @@ def _test_asset(asset):
 
 
 def test_asset_smartrecruiters_applicants():
+    from teamster.code_locations.kipptaf.smartrecruiters.assets import applicants
+
     _test_asset(applicants)
 
 
 def test_asset_smartrecruiters_applications():
+    from teamster.code_locations.kipptaf.smartrecruiters.assets import applications
+
     _test_asset(applications)

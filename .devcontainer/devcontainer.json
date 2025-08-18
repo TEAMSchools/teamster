@@ -1,14 +1,14 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
   "features": {
-    "ghcr.io/itsmechlark/features/1password:1": {},
-    "ghcr.io/trunk-io/devcontainer-feature/trunk:1": {}
+    "ghcr.io/itsmechlark/features/1password:1": {}
   },
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
   "containerEnv": {
     "DAGSTER_HOME": "/workspaces/teamster/.dagster/home",
     "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
+    "GOOGLE_CLOUD_PROJECT": "teamster-332318",
     "PYTHONDONTWRITEBYTECODE": "1",
     "TRUNK_TELEMETRY": "off",
     "UV_ENV_FILE": "/workspaces/teamster/env/.env",

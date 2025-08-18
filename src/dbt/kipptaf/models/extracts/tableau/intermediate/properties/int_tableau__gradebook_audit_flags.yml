@@ -104,7 +104,11 @@ models:
         data_type: string
       - name: is_ap_course
         data_type: boolean
-      - name: tableau_username
+      - name: teacher_tableau_username
+        data_type: string
+      - name: school_leader
+        data_type: string
+      - name: school_leader_tableau_username
         data_type: string
       - name: quarter
         data_type: string
@@ -132,11 +136,13 @@ models:
         data_type: int64
       - name: week_number_quarter
         data_type: int64
-      - name: quarter_course_percent_grade_that_matters
+      - name: is_current_week
+        data_type: boolean
+      - name: quarter_course_percent_grade
         data_type: float64
-      - name: quarter_course_grade_points_that_matters
+      - name: quarter_course_grade_points
         data_type: float64
-      - name: quarter_citizenship
+      - name: quarter_conduct
         data_type: string
       - name: quarter_comment_value
         data_type: string
@@ -166,25 +172,23 @@ models:
         data_type: string
       - name: totalpointvalue
         data_type: float64
-      - name: category_name
-        data_type: string
       - name: scorepoints
         data_type: float64
-      - name: actualscoreentered
-        data_type: string
-      - name: is_late
+      - name: is_expected_late
         data_type: int64
       - name: is_exempt
         data_type: int64
-      - name: is_missing
+      - name: is_expected_missing
+        data_type: int64
+      - name: is_expected_zero
+        data_type: int64
+      - name: is_expected_academic_dishonesty
         data_type: int64
       - name: score_entered
         data_type: float64
       - name: assign_final_score_percent
         data_type: float64
       - name: assign_expected_to_be_scored
-        data_type: boolean
-      - name: assign_scored
         data_type: boolean
       - name: assign_expected_with_score
         data_type: boolean
@@ -199,6 +203,8 @@ models:
       - name: n_exempt
         data_type: int64
       - name: n_missing
+        data_type: int64
+      - name: n_academic_dishonesty
         data_type: int64
       - name: n_null
         data_type: int64

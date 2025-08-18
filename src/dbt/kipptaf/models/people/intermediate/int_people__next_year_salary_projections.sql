@@ -17,7 +17,6 @@ select
     y.academic_year,
 
     h.home_business_unit_name,
-    h.wf_mgr_pay_rule,
     h.base_remuneration_annual_rate_amount as ay_salary,
     h.base_remuneration_hourly_rate_amount as ay_hourly,
 
@@ -28,12 +27,15 @@ select
     pss.scale_step,
 
     tss.scale_ny_salary as pm_salary_increase,
+
+    h.base_remuneration_hourly_rate_amount + 1 as ny_hourly,
+
     if(
-        regexp_contains(h.wf_mgr_pay_rule, r'Hourly'), 'Hourly', 'Salary'
+        regexp_contains(h.worker_type_code, r'Part Time|Intern'), 'Hourly', 'Salary'
     ) as salary_or_hourly,
 
     if(
-        regexp_contains(h.wf_mgr_pay_rule, r'Hourly'),
+        regexp_contains(h.worker_type_code, r'Part Time|Intern'),
         h.base_remuneration_hourly_rate_amount,
         h.base_remuneration_annual_rate_amount
     ) as ay_hourly_salary_rate,
@@ -65,8 +67,6 @@ select
                 + h.base_remuneration_annual_rate_amount * 0.03
         end
     ) as ny_salary,
-
-    h.base_remuneration_hourly_rate_amount + 1 as ny_hourly,
 from {{ ref("int_people__staff_roster") }} as c
 inner join
     years as y

@@ -2,13 +2,14 @@ import json
 
 from dagster import DagsterInstance, SensorResult, build_sensor_context
 
-from teamster.code_locations.kipptaf._google.forms.sensors import (
-    google_forms_responses_sensor,
-)
 from teamster.core.resources import GOOGLE_DRIVE_RESOURCE, GOOGLE_FORMS_RESOURCE
 
 
 def test_google_forms_responses_sensor():
+    from teamster.code_locations.kipptaf._google.forms.sensors import (
+        google_forms_responses_sensor,
+    )
+
     cursor = {
         "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA": "2025-01-09T17:52:11.213611Z",
         "1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0": "2025-01-09T17:52:11.213611Z",

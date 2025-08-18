@@ -22,7 +22,6 @@ ap = build_sftp_file_asset(
         r"/data-team/kipptaf/collegeboard/ap/(?P<school_year>\d+)/(?P<school>[A-Za-z]+)"
     ),
     remote_file_regex=r".+\.csv",
-    file_dtype=str,
     ssh_resource_key="ssh_couchdrop",
     avro_schema=AP_SCHEMA,
     partitions_def=MultiPartitionsDefinition(

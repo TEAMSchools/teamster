@@ -1,5 +1,3 @@
-{%- set ref_contact = ref("base_kippadb__contact") -%}
-
 with
     es_grad as (
         select
@@ -20,9 +18,15 @@ with
             {{ ref("stg_powerschool__schools") }} as s
             on co.entry_schoolid = s.school_number
             and {{ union_dataset_join_clause(left_alias="co", right_alias="s") }}
-
         where co.rn_year = 1
-        group by all
+        group by co.student_number, s.abbreviation
+    ),
+
+    dlm as (
+        select student_number, max(pathway_option) as dlm,
+        from {{ ref("int_students__graduation_path_codes") }}
+        where rn_discipline_distinct = 1 and final_grad_path_code = 'M'
+        group by student_number
     ),
 
     roster as (
@@ -46,6 +50,9 @@ with
             se.state as powerschool_state,
             se.zip as powerschool_zip,
             se.is_504 as powerschool_is_504,
+            se.lep_status,
+
+            c.* except (contact_current_kipp_student, contact_lastfirst),
 
             os.id as overgrad_students_id,
             os.graduation_year as overgrad_students_graduation_year,
@@ -71,26 +78,6 @@ with
             || ' '
             || se.zip as powerschool_mailing_address,
 
-            {{ var("current_academic_year") }}
-            - se.academic_year
-            + se.grade_level as current_grade_level_projection,
-
-            {{
-                dbt_utils.star(
-                    from=ref_contact,
-                    relation_alias="c",
-                    except=[
-                        "contact_current_kipp_student",
-                        "contact_mailing_address",
-                    ],
-                )
-            }},
-
-            (
-                {{ var("current_fiscal_year") }}
-                - extract(year from c.contact_actual_hs_graduation_date)
-            ) as years_out_of_hs,
-
             coalesce(
                 c.contact_current_kipp_student, 'Missing from Salesforce'
             ) as contact_current_kipp_student,
@@ -98,10 +85,7 @@ with
             coalesce(c.contact_kipp_hs_class, se.cohort) as ktc_cohort,
             coalesce(c.contact_first_name, se.first_name) as first_name,
             coalesce(c.contact_last_name, se.last_name) as last_name,
-
-            coalesce(
-                c.contact_last_name || ', ' || c.contact_first_name, se.lastfirst
-            ) as lastfirst,
+            coalesce(c.contact_lastfirst, se.lastfirst) as lastfirst,
 
             if(
                 se.enroll_status = 0,
@@ -109,13 +93,7 @@ with
                 c.contact_email
             ) as email,
 
-            c.contact_mailing_street
-            || ' '
-            || c.contact_mailing_city
-            || ', '
-            || c.contact_mailing_state
-            || ' '
-            || c.contact_mailing_postal_code as contact_mailing_address,
+            if(d.dlm is not null, true, false) as is_dlm,
 
             case
                 when se.enroll_status = 0
@@ -133,9 +111,14 @@ with
                 when c.contact_kipp_ms_graduate and not c.contact_kipp_hs_graduate
                 then 'TAF'
             end as ktc_status,
+
+            (
+                {{ var("current_academic_year") }} - se.academic_year + se.grade_level
+            ) as current_grade_level_projection,
         from {{ ref("base_powerschool__student_enrollments") }} as se
         left join
-            {{ ref_contact }} as c on se.student_number = c.contact_school_specific_id
+            {{ ref("base_kippadb__contact") }} as c
+            on se.student_number = c.contact_school_specific_id
         left join
             {{ ref("stg_overgrad__students") }} as os
             on c.contact_id = os.external_student_id
@@ -143,7 +126,8 @@ with
             {{ ref("int_overgrad__custom_fields_pivot") }} as cf
             on os.id = cf.id
             and cf._dbt_source_model = 'stg_overgrad__students'
-        left join es_grad as e on e.student_number = se.student_number
+        left join es_grad as e on se.student_number = e.student_number
+        left join dlm as d on e.student_number = d.student_number
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 
