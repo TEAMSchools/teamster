@@ -36,9 +36,12 @@ assets:
       cron_schedule: 0 13 * * *
   - name: High School Early Warning Dashboard
     deps:
+      - [kipptaf, tableau, rpt_tableau__athletic_eligibility]
       - [kipptaf, tableau, rpt_tableau__community_service]
       - [kipptaf, tableau, rpt_tableau__graduation_requirements]
+      - [kipptaf, tableau, rpt_tableau__grad_plan_tracking]
       - [kipptaf, tableau, rpt_tableau__hs_early_warning_dashboard]
+
     metadata:
       id: 6333e047-e7a9-4d8f-a740-3df30f179d11
       cron_schedule: 0 6 * * *
