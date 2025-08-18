@@ -43,8 +43,14 @@ with
 
             count(distinct microgoals.assignment_id) as microgoals_assigned,
         from teachers
-        left join calendar on teachers.school_id = calendar.schoolid
-        left join grow_users on teachers.employee_number = grow_users.internal_id_int
+        inner join
+            calendar
+            on teachers.school_id = calendar.schoolid
+            /* if a teacher switches schools mid-week, they will be counted in the
+            receiving school only for that week */
+            and calendar.week_end_sunday
+            between teachers.effective_date_start and teachers.effective_date_end
+        inner join grow_users on teachers.employee_number = grow_users.internal_id_int
         left join
             microgoals
             on grow_users.user_id = microgoals.user_id
@@ -57,5 +63,6 @@ with
             calendar.week_end_sunday
     )
 
-select *,
+select
+    employee_number, school_id, week_start_monday, week_end_sunday, microgoals_assigned,
 from final
