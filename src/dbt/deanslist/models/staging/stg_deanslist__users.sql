@@ -1,12 +1,11 @@
 with
     users as (
         select
-            dluserid as dl_user_id,
-
             cast(nullif(accountid, '') as int) as account_id,
             cast(nullif(dlschoolid, '') as int) as dl_school_id,
             cast(nullif(userstateid, '') as int) as user_state_id,
 
+            nullif(dluserid, '') as dl_user_id,
             nullif(userschoolid, '') as user_school_id,
             nullif(active, '') as active,
             nullif(email, '') as email,

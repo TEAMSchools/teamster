@@ -21,6 +21,8 @@ models:
       - name: reason_id
         data_type: int64
       - name: user_id
+        data_type: int64
+      - name: user_id_str
         data_type: string
       - name: call_status
         data_type: string
