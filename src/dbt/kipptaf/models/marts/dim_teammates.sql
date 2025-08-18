@@ -14,7 +14,7 @@ with
 
     ),
 
-    grade_levels as (select * from {{ ref("int_powerschool__teacher_grade_levels") }}),
+    grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
 
     final as (
         select
@@ -26,10 +26,10 @@ with
             roster.*,
             grade_levels.grade_level as grade_taught,
             if(
-                primary_indicator and (is_current_record or is_prestart), true, false
+                roster.primary_indicator and (roster.is_current_record or roster.is_prestart), true, false
             ) as current_roster,
             if(
-                job_title in (
+                roster.job_title in (
                     'Teacher',
                     'Teacher in Residence',
                     'ESE Teacher',
@@ -49,5 +49,5 @@ with
             and grade_levels.grade_level_rank = 1
     )
 
-select *
+select *,
 from final
