@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: int_deanslist__incidents__actions
+    config:
+      contract:
+        enforced: true
     columns:
       - name: incident_id
         data_type: int64
