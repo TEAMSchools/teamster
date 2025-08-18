@@ -52,5 +52,5 @@ with
             calendar.week_end_sunday
     )
 
-select *
+select *,
 from final
