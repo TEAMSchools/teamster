@@ -73,12 +73,13 @@ with a role teaching in the classroom.
 
 {% enddocs %}
 
-{% docs teammates_reports_to_formatted_name %} The employee/teammate's formal manager as entered in
-ADP, our Human Resources Information System. For instructional roles, this
-person is often called a the teacher's 'coach'. Used to group or filter staff by
-reporting structure and analyze coaching loads. Example question: "How many
-teachers does this Assistant Principal coach?" is the same as "For how many
-employees/teammates is this person listed as the manager?"
+{% docs teammates_reports_to_formatted_name %} The employee/teammate's formal
+manager as entered in ADP, our Human Resources Information System. For
+instructional roles, this person is often called a the teacher's 'coach'. Used
+to group or filter staff by reporting structure and analyze coaching loads.
+Example question: "How many teachers does this Assistant Principal coach?" is
+the same as "For how many employees/teammates is this person listed as the
+manager?"
 
 {% enddocs %}
 
