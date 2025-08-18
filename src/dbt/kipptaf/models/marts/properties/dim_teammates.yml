@@ -78,15 +78,15 @@ semantic_models:
         expr: employee_number
         agg_time_dimension: effective_date_start
 
-
 metrics:
   - name: teammates_count
     description:
-      A simple metric that counts employees based on their current record and not including historical records.
+      A simple metric that counts employees based on their current record and
+      not including historical records.
     type: simple
     label: teammates_count
     type_params:
       measure:
         name: teammates_count
-    filter: |  
+    filter: |
       {{ Dimension('teammates__current_roster') }} = 'true'

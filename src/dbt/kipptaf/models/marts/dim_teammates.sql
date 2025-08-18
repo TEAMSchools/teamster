@@ -26,7 +26,10 @@ with
             roster.*,
             grade_levels.grade_level as grade_taught,
             if(
-                roster.primary_indicator and (roster.is_current_record or roster.is_prestart), true, false
+                roster.primary_indicator
+                and (roster.is_current_record or roster.is_prestart),
+                true,
+                false
             ) as current_roster,
             if(
                 roster.job_title in (
