@@ -93,7 +93,7 @@ metrics:
       measure:
         name: count_teachers
     filter: |
-      {{ Dimension('teammates__current_roster') }} = 'true'
+      {{ Dimension('microgoals__assignment_id') }} is not null
   - name: percent_teachers_with_microgoal
     description: The number of teachers who have been assigned a microgoal
     type: ratio
