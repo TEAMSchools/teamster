@@ -28,21 +28,26 @@ with
         from {{ ref("stg_schoolmint_grow__assignments") }}
     ),
 
-    calendar as (select *, from {{ ref("int_powerschool__calendar_week") }}),
+    calendar as (
+        select schoolid, week_start_monday, week_end_sunday,
+        from {{ ref("int_powerschool__calendar_week") }}
+    ),
 
     final as (
         select
             teachers.employee_number,
             teachers.school_id,
+
             calendar.week_start_monday,
             calendar.week_end_sunday,
+
             count(distinct microgoals.assignment_id) as microgoals_assigned,
         from teachers
+        left join calendar on teachers.school_id = calendar.schoolid
         left join grow_users on teachers.employee_number = grow_users.internal_id_int
-        left join microgoals on grow_users.user_id = microgoals.user_id
         left join
-            calendar
-            on teachers.school_id = calendar.schoolid
+            microgoals
+            on grow_users.user_id = microgoals.user_id
             and microgoals.created_date_local
             between calendar.week_start_monday and calendar.week_end_sunday
         group by
