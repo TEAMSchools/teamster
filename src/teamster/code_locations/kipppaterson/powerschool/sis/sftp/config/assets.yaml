@@ -18,7 +18,6 @@ assets:
   - asset_name: personemailaddressassoc
   - asset_name: personphonenumberassoc
   - asset_name: phonenumber
-  - asset_name: prefs
   - asset_name: reenrollments
   - asset_name: s_nj_crs_x
   - asset_name: s_nj_ren_x
