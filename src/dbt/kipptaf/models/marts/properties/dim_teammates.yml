@@ -1,0 +1,92 @@
+semantic_models:
+  - name: teammates
+    model: ref('dim_teammates')
+    description:
+      Staff roster dimension with job titles, departments, demographics, and
+      employment status. Includes key fields for HR reporting, DEI analytics,
+      and workforce tracking.
+
+    entities:
+      - name: teammates
+        type: primary
+        expr: employee_number
+
+    dimensions:
+      - name: formatted_name
+        type: categorical
+        description: The employee's preferred name, in "Last, First" format
+
+      - name: assignment_status
+        type: categorical
+        description: '{{doc("teammates_assignment_status")}}'
+
+      - name: race_ethnicity_reporting
+        type: categorical
+        description: '{{doc("teammates_race_ethnicity_reporting")}}'
+
+      - name: home_business_unit_name
+        type: categorical
+        description: '{{doc("teammates_home_business_unit_name")}}'
+
+      - name: home_work_location_name
+        type: categorical
+        description: '{{doc("teammates_home_work_location_name")}}'
+
+      - name: home_work_location_powerschool_school_id
+        type: categorical
+        description: The PowerSchool ID number of the home work location
+        # to do: add as foreign key when dim_schools is ready
+
+      - name: home_work_location_grade_band
+        type: categorical
+        description: '{{doc("teammates_home_work_location_grade_band")}}'
+
+      - name: home_department_name
+        type: categorical
+        description: '{{doc("teammates_home_department_name")}}'
+
+      - name: job_title
+        type: categorical
+        description: '{{doc("teammates_job_title")}}'
+
+      - name: reports_to_formatted_name
+        type: categorical
+        description: '{{doc("teammates_reports_to_formatted_name")}}'
+
+      - name: is_teacher
+        type: categorical
+        description: '{{doc("teammates_is_teacher")}}'
+
+      - name: effective_date_start
+        type: time
+        expr: effective_date_start
+        description: start date of a unique row in the roster history
+        type_params:
+          time_granularity: day
+
+      - name: effective_date_end
+        type: time
+        expr: effective_date_end
+        description: end date of a unique row in the roster history
+        type_params:
+          time_granularity: day
+
+    measures:
+      - name: teammates_count
+        description: Distinct count of employee numbers.
+        agg: count_distinct
+        expr: employee_number
+        agg_time_dimension: effective_date_start
+
+
+metrics:
+  - name: teammates_count
+    description:
+      A simple metric that counts employees based on their current record and not including historical records.
+    type: simple
+    label: teammates_count
+    type_params:
+      measure:
+        name: teammates_count
+    filter: |  
+      {{ Dimension('teammates__current_roster') }} = 'true'

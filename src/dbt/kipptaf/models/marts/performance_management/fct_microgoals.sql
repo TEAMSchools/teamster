@@ -1,5 +1,24 @@
 with
-    teammates as (select * from {{ ref("dim_teammates") }}),
+    teachers as (
+        select
+            employee_number,
+            formatted_name,
+            job_title,
+            home_department_name,
+            home_work_location_name,
+            home_business_unit_name,
+            home_work_location_powerschool_school_id,
+            effective_date_start,
+            effective_date_end,
+        from {{ ref("dim_teammates") }}
+        where primary_indicator and assignment_status = 'Active' and is_teacher
+    ),
+
+    {# using as date scaffold to align with Topline #}
+    calendar as (
+        select schoolid, week_start_monday, week_end_sunday,
+        from {{ ref("int_powerschool__calendar_week") }}
+    ),
 
     grow_users as (select * from {{ ref("stg_schoolmint_grow__users") }}),
 
@@ -16,20 +35,38 @@ with
     final as (
 
         select
-            teammates.employee_number,
-            assignments.assignment_id as microgoal_assignment_id,
-            assignments.created_date_local as microgoal_date,
-            assignments.creator_name as microgoal_creator,
+            teachers.employee_number,
+            teachers.formatted_name,
+            teachers.job_title,
+            teachers.home_department_name,
+            teachers.home_work_location_name,
+            teachers.home_business_unit_name,
+            teachers.home_work_location_powerschool_school_id,
+            calendar.week_start_monday,
+            calendar.week_end_sunday,
+            assignments.assignment_id,
+            assignments.created_date_local,
+            assignments.creator_name,
             microgoals.goal_name,
             microgoals.strand_name,
             microgoals.bucket_name,
-        from teammates
-        left join grow_users on teammates.employee_number = grow_users.internal_id_int
-        left join assignments on grow_users.user_id = assignments.user_id
+        from teachers
+        inner join
+            calendar
+            on teachers.home_work_location_powerschool_school_id = calendar.schoolid
+            /* if a teacher switches schools mid-week, they will be counted in the
+            receiving school only for that week */
+            and calendar.week_end_sunday
+            between teachers.effective_date_start and teachers.effective_date_end
+        inner join grow_users on teachers.employee_number = grow_users.internal_id_int
+        left join
+            assignments
+            on grow_users.user_id = assignments.user_id
+            and assignments.created_date_local
+            between calendar.week_start_monday and calendar.week_end_sunday
         left join tags on assignments.assignment_id = tags.assignment_id
         left join microgoals on tags.tag_id = microgoals.goal_tag_id
-        {# filtering out microgoals that have been deleted from Grow #}
-        where goal_name is not null
+
     )
 
 select *
