@@ -2,6 +2,9 @@ version: 2
 
 sources:
   - name: kippcamden_deanslist
+    schema: |
+      {% if env_var('GITHUB_USER', 'dev') != 'dev' -%}
+      zz_{{ env_var('GITHUB_USER', 'dev') }}_{%- endif -%}kippcamden_deanslist
     tables:
       - name: stg_deanslist__behavior
         meta:

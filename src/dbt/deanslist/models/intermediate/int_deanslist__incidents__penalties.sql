@@ -1,7 +1,7 @@
 with
     incidents_penalties as (
         select
-            i.*,
+            i.* except (actions, attachments, custom_fields, penalties),
 
             p.isreportable as is_reportable,
             p.issuspension as is_suspension,
@@ -12,7 +12,9 @@ with
             cast(nullif(p.schoolid, '') as int) as penalty_school_id,
             cast(nullif(p.studentid, '') as int) as penalty_student_id,
             cast(nullif(p.said, '') as int) as said,
-            cast(nullif(p.numperiods, '') as int) as num_periods,
+
+            cast(nullif(p.numperiods, '') as numeric) as num_periods,
+
             cast(nullif(p.startdate, '') as date) as `start_date`,
             cast(nullif(p.enddate, '') as date) as end_date,
 

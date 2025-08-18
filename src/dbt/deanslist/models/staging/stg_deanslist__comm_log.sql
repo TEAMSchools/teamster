@@ -13,10 +13,11 @@ with
         select
             _dagster_partition_school as dl_school_id,
             isdraft as is_draft,
+            userid as user_id,
 
-            {# /* repeated records */ #}
-            {# followups, #}
             /* transformations */
+            cast(userid as string) as user_id_str,
+
             cast(recordid as int) as record_id,
             cast(callstatusid as int) as call_status_id,
             cast(reasonid as int) as reason_id,
@@ -27,7 +28,6 @@ with
             cast(nullif(student.studentid, '') as int) as student_id,
             cast(nullif(student.studentschoolid, '') as int) as student_school_id,
 
-            nullif(userid, '') as user_id,
             nullif(callstatus, '') as call_status,
             nullif(calltype, '') as call_type,
             nullif(educatorname, '') as educator_name,

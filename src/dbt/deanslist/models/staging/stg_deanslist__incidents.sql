@@ -28,9 +28,9 @@ with
 
             /* repeated records */
             actions,
+            attachments,
             custom_fields,
             penalties,
-            attachments,
 
             /* transformations */
             nullif(addlreqs, '') as addl_reqs,
