@@ -20,7 +20,7 @@ with
         from {{ ref("int_powerschool__calendar_week") }}
     ),
 
-    grow_users as (select * from {{ ref("stg_schoolmint_grow__users") }}),
+    grow_users as (select *, from {{ ref("stg_schoolmint_grow__users") }}),
 
     assignments as (
         select user_id, assignment_id, created_date_local, creator_name,
@@ -28,9 +28,9 @@ with
     ),
 
     {# need to import to link assignment to microgoal name and categories #}
-    tags as (select * from {{ ref("stg_schoolmint_grow__assignments__tags") }}),
+    tags as (select *, from {{ ref("stg_schoolmint_grow__assignments__tags") }}),
 
-    microgoals as (select * from {{ ref("stg_schoolmint_grow__microgoals") }}),
+    microgoals as (select *, from {{ ref("stg_schoolmint_grow__microgoals") }}),
 
     final as (
 
@@ -69,5 +69,5 @@ with
 
     )
 
-select *
+select *,
 from final
