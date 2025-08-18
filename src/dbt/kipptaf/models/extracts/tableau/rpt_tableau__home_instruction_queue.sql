@@ -1,9 +1,9 @@
 select
     co.student_number,
     co.state_studentnumber,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.academic_year,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.grade_level,
     co.advisory_name as team,
     co.advisor_lastfirst as advisor_name,
@@ -48,4 +48,4 @@ inner join
     on co.schoolid = d.school_id
     and dli.create_ts_date between d.start_date and d.end_date
     and d.type = 'RT'
-where co.academic_year = {{ var("current_academic_year") }} co.rn_year = 1
+where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1

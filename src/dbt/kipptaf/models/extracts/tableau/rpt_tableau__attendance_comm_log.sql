@@ -39,6 +39,8 @@ select
     co.is_retained_year,
     co.enroll_status,
     co.advisory_name as homeroom,
+    co.absences_unexcused_year as abs_count,
+    co.unweighted_ada as ada,
 
     att.att_date,
     att.att_comment,
@@ -56,9 +58,6 @@ select
     cl.followup_close_notes,
 
     rt.name as term,
-
-    a.days_absent_unexcused as abs_count,
-    a.ada,
 
     if(
         co.school_level = 'HS', co.advisor_lastfirst, cast(co.grade_level as string)
@@ -91,11 +90,6 @@ left join
     on co.student_number = cl.student_school_id
     and att.att_date = safe_cast(cl.commlog_date as date)
     and {{ union_dataset_join_clause(left_alias="co", right_alias="cl") }}
-left join
-    {{ ref("int_powerschool__ada") }} as a
-    on co.studentid = a.studentid
-    and co.yearid = a.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
 left join
     {{ ref("stg_reporting__terms") }} as rt
     on co.schoolid = rt.school_id

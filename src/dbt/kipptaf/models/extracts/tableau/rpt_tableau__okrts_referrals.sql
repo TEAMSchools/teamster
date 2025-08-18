@@ -134,6 +134,7 @@ select
     co.team as homeroom_section,
     co.advisor_lastfirst as homeroom_teacher_name,
     co.unweighted_ada as ada,
+    co.absences_unexcused_year as days_absent_unexcused,
 
     w.week_start_monday,
     w.week_end_sunday,
@@ -147,7 +148,7 @@ select
     dli.reported_details,
     dli.admin_summary,
     dli.infraction as incident_type,
-    dli.lastfirst as hi_approver_name,
+    dli.approver_lastfirst as hi_approver_name,
     dli.nj_state_reporting,
     dli.restraint_used,
     dli.restraint_duration,
@@ -166,12 +167,9 @@ select
     dli.penalty_name,
     dli.start_date,
     dli.end_date,
-    dli.create_last_first as entry_staff,
-    dli.update_last_first as last_update_staff,
-
-    st.suspension_type,
-
-    ada.days_absent_unexcused,
+    dli.create_lastfirst as entry_staff,
+    dli.update_lastfirst as last_update_staff,
+    dli.suspension_type,
 
     gpa.gpa_y1,
 
@@ -220,11 +218,11 @@ select
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_int,
 
-    max(if(st.suspension_type = 'OSS', 1, 0)) over (
+    max(if(dli.suspension_type = 'OSS', 1, 0)) over (
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_oss_int,
 
-    max(if(st.suspension_type = 'ISS', 1, 0)) over (
+    max(if(dli.suspension_type = 'ISS', 1, 0)) over (
         partition by co.academic_year, co.student_number
     ) as is_suspended_y1_iss_int,
 
@@ -243,7 +241,7 @@ select
     ) as is_suspended_y1_one_int,
 
     if(
-        sum(if(st.suspension_type = 'OSS', 1, 0)) over (
+        sum(if(dli.suspension_type = 'OSS', 1, 0)) over (
             partition by co.academic_year, co.student_number
         )
         = 1,
@@ -252,7 +250,7 @@ select
     ) as is_suspended_y1_oss_one_int,
 
     if(
-        sum(if(st.suspension_type = 'ISS', 1, 0)) over (
+        sum(if(dli.suspension_type = 'ISS', 1, 0)) over (
             partition by co.academic_year, co.student_number
         )
         = 1,
@@ -270,7 +268,7 @@ select
     ) as is_suspended_y1_2plus_int,
 
     if(
-        sum(if(st.suspension_type = 'OSS', 1, 0)) over (
+        sum(if(dli.suspension_type = 'OSS', 1, 0)) over (
             partition by co.academic_year, co.student_number
         )
         > 1,
@@ -279,7 +277,7 @@ select
     ) as is_suspended_y1_oss_2plus_int,
 
     if(
-        sum(if(st.suspension_type = 'ISS', 1, 0)) over (
+        sum(if(dli.suspension_type = 'ISS', 1, 0)) over (
             partition by co.academic_year, co.student_number
         )
         > 1,
@@ -313,7 +311,6 @@ left join
 left join
     ssds_period as s
     on dli.create_ts_date between s.period_start_date and s.period_end_date
-left join suspension_type as st on dli.penalty_name = st.penalty_name
 left join
     {{ ref("int_powerschool__gpa_term") }} as gpa
     on co.studentid = gpa.studentid
