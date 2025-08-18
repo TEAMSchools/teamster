@@ -37,7 +37,7 @@ select
     co.year_in_network,
     co.code_location as `db_name`,
     co.boy_status,
-    co.unweighted_ada as ada,
+    co.`ada`,
 
     dt.name as term_name,
     dt.code as reporting_term,
@@ -69,6 +69,7 @@ select
 
     sus.suspension_count,
     sus.suspension_days,
+
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("stg_reporting__terms") }} as dt
