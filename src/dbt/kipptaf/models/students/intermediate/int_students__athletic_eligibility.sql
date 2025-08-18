@@ -108,7 +108,7 @@ select
         when is_first_time_ninth
         then 'Eligible'
         when not met_py_credits
-        then 'Ineligble - Credits'
+        then 'Ineligible - Credits'
         when met_py_credits and py_y1_gpa < 2.2
         then 'Ineligible - GPA'
         when met_py_credits and py_y1_unweighted_ada >= 0.9 and py_y1_gpa >= 2.5
