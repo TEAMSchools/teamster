@@ -18,7 +18,7 @@ select
     co.lunch_status,
     co.iready_subject as `subject`,
     co.team,
-    co.tutoring_nj,
+    co.is_tutoring as tutoring_nj,
     co.state_test_proficiency,
     co.nj_student_tier,
     co.is_exempt_iready,
