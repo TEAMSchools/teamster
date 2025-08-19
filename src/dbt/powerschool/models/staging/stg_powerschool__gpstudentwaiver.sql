@@ -1,14 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__gpstudentwaiver"),
-                partition_by="id.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
 select
     authorizedby,
     waiveddate,
@@ -16,11 +5,10 @@ select
     /* records */
     id.int_value as id,
     studentid.int_value as studentid,
-    gpnodeidforwaived.int_value as gpnodeidforwaived,
-    gpnodeidforelective.int_value as gpnodeidforelective,
-    gpwaiverconfigidfortype.int_value as gpwaiverconfigidfortype,
     credithourswaived.double_value as credithourswaived,
-
-    gpwaiverconfigidforsource,
-    gpwaiverconfigidforreason,
-from deduplicate
+    gpnodeidforelective.int_value as gpnodeidforelective,
+    gpnodeidforwaived.int_value as gpnodeidforwaived,
+    gpwaiverconfigidforreason.int_value as gpwaiverconfigidforreason,
+    gpwaiverconfigidforsource.int_value as gpwaiverconfigidforsource,
+    gpwaiverconfigidfortype.int_value as gpwaiverconfigidfortype,
+from {{ source("powerschool", "src_powerschool__gpstudentwaiver") }}

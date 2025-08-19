@@ -1,15 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__gradescaleitem"),
-                partition_by="dcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         dcid,
@@ -83,4 +71,4 @@ select
     excludefromafg.int_value as excludefromafg,
     grade_replacement_policy.int_value as grade_replacement_policy,
     parentgradescaledcid.int_value as parentgradescaledcid,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__gradescaleitem") }}

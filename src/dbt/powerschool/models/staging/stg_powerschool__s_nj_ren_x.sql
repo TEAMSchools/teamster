@@ -1,16 +1,5 @@
 with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__s_nj_ren_x"),
-                partition_by="reenrollmentsdcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    ),
-
     transformations as (
-        -- trunk-ignore(sqlfluff/AM04)
         select
             * except (
                 reenrollmentsdcid,
@@ -52,7 +41,7 @@ with
             languageacquisition.int_value as languageacquisition,
             lep_completion_date_refused.int_value as lep_completion_date_refused,
             sid_excludeenrollment.int_value as sid_excludeenrollment,
-        from deduplicate
+        from {{ source("powerschool", "src_powerschool__s_nj_ren_x") }}
     )
 
 select * except (pid_504_tf), if(pid_504_tf = 1, true, false) as pid_504_tf,

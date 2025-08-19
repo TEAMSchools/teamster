@@ -1,16 +1,5 @@
 with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__schools"),
-                partition_by="dcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    ),
-
     transformations as (
-        -- trunk-ignore(sqlfluff/AM04)
         select
             * except (
                 dcid,
@@ -52,7 +41,7 @@ with
             issummerschool.int_value as issummerschool,
             schoolcategorycodesetid.int_value as schoolcategorycodesetid,
             whomodifiedid.int_value as whomodifiedid,
-        from deduplicate
+        from {{ source("powerschool", "src_powerschool__schools") }}
     )
 
 select

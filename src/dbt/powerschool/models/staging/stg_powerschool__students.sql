@@ -1,16 +1,5 @@
 with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__students"),
-                partition_by="dcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    ),
-
     staging as (
-        -- trunk-ignore(sqlfluff/AM04,sqlfluff/ST06)
         select
             * except (
                 allowwebaccess,
@@ -74,15 +63,8 @@ with
 
             /* column transformations */
             allowwebaccess.int_value as allowwebaccess,
-            balance1.double_value as balance1,
-            balance2.double_value as balance2,
-            balance3.double_value as balance3,
-            balance4.double_value as balance4,
             campusid.int_value as campusid,
             classof.int_value as classof,
-            cumulative_gpa.double_value as cumulative_gpa,
-            cumulative_pct.double_value as cumulative_pct,
-            customrank_gpa.double_value as customrank_gpa,
             dcid.int_value as dcid,
             districtentrygradelevel.int_value as districtentrygradelevel,
             enroll_status.int_value as enroll_status,
@@ -109,7 +91,6 @@ with
             person_id.int_value as person_id,
             phone_id.int_value as phone_id,
             photoflag.int_value as photoflag,
-            safe_cast(student_number.double_value as int) as student_number,
             sched_loadlock.int_value as sched_loadlock,
             sched_lockstudentschedule.int_value as sched_lockstudentschedule,
             sched_nextyeargrade.int_value as sched_nextyeargrade,
@@ -130,7 +111,17 @@ with
             whomodifiedid.int_value as whomodifiedid,
             wm_createtime.int_value as wm_createtime,
             wm_tier.int_value as wm_tier,
-        from deduplicate
+
+            balance1.double_value as balance1,
+            balance2.double_value as balance2,
+            balance3.double_value as balance3,
+            balance4.double_value as balance4,
+            cumulative_gpa.double_value as cumulative_gpa,
+            cumulative_pct.double_value as cumulative_pct,
+            customrank_gpa.double_value as customrank_gpa,
+
+            cast(student_number.double_value as int) as student_number,
+        from {{ source("powerschool", "src_powerschool__students") }}
     )
 
 select

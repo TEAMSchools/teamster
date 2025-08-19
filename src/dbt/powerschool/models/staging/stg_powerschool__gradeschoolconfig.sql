@@ -1,15 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__gradeschoolconfig"),
-                partition_by="gradeschoolconfigid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         gradeschoolconfigid,
@@ -65,4 +53,4 @@ select
     isstandardslimited.int_value as isstandardslimited,
     isstandardslimitededitable.int_value as isstandardslimitededitable,
     isusingpercentforstndautocalc.int_value as isusingpercentforstndautocalc,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__gradeschoolconfig") }}

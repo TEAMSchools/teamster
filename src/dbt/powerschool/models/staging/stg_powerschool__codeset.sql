@@ -1,15 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__codeset"),
-                partition_by="codesetid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         codesetid,
@@ -29,4 +17,4 @@ select
     ismodifiable.int_value as ismodifiable,
     isdeletable.int_value as isdeletable,
     excludefromstatereporting.int_value as excludefromstatereporting,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__codeset") }}

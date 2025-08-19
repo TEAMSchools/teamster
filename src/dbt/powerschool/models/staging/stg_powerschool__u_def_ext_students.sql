@@ -1,15 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__u_def_ext_students"),
-                partition_by="studentsdcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         studentsdcid,
@@ -31,4 +19,4 @@ select
     current_programid.int_value as current_programid,
     aup_yn_1718.int_value as aup_yn_1718,
     incorrect_region_grad_student.int_value as incorrect_region_grad_student,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__u_def_ext_students") }}

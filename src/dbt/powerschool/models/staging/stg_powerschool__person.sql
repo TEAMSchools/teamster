@@ -1,15 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__person"),
-                partition_by="dcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         dcid,
@@ -31,4 +19,4 @@ select
     statecontactnumber.int_value as statecontactnumber,
     isactive.int_value as isactive,
     excludefromstatereporting.int_value as excludefromstatereporting,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__person") }}

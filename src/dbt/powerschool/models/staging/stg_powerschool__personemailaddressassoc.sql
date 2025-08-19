@@ -1,17 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source(
-                    "powerschool", "src_powerschool__personemailaddressassoc"
-                ),
-                partition_by="personemailaddressassocid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         personemailaddressassocid,
@@ -29,4 +15,4 @@ select
     emailtypecodesetid.int_value as emailtypecodesetid,
     isprimaryemailaddress.int_value as isprimaryemailaddress,
     emailaddresspriorityorder.int_value as emailaddresspriorityorder,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__personemailaddressassoc") }}

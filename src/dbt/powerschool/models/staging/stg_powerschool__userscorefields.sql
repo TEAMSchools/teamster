@@ -1,14 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__userscorefields"),
-                partition_by="usersdcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
 select
     dob,
     gender,
@@ -21,4 +10,4 @@ select
 
     /* records */
     usersdcid.int_value as usersdcid,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__userscorefields") }}
