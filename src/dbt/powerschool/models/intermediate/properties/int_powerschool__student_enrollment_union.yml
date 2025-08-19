@@ -1,12 +1,13 @@
 version: 2
 models:
   - name: int_powerschool__student_enrollment_union
-    tests:
+    data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - student_number
-            - academic_year
-            - entrydate
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - entrydate
           config:
             severity: warn
             store_failures: true
