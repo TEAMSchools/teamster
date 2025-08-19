@@ -1,15 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__users"),
-                partition_by="dcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         dcid,
@@ -57,4 +45,4 @@ select
     fedracedecline.int_value as fedracedecline,
     ptaccess.int_value as ptaccess,
     whomodifiedid.int_value as whomodifiedid,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__users") }}

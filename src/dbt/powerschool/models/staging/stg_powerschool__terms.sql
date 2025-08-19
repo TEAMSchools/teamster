@@ -1,16 +1,5 @@
 with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__terms"),
-                partition_by="id.int_value, schoolid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    ),
-
     transformations as (
-        -- trunk-ignore(sqlfluff/AM04)
         select
             * except (
                 dcid,
@@ -48,7 +37,7 @@ with
             sterms.int_value as sterms,
             suppresspublicview.int_value as suppresspublicview,
             whomodifiedid.int_value as whomodifiedid,
-        from deduplicate
+        from {{ source("powerschool", "src_powerschool__terms") }}
     )
 
 select *, yearid + 1990 as academic_year, yearid + 1991 as fiscal_year,

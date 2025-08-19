@@ -1,15 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__sectionteacher"),
-                partition_by="id.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         id, teacherid, sectionid, roleid, allocation, priorityorder, whomodifiedid
@@ -23,4 +11,4 @@ select
     allocation.bytes_decimal_value as allocation,
     priorityorder.int_value as priorityorder,
     whomodifiedid.int_value as whomodifiedid,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__sectionteacher") }}

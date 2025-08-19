@@ -1,15 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__sections"),
-                partition_by="dcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         dcid,
@@ -79,4 +67,4 @@ select
     excludefromstoredgrades.int_value as excludefromstoredgrades,
     gradebooktype.int_value as gradebooktype,
     whomodifiedid.int_value as whomodifiedid,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__sections") }}

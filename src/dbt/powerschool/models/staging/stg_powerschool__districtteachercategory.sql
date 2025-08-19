@@ -1,17 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source(
-                    "powerschool", "src_powerschool__districtteachercategory"
-                ),
-                partition_by="districtteachercategoryid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         districtteachercategoryid,
@@ -41,4 +27,4 @@ select
     isdefaultpublishscores.int_value as isdefaultpublishscores,
     defaultdaysbeforedue.int_value as defaultdaysbeforedue,
     whomodifiedid.int_value as whomodifiedid,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__districtteachercategory") }}

@@ -1,17 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source(
-                    "powerschool", "src_powerschool__studentcontactdetail"
-                ),
-                partition_by="studentcontactdetailid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         studentcontactdetailid,
@@ -41,4 +27,4 @@ select
     excludefromstatereportingflg.int_value as excludefromstatereportingflg,
     generalcommflag.int_value as generalcommflag,
     confidentialcommflag.int_value as confidentialcommflag,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__studentcontactdetail") }}

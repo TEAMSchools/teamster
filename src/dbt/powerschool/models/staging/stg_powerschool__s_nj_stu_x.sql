@@ -1,15 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__s_nj_stu_x"),
-                partition_by="studentsdcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         studentsdcid,
@@ -201,4 +189,4 @@ select
     collegecreditsearned.int_value as collegecreditsearned,
     cteworkbasedlearning.int_value as cteworkbasedlearning,
     sid_excludeenrollment.int_value as sid_excludeenrollment,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__s_nj_stu_x") }}

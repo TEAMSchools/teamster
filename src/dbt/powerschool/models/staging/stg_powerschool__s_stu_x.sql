@@ -1,14 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__s_stu_x"),
-                partition_by="studentsdcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
 select
     priorityforservice,
     sealofbiliteracy,
@@ -76,4 +65,4 @@ select
     native_language.int_value as native_language,
     foster_care.int_value as foster_care,
     parentrefusalofimmaccuracy.int_value as parentrefusalofimmaccuracy,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__s_stu_x") }}

@@ -1,15 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__gradesectionconfig"),
-                partition_by="gradesectionconfigid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         gradesectionconfigid,
@@ -49,4 +37,4 @@ select
     minimumassignmentvalue.int_value as minimumassignmentvalue,
     isgradescaleteachereditable.int_value as isgradescaleteachereditable,
     isusingpercentforstndautocalc.int_value as isusingpercentforstndautocalc,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__gradesectionconfig") }}

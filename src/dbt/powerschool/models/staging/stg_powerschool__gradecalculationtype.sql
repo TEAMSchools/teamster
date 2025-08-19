@@ -1,17 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source(
-                    "powerschool", "src_powerschool__gradecalculationtype"
-                ),
-                partition_by="gradecalculationtypeid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         gradecalculationtypeid,
@@ -33,4 +19,4 @@ select
     isalternatepointsused.int_value as isalternatepointsused,
     iscalcformulaeditable.int_value as iscalcformulaeditable,
     isdropscoreeditable.int_value as isdropscoreeditable,
-from deduplicate
+from {{ source("powerschool", "src_powerschool__gradecalculationtype") }}

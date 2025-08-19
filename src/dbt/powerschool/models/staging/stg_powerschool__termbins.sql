@@ -1,16 +1,5 @@
 with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__termbins"),
-                partition_by="dcid.int_value",
-                order_by="_file_name desc",
-            )
-        }}
-    ),
-
     staging as (
-        -- trunk-ignore(sqlfluff/AM04)
         select
             * except (
                 dcid,
@@ -47,7 +36,7 @@ with
             suppresspercentscr.int_value as suppresspercentscr,
             aregradeslocked.int_value as aregradeslocked,
             whomodifiedid.int_value as whomodifiedid,
-        from deduplicate
+        from {{ source("powerschool", "src_powerschool__termbins") }}
     )
 
 select *, left(storecode, 1) as storecode_type, right(storecode, 1) as storecode_order,
