@@ -1,21 +1,15 @@
 with
     suspension as (
         select
-            ics._dbt_source_relation,
-            ics.student_school_id,
-            ics.create_ts_academic_year,
+            _dbt_source_relation,
+            student_school_id,
+            create_ts_academic_year,
 
-            count(ips.incident_penalty_id) as suspension_count,
-            sum(ips.num_days) as suspension_days,
-
-        from {{ ref("stg_deanslist__incidents") }} as ics
-        inner join
-            {{ ref("stg_deanslist__incidents__penalties") }} as ips
-            on ics.incident_id = ips.incident_id
-            and ics._dbt_source_relation = ips._dbt_source_relation
-        where ips.is_suspension
-        group by
-            ics.student_school_id, ics.create_ts_academic_year, ics._dbt_source_relation
+            count(incident_penalty_id) as suspension_count,
+            sum(num_days) as suspension_days,
+        from {{ ref("int_deanslist__incidents__penalties") }}
+        where is_suspension
+        group by student_school_id, create_ts_academic_year, _dbt_source_relation
     )
 
 select
