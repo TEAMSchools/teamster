@@ -1,18 +1,13 @@
 version: 2
 models:
   - name: int_powerschool__student_contacts_pivot
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - studentid
-          config:
-            store_failures: true
     columns:
-      - name: studentid
+      - name: studentdcid
         data_type: int64
-      - name: student_number
-        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: contact_1_address_home
         data_type: string
       - name: contact_1_email_current
