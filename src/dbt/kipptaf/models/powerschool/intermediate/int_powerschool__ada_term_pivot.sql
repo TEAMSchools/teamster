@@ -35,6 +35,11 @@ select
         coalesce(ada_year_q4, ada_year_q3, ada_year_q2, ada_year_q1), 3
     ) as ada_weighted_year,
 
+    coalesce(sum_absences_term_q1, 0)
+    + coalesce(sum_absences_term_q2, 0)
+    + coalesce(sum_absences_term_q3, 0)
+    + coalesce(sum_absences_term_q4, 0) as sum_absences_year,
+
 from
     {{ ref("int_powerschool__ada_term") }} pivot (
         max(ada_term) as ada_term,
@@ -44,6 +49,11 @@ from
         max(ada_weighted_term) as ada_weighted_term,
         max(ada_weighted_semester) as ada_weighted_semester,
         max(ada_weighted_year) as ada_weighted_year,
-        max(ada_weighted_year_running) as ada_weighted_year_running for term
-        in ('Q1', 'Q2', 'Q3', 'Q4')
+        max(ada_weighted_year_running) as ada_weighted_year_running,
+        max(sum_attendance_value_term) as sum_attendance_value_term,
+        max(sum_attendance_value_weighted_term) as sum_attendance_value_weighted_term,
+        max(sum_membership_value_term) as sum_membership_value_term,
+        max(sum_absences_term) as sum_absences_term,
+        max(count_attendance_value_term) as count_attendance_value_term
+        for term in ('Q1', 'Q2', 'Q3', 'Q4')
     )

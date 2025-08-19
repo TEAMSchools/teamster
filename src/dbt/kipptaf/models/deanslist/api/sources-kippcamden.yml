@@ -2,6 +2,9 @@ version: 2
 
 sources:
   - name: kippcamden_deanslist
+    schema: |
+      {% if env_var('GITHUB_USER', 'dev') != 'dev' -%}
+      zz_{{ env_var('GITHUB_USER', 'dev') }}_{%- endif -%}kippcamden_deanslist
     tables:
       - name: stg_deanslist__behavior
         meta:
@@ -11,14 +14,14 @@ sources:
               - kippcamden
               - deanslist
               - stg_deanslist__behavior
-      - name: stg_deanslist__comm_log
+      - name: int_deanslist__comm_log
         meta:
           dagster:
             group: deanslist
             asset_key:
               - kippcamden
               - deanslist
-              - stg_deanslist__comm_log
+              - int_deanslist__comm_log
       - name: stg_deanslist__followups
         meta:
           dagster:
@@ -51,22 +54,6 @@ sources:
               - kippcamden
               - deanslist
               - stg_deanslist__lists
-      - name: stg_deanslist__roster_assignments
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__roster_assignments
-      - name: stg_deanslist__rosters
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__rosters
       - name: stg_deanslist__terms
         meta:
           dagster:
@@ -76,6 +63,8 @@ sources:
               - deanslist
               - stg_deanslist__terms
       - name: stg_deanslist__users
+        config:
+          enabled: false
         meta:
           dagster:
             group: deanslist
@@ -83,54 +72,6 @@ sources:
               - kippcamden
               - deanslist
               - stg_deanslist__users
-      - name: stg_deanslist__incidents__penalties
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__incidents__penalties
-      - name: stg_deanslist__incidents__actions
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__incidents__actions
-      - name: stg_deanslist__incidents__custom_fields
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__incidents__custom_fields
-      - name: int_deanslist__incidents__custom_fields__pivot
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - int_deanslist__incidents__custom_fields__pivot
-      - name: stg_deanslist__students__custom_fields
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__students__custom_fields
-      - name: int_deanslist__students__custom_fields__pivot
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - int_deanslist__students__custom_fields__pivot
       - name: stg_deanslist__dff_stats
         meta:
           dagster:
@@ -139,11 +80,95 @@ sources:
               - kippcamden
               - deanslist
               - stg_deanslist__dff_stats
-      - name: stg_deanslist__incidents__attachments
+      - name: int_deanslist__incidents__penalties
         meta:
           dagster:
             group: deanslist
             asset_key:
               - kippcamden
               - deanslist
-              - stg_deanslist__incidents__attachments
+              - int_deanslist__incidents__penalties
+      - name: int_deanslist__incidents__actions
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - int_deanslist__incidents__actions
+      - name: int_deanslist__incidents__custom_fields
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - int_deanslist__incidents__custom_fields
+      - name: int_deanslist__incidents__custom_fields__pivot
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - int_deanslist__incidents__custom_fields__pivot
+      - name: int_deanslist__students__custom_fields
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - int_deanslist__students__custom_fields
+      - name: int_deanslist__students__custom_fields__pivot
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - int_deanslist__students__custom_fields__pivot
+      - name: int_deanslist__incidents__attachments
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - int_deanslist__incidents__attachments
+      - name: int_deanslist__incidents
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - int_deanslist__incidents
+      - name: int_deanslist__roster_assignments
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - int_deanslist__roster_assignments
+      - name: stg_deanslist__roster_assignments
+        config:
+          enabled: false
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - stg_deanslist__roster_assignments
+      - name: stg_deanslist__rosters
+        config:
+          enabled: false
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - stg_deanslist__rosters
