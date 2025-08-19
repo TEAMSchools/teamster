@@ -15,6 +15,8 @@ select
     sp.exit_date,
     sp.exitcode,
     sp.academic_year,
+    sp.rn_student_program_year_desc,
+    sp.is_current,
 
     gen.name as specprog_name,
 

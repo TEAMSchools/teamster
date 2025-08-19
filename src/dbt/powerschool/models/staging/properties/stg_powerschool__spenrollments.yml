@@ -5,6 +5,16 @@ models:
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
         "src_powerschool__spenrollments") | replace("`", "") }}')
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - programid
+              - enter_date
+          config:
+            store_failures: true
+            severity: warn
     columns:
       - name: enter_date
         data_type: date
