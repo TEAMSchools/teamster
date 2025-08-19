@@ -198,3 +198,5 @@ models:
               config:
                 severity: warn
                 store_failures: true
+      - name: region_official_name
+        data_type: string
