@@ -243,6 +243,18 @@ select
         else 'No issues'
     end as fafsa_status_mismatch_category,
 
+    case
+        region
+        when 'Camden'
+        then 'KIPP Cooper Norcross Academy'
+        when 'Miami'
+        then 'KIPP Miami'
+        when 'Newark'
+        then 'TEAM Academy Charter School'
+        when 'Paterson'
+        then 'KIPP Paterson'
+    end as region_official_name,
+
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     ms_grad_sub as m
