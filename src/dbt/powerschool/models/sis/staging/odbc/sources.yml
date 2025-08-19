@@ -1,0 +1,1450 @@
+version: 2
+
+sources:
+  - name: powerschool
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('powerschool_schema', project_name + '_powerschool') }}
+    tables:
+      - name: src_powerschool__assignmentscore
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - assignmentscore
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/assignmentscore/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('powerschool_external_location_root',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/assignmentscore/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__attendance
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - attendance
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/attendance/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('powerschool_external_location_root',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/attendance/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__pgfinalgrades
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - pgfinalgrades
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/pgfinalgrades/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('powerschool_external_location_root',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/pgfinalgrades/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__storedgrades
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - storedgrades
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/storedgrades/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('powerschool_external_location_root',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/storedgrades/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__assignmentcategoryassoc
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - assignmentcategoryassoc
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/assignmentcategoryassoc/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+            hive_partition_uri_prefix:
+              "{{ var('powerschool_external_location_root',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/assignmentcategoryassoc/"
+      - name: src_powerschool__assignmentsection
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - assignmentsection
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/assignmentsection/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+            hive_partition_uri_prefix:
+              "{{ var('powerschool_external_location_root',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/assignmentsection/"
+      - name: src_powerschool__cc
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - cc
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/cc/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__codeset
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - codeset
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/codeset/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__courses
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - courses
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/courses/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__districtteachercategory
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - districtteachercategory
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/districtteachercategory/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__emailaddress
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - emailaddress
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/emailaddress/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gradecalcformulaweight
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gradecalcformulaweight
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gradecalcformulaweight/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gradecalcschoolassoc
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gradecalcschoolassoc
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gradecalcschoolassoc/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gradecalculationtype
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gradecalculationtype
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gradecalculationtype/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gradeformulaset
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gradeformulaset
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gradeformulaset/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gradescaleitem
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gradescaleitem
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gradescaleitem/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gradeschoolconfig
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gradeschoolconfig
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gradeschoolconfig/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gradeschoolformulaassoc
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gradeschoolformulaassoc
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gradeschoolformulaassoc/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gradesectionconfig
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gradesectionconfig
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gradesectionconfig/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__originalcontactmap
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - originalcontactmap
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/originalcontactmap/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__person
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - person
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/person/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__personaddress
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - personaddress
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/personaddress/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__personaddressassoc
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - personaddressassoc
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/personaddressassoc/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__personemailaddressassoc
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - personemailaddressassoc
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/personemailaddressassoc/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__personphonenumberassoc
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - personphonenumberassoc
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/personphonenumberassoc/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__phonenumber
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - phonenumber
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/phonenumber/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__prefs
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - prefs
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/prefs/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__roledef
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - roledef
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/roledef/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__s_nj_crs_x
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - s_nj_crs_x
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_crs_x/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__s_nj_ren_x
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - s_nj_ren_x
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_ren_x/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__s_nj_stu_x
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - s_nj_stu_x
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_stu_x/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__s_nj_usr_x
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - s_nj_usr_x
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_usr_x/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__schools
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - schools
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/schools/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__schoolstaff
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - schoolstaff
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/schoolstaff/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__sections
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - sections
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/sections/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__sectionteacher
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - sectionteacher
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/sectionteacher/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__studentcontactassoc
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - studentcontactassoc
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/studentcontactassoc/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__studentcontactdetail
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - studentcontactdetail
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/studentcontactdetail/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__studentcorefields
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - studentcorefields
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/studentcorefields/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__studentrace
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - studentrace
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/studentrace/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__students
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - students
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/students/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__teachercategory
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - teachercategory
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/teachercategory/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__termbins
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - termbins
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/termbins/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__terms
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - terms
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/terms/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__u_clg_et_stu
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - u_clg_et_stu
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/u_clg_et_stu/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__u_clg_et_stu_alt
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - u_clg_et_stu_alt
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/u_clg_et_stu_alt/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__u_def_ext_students
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - u_def_ext_students
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/u_def_ext_students/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__u_studentsuserfields
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - u_studentsuserfields
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/u_studentsuserfields/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__users
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - users
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/users/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      # not-partitionable
+      - name: src_powerschool__attendance_code
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - attendance_code
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/attendance_code/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__attendance_conversion_items
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - attendance_conversion_items
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/attendance_conversion_items/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__bell_schedule
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - bell_schedule
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/bell_schedule/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__calendar_day
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - calendar_day
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/calendar_day/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__cycle_day
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - cycle_day
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/cycle_day/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__fte
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - fte
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/fte/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gen
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gen
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gen/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__log
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - log
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/log/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__period
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - period
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/period/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__reenrollments
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - reenrollments
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/reenrollments/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__spenrollments
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - spenrollments
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/spenrollments/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__test
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - test
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/test/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__testscore
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - testscore
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/testscore/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__studenttest
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - studenttest
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/studenttest/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__studenttestscore
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - studenttestscore
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/studenttestscore/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__sced_code_mapping
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - sced_code_mapping
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/sced_code_mapping/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gradplan
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gradplan
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gradplan/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__userscorefields
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - userscorefields
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/userscorefields/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__u_storedgrades_de
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - u_storedgrades_de
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/u_storedgrades_de/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpnode
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpnode
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpnode/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpprogresssubject
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpprogresssubject
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gpprogresssubject/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpprogresssubjectearned
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpprogresssubjectearned
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gpprogresssubjectearned/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpprogresssubjectenrolled
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpprogresssubjectenrolled
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gpprogresssubjectenrolled/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpprogresssubjectrequested
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpprogresssubjectrequested
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gpprogresssubjectrequested/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpprogresssubjectwaived
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpprogresssubjectwaived
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gpprogresssubjectwaived/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpprogresssubjwaivedapplied
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpprogresssubjwaivedapplied
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/gpprogresssubjwaivedapplied/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpselectedcrs
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpselectedcrs
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpselectedcrs/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpselectedcrtype
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpselectedcrtype
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpselectedcrtype/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpselector
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpselector
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpselector/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gptarget
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gptarget
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gptarget/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpversion
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpversion
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpversion/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__gpstudentwaiver
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - gpstudentwaiver
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpstudentwaiver/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__s_stu_x
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - powerschool
+              - s_stu_x
+        external:
+          location:
+            "{{ var('powerschool_external_location_root',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_stu_x/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true

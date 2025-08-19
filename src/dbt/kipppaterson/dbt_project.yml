@@ -20,26 +20,11 @@ vars:
   local_timezone: America/New_York
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
   cloud_storage_uri_base: gs://teamster-kipppaterson/dagster/kipppaterson
+  powerschool_external_location_root: gs://teamster-test/dagster/kipppaterson/powerschool/sis/sftp
+  powerschool_external_source_type: sftp
   current_academic_year: 2025
   current_fiscal_year: 2026
 
 models:
   powerschool:
     +materialized: table
-    staging:
-      stg_powerschool__period:
-        +enabled: false
-      stg_powerschool__sced_code_mapping:
-        +enabled: false
-      stg_powerschool__u_def_ext_students:
-        +enabled: false
-
-sources:
-  powerschool:
-    powerschool:
-      src_powerschool__period:
-        +enabled: false
-      src_powerschool__sced_code_mapping:
-        +enabled: false
-      src_powerschool__u_def_ext_students:
-        +enabled: false
