@@ -25,9 +25,8 @@ select
     co.is_sipps,
     co.territory,
     co.hos as head_of_school,
-
-    w.week_start_monday,
-    w.week_end_sunday,
+    co.week_start_monday,
+    co.week_end_sunday,
 
     il.lesson_id,
     il.lesson_name,
@@ -79,24 +78,18 @@ select
     dr.mid_on_grade_level_scale_score
     - dr.overall_scale_score as scale_pts_to_mid_on_grade_level,
 
-from {{ ref("int_extracts__student_enrollments_subjects") }} as co
-inner join
-    {{ ref("int_powerschool__calendar_week") }} as w
-    on co.schoolid = w.schoolid
-    and co.academic_year = w.academic_year
-    and w.week_start_monday between co.entrydate and co.exitdate
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="w") }}
+from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
 left join
     {{ ref("stg_reporting__terms") }} as rt
     on co.academic_year = rt.academic_year
     and co.region_official_name = rt.region
     and rt.type = 'IREX'
-    and w.week_start_monday between rt.start_date and rt.end_date
+    and co.week_start_monday between rt.start_date and rt.end_date
 left join
     {{ ref("int_iready__instruction_by_lesson_union") }} as il
     on co.student_number = il.student_id
     and co.iready_subject = il.subject
-    and il.completion_date between w.week_start_monday and w.week_end_sunday
+    and il.completion_date between co.week_start_monday and co.week_end_sunday
     and il.academic_year_int = {{ var("current_academic_year") }}
 left join
     {{ ref("base_iready__diagnostic_results") }} as dr
@@ -109,7 +102,7 @@ left join
     {{ ref("snapshot_iready__instructional_usage_data") }} as iu
     on co.student_number = iu.student_id
     and co.iready_subject = iu.subject
-    and w.week_start_monday = iu.last_week_start_date
+    and co.week_start_monday = iu.last_week_start_date
     and iu.academic_year_int = {{ var("current_academic_year") }}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as cr
