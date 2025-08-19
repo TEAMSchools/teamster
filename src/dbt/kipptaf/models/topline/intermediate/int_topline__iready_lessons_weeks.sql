@@ -22,7 +22,10 @@ select
     co.exitdate,
     co.enroll_status,
 
-    sum(coalesce(ir.passed_or_not_passed_numeric, 0)) as n_lessons_passed,
+    sum(coalesce(ir.passed_or_not_passed_numeric, 0)) as n_lessons_passed_week,
+    sum(ir.passed_or_not_passed_numeric) over (
+        partition by co.iready_subject, co.academic_year, co.student_number
+    ) as n_lessons_passed_y1,
 from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
 left join
     {{ ref("int_iready__instruction_by_lesson_union") }} as ir
