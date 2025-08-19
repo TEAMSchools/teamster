@@ -58,6 +58,22 @@ kipptaf:
       method: oauth
       project: teamster-332318
 
+deanslist:
+  target: deanslist
+  outputs:
+    deanslist:
+      type: bigquery
+      schema: zz_dev
+      threads: 40
+      method: oauth
+      project: teamster-332318
+    kippnewark:
+      type: bigquery
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kippnewark
+      threads: 40
+      method: oauth
+      project: teamster-332318
+
 integration_tests:
   target: integration_tests
   outputs:
