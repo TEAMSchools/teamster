@@ -244,7 +244,7 @@ select
     end as fafsa_status_mismatch_category,
 
     case
-        region
+        e.region
         when 'Camden'
         then 'KIPP Cooper Norcross Academy'
         when 'Miami'
