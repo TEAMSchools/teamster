@@ -9,10 +9,13 @@ with
 
             sum(is_present_weighted) as sum_attendance_value_weighted_term,
             sum(attendancevalue) as sum_attendance_value_term,
+            sum(membershipvalue) as sum_membership_value_term,
 
             count(attendancevalue) as count_attendance_value_term,
 
             avg(attendancevalue) as ada_term,
+
+            sum(abs(attendancevalue - 1)) as sum_absences_term,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
         where
             membershipvalue = 1
@@ -26,6 +29,11 @@ select
     studentid,
     academic_year,
     term,
+    sum_attendance_value_term,
+    sum_attendance_value_weighted_term,
+    sum_membership_value_term,
+    sum_absences_term,
+    count_attendance_value_term,
 
     round(ada_term, 3) as ada_term,
 

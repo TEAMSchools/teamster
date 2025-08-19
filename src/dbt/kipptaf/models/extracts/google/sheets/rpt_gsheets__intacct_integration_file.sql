@@ -41,6 +41,7 @@ select
 
     gl._dagster_partition_group_code,
     safe_cast(gl._dagster_partition_date as string) as _dagster_partition_date,
+
 from {{ ref("stg_adp_payroll__general_ledger_file") }} as gl
 left join
     {{ ref("stg_finance__payroll_code_mapping") }} as cm

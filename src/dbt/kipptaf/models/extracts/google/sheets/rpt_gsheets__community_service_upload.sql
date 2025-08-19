@@ -14,11 +14,9 @@ with
         from {{ ref("base_powerschool__student_enrollments") }} as co
         left join
             {{ ref("stg_deanslist__behavior") }} as b
-            on (
-                co.student_number = b.student_school_id
-                and b.behavior_category = 'Community Service'
-                and (b.behavior_date between co.entrydate and co.exitdate)
-            )
+            on co.student_number = b.student_school_id
+            and b.behavior_category = 'Community Service'
+            and b.behavior_date between co.entrydate and co.exitdate
         where
             co.grade_level between 9 and 12
             and co.is_enrolled_y1
