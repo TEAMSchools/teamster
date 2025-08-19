@@ -1,9 +1,10 @@
 with
     suspension_att as (
         select
+            _dbt_source_relation,
             studentid,
             academic_year,
-            _dbt_source_relation,
+
             count(*) as days_suspended_att,
         from {{ ref("int_powerschool__ps_attendance_daily") }}
         where att_code in ('OS', 'OSS', 'OSSP', 'S', 'ISS', 'SHI')
@@ -11,15 +12,14 @@ with
     )
 
 select
-
     co.student_number,
     co.state_studentnumber,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.academic_year,
     co.reporting_schoolid,
     co.schoolid,
     co.school_name,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.grade_level,
     co.advisory_name as team,
     co.advisor_lastfirst as advisor_name,
@@ -46,43 +46,32 @@ select
     dli.infraction as incident_type,
     dli.is_referral,
     dli.category as referral_category,
-
-    dlp.penalty_name as penaltyname,
-    dlp.start_date as startdate,
-    dlp.end_date as enddate,
-    dlp.num_days as numdays,
-    dlp.is_suspension as issuspension,
-
-    cf.behavior_category as `Behavior Category`,
-    cf.nj_state_reporting as `NJ State Reporting`,
-    cf.others_involved as `Others Involved`,
-    cf.parent_contacted as `Parent Contacted`,
-    cf.perceived_motivation as `Perceived Motivation`,
-    cf.restraint_used as `Restraint Used`,
-    cf.ssds_incident_id as `SSDS Incident ID`,
+    dli.penalty_name as penaltyname,
+    dli.start_date as startdate,
+    dli.end_date as enddate,
+    dli.num_days as numdays,
+    dli.is_suspension as issuspension,
+    dli.behavior_category as `Behavior Category`,
+    dli.nj_state_reporting as `NJ State Reporting`,
+    dli.others_involved as `Others Involved`,
+    dli.parent_contacted as `Parent Contacted`,
+    dli.perceived_motivation as `Perceived Motivation`,
+    dli.restraint_used as `Restraint Used`,
+    dli.ssds_incident_id as `SSDS Incident ID`,
+    dli.create_lastfirst as created_staff,
+    dli.update_lastfirst as last_update_staff,
 
     d.name as term,
 
     att.days_suspended_att,
 
     'Referral' as dl_category,
-
-    concat(dli.create_last, ', ', dli.create_first) as created_staff,
-    concat(dli.update_last, ', ', dli.update_first) as last_update_staff,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 left join
-    {{ ref("stg_deanslist__incidents") }} as dli
+    {{ ref("int_deanslist__incidents__penalties") }} as dli
     on co.student_number = dli.student_school_id
     and co.academic_year = dli.create_ts_academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
-left join
-    {{ ref("stg_deanslist__incidents__penalties") }} as dlp
-    on dli.incident_id = dlp.incident_id
-    and {{ union_dataset_join_clause(left_alias="dli", right_alias="dlp") }}
-left join
-    {{ ref("int_deanslist__incidents__custom_fields__pivot") }} as cf
-    on dli.incident_id = cf.incident_id
-    and {{ union_dataset_join_clause(left_alias="dli", right_alias="cf") }}
 left join
     {{ ref("stg_reporting__terms") }} as d
     on co.schoolid = d.school_id
@@ -93,7 +82,4 @@ left join
     on co.studentid = att.studentid
     and co.academic_year = att.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
-where
-    co.rn_year = 1
-    and co.grade_level != 99
-    and co.academic_year >= ({{ var("current_academic_year") - 1 }})
+where co.rn_year = 1 and co.academic_year >= {{ var("current_academic_year") - 1 }}
