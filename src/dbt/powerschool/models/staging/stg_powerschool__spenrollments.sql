@@ -19,10 +19,16 @@ with
         from {{ source("powerschool", "src_powerschool__spenrollments") }}
     )
 
-    {{
-        dbt_utils.deduplicate(
-            relation="transformations",
-            partition_by="studentid, programid, academic_year",
-            order_by="enter_date desc",
-        )
-    }}
+select
+    *,
+
+    if(
+        current_date('{{ var("local_timezone") }}') between enter_date and exit_date,
+        true,
+        false,
+    ) as is_current,
+
+    row_number() over (
+        partition by studentid, programid, academic_year order by enter_date desc
+    ) as rn_student_program_year_desc,
+from transformations
