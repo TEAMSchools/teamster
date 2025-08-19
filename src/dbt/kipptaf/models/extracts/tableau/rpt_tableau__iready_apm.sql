@@ -82,7 +82,7 @@ from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
 left join
     {{ ref("stg_reporting__terms") }} as rt
     on co.academic_year = rt.academic_year
-    and co.region_official_name = rt.region
+    and co.region = rt.city
     and rt.type = 'IREX'
     and co.week_start_monday between rt.start_date and rt.end_date
 left join
