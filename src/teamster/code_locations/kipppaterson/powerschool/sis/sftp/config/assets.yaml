@@ -32,7 +32,7 @@ assets:
   - asset_name: students
   - asset_name: termbins
   - asset_name: terms
-  - asset_name: u_clg_et_stu
-  - asset_name: u_clg_et_stu_alt
-  - asset_name: u_studentsuserfields
   - asset_name: users
+  # - asset_name: u_clg_et_stu
+  # - asset_name: u_clg_et_stu_alt
+  # - asset_name: u_studentsuserfields
