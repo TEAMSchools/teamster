@@ -247,9 +247,7 @@ select
     end as fafsa_status_mismatch_category,
 
 from {{ ref("base_powerschool__student_enrollments") }} as e
-left join
-    {{ ref("stg_people__location_crosswalk") }} as lc
-    on e.schoolid = lc.powerschool_school_id
+left join {{ ref("stg_people__location_crosswalk") }} as lc on e.school_name = lc.name
 left join
     ms_grad_sub as m
     on e.student_number = m.student_number
