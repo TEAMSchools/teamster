@@ -193,8 +193,11 @@ models:
         data_type: string
         data_tests:
           - accepted_values:
-              values:
-                - No issues
+              arguments:
+                values:
+                  - No issues
               config:
                 severity: warn
                 store_failures: true
+      - name: region_official_name
+        data_type: string
