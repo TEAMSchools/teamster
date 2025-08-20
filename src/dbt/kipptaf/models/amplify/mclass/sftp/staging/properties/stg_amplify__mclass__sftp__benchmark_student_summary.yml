@@ -2,7 +2,6 @@ version: 2
 models:
   - name: stg_amplify__mclass__sftp__benchmark_student_summary
     config:
-        "") }}')
       contract:
         enforced: true
     columns:

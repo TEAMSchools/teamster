@@ -1,7 +1,6 @@
 version: 2
 models:
   - name: stg_schoolmint_grow__measurements
-    config:
     columns:
       - name: measurement_id
         data_type: string

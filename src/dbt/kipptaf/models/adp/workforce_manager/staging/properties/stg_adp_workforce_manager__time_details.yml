@@ -2,7 +2,6 @@ version: 2
 models:
   - name: stg_adp_workforce_manager__time_details
     config:
-        "src_adp_workforce_manager__time_details") | replace("`", "") }}')
       contract:
         enforced: true
     columns:
