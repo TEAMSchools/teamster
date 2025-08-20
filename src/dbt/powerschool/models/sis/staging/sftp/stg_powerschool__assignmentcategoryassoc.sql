@@ -5,7 +5,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation=source(
-                    "powerschool", "src_powerschool__assignmentcategoryassoc"
+                    "powerschool_sftp", "src_powerschool__assignmentcategoryassoc"
                 ),
                 partition_by="assignmentcategoryassocid.int_value",
                 order_by="_file_name desc",

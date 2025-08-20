@@ -4,10 +4,6 @@ models:
     config:
       contract:
         enforced: true
-      pre_hook:
-        '{{
-        refresh_external_metadata_cache(var("powerschool_external_source_type"),
-        "src_powerschool__assignmentcategoryassoc") }}'
     columns:
       - name: whocreated
         data_type: string

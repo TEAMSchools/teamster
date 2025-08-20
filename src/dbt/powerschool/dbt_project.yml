@@ -21,7 +21,7 @@ vars:
   current_academic_year: 0
   local_timezone: UTC
   bigquery_external_connection_name: null
-  powerschool_external_source_type: sftp
+  powerschool_external_source_type: odbc
 
 models:
   +schema: powerschool
