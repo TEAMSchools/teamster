@@ -4,9 +4,6 @@ models:
     config:
       contract:
         enforced: true
-    #      pre_hook:
-    #        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE\('\{\{ source\("powerschool",
-    #        "\w+"\) \| replace\("`", ""\) \}\}'\)
     columns:
       - name: emailaddress
         data_type: string
