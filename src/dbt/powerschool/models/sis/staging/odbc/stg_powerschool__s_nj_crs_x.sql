@@ -1,5 +1,3 @@
-{{ config(enabled=(var("powerschool_external_source_type") == "odbc")) }}
-
 select
     * except (coursesdcid, exclude_course_submission_tf, sla_include_tf),
 

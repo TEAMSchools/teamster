@@ -1,5 +1,3 @@
-{{ config(enabled=(var("powerschool_external_source_type") == "sftp")) }}
-
 select
     /* records */
     id.int_value as id,

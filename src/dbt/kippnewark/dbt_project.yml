@@ -21,7 +21,6 @@ vars:
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
   cloud_storage_uri_base: gs://teamster-kippnewark/dagster/kippnewark
   powerschool_external_location_root: gs://teamster-kippnewark/dagster/kippnewark/powerschool
-  powerschool_external_source_type: odbc
   current_academic_year: 2025
   current_fiscal_year: 2026
   iready_schema: kippnj_iready
@@ -49,6 +48,7 @@ models:
     sis:
       staging:
         odbc:
+          +enabled: true
           stg_powerschool__period:
             +enabled: false
           stg_powerschool__sced_code_mapping:
