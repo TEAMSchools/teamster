@@ -1,7 +1,6 @@
 version: 2
 models:
   - name: stg_ldap__group
-    config:
     columns:
       - name: cn
         data_type: string

@@ -1,7 +1,6 @@
 version: 2
 models:
   - name: stg_google_forms__form
-    config:
     columns:
       - name: form_id
         data_type: string

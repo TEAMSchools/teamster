@@ -1,7 +1,6 @@
 version: 2
 models:
   - name: stg_schoolmint_grow__schools
-    config:
     columns:
       - name: school_id
         data_type: string

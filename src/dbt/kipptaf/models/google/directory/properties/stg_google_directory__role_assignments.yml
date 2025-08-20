@@ -1,7 +1,6 @@
 version: 2
 models:
   - name: stg_google_directory__role_assignments
-    config:
     columns:
       - name: role_assignment_id
         data_type: string

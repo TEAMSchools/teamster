@@ -1,7 +1,6 @@
 version: 2
 models:
   - name: stg_ldap__user_person
-    config:
     columns:
       - name: distinguished_name
         data_type: string

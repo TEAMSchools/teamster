@@ -1,7 +1,6 @@
 version: 2
 models:
   - name: stg_schoolmint_grow__rubrics
-    config:
     columns:
       - name: rubric_id
         data_type: string

@@ -3,7 +3,6 @@ version: 2
 models:
   - name: stg_adp_workforce_now__pension_and_benefits_enrollments
     config:
-        replace("`", "") }}')
       contract:
         enforced: true
     columns:
