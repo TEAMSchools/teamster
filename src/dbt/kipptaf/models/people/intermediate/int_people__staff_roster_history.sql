@@ -323,8 +323,7 @@ left join
     = rtldap.employee_number
 left join
     {{ ref("stg_adp_workforce_now__pension_and_benefits_enrollments") }} as pbe
-    on w.employee_number = pbe.employee_number
-    and w.position_id = pbe.position_id
+    on w.position_id = pbe.position_id
     and pbe.enrollment_status = 'Active'
     and pbe.plan_name in (
         'NJ Pension - DCRP:Eligible Employees(Prudential Financial)',
