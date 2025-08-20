@@ -69,7 +69,6 @@ with
         group by student_number, scope, score_type
     ),
 
-    -- trunk-ignore(sqlfluff/ST06)
     max_total_score as (
         select
             student_number,
@@ -95,6 +94,7 @@ with
         }}
     )
 
+-- trunk-ignore(sqlfluff/ST03)
 select s.*, m.max_scale_score, round(d.superscore) as superscore,
 
 from scores as s
