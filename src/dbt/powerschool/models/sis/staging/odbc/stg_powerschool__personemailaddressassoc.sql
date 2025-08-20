@@ -17,4 +17,4 @@ select
     emailtypecodesetid.int_value as emailtypecodesetid,
     isprimaryemailaddress.int_value as isprimaryemailaddress,
     emailaddresspriorityorder.int_value as emailaddresspriorityorder,
-from {{ source("powerschool", "src_powerschool__personemailaddressassoc") }}
+from {{ source("powerschool_odbc", "src_powerschool__personemailaddressassoc") }}

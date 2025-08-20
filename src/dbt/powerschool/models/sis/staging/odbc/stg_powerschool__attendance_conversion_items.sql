@@ -21,4 +21,4 @@ select
     fteid.int_value as fteid,
     unused.int_value as unused,
     daypartid.int_value as daypartid,
-from {{ source("powerschool", "src_powerschool__attendance_conversion_items") }}
+from {{ source("powerschool_odbc", "src_powerschool__attendance_conversion_items") }}

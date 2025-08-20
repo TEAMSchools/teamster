@@ -4,7 +4,9 @@ with
     deduplicate as (
         {{
             dbt_utils.deduplicate(
-                relation=source("powerschool", "src_powerschool__assignmentsection"),
+                relation=source(
+                    "powerschool_odbc", "src_powerschool__assignmentsection"
+                ),
                 partition_by="assignmentsectionid.int_value",
                 order_by="_file_name desc",
             )

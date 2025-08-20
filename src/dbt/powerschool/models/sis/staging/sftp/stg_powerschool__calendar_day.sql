@@ -36,7 +36,7 @@ with
             bell_schedule_id.int_value as bell_schedule_id,
             week_num.int_value as week_num,
             whomodifiedid.int_value as whomodifiedid,
-        from {{ source("powerschool", "src_powerschool__calendar_day") }}
+        from {{ source("powerschool_sftp", "src_powerschool__calendar_day") }}
     ),
 
     with_start as (

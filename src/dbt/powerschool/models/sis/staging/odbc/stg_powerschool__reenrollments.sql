@@ -27,4 +27,4 @@ select
     membershipshare.double_value as membershipshare,
     tuitionpayer.int_value as tuitionpayer,
     fteid.int_value as fteid,
-from {{ source("powerschool", "src_powerschool__reenrollments") }}
+from {{ source("powerschool_odbc", "src_powerschool__reenrollments") }}

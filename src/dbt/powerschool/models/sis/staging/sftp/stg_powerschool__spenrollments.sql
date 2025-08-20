@@ -18,7 +18,7 @@ with
                 extract(year from enter_date),
                 extract(year from enter_date) - 1
             ) as academic_year,
-        from {{ source("powerschool", "src_powerschool__spenrollments") }}
+        from {{ source("powerschool_sftp", "src_powerschool__spenrollments") }}
     )
 
 select

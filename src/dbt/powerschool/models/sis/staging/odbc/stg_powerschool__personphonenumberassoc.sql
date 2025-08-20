@@ -17,4 +17,4 @@ select
     phonetypecodesetid.int_value as phonetypecodesetid,
     phonenumberpriorityorder.int_value as phonenumberpriorityorder,
     ispreferred.int_value as ispreferred,
-from {{ source("powerschool", "src_powerschool__personphonenumberassoc") }}
+from {{ source("powerschool_odbc", "src_powerschool__personphonenumberassoc") }}

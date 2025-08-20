@@ -35,4 +35,4 @@ select
     isdefaultpublishscores.int_value as isdefaultpublishscores,
     defaultdaysbeforedue.int_value as defaultdaysbeforedue,
     whomodifiedid.int_value as whomodifiedid,
-from {{ source("powerschool", "src_powerschool__teachercategory") }}
+from {{ source("powerschool_odbc", "src_powerschool__teachercategory") }}

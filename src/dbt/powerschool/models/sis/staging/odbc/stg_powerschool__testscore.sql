@@ -8,4 +8,4 @@ select
     id.int_value as id,
     testid.int_value as testid,
     sortorder.int_value as sortorder,
-from {{ source("powerschool", "src_powerschool__testscore") }}
+from {{ source("powerschool_odbc", "src_powerschool__testscore") }}

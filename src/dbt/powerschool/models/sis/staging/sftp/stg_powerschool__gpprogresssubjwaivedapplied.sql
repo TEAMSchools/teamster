@@ -6,4 +6,4 @@ select
     gpprogresssubjectid.int_value as gpprogresssubjectid,
     gpstudentwaiverid.int_value as gpstudentwaiverid,
     appliedcredits.double_value as appliedcredits,
-from {{ source("powerschool", "src_powerschool__gpprogresssubjwaivedapplied") }}
+from {{ source("powerschool_sftp", "src_powerschool__gpprogresssubjwaivedapplied") }}

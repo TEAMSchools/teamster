@@ -17,4 +17,4 @@ select
     districtteachercategoryid.int_value as districtteachercategoryid,
     assignmentid.int_value as assignmentid,
     weight.bytes_decimal_value as `weight`,
-from {{ source("powerschool", "src_powerschool__gradecalcformulaweight") }}
+from {{ source("powerschool_odbc", "src_powerschool__gradecalcformulaweight") }}

@@ -33,4 +33,4 @@ select
     spedindicator.int_value as spedindicator,
     valueli4.int_value as valueli4,
     yearid.int_value as yearid,
-from {{ source("powerschool", "src_powerschool__gen") }}
+from {{ source("powerschool_odbc", "src_powerschool__gen") }}

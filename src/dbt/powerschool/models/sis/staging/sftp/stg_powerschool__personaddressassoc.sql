@@ -15,4 +15,4 @@ select
     personaddressid.int_value as personaddressid,
     addresstypecodesetid.int_value as addresstypecodesetid,
     addresspriorityorder.int_value as addresspriorityorder,
-from {{ source("powerschool", "src_powerschool__personaddressassoc") }}
+from {{ source("powerschool_sftp", "src_powerschool__personaddressassoc") }}

@@ -10,7 +10,7 @@ with
             studentsdcid.int_value as studentsdcid,
 
             coalesce(whenmodified, whencreated) as when_modified_or_created,
-        from {{ source("powerschool", "src_powerschool__u_clg_et_stu") }}
+        from {{ source("powerschool_sftp", "src_powerschool__u_clg_et_stu") }}
     )
 
     {{

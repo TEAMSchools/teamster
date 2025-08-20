@@ -9,4 +9,4 @@ select
     schoolid.int_value as schoolid,
     year_id.int_value as year_id,
     attendance_conversion_id.int_value as attendance_conversion_id,
-from {{ source("powerschool", "src_powerschool__bell_schedule") }}
+from {{ source("powerschool_sftp", "src_powerschool__bell_schedule") }}

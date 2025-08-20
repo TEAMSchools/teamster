@@ -15,4 +15,4 @@ select
     iscoursegradecalculated.int_value as iscoursegradecalculated,
     isreporttermsetupsame.int_value as isreporttermsetupsame,
     sectionsdcid.int_value as sectionsdcid,
-from {{ source("powerschool", "src_powerschool__gradeformulaset") }}
+from {{ source("powerschool_odbc", "src_powerschool__gradeformulaset") }}

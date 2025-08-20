@@ -10,4 +10,4 @@ select
     last_modified_ts,
 
     sced_code_mappingid.int_value as sced_code_mappingid,
-from {{ source("powerschool", "src_powerschool__sced_code_mapping") }}
+from {{ source("powerschool_sftp", "src_powerschool__sced_code_mapping") }}

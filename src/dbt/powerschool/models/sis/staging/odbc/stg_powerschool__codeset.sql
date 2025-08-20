@@ -19,4 +19,4 @@ select
     ismodifiable.int_value as ismodifiable,
     isdeletable.int_value as isdeletable,
     excludefromstatereporting.int_value as excludefromstatereporting,
-from {{ source("powerschool", "src_powerschool__codeset") }}
+from {{ source("powerschool_odbc", "src_powerschool__codeset") }}

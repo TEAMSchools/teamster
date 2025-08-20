@@ -13,4 +13,4 @@ select
     allocation.bytes_decimal_value as allocation,
     priorityorder.int_value as priorityorder,
     whomodifiedid.int_value as whomodifiedid,
-from {{ source("powerschool", "src_powerschool__sectionteacher") }}
+from {{ source("powerschool_odbc", "src_powerschool__sectionteacher") }}

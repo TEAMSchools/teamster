@@ -1,12 +1,12 @@
 version: 2
 
 sources:
-  - name: powerschool
+  - name: powerschool_sftp
     schema: |
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ var('powerschool_schema', project_name + '_powerschool') }}
     tables:
-      - name: src_powerschool__sis__sftp__assignmentscore
+      - name: src_powerschool__assignmentscore
         meta:
           dagster:
             asset_key:
@@ -23,7 +23,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__attendance
+      - name: src_powerschool__attendance
         meta:
           dagster:
             asset_key:
@@ -40,7 +40,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__pgfinalgrades
+      - name: src_powerschool__pgfinalgrades
         meta:
           dagster:
             asset_key:
@@ -57,7 +57,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__storedgrades
+      - name: src_powerschool__storedgrades
         meta:
           dagster:
             asset_key:
@@ -74,7 +74,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__assignmentcategoryassoc
+      - name: src_powerschool__assignmentcategoryassoc
         meta:
           dagster:
             asset_key:
@@ -92,7 +92,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__assignmentsection
+      - name: src_powerschool__assignmentsection
         meta:
           dagster:
             asset_key:
@@ -110,7 +110,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__cc
+      - name: src_powerschool__cc
         meta:
           dagster:
             asset_key:
@@ -127,7 +127,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__codeset
+      - name: src_powerschool__codeset
         meta:
           dagster:
             asset_key:
@@ -144,7 +144,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__courses
+      - name: src_powerschool__courses
         meta:
           dagster:
             asset_key:
@@ -161,7 +161,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__districtteachercategory
+      - name: src_powerschool__districtteachercategory
         meta:
           dagster:
             asset_key:
@@ -179,7 +179,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__emailaddress
+      - name: src_powerschool__emailaddress
         meta:
           dagster:
             asset_key:
@@ -196,7 +196,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gradecalcformulaweight
+      - name: src_powerschool__gradecalcformulaweight
         meta:
           dagster:
             asset_key:
@@ -214,7 +214,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gradecalcschoolassoc
+      - name: src_powerschool__gradecalcschoolassoc
         meta:
           dagster:
             asset_key:
@@ -232,7 +232,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gradecalculationtype
+      - name: src_powerschool__gradecalculationtype
         meta:
           dagster:
             asset_key:
@@ -250,7 +250,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gradeformulaset
+      - name: src_powerschool__gradeformulaset
         meta:
           dagster:
             asset_key:
@@ -267,7 +267,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gradescaleitem
+      - name: src_powerschool__gradescaleitem
         meta:
           dagster:
             asset_key:
@@ -284,7 +284,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gradeschoolconfig
+      - name: src_powerschool__gradeschoolconfig
         meta:
           dagster:
             asset_key:
@@ -302,7 +302,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gradeschoolformulaassoc
+      - name: src_powerschool__gradeschoolformulaassoc
         meta:
           dagster:
             asset_key:
@@ -320,7 +320,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gradesectionconfig
+      - name: src_powerschool__gradesectionconfig
         meta:
           dagster:
             asset_key:
@@ -338,7 +338,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__originalcontactmap
+      - name: src_powerschool__originalcontactmap
         meta:
           dagster:
             asset_key:
@@ -356,7 +356,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__person
+      - name: src_powerschool__person
         meta:
           dagster:
             asset_key:
@@ -373,7 +373,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__personaddress
+      - name: src_powerschool__personaddress
         meta:
           dagster:
             asset_key:
@@ -390,7 +390,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__personaddressassoc
+      - name: src_powerschool__personaddressassoc
         meta:
           dagster:
             asset_key:
@@ -408,7 +408,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__personemailaddressassoc
+      - name: src_powerschool__personemailaddressassoc
         meta:
           dagster:
             asset_key:
@@ -426,7 +426,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__personphonenumberassoc
+      - name: src_powerschool__personphonenumberassoc
         meta:
           dagster:
             asset_key:
@@ -444,7 +444,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__phonenumber
+      - name: src_powerschool__phonenumber
         meta:
           dagster:
             asset_key:
@@ -461,7 +461,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__prefs
+      - name: src_powerschool__prefs
         meta:
           dagster:
             asset_key:
@@ -478,7 +478,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__roledef
+      - name: src_powerschool__roledef
         meta:
           dagster:
             asset_key:
@@ -495,7 +495,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__s_nj_crs_x
+      - name: src_powerschool__s_nj_crs_x
         meta:
           dagster:
             asset_key:
@@ -512,7 +512,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__s_nj_ren_x
+      - name: src_powerschool__s_nj_ren_x
         meta:
           dagster:
             asset_key:
@@ -529,7 +529,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__s_nj_stu_x
+      - name: src_powerschool__s_nj_stu_x
         meta:
           dagster:
             asset_key:
@@ -546,7 +546,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__s_nj_usr_x
+      - name: src_powerschool__s_nj_usr_x
         meta:
           dagster:
             asset_key:
@@ -563,7 +563,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__schools
+      - name: src_powerschool__schools
         meta:
           dagster:
             asset_key:
@@ -580,7 +580,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__schoolstaff
+      - name: src_powerschool__schoolstaff
         meta:
           dagster:
             asset_key:
@@ -597,7 +597,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__sections
+      - name: src_powerschool__sections
         meta:
           dagster:
             asset_key:
@@ -614,7 +614,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__sectionteacher
+      - name: src_powerschool__sectionteacher
         meta:
           dagster:
             asset_key:
@@ -631,7 +631,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__studentcontactassoc
+      - name: src_powerschool__studentcontactassoc
         meta:
           dagster:
             asset_key:
@@ -649,7 +649,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__studentcontactdetail
+      - name: src_powerschool__studentcontactdetail
         meta:
           dagster:
             asset_key:
@@ -667,7 +667,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__studentcorefields
+      - name: src_powerschool__studentcorefields
         meta:
           dagster:
             asset_key:
@@ -685,7 +685,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__studentrace
+      - name: src_powerschool__studentrace
         meta:
           dagster:
             asset_key:
@@ -702,7 +702,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__students
+      - name: src_powerschool__students
         meta:
           dagster:
             asset_key:
@@ -719,7 +719,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__teachercategory
+      - name: src_powerschool__teachercategory
         meta:
           dagster:
             asset_key:
@@ -736,7 +736,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__termbins
+      - name: src_powerschool__termbins
         meta:
           dagster:
             asset_key:
@@ -753,7 +753,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__terms
+      - name: src_powerschool__terms
         meta:
           dagster:
             asset_key:
@@ -770,7 +770,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__u_clg_et_stu
+      - name: src_powerschool__u_clg_et_stu
         meta:
           dagster:
             asset_key:
@@ -787,7 +787,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__u_clg_et_stu_alt
+      - name: src_powerschool__u_clg_et_stu_alt
         meta:
           dagster:
             asset_key:
@@ -804,7 +804,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__u_def_ext_students
+      - name: src_powerschool__u_def_ext_students
         meta:
           dagster:
             asset_key:
@@ -822,7 +822,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__u_studentsuserfields
+      - name: src_powerschool__u_studentsuserfields
         meta:
           dagster:
             asset_key:
@@ -840,7 +840,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__users
+      - name: src_powerschool__users
         meta:
           dagster:
             asset_key:
@@ -858,7 +858,7 @@ sources:
             format: AVRO
             enable_logical_types: true
       # not-partitionable
-      - name: src_powerschool__sis__sftp__attendance_code
+      - name: src_powerschool__attendance_code
         meta:
           dagster:
             asset_key:
@@ -875,7 +875,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__attendance_conversion_items
+      - name: src_powerschool__attendance_conversion_items
         meta:
           dagster:
             asset_key:
@@ -893,7 +893,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__bell_schedule
+      - name: src_powerschool__bell_schedule
         meta:
           dagster:
             asset_key:
@@ -910,7 +910,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__calendar_day
+      - name: src_powerschool__calendar_day
         meta:
           dagster:
             asset_key:
@@ -927,7 +927,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__cycle_day
+      - name: src_powerschool__cycle_day
         meta:
           dagster:
             asset_key:
@@ -944,7 +944,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__fte
+      - name: src_powerschool__fte
         meta:
           dagster:
             asset_key:
@@ -961,7 +961,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gen
+      - name: src_powerschool__gen
         meta:
           dagster:
             asset_key:
@@ -978,7 +978,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__log
+      - name: src_powerschool__log
         meta:
           dagster:
             asset_key:
@@ -995,7 +995,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__period
+      - name: src_powerschool__period
         meta:
           dagster:
             asset_key:
@@ -1012,7 +1012,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__reenrollments
+      - name: src_powerschool__reenrollments
         meta:
           dagster:
             asset_key:
@@ -1029,7 +1029,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__spenrollments
+      - name: src_powerschool__spenrollments
         meta:
           dagster:
             asset_key:
@@ -1046,7 +1046,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__test
+      - name: src_powerschool__test
         meta:
           dagster:
             asset_key:
@@ -1063,7 +1063,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__testscore
+      - name: src_powerschool__testscore
         meta:
           dagster:
             asset_key:
@@ -1080,7 +1080,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__studenttest
+      - name: src_powerschool__studenttest
         meta:
           dagster:
             asset_key:
@@ -1097,7 +1097,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__studenttestscore
+      - name: src_powerschool__studenttestscore
         meta:
           dagster:
             asset_key:
@@ -1114,7 +1114,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__sced_code_mapping
+      - name: src_powerschool__sced_code_mapping
         meta:
           dagster:
             asset_key:
@@ -1132,7 +1132,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gradplan
+      - name: src_powerschool__gradplan
         meta:
           dagster:
             asset_key:
@@ -1149,7 +1149,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__userscorefields
+      - name: src_powerschool__userscorefields
         meta:
           dagster:
             asset_key:
@@ -1166,7 +1166,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__u_storedgrades_de
+      - name: src_powerschool__u_storedgrades_de
         meta:
           dagster:
             asset_key:
@@ -1184,7 +1184,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpnode
+      - name: src_powerschool__gpnode
         meta:
           dagster:
             asset_key:
@@ -1201,7 +1201,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpprogresssubject
+      - name: src_powerschool__gpprogresssubject
         meta:
           dagster:
             asset_key:
@@ -1219,7 +1219,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpprogresssubjectearned
+      - name: src_powerschool__gpprogresssubjectearned
         meta:
           dagster:
             asset_key:
@@ -1237,7 +1237,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpprogresssubjectenrolled
+      - name: src_powerschool__gpprogresssubjectenrolled
         meta:
           dagster:
             asset_key:
@@ -1255,7 +1255,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpprogresssubjectrequested
+      - name: src_powerschool__gpprogresssubjectrequested
         meta:
           dagster:
             asset_key:
@@ -1273,7 +1273,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpprogresssubjectwaived
+      - name: src_powerschool__gpprogresssubjectwaived
         meta:
           dagster:
             asset_key:
@@ -1291,7 +1291,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpprogresssubjwaivedapplied
+      - name: src_powerschool__gpprogresssubjwaivedapplied
         meta:
           dagster:
             asset_key:
@@ -1309,7 +1309,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpselectedcrs
+      - name: src_powerschool__gpselectedcrs
         meta:
           dagster:
             asset_key:
@@ -1326,7 +1326,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpselectedcrtype
+      - name: src_powerschool__gpselectedcrtype
         meta:
           dagster:
             asset_key:
@@ -1343,7 +1343,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpselector
+      - name: src_powerschool__gpselector
         meta:
           dagster:
             asset_key:
@@ -1360,7 +1360,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gptarget
+      - name: src_powerschool__gptarget
         meta:
           dagster:
             asset_key:
@@ -1377,7 +1377,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpversion
+      - name: src_powerschool__gpversion
         meta:
           dagster:
             asset_key:
@@ -1394,7 +1394,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__gpstudentwaiver
+      - name: src_powerschool__gpstudentwaiver
         meta:
           dagster:
             asset_key:
@@ -1411,7 +1411,7 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-      - name: src_powerschool__sis__sftp__s_stu_x
+      - name: src_powerschool__s_stu_x
         meta:
           dagster:
             asset_key:

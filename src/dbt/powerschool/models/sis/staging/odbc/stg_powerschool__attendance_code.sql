@@ -1,11 +1,4 @@
-{% set source_ref = source("powerschool", "src_powerschool__attendance_code") %}
-
-{{
-    config(
-        enabled=(var("powerschool_external_source_type") == "odbc"),
-        pre_hook=refresh_external_metadata_cache(source_ref),
-    )
-}}
+{{ config(enabled=(var("powerschool_external_source_type") == "odbc")) }}
 
 select
     * except (
@@ -30,4 +23,4 @@ select
     calculate_ada_yn.int_value as calculate_ada_yn,
     calculate_adm_yn.int_value as calculate_adm_yn,
     sortorder.int_value as sortorder,
-from {{ source_ref }}
+from {{ source("powerschool_odbc", "src_powerschool__attendance_code") }}

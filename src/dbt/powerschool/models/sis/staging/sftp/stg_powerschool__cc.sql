@@ -26,7 +26,7 @@ with
             studyear.int_value as studyear,
             teacherid.int_value as teacherid,
             termid.int_value as termid,
-        from {{ source("powerschool", "src_powerschool__cc") }}
+        from {{ source("powerschool_sftp", "src_powerschool__cc") }}
     ),
 
     calcs as (

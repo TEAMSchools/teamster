@@ -24,4 +24,4 @@ select
     minimumgradepercentage,
     requirementcount,
     verifyminimumgradefirst,
-from {{ source("powerschool", "src_powerschool__gpnode") }}
+from {{ source("powerschool_odbc", "src_powerschool__gpnode") }}

@@ -12,4 +12,4 @@ select
     alphascore,
     psguid,
     notes,
-from {{ source("powerschool", "src_powerschool__studenttestscore") }}
+from {{ source("powerschool_odbc", "src_powerschool__studenttestscore") }}

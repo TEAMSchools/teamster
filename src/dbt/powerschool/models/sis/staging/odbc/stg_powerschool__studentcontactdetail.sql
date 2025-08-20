@@ -29,4 +29,4 @@ select
     excludefromstatereportingflg.int_value as excludefromstatereportingflg,
     generalcommflag.int_value as generalcommflag,
     confidentialcommflag.int_value as confidentialcommflag,
-from {{ source("powerschool", "src_powerschool__studentcontactdetail") }}
+from {{ source("powerschool_odbc", "src_powerschool__studentcontactdetail") }}

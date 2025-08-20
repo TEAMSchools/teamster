@@ -21,4 +21,4 @@ select
     statecontactnumber.int_value as statecontactnumber,
     isactive.int_value as isactive,
     excludefromstatereporting.int_value as excludefromstatereporting,
-from {{ source("powerschool", "src_powerschool__person") }}
+from {{ source("powerschool_odbc", "src_powerschool__person") }}

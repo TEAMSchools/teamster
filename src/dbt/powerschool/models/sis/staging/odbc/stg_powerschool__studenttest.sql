@@ -10,4 +10,4 @@ select
     testid.int_value as testid,
     test_date,
     psguid,
-from {{ source("powerschool", "src_powerschool__studenttest") }}
+from {{ source("powerschool_odbc", "src_powerschool__studenttest") }}

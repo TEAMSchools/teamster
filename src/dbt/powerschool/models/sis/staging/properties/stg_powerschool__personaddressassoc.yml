@@ -5,8 +5,9 @@ models:
       contract:
         enforced: true
       pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
-        "src_powerschool__personaddressassoc") | replace("`", "") }}')
+        '{{
+        refresh_external_metadata_cache(var("powerschool_external_source_type"),
+        "src_powerschool__personaddressassoc") }}'
     columns:
       - name: startdate
         data_type: date

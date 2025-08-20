@@ -9,4 +9,4 @@ select
     storedgradesdcid.int_value as storedgradesdcid,
     earnedcredits.double_value as earnedcredits,
     percentgrade.double_value as percentgrade,
-from {{ source("powerschool", "src_powerschool__gpprogresssubjectearned") }}
+from {{ source("powerschool_sftp", "src_powerschool__gpprogresssubjectearned") }}
