@@ -1,7 +1,7 @@
 version: 2
 
 sources:
-  - name: powerschool
+  - name: powerschool_odbc
     schema: |
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ var('powerschool_schema', project_name + '_powerschool') }}
