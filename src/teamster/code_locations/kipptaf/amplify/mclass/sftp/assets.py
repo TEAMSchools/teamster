@@ -13,8 +13,8 @@ partitions_def = StaticPartitionsDefinition(
 
 benchmark_student_summary = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "amplify", "mclass", "sftp", "benchmark_student_summary"],
-    remote_dir_regex=r"bm",
-    remote_file_regex=r"dibels8_BM_(?P<school_year>[\d-]+)[-\w]+\.csv",
+    remote_dir_regex=r"/BM",
+    remote_file_regex=r"dibels8_BM_(?P<school_year>[\d-]+)_[-\w]+\.csv",
     ssh_resource_key="ssh_amplify",
     avro_schema=BENCHMARK_STUDENT_SUMMARY_SCHEMA,
     partitions_def=partitions_def,
@@ -23,8 +23,8 @@ benchmark_student_summary = build_sftp_file_asset(
 
 pm_student_summary = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "amplify", "mclass", "sftp", "pm_student_summary"],
-    remote_dir_regex=r"pm",
-    remote_file_regex=r"dibels8_PM_(?P<school_year>[\d-]+)[-\w]+\.csv",
+    remote_dir_regex=r"/PM",
+    remote_file_regex=r"dibels8_PM_(?P<school_year>[\d-]+)_[-\w]+\.csv",
     ssh_resource_key="ssh_amplify",
     avro_schema=PM_STUDENT_SUMMARY_SCHEMA,
     partitions_def=partitions_def,

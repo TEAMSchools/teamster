@@ -133,6 +133,9 @@ select
     e.contact_2_email_current,
     e.is_fldoe_fte_2,
 
+    lc.region as region_official_name,
+    lc.deanslist_school_id,
+
     m.ms_attended,
 
     es.es_attended,
@@ -244,6 +247,9 @@ select
     end as fafsa_status_mismatch_category,
 
 from {{ ref("base_powerschool__student_enrollments") }} as e
+left join
+    {{ ref("stg_people__location_crosswalk") }} as lc
+    on e.schoolid = lc.powerschool_school_id
 left join
     ms_grad_sub as m
     on e.student_number = m.student_number

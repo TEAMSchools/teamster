@@ -2,7 +2,7 @@ version: 2
 models:
   - name: stg_amplify__mclass__sftp__pm_student_summary
     config:
-      enabled: false # TODO: enable for prod
+      enabled: false # TODO: enable for prod when ready
       pre_hook:
         CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("amplify",
         "src_amplify__mclass__sftp__pm_student_summary") | replace("`", "") }}')
@@ -103,11 +103,5 @@ models:
         data_type: string
       - name: additional_student_id
         data_type: string
-      - name: _dagster_partition_fiscal_year
-        data_type: int64
-      - name: _dagster_partition_date
-        data_type: date
-      - name: _dagster_partition_hour
-        data_type: int64
-      - name: _dagster_partition_minute
-        data_type: int64
+      - name: _dagster_partition_key
+        data_type: string
