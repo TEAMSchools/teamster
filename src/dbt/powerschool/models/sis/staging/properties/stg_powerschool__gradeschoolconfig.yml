@@ -31,6 +31,10 @@ models:
         data_type: timestamp
       - name: gradeschoolconfigid
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: schoolsdcid
         data_type: int64
       - name: yearid
@@ -79,3 +83,7 @@ models:
         data_type: int64
       - name: isusingpercentforstndautocalc
         data_type: int64
+      - name: startingpagekey
+        data_type: string
+      - name: startingpageurl
+        data_type: string

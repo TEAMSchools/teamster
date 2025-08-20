@@ -15,6 +15,10 @@ models:
         data_type: timestamp
       - name: gradecalcschoolassocid
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: gradecalculationtypeid
         data_type: int64
       - name: schoolsdcid

@@ -27,6 +27,10 @@ models:
         data_type: int64
       - name: id
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: prefixcodesetid
         data_type: int64
       - name: suffixcodesetid

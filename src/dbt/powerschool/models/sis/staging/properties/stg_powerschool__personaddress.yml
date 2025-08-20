@@ -25,6 +25,10 @@ models:
         data_type: timestamp
       - name: personaddressid
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: statescodesetid
         data_type: int64
       - name: countrycodesetid
@@ -33,3 +37,15 @@ models:
         data_type: numeric
       - name: geocodelongitude
         data_type: numeric
+      - name: addressline3
+        data_type: string
+      - name: addressline4
+        data_type: string
+      - name: addressline5
+        data_type: string
+      - name: countycodesetid
+        data_type: int64
+      - name: isverified
+        data_type: int64
+      - name: verification
+        data_type: string

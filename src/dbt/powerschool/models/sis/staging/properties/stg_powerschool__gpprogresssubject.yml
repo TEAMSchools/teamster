@@ -55,6 +55,10 @@ models:
         data_type: int64
       - name: id
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: isadvancedplan
         data_type: int64
       - name: issinglesitting

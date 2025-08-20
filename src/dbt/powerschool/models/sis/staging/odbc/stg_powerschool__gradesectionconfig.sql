@@ -18,7 +18,9 @@ select
         issectstndweighteditable,
         minimumassignmentvalue,
         isgradescaleteachereditable,
-        isusingpercentforstndautocalc
+        isusingpercentforstndautocalc,
+        ismulticategoryallowed,
+        ismulticategoryeditable
     ),
 
     /* column transformations */
@@ -39,4 +41,6 @@ select
     minimumassignmentvalue.int_value as minimumassignmentvalue,
     isgradescaleteachereditable.int_value as isgradescaleteachereditable,
     isusingpercentforstndautocalc.int_value as isusingpercentforstndautocalc,
+    ismulticategoryallowed.int_value as ismulticategoryallowed,
+    ismulticategoryeditable.int_value as ismulticategoryeditable,
 from {{ source("powerschool_odbc", "src_powerschool__gradesectionconfig") }}

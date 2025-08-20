@@ -5,6 +5,12 @@ models:
       contract:
         enforced: true
     columns:
+      - name: assignmentcategoryassocid
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: whocreated
         data_type: string
       - name: whencreated
@@ -28,8 +34,6 @@ models:
       - name: _dagster_partition_hour
         data_type: int64
       - name: _dagster_partition_minute
-        data_type: int64
-      - name: assignmentcategoryassocid
         data_type: int64
       - name: assignmentsectionid
         data_type: int64

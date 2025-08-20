@@ -681,6 +681,10 @@ models:
         data_type: string
       - name: studentsdcid
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: lep_completion_date_refused
         data_type: int64
       - name: military_connected_indicator

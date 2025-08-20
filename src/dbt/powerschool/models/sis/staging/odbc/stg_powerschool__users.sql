@@ -22,7 +22,8 @@ select
         fedethnicity,
         fedracedecline,
         ptaccess,
-        whomodifiedid
+        whomodifiedid,
+        prefixcodesetid
     ),
 
     /* column transformations */
@@ -47,4 +48,5 @@ select
     fedracedecline.int_value as fedracedecline,
     ptaccess.int_value as ptaccess,
     whomodifiedid.int_value as whomodifiedid,
+    prefixcodesetid.int_value as prefixcodesetid,
 from {{ source("powerschool_odbc", "src_powerschool__users") }}

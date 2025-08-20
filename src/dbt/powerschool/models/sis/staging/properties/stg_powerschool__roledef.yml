@@ -21,6 +21,10 @@ models:
         data_type: timestamp
       - name: id
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: rolemoduleid
         data_type: int64
       - name: islocked
@@ -31,3 +35,5 @@ models:
         data_type: int64
       - name: sortorder
         data_type: int64
+      - name: productname
+        data_type: string
