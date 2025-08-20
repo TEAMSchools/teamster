@@ -94,6 +94,7 @@ with
         }}
     )
 
+-- trunk-ignore(sqlfluff/ST06)
 select s.*, m.max_scale_score, round(d.superscore) as superscore,
 
 from scores as s
