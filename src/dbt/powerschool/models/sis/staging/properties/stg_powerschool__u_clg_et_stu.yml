@@ -19,6 +19,10 @@ models:
         data_type: timestamp
       - name: id
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: studentsdcid
         data_type: int64
       - name: when_modified_or_created

@@ -27,7 +27,7 @@ select
     if(
         current_date('{{ var("local_timezone") }}') between enter_date and exit_date,
         true,
-        false,
+        false
     ) as is_current,
 
     row_number() over (

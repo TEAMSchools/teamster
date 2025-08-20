@@ -27,6 +27,10 @@ models:
         data_type: timestamp
       - name: gradesectionconfigid
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: sectionsdcid
         data_type: int64
       - name: gradeformulasetid
@@ -58,4 +62,8 @@ models:
       - name: isgradescaleteachereditable
         data_type: int64
       - name: isusingpercentforstndautocalc
+        data_type: int64
+      - name: ismulticategoryallowed
+        data_type: int64
+      - name: ismulticategoryeditable
         data_type: int64

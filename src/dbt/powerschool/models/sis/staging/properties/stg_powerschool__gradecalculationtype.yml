@@ -23,6 +23,10 @@ models:
         data_type: timestamp
       - name: gradecalculationtypeid
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: gradeformulasetid
         data_type: int64
       - name: yearid

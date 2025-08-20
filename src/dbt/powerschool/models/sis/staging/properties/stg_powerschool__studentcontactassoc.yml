@@ -15,6 +15,10 @@ models:
         data_type: timestamp
       - name: studentcontactassocid
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: studentdcid
         data_type: int64
       - name: personid

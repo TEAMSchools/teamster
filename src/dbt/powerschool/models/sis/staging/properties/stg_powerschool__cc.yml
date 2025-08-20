@@ -5,9 +5,13 @@ models:
       contract:
         enforced: true
     columns:
-      - name: dcid
-        data_type: int64
       - name: id
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: dcid
         data_type: int64
       - name: studentid
         data_type: int64
