@@ -1,5 +1,3 @@
-{{ config(enabled=(var("powerschool_external_source_type") == "odbc")) }}
-
 select
     dcid.int_value as dcid,
     id.int_value as id,

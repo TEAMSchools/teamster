@@ -1,5 +1,3 @@
-{{ config(enabled=(var("powerschool_external_source_type") == "odbc")) }}
-
 {% set lep_status_true = ["1", "YES", "Y"] %}
 
 select
