@@ -4,6 +4,11 @@ assets = [
     *sftp.assets,
 ]
 
+sensors = [
+    *sftp.sensors,
+]
+
 __all__ = [
     "assets",
+    "sensors",
 ]
