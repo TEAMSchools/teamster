@@ -1,13 +1,4 @@
 {{ config(enabled=(var("powerschool_external_source_type") == "sftp")) }}
 
-select
-    * except (dcid, id, schoolid, year_id, period_number, sort_order),
-
-    /* column transformations */
-    dcid.int_value as dcid,
-    id.int_value as id,
-    schoolid.int_value as schoolid,
-    year_id.int_value as year_id,
-    period_number.int_value as period_number,
-    sort_order.int_value as sort_order,
+select *,
 from {{ source("powerschool_sftp", "src_powerschool__period") }}

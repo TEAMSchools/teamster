@@ -1,10 +1,4 @@
 {{ config(enabled=(var("powerschool_external_source_type") == "sftp")) }}
 
-select
-    * except (dcid, id, test_type),
-
-    /* column transformations */
-    dcid.int_value as dcid,
-    id.int_value as id,
-    test_type.int_value as test_type,
+select *,
 from {{ source("powerschool_sftp", "src_powerschool__test") }}
