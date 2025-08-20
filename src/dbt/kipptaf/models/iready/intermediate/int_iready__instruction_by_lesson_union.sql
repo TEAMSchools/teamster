@@ -25,9 +25,11 @@ select
     `subject`,
     lesson as lesson_id,
     lesson as lesson_name,
+
     null as lesson_objective,
     null as lesson_level,
     null as lesson_grade,
+
     lesson_result as passed_or_not_passed,
     lesson_time_on_task_min,
     completion_date,
