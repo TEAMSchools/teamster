@@ -3,8 +3,9 @@ models:
   - name: stg_kippadb__user
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - id
+          arguments:
+            combination_of_columns:
+              - id
           config:
             severity: warn
             store_failures: true

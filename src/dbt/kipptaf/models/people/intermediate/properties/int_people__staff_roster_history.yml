@@ -9,10 +9,11 @@ models:
               - kipptaf/surveys/int_surveys__staff_information_survey_pivot
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - employee_number
-            - effective_date_start
-            - position_id
+          arguments:
+            combination_of_columns:
+              - employee_number
+              - effective_date_start
+              - position_id
           config:
             severity: warn
             store_failures: true
