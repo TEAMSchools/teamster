@@ -3,11 +3,12 @@ models:
   - name: int_students__graduation_path_codes
     data_tests:
       - distinct_count:
-          group_by: student_number
-          distinct_field: grad_eligibility
-          config:
-            severity: warn
-            store_failures: true
+          arguments:
+            group_by: student_number
+            distinct_field: grad_eligibility
+            config:
+              severity: warn
+              store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -88,15 +89,16 @@ models:
         data_type: string
         data_tests:
           - accepted_values:
-              values:
-                - Grad Eligible
-                - ELA Only
-                - Not Grad Eligible
-                - Math Only
-                - No FAFSA
-                - FAFSA Only
-                - ELA Only / No FAFSA
-                - Math Only / No FAFSA
+              arguments:
+                values:
+                  - Grad Eligible
+                  - ELA Only
+                  - Not Grad Eligible
+                  - Math Only
+                  - No FAFSA
+                  - FAFSA Only
+                  - ELA Only / No FAFSA
+                  - Math Only / No FAFSA
               config:
                 severity: warn
                 store_failures: true
