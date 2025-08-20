@@ -37,7 +37,7 @@ with
             srh.effective_date_start,
             max(srh.effective_date_start) over (
                 partition by d.academic_year, srh.employee_number
-            ) as max_effective_date_start
+            ) as max_effective_date_start,
         from {{ ref("int_people__staff_roster_history") }} as srh
         inner join
             dates as d
@@ -64,7 +64,7 @@ with
     ),
 
     denom_deduped as (
-        select academic_year, attrition_date, effective_date, employee_number
+        select academic_year, attrition_date, effective_date, employee_number,
         from denom
         where effective_date_start = max_effective_date_start
     ),
