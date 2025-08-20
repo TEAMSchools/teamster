@@ -24,9 +24,3 @@ vars:
 
 models:
   +schema: powerschool
-  sis:
-    staging:
-      odbc:
-        +enabled: false
-      sftp:
-        +enabled: false

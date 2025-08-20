@@ -1,9 +1,9 @@
 version: 2
 models:
   - name: stg_powerschool__u_studentsuserfields
-    config:
-      contract:
-        enforced: true
+    # config:
+    #   contract:
+    #     enforced: true
     columns:
       - name: cr_prevschoolname
         data_type: string

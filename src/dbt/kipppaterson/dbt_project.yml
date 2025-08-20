@@ -29,5 +29,7 @@ models:
     +materialized: table
     sis:
       staging:
+        odbc:
+          +enabled: false
         sftp:
           +enabled: true
