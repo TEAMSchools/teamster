@@ -1,6 +1,16 @@
 version: 2
 models:
   - name: int_powerschool__final_grades_pivot
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - yearid
+              - course_number
+              - storecode
+          config:
+            store_failures: true
     columns:
       - name: studentid
         data_type: int64
