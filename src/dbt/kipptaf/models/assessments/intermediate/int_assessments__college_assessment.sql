@@ -84,6 +84,7 @@ with
         where score_type not in ('act_composite', 'sat_total_score')
     ),
 
+    -- trunk-ignore(sqlfluff/ST06)
     dedup_superscore as (
         {{
             dbt_utils.deduplicate(
@@ -94,7 +95,6 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/ST06)
 select s.*, m.max_scale_score, round(d.superscore) as superscore,
 
 from scores as s
