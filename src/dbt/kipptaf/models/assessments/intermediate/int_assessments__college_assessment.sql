@@ -103,4 +103,4 @@ left join
     on s.student_number = m.student_number
     and s.score_type = m.score_type
 left join
-    dedup_superscore as d on d.student_number = s.student_number and d.scope = s.scope
+    dedup_superscore as d on s.student_number = d.student_number and s.scope = d.scope
