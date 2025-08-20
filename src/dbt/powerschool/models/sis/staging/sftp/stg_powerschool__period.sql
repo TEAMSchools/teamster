@@ -10,4 +10,4 @@ select
     year_id.int_value as year_id,
     period_number.int_value as period_number,
     sort_order.int_value as sort_order,
-from {{ source("powerschool", "src_powerschool__period") }}
+from {{ source("powerschool_sftp", "src_powerschool__period") }}

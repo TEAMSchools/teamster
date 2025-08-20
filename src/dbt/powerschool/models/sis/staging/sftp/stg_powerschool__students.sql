@@ -123,7 +123,7 @@ with
             customrank_gpa.double_value as customrank_gpa,
 
             cast(student_number.double_value as int) as student_number,
-        from {{ source("powerschool", "src_powerschool__students") }}
+        from {{ source("powerschool_sftp", "src_powerschool__students") }}
     )
 
 select

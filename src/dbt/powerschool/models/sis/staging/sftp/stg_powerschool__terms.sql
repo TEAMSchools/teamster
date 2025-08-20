@@ -39,7 +39,7 @@ with
             sterms.int_value as sterms,
             suppresspublicview.int_value as suppresspublicview,
             whomodifiedid.int_value as whomodifiedid,
-        from {{ source("powerschool", "src_powerschool__terms") }}
+        from {{ source("powerschool_sftp", "src_powerschool__terms") }}
     )
 
 select *, yearid + 1990 as academic_year, yearid + 1991 as fiscal_year,

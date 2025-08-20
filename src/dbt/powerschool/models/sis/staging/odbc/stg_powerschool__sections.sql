@@ -69,4 +69,4 @@ select
     excludefromstoredgrades.int_value as excludefromstoredgrades,
     gradebooktype.int_value as gradebooktype,
     whomodifiedid.int_value as whomodifiedid,
-from {{ source("powerschool", "src_powerschool__sections") }}
+from {{ source("powerschool_odbc", "src_powerschool__sections") }}

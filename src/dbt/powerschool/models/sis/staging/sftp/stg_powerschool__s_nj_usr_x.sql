@@ -21,4 +21,4 @@ select
     excl_frm_smart_stf_submissn.int_value as excl_frm_smart_stf_submissn,
     smart_stafcompenanualsup.int_value as smart_stafcompenanualsup,
     smart_stafcompnsatnbassal.int_value as smart_stafcompnsatnbassal,
-from {{ source("powerschool", "src_powerschool__s_nj_usr_x") }}
+from {{ source("powerschool_sftp", "src_powerschool__s_nj_usr_x") }}

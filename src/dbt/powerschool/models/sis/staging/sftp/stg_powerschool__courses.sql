@@ -119,4 +119,4 @@ select
     whomodifiedid.int_value as whomodifiedid,
     isfitnesscourse.int_value as isfitnesscourse,
     ispewaiver.int_value as ispewaiver,
-from {{ source("powerschool", "src_powerschool__courses") }}
+from {{ source("powerschool_sftp", "src_powerschool__courses") }}

@@ -57,4 +57,4 @@ select
     sched_maxpers.int_value as sched_maxpers,
     sched_maxpreps.int_value as sched_maxpreps,
     whomodifiedid.int_value as whomodifiedid,
-from {{ source("powerschool", "src_powerschool__schoolstaff") }}
+from {{ source("powerschool_sftp", "src_powerschool__schoolstaff") }}

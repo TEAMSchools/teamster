@@ -43,7 +43,7 @@ with
             languageacquisition.int_value as languageacquisition,
             lep_completion_date_refused.int_value as lep_completion_date_refused,
             sid_excludeenrollment.int_value as sid_excludeenrollment,
-        from {{ source("powerschool", "src_powerschool__s_nj_ren_x") }}
+        from {{ source("powerschool_sftp", "src_powerschool__s_nj_ren_x") }}
     )
 
 select * except (pid_504_tf), if(pid_504_tf = 1, true, false) as pid_504_tf,

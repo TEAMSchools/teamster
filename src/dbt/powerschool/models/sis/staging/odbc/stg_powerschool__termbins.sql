@@ -38,7 +38,7 @@ with
             suppresspercentscr.int_value as suppresspercentscr,
             aregradeslocked.int_value as aregradeslocked,
             whomodifiedid.int_value as whomodifiedid,
-        from {{ source("powerschool", "src_powerschool__termbins") }}
+        from {{ source("powerschool_odbc", "src_powerschool__termbins") }}
     )
 
 select *, left(storecode, 1) as storecode_type, right(storecode, 1) as storecode_order,

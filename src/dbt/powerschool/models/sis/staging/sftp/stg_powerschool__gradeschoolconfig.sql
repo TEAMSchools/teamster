@@ -55,4 +55,4 @@ select
     isstandardslimited.int_value as isstandardslimited,
     isstandardslimitededitable.int_value as isstandardslimitededitable,
     isusingpercentforstndautocalc.int_value as isusingpercentforstndautocalc,
-from {{ source("powerschool", "src_powerschool__gradeschoolconfig") }}
+from {{ source("powerschool_sftp", "src_powerschool__gradeschoolconfig") }}

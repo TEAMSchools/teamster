@@ -12,4 +12,4 @@ select
 
     /* records */
     usersdcid.int_value as usersdcid,
-from {{ source("powerschool", "src_powerschool__userscorefields") }}
+from {{ source("powerschool_odbc", "src_powerschool__userscorefields") }}

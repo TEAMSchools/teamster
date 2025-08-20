@@ -4,9 +4,9 @@ models:
     config:
       contract:
         enforced: true
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
-        "src_powerschool__spenrollments") | replace("`", "") }}')
+    #      pre_hook:
+    #        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE\('\{\{ source\("powerschool",
+    #        "\w+"\) \| replace\("`", ""\) \}\}'\)
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

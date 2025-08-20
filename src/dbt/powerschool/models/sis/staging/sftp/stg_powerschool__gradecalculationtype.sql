@@ -21,4 +21,4 @@ select
     isalternatepointsused.int_value as isalternatepointsused,
     iscalcformulaeditable.int_value as iscalcformulaeditable,
     isdropscoreeditable.int_value as isdropscoreeditable,
-from {{ source("powerschool", "src_powerschool__gradecalculationtype") }}
+from {{ source("powerschool_sftp", "src_powerschool__gradecalculationtype") }}

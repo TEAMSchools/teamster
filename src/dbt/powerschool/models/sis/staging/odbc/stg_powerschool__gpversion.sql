@@ -16,4 +16,4 @@ select
     minimumgpa,
     sourceid,
     useallcoursesforgpacalc,
-from {{ source("powerschool", "src_powerschool__gpversion") }}
+from {{ source("powerschool_odbc", "src_powerschool__gpversion") }}

@@ -39,4 +39,4 @@ select
     minimumassignmentvalue.int_value as minimumassignmentvalue,
     isgradescaleteachereditable.int_value as isgradescaleteachereditable,
     isusingpercentforstndautocalc.int_value as isusingpercentforstndautocalc,
-from {{ source("powerschool", "src_powerschool__gradesectionconfig") }}
+from {{ source("powerschool_odbc", "src_powerschool__gradesectionconfig") }}

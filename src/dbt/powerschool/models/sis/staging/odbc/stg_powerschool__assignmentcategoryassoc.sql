@@ -1,19 +1,12 @@
-{% set source_ref = source(
-    "powerschool_odbc", "src_powerschool__assignmentcategoryassoc"
-) %}
-
-{{
-    config(
-        enabled=(var("powerschool_external_source_type") == "odbc"),
-        pre_hook=refresh_external_metadata_cache(source_ref),
-    )
-}}
+{{ config(enabled=(var("powerschool_external_source_type") == "odbc")) }}
 
 with
     deduplicate as (
         {{
             dbt_utils.deduplicate(
-                relation=source_ref,
+                relation=source(
+                    "powerschool_odbc", "src_powerschool__assignmentcategoryassoc"
+                ),
                 partition_by="assignmentcategoryassocid.int_value",
                 order_by="_file_name desc",
             )

@@ -13,4 +13,4 @@ select
     gradeformulasetid.int_value as gradeformulasetid,
     gradeschoolconfigid.int_value as gradeschoolconfigid,
     isdefaultformulaset.int_value as isdefaultformulaset,
-from {{ source("powerschool", "src_powerschool__gradeschoolformulaassoc") }}
+from {{ source("powerschool_sftp", "src_powerschool__gradeschoolformulaassoc") }}

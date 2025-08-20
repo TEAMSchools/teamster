@@ -4,9 +4,9 @@ models:
     config:
       contract:
         enforced: true
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("powerschool",
-        "src_powerschool__s_nj_ren_x") | replace("`", "") }}')
+    #      pre_hook:
+    #        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE\('\{\{ source\("powerschool",
+    #        "\w+"\) \| replace\("`", ""\) \}\}'\)
     columns:
       - name: lepbegindate
         data_type: date

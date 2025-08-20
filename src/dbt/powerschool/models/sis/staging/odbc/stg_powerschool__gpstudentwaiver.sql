@@ -13,4 +13,4 @@ select
     gpwaiverconfigidforreason.int_value as gpwaiverconfigidforreason,
     gpwaiverconfigidforsource.int_value as gpwaiverconfigidforsource,
     gpwaiverconfigidfortype.int_value as gpwaiverconfigidfortype,
-from {{ source("powerschool", "src_powerschool__gpstudentwaiver") }}
+from {{ source("powerschool_odbc", "src_powerschool__gpstudentwaiver") }}

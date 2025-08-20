@@ -73,4 +73,4 @@ select
     excludefromafg.int_value as excludefromafg,
     grade_replacement_policy.int_value as grade_replacement_policy,
     parentgradescaledcid.int_value as parentgradescaledcid,
-from {{ source("powerschool", "src_powerschool__gradescaleitem") }}
+from {{ source("powerschool_sftp", "src_powerschool__gradescaleitem") }}

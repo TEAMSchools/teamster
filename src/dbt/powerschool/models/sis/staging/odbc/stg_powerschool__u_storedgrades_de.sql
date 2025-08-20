@@ -13,4 +13,4 @@ select
     id.int_value as id,
     storedgradesdcid.int_value as storedgradesdcid,
     de_pass_yn.int_value as de_pass_yn,
-from {{ source("powerschool", "src_powerschool__u_storedgrades_de") }}
+from {{ source("powerschool_odbc", "src_powerschool__u_storedgrades_de") }}

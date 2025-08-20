@@ -191,4 +191,4 @@ select
     collegecreditsearned.int_value as collegecreditsearned,
     cteworkbasedlearning.int_value as cteworkbasedlearning,
     sid_excludeenrollment.int_value as sid_excludeenrollment,
-from {{ source("powerschool", "src_powerschool__s_nj_stu_x") }}
+from {{ source("powerschool_odbc", "src_powerschool__s_nj_stu_x") }}

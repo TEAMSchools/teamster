@@ -21,4 +21,4 @@ select
     isadvancedplan.int_value as isadvancedplan,
     issinglesitting.int_value as issinglesitting,
     issummation.int_value as issummation,
-from {{ source("powerschool", "src_powerschool__gpprogresssubject") }}
+from {{ source("powerschool_sftp", "src_powerschool__gpprogresssubject") }}

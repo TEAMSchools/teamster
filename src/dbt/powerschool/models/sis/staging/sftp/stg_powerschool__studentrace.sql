@@ -7,4 +7,4 @@ select
     dcid.int_value as dcid,
     id.int_value as id,
     studentid.int_value as studentid,
-from {{ source("powerschool", "src_powerschool__studentrace") }}
+from {{ source("powerschool_sftp", "src_powerschool__studentrace") }}

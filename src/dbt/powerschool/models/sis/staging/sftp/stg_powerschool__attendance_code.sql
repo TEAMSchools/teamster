@@ -23,4 +23,4 @@ select
     calculate_ada_yn.int_value as calculate_ada_yn,
     calculate_adm_yn.int_value as calculate_adm_yn,
     sortorder.int_value as sortorder,
-from {{ source("powerschool", "src_powerschool__attendance_code") }}
+from {{ source("powerschool_sftp", "src_powerschool__attendance_code") }}

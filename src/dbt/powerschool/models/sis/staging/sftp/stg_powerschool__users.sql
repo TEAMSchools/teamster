@@ -47,4 +47,4 @@ select
     fedracedecline.int_value as fedracedecline,
     ptaccess.int_value as ptaccess,
     whomodifiedid.int_value as whomodifiedid,
-from {{ source("powerschool", "src_powerschool__users") }}
+from {{ source("powerschool_sftp", "src_powerschool__users") }}

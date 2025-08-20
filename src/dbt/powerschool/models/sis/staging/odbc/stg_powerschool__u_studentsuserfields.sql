@@ -13,7 +13,7 @@ with
             {% if project_name == "kippmiami" %}
                 if(is_gifted.int_value = 1, 'Y', 'N') as gifted_and_talented,
             {% endif %}
-        from {{ source("powerschool", "src_powerschool__u_studentsuserfields") }}
+        from {{ source("powerschool_odbc", "src_powerschool__u_studentsuserfields") }}
     )
 
 select *, if(c_504_status = 1, true, false) as is_504,

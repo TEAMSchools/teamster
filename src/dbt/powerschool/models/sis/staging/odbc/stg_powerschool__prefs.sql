@@ -10,4 +10,4 @@ select
     yearid.int_value as yearid,
     userid.int_value as userid,
     whomodifiedid.int_value as whomodifiedid,
-from {{ source("powerschool", "src_powerschool__prefs") }}
+from {{ source("powerschool_odbc", "src_powerschool__prefs") }}

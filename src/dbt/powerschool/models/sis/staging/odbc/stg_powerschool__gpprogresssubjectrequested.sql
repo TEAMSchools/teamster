@@ -8,4 +8,4 @@ select
     gpprogresssubjectid.int_value as gpprogresssubjectid,
     schedulerequestsdcid.int_value as schedulerequestsdcid,
     requestedcredits.double_value as requestedcredits,
-from {{ source("powerschool", "src_powerschool__gpprogresssubjectrequested") }}
+from {{ source("powerschool_odbc", "src_powerschool__gpprogresssubjectrequested") }}

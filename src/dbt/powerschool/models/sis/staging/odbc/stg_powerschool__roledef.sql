@@ -10,4 +10,4 @@ select
     isvisible.int_value as isvisible,
     isenabled.int_value as isenabled,
     sortorder.int_value as sortorder,
-from {{ source("powerschool", "src_powerschool__roledef") }}
+from {{ source("powerschool_odbc", "src_powerschool__roledef") }}

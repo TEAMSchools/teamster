@@ -43,7 +43,7 @@ with
             issummerschool.int_value as issummerschool,
             schoolcategorycodesetid.int_value as schoolcategorycodesetid,
             whomodifiedid.int_value as whomodifiedid,
-        from {{ source("powerschool", "src_powerschool__schools") }}
+        from {{ source("powerschool_odbc", "src_powerschool__schools") }}
     )
 
 select

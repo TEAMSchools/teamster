@@ -67,4 +67,4 @@ select
     native_language.int_value as native_language,
     foster_care.int_value as foster_care,
     parentrefusalofimmaccuracy.int_value as parentrefusalofimmaccuracy,
-from {{ source("powerschool", "src_powerschool__s_stu_x") }}
+from {{ source("powerschool_sftp", "src_powerschool__s_stu_x") }}

@@ -21,4 +21,4 @@ select
     current_programid.int_value as current_programid,
     aup_yn_1718.int_value as aup_yn_1718,
     incorrect_region_grad_student.int_value as incorrect_region_grad_student,
-from {{ source("powerschool", "src_powerschool__u_def_ext_students") }}
+from {{ source("powerschool_odbc", "src_powerschool__u_def_ext_students") }}

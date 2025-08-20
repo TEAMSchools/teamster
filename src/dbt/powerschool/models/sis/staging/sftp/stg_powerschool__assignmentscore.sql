@@ -32,7 +32,7 @@ with
                 scorepoints.int_value,
                 scorepoints.double_value
             ) as scorepoints,
-        from {{ source("powerschool", "src_powerschool__assignmentscore") }}
+        from {{ source("powerschool_sftp", "src_powerschool__assignmentscore") }}
     ),
 
     deduplicate as (

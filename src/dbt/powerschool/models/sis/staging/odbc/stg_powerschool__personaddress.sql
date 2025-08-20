@@ -15,4 +15,4 @@ select
     countrycodesetid.int_value as countrycodesetid,
     geocodelatitude.bytes_decimal_value as geocodelatitude,
     geocodelongitude.bytes_decimal_value as geocodelongitude,
-from {{ source("powerschool", "src_powerschool__personaddress") }}
+from {{ source("powerschool_odbc", "src_powerschool__personaddress") }}

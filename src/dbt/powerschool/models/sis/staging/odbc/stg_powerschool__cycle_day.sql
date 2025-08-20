@@ -10,4 +10,4 @@ select
     year_id.int_value as year_id,
     day_number.int_value as day_number,
     sortorder.int_value as sortorder,
-from {{ source("powerschool", "src_powerschool__cycle_day") }}
+from {{ source("powerschool_odbc", "src_powerschool__cycle_day") }}

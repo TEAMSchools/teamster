@@ -8,4 +8,4 @@ select
     gpprogresssubjectid.int_value as gpprogresssubjectid,
     ccdcid.int_value as ccdcid,
     enrolledcredits.double_value as enrolledcredits,
-from {{ source("powerschool", "src_powerschool__gpprogresssubjectenrolled") }}
+from {{ source("powerschool_sftp", "src_powerschool__gpprogresssubjectenrolled") }}
