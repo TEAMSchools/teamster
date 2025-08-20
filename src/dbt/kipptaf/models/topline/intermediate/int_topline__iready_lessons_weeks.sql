@@ -25,6 +25,7 @@ with
             co.exitdate,
             co.enroll_status,
 
+            count(distinct ir.lesson_id) as n_lessons_completed_week,
             sum(coalesce(ir.passed_or_not_passed_numeric, 0)) as n_lessons_passed_week,
         from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
         left join
@@ -85,8 +86,10 @@ select
     exitdate,
     enroll_status,
     n_lessons_passed_week,
+    n_lessons_completed_week,
 
     sum(n_lessons_passed_week) over (
         partition by iready_subject, academic_year, student_number
+        order by week_start_monday asc
     ) as n_lessons_passed_y1,
 from weeks
