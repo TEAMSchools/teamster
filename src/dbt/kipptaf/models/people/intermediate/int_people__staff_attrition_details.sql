@@ -29,7 +29,15 @@ with
     ),
 
     denom as (
-        select d.academic_year, d.attrition_date, d.effective_date, srh.employee_number,
+        select
+            d.academic_year,
+            d.attrition_date,
+            d.effective_date,
+            srh.employee_number,
+            srh.effective_date_start,
+            max(srh.effective_date_start) over (
+                partition by d.academic_year, srh.employee_number
+            ) as max_effective_date_start
         from {{ ref("int_people__staff_roster_history") }} as srh
         inner join
             dates as d
@@ -55,6 +63,12 @@ with
             != 'Internship Ended'
     ),
 
+    denom_deduped as (
+        select academic_year, attrition_date, effective_date, employee_number
+        from denom
+        where effective_date_start = max_effective_date_start
+    ),
+
     active_next_year as (
         select
             dc.academic_year,
@@ -77,7 +91,7 @@ with
             max(srh.worker_termination_date) over (
                 partition by srh.employee_number
             ) as termination_date,
-        from denom as dc
+        from denom_deduped as dc
         inner join
             {{ ref("int_people__staff_roster_history") }} as srh
             on dc.employee_number = srh.employee_number
@@ -123,7 +137,7 @@ with
                 ),
                 srh.effective_date_start
             ) as termination_date,
-        from denom as dc
+        from denom_deduped as dc
         inner join
             {{ ref("int_people__staff_roster_history") }} as srh
             on dc.employee_number = srh.employee_number
@@ -336,7 +350,7 @@ with
         from ly_combined
     )
 
-select distinct  /* w/o distinct we get ~10k additional duplicate records*/
+select
     l.academic_year,
     l.employee_number,
     l.is_attrition,
