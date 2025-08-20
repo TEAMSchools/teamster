@@ -93,9 +93,18 @@ with
                 order_by="student_number",
             )
         }}
+    ),
+
+    alt_superscore as (
+        select student_number, scope, avg(max_scale_score) as superscore,
+
+        from max_score
+        where score_type in ('act_composite', 'sat_total_score')
+        group by student_number, scope
     )
 
-select s.*, m.max_scale_score, round(d.superscore) as superscore,
+select
+    s.*, m.max_scale_score, round(coalesce(d.superscore, a.superscore)) as superscore,
 
 from scores as s
 left join
@@ -104,3 +113,5 @@ left join
     and s.score_type = m.score_type
 left join
     dedup_superscore as d on s.student_number = d.student_number and s.scope = d.scope
+left join
+    alt_superscore as a on s.student_number = a.student_number and s.scope = a.scope
