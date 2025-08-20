@@ -61,7 +61,7 @@ select
     null as numerator,
     null as denominator,
 
-    n_lessons_passed as metric_value,
+    n_lessons_passed_week as metric_value,
 
     'i-Ready Lessons Passed' as metric_name,
     'Week' as term_type,

@@ -1,0 +1,23 @@
+version: 2
+models:
+  - name: int_topline__microgoals_assigned_weekly
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - employee_number
+              - week_start_monday
+          config:
+            severity: warn
+            store_failures: true
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: school_id
+        data_type: int64
+      - name: week_start_monday
+        data_type: date
+      - name: week_end_sunday
+        data_type: date
+      - name: microgoals_assigned
+        data_type: int64

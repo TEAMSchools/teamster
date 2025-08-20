@@ -11,7 +11,6 @@ with
     ),
 
     translations as (
-
         select
             ur._dbt_source_relation,
             ur.id,

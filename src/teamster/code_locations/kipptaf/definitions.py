@@ -99,6 +99,7 @@ defs = Definitions(
         *adp.sensors,
         *couchdrop.sensors,
         *deanslist.sensors,
+        *amplify.sensors,
         build_sensor_for_freshness_checks(
             freshness_checks=asset_checks.freshness_checks
         ),

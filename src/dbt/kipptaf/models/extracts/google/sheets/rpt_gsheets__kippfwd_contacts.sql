@@ -7,7 +7,7 @@ select
     ktc.contact_id as `Salesforce ID`,
     ktc.ktc_cohort as `HS Cohort`,
 
-    format_date('%m/%d/%Y', s.dob) as `Birthdate`,
+    format_date('%m/%d/%Y', ktc.dob) as `Birthdate`,
 
     c.reason as `Subject`,
     c.topic as `Comments`,
@@ -39,8 +39,6 @@ select
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_kippadb__roster") }} as ktc
 inner join
-    {{ ref("stg_powerschool__students") }} as s on ktc.student_number = s.student_number
-inner join
-    {{ ref("stg_deanslist__comm_log") }} as c
+    {{ ref("int_deanslist__comm_log") }} as c
     on ktc.student_number = c.student_school_id
     and regexp_contains(c.reason, r'^KF:')
