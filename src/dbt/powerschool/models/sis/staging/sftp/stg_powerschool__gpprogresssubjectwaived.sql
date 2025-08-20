@@ -1,7 +1,2 @@
-select
-    /* records */
-    id.int_value as id,
-    gpprogresssubjectid.int_value as gpprogresssubjectid,
-    gpstudentwaiverid.int_value as gpstudentwaiverid,
-    waivedcredits.double_value as waivedcredits,
+select *,
 from {{ source("powerschool_sftp", "src_powerschool__gpprogresssubjectwaived") }}
