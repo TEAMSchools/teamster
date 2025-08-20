@@ -1,7 +1,11 @@
 with
     transformations as (
         select
-            * except (studentsdcid, c_504_status),
+            * except (
+                studentsdcid,
+                c_504_status
+                {% if project_name == "kippmiami" %}, is_gifted{% endif %}
+            ),
 
             /* column transformations */
             studentsdcid.int_value as studentsdcid,
