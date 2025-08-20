@@ -4,9 +4,11 @@ select
     e.salesforce_id,
     e.grade_level,
 
-    a.scope,
-    a.test_month,
-    a.score_type,
+    psat89_count,
+    psat10_count,
+    psatnmsqt_count,
+    sat_count,
+    act_count,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join
