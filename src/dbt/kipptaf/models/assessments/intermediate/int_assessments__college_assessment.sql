@@ -69,6 +69,7 @@ with
         group by student_number, scope, score_type
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     max_total_score as (
         select
             student_number,
@@ -84,7 +85,6 @@ with
         where score_type not in ('act_composite', 'sat_total_score')
     ),
 
-    -- trunk-ignore(sqlfluff/ST03)
     dedup_superscore as (
         {{
             dbt_utils.deduplicate(
