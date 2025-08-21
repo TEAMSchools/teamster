@@ -19,36 +19,32 @@ with
             effective_date_end,
             case
                 when
-                    home_work_location_powerschool_school_id is null
-                    and home_business_unit_name = "KIPP TEAM and Family Schools Inc."
+                    (
+                        home_work_location_powerschool_school_id is null
+                        or home_work_location_powerschool_school_id = 0
+                    )
+                    and home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
                 then 133570965
                 when
-                    home_work_location_powerschool_school_id = 0
-                    and home_business_unit_name = "KIPP TEAM and Family Schools Inc."
+                    (
+                        home_work_location_powerschool_school_id is null
+                        or home_work_location_powerschool_school_id = 0
+                    )
+                    and home_business_unit_name = 'TEAM Academy Charter School'
                 then 133570965
                 when
-                    home_work_location_powerschool_school_id is null
-                    and home_business_unit_name = "TEAM Academy Charter School"
-                then 133570965
-                when
-                    home_work_location_powerschool_school_id = 0
-                    and home_business_unit_name = "TEAM Academy Charter School"
-                then 133570965
-                when
-                    home_work_location_powerschool_school_id is null
-                    and home_business_unit_name = "KIPP Miami"
+                    (
+                        home_work_location_powerschool_school_id is null
+                        or home_work_location_powerschool_school_id = 0
+                    )
+                    and home_business_unit_name = 'KIPP Miami'
                 then 30200803
                 when
-                    home_work_location_powerschool_school_id = 0
-                    and home_business_unit_name = "KIPP Miami"
-                then 30200803
-                when
-                    home_work_location_powerschool_school_id is null
-                    and home_business_unit_name = "KIPP Cooper Norcross Academy"
-                then 179901
-                when
-                    home_work_location_powerschool_school_id = 0
-                    and home_business_unit_name = "KIPP Cooper Norcross Academy"
+                    (
+                        home_work_location_powerschool_school_id is null
+                        or home_work_location_powerschool_school_id = 0
+                    )
+                    and home_business_unit_name = 'KIPP Cooper Norcross Academy'
                 then 179901
                 else home_work_location_powerschool_school_id
             end as ps_id_for_cal_mapping,
