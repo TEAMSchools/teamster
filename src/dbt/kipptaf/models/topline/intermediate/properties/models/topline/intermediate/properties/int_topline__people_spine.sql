@@ -7,7 +7,7 @@ with
             cw.academic_year,
             min(cw.week_start_monday) over (
                 partition by cw.academic_year, cw.schoolid
-            ) as first_day_of_ay
+            ) as first_day_of_ay,
         from {{ ref("int_powerschool__calendar_week") }} as cw
         where cw.academic_year >= 2025
     ),
