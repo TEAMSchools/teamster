@@ -2,8 +2,7 @@ version: 2
 models:
   - name: stg_amplify__mclass__sftp__benchmark_student_summary
     config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("amplify",
+      pre_hook: CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("amplify",
         "src_amplify__mclass__sftp__benchmark_student_summary") | replace("`",
         "") }}')
       contract:
@@ -30,8 +29,6 @@ models:
       - name: student_last_name
         data_type: string
       - name: student_first_name
-        data_type: string
-      - name: student_primary_id
         data_type: string
       - name: enrollment_teacher_name
         data_type: string
@@ -61,19 +58,9 @@ models:
         data_type: string
       - name: completion_status
         data_type: string
-      - name: device_date
-        data_type: string
-      - name: sync_date
-        data_type: string
       - name: composite_level
         data_type: string
-      - name: composite_score
-        data_type: string
       - name: composite_score_lexile
-        data_type: string
-      - name: composite_local_percentile
-        data_type: string
-      - name: composite_national_norm_percentile
         data_type: string
       - name: composite_semester_growth
         data_type: string
@@ -81,23 +68,11 @@ models:
         data_type: string
       - name: letter_names_lnf_level
         data_type: string
-      - name: letter_names_lnf_score
-        data_type: string
-      - name: letter_names_lnf_local_percentile
-        data_type: string
-      - name: letter_names_lnf_national_norm_percentile
-        data_type: string
       - name: letter_names_lnf_semester_growth
         data_type: string
       - name: letter_names_lnf_year_growth
         data_type: string
       - name: phonemic_awareness_psf_level
-        data_type: string
-      - name: phonemic_awareness_psf_score
-        data_type: string
-      - name: phonemic_awareness_psf_local_percentile
-        data_type: string
-      - name: phonemic_awareness_psf_national_norm_percentile
         data_type: string
       - name: phonemic_awareness_psf_semester_growth
         data_type: string
@@ -105,23 +80,11 @@ models:
         data_type: string
       - name: letter_sounds_nwf_cls_level
         data_type: string
-      - name: letter_sounds_nwf_cls_score
-        data_type: string
-      - name: letter_sounds_nwf_cls_local_percentile
-        data_type: string
-      - name: letter_sounds_nwf_cls_national_norm_percentile
-        data_type: string
       - name: letter_sounds_nwf_cls_semester_growth
         data_type: string
       - name: letter_sounds_nwf_cls_year_growth
         data_type: string
       - name: decoding_nwf_wrc_level
-        data_type: string
-      - name: decoding_nwf_wrc_score
-        data_type: string
-      - name: decoding_nwf_wrc_local_percentile
-        data_type: string
-      - name: decoding_nwf_wrc_national_norm_percentile
         data_type: string
       - name: decoding_nwf_wrc_semester_growth
         data_type: string
@@ -129,23 +92,11 @@ models:
         data_type: string
       - name: word_reading_wrf_level
         data_type: string
-      - name: word_reading_wrf_score
-        data_type: string
-      - name: word_reading_wrf_local_percentile
-        data_type: string
-      - name: word_reading_wrf_national_norm_percentile
-        data_type: string
       - name: word_reading_wrf_semester_growth
         data_type: string
       - name: word_reading_wrf_year_growth
         data_type: string
       - name: reading_accuracy_orf_accu_level
-        data_type: string
-      - name: reading_accuracy_orf_accu_score
-        data_type: string
-      - name: reading_accuracy_orf_accu_local_percentile
-        data_type: string
-      - name: reading_accuracy_orf_accu_national_norm_percentile
         data_type: string
       - name: reading_accuracy_orf_accu_semester_growth
         data_type: string
@@ -153,51 +104,25 @@ models:
         data_type: string
       - name: reading_fluency_orf_level
         data_type: string
-      - name: reading_fluency_orf_score
-        data_type: string
-      - name: reading_fluency_orf_local_percentile
-        data_type: string
-      - name: reading_fluency_orf_national_norm_percentile
-        data_type: string
       - name: reading_fluency_orf_semester_growth
         data_type: string
       - name: reading_fluency_orf_year_growth
         data_type: string
-      - name: error_rate_orf_score
-        data_type: string
       - name: basic_comprehension_maze_level
-        data_type: string
-      - name: basic_comprehension_maze_score
-        data_type: string
-      - name: basic_comprehension_maze_local_percentile
-        data_type: string
-      - name: basic_comprehension_maze_national_norm_percentile
         data_type: string
       - name: basic_comprehension_maze_semester_growth
         data_type: string
       - name: basic_comprehension_maze_year_growth
         data_type: string
-      - name: correct_responses_maze_score
-        data_type: string
-      - name: incorrect_responses_maze_score
-        data_type: string
       - name: vocabulary_level
-        data_type: string
-      - name: vocabulary_score
         data_type: string
       - name: spelling_level
         data_type: string
-      - name: spelling_score
-        data_type: string
       - name: ran_level
-        data_type: string
-      - name: ran_score
         data_type: string
       - name: risk_indicator_level
         data_type: string
       - name: oral_language_level
-        data_type: string
-      - name: oral_language_score
         data_type: string
       - name: date_of_birth
         data_type: string
@@ -240,4 +165,128 @@ models:
       - name: assessing_teacher_staff_id_teachernumber
         data_type: string
       - name: secondary_student_id_stateid
+        data_type: string
+      - name: school
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: student_primary_id
+        data_type: int64
+      - name: device_date
+        data_type: date
+      - name: sync_date
+        data_type: date
+      - name: basic_comprehension_maze_score
+        data_type: numeric
+      - name: composite_score
+        data_type: numeric
+      - name: correct_responses_maze_score
+        data_type: numeric
+      - name: decoding_nwf_wrc_score
+        data_type: numeric
+      - name: error_rate_orf_score
+        data_type: numeric
+      - name: incorrect_responses_maze_score
+        data_type: numeric
+      - name: letter_names_lnf_score
+        data_type: numeric
+      - name: letter_sounds_nwf_cls_score
+        data_type: numeric
+      - name: oral_language_score
+        data_type: numeric
+      - name: phonemic_awareness_psf_score
+        data_type: numeric
+      - name: ran_score
+        data_type: numeric
+      - name: reading_accuracy_orf_accu_score
+        data_type: numeric
+      - name: reading_fluency_orf_score
+        data_type: numeric
+      - name: spelling_score
+        data_type: numeric
+      - name: vocabulary_score
+        data_type: numeric
+      - name: word_reading_wrf_score
+        data_type: numeric
+      - name: composite_local_percentile
+        data_type: numeric
+      - name: letter_names_lnf_local_percentile
+        data_type: numeric
+      - name: phonemic_awareness_psf_local_percentile
+        data_type: numeric
+      - name: letter_sounds_nwf_cls_local_percentile
+        data_type: numeric
+      - name: decoding_nwf_wrc_local_percentile
+        data_type: numeric
+      - name: word_reading_wrf_local_percentile
+        data_type: numeric
+      - name: reading_accuracy_orf_accu_local_percentile
+        data_type: numeric
+      - name: reading_fluency_orf_local_percentile
+        data_type: numeric
+      - name: basic_comprehension_maze_local_percentile
+        data_type: numeric
+      - name: composite_national_norm_percentile
+        data_type: numeric
+      - name: letter_names_lnf_national_norm_percentile
+        data_type: numeric
+      - name: phonemic_awareness_psf_national_norm_percentile
+        data_type: numeric
+      - name: letter_sounds_nwf_cls_national_norm_percentile
+        data_type: numeric
+      - name: decoding_nwf_wrc_national_norm_percentile
+        data_type: numeric
+      - name: word_reading_wrf_national_norm_percentile
+        data_type: numeric
+      - name: reading_accuracy_orf_accu_national_norm_percentile
+        data_type: numeric
+      - name: reading_fluency_orf_national_norm_percentile
+        data_type: numeric
+      - name: basic_comprehension_maze_national_norm_percentile
+        data_type: numeric
+      - name: region
+        data_type: string
+      - name: assessment_grade_int
+        data_type: int64
+      - name: enrollment_grade_int
+        data_type: int64
+      - name: composite_tested_out
+        data_type: boolean
+      - name: decoding_nwf_wrc_tested_out
+        data_type: boolean
+      - name: letter_names_lnf_tested_out
+        data_type: boolean
+      - name: letter_sounds_nwf_cls_tested_out
+        data_type: boolean
+      - name: phonemic_awareness_psf_tested_out
+        data_type: boolean
+      - name: reading_accuracy_orf_accu_tested_out
+        data_type: boolean
+      - name: basic_comprehension_maze_tested_out
+        data_type: boolean
+      - name: reading_fluency_orf_tested_out
+        data_type: boolean
+      - name: word_reading_wrf_tested_out
+        data_type: boolean
+      - name: composite_discontinued
+        data_type: boolean
+      - name: decoding_nwf_wrc_discontinued
+        data_type: boolean
+      - name: letter_names_lnf_discontinued
+        data_type: boolean
+      - name: letter_sounds_nwf_cls_discontinued
+        data_type: boolean
+      - name: phonemic_awareness_psf_discontinued
+        data_type: boolean
+      - name: reading_accuracy_orf_accu_discontinued
+        data_type: boolean
+      - name: basic_comprehension_maze_discontinued
+        data_type: boolean
+      - name: reading_fluency_orf_discontinued
+        data_type: boolean
+      - name: word_reading_wrf_discontinued
+        data_type: boolean
+      - name: surrogate_key
         data_type: string
