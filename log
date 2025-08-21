@@ -1,0 +1,141 @@
+23:37:42    Compilation Error in model stg_powerschool__reenrollments (models/sis/staging/sftp/stg_powerschool__reenrollments.sql)
+  | column_name | definition_type | contract_type | mismatch_reason       |
+  | ----------- | --------------- | ------------- | --------------------- |
+  | custom      |                 | STRING        | missing in definition |
+
+23:37:42    Compilation Error in model stg_powerschool__sections (models/sis/staging/sftp/stg_powerschool__sections.sql)
+  | column_name   | definition_type | contract_type | mismatch_reason       |
+  | ------------- | --------------- | ------------- | --------------------- |
+  | comment       | STRING          |               | missing in contract   |
+  | comment_value |                 | STRING        | missing in definition |
+  | custom        |                 | STRING        | missing in definition |
+  | executionid   |                 | STRING        | missing in definition |
+
+23:37:42    Compilation Error in model stg_powerschool__attendance_conversion_items (models/sis/staging/sftp/stg_powerschool__attendance_conversion_items.sql)
+  | column_name   | definition_type | contract_type | mismatch_reason       |
+  | ------------- | --------------- | ------------- | --------------------- |
+  | comment       | STRING          |               | missing in contract   |
+  | comment_value |                 | STRING        | missing in definition |
+
+23:37:42    Compilation Error in model stg_powerschool__users (models/sis/staging/sftp/stg_powerschool__users.sql)
+  | column_name  | definition_type | contract_type | mismatch_reason       |
+  | ------------ | --------------- | ------------- | --------------------- |
+  | access       | STRING          |               | missing in contract   |
+  | accessvalue  |                 | STRING        | missing in definition |
+  | executionid  |                 | STRING        | missing in definition |
+  | group        | STRING          |               | missing in contract   |
+  | groupvalue   |                 | INT64         | missing in definition |
+  | whencreated  |                 | TIMESTAMP     | missing in definition |
+  | whenmodified |                 | TIMESTAMP     | missing in definition |
+  | whocreated   |                 | STRING        | missing in definition |
+  | whomodified  |                 | STRING        | missing in definition |
+
+23:37:42    Compilation Error in model stg_powerschool__termbins (models/sis/staging/sftp/stg_powerschool__termbins.sql)
+  | column_name        | definition_type | contract_type | mismatch_reason       |
+  | ------------------ | --------------- | ------------- | --------------------- |
+  | aregradeslocked    |                 | INT64         | missing in definition |
+  | collectiondate     | STRING          | DATE          | data type mismatch    |
+  | collectiondate_1   | DATE            |               | missing in contract   |
+  | creditpct          | STRING          | FLOAT64       | data type mismatch    |
+  | creditpct_1        | FLOAT64         |               | missing in contract   |
+  | date1              | STRING          | DATE          | data type mismatch    |
+  | date1_1            | DATE            |               | missing in contract   |
+  | date2              | STRING          | DATE          | data type mismatch    |
+  | date2_1            | DATE            |               | missing in contract   |
+  | executionid        |                 | STRING        | missing in definition |
+  | numattpoints       | STRING          | FLOAT64       | data type mismatch    |
+  | numattpoints_1     | FLOAT64         |               | missing in contract   |
+  | storecode_order    |                 | STRING        | missing in definition |
+  | storecode_type     |                 | STRING        | missing in definition |
+  | transaction_date   | STRING          | TIMESTAMP     | data type mismatch    |
+  | transaction_date_1 | TIMESTAMP       |               | missing in contract   |
+
+23:37:42    Compilation Error in model stg_powerschool__cc (models/sis/staging/sftp/stg_powerschool__cc.sql)
+  | column_name           | definition_type | contract_type | mismatch_reason       |
+  | --------------------- | --------------- | ------------- | --------------------- |
+  | ab_course_cmp_ext_crd | STRING          |               | missing in contract   |
+  | ab_course_cmp_fun_flg | STRING          |               | missing in contract   |
+  | ab_course_cmp_met_cd  | STRING          |               | missing in contract   |
+  | ab_course_cmp_sta_cd  | STRING          |               | missing in contract   |
+  | ab_course_eva_pro_cd  | STRING          |               | missing in contract   |
+  | abs_sectionid         |                 | INT64         | missing in definition |
+  | abs_termid            |                 | INT64         | missing in definition |
+  | academic_year         |                 | INT64         | missing in definition |
+  | asmtscores            | STRING          |               | missing in contract   |
+  | attendance            | STRING          |               | missing in contract   |
+  | attendance_type_code  | STRING          |               | missing in contract   |
+  | expression            | STRING          |               | missing in contract   |
+  | finalgrades           | STRING          |               | missing in contract   |
+  | firstattdate          | STRING          |               | missing in contract   |
+  | fiscal_year           |                 | INT64         | missing in definition |
+  | ip_address            | STRING          |               | missing in contract   |
+  | lastattmod            | STRING          |               | missing in contract   |
+  | lastgradeupdate       | STRING          |               | missing in contract   |
+  | log                   | STRING          |               | missing in contract   |
+  | origsectionid         | STRING          |               | missing in contract   |
+  | period_obsolete       | STRING          |               | missing in contract   |
+  | psguid                | STRING          |               | missing in contract   |
+  | studentsectenrl_guid  | STRING          |               | missing in contract   |
+  | teachercomment        | STRING          |               | missing in contract   |
+  | teacherprivatenote    | STRING          |               | missing in contract   |
+  | transaction_date      | STRING          |               | missing in contract   |
+  | unused2               | STRING          |               | missing in contract   |
+  | unused3               | STRING          |               | missing in contract   |
+  | whomodifiedid         | STRING          |               | missing in contract   |
+  | whomodifiedtype       | STRING          |               | missing in contract   |
+  | yearid                |                 | INT64         | missing in definition |
+
+23:37:42    Compilation Error in model stg_powerschool__students (models/sis/staging/sftp/stg_powerschool__students.sql)
+  | column_name    | definition_type | contract_type | mismatch_reason       |
+  | -------------- | --------------- | ------------- | --------------------- |
+  | custom         |                 | STRING        | missing in definition |
+  | ethnicity_code |                 | STRING        | missing in definition |
+  | executionid    |                 | STRING        | missing in definition |
+  | gender_code    |                 | STRING        | missing in definition |
+  | ismigrated     |                 | INT64         | missing in definition |
+
+23:37:42    Compilation Error in model stg_powerschool__studentcorefields (models/sis/staging/sftp/stg_powerschool__studentcorefields.sql)
+  | column_name | definition_type | contract_type | mismatch_reason       |
+  | ----------- | --------------- | ------------- | --------------------- |
+  | is_homeless |                 | BOOLEAN       | missing in definition |
+
+23:37:42    Compilation Error in model stg_powerschool__terms (models/sis/staging/sftp/stg_powerschool__terms.sql)
+  | column_name   | definition_type | contract_type | mismatch_reason       |
+  | ------------- | --------------- | ------------- | --------------------- |
+  | academic_year |                 | INT64         | missing in definition |
+  | executionid   |                 | STRING        | missing in definition |
+  | fiscal_year   |                 | INT64         | missing in definition |
+
+23:37:42    Compilation Error in model stg_powerschool__courses (models/sis/staging/sftp/stg_powerschool__courses.sql)
+  | column_name                     | definition_type | contract_type | mismatch_reason       |
+  | ------------------------------- | --------------- | ------------- | --------------------- |
+  | custom                          |                 | STRING        | missing in definition |
+  | executionid                     |                 | STRING        | missing in definition |
+  | prerequisites                   | STRING          |               | missing in contract   |
+  | prerequisitesvalue              |                 | STRING        | missing in definition |
+  | sched_validextradaycombinations | STRING          |               | missing in contract   |
+  | validextradaycombinations       |                 | STRING        | missing in definition |
+
+23:37:42    Compilation Error in model stg_powerschool__attendance (models/sis/staging/sftp/stg_powerschool__attendance.sql)
+  | column_name                    | definition_type | contract_type | mismatch_reason       |
+  | ------------------------------ | --------------- | ------------- | --------------------- |
+  | _dagster_partition_date        |                 | DATE          | missing in definition |
+  | _dagster_partition_fiscal_year |                 | INT64         | missing in definition |
+  | _dagster_partition_hour        |                 | INT64         | missing in definition |
+  | _dagster_partition_minute      |                 | INT64         | missing in definition |
+  | executionid                    |                 | STRING        | missing in definition |
+
+23:37:42    Compilation Error in model stg_powerschool__schools (models/sis/staging/sftp/stg_powerschool__schools.sql)
+  | column_name  | definition_type | contract_type | mismatch_reason       |
+  | ------------ | --------------- | ------------- | --------------------- |
+  | custom       |                 | STRING        | missing in definition |
+  | executionid  |                 | STRING        | missing in definition |
+  | school_level |                 | STRING        | missing in definition |
+
+23:37:42    Compilation Error in model stg_powerschool__calendar_day (models/sis/staging/sftp/stg_powerschool__calendar_day.sql)
+  | column_name     | definition_type | contract_type | mismatch_reason       |
+  | --------------- | --------------- | ------------- | --------------------- |
+  | date            | STRING          |               | missing in contract   |
+  | date_value      |                 | DATE          | missing in definition |
+  | week_end_date   |                 | DATE          | missing in definition |
+  | week_start_date |                 | DATE          | missing in definition |

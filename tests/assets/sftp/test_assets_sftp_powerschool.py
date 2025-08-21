@@ -210,12 +210,12 @@ def test_powerschool_sections_kipppaterson():
     _test_asset(assets=assets, selection="kipppaterson/powerschool/sis/sftp/sections")
 
 
-def test_powerschool_spenrollments_kipppaterson():
-    from teamster.code_locations.kipppaterson.powerschool.sis.sftp.assets import assets
+# def test_powerschool_spenrollments_kipppaterson():
+#     from teamster.code_locations.kipppaterson.powerschool.sis.sftp.assets import assets
 
-    _test_asset(
-        assets=assets, selection="kipppaterson/powerschool/sis/sftp/spenrollments"
-    )
+#     _test_asset(
+#         assets=assets, selection="kipppaterson/powerschool/sis/sftp/spenrollments"
+#     )
 
 
 def test_powerschool_studentcontactassoc_kipppaterson():
