@@ -1,98 +1,7 @@
 with
-    enr_order as (
-        select
-            seu.*,
-
-            x1.exit_code as exit_code_kf,
-            x2.exit_code as exit_code_ts,
-
-            (seu.academic_year + 13) + (-1 * seu.grade_level) as cohort_primary,
-
-            lag(seu.yearid, 1) over (
-                partition by seu.studentid order by seu.yearid asc
-            ) as yearid_prev,
-
-            lag(seu.grade_level, 1) over (
-                partition by seu.studentid order by seu.yearid asc
-            ) as grade_level_prev,
-
-            row_number() over (
-                partition by seu.studentid order by seu.yearid desc, seu.exitdate desc
-            ) as rn_all,
-
-            row_number() over (
-                partition by seu.studentid, seu.yearid
-                order by seu.yearid desc, seu.exitdate desc
-            ) as rn_year,
-
-            row_number() over (
-                partition by seu.studentid, seu.schoolid
-                order by seu.yearid desc, seu.exitdate desc
-            ) as rn_school,
-
-            row_number() over (
-                partition by seu.studentid, if(seu.grade_level = 99, true, false)
-                order by seu.yearid desc, seu.exitdate desc
-            ) as rn_undergrad,
-        from {{ ref("int_powerschool__student_enrollment_union") }} as seu
-        left join
-            {{ ref("stg_powerschool__u_clg_et_stu") }} as x1
-            on seu.students_dcid = x1.studentsdcid
-            and seu.exitdate = x1.exit_date
-        left join
-            {{ ref("stg_powerschool__u_clg_et_stu_alt") }} as x2
-            on seu.students_dcid = x2.studentsdcid
-            and seu.exitdate = x2.exit_date
-    ),
-
-    enr_window as (
-        select
-            * except (grade_level_prev, yearid_prev),
-
-            min(grade_level_prev) over (
-                partition by studentid, yearid
-            ) as grade_level_prev,
-
-            min(yearid_prev) over (partition by studentid, yearid) as yearid_prev,
-
-            row_number() over (
-                partition by studentid, schoolid, rn_year
-                order by yearid asc, exitdate asc
-            ) as year_in_school,
-
-            row_number() over (
-                partition by studentid, rn_year order by yearid asc, exitdate asc
-            ) as year_in_network,
-        from enr_order
-    ),
-
     enr_bools as (
         select
-            enr.* except (rn_undergrad, year_in_school, year_in_network),
-
-            if(enr.grade_level != 99, enr.rn_undergrad, null) as rn_undergrad,
-            if(enr.rn_year = 1, enr.year_in_school, null) as year_in_school,
-            if(enr.rn_year = 1, enr.year_in_network, null) as year_in_network,
-            if(enr.exitcode = 'G1', enr.cohort_primary, null) as cohort_graduated,
-            if(enr.exitdate is not null, true, false) as is_enrolled_y1,
-            if(
-                date(enr.academic_year, 10, 1) between enr.entrydate and enr.exitdate,
-                true,
-                false
-            ) as is_enrolled_oct01,
-            if(
-                date(enr.academic_year, 10, 15) between enr.entrydate and enr.exitdate,
-                true,
-                false
-            ) as is_enrolled_oct15,
-
-            case
-                when enr.yearid = enr.yearid_prev
-                then false
-                when enr.grade_level != 99 and enr.grade_level <= enr.grade_level_prev
-                then true
-                else false
-            end as is_retained_year,
+            enr.*
 
             case
                 when enr.exitdate >= cr.max_calendardate
@@ -103,7 +12,7 @@ with
                 then true
                 else false
             end as is_enrolled_recent,
-        from enr_window as enr
+        from {{ ref("int_powerschool__student_enrollment_union") }} as enr
         left join
             {{ ref("int_powerschool__calendar_rollup") }} as cr
             on enr.schoolid = cr.schoolid
@@ -281,6 +190,32 @@ select
     scw.pickup_3_phone_work,
     scw.pickup_3_relationship,
 
+    {% if project_name != "kipppaterson" %}
+        x1.exit_code as exit_code_kf,
+
+        x2.exit_code as exit_code_ts,
+
+        coalesce(sp.is_self_contained, false) as is_self_contained,
+
+        coalesce(ood.is_out_of_district, false) as is_out_of_district,
+
+        if(ood.dcid is not null, ood.programid, enr.schoolid) as reporting_schoolid,
+
+        if(ood.dcid is not null, ood.specprog_name, sch.name) as reporting_school_name,
+
+        if(ood.dcid is not null, 'OD', sch.school_level) as school_level,
+    {% else %}
+        null as exit_code_kf,
+        null as exit_code_ts,
+        null as is_self_contained,
+        null as is_out_of_district,
+
+        enr.schoolid as reporting_schoolid,
+
+        sch.name as reporting_school_name,
+        sch.school_level as school_level,
+    {% endif %}
+
     case
         when enr.grade_level = 99
         then enr.cohort_graduated
@@ -289,15 +224,6 @@ select
         else enr.cohort_primary
     end as cohort,
 
-    coalesce(sp.is_self_contained, false) as is_self_contained,
-
-    coalesce(ood.is_out_of_district, false) as is_out_of_district,
-
-    if(ood.dcid is not null, ood.programid, enr.schoolid) as reporting_schoolid,
-
-    if(ood.dcid is not null, ood.specprog_name, sch.name) as reporting_school_name,
-
-    if(ood.dcid is not null, 'OD', sch.school_level) as school_level,
 from with_boy_status_window as enr
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on enr.schoolid = sch.school_number
@@ -312,13 +238,23 @@ left join
 left join
     {{ ref("int_powerschool__student_contacts_pivot") }} as scw
     on enr.students_dcid = scw.studentdcid
-left join
-    {{ ref("int_powerschool__spenrollments") }} as sp
-    on enr.studentid = sp.studentid
-    and enr.exitdate between sp.enter_date and sp.exit_date
-    and sp.is_self_contained
-left join
-    {{ ref("int_powerschool__spenrollments") }} as ood
-    on enr.studentid = ood.studentid
-    and enr.exitdate between ood.enter_date and ood.exit_date
-    and ood.is_out_of_district
+{% if project_name != "kipppaterson" %}
+    left join
+        {{ ref("int_powerschool__spenrollments") }} as sp
+        on enr.studentid = sp.studentid
+        and enr.exitdate between sp.enter_date and sp.exit_date
+        and sp.is_self_contained
+    left join
+        {{ ref("int_powerschool__spenrollments") }} as ood
+        on enr.studentid = ood.studentid
+        and enr.exitdate between ood.enter_date and ood.exit_date
+        and ood.is_out_of_district
+    left join
+        {{ ref("stg_powerschool__u_clg_et_stu") }} as x1
+        on enr.students_dcid = x1.studentsdcid
+        and enr.exitdate = x1.exit_date
+    left join
+        {{ ref("stg_powerschool__u_clg_et_stu_alt") }} as x2
+        on enr.students_dcid = x2.studentsdcid
+        and enr.exitdate = x2.exit_date
+{% endif %}
