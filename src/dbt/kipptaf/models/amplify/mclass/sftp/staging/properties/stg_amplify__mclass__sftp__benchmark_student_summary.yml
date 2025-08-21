@@ -2,7 +2,8 @@ version: 2
 models:
   - name: stg_amplify__mclass__sftp__benchmark_student_summary
     config:
-      pre_hook: CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("amplify",
+      pre_hook:
+        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("amplify",
         "src_amplify__mclass__sftp__benchmark_student_summary") | replace("`",
         "") }}')
       contract:
