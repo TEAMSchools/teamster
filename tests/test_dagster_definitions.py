@@ -41,5 +41,11 @@ def test_definitions_kippnewark():
     _test_definitions_validate(["kippnewark"])
 
 
+def test_definitions_kipppaterson():
+    _test_definitions_validate(["kipppaterson"])
+
+
 def test_definitions_all():
-    _test_definitions_validate(["kippcamden", "kippmiami", "kippnewark", "kipptaf"])
+    _test_definitions_validate(
+        ["kippcamden", "kippmiami", "kippnewark", "kipppaterson", "kipptaf"]
+    )
