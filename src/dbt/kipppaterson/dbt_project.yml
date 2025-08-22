@@ -48,8 +48,6 @@ models:
           +enabled: false
         int_powerschool__section_grade_config:
           +enabled: false
-        int_powerschool__spenrollments:
-          +enabled: false
         int_powerschool__teacher_grade_levels:
           +enabled: false
       staging:
@@ -127,8 +125,6 @@ models:
             +enabled: false
           stg_powerschool__sectionteacher:
             +enabled: false
-          # stg_powerschool__spenrollments:
-          #   +enabled: false
           stg_powerschool__storedgrades:
             +enabled: false
           stg_powerschool__studentrace:
@@ -234,8 +230,6 @@ sources:
               +enabled: false
             src_powerschool__sectionteacher:
               +enabled: false
-            # src_powerschool__spenrollments:
-            #   +enabled: false
             src_powerschool__storedgrades:
               +enabled: false
             src_powerschool__studentrace:

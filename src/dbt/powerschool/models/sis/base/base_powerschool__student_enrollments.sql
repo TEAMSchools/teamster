@@ -191,30 +191,19 @@ select
     scw.pickup_3_relationship,
 
     {% if project_name != "kipppaterson" %}
-        x1.exit_code as exit_code_kf,
-
-        x2.exit_code as exit_code_ts,
-
-        coalesce(sp.is_self_contained, false) as is_self_contained,
-
-        coalesce(ood.is_out_of_district, false) as is_out_of_district,
-
-        if(ood.dcid is not null, ood.programid, enr.schoolid) as reporting_schoolid,
-
-        if(ood.dcid is not null, ood.specprog_name, sch.name) as reporting_school_name,
-
-        if(ood.dcid is not null, 'OD', sch.school_level) as school_level,
-    {% else %}
-        null as exit_code_kf,
-        null as exit_code_ts,
-        null as is_self_contained,
-        null as is_out_of_district,
-
-        enr.schoolid as reporting_schoolid,
-
-        sch.name as reporting_school_name,
-        sch.school_level as school_level,
+        x1.exit_code as exit_code_kf, x2.exit_code as exit_code_ts,
+    {% else %} null as exit_code_kf, null as exit_code_ts,
     {% endif %}
+
+    coalesce(sp.is_self_contained, false) as is_self_contained,
+
+    coalesce(ood.is_out_of_district, false) as is_out_of_district,
+
+    if(ood.dcid is not null, ood.programid, enr.schoolid) as reporting_schoolid,
+
+    if(ood.dcid is not null, ood.specprog_name, sch.name) as reporting_school_name,
+
+    if(ood.dcid is not null, 'OD', sch.school_level) as school_level,
 
     case
         when enr.grade_level = 99
@@ -238,17 +227,17 @@ left join
 left join
     {{ ref("int_powerschool__student_contacts_pivot") }} as scw
     on enr.students_dcid = scw.studentdcid
+left join
+    {{ ref("int_powerschool__spenrollments") }} as sp
+    on enr.studentid = sp.studentid
+    and enr.exitdate between sp.enter_date and sp.exit_date
+    and sp.is_self_contained
+left join
+    {{ ref("int_powerschool__spenrollments") }} as ood
+    on enr.studentid = ood.studentid
+    and enr.exitdate between ood.enter_date and ood.exit_date
+    and ood.is_out_of_district
 {% if project_name != "kipppaterson" %}
-    left join
-        {{ ref("int_powerschool__spenrollments") }} as sp
-        on enr.studentid = sp.studentid
-        and enr.exitdate between sp.enter_date and sp.exit_date
-        and sp.is_self_contained
-    left join
-        {{ ref("int_powerschool__spenrollments") }} as ood
-        on enr.studentid = ood.studentid
-        and enr.exitdate between ood.enter_date and ood.exit_date
-        and ood.is_out_of_district
     left join
         {{ ref("stg_powerschool__u_clg_et_stu") }} as x1
         on enr.students_dcid = x1.studentsdcid
