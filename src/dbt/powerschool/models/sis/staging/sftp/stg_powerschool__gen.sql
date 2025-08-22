@@ -1,5 +1,6 @@
 select
     * except (
+        `date`,
         date2,
         dcid,
         id,
@@ -34,12 +35,8 @@ select
     cast(valuer as float64) as valuer,
     cast(valuer2 as float64) as valuer2,
 
+    cast(`date` as date) as date_value,
     cast(date2 as date) as date2,
 
     cast(value_x as bytes) as value_x,
-{# 
-| date          | STRING          |               | missing in contract   |
-| custom        |                 | STRING        | missing in definition |
-| date_value    |                 | DATE          | missing in definition | 
-#}
 from {{ source("powerschool_sftp", "src_powerschool__gen") }}

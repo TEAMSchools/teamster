@@ -1,5 +1,6 @@
 select
     * except (
+        `status`,
         add_to_gpa,
         credit_hours,
         crhrweight,
@@ -17,6 +18,7 @@ select
         ispewaiver,
         maxclasssize,
         maxcredit,
+        prerequisites,
         programid,
         regavailable,
         sched_balanceterms,
@@ -49,16 +51,19 @@ select
         sched_teachercount,
         sched_usepreestablishedteams,
         sched_usesectiontypes,
+        sched_validextradaycombinations,
         sched_year,
         schoolgroup,
         schoolid,
         sectionstooffer,
-        `status`,
         targetclasssize,
         transaction_date,
         vocational,
         whomodifiedid
     ),
+
+    prerequisites as prerequisitesvalue,
+    sched_validextradaycombinations as validextradaycombinations,
 
     cast(dcid as int) as dcid,
     cast(id as int) as id,
@@ -121,12 +126,4 @@ select
 
     cast(transaction_date as timestamp) as transaction_date,
 
-{#
-| prerequisites                   | STRING          |               | missing in contract   |
-| sched_validextradaycombinations | STRING          |               | missing in contract   |
-| custom                          |                 | STRING        | missing in definition |
-| executionid                     |                 | STRING        | missing in definition |
-| prerequisitesvalue              |                 | STRING        | missing in definition |
-| validextradaycombinations       |                 | STRING        | missing in definition |
-#}
 from {{ source("powerschool_sftp", "src_powerschool__courses") }}

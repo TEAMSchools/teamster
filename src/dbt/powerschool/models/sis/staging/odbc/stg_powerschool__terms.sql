@@ -17,7 +17,8 @@ with
                 attendance_calculation_code,
                 sterms,
                 suppresspublicview,
-                whomodifiedid
+                whomodifiedid,
+                executionid
             ),
 
             /* column transformations */

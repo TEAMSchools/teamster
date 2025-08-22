@@ -49,11 +49,4 @@ select
     cast(att_date as date) as att_date,
 
     cast(transaction_date as timestamp) as transaction_date,
-{# 
-| _dagster_partition_date        || DATE    | missing in definition |
-| _dagster_partition_fiscal_year || INT64   | missing in definition |
-| _dagster_partition_hour        || INT64   | missing in definition |
-| _dagster_partition_minute      || INT64   | missing in definition |
-| executionid                    || STRING  | missing in definition |
-#}
 from {{ source("powerschool_sftp", "src_powerschool__attendance") }}

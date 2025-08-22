@@ -7,8 +7,11 @@ select
         fteid,
         id,
         input_value,
-        unused
+        unused,
+        comment
     ),
+
+    comment as comment_value,
 
     cast(attendance_conversion_id as int) as attendance_conversion_id,
     cast(daypartid as int) as daypartid,

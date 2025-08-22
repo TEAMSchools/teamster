@@ -42,9 +42,12 @@ select
 
     cast(transaction_date as timestamp) as transaction_date,
 
-{#
-| custom | | STRING | missing in definition |
-| executionid | | STRING | missing in definition |
-| school_level | | STRING | missing in definition |
-#}
+    case
+        when high_grade = '12'
+        then 'HS'
+        when high_grade = '8'
+        then 'MS'
+        when high_grade in ('4', '5')
+        then 'ES'
+    end as school_level,
 from {{ source("powerschool_sftp", "src_powerschool__schools") }}

@@ -1,5 +1,7 @@
 select
     * except (
+        `group`,
+        access,
         adminldapenabled,
         allowloginend,
         allowloginstart,
@@ -8,6 +10,7 @@ select
         fedracedecline,
         gradebooktype,
         homeschoolid,
+        lunch_id,
         maximum_load,
         numlogins,
         photo,
@@ -16,17 +19,17 @@ select
         ptaccess,
         supportcontact,
         teacherldapenabled,
+        transaction_date,
         whomodifiedid,
+        wm_createdate,
         wm_createtime,
         wm_exclude,
-        wm_tier,
-        lunch_id,
-        wm_createdate,
         wm_statusdate,
         wm_ta_date,
-        transaction_date
+        wm_tier
     ),
 
+    cast(`group` as int) as groupvalue,
     cast(adminldapenabled as int) as adminldapenabled,
     cast(allowloginend as int) as allowloginend,
     cast(allowloginstart as int) as allowloginstart,
@@ -55,15 +58,6 @@ select
     cast(wm_ta_date as date) as wm_ta_date,
 
     cast(transaction_date as timestamp) as transaction_date,
-{#
-| access             | STRING          |               | missing in contract   |
-| group              | STRING          |               | missing in contract   |
-| accessvalue        |                 | STRING        | missing in definition |
-| executionid        |                 | STRING        | missing in definition |
-| groupvalue         |                 | INT64         | missing in definition |
-| whencreated        |                 | TIMESTAMP     | missing in definition |
-| whenmodified       |                 | TIMESTAMP     | missing in definition |
-| whocreated         |                 | STRING        | missing in definition |
-| whomodified        |                 | STRING        | missing in definition |
-#}
+
+    access as accessvalue,
 from {{ source("powerschool_sftp", "src_powerschool__users") }}

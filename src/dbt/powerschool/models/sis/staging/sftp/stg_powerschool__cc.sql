@@ -1,64 +1,71 @@
-select
-    * except (
-        currentabsences,
-        currenttardies,
-        dateenrolled,
-        dateleft,
-        dcid,
-        id,
-        schoolid,
-        sectionid,
-        studentid,
-        studyear,
-        teacherid,
-        termid
+with
+    cc as (
+        select
+            * except (
+                currentabsences,
+                currenttardies,
+                dateenrolled,
+                dateleft,
+                dcid,
+                id,
+                schoolid,
+                sectionid,
+                studentid,
+                studyear,
+                teacherid,
+                termid,
+                ab_course_cmp_ext_crd,
+                ab_course_cmp_fun_flg,
+                ab_course_cmp_met_cd,
+                ab_course_cmp_sta_cd,
+                ab_course_eva_pro_cd,
+                asmtscores,
+                attendance,
+                attendance_type_code,
+                expression,
+                finalgrades,
+                firstattdate,
+                ip_address,
+                lastattmod,
+                lastgradeupdate,
+                `log`,
+                origsectionid,
+                period_obsolete,
+                psguid,
+                studentsectenrl_guid,
+                teachercomment,
+                teacherprivatenote,
+                transaction_date,
+                unused2,
+                unused3,
+                whomodifiedid,
+                whomodifiedtype
+            ),
+
+            cast(currentabsences as int) as currentabsences,
+            cast(currenttardies as int) as currenttardies,
+            cast(dcid as int) as dcid,
+            cast(id as int) as id,
+            cast(schoolid as int) as schoolid,
+            cast(sectionid as int) as sectionid,
+            cast(studentid as int) as studentid,
+            cast(studyear as int) as studyear,
+            cast(teacherid as int) as teacherid,
+            cast(termid as int) as termid,
+
+            cast(dateenrolled as date) as dateenrolled,
+            cast(dateleft as date) as dateleft,
+        from {{ source("powerschool_sftp", "src_powerschool__cc") }}
     ),
 
-    cast(currentabsences as int) as currentabsences,
-    cast(currenttardies as int) as currenttardies,
-    cast(dcid as int) as dcid,
-    cast(id as int) as id,
-    cast(schoolid as int) as schoolid,
-    cast(sectionid as int) as sectionid,
-    cast(studentid as int) as studentid,
-    cast(studyear as int) as studyear,
-    cast(teacherid as int) as teacherid,
-    cast(termid as int) as termid,
+    abs_calcs as (
+        select *, abs(termid) as abs_termid, abs(sectionid) as abs_sectionid, from cc
+    ),
 
-    cast(dateenrolled as date) as dateenrolled,
-    cast(dateleft as date) as dateleft,
+    yearid_calc as (
+        select *, cast(left(cast(abs_termid as string), 2) as int) as yearid,
+        from abs_calcs
+    )
 
-{# 
-| yearid                |                 | INT64         | missing in definition |
-| abs_sectionid         |                 | INT64         | missing in definition |
-| abs_termid            |                 | INT64         | missing in definition |
-| academic_year         |                 | INT64         | missing in definition |
-| fiscal_year           |                 | INT64         | missing in definition |
-| ab_course_cmp_ext_crd | STRING          |               | missing in contract   |
-| ab_course_cmp_fun_flg | STRING          |               | missing in contract   |
-| ab_course_cmp_met_cd  | STRING          |               | missing in contract   |
-| ab_course_cmp_sta_cd  | STRING          |               | missing in contract   |
-| ab_course_eva_pro_cd  | STRING          |               | missing in contract   |
-| asmtscores            | STRING          |               | missing in contract   |
-| attendance            | STRING          |               | missing in contract   |
-| attendance_type_code  | STRING          |               | missing in contract   |
-| expression            | STRING          |               | missing in contract   |
-| finalgrades           | STRING          |               | missing in contract   |
-| firstattdate          | STRING          |               | missing in contract   |
-| ip_address            | STRING          |               | missing in contract   |
-| lastattmod            | STRING          |               | missing in contract   |
-| lastgradeupdate       | STRING          |               | missing in contract   |
-| log                   | STRING          |               | missing in contract   |
-| origsectionid         | STRING          |               | missing in contract   |
-| period_obsolete       | STRING          |               | missing in contract   |
-| psguid                | STRING          |               | missing in contract   |
-| studentsectenrl_guid  | STRING          |               | missing in contract   |
-| teachercomment        | STRING          |               | missing in contract   |
-| teacherprivatenote    | STRING          |               | missing in contract   |
-| transaction_date      | STRING          |               | missing in contract   |
-| unused2               | STRING          |               | missing in contract   |
-| unused3               | STRING          |               | missing in contract   |
-| whomodifiedid         | STRING          |               | missing in contract   |
-| whomodifiedtype       | STRING          |               | missing in contract   |
-#}
-from {{ source("powerschool_sftp", "src_powerschool__cc") }}
+select *, yearid + 1990 as academic_year, yearid + 1991 as fiscal_year,
+from yearid_calc

@@ -34,8 +34,11 @@ select
         transaction_date,
         wheretaught,
         wheretaughtdistrict,
-        whomodifiedid
+        whomodifiedid,
+        comment
     ),
+
+    comment as comment_value,
 
     cast(attendance_type_code as int) as attendance_type_code,
     cast(buildid as int) as buildid,
@@ -75,10 +78,4 @@ select
     cast(transaction_date as timestamp) as transaction_date,
 
     cast(bitmap as bytes) as bitmap,
-{# 
-| comment | STRING | | missing in contract |
-| comment_value | | STRING | missing in definition |
-| custom | | STRING | missing in definition |
-| executionid | | STRING | missing in definition |
-#}
 from {{ source("powerschool_sftp", "src_powerschool__sections") }}

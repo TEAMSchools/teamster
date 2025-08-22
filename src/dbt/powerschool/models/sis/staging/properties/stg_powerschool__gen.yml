@@ -5,6 +5,14 @@ models:
       contract:
         enforced: true
     columns:
+      - name: dcid
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: id
+        data_type: int64
       - name: cat
         data_type: string
       - name: name
@@ -16,8 +24,6 @@ models:
       - name: value2
         data_type: string
       - name: valuet2
-        data_type: string
-      - name: custom
         data_type: string
       - name: powerlink
         data_type: string
@@ -33,14 +39,6 @@ models:
         data_type: bytes
       - name: psguid
         data_type: string
-      - name: dcid
-        data_type: int64
-        data_tests:
-          - unique:
-              config:
-                store_failures: true
-      - name: id
-        data_type: int64
       - name: valueli
         data_type: int64
       - name: valueli2
@@ -65,3 +63,5 @@ models:
         data_type: int64
       - name: yearid
         data_type: int64
+      # - name: custom
+      #   data_type: string

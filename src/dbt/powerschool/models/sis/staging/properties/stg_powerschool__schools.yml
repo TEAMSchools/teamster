@@ -5,6 +5,14 @@ models:
       contract:
         enforced: true
     columns:
+      - name: dcid
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: id
+        data_type: int64
       - name: name
         data_type: string
       - name: address
@@ -12,8 +20,6 @@ models:
       - name: pscomm_path
         data_type: string
       - name: abbreviation
-        data_type: string
-      - name: custom
         data_type: string
       - name: activecrslist
         data_type: string
@@ -69,16 +75,6 @@ models:
         data_type: string
       - name: transaction_date
         data_type: timestamp
-      - name: executionid
-        data_type: string
-      - name: dcid
-        data_type: int64
-      - name: id
-        data_type: int64
-        data_tests:
-          - unique:
-              config:
-                store_failures: true
       - name: district_number
         data_type: int64
       - name: school_number
@@ -113,3 +109,7 @@ models:
         data_type: int64
       - name: school_level
         data_type: string
+      # - name: custom
+      #   data_type: string
+      # - name: executionid
+      #   data_type: string

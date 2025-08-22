@@ -1,7 +1,7 @@
 with
     enr_bools as (
         select
-            enr.*
+            enr.*,
 
             case
                 when enr.exitdate >= cr.max_calendardate

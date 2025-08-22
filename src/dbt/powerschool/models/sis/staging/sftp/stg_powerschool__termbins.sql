@@ -12,7 +12,13 @@ select
         suppresspercentscr,
         termid,
         whomodifiedid,
-        yearid
+        yearid,
+        creditpct,
+        numattpoints,
+        collectiondate,
+        date1,
+        date2,
+        transaction_date
     ),
 
     cast(collect as int) as collect,
@@ -38,10 +44,6 @@ select
 
     cast(transaction_date as timestamp) as transaction_date,
 
-{#
-| aregradeslocked    |                 | INT64         | missing in definition |
-| executionid        |                 | STRING        | missing in definition |
-| storecode_order    |                 | STRING        | missing in definition |
-| storecode_type     |                 | STRING        | missing in definition |
-#}
+    left(storecode, 1) as storecode_type,
+    right(storecode, 1) as storecode_order,
 from {{ source("powerschool_sftp", "src_powerschool__termbins") }}

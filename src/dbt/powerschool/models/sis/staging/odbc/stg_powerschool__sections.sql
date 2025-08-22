@@ -31,7 +31,9 @@ select
         programid,
         excludefromstoredgrades,
         gradebooktype,
-        whomodifiedid
+        whomodifiedid,
+        custom,
+        executionid
     ),
 
     /* column transformations */

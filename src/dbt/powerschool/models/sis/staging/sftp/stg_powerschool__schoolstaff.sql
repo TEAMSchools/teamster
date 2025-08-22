@@ -58,13 +58,4 @@ select
     cast(balance4 as float64) as balance4,
 
     cast(transaction_date as timestamp) as transaction_date,
-
-{#
-| custom                     |                 | STRING        | missing in definition |
-| executionid                |                 | STRING        | missing in definition |
-| whencreated                |                 | TIMESTAMP     | missing in definition |
-| whenmodified               |                 | TIMESTAMP     | missing in definition |
-| whocreated                 |                 | STRING        | missing in definition |
-| whomodified                |                 | STRING        | missing in definition |
-#}
 from {{ source("powerschool_sftp", "src_powerschool__schoolstaff") }}

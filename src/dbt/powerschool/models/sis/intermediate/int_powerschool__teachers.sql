@@ -1,28 +1,12 @@
 select
-    u.* except (
-        executionid,
-        ip_address,
-        psguid,
-        transaction_date,
-        whencreated,
-        whenmodified,
-        whocreated,
-        whomodified,
-        whomodifiedid,
-        whomodifiedtype
-    ),
+    u.* except (ip_address, psguid, transaction_date, whomodifiedid, whomodifiedtype),
 
     ss.* except (
         users_dcid,
         dcid,
-        executionid,
         ip_address,
         psguid,
         transaction_date,
-        whencreated,
-        whenmodified,
-        whocreated,
-        whomodified,
         whomodifiedid,
         whomodifiedtype
     ),
