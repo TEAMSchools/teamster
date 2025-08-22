@@ -1,12 +1,21 @@
 with
     calendar as (select *, from {{ ref("int_powerschool__calendar_week") }}),
 
-    seat_tracker as (select *, from {{ ref("int_seat_tracker__snapshot") }}),
+    {# only active seats for the current academic year #}
+    seat_tracker as (
+        select *,
+        from {{ ref("int_seat_tracker__snapshot") }}
+        where
+            cast(academic_year as int) = {{ var("current_academic_year") }}
+            and is_active
+    ),
 
     locations as (select *, from {{ ref("int_people__location_crosswalk") }}),
 
-    staffed_current_year as (
+    final as (
         select
+            seat_tracker.staffing_model_id,
+            locations.location_name,
             locations.location_powerschool_school_id as school_id,
             calendar.week_start_monday,
             calendar.week_end_sunday,
@@ -17,13 +26,13 @@ with
             calendar
             on locations.location_powerschool_school_id = calendar.schoolid
             and calendar.week_end_sunday
-            between seat_tracker.valid_to and seat_tracker.valid_from
-        
+            between seat_tracker.valid_from and seat_tracker.valid_to
+    )
 
 select
     school_id,
     week_start_monday,
     week_end_sunday,
     avg(is_staffed) as percent_staffed_current_year,
-from staffed_current_year
+from final
 group by school_id, week_start_monday, week_end_sunday
