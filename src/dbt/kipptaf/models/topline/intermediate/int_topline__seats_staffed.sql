@@ -15,7 +15,7 @@ with
     final as (
         select
             seat_tracker.staffing_model_id,
-            locations.location_name,
+            seat_tracker.entity,
             locations.location_powerschool_school_id as school_id,
             calendar.week_start_monday,
             calendar.week_end_sunday,
@@ -25,14 +25,15 @@ with
         inner join
             calendar
             on locations.location_powerschool_school_id = calendar.schoolid
-            and calendar.week_end_sunday
+            and calendar.week_start_monday
             between seat_tracker.valid_from and seat_tracker.valid_to
     )
 
 select
+    staffing_model_id,
+    entity,
     school_id,
     week_start_monday,
     week_end_sunday,
-    avg(is_staffed) as percent_staffed_current_year,
+    is_staffed,
 from final
-group by school_id, week_start_monday, week_end_sunday
