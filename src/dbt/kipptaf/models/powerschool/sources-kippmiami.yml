@@ -2,6 +2,9 @@ version: 2
 
 sources:
   - name: kippmiami_powerschool
+    schema: |
+      {% if env_var('GITHUB_USER', 'dev') != 'dev' -%}
+      zz_{{ env_var('GITHUB_USER', 'dev') }}_{%- endif -%}kippmiami_powerschool
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         meta:
