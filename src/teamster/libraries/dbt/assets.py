@@ -63,8 +63,12 @@ def build_dbt_assets(
             for event in stage_external_sources.stream_raw_events():
                 context.log.info(msg=event)
 
-            # refresh_external_metadata_cache
-            relation_names = [s["relation_name"] for s in external_sources]
+            # refresh_external_metadata_cache for biglake tables
+            relation_names = [
+                s["relation_name"]
+                for s in external_sources
+                if s["external"]["options"].get("connection_name") is not None
+            ]
 
             refresh_external_metadata_cache = dbt_cli.cli(
                 args=[
