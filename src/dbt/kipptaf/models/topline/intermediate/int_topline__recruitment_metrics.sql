@@ -15,10 +15,10 @@ with
         left join locations on seat_tracker.adp_location = locations.location_name
         inner join
             calendar
-            on calendar.week_end_sunday
+            on locations.location_powerschool_school_id = calendar.schoolid
+            and calendar.week_end_sunday
             between seat_tracker.valid_to and seat_tracker.valid_from
-        where calendar.academic_year = {{ var("current_academic_year") }}
-    )
+        
 
 select
     school_id,
