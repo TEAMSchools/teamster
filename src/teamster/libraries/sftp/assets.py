@@ -69,7 +69,6 @@ def build_sftp_file_asset(
     file_sep: str = ",",
     file_encoding: str = "utf-8",
     slugify_cols: bool = True,
-    skip_asset_checks: bool = False,
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
@@ -93,11 +92,7 @@ def build_sftp_file_asset(
         op_tags=op_tags,
         group_name=group_name,
         automation_condition=automation_condition,
-        check_specs=(
-            [build_check_spec_avro_schema_valid(asset_key)]
-            if not skip_asset_checks
-            else None
-        ),
+        check_specs=[build_check_spec_avro_schema_valid(asset_key)],
         kinds={"python", "file"},
     )
     def _asset(context: AssetExecutionContext):
@@ -209,11 +204,9 @@ def build_sftp_file_asset(
                 context.log.warning(msg="File contains 0 rows")
 
         yield Output(value=(records, avro_schema), metadata={"records": n_rows})
-
-        if not skip_asset_checks:
-            yield check_avro_schema_valid(
-                asset_key=context.asset_key, records=records, schema=avro_schema
-            )
+        yield check_avro_schema_valid(
+            asset_key=context.asset_key, records=records, schema=avro_schema
+        )
 
     return _asset
 

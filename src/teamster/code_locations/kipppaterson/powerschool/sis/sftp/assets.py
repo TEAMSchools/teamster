@@ -17,6 +17,7 @@ assets = [
         remote_file_regex=rf"{a['asset_name']}\.csv",
         ssh_resource_key="ssh_couchdrop",
         avro_schema=SCHEMAS[a["asset_name"]],
+        slugify_replacements=[[f"{a['asset_name'].upper()}.", ""]],
     )
     for a in config_from_files([(f"{config_dir}/assets.yaml")])["assets"]
 ]
