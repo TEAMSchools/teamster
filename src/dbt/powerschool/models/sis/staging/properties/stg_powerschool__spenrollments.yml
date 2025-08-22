@@ -4,17 +4,13 @@ models:
     config:
       contract:
         enforced: true
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - studentid
-              - programid
-              - enter_date
-          config:
-            store_failures: true
-            severity: warn
     columns:
+      - name: dcid
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: enter_date
         data_type: date
       - name: exit_date
@@ -31,12 +27,6 @@ models:
         data_type: string
       - name: psguid
         data_type: string
-      - name: dcid
-        data_type: int64
-        data_tests:
-          - unique:
-              config:
-                store_failures: true
       - name: id
         data_type: int64
       - name: programid

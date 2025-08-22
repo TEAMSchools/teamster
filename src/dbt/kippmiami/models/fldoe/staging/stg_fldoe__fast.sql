@@ -120,33 +120,31 @@ with
                 grade_8_fast_mathematics_percentile_rank
             ) as percentile_rank,
 
-            cast(
-                coalesce(
-                    fast_grade_3_ela_reading_scale_score,
-                    fast_grade_3_mathematics_scale_score,
-                    fast_grade_4_ela_reading_scale_score,
-                    fast_grade_4_mathematics_scale_score,
-                    fast_grade_5_ela_reading_scale_score,
-                    fast_grade_5_mathematics_scale_score,
-                    fast_grade_6_ela_reading_scale_score,
-                    fast_grade_6_mathematics_scale_score,
-                    fast_grade_7_ela_reading_scale_score,
-                    fast_grade_7_mathematics_scale_score,
-                    fast_grade_8_ela_reading_scale_score,
-                    fast_grade_8_mathematics_scale_score,
-                    grade_3_fast_ela_reading_scale_score,
-                    grade_3_fast_mathematics_scale_score,
-                    grade_4_fast_ela_reading_scale_score,
-                    grade_4_fast_mathematics_scale_score,
-                    grade_5_fast_ela_reading_scale_score,
-                    grade_5_fast_mathematics_scale_score,
-                    grade_6_fast_ela_reading_scale_score,
-                    grade_6_fast_mathematics_scale_score,
-                    grade_7_fast_ela_reading_scale_score,
-                    grade_7_fast_mathematics_scale_score,
-                    grade_8_fast_ela_reading_scale_score,
-                    grade_8_fast_mathematics_scale_score
-                ) as int
+            coalesce(
+                fast_grade_3_ela_reading_scale_score,
+                fast_grade_3_mathematics_scale_score,
+                fast_grade_4_ela_reading_scale_score,
+                fast_grade_4_mathematics_scale_score,
+                fast_grade_5_ela_reading_scale_score,
+                fast_grade_5_mathematics_scale_score,
+                fast_grade_6_ela_reading_scale_score,
+                fast_grade_6_mathematics_scale_score,
+                fast_grade_7_ela_reading_scale_score,
+                fast_grade_7_mathematics_scale_score,
+                fast_grade_8_ela_reading_scale_score,
+                fast_grade_8_mathematics_scale_score,
+                grade_3_fast_ela_reading_scale_score,
+                grade_3_fast_mathematics_scale_score,
+                grade_4_fast_ela_reading_scale_score,
+                grade_4_fast_mathematics_scale_score,
+                grade_5_fast_ela_reading_scale_score,
+                grade_5_fast_mathematics_scale_score,
+                grade_6_fast_ela_reading_scale_score,
+                grade_6_fast_mathematics_scale_score,
+                grade_7_fast_ela_reading_scale_score,
+                grade_7_fast_mathematics_scale_score,
+                grade_8_fast_ela_reading_scale_score,
+                grade_8_fast_mathematics_scale_score
             ) as scale_score,
 
             regexp_extract(test_reason, r'\w+\d') as administration_window,
@@ -170,7 +168,9 @@ with
 
     with_calcs as (
         select
-            * except (percentile_rank, assessment_subject),
+            * except (percentile_rank, scale_score, assessment_subject),
+
+            cast(scale_score as int) as scale_score,
 
             cast(regexp_extract(percentile_rank, r'\d+') as numeric) as percentile_rank,
             cast(
@@ -182,6 +182,7 @@ with
                 concat('ELA0', assessment_grade),
                 concat('MAT0', assessment_grade)
             ) as test_code,
+
             if(
                 assessment_subject = 'ELAReading',
                 'English Language Arts',
@@ -197,6 +198,7 @@ with
                 when 'PM3'
                 then 'Spring'
             end as season,
+
             case
                 assessment_subject
                 when 'ELAReading'
@@ -204,13 +206,13 @@ with
                 when 'Mathematics'
                 then 'Math'
             end as discipline,
-
-            lag(scale_score, 1) over (
-                partition by student_id, academic_year, assessment_subject
-                order by administration_window asc
-            ) as scale_score_prev,
         from fast_data
-        where achievement_level not in ('Insufficient to score', 'Invalidated')
+        where
+            achievement_level not in (
+                'Insufficient to score',
+                'Invalidated',
+                'Insufficient to Score/No Response'
+            )
     )
 
 select
@@ -222,4 +224,9 @@ select
         when achievement_level_int < 3
         then false
     end as is_proficient,
+
+    lag(scale_score, 1) over (
+        partition by student_id, academic_year, assessment_subject
+        order by administration_window asc
+    ) as scale_score_prev,
 from with_calcs
