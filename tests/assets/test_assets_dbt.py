@@ -1,12 +1,12 @@
 from dagster import AssetsDefinition, materialize
 from dagster_dbt import DbtProject
 
-from teamster.core.resources import get_dbt_cli_resource
-
 
 def _test_dbt_assets(
     assets: list[AssetsDefinition], code_location: str, selection: list[str]
 ):
+    from teamster.core.resources import get_dbt_cli_resource
+
     result = materialize(
         assets=assets,
         resources={
@@ -19,6 +19,19 @@ def _test_dbt_assets(
     )
 
     assert result.success
+
+
+def test_dbt_assets_kippnewark():
+    from teamster.code_locations.kippnewark._dbt.assets import dbt_assets
+
+    _test_dbt_assets(
+        assets=[dbt_assets],
+        code_location="kippnewark",
+        selection=[
+            "kippnewark/powerschool/stg_powerschool__districtteachercategory",
+            "kippnewark/powerschool/stg_powerschool__schoolstaff",
+        ],
+    )
 
 
 def test_dbt_assets_kipptaf():
