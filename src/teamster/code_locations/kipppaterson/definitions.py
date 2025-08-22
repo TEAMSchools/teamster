@@ -15,6 +15,7 @@ from teamster.code_locations.kipppaterson import (
 )
 from teamster.core.resources import (
     GCS_RESOURCE,
+    GOOGLE_DRIVE_RESOURCE,
     SSH_COUCHDROP,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
@@ -39,6 +40,7 @@ defs = Definitions(
     resources={
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "gcs": GCS_RESOURCE,
+        "google_drive": GOOGLE_DRIVE_RESOURCE,
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "ssh_couchdrop": SSH_COUCHDROP,
