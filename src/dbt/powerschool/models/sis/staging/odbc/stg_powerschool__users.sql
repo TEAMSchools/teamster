@@ -21,7 +21,12 @@ select
         fedracedecline,
         ptaccess,
         whomodifiedid,
-        prefixcodesetid
+        prefixcodesetid,
+        executionid,
+        whencreated,
+        whenmodified,
+        whocreated,
+        whomodified
     ),
 
     /* column transformations */

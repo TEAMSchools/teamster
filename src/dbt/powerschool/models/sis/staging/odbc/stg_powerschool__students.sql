@@ -30,7 +30,6 @@ with
                 graduated_rank,
                 graduated_schoolid,
                 id,
-                ismigrated,
                 ldapenabled,
                 lunch_id,
                 membershipshare,
@@ -58,7 +57,10 @@ with
                 tuitionpayer,
                 whomodifiedid,
                 wm_createtime,
-                wm_tier
+                wm_tier,
+                custom,
+                executionid,
+                ismigrated
             ),
 
             /* column transformations */
@@ -83,7 +85,6 @@ with
             graduated_rank.int_value as graduated_rank,
             graduated_schoolid.int_value as graduated_schoolid,
             id.int_value as id,
-            ismigrated.int_value as ismigrated,
             ldapenabled.int_value as ldapenabled,
             lunch_id.double_value as lunch_id,
             membershipshare.double_value as membershipshare,
@@ -120,6 +121,7 @@ with
             cumulative_pct.double_value as cumulative_pct,
             customrank_gpa.double_value as customrank_gpa,
 
+            {# ismigrated.int_value as ismigrated, #}
             cast(student_number.double_value as int) as student_number,
         from {{ source("powerschool_odbc", "src_powerschool__students") }}
     )

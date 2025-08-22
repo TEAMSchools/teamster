@@ -16,8 +16,9 @@ with
                 suppressltrgrd,
                 gradescaleid,
                 suppresspercentscr,
+                whomodifiedid,
                 aregradeslocked,
-                whomodifiedid
+                executionid
             ),
 
             dcid.int_value as dcid,
@@ -34,8 +35,8 @@ with
             suppressltrgrd.int_value as suppressltrgrd,
             gradescaleid.int_value as gradescaleid,
             suppresspercentscr.int_value as suppresspercentscr,
-            aregradeslocked.int_value as aregradeslocked,
             whomodifiedid.int_value as whomodifiedid,
+        {# aregradeslocked.int_value as aregradeslocked, #}
         from {{ source("powerschool_odbc", "src_powerschool__termbins") }}
     )
 

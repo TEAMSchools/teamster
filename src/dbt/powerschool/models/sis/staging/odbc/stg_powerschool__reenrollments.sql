@@ -11,6 +11,7 @@ select
         membershipshare,
         tuitionpayer,
         fteid
+        custom,
     ),
 
     /* column transformations */

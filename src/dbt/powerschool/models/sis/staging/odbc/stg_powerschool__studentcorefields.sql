@@ -1,5 +1,3 @@
-{% set lep_status_true = ["1", "YES", "Y"] %}
-
 select
     * except (studentsdcid, lep_status),
 
@@ -7,6 +5,5 @@ select
     studentsdcid.int_value as studentsdcid,
 
     if(homeless_code in ('Y1', 'Y2'), true, false) as is_homeless,
-
-    if(lep_status in unnest({{ lep_status_true }}), true, false) as lep_status,
+    if(lep_status in ('1', 'YES', 'Y'), true, false) as lep_status,
 from {{ source("powerschool_odbc", "src_powerschool__studentcorefields") }}

@@ -30,6 +30,4 @@ select
 
     cast(entrydate as date) as entrydate,
     cast(exitdate as date) as exitdate,
-
-{# | custom|| STRING| missing in definition | #}
 from {{ source("powerschool_sftp", "src_powerschool__reenrollments") }}

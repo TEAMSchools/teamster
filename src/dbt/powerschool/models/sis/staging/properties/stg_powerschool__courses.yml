@@ -5,12 +5,14 @@ models:
       contract:
         enforced: true
     columns:
-      - name: id
+      - name: dcid
         data_type: int64
         data_tests:
           - unique:
               config:
                 store_failures: true
+      - name: id
+        data_type: int64
       - name: course_number
         data_type: string
       - name: course_name
@@ -18,8 +20,6 @@ models:
       - name: code
         data_type: string
       - name: prerequisitesvalue
-        data_type: string
-      - name: custom
         data_type: string
       - name: corequisites
         data_type: string
@@ -77,10 +77,6 @@ models:
         data_type: string
       - name: transaction_date
         data_type: timestamp
-      - name: executionid
-        data_type: string
-      - name: dcid
-        data_type: int64
       - name: credit_hours
         data_type: float64
       - name: add_to_gpa
@@ -191,3 +187,7 @@ models:
         data_type: int64
       - name: ispewaiver
         data_type: int64
+      # - name: custom
+      #   data_type: string
+      # - name: executionid
+      #   data_type: string

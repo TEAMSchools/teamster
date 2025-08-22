@@ -5,9 +5,13 @@ models:
       contract:
         enforced: true
     columns:
+      - name: dcid
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: classpua
-        data_type: string
-      - name: custom
         data_type: string
       - name: log
         data_type: string
@@ -31,14 +35,6 @@ models:
         data_type: string
       - name: notes
         data_type: string
-      - name: whocreated
-        data_type: string
-      - name: whencreated
-        data_type: timestamp
-      - name: whomodified
-        data_type: string
-      - name: whenmodified
-        data_type: timestamp
       - name: psguid
         data_type: string
       - name: ip_address
@@ -47,16 +43,8 @@ models:
         data_type: string
       - name: transaction_date
         data_type: timestamp
-      - name: executionid
-        data_type: string
-      - name: dcid
-        data_type: int64
       - name: id
         data_type: int64
-        data_tests:
-          - unique:
-              config:
-                store_failures: true
       - name: schoolid
         data_type: int64
       - name: users_dcid
@@ -105,3 +93,15 @@ models:
         data_type: int64
       - name: whomodifiedid
         data_type: int64
+      # - name: custom
+      #   data_type: string
+      # - name: executionid
+      #   data_type: string
+      # - name: whencreated
+      #   data_type: timestamp
+      # - name: whenmodified
+      #   data_type: timestamp
+      # - name: whocreated
+      #   data_type: string
+      # - name: whomodified
+      #   data_type: string
