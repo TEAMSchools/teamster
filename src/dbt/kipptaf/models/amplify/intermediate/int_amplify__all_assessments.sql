@@ -154,7 +154,7 @@ with
             *,
 
             row_number() over (
-                partition by surrogate_key, measure_standard
+                partition by surrogate_key, round_number, measure_standard
                 order by measure_standard_level_int desc
             ) as rn_highest,
 
