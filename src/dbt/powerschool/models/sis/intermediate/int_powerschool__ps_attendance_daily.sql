@@ -5,9 +5,6 @@ select
     att.att_date,
     att.attendance_codeid,
     att.att_mode_code,
-    att.calendar_dayid,
-    att.programid,
-    att.total_minutes,
 
     ac.att_code,
     ac.presence_status_cd,

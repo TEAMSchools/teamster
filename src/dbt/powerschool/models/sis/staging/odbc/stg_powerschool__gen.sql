@@ -1,18 +1,19 @@
 select
     * except (
+        custom,
         dcid,
         id,
-        valueli,
-        valueli2,
-        valuer,
-        sortorder,
         schoolid,
-        valueli3,
-        valuer2,
+        sortorder,
+        spedindicator,
         time1,
         time2,
-        spedindicator,
+        valueli,
+        valueli2,
+        valueli3,
         valueli4,
+        valuer,
+        valuer2,
         yearid
     ),
 

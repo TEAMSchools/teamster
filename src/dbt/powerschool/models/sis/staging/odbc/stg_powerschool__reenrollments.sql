@@ -1,17 +1,17 @@
 select
     * except (
-        dcid,
-        id,
-        studentid,
-        schoolid,
-        grade_level,
         `type`,
-        enrollmentcode,
-        fulltimeequiv_obsolete,
-        membershipshare,
-        tuitionpayer,
-        fteid
         custom,
+        dcid,
+        enrollmentcode,
+        fteid,
+        fulltimeequiv_obsolete,
+        grade_level,
+        id,
+        membershipshare,
+        schoolid,
+        studentid,
+        tuitionpayer
     ),
 
     /* column transformations */
