@@ -36,11 +36,12 @@ select
     cast(schoolcategorycodesetid as int) as schoolcategorycodesetid,
     cast(schoolgroup as int) as schoolgroup,
     cast(sortorder as int) as sortorder,
-    cast(state_excludefromreporting as int) as state_excludefromreporting,
     cast(view_in_portal as int) as view_in_portal,
     cast(whomodifiedid as int) as whomodifiedid,
 
     cast(transaction_date as timestamp) as transaction_date,
+
+    if(state_excludefromreporting = 'true', 1, 0) as state_excludefromreporting,
 
     case
         when high_grade = '12'

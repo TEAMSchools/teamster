@@ -55,7 +55,6 @@ select
     cast(gradebooktype as int) as gradebooktype,
     cast(gradescaleid as int) as gradescaleid,
     cast(id as int) as id,
-    cast(maxcut as int) as maxcut,
     cast(maxenrollment as int) as maxenrollment,
     cast(no_of_students as int) as no_of_students,
     cast(noofterms as int) as noofterms,
@@ -78,4 +77,6 @@ select
     cast(transaction_date as timestamp) as transaction_date,
 
     cast(bitmap as bytes) as bitmap,
+
+    if(maxcut = 'true', 1, 0) as maxcut,
 from {{ source("powerschool_sftp", "src_powerschool__sections") }}

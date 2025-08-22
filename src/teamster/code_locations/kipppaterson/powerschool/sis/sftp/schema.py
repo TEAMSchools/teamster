@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.libraries.powerschool.sis.sftp.schema import (  # SPEnrollments,
+from teamster.libraries.powerschool.sis.sftp.schema import (
     CC,
     FTE,
     Attendance,
@@ -29,6 +29,7 @@ from teamster.libraries.powerschool.sis.sftp.schema import (  # SPEnrollments,
     SNJCrsX,
     SNJRenX,
     SNJStuX,
+    SPEnrollments,
     StudentContactAssoc,
     StudentContactDetail,
     StudentCoreFields,
@@ -128,9 +129,9 @@ SCHOOLSTAFF_SCHEMA = json.loads(
 
 SECTIONS_SCHEMA = json.loads(py_avro_schema.generate(py_type=Sections, options=options))
 
-# SPENROLLMENTS_SCHEMA = json.loads(
-#     py_avro_schema.generate(py_type=SPEnrollments, options=options)
-# )
+SPENROLLMENTS_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=SPEnrollments, options=options)
+)
 
 STUDENTCONTACTASSOC_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=StudentContactAssoc, options=options)
@@ -179,7 +180,7 @@ SCHEMAS = {
     "schools": SCHOOLS_SCHEMA,
     "schoolstaff": SCHOOLSTAFF_SCHEMA,
     "sections": SECTIONS_SCHEMA,
-    # "spenrollments": SPENROLLMENTS_SCHEMA,
+    "spenrollments": SPENROLLMENTS_SCHEMA,
     "studentcontactassoc": STUDENTCONTACTASSOC_SCHEMA,
     "studentcontactdetail": STUDENTCONTACTDETAIL_SCHEMA,
     "studentcorefields": STUDENTCOREFIELDS_SCHEMA,

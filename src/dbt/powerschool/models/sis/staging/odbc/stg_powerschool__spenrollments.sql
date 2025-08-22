@@ -1,7 +1,7 @@
 with
     transformations as (
         select
-            * except (dcid, id, programid, schoolid, gradelevel, studentid),
+            * except (dcid, id, programid, schoolid, gradelevel, studentid, custom),
 
             /* column transformations */
             dcid.int_value as dcid,
@@ -16,17 +16,18 @@ with
                 extract(year from enter_date),
                 extract(year from enter_date) - 1
             ) as academic_year,
+
+            if(
+                current_date('{{ var("local_timezone") }}')
+                between enter_date and exit_date,
+                true,
+                false
+            ) as is_current,
         from {{ source("powerschool_odbc", "src_powerschool__spenrollments") }}
     )
 
 select
     *,
-
-    if(
-        current_date('{{ var("local_timezone") }}') between enter_date and exit_date,
-        true,
-        false
-    ) as is_current,
 
     row_number() over (
         partition by studentid, programid, academic_year order by enter_date desc
