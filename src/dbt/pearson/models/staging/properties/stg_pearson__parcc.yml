@@ -2,9 +2,6 @@ version: 2
 models:
   - name: stg_pearson__parcc
     config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("pearson",
-        "src_pearson__parcc") | replace("`", "") }}')
       contract:
         enforced: true
     columns:

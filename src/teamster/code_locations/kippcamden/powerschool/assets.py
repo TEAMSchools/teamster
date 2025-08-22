@@ -5,7 +5,7 @@ from dagster import MonthlyPartitionsDefinition, config_from_files
 
 from teamster.code_locations.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
-from teamster.libraries.powerschool.sis.assets import build_powerschool_table_asset
+from teamster.libraries.powerschool.sis.odbc.assets import build_powerschool_table_asset
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
