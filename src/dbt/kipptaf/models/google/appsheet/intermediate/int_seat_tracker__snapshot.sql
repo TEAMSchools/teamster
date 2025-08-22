@@ -6,6 +6,8 @@ with
             status_detail,
             mid_year_hire as is_mid_year_hire,
             plan_status,
+            adp_location,
+            entity,
 
             cast(academic_year as string) as academic_year,
             cast(dbt_valid_from as date) as valid_from,
@@ -30,6 +32,8 @@ with
             status_detail,
             is_mid_year_hire,
             plan_status,
+            null as adp_location,
+            null as entity,
             academic_year,
             valid_from,
 
@@ -59,6 +63,8 @@ select
     os1.status_detail,
     os1.is_mid_year_hire,
     os1.plan_status,
+    os1.adp_location,
+    os1.entity,
     os1.academic_year,
     os1.teammate,
     os1.is_open,
