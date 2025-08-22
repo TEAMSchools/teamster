@@ -7,7 +7,7 @@ from teamster.code_locations.kippcamden.powerschool.assets import (
     powerschool_table_assets_nightly,
     powerschool_table_assets_no_partition,
 )
-from teamster.libraries.powerschool.sis.schedules import (
+from teamster.libraries.powerschool.sis.odbc.schedules import (
     build_powerschool_sis_asset_schedule,
 )
 

@@ -1,7 +1,7 @@
 from dagster import EnvVar
 from dagster_shared import check
 
-from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 
 
