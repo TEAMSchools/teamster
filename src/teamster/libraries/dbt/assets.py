@@ -25,8 +25,6 @@ def build_dbt_assets(
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dbt_cli: DbtCliResource):
-        external_source_selection = []
-
         # get upstream nodes for asset selection
         selection_depends_on_nodes = [
             node
@@ -37,20 +35,24 @@ def build_dbt_assets(
         ]
 
         # filter upstream nodes for external sources
-        external_source_selection = {
-            f"{sources[node]['source_name']}.{sources[node]['name']}"
+        external_sources = [
+            sources[node]
             for node in selection_depends_on_nodes
             if sources.get(node, {}).get("external")
-        }
+        ]
 
-        # stage external sources
-        if external_source_selection:
-            dbt_run_operation = dbt_cli.cli(
+        if external_sources:
+            # stage external sources
+            select = " ".join(
+                [f"{s['source_name']}.{s['name']}" for s in external_sources]
+            )
+
+            stage_external_sources = dbt_cli.cli(
                 args=[
                     "run-operation",
                     "stage_external_sources",
                     "--args",
-                    json.dumps({"select": " ".join(external_source_selection)}),
+                    json.dumps({"select": select}),
                     "--vars",
                     json.dumps({"ext_full_refresh": "true"}),
                 ],
@@ -58,7 +60,28 @@ def build_dbt_assets(
                 dagster_dbt_translator=dagster_dbt_translator,
             )
 
-            for event in dbt_run_operation.stream_raw_events():
+            for event in stage_external_sources.stream_raw_events():
+                context.log.info(msg=event)
+
+            # refresh_external_metadata_cache for biglake tables
+            relation_names = [
+                s["relation_name"]
+                for s in external_sources
+                if s["external"]["options"].get("connection_name") is not None
+            ]
+
+            refresh_external_metadata_cache = dbt_cli.cli(
+                args=[
+                    "run-operation",
+                    "refresh_external_metadata_cache",
+                    "--args",
+                    json.dumps({"relation_names": relation_names}),
+                ],
+                manifest=manifest,
+                dagster_dbt_translator=dagster_dbt_translator,
+            )
+
+            for event in refresh_external_metadata_cache.stream_raw_events():
                 context.log.info(msg=event)
 
         # build models
