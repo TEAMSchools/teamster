@@ -17,12 +17,12 @@ def _test_asset(assets: list[AssetsDefinition], selection: str):
 
     assert result.success
 
-    # asset_check_evaluation = result.get_asset_check_evaluations()[0]
+    asset_check_evaluation = result.get_asset_check_evaluations()[0]
 
-    # extras = asset_check_evaluation.metadata.get("extras")
+    extras = asset_check_evaluation.metadata.get("extras")
 
-    # assert extras is not None
-    # assert extras.text == ""
+    assert extras is not None
+    assert extras.text == ""
 
 
 def test_powerschool_attendance_kipppaterson():
