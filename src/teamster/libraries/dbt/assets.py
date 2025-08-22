@@ -52,7 +52,7 @@ def build_dbt_assets(
                     "run-operation",
                     "stage_external_sources",
                     "--args",
-                    json.dumps({"select": list(select)}),
+                    json.dumps({"select": select}),
                     "--vars",
                     json.dumps({"ext_full_refresh": "true"}),
                 ],
