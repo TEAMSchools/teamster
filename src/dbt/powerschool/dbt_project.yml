@@ -24,3 +24,8 @@ vars:
 
 models:
   +schema: powerschool
+  powerschool:
+    sis:
+      staging:
+        sftp:
+          +enabled: false
