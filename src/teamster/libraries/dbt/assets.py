@@ -44,7 +44,7 @@ def build_dbt_assets(
         if external_sources:
             # stage external sources
             select = " ".join(
-                [f"{s['source_name']}.{s['name']}" for s in external_sources]
+                {f"{s['source_name']}.{s['name']}" for s in external_sources}
             )
 
             stage_external_sources = dbt_cli.cli(
@@ -52,7 +52,7 @@ def build_dbt_assets(
                     "run-operation",
                     "stage_external_sources",
                     "--args",
-                    json.dumps({"select": select}),
+                    json.dumps({"select": list(select)}),
                     "--vars",
                     json.dumps({"ext_full_refresh": "true"}),
                 ],
@@ -64,11 +64,11 @@ def build_dbt_assets(
                 context.log.info(msg=event)
 
             # refresh_external_metadata_cache for biglake tables
-            relation_names = [
+            relation_names = {
                 s["relation_name"]
                 for s in external_sources
                 if s["external"]["options"].get("connection_name") is not None
-            ]
+            }
 
             if relation_names:
                 refresh_external_metadata_cache = dbt_cli.cli(
@@ -76,7 +76,7 @@ def build_dbt_assets(
                         "run-operation",
                         "refresh_external_metadata_cache",
                         "--args",
-                        json.dumps({"relation_names": relation_names}),
+                        json.dumps({"relation_names": list(relation_names)}),
                     ],
                     manifest=manifest,
                     dagster_dbt_translator=dagster_dbt_translator,
