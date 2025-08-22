@@ -12,6 +12,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - assignmentscore
         external:
           location:
@@ -29,6 +31,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - attendance
         external:
           location:
@@ -46,6 +50,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - pgfinalgrades
         external:
           location:
@@ -63,6 +69,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - storedgrades
         external:
           location:
@@ -80,6 +88,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - assignmentcategoryassoc
         external:
           location:
@@ -98,6 +108,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - assignmentsection
         external:
           location:
@@ -116,6 +128,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - cc
         external:
           location:
@@ -133,6 +147,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - codeset
         external:
           location:
@@ -150,6 +166,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - courses
         external:
           location:
@@ -167,6 +185,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - districtteachercategory
         external:
           location:
@@ -185,6 +205,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - emailaddress
         external:
           location:
@@ -202,6 +224,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gradecalcformulaweight
         external:
           location:
@@ -220,6 +244,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gradecalcschoolassoc
         external:
           location:
@@ -238,6 +264,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gradecalculationtype
         external:
           location:
@@ -256,6 +284,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gradeformulaset
         external:
           location:
@@ -273,6 +303,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gradescaleitem
         external:
           location:
@@ -290,6 +322,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gradeschoolconfig
         external:
           location:
@@ -308,6 +342,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gradeschoolformulaassoc
         external:
           location:
@@ -326,6 +362,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gradesectionconfig
         external:
           location:
@@ -344,6 +382,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - originalcontactmap
         external:
           location:
@@ -362,6 +402,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - person
         external:
           location:
@@ -379,6 +421,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - personaddress
         external:
           location:
@@ -396,6 +440,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - personaddressassoc
         external:
           location:
@@ -414,6 +460,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - personemailaddressassoc
         external:
           location:
@@ -432,6 +480,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - personphonenumberassoc
         external:
           location:
@@ -450,6 +500,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - phonenumber
         external:
           location:
@@ -467,6 +519,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - prefs
         external:
           location:
@@ -484,6 +538,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - roledef
         external:
           location:
@@ -501,6 +557,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - s_nj_crs_x
         external:
           location:
@@ -518,6 +576,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - s_nj_ren_x
         external:
           location:
@@ -535,6 +595,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - s_nj_stu_x
         external:
           location:
@@ -552,6 +614,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - s_nj_usr_x
         external:
           location:
@@ -569,6 +633,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - schools
         external:
           location:
@@ -586,6 +652,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - schoolstaff
         external:
           location:
@@ -603,6 +671,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - sections
         external:
           location:
@@ -620,6 +690,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - sectionteacher
         external:
           location:
@@ -637,6 +709,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - studentcontactassoc
         external:
           location:
@@ -655,6 +729,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - studentcontactdetail
         external:
           location:
@@ -673,6 +749,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - studentcorefields
         external:
           location:
@@ -691,6 +769,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - studentrace
         external:
           location:
@@ -708,6 +788,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - students
         external:
           location:
@@ -725,6 +807,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - teachercategory
         external:
           location:
@@ -742,6 +826,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - termbins
         external:
           location:
@@ -759,6 +845,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - terms
         external:
           location:
@@ -776,6 +864,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - u_clg_et_stu
         external:
           location:
@@ -793,6 +883,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - u_clg_et_stu_alt
         external:
           location:
@@ -810,6 +902,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - u_def_ext_students
         external:
           location:
@@ -828,6 +922,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - u_studentsuserfields
         external:
           location:
@@ -846,6 +942,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - users
         external:
           location:
@@ -864,6 +962,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - attendance_code
         external:
           location:
@@ -881,6 +981,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - attendance_conversion_items
         external:
           location:
@@ -899,6 +1001,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - bell_schedule
         external:
           location:
@@ -916,6 +1020,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - calendar_day
         external:
           location:
@@ -933,6 +1039,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - cycle_day
         external:
           location:
@@ -950,6 +1058,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - fte
         external:
           location:
@@ -967,6 +1077,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gen
         external:
           location:
@@ -984,6 +1096,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - log
         external:
           location:
@@ -1001,6 +1115,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - period
         external:
           location:
@@ -1018,6 +1134,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - reenrollments
         external:
           location:
@@ -1035,6 +1153,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - spenrollments
         external:
           location:
@@ -1052,6 +1172,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - test
         external:
           location:
@@ -1069,6 +1191,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - testscore
         external:
           location:
@@ -1086,6 +1210,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - studenttest
         external:
           location:
@@ -1103,6 +1229,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - studenttestscore
         external:
           location:
@@ -1120,6 +1248,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - sced_code_mapping
         external:
           location:
@@ -1138,6 +1268,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gradplan
         external:
           location:
@@ -1155,6 +1287,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - userscorefields
         external:
           location:
@@ -1172,6 +1306,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - u_storedgrades_de
         external:
           location:
@@ -1190,6 +1326,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpnode
         external:
           location:
@@ -1207,6 +1345,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpprogresssubject
         external:
           location:
@@ -1225,6 +1365,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpprogresssubjectearned
         external:
           location:
@@ -1243,6 +1385,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpprogresssubjectenrolled
         external:
           location:
@@ -1261,6 +1405,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpprogresssubjectrequested
         external:
           location:
@@ -1279,6 +1425,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpprogresssubjectwaived
         external:
           location:
@@ -1297,6 +1445,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpprogresssubjwaivedapplied
         external:
           location:
@@ -1315,6 +1465,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpselectedcrs
         external:
           location:
@@ -1332,6 +1484,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpselectedcrtype
         external:
           location:
@@ -1349,6 +1503,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpselector
         external:
           location:
@@ -1366,6 +1522,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gptarget
         external:
           location:
@@ -1383,6 +1541,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpversion
         external:
           location:
@@ -1400,6 +1560,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - gpstudentwaiver
         external:
           location:
@@ -1417,6 +1579,8 @@ sources:
             asset_key:
               - "{{ project_name }}"
               - powerschool
+              - sis
+              - sftp
               - s_stu_x
         external:
           location:
