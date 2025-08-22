@@ -29,7 +29,6 @@ select
     cast(schoolid as int) as schoolid,
     cast(showonspreadsht as int) as showonspreadsht,
     cast(storegrades as int) as storegrades,
-    cast(suppressltrgrd as int) as suppressltrgrd,
     cast(suppresspercentscr as int) as suppresspercentscr,
     cast(termid as int) as termid,
     cast(whomodifiedid as int) as whomodifiedid,
@@ -46,4 +45,6 @@ select
 
     left(storecode, 1) as storecode_type,
     right(storecode, 1) as storecode_order,
+
+    if(suppressltrgrd = 'true', 1, 0) as suppressltrgrd,
 from {{ source("powerschool_sftp", "src_powerschool__termbins") }}

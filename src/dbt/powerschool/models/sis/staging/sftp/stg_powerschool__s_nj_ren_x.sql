@@ -34,8 +34,6 @@ select
         whenmodified
     ),
 
-    cast(pid_504_tf as boolean) as pid_504_tf,
-
     cast(cumulativedaysabsent as int) as cumulativedaysabsent,
     cast(cumulativedayspresent as int) as cumulativedayspresent,
     cast(cumulativestateabs as int) as cumulativestateabs,
@@ -54,19 +52,21 @@ select
     cast(retained_tf as int) as retained_tf,
     cast(sid_excludeenrollment as int) as sid_excludeenrollment,
 
-    cast(declassificationspeddate as date) as declassificationspeddate,
-    cast(districtentrydate as date) as districtentrydate,
-    cast(elp_screener_date as date) as elp_screener_date,
-    cast(lepbegindate as date) as lepbegindate,
-    cast(lepbegindate2 as date) as lepbegindate2,
-    cast(lependdate as date) as lependdate,
-    cast(liep_parent_refusal_date as date) as liep_parent_refusal_date,
-    cast(liependdate2 as date) as liependdate2,
-    cast(schoolentrydate as date) as schoolentrydate,
-    cast(sid_entrydate as date) as sid_entrydate,
-    cast(sid_exitdate as date) as sid_exitdate,
-    cast(withdrawal_date as date) as withdrawal_date,
+    parse_date('%m/%d/%Y', declassificationspeddate) as declassificationspeddate,
+    parse_date('%m/%d/%Y', districtentrydate) as districtentrydate,
+    parse_date('%m/%d/%Y', elp_screener_date) as elp_screener_date,
+    parse_date('%m/%d/%Y', lepbegindate) as lepbegindate,
+    parse_date('%m/%d/%Y', lepbegindate2) as lepbegindate2,
+    parse_date('%m/%d/%Y', lependdate) as lependdate,
+    parse_date('%m/%d/%Y', liep_parent_refusal_date) as liep_parent_refusal_date,
+    parse_date('%m/%d/%Y', liependdate2) as liependdate2,
+    parse_date('%m/%d/%Y', schoolentrydate) as schoolentrydate,
+    parse_date('%m/%d/%Y', sid_entrydate) as sid_entrydate,
+    parse_date('%m/%d/%Y', sid_exitdate) as sid_exitdate,
+    parse_date('%m/%d/%Y', withdrawal_date) as withdrawal_date,
 
-    cast(whencreated as timestamp) as whencreated,
-    cast(whenmodified as timestamp) as whenmodified,
+    parse_timestamp('%m/%d/%Y', whencreated) as whencreated,
+    parse_timestamp('%m/%d/%Y', whenmodified) as whenmodified,
+
+    if(pid_504_tf = '1', true, false) as pid_504_tf,
 from {{ source("powerschool_sftp", "src_powerschool__s_nj_ren_x") }}

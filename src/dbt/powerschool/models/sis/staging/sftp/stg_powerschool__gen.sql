@@ -23,7 +23,6 @@ select
     cast(id as int) as id,
     cast(schoolid as int) as schoolid,
     cast(sortorder as int) as sortorder,
-    cast(spedindicator as int) as spedindicator,
     cast(time1 as int) as time1,
     cast(time2 as int) as time2,
     cast(valueli as int) as valueli,
@@ -39,4 +38,6 @@ select
     cast(date2 as date) as date2,
 
     cast(value_x as bytes) as value_x,
+
+    if(spedindicator = 'true', 1, 0) as spedindicator,
 from {{ source("powerschool_sftp", "src_powerschool__gen") }}
