@@ -70,19 +70,20 @@ def build_dbt_assets(
                 if s["external"]["options"].get("connection_name") is not None
             ]
 
-            refresh_external_metadata_cache = dbt_cli.cli(
-                args=[
-                    "run-operation",
-                    "refresh_external_metadata_cache",
-                    "--args",
-                    json.dumps({"relation_names": relation_names}),
-                ],
-                manifest=manifest,
-                dagster_dbt_translator=dagster_dbt_translator,
-            )
+            if relation_names:
+                refresh_external_metadata_cache = dbt_cli.cli(
+                    args=[
+                        "run-operation",
+                        "refresh_external_metadata_cache",
+                        "--args",
+                        json.dumps({"relation_names": relation_names}),
+                    ],
+                    manifest=manifest,
+                    dagster_dbt_translator=dagster_dbt_translator,
+                )
 
-            for event in refresh_external_metadata_cache.stream_raw_events():
-                context.log.info(msg=event)
+                for event in refresh_external_metadata_cache.stream_raw_events():
+                    context.log.info(msg=event)
 
         # build models
         dbt_build = dbt_cli.cli(args=["build"], context=context)
