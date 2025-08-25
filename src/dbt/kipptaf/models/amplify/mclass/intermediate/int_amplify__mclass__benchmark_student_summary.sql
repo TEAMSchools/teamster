@@ -13,24 +13,33 @@ with
 -- trunk-ignore(sqlfluff/AM04)
 select
     * except (
-        enrollment_teacher_staff_id,
-        enrollment_teacher_name,
-        device_date,
-        composite_score_lexile,
-        basic_comprehension_maze_score,
-        basic_comprehension_maze_semester_growth,
-        basic_comprehension_maze_year_growth,
         basic_comprehension_maze_local_percentile,
+        enrollment_teacher_staff_id,
+        official_teacher_staff_id,
+        enrollment_teacher_name,
+        official_teacher_name,
+        device_date,
+        client_date,
+        composite_score_lexile,
+        dibels_composite_score_lexile,
+        basic_comprehension_maze_score,
+        reading_comprehension_maze_score,
+        basic_comprehension_maze_semester_growth,
+        reading_comprehension_maze_semester_growth,
+        basic_comprehension_maze_year_growth,
+        reading_comprehension_maze_year_growth,
         basic_comprehension_maze_national_norm_percentile,
+        reading_comprehension_maze_national_norm_percentile,
         basic_comprehension_maze_level,
+        reading_comprehension_maze_level,
         basic_comprehension_maze_tested_out,
-        basic_comprehension_maze_discontinued
+        reading_comprehension_maze_tested_out,
+        basic_comprehension_maze_discontinued,
+        reading_comprehension_maze_discontinued
     ),
 
     basic_comprehension_maze_local_percentile
     as reading_comprehension_maze_local_percentile,
-    basic_comprehension_maze_national_norm_percentile
-    as reading_comprehension_maze_national_norm_percentile,
 
     coalesce(
         enrollment_teacher_staff_id, official_teacher_staff_id
@@ -50,6 +59,10 @@ select
     coalesce(
         basic_comprehension_maze_year_growth, reading_comprehension_maze_year_growth
     ) as reading_comprehension_maze_year_growth,
+    coalesce(
+        basic_comprehension_maze_national_norm_percentile,
+        reading_comprehension_maze_national_norm_percentile
+    ) as reading_comprehension_maze_national_norm_percentile,
     coalesce(
         basic_comprehension_maze_level, reading_comprehension_maze_level
     ) as reading_comprehension_maze_level,
