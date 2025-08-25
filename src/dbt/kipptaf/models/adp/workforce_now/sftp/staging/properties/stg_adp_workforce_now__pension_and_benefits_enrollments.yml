@@ -5,6 +5,15 @@ models:
     config:
       contract:
         enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - position_id
+              - enrollment_status
+              - plan_name
+          config:
+            store_failures: true
     columns:
       - name: employee_number
         data_type: int64
