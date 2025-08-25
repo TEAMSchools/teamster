@@ -37,7 +37,9 @@ with
             if(specprog_name = 'Bucket 2 - ELA', 'Reading', 'Math') as iready_subject,
 
         from {{ ref("int_powerschool__spenrollments") }}
-        where specprog_name in ('Bucket 2 - ELA', 'Bucket 2 - Math')
+        where
+            specprog_name in ('Bucket 2 - ELA', 'Bucket 2 - Math')
+            and rn_student_program_year_desc = 1
     ),
 
     prev_yr_state_test as (

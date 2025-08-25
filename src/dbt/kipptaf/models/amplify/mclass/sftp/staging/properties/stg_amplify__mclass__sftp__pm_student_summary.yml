@@ -3,9 +3,6 @@ models:
   - name: stg_amplify__mclass__sftp__pm_student_summary
     config:
       enabled: false # TODO: enable for prod when ready
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("amplify",
-        "src_amplify__mclass__sftp__pm_student_summary") | replace("`", "") }}')
       contract:
         enforced: true
     columns:
