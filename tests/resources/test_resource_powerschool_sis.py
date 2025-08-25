@@ -1,7 +1,7 @@
 from dagster import EnvVar, build_resources
 from sqlalchemy import TextClause
 
-from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 
 

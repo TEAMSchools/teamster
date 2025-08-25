@@ -1,0 +1,9 @@
+kipppaterson:
+  target: kipppaterson
+  outputs:
+    kipppaterson:
+      type: bigquery
+      schema: kipppaterson
+      threads: 40
+      method: oauth
+      project: teamster-332318

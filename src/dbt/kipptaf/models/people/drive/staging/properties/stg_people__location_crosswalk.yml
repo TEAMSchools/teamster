@@ -8,6 +8,10 @@ models:
     columns:
       - name: Name
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: Clean_Name
         data_type: string
       - name: Abbreviation
