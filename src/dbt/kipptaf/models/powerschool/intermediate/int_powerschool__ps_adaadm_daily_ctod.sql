@@ -15,6 +15,10 @@ with
                         "kippmiami_powerschool",
                         "int_powerschool__ps_adaadm_daily_ctod",
                     ),
+                    source(
+                        "kipppaterson_powerschool",
+                        "int_powerschool__ps_adaadm_daily_ctod",
+                    ),
                 ]
             )
         }}

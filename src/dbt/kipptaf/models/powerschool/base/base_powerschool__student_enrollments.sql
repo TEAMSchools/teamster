@@ -17,6 +17,10 @@ with
                         "kippmiami_powerschool",
                         "base_powerschool__student_enrollments",
                     ),
+                    source(
+                        "kipppaterson_powerschool",
+                        "base_powerschool__student_enrollments",
+                    ),
                 ]
             )
         }}
