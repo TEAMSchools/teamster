@@ -27,6 +27,11 @@ select
         basic_comprehension_maze_discontinued
     ),
 
+    basic_comprehension_maze_local_percentile
+    as reading_comprehension_maze_local_percentile,
+    basic_comprehension_maze_national_norm_percentile
+    as reading_comprehension_maze_national_norm_percentile,
+
     coalesce(
         enrollment_teacher_staff_id, official_teacher_staff_id
     ) as official_teacher_staff_id,
@@ -45,14 +50,6 @@ select
     coalesce(
         basic_comprehension_maze_year_growth, reading_comprehension_maze_year_growth
     ) as reading_comprehension_maze_year_growth,
-    coalesce(
-        basic_comprehension_maze_local_percentile,
-        reading_comprehension_maze_local_percentile
-    ) as reading_comprehension_maze_local_percentile,
-    coalesce(
-        basic_comprehension_maze_national_norm_percentile,
-        reading_comprehension_maze_national_norm_percentile
-    ) as reading_comprehension_maze_national_norm_percentile,
     coalesce(
         basic_comprehension_maze_level, reading_comprehension_maze_level
     ) as reading_comprehension_maze_level,
