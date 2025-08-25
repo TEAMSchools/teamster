@@ -7,8 +7,6 @@ sources:
       {{ project_name }}_amplify
     tables:
       - name: src_amplify__mclass__sftp__benchmark_student_summary
-        config:
-          enabled: false # TODO: enable for prod
         external:
           location:
             "{{ var('cloud_storage_uri_base')
@@ -31,8 +29,6 @@ sources:
               - sftp
               - benchmark_student_summary
       - name: src_amplify__mclass__sftp__pm_student_summary
-        config:
-          enabled: false # TODO: enable for prod
         external:
           location:
             "{{ var('cloud_storage_uri_base')

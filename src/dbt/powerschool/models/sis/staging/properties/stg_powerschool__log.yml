@@ -1,0 +1,21 @@
+version: 2
+models:
+  - name: stg_powerschool__log
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: dcid
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: studentid
+        data_type: int64
+      - name: logtypeid
+        data_type: int64
+      - name: entry_date
+        data_type: date
+      - name: entry
+        data_type: string

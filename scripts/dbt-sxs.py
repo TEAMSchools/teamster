@@ -4,6 +4,7 @@
 # ///
 
 import argparse
+import json
 import os
 import subprocess
 
@@ -22,12 +23,17 @@ def main() -> None:
         f"gs://teamster-{'test' if args.test else args.project}/dagster/{args.project}"
     )
 
+    vars = {
+        "ext_full_refresh": "true",
+        "cloud_storage_uri_base": cloud_storage_uri_base,
+    }
+
     run_args = [
         "dbt",
         "run-operation",
         "stage_external_sources",
         f"--project-dir=src/dbt/{args.project}",
-        f"--vars={{'ext_full_refresh': 'true', 'cloud_storage_uri_base': '{cloud_storage_uri_base}'}}",
+        f"--vars={json.dumps(vars)}",
     ]
 
     if args.select:

@@ -6,6 +6,7 @@ models:
           arguments:
             combination_of_columns:
               - id
+              - _dbt_source_model
           config:
             store_failures: true
     columns:
