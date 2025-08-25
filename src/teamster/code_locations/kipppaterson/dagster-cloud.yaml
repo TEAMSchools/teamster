@@ -1,0 +1,46 @@
+locations:
+  - location_name: kipppaterson
+    code_source:
+      module_name: teamster.code_locations.kipppaterson.definitions
+    build:
+      directory: ./
+      registry: us-central1-docker.pkg.dev/teamster-332318/teamster/kipppaterson
+    working_directory: /app
+    container_context:
+      k8s:
+        server_k8s_config:
+          container_config:
+            env:
+              - name: COUCHDROP_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: password
+              - name: COUCHDROP_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: username
+              - name: COUCHDROP_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: URL
+        run_k8s_config:
+          container_config:
+            env:
+              - name: COUCHDROP_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: password
+              - name: COUCHDROP_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: username
+              - name: COUCHDROP_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-couchdrop-sftp
+                    key: URL

@@ -97,7 +97,7 @@ def dict_reader_to_records(
     dict_reader: csv.DictReader,
     slugify_cols: bool = True,
     slugify_replacements: list[list[str]] | None = None,
-) -> list[dict[str, str]]:
+) -> list[dict[str, str | None]]:
     if slugify_replacements is None:
         slugify_replacements = []
 
@@ -107,18 +107,17 @@ def dict_reader_to_records(
             for text in check.not_none(value=dict_reader.fieldnames)
         ]
 
-    records = [
-        {key: value for key, value in row.items() if value != ""} for row in dict_reader
+    return [
+        {key: (value if value != "" else None) for key, value in row.items()}
+        for row in dict_reader
     ]
-
-    return records
 
 
 def csv_string_to_records(
     csv_string: str,
     slugify_cols: bool = True,
     slugify_replacements: list[list[str]] | None = None,
-) -> list[dict[str, str]]:
+) -> list[dict[str, str | None]]:
     return dict_reader_to_records(
         dict_reader=csv.DictReader(f=StringIO(csv_string)),
         slugify_cols=slugify_cols,
@@ -132,7 +131,7 @@ def file_to_records(
     delimiter: str = ",",
     slugify_cols: bool = True,
     slugify_replacements: list[list[str]] | None = None,
-) -> list[dict[str, str]]:
+) -> list[dict[str, str | None]]:
     with open(file=file, encoding=encoding, mode="r") as f:
         records = dict_reader_to_records(
             dict_reader=csv.DictReader(f=f, delimiter=delimiter),

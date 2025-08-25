@@ -4,6 +4,11 @@ assets = [
     *mclass.assets,
 ]
 
+sensors = [
+    *mclass.sensors,
+]
+
 __all__ = [
     "assets",
+    "sensors",
 ]

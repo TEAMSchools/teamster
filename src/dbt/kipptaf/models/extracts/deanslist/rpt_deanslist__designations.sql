@@ -64,6 +64,7 @@ inner join
     on co.studentid = sp.studentid
     and co.academic_year = sp.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
+    and sp.is_current
     and sp.specprog_name in (
         'Counseling Services',
         'Home Instruction',
@@ -72,7 +73,6 @@ inner join
         'Student Athlete',
         'Tutoring'
     )
-    and sp.exit_date >= current_date('{{ var("local_timezone") }}')
 
 union all
 
