@@ -1,54 +1,54 @@
 with
     date_spine as (
         select
-            cw.week_start_monday,
-            cw.week_end_sunday,
-            cw.schoolid,
-            cw.academic_year,
-            min(cw.week_start_monday) over (
-                partition by cw.academic_year, cw.schoolid
+            week_start_monday,
+            week_end_sunday,
+            schoolid,
+            academic_year,
+
+            min(week_start_monday) over (
+                partition by academic_year, schoolid
             ) as first_day_of_ay,
-        from {{ ref("int_powerschool__calendar_week") }} as cw
-        where cw.academic_year >= 2025
+        from {{ ref("int_powerschool__calendar_week") }}
+        where academic_year >= 2025  /* 1st year for topline */
     ),
 
-    school_id_calendar_mapping as (
+    staff_roster_history as (
         select
             employee_number,
             effective_date_start,
             effective_date_end,
+            worker_termination_date,
+            powerschool_teacher_number,
+            home_business_unit_name,
+            home_work_location_powerschool_school_id,
+            home_work_location_name,
+            home_department_name,
+            job_title,
+            assignment_status,
+            reports_to_user_principal_name,
+
             case
                 when
-                    (
-                        home_work_location_powerschool_school_id is null
-                        or home_work_location_powerschool_school_id = 0
-                    )
-                    and home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
+                    home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
+                    and coalesce(home_work_location_powerschool_school_id, 0) = 0
                 then 133570965
                 when
-                    (
-                        home_work_location_powerschool_school_id is null
-                        or home_work_location_powerschool_school_id = 0
-                    )
-                    and home_business_unit_name = 'TEAM Academy Charter School'
+                    home_business_unit_name = 'TEAM Academy Charter School'
+                    and coalesce(home_work_location_powerschool_school_id, 0) = 0
                 then 133570965
                 when
-                    (
-                        home_work_location_powerschool_school_id is null
-                        or home_work_location_powerschool_school_id = 0
-                    )
-                    and home_business_unit_name = 'KIPP Miami'
+                    home_business_unit_name = 'KIPP Miami'
+                    and coalesce(home_work_location_powerschool_school_id, 0) = 0
                 then 30200803
                 when
-                    (
-                        home_work_location_powerschool_school_id is null
-                        or home_work_location_powerschool_school_id = 0
-                    )
-                    and home_business_unit_name = 'KIPP Cooper Norcross Academy'
+                    home_business_unit_name = 'KIPP Cooper Norcross Academy'
+                    and coalesce(home_work_location_powerschool_school_id, 0) = 0
                 then 179901
                 else home_work_location_powerschool_school_id
             end as ps_id_for_cal_mapping,
         from {{ ref("int_people__staff_roster_history") }}
+        where primary_indicator
     )
 
 select
@@ -61,19 +61,14 @@ select
     srh.job_title,
     srh.assignment_status,
     srh.reports_to_user_principal_name,
+
     ds.academic_year,
     ds.week_start_monday,
     ds.week_end_sunday,
-from {{ ref("int_people__staff_roster_history") }} as srh
-inner join
-    school_id_calendar_mapping as sicm
-    on srh.primary_indicator
-    and srh.employee_number = sicm.employee_number
-    and srh.effective_date_start = sicm.effective_date_start
-    and srh.effective_date_end = sicm.effective_date_end
+from staff_roster_history as srh
 inner join
     date_spine as ds
-    on sicm.ps_id_for_cal_mapping = ds.schoolid
+    on srh.ps_id_for_cal_mapping = ds.schoolid
     and (
         srh.effective_date_start between ds.week_start_monday and ds.week_end_sunday
         or srh.effective_date_end between ds.week_start_monday and ds.week_end_sunday
