@@ -32,7 +32,7 @@ with
                 then 1
             end as measure_standard_level_int,
         from
-            {{ ref("stg_amplify__benchmark_student_summary") }} unpivot (
+            {{ ref("int_amplify__mclass__benchmark_student_summary") }} unpivot (
                 (
                     `level`,
                     national_norm_percentile,

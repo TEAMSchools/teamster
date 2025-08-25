@@ -78,7 +78,7 @@ with
             cast(testingdistrictcode as int) as testingdistrictcode,
             cast(testingorganizationaltype as int) as testingorganizationaltype,
             cast(testingschoolcode as int) as testingschoolcode,
-            cast(testperformancelevel as int) as testperformancelevel,
+
             cast(colorcontrast as numeric) as colorcontrast,
             cast(elaconstructedresponse as numeric) as elaconstructedresponse,
             cast(elalconstructedresponse as numeric) as elalconstructedresponse,
@@ -149,6 +149,8 @@ with
             cast(unit3numberofattempteditems as numeric) as unit3numberofattempteditems,
             cast(unit3totaltestitems as numeric) as unit3totaltestitems,
             cast(voidscorereason as numeric) as voidscorereason,
+
+            cast(cast(testperformancelevel as numeric) as int) as testperformancelevel,
 
             cast(left(assessmentyear, 4) as int) as academic_year,
 
