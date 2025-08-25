@@ -24,7 +24,7 @@ select
         basic_comprehension_maze_national_norm_percentile,
         basic_comprehension_maze_level,
         basic_comprehension_maze_tested_out,
-        basic_comprehension_maze_discontinued,
+        basic_comprehension_maze_discontinued
     ),
 
     coalesce(
