@@ -308,9 +308,10 @@ with
             and u.discipline = s.discipline
     ),
 
-    met_subject as (
-        /* calculating if the student met the discipline overall, regardless of how 
+    /* calculating if the student met the discipline overall, regardless of how 
         they  did it, assuming they took the njgpa */
+    met_subject as (
+
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
             unpivot_calcs_ps_code pivot (
@@ -400,6 +401,7 @@ with
             row_number() over (
                 partition by l.student_number, l.score_type order by l.scale_score desc
             ) as rn_highest,
+
         from lookup_table as l
         left join
             unpivot_calcs as u
