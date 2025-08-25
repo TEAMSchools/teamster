@@ -2,6 +2,8 @@ select
     e._dbt_source_relation,
     e.academic_year,
     e.student_number,
+    e.studentid,
+    e.students_dcid,
     e.salesforce_id,
     e.grade_level,
 
