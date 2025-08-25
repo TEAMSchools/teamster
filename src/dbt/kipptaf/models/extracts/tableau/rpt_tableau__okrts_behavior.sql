@@ -27,8 +27,8 @@ with
             end as behavior,
 
             case
-                when b.behavior_category = 'Earned Incentives'
-                then 'Incentives'
+                -- when b.behavior_category = 'Earned Incentives'
+                -- then 'Incentives'
                 /* Miami */
                 when
                     b._dbt_source_relation like '%kippmiami%'
@@ -72,7 +72,7 @@ with
                 'Be Kind (Revolutionary Love)',
                 'Big Reminders',
                 'Corrective Behaviors',
-                'Earned Incentives',
+                -- 'Earned Incentives',
                 'Effort (Perseverance)',
                 'Effort (Pride)',
                 'Teamwork (Community)',
@@ -142,6 +142,8 @@ select
     b.total_points,
     b.behavior_count,
 
+    if(bi.behavior is not null, 1, 0) as is_earned_progress_to_quarterly,
+
     extract(month from cw.week_start_monday) as behavior_month,
 
     if(co.lep_status, 'ML', 'Not ML') as ml_status,
@@ -167,4 +169,11 @@ left join
     and co.academic_year = b.academic_year
     and cw.week_start_monday = b.week_start_monday
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
+left join
+    {{ ref("int_deanslist__behavior_incentive_by_term") }} as bi
+    on co.student_number = bi.student_school_id
+    and co.deanslist_school_id = bi.school_id
+    and co.academic_year = bi.academic_year
+    and bi.end_date between cw.week_start_monday and cw.week_end_sunday
+    and bi.incentive_type = 'Weeks (Progress to Quarterly Incentive)'
 where co.academic_year >= {{ var("current_academic_year") - 1 }}

@@ -2,9 +2,6 @@ version: 2
 models:
   - name: stg_deanslist__dff_stats
     config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
-        "src_deanslist__dff_stats") | replace("`", "") }}')
       contract:
         enforced: true
     columns:

@@ -2,12 +2,8 @@ name: kippcamden
 version: 1.0.0
 config-version: 2
 
-# This setting configures which profile dbt uses for this project.
 profile: kippcamden
 
-# These configurations specify where dbt should look for different types of files.
-# The `source-paths` config, for example, states that models in this project can be
-# found in the models/ directory. You probably won't need to change these!
 model-paths: [models]
 analysis-paths: [analyses]
 test-paths: [tests]
@@ -15,20 +11,19 @@ seed-paths: [seeds]
 macro-paths: [macros]
 snapshot-paths: [snapshots]
 
-target-path: target # directory which will store compiled SQL files
-clean-targets: # directories to be removed by `dbt clean`
+target-path: target
+clean-targets:
   - target
   - dbt_packages
 
 vars:
   local_timezone: America/New_York
-  bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
-  cloud_storage_uri_base: gs://teamster-kippcamden/dagster/kippcamden
   current_academic_year: 2025
   current_fiscal_year: 2026
+  cloud_storage_uri_base: gs://teamster-kippcamden/dagster/kippcamden
+  bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
+  powerschool_external_location_root: gs://teamster-kippcamden/dagster/kippcamden/powerschool
 
-# Configuring models
-# Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
   kippcamden:
     extracts:
@@ -46,33 +41,22 @@ models:
     +materialized: table
   powerschool:
     +materialized: table
-    staging:
-      stg_powerschool__period:
-        +enabled: false
-      stg_powerschool__sced_code_mapping:
-        +enabled: false
-      stg_powerschool__u_def_ext_students:
-        +enabled: false
+    sis:
+      staging:
+        sftp:
+          +enabled: false
+        odbc:
+          +enabled: true
+          stg_powerschool__period:
+            +enabled: false
+          stg_powerschool__sced_code_mapping:
+            +enabled: false
+          stg_powerschool__u_def_ext_students:
+            +enabled: false
+          stg_powerschool__prefs:
+            +enabled: false
   titan:
     +materialized: table
     staging:
       stg_titan__income_form_data:
-        +enabled: false
-
-sources:
-  edplan:
-    edplan:
-      src_edplan__njsmart_powerschool_archive:
-        +enabled: false
-  titan:
-    titan:
-      src_titan__income_form_data:
-        +enabled: false
-  powerschool:
-    powerschool:
-      src_powerschool__period:
-        +enabled: false
-      src_powerschool__sced_code_mapping:
-        +enabled: false
-      src_powerschool__u_def_ext_students:
         +enabled: false

@@ -32,7 +32,7 @@ on:
       - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
@@ -51,7 +51,7 @@ on:
       - src/teamster/libraries/edplan/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
