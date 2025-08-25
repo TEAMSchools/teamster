@@ -79,5 +79,3 @@ select
     ) as act_count_ytd,
 
 from yearly_test_counts
-where student_number = 11737
-order by grade_level
