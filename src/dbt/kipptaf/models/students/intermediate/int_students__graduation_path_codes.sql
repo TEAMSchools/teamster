@@ -311,7 +311,6 @@ with
     /* calculating if the student met the discipline overall, regardless of how 
         they  did it, assuming they took the njgpa */
     met_subject as (
-
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
             unpivot_calcs_ps_code pivot (
