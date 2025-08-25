@@ -30,7 +30,7 @@ select
 
     tac.yearid,
 
-    ada_0.att_code,
+    coalesce(ada_0.att_code, ada_1.att_code) as att_code,
 
     if(ada_0.id is not null, 0, aci_real.attendance_value)
     * mv.ontrack as attendancevalue,

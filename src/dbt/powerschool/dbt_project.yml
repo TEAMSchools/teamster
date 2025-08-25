@@ -27,5 +27,7 @@ models:
   powerschool:
     sis:
       staging:
+        odbc:
+          +enabled: true
         sftp:
           +enabled: false
