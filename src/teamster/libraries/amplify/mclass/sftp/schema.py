@@ -167,3 +167,4 @@ class BenchmarkStudentSummary(BaseModel):
     secondary_student_id: str | None = None
     secondary_student_id_stateid: str | None = None
     additional_student_id: str | None = None
+    additional_student_id_primarysisid: str | None = None
