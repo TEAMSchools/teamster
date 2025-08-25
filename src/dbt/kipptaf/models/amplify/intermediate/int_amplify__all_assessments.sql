@@ -33,7 +33,7 @@ with
             e.end_date,
             e.matching_pm_season as matching_season,
 
-        from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
+        from {{ ref("int_amplify__mclass__benchmark_student_summary") }} as bss
         inner join
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
@@ -154,7 +154,7 @@ with
             *,
 
             row_number() over (
-                partition by surrogate_key, measure_standard
+                partition by surrogate_key, round_number, measure_standard
                 order by measure_standard_level_int desc
             ) as rn_highest,
 
