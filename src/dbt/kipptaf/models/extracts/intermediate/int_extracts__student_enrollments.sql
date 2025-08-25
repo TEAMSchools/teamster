@@ -247,9 +247,7 @@ select
     end as fafsa_status_mismatch_category,
 
 from {{ ref("base_powerschool__student_enrollments") }} as e
-left join
-    {{ ref("stg_people__location_crosswalk") }} as lc
-    on e.schoolid = lc.powerschool_school_id
+left join {{ ref("stg_people__location_crosswalk") }} as lc on e.school_name = lc.name
 left join
     ms_grad_sub as m
     on e.student_number = m.student_number
@@ -271,18 +269,21 @@ left join
     and e.academic_year = cs.academic_year
     and {{ union_dataset_join_clause(left_alias="e", right_alias="cs") }}
     and cs.specprog_name = 'Counseling Services'
+    and cs.rn_student_program_year_desc = 1
 left join
     {{ ref("int_powerschool__spenrollments") }} as ath
     on e.studentid = ath.studentid
     and e.academic_year = ath.academic_year
     and {{ union_dataset_join_clause(left_alias="e", right_alias="ath") }}
     and ath.specprog_name = 'Student Athlete'
+    and ath.rn_student_program_year_desc = 1
 left join
     {{ ref("int_powerschool__spenrollments") }} as tut
     on e.studentid = tut.studentid
     and e.academic_year = tut.academic_year
     and {{ union_dataset_join_clause(left_alias="e", right_alias="tut") }}
     and tut.specprog_name = 'Tutoring'
+    and tut.rn_student_program_year_desc = 1
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id

@@ -35,7 +35,7 @@ on:
       - src/teamster/libraries/iready/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
@@ -56,7 +56,7 @@ on:
       - src/teamster/libraries/iready/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
