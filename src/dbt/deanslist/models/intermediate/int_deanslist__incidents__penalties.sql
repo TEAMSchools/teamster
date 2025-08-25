@@ -24,7 +24,7 @@ with
                 p.numdays.double_value, cast(p.numdays.long_value as numeric)
             ) as num_days,
         from {{ ref("int_deanslist__incidents") }} as i
-        cross join unnest(i.penalties) as p
+        left join unnest(i.penalties) as p
     )
 
 select
