@@ -1,6 +1,7 @@
 select
     b.* except (
         student_primary_id,
+        student_primary_id_studentnumber,
         device_date,
         sync_date,
         basic_comprehension_maze_score,
@@ -43,7 +44,7 @@ select
     x.powerschool_school_id as schoolid,
 
     cast(left(b.school_year, 4) as int) as academic_year,
-    cast(b.student_primary_id as int) as student_primary_id,
+    cast(b.student_primary_id_studentnumber as int) as student_primary_id,
 
     cast(b.device_date as date) as device_date,
     cast(b.sync_date as date) as sync_date,
@@ -78,7 +79,7 @@ select
         b.enrollment_grade = 'K', 0, safe_cast(b.enrollment_grade as int)
     ) as enrollment_grade_int,
 
-    -- Tested Out National
+    -- Tested Out
     if(
         b.composite_national_norm_percentile = 'Tested Out', true, false
     ) as composite_tested_out,
@@ -206,7 +207,7 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "student_primary_id",
+                "student_primary_id_studentnumber",
                 "school_year",
                 "benchmark_period",
                 "assessment_grade",
