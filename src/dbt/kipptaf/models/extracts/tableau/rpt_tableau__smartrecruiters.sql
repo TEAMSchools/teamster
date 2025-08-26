@@ -1,47 +1,12 @@
 with
-    applications as (
-        select
-            * except (resume_score, star_score, subject_preference),
-            coalesce(resume_score, star_score) as resume_score,
-            if(
-                subject_preference is null, 'No Preference', subject_preference
-            ) as subject_preference,
-            case
-                when hired_date is not null
-                then 6
-                when offer_date is not null
-                then 5
-                when demo_date is not null
-                then 4
-                when phone_screen_complete_date is not null
-                then 3
-                when phone_screen_requested_date is not null
-                then 2
-                when new_date is not null
-                then 1
-                else 0
-            end as max_stage_reached,
-        from {{ ref("stg_smartrecruiters__applications") }}
-    ),
+    date_spine as (),
 
-    applications_status_cascade as (
-        select
-            *,
-            -- Cascading booleans based on max stage reached
-            max_stage_reached >= 1 as has_new_status,
-            max_stage_reached >= 2 as has_phone_screen_requested_status,
-            max_stage_reached >= 3 as has_phone_screen_complete_status,
-            max_stage_reached >= 4 as has_demo_status,
-            max_stage_reached >= 5 as has_offer_status,
-            max_stage_reached >= 6 as has_hired_status,
-
-        from applications
-    ),
+    applications as (select *, from {{ ref("stg_smartrecruiters__applications") }}),
 
     applications_unpivoted as (
         select *, status_type, date_val,
         from
-            applications_status_cascade unpivot (
+            applications unpivot (
                 date_val for status_type in (
                     demo_date,
                     hired_date,
@@ -53,27 +18,42 @@ with
             )
     ),
 
-    applications_unnested as (
-        select *, trim(subject_preference) as subject_preference,
-        from applications_unpivoted
-        cross join unnest(split(subject_preference, ',')) as subject_preference
-    ),
-
-    applicants as (select *, from {{ ref("stg_smartrecruiters__applicants") }}),
-
     final as (
         select
-            applications_unnested.*,
-            applicants.*,
-            if(
-                applications_unnested.application_status in ('New', 'Lead')
-                or applications_unnested.resume_score is null,
-                true,
-                false
-            ) as is_not_reviewed,
-        from applications_unnested
-        left join
-            applicants on applications_unnested.candidate_id = applicants.candidate_id
+            -- Explicit column listing
+            applications_unpivoted.application_id,
+            applications_unpivoted.candidate_id,
+            {# to do: add columns explicitly #}
+            applications_unpivoted.status_type,
+            applications_unpivoted.date_val,
+            coalesce(
+                applications_unpivoted.resume_score, applications_unpivoted.star_score
+            ) as resume_score,
+            trim(subject_preference) as subject_preference,
+            case
+                when applications_unpivoted.hired_date is not null then 1 else 0
+            end as has_hired_status,
+            case
+                when applications_unpivoted.offer_date is not null then 1 else 0
+            end as has_offer_status,
+            case
+                when applications_unpivoted.demo_date is not null then 1 else 0
+            end as has_demo_status,
+            case
+                when applications_unpivoted.phone_screen_complete_date is not null
+                then 1
+                else 0
+            end as has_phone_screen_complete_status,
+            case
+                when applications_unpivoted.phone_screen_requested_date is not null
+                then 1
+                else 0
+            end as has_phone_screen_requested_status,
+            case
+                when applications_unpivoted.new_date is not null then 1 else 0
+            end as has_new_status,
+        from applications_unpivoted
+        cross join unnest(split(subject_preference, ',')) as subject_preference
     )
 
 select *,
