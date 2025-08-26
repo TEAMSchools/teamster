@@ -24,16 +24,11 @@ select
     cast(cast(job_title as numeric) as int) as job_title,
 
     cast(
-        cast(
-            if(regexp_contains(acct_no, r'[A-Za-z\s]'), null, acct_no) as numeric
-        ) as int
+        cast(nullif(regexp_replace(acct_no, r'[^\d\.]', ''), '') as numeric) as int
     ) as acct_no,
+
     cast(
-        cast(
-            if(
-                regexp_contains(location_id, r'[A-Za-z\s]'), null, location_id
-            ) as numeric
-        ) as int
+        cast(nullif(regexp_replace(location_id, r'[^\d\.]', ''), '') as numeric) as int
     ) as location_id,
 
     parse_date('%m/%d/%Y', `date`) as `date`,

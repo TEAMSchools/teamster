@@ -155,8 +155,6 @@ models:
         data_type: string
       - name: additional_student_id
         data_type: string
-      - name: student_primary_id_studentnumber
-        data_type: string
       - name: enrollment_teacher_staff_id_teachernumber
         data_type: string
       - name: assessing_teacher_staff_id_teachernumber
@@ -286,4 +284,6 @@ models:
       - name: word_reading_wrf_discontinued
         data_type: boolean
       - name: surrogate_key
+        data_type: string
+      - name: additional_student_id_primarysisid
         data_type: string
