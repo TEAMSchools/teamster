@@ -43,18 +43,18 @@ with
             * except (subject_preference),
             trim(subject_preference) as subject_preference,
             case
-                when applications_status_cascade.has_new_status
-                then 'New'
-                when applications_status_cascade.has_phone_screen_requested_status
-                then 'Phone Screen Requested'
+                when applications_status_cascade.has_hired_status
+                then 'Hired'
                 when applications_status_cascade.has_offer_status
-                then 'Phone Screen Complete'
+                then 'Offer'
                 when applications_status_cascade.has_demo_status
                 then 'Demo/Interview'
                 when applications_status_cascade.has_offer_status
-                then 'Offer'
-                when applications_status_cascade.has_hired_status
-                then 'Hired'
+                then 'Phone Screen Complete'
+                when applications_status_cascade.has_phone_screen_requested_status
+                then 'Phone Screen Requested'
+                when applications_status_cascade.has_new_status
+                then 'New'
             end as cascaded_application_status,
         from applications_status_cascade
         cross join unnest(split(subject_preference, ',')) as subject_preference
