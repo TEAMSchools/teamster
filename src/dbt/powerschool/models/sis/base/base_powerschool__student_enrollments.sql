@@ -230,13 +230,15 @@ left join
 left join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on enr.studentid = sp.studentid
-    and enr.exitdate between sp.enter_date and sp.exit_date
+    and enr.academic_year = sp.academic_year
     and sp.is_self_contained
+    and sp.rn_student_program_year_desc = 1
 left join
     {{ ref("int_powerschool__spenrollments") }} as ood
     on enr.studentid = ood.studentid
-    and enr.exitdate between ood.enter_date and ood.exit_date
+    and enr.academic_year = ood.academic_year
     and ood.is_out_of_district
+    and ood.rn_student_program_year_desc = 1
 {% if project_name != "kipppaterson" %}
     left join
         {{ ref("stg_powerschool__u_clg_et_stu") }} as x1
