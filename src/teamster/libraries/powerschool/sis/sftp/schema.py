@@ -1629,3 +1629,13 @@ class Terms(BaseModel):
     whomodifiedtype: str | None = None
     yearid: str | None = None
     yearlycredithrs: str | None = None
+
+
+class StudentEmail(BaseModel):
+    student_number: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+    grade_level: str | None = None
+    schoolid: str | None = None
+    state_studentnumber: str | None = None
