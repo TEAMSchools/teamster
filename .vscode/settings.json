@@ -56,5 +56,10 @@
     "UV_RESOLUTION": "highest"
   },
   "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
-  "dbt.prefixGenerateModel": "stg"
+  "dbt.prefixGenerateModel": "stg",
+  "trunk.enableUpgradePane": false,
+  "trunk.showWhatsNew": false,
+  "trunk.showWhatsNewMessage": false,
+  "trunk.trunkPath": "./trunk",
+  "trunk.autoInit": false
 }
