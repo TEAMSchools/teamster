@@ -30,6 +30,6 @@ inner join
 left join
     {{ ref("stg_google_sheets__kippfwd_seasons") }} as s
     on a.scope = s.scope
-    and a.test_month = a.test_month
+    and a.test_month = s.test_month
     and e.grade_level = s.grade_level
 where e.school_level = 'HS' and e.rn_year = 1
