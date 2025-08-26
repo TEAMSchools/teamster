@@ -1,98 +1,84 @@
 with
-    commlog as (
+    call_roster as (
         select
-            c._dbt_source_relation,
-            c.student_school_id,
-            c.reason as commlog_reason,
-            c.response as commlog_notes,
-            c.topic as commlog_topic,
-            c.call_date_time as commlog_datetime,
-            c.call_date as commlog_date,
-            c.call_type as commlog_type,
-            c.call_status as commlog_status,
-            c.user_full_name as commlog_staff_name,
+            co.student_number,
+            co.student_name,
+            co.academic_year,
+            co.region,
+            co.school_level,
+            co.school,
+            co.grade_level,
+            co.team,
+            co.iep_status,
+            co.gender,
+            co.is_retained_year,
+            co.enroll_status,
+            co.absences_unexcused_year,
+            co.unweighted_ada,
 
-            f.init_notes as followup_init_notes,
-            f.followup_notes as followup_close_notes,
-            f.outstanding,
-            f.c_first_last as followup_staff_name,
-        from {{ ref("int_deanslist__comm_log") }} as c
+            att.calendardate,
+            att.att_code,
+
+            com.educator_name as commlog_staff_name,
+            com.reason as commlog_reason,
+            com.response as commlog_notes,
+            com.topic as commlog_topic,
+            com.call_type as commlog_type,
+            com.call_status as commlog_status,
+
+            if(
+                com.reason is not null and com.reason not like 'Att: Unknown%',
+                true,
+                false
+            ) as is_successful,
+            if(
+                com.reason is not null and com.reason not like 'Att: Unknown%', 1, 0
+            ) as is_successful_int,
+            row_number() over (
+                partition by co.studentid, att.calendardate
+                order by com.call_date_time desc
+            ) as rn_date,
+        from {{ ref("int_extracts__student_enrollments") }} as co
+        inner join
+            {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as att
+            on co.student_number = att.student_number
+            and co.yearid = att.yearid
+            and co.schoolid = att.schoolid
+            and att.calendardate between co.entrydate and co.exitdate
+            and att.is_absent = 1
+            and att.membershipvalue = 1
         left join
-            {{ ref("stg_deanslist__followups") }} as f
-            on c.record_id = f.source_id
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="f") }}
-        where c.reason like 'Att:%' and c.call_status = 'Completed'
+            {{ ref("int_deanslist__comm_log") }} as com
+            on co.student_number = com.student_school_id
+            and co.academic_year = com.academic_year
+            and att.calendardate = com.call_date
+            and com.is_attendance_call
     )
 
 select
-    co.student_number,
-    co.student_name as lastfirst,
-    co.academic_year,
-    co.region,
-    co.school_level,
-    co.reporting_schoolid,
-    co.school as school_abbreviation,
-    co.grade_level,
-    co.advisory_name as team,
-    co.spedlep as iep_status,
-    co.gender,
-    co.is_retained_year,
-    co.enroll_status,
-    co.advisory_name as homeroom,
-    co.absences_unexcused_year as abs_count,
-    co.unweighted_ada as ada,
-
-    att.att_date,
-    att.att_comment,
-
-    ac.att_code,
-
-    cl.commlog_staff_name,
-    cl.commlog_reason,
-    cl.commlog_notes,
-    cl.commlog_topic,
-    cl.commlog_type,
-    cl.commlog_status,
-    cl.followup_staff_name,
-    cl.followup_init_notes,
-    cl.followup_close_notes,
-
-    rt.name as term,
-
-    if(
-        co.school_level = 'HS', co.advisor_lastfirst, cast(co.grade_level as string)
-    ) as drill_down,
-
-    if(
-        cl.commlog_reason is not null and cl.commlog_reason not like 'Att: Unknown%',
-        true,
-        false
-    ) as is_successful,
-
-    row_number() over (
-        partition by co.studentid, att.att_date order by cl.commlog_datetime desc
-    ) as rn_date,
-from {{ ref("int_extracts__student_enrollments") }} as co
-inner join
-    {{ ref("stg_powerschool__attendance") }} as att
-    on co.studentid = att.studentid
-    and att.att_date between co.entrydate and co.exitdate
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
-    and att.att_mode_code = 'ATT_ModeDaily'
-    and att.att_date <= current_date('{{ var("local_timezone") }}')
-inner join
-    {{ ref("stg_powerschool__attendance_code") }} as ac
-    on att.attendance_codeid = ac.id
-    and {{ union_dataset_join_clause(left_alias="att", right_alias="ac") }}
-    and ac.att_code like 'A%'
-left join
-    commlog as cl
-    on co.student_number = cl.student_school_id
-    and att.att_date = safe_cast(cl.commlog_date as date)
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="cl") }}
-left join
-    {{ ref("stg_reporting__terms") }} as rt
-    on co.schoolid = rt.school_id
-    and att.att_date between rt.start_date and rt.end_date
-    and rt.type = 'RT'
-where co.academic_year = {{ var("current_academic_year") }}
+    student_number,
+    student_name,
+    academic_year,
+    region,
+    school_level,
+    school,
+    grade_level,
+    team,
+    iep_status,
+    gender,
+    is_retained_year,
+    enroll_status,
+    absences_unexcused_year,
+    unweighted_ada,
+    calendardate,
+    att_code,
+    commlog_staff_name,
+    commlog_reason,
+    commlog_notes,
+    commlog_topic,
+    commlog_type,
+    commlog_status,
+    is_successful,
+    is_successful_int,
+from call_roster
+where rn_date = 1
