@@ -28,12 +28,12 @@ with
         select
             *,
             -- Cascading booleans based on max stage reached
-            max_stage_reached >= 1 as has_new_status,
-            max_stage_reached >= 2 as has_phone_screen_requested_status,
-            max_stage_reached >= 3 as has_phone_screen_complete_status,
-            max_stage_reached >= 4 as has_demo_status,
-            max_stage_reached >= 5 as has_offer_status,
-            max_stage_reached >= 6 as has_hired_status,
+            if(max_stage_reached >= 1, 1, 0) as has_new_status,
+            if(max_stage_reached >= 2, 1, 0) as has_phone_screen_requested_status,
+            if(max_stage_reached >= 3, 1, 0) as has_phone_screen_complete_status,
+            if(max_stage_reached >= 4, 1, 0) as has_demo_status,
+            if(max_stage_reached >= 5, 1, 0) as has_offer_status,
+            if(max_stage_reached >= 6, 1, 0) as has_hired_status,
 
         from applications
     ),
@@ -42,20 +42,6 @@ with
         select
             * except (subject_preference),
             trim(subject_preference) as subject_preference,
-            case
-                when applications_status_cascade.has_hired_status
-                then 'Hired'
-                when applications_status_cascade.has_offer_status
-                then 'Offer'
-                when applications_status_cascade.has_demo_status
-                then 'Demo/Interview'
-                when applications_status_cascade.has_offer_status
-                then 'Phone Screen Complete'
-                when applications_status_cascade.has_phone_screen_requested_status
-                then 'Phone Screen Requested'
-                when applications_status_cascade.has_new_status
-                then 'New'
-            end as cascaded_application_status,
         from applications_status_cascade
         cross join unnest(split(subject_preference, ',')) as subject_preference
     ),
