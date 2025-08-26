@@ -69,30 +69,8 @@ from staff_roster_history as srh
 inner join
     date_spine as ds
     on srh.schoolid = ds.schoolid
-    /* if a teacher switches schools mid-week, they will be counted in the receiving
-    school only for that week */
     and ds.week_end_sunday between srh.effective_date_start and srh.effective_date_end
-    /*
-inner join
-    date_spine as ds
-    on srh.ps_id_for_cal_mapping = ds.schoolid
-    and (
-        srh.effective_date_start between ds.week_start_monday and ds.week_end_sunday
-        or srh.effective_date_end between ds.week_start_monday and ds.week_end_sunday
-        or (
-            (
-                ds.week_start_monday
-                between srh.effective_date_start and srh.effective_date_end
-            )
-            and (
-                ds.week_end_sunday
-                between srh.effective_date_start and srh.effective_date_end
-            )
-        )
-    )
     and (
         srh.worker_termination_date is null
         or srh.worker_termination_date > ds.first_day_of_ay
     )
-*/
-    
