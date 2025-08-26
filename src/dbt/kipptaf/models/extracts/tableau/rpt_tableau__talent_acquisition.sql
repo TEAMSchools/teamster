@@ -38,24 +38,38 @@ with
         from applications
     ),
 
-    applications_unnested as (
+    applications_unnest_and_status as (
         select
             * except (subject_preference),
             trim(subject_preference) as subject_preference,
+            case
+                when applications_status_cascade.has_new_status
+                then 'New'
+                when applications_status_cascade.has_phone_screen_requested_status
+                then 'Phone Screen Requested'
+                when applications_status_cascade.has_offer_status
+                then 'Phone Screen Complete'
+                when applications_status_cascade.has_demo_status
+                then 'Demo/Interview'
+                when applications_status_cascade.has_offer_status
+                then 'Offer'
+                when applications_status_cascade.has_hired_status
+                then 'Hired'
+            end as cascaded_application_status,
         from applications_status_cascade
         cross join unnest(split(subject_preference, ',')) as subject_preference
     ),
 
     final as (
         select
-            applications_unnested.*,
+            applications_unnest_and_status.*,
             if(
-                applications_unnested.application_status in ('New', 'Lead')
-                or applications_unnested.resume_score is null,
+                applications_unnest_and_status.application_status in ('New', 'Lead')
+                or applications_unnest_and_status.resume_score is null,
                 true,
                 false
             ) as is_not_reviewed,
-        from applications_unnested
+        from applications_unnest_and_status
     )
 
 select *,
