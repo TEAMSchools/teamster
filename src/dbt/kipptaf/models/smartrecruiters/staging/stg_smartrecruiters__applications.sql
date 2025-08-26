@@ -1,13 +1,22 @@
 with
     applications as (
         select
-            application_id,
-            candidate_id,
-            department_internal,
-            job_title,
-            job_city,
-            recruiters,
-            application_status,
+            * except (
+                application_field_phone_interview_score,
+                application_field_resume_score,
+                average_rating,
+                screening_question_answer_knjm_application_subject_preference,
+                application_reason_for_rejection,
+                application_reason_for_withdrawal,
+                application_state_hired_date,
+                application_state_new_date,
+                application_state_offer_date,
+                application_state_rejected_date,
+                application_status_interview_demo_date,
+                application_status_interview_phone_screen_complete_date,
+                application_status_interview_phone_screen_requested_date
+            ),
+
             application_field_phone_interview_score as phone_interview_score,
             application_field_resume_score as resume_score,
             average_rating as star_score,
@@ -40,3 +49,4 @@ select
     date(offer_datetime) as offer_date,
     date(hired_datetime) as hired_date,
 from applications
+where time_in_application_state_interview is not null
