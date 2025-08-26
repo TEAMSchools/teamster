@@ -49,4 +49,3 @@ select
     date(offer_datetime) as offer_date,
     date(hired_datetime) as hired_date,
 from applications
-where time_in_application_state_interview is not null
