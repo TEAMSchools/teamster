@@ -73,7 +73,7 @@ select
         then 'C'
     end as s_stu_x__fafsa,
 
-from {{ ref("base_powerschool__student_enrollments") }} as se
+from {{ ref("int_extracts__student_enrollments") }} as se
 left join
     {{ ref("stg_powerschool__students") }} as s
     on se.student_number = s.student_number

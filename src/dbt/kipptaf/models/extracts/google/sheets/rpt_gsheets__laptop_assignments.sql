@@ -19,7 +19,7 @@ select
         when enroll_status = -1
         then 'Pre-Registered'
     end as enroll_status,
-from {{ ref("base_powerschool__student_enrollments") }}
+from {{ ref("int_extracts__student_enrollments") }}
 where
     is_enrolled_y1
     and rn_year = 1

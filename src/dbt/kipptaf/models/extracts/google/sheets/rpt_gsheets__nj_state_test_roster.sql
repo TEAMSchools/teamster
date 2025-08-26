@@ -84,7 +84,7 @@ with
                 when subj = 'SCI' and co.grade_level = 11
                 then 'SC11'
             end as test_code,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         cross join unnest(['ENG', 'MATH', 'SCI']) as subj
         left join
             courses as c

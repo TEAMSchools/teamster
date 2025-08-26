@@ -12,7 +12,7 @@ with
             lower(region) as region,
 
             if(enroll_status = 0, false, true) as suspended,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_extracts__student_enrollments") }}
         where rn_all = 1 and student_email_google is not null
     ),
 

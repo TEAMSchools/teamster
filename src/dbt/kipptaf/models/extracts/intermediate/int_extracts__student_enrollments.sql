@@ -11,7 +11,7 @@ with
                 partition by student_number order by exitdate desc
             ) as rn,
 
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_extracts__student_enrollments") }}
         where school_level = 'MS'
     ),
 
@@ -25,7 +25,7 @@ with
                 partition by student_number order by exitdate desc
             ) as rn,
 
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_extracts__student_enrollments") }}
         where school_level = 'ES'
     ),
 
@@ -246,7 +246,7 @@ select
         else 'No issues'
     end as fafsa_status_mismatch_category,
 
-from {{ ref("base_powerschool__student_enrollments") }} as e
+from {{ ref("int_extracts__student_enrollments") }} as e
 left join {{ ref("stg_people__location_crosswalk") }} as lc on e.school_name = lc.name
 left join
     ms_grad_sub as m
