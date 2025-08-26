@@ -38,33 +38,17 @@ with
         from applications
     ),
 
-    applications_unpivoted as (
-        select *, status_type, date_val,
-        from
-            applications_status_cascade unpivot (
-                date_val for status_type in (
-                    demo_date,
-                    hired_date,
-                    new_date,
-                    offer_date,
-                    phone_screen_complete_date,
-                    phone_screen_requested_date
-                )
-            )
-    ),
-
     applications_unnested as (
-        select *, trim(subject_preference) as subject_preference,
-        from applications_unpivoted
+        select
+            * except (subject_preference),
+            trim(subject_preference) as subject_preference,
+        from applications_status_cascade
         cross join unnest(split(subject_preference, ',')) as subject_preference
     ),
-
-    applicants as (select *, from {{ ref("stg_smartrecruiters__applicants") }}),
 
     final as (
         select
             applications_unnested.*,
-            applicants.*,
             if(
                 applications_unnested.application_status in ('New', 'Lead')
                 or applications_unnested.resume_score is null,
@@ -72,8 +56,6 @@ with
                 false
             ) as is_not_reviewed,
         from applications_unnested
-        left join
-            applicants on applications_unnested.candidate_id = applicants.candidate_id
     )
 
 select *,
