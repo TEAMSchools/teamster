@@ -87,9 +87,6 @@ select
     e.advisory_name,
     e.advisory_section_number as team,
     e.advisor_lastfirst,
-    e.student_email_google as student_email,
-    e.student_web_id,
-    e.student_web_password,
     e.gender,
     e.ethnicity,
     e.fedethnicity,
@@ -170,6 +167,9 @@ select
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
+    if(e.region = 'Paterson', null, e.student_web_id) as student_web_id,
+    if(e.region = 'Paterson', null, e.student_web_password) as student_web_password,
+    if(e.region = 'Paterson', null, e.student_email_google) as student_email,
 
     /* starting SY26, HS uses weighted ADA */
     if(

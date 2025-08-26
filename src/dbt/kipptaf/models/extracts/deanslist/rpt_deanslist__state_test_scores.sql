@@ -1,26 +1,22 @@
 select
-    co.student_number,
+    localstudentidentifier,
+    assessmentyear as academic_year,
+    academic_year as academic_year_int,
+    `period` as test_round,
+    assessment_name as test_type,
+    discipline as `subject`,
+    `subject` as test_name,
+    testscalescore as scale_score,
+    testperformancelevel_text as proficiency_level,
 
-    p.assessmentyear as academic_year,
-    p.academic_year as academic_year_int,
-    p.period as test_round,
-    p.assessment_name as test_type,
-    p.discipline as `subject`,
-    p.subject as test_name,
-    p.testscalescore as scale_score,
-    p.testperformancelevel_text as proficiency_level,
+    if(is_proficient, 1, 0) as is_proficient,
 
-    if(p.is_proficient, 1, 0) as is_proficient,
-
-    concat(p.testperformancelevel_text, ' (', p.testscalescore, ')') as score_display,
+    concat(testperformancelevel_text, ' (', testscalescore, ')') as score_display,
 
     row_number() over (
-        partition by co.student_number, p.subject order by p.assessmentyear asc
+        partition by localstudentidentifier, `subject` order by assessmentyear asc
     ) as test_index,
-from {{ ref("stg_powerschool__students") }} as co
-inner join
-    {{ ref("int_pearson__all_assessments") }} as p
-    on co.state_studentnumber = p.statestudentidentifier
+from {{ ref("int_pearson__all_assessments") }}
 
 union all
 
