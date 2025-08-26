@@ -13,9 +13,7 @@ def build_check_spec_avro_schema_valid(asset):
 
 
 def check_avro_schema_valid(asset_key, records, schema):
-    record_fields = set().union(
-        [k for r in records for k in r.keys() if not k[0].isdigit()]
-    )
+    record_fields = set().union([k for r in records for k in r.keys()])
     schema_fields = set(field["name"] for field in schema["fields"])
 
     extras = record_fields - schema_fields
