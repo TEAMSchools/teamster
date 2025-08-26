@@ -55,6 +55,8 @@ with
             e.assessment_type,
             e.admin_season,
             e.round_number,
+            e.start_date,
+            e.end_date,
             e.expected_row_count,
 
             coalesce(a.actual_row_count, 0) as actual_row_count,
@@ -113,6 +115,8 @@ with
             e.assessment_type,
             e.admin_season,
             e.round_number,
+            e.start_date,
+            e.end_date,
             e.expected_row_count,
 
             coalesce(a.actual_row_count, 0) as actual_row_count,
@@ -165,6 +169,8 @@ with
             e.assessment_type,
             e.admin_season,
             e.round_number,
+            e.start_date,
+            e.end_date,
             e.expected_row_count,
 
             coalesce(a.actual_row_count, 0) as actual_row_count,
@@ -215,6 +221,8 @@ select
     assessment_type,
     admin_season,
     round_number,
+    `start_date`,
+    end_date,
     expected_row_count,
     actual_row_count,
     completed_test_round,
