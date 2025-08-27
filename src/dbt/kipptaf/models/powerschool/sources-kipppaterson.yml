@@ -897,3 +897,11 @@ sources:
               - kipppaterson
               - powerschool
               - stg_powerschool__s_stu_x
+      - name: stg_powerschool__student_email
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kipppaterson
+              - powerschool
+              - stg_powerschool__student_email
