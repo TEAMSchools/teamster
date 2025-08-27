@@ -102,7 +102,7 @@ select
     co.student_number,
     co.student_name,
     co.grade_level,
-    co.school_abbreviation as school,
+    co.school,
     co.lep_status,
     co.gender,
     co.ethnicity as race_ethnicity,

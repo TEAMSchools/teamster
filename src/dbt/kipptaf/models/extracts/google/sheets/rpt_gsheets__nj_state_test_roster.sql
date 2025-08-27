@@ -23,7 +23,7 @@ with
             co.region,
             co.is_self_contained,
             co.school_level,
-            co.school_abbreviation,
+            co.school as school_abbreviation,
             co.grade_level,
             co.advisory_name,
             co.student_number,

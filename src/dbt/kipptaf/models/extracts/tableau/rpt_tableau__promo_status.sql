@@ -3,7 +3,7 @@ select
     co.student_name as lastfirst,
     co.region,
     co.school_level,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.grade_level,
     co.advisory_name,
     co.advisor_lastfirst as advisor_name,

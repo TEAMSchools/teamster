@@ -74,7 +74,7 @@ with
 select
     co.student_number,
     co.student_name,
-    co.school_abbreviation as school,
+    co.school,
     co.region,
     co.advisor_lastfirst as advisor,
     co.gender,

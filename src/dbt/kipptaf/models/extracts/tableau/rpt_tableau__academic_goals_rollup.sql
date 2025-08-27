@@ -167,7 +167,7 @@ with
             co.grade_level,
             co.grade_level_prev,
             co.year_in_network,
-            co.school_abbreviation as school,
+            co.school as school,
 
             gb.band,
 
@@ -270,7 +270,7 @@ with
             co.grade_level,
             co.grade_level_prev,
             co.year_in_network,
-            co.school_abbreviation as school,
+            co.school as school,
 
             gb.band,
 

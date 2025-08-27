@@ -14,7 +14,7 @@ select
     co.student_number,
     co.student_name,
     co.region,
-    co.school_abbreviation as school,
+    co.school,
     co.grade_level,
     co.ethnicity,
     co.gender,

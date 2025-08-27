@@ -1,5 +1,5 @@
 select
-    co.school_abbreviation as school,
+    co.school,
     co.student_number,
     co.student_name as student,
     co.academic_year,

@@ -13,7 +13,7 @@ select
 
     lower(p.mail) as teacher_mail,
 
-    s.school_abbreviation
+    s.school
     || ' - '
     || s.grade_level
     || '.'

@@ -4,7 +4,7 @@ select
     co.student_name,
     co.grade_level as last_kipp_grade_level,
     co.region as last_kipp_region,
-    co.school_abbreviation as last_kipp_school,
+    co.school as last_kipp_school,
     co.advisor_lastfirst as last_kipp_advisor,
     co.exitdate as exit_date,
     co.exitcode as nj_exit_code,

@@ -33,7 +33,7 @@ with
             se.region,
             se.schoolid,
             se.school_name,
-            se.school_abbreviation,
+            se.school as school_abbreviation,
             se.grade_level,
             se.advisory_name,
             se.fteid,

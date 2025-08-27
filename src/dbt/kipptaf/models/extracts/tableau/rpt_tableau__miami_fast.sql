@@ -92,7 +92,7 @@ select
     co.schoolid,
     co.school_name,
     co.advisory_name as team,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.year_in_network,
     co.gender,
     co.ethnicity,

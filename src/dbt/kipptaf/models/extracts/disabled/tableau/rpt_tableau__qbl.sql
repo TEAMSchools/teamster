@@ -7,7 +7,7 @@ select
     co.advisory_name,
     co.region,
     co.school_level,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.grade_level,
     co.spedlep as iep_status,
 
@@ -130,7 +130,7 @@ select
     co.advisory_name,
     co.region,
     co.school_level,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.grade_level,
     co.spedlep as iep_status,
 
