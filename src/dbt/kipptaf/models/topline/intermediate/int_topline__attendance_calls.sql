@@ -26,6 +26,8 @@ with
             com.call_type as commlog_type,
             com.call_status as commlog_status,
 
+            rt.name as term,
+
             if(
                 com.reason is not null and com.reason not like 'Att: Unknown%',
                 true,
@@ -55,12 +57,19 @@ with
             and att.calendardate = com.call_date
             and com.is_attendance_call
             and com.call_status = 'Completed'
+        left join
+            {{ ref("stg_reporting__terms") }} as rt
+            on co.schoolid = rt.school_id
+            and co.academic_year = rt.academic_year
+            and att.calendardate between rt.start_date and rt.end_date
+            and rt.type = 'RT'
     )
 
 select
     student_number,
     student_name,
     academic_year,
+    term,
     region,
     school_level,
     school,
