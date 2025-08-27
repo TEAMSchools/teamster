@@ -46,6 +46,7 @@ with
             and co.schoolid = att.schoolid
             and att.calendardate between co.entrydate and co.exitdate
             and att.is_absent = 1
+            and att.is_suspended = 0
             and att.membershipvalue = 1
         left join
             {{ ref("int_deanslist__comm_log") }} as com
