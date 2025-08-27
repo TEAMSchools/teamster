@@ -53,6 +53,7 @@ with
             and co.academic_year = com.academic_year
             and att.calendardate = com.call_date
             and com.is_attendance_call
+            and com.call_status = 'Completed'
     )
 
 select
