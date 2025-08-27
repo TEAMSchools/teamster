@@ -43,5 +43,5 @@ select
     date(offer_datetime) as offer_date,
     date(hired_datetime) as hired_date,
     date(rejected_datetime) as rejected_date,
-    date(update_datetime) as last_update_date,
+    date(last_update_datetime) as last_update_date,
 from applications
