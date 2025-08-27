@@ -456,6 +456,7 @@ class NJSLA(BaseModel):
     hispanicorlatinoethnicity: str | None = None
     home_language: str | None = None
     homelanguage: str | None = None
+    homeless_primary_nighttime_residence: str | None = None
     homeless: str | None = None
     homelessprimarynighttimeresidence: str | None = None
     humanreaderorhumansigner: str | None = None
@@ -474,6 +475,7 @@ class NJSLA(BaseModel):
     mlaccommodation: str | None = None
     mlexemptfromtakingela: str | None = None
     monitortestresponse: str | None = None
+    multilinguallearneraccommodatedresponse: str | None = None
     multilinguallearneraccommodatedresponses: str | None = None
     multilinguallearnerml: str | None = None
     multipletestregistration: str | None = None
@@ -504,6 +506,7 @@ class NJSLA(BaseModel):
     refreshablebrailledisplay: str | None = None
     reportsuppressionaction: str | None = None
     reportsuppressioncode: str | None = None
+    requiredhighschoolmathassessment: str | None = None
     retest: str | None = None
     rosterflag: str | None = None
     sensemakingpracticesperformancelevel: str | None = None
@@ -658,6 +661,7 @@ class NJGPA(BaseModel):
     mlaccommodation: str | None = None
     mlexemptfromtakingela: str | None = None
     monitortestresponse: str | None = None
+    multilinguallearneraccommodatedresponse: str | None = None
     multilinguallearneraccommodatedresponses: str | None = None
     multilinguallearnerml: str | None = None
     multipletestregistration: str | None = None
@@ -686,6 +690,7 @@ class NJGPA(BaseModel):
     refreshablebrailledisplay: str | None = None
     reportsuppressionaction: str | None = None
     reportsuppressioncode: str | None = None
+    requiredhighschoolmathassessment: str | None = None
     retest: str | None = None
     rosterflag: str | None = None
     separatealternatelocation: str | None = None
