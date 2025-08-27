@@ -36,7 +36,7 @@ with
             a.time_in_application_status_interview_demo,
             a.time_in_application_status_interview_phone_screen_complete,
             a.time_in_application_status_interview_phone_screen_requested,
-            trim(a.subject_preference_unnest) as subject_preference,
+            trim(subject_preference_unnest) as subject_preference,
             coalesce(
                 a.application_field_school_shared_with_miami,
                 a.application_field_school_shared_with_new_jersey
