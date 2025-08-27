@@ -22,7 +22,6 @@ with
             a.source,
             a.new_date,
             a.hired_date,
-            a.new_date,
             a.offer_date,
             a.demo_date,
             a.phone_screen_complete_date,
