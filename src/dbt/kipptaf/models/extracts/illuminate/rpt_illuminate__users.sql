@@ -28,7 +28,8 @@ with
             'KIPP Paterson' as home_business_unit_name,
 
             title as job_title,
-        from {{ source("kipppaterson_powerschool", "stg_powerschool__users") }}
+        from {{ ref("stg_powerschool__users") }}
+        where _dbt_source_relation like '%kipppaterson%'
     )
 
 -- trunk-ignore(sqlfluff/ST06)
