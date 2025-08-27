@@ -42,10 +42,11 @@
                 and first_name is not null
                 and last_name is not null
                 and enroll_status = 0
+                and _dbt_source_relation not like '%kipppaterson%'
         ),
 
         username_options as (
-            {# powerschool usernames are capped @ 20 chars #}
+            /* powerschool usernames are capped @ 20 chars  */
             select
                 student_number,
 
