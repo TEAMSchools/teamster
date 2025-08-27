@@ -16,6 +16,7 @@ with
             co.is_self_contained as is_pathways,
             co.school,
             co.school_level,
+            co.advisor_teachernumber as hr_teachernumber,
 
             asr.assessment_id,
             asr.title,
@@ -37,8 +38,6 @@ with
             asr.performance_band_label,
             asr.is_replacement,
             asr.is_internal_assessment as is_normed_scope,
-
-            hr.teachernumber as hr_teachernumber,
 
             enr.teachernumber as enr_teachernumber,
             enr.teacher_lastfirst as teacher_name,
@@ -65,15 +64,6 @@ with
             and asr.subject_area = enr.illuminate_subject_area
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1
-        left join
-            {{ ref("base_powerschool__course_enrollments") }} as hr
-            on co.student_number = hr.cc_studentid
-            and co.yearid = hr.cc_yearid
-            and co.schoolid = hr.cc_schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-            and hr.cc_course_number = 'HR'
-            and not hr.is_dropped_section
-            and hr.rn_course_number_year = 1
         left join
             {{ ref("int_people__leadership_crosswalk") }} as lc
             on co.schoolid = lc.home_work_location_powerschool_school_id

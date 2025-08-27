@@ -72,6 +72,9 @@ with
             co.ethnicity,
             co.year_in_network,
             co.is_self_contained,
+            co.advisory_section_number as homeroom_section,
+            co.advisor_lastfirst as homeroom_teacher_name,
+            co.advisor_teachernumber as homeroom_teachernumber,
 
             w.week_start_monday,
             w.week_end_sunday,
@@ -108,10 +111,6 @@ with
             sf.dibels_most_recent_composite,
             sf.state_test_proficiency,
             sf.is_exempt_iready,
-
-            hr.sections_section_number as homeroom_section,
-            hr.teachernumber as homeroom_teachernumber,
-            hr.teacher_lastfirst as homeroom_teacher_name,
 
             lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
@@ -172,15 +171,6 @@ with
             and co.academic_year = sf.academic_year
             and cc.courses_credittype = sf.powerschool_credittype
             and sf.rn_year = 1
-        left join
-            {{ ref("base_powerschool__course_enrollments") }} as hr
-            on co.studentid = hr.cc_studentid
-            and co.yearid = hr.cc_yearid
-            and co.schoolid = hr.cc_schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-            and hr.cc_course_number = 'HR'
-            and not hr.is_dropped_section
-            and hr.rn_course_number_year = 1
         left join
             {{ ref("int_people__leadership_crosswalk") }} as lc
             on co.schoolid = lc.home_work_location_powerschool_school_id

@@ -87,6 +87,7 @@ select
     e.advisory_name,
     e.advisory_section_number as team,
     e.advisor_lastfirst,
+    e.advisor_teachernumber,
     e.student_email_google as student_email,
     e.student_web_id,
     e.student_web_password,
