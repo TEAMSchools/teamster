@@ -236,9 +236,9 @@ where
     and e.academic_year >= {{ var("current_academic_year") - 7 }}
     and e.grade_level > 2
 
-union all
-
-/* NJ prelim scores */
+    -- union all
+    /* NJ prelim scores */
+    /* disabled until december
 select
     e.academic_year,
     e.region,
@@ -302,3 +302,5 @@ where
     and e.rn_year = 1
     and e.grade_level > 2
     and e.school_level != 'OD'
+*/
+    
