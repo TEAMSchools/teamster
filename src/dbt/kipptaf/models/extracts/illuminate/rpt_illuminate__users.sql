@@ -23,7 +23,7 @@ with
             email_addr as user_principal_name,
             email_addr as sam_account_name,
 
-            if(ptaccess = 1 or psaccess = 1, 0, 1) as uac_account_disable,
+            if(ptaccess = 1 or psaccess = 1, 0, 2) as uac_account_disable,
 
             'KIPP Paterson' as home_business_unit_name,
 
