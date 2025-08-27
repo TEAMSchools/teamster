@@ -11,7 +11,7 @@ with
                 partition by student_number order by exitdate desc
             ) as rn,
 
-        from {{ ref("int_extracts__student_enrollments") }}
+        from {{ ref("base_powerschool__student_enrollments") }}
         where school_level = 'MS'
     ),
 
@@ -25,7 +25,7 @@ with
                 partition by student_number order by exitdate desc
             ) as rn,
 
-        from {{ ref("int_extracts__student_enrollments") }}
+        from {{ ref("base_powerschool__student_enrollments") }}
         where school_level = 'ES'
     ),
 
