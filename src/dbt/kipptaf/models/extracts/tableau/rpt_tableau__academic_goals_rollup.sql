@@ -168,7 +168,7 @@ with
             co.grade_level_prev,
             co.year_in_network,
             co.school as school,
-            co.advisory_section_number as homeroom_section,
+            co.team as homeroom_section,
             co.advisor_lastfirst as homeroom_teacher_name,
 
             gb.band,
@@ -261,8 +261,8 @@ with
             co.grade_level_prev,
             co.year_in_network,
             co.school as school,
-            hr.advisory_section_number as homeroom_section,
-            hr.advisor_lastfirst as homeroom_teacher_name,
+            co.team as homeroom_section,
+            co.advisor_lastfirst as homeroom_teacher_name,
 
             gb.band,
 

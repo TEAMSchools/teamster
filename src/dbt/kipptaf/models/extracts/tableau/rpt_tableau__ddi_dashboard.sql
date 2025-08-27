@@ -72,7 +72,7 @@ with
             co.ethnicity,
             co.year_in_network,
             co.is_self_contained,
-            co.advisory_section_number as homeroom_section,
+            co.team as homeroom_section,
             co.advisor_lastfirst as homeroom_teacher_name,
             co.advisor_teachernumber as homeroom_teachernumber,
 
