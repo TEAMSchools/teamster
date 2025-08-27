@@ -119,6 +119,7 @@ where
     and co.enroll_status = 0
     and co.region != 'Miami'
     and not co.is_self_contained
+
 union all
 
 -- HS
