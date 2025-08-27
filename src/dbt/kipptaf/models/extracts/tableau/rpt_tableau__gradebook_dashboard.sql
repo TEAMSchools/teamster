@@ -476,7 +476,7 @@ select
     coalesce(co.student_number, e1.student_number) as student_number,
     coalesce(co.lastfirst, e1.lastfirst) as lastfirst,
     coalesce(co.schoolid, e1.schoolid) as schoolid,
-    coalesce(co.school, e1.school) as school_abbreviation,
+    coalesce(co.school_abbreviation, e1.school_abbreviation) as school_abbreviation,
     coalesce(co.grade_level, e1.grade_level) as grade_level,
     coalesce(co.team, e1.team) as team,
 

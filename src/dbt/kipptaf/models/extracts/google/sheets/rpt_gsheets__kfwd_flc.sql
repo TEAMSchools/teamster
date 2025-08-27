@@ -78,7 +78,7 @@ select
     co.region,
     co.advisor_lastfirst as advisor,
     co.gender,
-    co.student_email_google,
+    co.student_email as student_email_google,
 
     ce.teacher_lastfirst as ccr_teacher,
     ce.sections_external_expression as ccr_period,
@@ -189,5 +189,5 @@ left join
     on co.studentid = gpa.studentid
     and co.schoolid = gpa.schoolid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
-left join dps_pivot as dps on co.student_email_google = dps.respondent_email
+left join dps_pivot as dps on co.student_email = dps.respondent_email
 where co.rn_undergrad = 1

@@ -81,7 +81,7 @@ left join
     between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
 left join
     {{ ref("int_extracts__student_enrollments") }} as se1
-    on sr.respondent_email = se1.student_email_google
+    on sr.respondent_email = se1.student_email
     and sr.academic_year = se1.academic_year
 left join
     family_responses as fr
