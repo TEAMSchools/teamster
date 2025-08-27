@@ -1,4 +1,3 @@
--- trunk-ignore(sqlfluff/ST03)
 with
     ktaf as (
         select
@@ -83,6 +82,7 @@ with
             and district_state = 'KTAF FL'
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     -- deduping here because of how group by cube generates rows
     dedup_ktaf as (
         {{
