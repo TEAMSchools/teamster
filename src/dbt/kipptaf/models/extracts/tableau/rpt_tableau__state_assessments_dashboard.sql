@@ -178,7 +178,7 @@ with
 
         from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
-
+    /* disabled until next december
         union all
 
         select
@@ -262,7 +262,7 @@ with
             state_student_identifier is not null
             and administration = 'Spring'
             and test_type = 'NJSLA'
-            and academic_year = {{ var("current_academic_year") - 1 }}
+            and academic_year = {{ var("current_academic_year") - 1 }}*/
     )
 
 -- NJ scores
