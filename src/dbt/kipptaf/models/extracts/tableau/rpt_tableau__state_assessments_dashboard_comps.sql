@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
     ktaf as (
         select
             b.academic_year,
@@ -87,20 +88,12 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="ktaf",
-                partition_by="academic_year,
-                    region,
-                    comparison_entity,
-                    comparison_demographic_group,
-                    comparison_demographic_subgroup,
-                    focus_level,
-                    assessment_name,
-                    test_code",
+                partition_by="academic_year, region, comparison_entity,comparison_demographic_group,comparison_demographic_subgroup,focus_level,assessment_name,test_code",
                 order_by="academic_year",
             )
         }}
     ),
 
-    -- trunk-ignore(sqlfluff/ST03)
     appended as (
         select
             academic_year,
@@ -321,7 +314,7 @@ select
         or b.percent_proficient > a.percent_proficient,
         true,
         false
-    ) region_matched_or_outperformed,
+    ) as region_matched_or_outperformed,
 
 from grouped_comps as a
 left join
