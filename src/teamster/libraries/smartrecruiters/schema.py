@@ -10,6 +10,7 @@ class Application(BaseModel):
     application_field_school_shared_with_miami: str | None = None
     application_field_school_shared_with_new_jersey: str | None = None
     application_id: str | None = None
+    application_last_update_date: str | None = None
     application_reason_for_rejection: str | None = None
     application_reason_for_withdrawal: str | None = None
     application_state_hired_date: str | None = None
