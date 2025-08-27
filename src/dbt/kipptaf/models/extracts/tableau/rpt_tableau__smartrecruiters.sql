@@ -46,15 +46,47 @@ with
                 a.application_field_resume_score, a.average_rating
             ) as resume_score,
             case when a.hired_date is not null then 1 else 0 end as has_hired_status,
-            case when a.offer_date is not null then 1 else 0 end as has_offer_status,
-            case when a.demo_date is not null then 1 else 0 end as has_demo_status,
             case
-                when a.phone_screen_complete_date is not null then 1 else 0
+                when a.hired_date is not null or a.offer_date is not null then 1 else 0
+            end as has_offer_status,
+            case
+                when
+                    a.hired_date is not null
+                    or a.offer_date is not null
+                    or a.demo_date is not null
+                then 1
+                else 0
+            end as has_demo_status,
+            case
+                when
+                    a.hired_date is not null
+                    or a.offer_date is not null
+                    or a.demo_date is not null
+                    or a.phone_screen_complete_date is not null
+                then 1
+                else 0
             end as has_phone_screen_complete_status,
             case
-                when a.phone_screen_requested_date is not null then 1 else 0
+                when
+                    a.hired_date is not null
+                    or a.offer_date is not null
+                    or a.demo_date is not null
+                    or a.phone_screen_complete_date is not null
+                    or a.phone_screen_requested_date is not null
+                then 1
+                else 0
             end as has_phone_screen_requested_status,
-            case when a.new_date is not null then 1 else 0 end as has_new_status,
+            case
+                when
+                    a.hired_date is not null
+                    or a.offer_date is not null
+                    or a.demo_date is not null
+                    or a.phone_screen_complete_date is not null
+                    or a.phone_screen_requested_date is not null
+                    or a.new_date is not null
+                then 1
+                else 0
+            end as has_new_status,
         from {{ ref("stg_smartrecruiters__applications") }} as a
         cross join unnest(split(a.subject_preference, ',')) as subject_preference_unnest
 
