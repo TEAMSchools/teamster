@@ -34,7 +34,7 @@ select
     p.progress_multiplier_4yr,
     p.progress_multiplier_6yr,
 
-    r.student_name,
+    r.lastfirst as student_name,
     r.last_name as student_last_name,
     r.first_name as student_first_name,
     r.record_type_name,

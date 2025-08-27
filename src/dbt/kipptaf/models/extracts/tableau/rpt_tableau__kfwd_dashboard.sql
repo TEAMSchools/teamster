@@ -191,7 +191,7 @@ with
 
 select
     c.contact_id,
-    c.student_name,
+    c.lastfirst as student_name,
     c.ktc_cohort,
     c.record_type_name as record_type_name,
     c.contact_owner_name as counselor_name,

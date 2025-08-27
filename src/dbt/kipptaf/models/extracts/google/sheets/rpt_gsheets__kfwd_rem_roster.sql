@@ -37,7 +37,7 @@ with
     )
 
 select
-    r.student_name,
+    r.lastfirst as student_name,
     r.contact_id,
     r.ktc_cohort,
     r.contact_owner_name,
