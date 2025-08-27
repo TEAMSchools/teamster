@@ -1,10 +1,65 @@
 with
-    date_spine as (),
+    applications as (
+        select
+            a.application_field_phone_interview_score,
+            a.application_field_school_shared_with_miami,
+            a.application_field_school_shared_with_new_jersey,
+            a.application_id,
+            a.application_last_update_date,
+            a.application_reason_for_rejection,
+            a.application_state,
+            a.application_url,
+            a.average_rating,
+            a.candidate_email,
+            a.candidate_first_name,
+            a.candidate_id,
+            a.candidate_last_name,
+            a.candidate_linkedin_profile_url,
+            a.department_internal,
+            a.department_org_field_value,
+            a.job_city,
+            a.job_title,
+            a.recruiters,
+            a.source_subtype,
+            a.source_type,
+            a.source,
+            a.hired_date,
+            a.offer_date,
+            a.demo_date,
+            a.phone_screen_complete_date,
+            a.phone_screen_requested_date,
+            a.last_update_date,
+            a.rejected_date,
+            a.time_in_application_state_in_review,
+            a.time_in_application_state_interview,
+            a.time_in_application_state_lead,
+            a.time_in_application_state_new,
+            a.time_in_application_state_offered,
+            a.time_in_application_status_in_review_resume_review,
+            a.time_in_application_status_interview_demo,
+            a.time_in_application_status_interview_phone_screen_complete,
+            a.time_in_application_status_interview_phone_screen_requested,
+            a.trim(subject_preference_unnest) as subject_preference,
+            coalesce(
+                a.application_field_resume_score, a.average_rating
+            ) as resume_score,
+            case when a.hired_date is not null then 1 else 0 end as has_hired_status,
+            case when a.offer_date is not null then 1 else 0 end as has_offer_status,
+            case when a.demo_date is not null then 1 else 0 end as has_demo_status,
+            case
+                when a.phone_screen_complete_date is not null then 1 else 0
+            end as has_phone_screen_complete_status,
+            case
+                when a.phone_screen_requested_date is not null then 1 else 0
+            end as has_phone_screen_requested_status,
+            case when a.new_date is not null then 1 else 0 end as has_new_status,
+        from {{ ref("stg_smartrecruiters__applications") }} as a
+        cross join unnest(split(a.subject_preference, ',')) as subject_preference_unnest
 
-    applications as (select *, from {{ ref("stg_smartrecruiters__applications") }}),
+    ),
 
     applications_unpivoted as (
-        select *, status_type, date_val,
+        select *,
         from
             applications unpivot (
                 date_val for status_type in (
@@ -16,45 +71,7 @@ with
                     phone_screen_requested_date
                 )
             )
-    ),
-
-    final as (
-        select
-            -- Explicit column listing
-            applications_unpivoted.application_id,
-            applications_unpivoted.candidate_id,
-            {# to do: add columns explicitly #}
-            applications_unpivoted.status_type,
-            applications_unpivoted.date_val,
-            coalesce(
-                applications_unpivoted.resume_score, applications_unpivoted.star_score
-            ) as resume_score,
-            trim(subject_preference) as subject_preference,
-            case
-                when applications_unpivoted.hired_date is not null then 1 else 0
-            end as has_hired_status,
-            case
-                when applications_unpivoted.offer_date is not null then 1 else 0
-            end as has_offer_status,
-            case
-                when applications_unpivoted.demo_date is not null then 1 else 0
-            end as has_demo_status,
-            case
-                when applications_unpivoted.phone_screen_complete_date is not null
-                then 1
-                else 0
-            end as has_phone_screen_complete_status,
-            case
-                when applications_unpivoted.phone_screen_requested_date is not null
-                then 1
-                else 0
-            end as has_phone_screen_requested_status,
-            case
-                when applications_unpivoted.new_date is not null then 1 else 0
-            end as has_new_status,
-        from applications_unpivoted
-        cross join unnest(split(subject_preference, ',')) as subject_preference
     )
 
 select *,
-from final
+from applications_unpivoted
