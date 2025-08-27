@@ -9,7 +9,7 @@ select
     student_web_id as username,
     student_email as email,
 
-    lastfirst || ' (' || student_number || ')' as dropdown_hash,
+    student_name || ' (' || student_number || ')' as dropdown_hash,
 
     if(enroll_status = 2, exitdate, null) as exitdate,
 

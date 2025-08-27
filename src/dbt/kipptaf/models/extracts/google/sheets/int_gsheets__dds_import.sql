@@ -8,8 +8,8 @@ select
     p.given_name as teacher_first,
     p.family_name_1 as teacher_last,
 
-    regexp_replace(s.first_name, r'\W', '') as student_first,
-    regexp_replace(s.last_name, r'\W', '') as student_last,
+    regexp_replace(s.student_first_name, r'\W', '') as student_first,
+    regexp_replace(s.student_last_name, r'\W', '') as student_last,
 
     lower(p.mail) as teacher_mail,
 

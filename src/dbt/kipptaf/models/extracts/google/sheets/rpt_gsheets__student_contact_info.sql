@@ -11,7 +11,7 @@ select
     co.schoolid,
     co.school_name,
 
-    if(co.grade_level = 0, 'K', safe_cast(co.grade_level as string)) as grade_level,
+    if(co.grade_level = 0, 'K', cast(co.grade_level as string)) as grade_level,
 
     co.advisory_name as team,
     co.advisor_lastfirst as advisor_name,
@@ -48,8 +48,8 @@ select
     coalesce(co.contact_1_email_current, co.contact_2_email_current) as guardianemail,
     concat(co.street, ', ', co.city, ', ', co.`state`, ' ', co.zip) as `address`,
 
-    co.first_name,
-    co.last_name,
+    co.student_first_name as first_name,
+    co.student_last_name as last_name,
     co.student_web_id,
     co.student_web_password,
 

@@ -1,7 +1,7 @@
 select
-    sr.last_name,
-    sr.middle_name,
-    sr.first_name,
+    sr.student_last_name as last_name,
+    sr.student_middle_name as middle_name,
+    sr.student_first_name as first_name,
     sr.gender,
     sr.cohort as graduation_year,
     sr.ethnicity as race,

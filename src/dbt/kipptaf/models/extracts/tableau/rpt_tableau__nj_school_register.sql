@@ -1,12 +1,13 @@
 with
     att_mem as (
         select
+            _dbt_source_relation,
             studentid,
             yearid,
-            _dbt_source_relation,
 
             sum(attendancevalue) as n_att,
             sum(membershipvalue) as n_mem,
+
             sum(
                 if(
                     calendardate <= current_date('{{ var("local_timezone") }}'),

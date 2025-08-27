@@ -1,8 +1,8 @@
 with
     students as (
         select
-            first_name,
-            last_name,
+            student_first_name as first_name,
+            student_last_name as last_name,
             school_name,
             grade_level,
             student_email,

@@ -1,7 +1,7 @@
 select
     e.student_number,
-    e.first_name,
-    e.last_name,
+    e.student_first_name as first_name,
+    e.student_last_name as last_name,
     e.dob,
     e.gender,
 
