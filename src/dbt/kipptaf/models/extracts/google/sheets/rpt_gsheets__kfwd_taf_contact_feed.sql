@@ -69,5 +69,4 @@ left join
     {{ ref("int_extracts__student_enrollments") }} as co
     on r.student_number = co.student_number
     and co.rn_undergrad = 1
-    and co.grade_level != 99
 where r.ktc_status like 'TAF%'

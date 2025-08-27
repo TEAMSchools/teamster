@@ -60,4 +60,4 @@ left join
     {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
     on co.students_dcid = nj.studentsdcid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
-where co.rn_year = 1 and co.region != 'Miami' and co.grade_level != 99
+where co.rn_year = 1 and co.region != 'Miami'

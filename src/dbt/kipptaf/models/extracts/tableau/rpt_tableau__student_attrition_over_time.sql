@@ -47,5 +47,4 @@ left join
     {{ ref("int_powerschool__calendar_week") }} as w
     on co.academic_year = w.academic_year
     and co.schoolid = w.schoolid
-where
-    co.academic_year >= {{ var("current_academic_year") - 2 }} and co.grade_level != 99
+where co.academic_year >= {{ var("current_academic_year") - 2 }}

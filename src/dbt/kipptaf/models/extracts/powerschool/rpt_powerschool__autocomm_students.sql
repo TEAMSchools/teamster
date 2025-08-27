@@ -97,7 +97,4 @@ left join
     {{ ref("stg_powerschool__s_stu_x") }} as pfs
     on se.students_dcid = pfs.studentsdcid
     and {{ union_dataset_join_clause(left_alias="se", right_alias="pfs") }}
-where
-    se.academic_year = {{ var("current_academic_year") }}
-    and se.rn_year = 1
-    and se.grade_level != 99
+where se.academic_year = {{ var("current_academic_year") }} and se.rn_year = 1

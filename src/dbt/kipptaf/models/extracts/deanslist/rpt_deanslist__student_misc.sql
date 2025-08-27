@@ -2,7 +2,7 @@ with
     ug_school as (
         select studentid, schoolid, _dbt_source_relation,
         from {{ ref("int_extracts__student_enrollments") }}
-        where rn_undergrad = 1 and grade_level != 99
+        where rn_undergrad = 1
     ),
 
     enroll_dates as (

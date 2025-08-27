@@ -190,4 +190,4 @@ left join
     and co.schoolid = gpa.schoolid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
 left join dps_pivot as dps on co.student_email_google = dps.respondent_email
-where co.rn_undergrad = 1 and co.grade_level != 99
+where co.rn_undergrad = 1
