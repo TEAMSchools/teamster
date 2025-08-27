@@ -82,7 +82,6 @@ with
             and district_state = 'KTAF FL'
     ),
 
-    -- trunk-ignore(sqlfluff/ST03)
     -- deduping here because of how group by cube generates rows
     dedup_ktaf as (
         {{
@@ -101,6 +100,7 @@ with
         }}
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     appended as (
         select
             academic_year,
