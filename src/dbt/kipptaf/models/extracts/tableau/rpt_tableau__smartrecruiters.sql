@@ -2,10 +2,7 @@ with
     applications as (
         select
             a.application_field_phone_interview_score,
-            a.application_field_school_shared_with_miami,
-            a.application_field_school_shared_with_new_jersey,
             a.application_id,
-            a.application_last_update_date,
             a.application_reason_for_rejection,
             a.application_state,
             a.application_url,
@@ -40,6 +37,10 @@ with
             a.time_in_application_status_interview_phone_screen_complete,
             a.time_in_application_status_interview_phone_screen_requested,
             a.trim(subject_preference_unnest) as subject_preference,
+            coalesce(
+                a.application_field_school_shared_with_miami,
+                a.application_field_school_shared_with_new_jersey
+            ) as school_shared_with,
             coalesce(
                 a.application_field_resume_score, a.average_rating
             ) as resume_score,
