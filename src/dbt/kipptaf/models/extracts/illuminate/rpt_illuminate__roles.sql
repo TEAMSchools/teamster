@@ -95,8 +95,10 @@ select
 
     1 as `05 Session Type ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ source("kipppaterson_powerschool", "stg_powerschool__users") }} as u
+from {{ ref("stg_powerschool__users") }} as u
 inner join
-    {{ source("kipppaterson_powerschool", "stg_powerschool__schools") }} as s
-    on s.state_excludefromreporting = 0
-where u.ptaccess = 1 or u.psaccess = 1
+    {{ ref("stg_powerschool__schools") }} as s
+    on {{ union_dataset_join_clause(left_alias="u", right_alias="s") }}
+    and s.state_excludefromreporting = 0
+where
+    u._dbt_source_relation like '%kipppaterson%' and (u.ptaccess = 1 or u.psaccess = 1)
