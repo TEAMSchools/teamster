@@ -106,8 +106,8 @@ left join
     and asr.subject_area = ag.illuminate_subject_area
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-    on sf.student_number = co.student_number
-    and sf.academic_year = co.academic_year
+    on co.student_number = sf.student_number
+    and co.academic_year = sf.academic_year
     and asr.subject_area = sf.illuminate_subject_area
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
@@ -220,8 +220,8 @@ left join
     and asr.subject_area = ag.illuminate_subject_area
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-    on sf.student_number = co.student_number
-    and sf.academic_year = co.academic_year
+    on co.student_number = sf.student_number
+    and co.academic_year = sf.academic_year
     and asr.subject_area = sf.illuminate_subject_area
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
