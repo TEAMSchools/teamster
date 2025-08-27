@@ -57,7 +57,7 @@ with
 /* current year - term grades */
 select
     co.student_number,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.schoolid,
     co.school_abbreviation,
     co.grade_level,
@@ -145,7 +145,7 @@ union all
 /* current year - Y1 grades */
 select
     co.student_number,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.schoolid,
     co.school_abbreviation,
     co.grade_level,
@@ -235,7 +235,7 @@ union all
 /* category grades - term */
 select
     co.student_number,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.schoolid,
     co.school_abbreviation,
     co.grade_level,
@@ -318,7 +318,7 @@ union all
 /* category grades - year */
 select
     co.student_number,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.schoolid,
     co.school_abbreviation,
     co.grade_level,
@@ -399,7 +399,7 @@ union all
 /* historical grades */
 select
     co.student_number,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.schoolid,
     co.school_abbreviation,
     co.grade_level,
@@ -474,7 +474,7 @@ union all
 /* transfer grades */
 select
     coalesce(co.student_number, e1.student_number) as student_number,
-    coalesce(co.lastfirst, e1.lastfirst) as lastfirst,
+    coalesce(co.student_name, e1.student_name) as lastfirst,
     coalesce(co.schoolid, e1.schoolid) as schoolid,
     coalesce(co.school_abbreviation, e1.school_abbreviation) as school_abbreviation,
     coalesce(co.grade_level, e1.grade_level) as grade_level,

@@ -64,7 +64,7 @@ select
     e.studentid,
     e.students_dcid,
     e.student_number,
-    e.lastfirst as student_name,
+    e.student_name,
     e.last_name as student_last_name,
     e.first_name as student_first_name,
     e.middle_name as student_middle_name,

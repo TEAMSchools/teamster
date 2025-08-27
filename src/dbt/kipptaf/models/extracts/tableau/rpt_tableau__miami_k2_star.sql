@@ -100,7 +100,7 @@ with
 select
     co.academic_year,
     co.student_number,
-    co.lastfirst as student_name,
+    co.student_name,
     co.grade_level,
     co.school_abbreviation as school,
     co.lep_status,

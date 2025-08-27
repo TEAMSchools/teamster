@@ -2,7 +2,7 @@ with
     dashboard as (
         select
             co.student_number,
-            co.lastfirst,
+            co.student_name as lastfirst,
             co.academic_year,
             co.reporting_schoolid as schoolid,
             co.region,

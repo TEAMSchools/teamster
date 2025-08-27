@@ -21,7 +21,7 @@ with
 
 select
     co.student_number,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.academic_year,
     co.region,
     co.reporting_schoolid,

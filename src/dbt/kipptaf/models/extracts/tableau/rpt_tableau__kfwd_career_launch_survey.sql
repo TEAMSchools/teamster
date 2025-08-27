@@ -65,7 +65,7 @@ with
             r.contact_id,
             r.contact_first_name as sf_first_name,
             r.contact_last_name as sf_last_name,
-            r.lastfirst as sf_lastfirst,
+            r.student_name as sf_lastfirst,
             r.contact_kipp_ms_graduate,
             r.contact_kipp_hs_graduate,
             r.contact_kipp_hs_class,

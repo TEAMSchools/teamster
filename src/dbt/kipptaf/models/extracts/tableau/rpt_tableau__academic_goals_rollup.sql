@@ -162,7 +162,7 @@ with
         select
             co.academic_year,
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name,
             co.region,
             co.grade_level,
             co.grade_level_prev,
@@ -265,7 +265,7 @@ with
         select
             co.academic_year,
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name,
             co.region,
             co.grade_level,
             co.grade_level_prev,

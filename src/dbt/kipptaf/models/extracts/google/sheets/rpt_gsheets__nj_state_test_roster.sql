@@ -28,7 +28,7 @@ with
             co.advisory_name,
             co.student_number,
             co.state_studentnumber,
-            co.lastfirst as student_name,
+            co.student_name,
             co.special_education_code,
 
             subj as `subject`,
@@ -38,7 +38,7 @@ with
             if(co.lep_status, 'LEP', 'Not LEP') as lep_status,
             if(co.is_504, 'Has 504', 'No 504') as status_504,
 
-            concat(co.lastfirst, ' - ', co.student_number, ' - ', subj) as student,
+            concat(co.student_name, ' - ', co.student_number, ' - ', subj) as student,
 
             case
                 when subj = 'MATH' and nj.asmt_extended_time_math is not null

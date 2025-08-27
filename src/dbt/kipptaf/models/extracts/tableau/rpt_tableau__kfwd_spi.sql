@@ -1,6 +1,6 @@
 select
     r.contact_id,
-    r.lastfirst as student_name,
+    r.student_name,
     r.ktc_cohort as cohort,
     r.contact_advising_provider as advising_provider,
     r.contact_owner_name,
@@ -143,7 +143,7 @@ union all
 
 select
     r.contact_id,
-    r.lastfirst as student_name,
+    r.student_name,
     r.ktc_cohort as cohort,
     r.contact_advising_provider as advising_provider,
     r.contact_owner_name,

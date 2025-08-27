@@ -73,7 +73,7 @@ with
 -- trunk-ignore(sqlfluff/ST06)
 select
     co.student_number,
-    co.lastfirst as student_name,
+    co.student_name,
     co.school_abbreviation as school,
     co.region,
     co.advisor_lastfirst as advisor,
@@ -101,7 +101,7 @@ select
         then 'graduated'
     end as enroll_status,
 
-    concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
+    concat(co.student_name, ' - ', co.student_number) as student_identifier,
 
     act.act_count,
 

@@ -12,7 +12,7 @@ with
 select
     co.academic_year,
     co.student_number,
-    co.lastfirst as student_name,
+    co.student_name,
     co.region,
     co.school_abbreviation as school,
     co.grade_level,

@@ -87,7 +87,7 @@ select
     co.student_number,
     co.state_studentnumber as mdcps_id,
     co.fleid,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.grade_level,
     co.schoolid,
     co.school_name,

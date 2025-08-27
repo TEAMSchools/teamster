@@ -1,6 +1,6 @@
 select
     co.student_number,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.region,
     co.school_level,
     co.school_abbreviation,

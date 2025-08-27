@@ -24,7 +24,7 @@ with
             se._dbt_source_relation,
             se.student_number,
             se.state_studentnumber,
-            se.lastfirst,
+            se.student_name as lastfirst,
             se.enroll_status,
             se.gender,
             se.ethnicity,
@@ -45,7 +45,7 @@ with
             safe_cast(cec.sectionid_count as string) as sectionid_count,
 
             if(
-                regexp_contains(se.lastfirst, r"\s{2,}|[^\w\s',-]"), 1, 0
+                regexp_contains(se.student_name, r"\s{2,}|[^\w\s',-]"), 1, 0
             ) as name_spelling_flag,
             if(se.ethnicity is null, 1, 0) as missing_ethnicity_flag,
             if(se.gender is null, 1, 0) as missing_gender_flag,

@@ -8,7 +8,7 @@ select
     regexp_extract(enr._dbt_source_relation, r'(kipp\w+)_') as db_name,
 
     co.student_number,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.academic_year,
     co.schoolid,
     co.school_name,
@@ -73,7 +73,7 @@ select
     regexp_extract(enr._dbt_source_relation, r'(kipp\w+)_') as db_name,
 
     co.student_number,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.academic_year,
     co.schoolid,
     co.school_name,

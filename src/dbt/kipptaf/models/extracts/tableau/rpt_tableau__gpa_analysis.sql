@@ -1,6 +1,6 @@
 select
     sr.student_number,
-    sr.lastfirst,
+    sr.student_name as lastfirst,
     sr.gender,
     sr.ethnicity,
     sr.enroll_status,

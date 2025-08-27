@@ -6,7 +6,7 @@ with
             s.region,
             s.schoolid as school_id,
             s.student_number,
-            s.lastfirst as student_name,
+            s.student_name,
             s.first_name as student_first_name,
             s.last_name as student_last_name,
 

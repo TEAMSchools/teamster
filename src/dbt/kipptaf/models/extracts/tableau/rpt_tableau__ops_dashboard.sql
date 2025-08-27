@@ -80,7 +80,7 @@ with
 
 select
     se.student_number,
-    se.lastfirst,
+    se.student_name as lastfirst,
     se.academic_year,
     se.region,
     se.school_level,

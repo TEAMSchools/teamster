@@ -7,7 +7,7 @@ select
     ) as newark_enrollment_number,
 
     co.state_studentnumber,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.schoolid,
     co.school_name,
 
