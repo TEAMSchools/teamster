@@ -33,6 +33,7 @@ from teamster.libraries.powerschool.sis.sftp.schema import (
     StudentContactAssoc,
     StudentContactDetail,
     StudentCoreFields,
+    StudentEmail,
     Students,
     TermBins,
     Terms,
@@ -153,6 +154,10 @@ TERMS_SCHEMA = json.loads(py_avro_schema.generate(py_type=Terms, options=options
 
 USERS_SCHEMA = json.loads(py_avro_schema.generate(py_type=Users, options=options))
 
+STUDENT_EMAIL_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=StudentEmail, options=options)
+)
+
 SCHEMAS = {
     "attendance": ATTENDANCE_SCHEMA,
     "attendance_code": ATTENDANCE_CODE_SCHEMA,
@@ -181,6 +186,7 @@ SCHEMAS = {
     "schoolstaff": SCHOOLSTAFF_SCHEMA,
     "sections": SECTIONS_SCHEMA,
     "spenrollments": SPENROLLMENTS_SCHEMA,
+    "student_email": STUDENT_EMAIL_SCHEMA,
     "studentcontactassoc": STUDENTCONTACTASSOC_SCHEMA,
     "studentcontactdetail": STUDENTCONTACTDETAIL_SCHEMA,
     "studentcorefields": STUDENTCOREFIELDS_SCHEMA,
