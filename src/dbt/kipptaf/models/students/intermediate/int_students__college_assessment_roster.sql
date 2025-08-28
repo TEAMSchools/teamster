@@ -23,10 +23,8 @@ with
             a.superscore,
 
             s.admin_season,
-
-            case
-                s.admin_season when 'BOY' then 1 when 'MOY' then 2 else 3
-            end as admin_season_order,
+            s.admin_season_order,
+            s.grade_season,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
@@ -48,12 +46,10 @@ with
             scope,
             score_type,
             scale_score,
-            admin_season,
-            admin_season_order,
+            grade_season,
 
             max(scale_score) over (
-                partition by student_number, score_type
-                order by academic_year, admin_season_order
+                partition by student_number, score_type order by grade_season
             ) as running_max_scale_score,
 
         from scores
@@ -66,6 +62,7 @@ with
             )
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     running_superscore as (
         select
             student_number,
@@ -80,7 +77,22 @@ with
 
         from running_max_score
         where score_type not in ('act_composite', 'sat_total_score')
+    ),
+
+    dedup_runnning_superscore as (
+        {{
+            dbt_utils.deduplicate(
+                relation="running_superscore",
+                partition_by="student_number,scope",
+                order_by="student_number",
+            )
+        }}
     )
 
-select *,
-from scores
+select s.*,
+from scores as s
+left join
+    running_max_score as rm
+    on s.student_number = rm.student_number
+    and s.grade_season = rm.grade_season
+    and s.score_type = rm.score_type
